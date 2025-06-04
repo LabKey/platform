@@ -189,7 +189,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Domain getDomain()
     {
-        return _dataClass.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dataClass.getDomain(forUpdate);
     }
 
     @Override

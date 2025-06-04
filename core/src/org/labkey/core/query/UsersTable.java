@@ -322,13 +322,19 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
         if (getObjectUriColumn() == null)
             return null;
 
         if (_domain == null)
         {
             String domainURI = getDomainURI();
-            _domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+            _domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI, forUpdate);
         }
 
         return _domain;

@@ -149,10 +149,10 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         JSONObject args = arguments != null ? arguments.toJSONObject() : null;
-        return _assayDelegate.createDomain(domain, args, container, user, templateInfo);
+        return _assayDelegate.createDomain(domain, args, container, user, templateInfo, forUpdate);
     }
 
     @NotNull

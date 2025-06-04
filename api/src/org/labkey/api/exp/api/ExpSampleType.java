@@ -66,6 +66,9 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
     @NotNull
     Domain getDomain();
 
+    @NotNull
+    Domain getDomain(boolean forUpdate);
+
     String getDescription();
 
     /**

@@ -450,7 +450,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer(), true);
                         if (gwtDomain == null)
                         {
-                            Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
+                            Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null, false);
                             domainURIs.add(newDomain.getTypeURI());
                         }
                         else

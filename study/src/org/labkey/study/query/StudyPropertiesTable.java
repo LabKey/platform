@@ -174,6 +174,18 @@ public class StudyPropertiesTable extends BaseStudyTable
         return _domain;
     }
 
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (_domain != null && forUpdate && !_domain.isMutable())
+        {
+            String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(getContainer());
+            _domain = PropertyService.get().getDomain(getContainer(), domainURI, forUpdate);
+        }
+        return _domain;
+    }
+
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {

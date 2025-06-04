@@ -122,7 +122,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         try
         {
@@ -131,7 +131,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
             ensureDomainProperties(metadataDomain, container);
             metadataDomain.save(user);
 
-            return PropertyService.get().getDomain(container, domainURI);
+            return PropertyService.get().getDomain(container, domainURI, forUpdate);
         }
         catch (Exception e)
         {

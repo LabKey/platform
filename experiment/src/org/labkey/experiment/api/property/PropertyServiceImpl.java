@@ -128,34 +128,48 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Nullable
     public DomainImpl getDomain(Container container, String domainURI)
     {
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
+        return getDomain(container, domainURI, false);
+    }
+
+    @Override
+    @Nullable
+    public DomainImpl getDomain(Container container, String domainURI, boolean forUpdate)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container, forUpdate);
         if (dd == null)
             return null;
-        return new DomainImpl(dd);
+        return new DomainImpl(dd, forUpdate);
     }
 
     @Override
     @Nullable
     public Domain getDomain(int domainId)
     {
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId);
+        return getDomain(domainId, false);
+    }
+
+    @Override
+    @Nullable
+    public Domain getDomain(int domainId, boolean forUpdate)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId, forUpdate);
         if (dd == null)
             return null;
-        return new DomainImpl(dd);
+        return new DomainImpl(dd, forUpdate);
     }
 
     @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name)
     {
-        return new DomainImpl(container, typeURI, name);
+        return new DomainImpl(container, typeURI, name, true);
     }
 
     @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo)
     {
-        return new DomainImpl(container, typeURI, name, templateInfo);
+        return new DomainImpl(container, typeURI, name, templateInfo, true);
     }
 
     @Override
@@ -176,7 +190,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             }
 
             // return created domain, will only be null in some sort of race condition
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), false);
             if (null == domain)
                 throw new OptimisticConflictException("Domain deleted: " + domainURI, "", Table.ERROR_DELETED);
             return domain;

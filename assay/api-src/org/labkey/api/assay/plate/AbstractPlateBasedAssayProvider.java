@@ -159,7 +159,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     @Override
     public Domain getSampleWellGroupDomain(ExpProtocol protocol)
     {
-        return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
+        return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP, false);
     }
 
     @Override
