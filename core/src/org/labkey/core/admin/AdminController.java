@@ -11220,10 +11220,12 @@ public class AdminController extends SpringActionController
             _existingValue = existingValue;
         }
 
-        public String getExistingValues()
+        public List<String> getExistingValues()
         {
-            // The JSP JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
-            return StringUtils.trimToEmpty(_existingValues).replace("\r", "");
+            return Arrays.stream(StringUtils.trimToEmpty(_existingValues).split("\n"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
         }
 
         @SuppressWarnings("unused")
@@ -11250,7 +11252,7 @@ public class AdminController extends SpringActionController
 
         private List<AllowedHost> getExistingAllowedHosts(BindException errors)
         {
-            List<AllowedHost> existing = Arrays.stream(getExistingValues().split("\n"))
+            List<AllowedHost> existing = getExistingValues().stream()
                 .map(value-> getAllowedHost(value, errors))
                 .toList();
 
