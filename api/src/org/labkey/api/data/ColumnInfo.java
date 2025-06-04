@@ -307,7 +307,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     TableInfo getParentTable();
 
-    String getColumnName();
 
     @Nullable
     String getWrappedColumnName();

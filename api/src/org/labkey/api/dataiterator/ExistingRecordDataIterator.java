@@ -278,12 +278,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     // Issue 52922: Rows with blank key in the file are getting ignored in update from file
                     if (pkVal == null)
                     {
-                        _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                        _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getName() + " value not provided on row " + lastPrefetchRowNumber));
                         continue;
                     }
 
                     sqlf.add(pkVal);
-                    if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
+                    if (!_sharedKeys.contains(pkColumns.get(p).getName()))
                         pkKeys.add(pkVal.toString());
                 }
                 sqlf.append(")");
@@ -405,12 +405,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         // Issue 52922: Rows with blank key in the file are getting ignored in update from file
                         if (pkVal == null)
                         {
-                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getName() + " value not provided on row " + lastPrefetchRowNumber));
                             return;
                         }
 
-                        keyMap.put(pkColumns.get(p).getColumnName(), pkVal);
-                        if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
+                        keyMap.put(pkColumns.get(p).getName(), pkVal);
+                        if (!_sharedKeys.contains(pkColumns.get(p).getName()))
                             pkKeys.add(pkVal.toString());
                     }
 

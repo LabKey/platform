@@ -1101,10 +1101,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid", "samplestate", "storedamount", "rootmaterialrowId", "units");
         for (ColumnInfo column : getQueryTable().getColumns())
         {
-            if (dataColumns.contains(column.getColumnName()))
-                includedColumns.add(column.getColumnName());
-            else if (dataColumns.contains(remap.get(column.getColumnName())))
-                includedColumns.add(remap.get(column.getColumnName()));
+            if (dataColumns.contains(column.getName()))
+                includedColumns.add(column.getName());
+            else if (dataColumns.contains(remap.get(column.getName())))
+                includedColumns.add(remap.get(column.getName()));
         }
 
         boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())

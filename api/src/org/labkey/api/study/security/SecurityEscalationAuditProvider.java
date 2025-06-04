@@ -142,7 +142,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
             protected void initColumn(MutableColumnInfo columnInfo) {
                 // Customize Column Labels
                 for (CustomColumn custom_column : CustomColumn.values()) {
-                    if (custom_column.columnName.equalsIgnoreCase(columnInfo.getColumnName())) {
+                    if (custom_column.columnName.equalsIgnoreCase(columnInfo.getName())) {
                         // Set the label to the display value in our enum
                         columnInfo.setLabel(custom_column.displayName);
 
@@ -154,7 +154,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
                 }
 
                 // For the user column, add a foreign key to the user table.
-                if (columnInfo.getColumnName().equalsIgnoreCase(CustomColumn.ESCALATING_USER.columnName)) {
+                if (columnInfo.getName().equalsIgnoreCase(CustomColumn.ESCALATING_USER.columnName)) {
                     LookupForeignKey fk = new LookupForeignKey("UserId", "DisplayName") {
                         @Override
                         public TableInfo getLookupTableInfo() {

@@ -116,16 +116,16 @@ public class SchemaXMLTestCase extends Assert
                     }
                     else
                     {
-                        typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getJdbcType() returned '%s'<br>".formatted(ti.getName(), ci.getColumnName(), sqlTypeName, jdbcType.name()));
+                        typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getJdbcType() returned '%s'<br>".formatted(ti.getName(), ci.getName(), sqlTypeName, jdbcType.name()));
                     }
                 }
                 if ("TIMESTAMP".equalsIgnoreCase(sqlTypeName))
                 {
                     // TIMESTAMP is a legal type, however we discourage its use in xml schema because of the non-standard SQL Server usage of the name
-                    var colType = xmlColMap.get(ci.getColumnName());
+                    var colType = xmlColMap.get(ci.getName());
                     var xmlDatatype = null != colType && colType.isSetDatatype() ? colType.getDatatype() : null;
                     if ("TIMESTAMP".equalsIgnoreCase(xmlDatatype))
-                        typeErrors.append("%s.%s: use DATETIME rather than TIMESTAMP in schema xml file<br>".formatted(ti.getName(), ci.getColumnName()));
+                        typeErrors.append("%s.%s: use DATETIME rather than TIMESTAMP in schema xml file<br>".formatted(ti.getName(), ci.getName()));
                 }
             }
         }

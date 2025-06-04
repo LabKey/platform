@@ -85,7 +85,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                     for (int i = 1; i <= iter.getColumnCount(); i++)
                     {
                         pw.append(sep);
-                        String colName = iter.getColumnInfo(i).getColumnName();
+                        String colName = iter.getColumnInfo(i).getName();
                         pw.append(colName);
                         columns.add(colName);
                         sep = "\t";

@@ -1406,9 +1406,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 // don't select twice
                 if (
-                    Column.RowId.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
-                    Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
-                    Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                    Column.RowId.name().equalsIgnoreCase(propertyColumn.getName()) ||
+                    Column.LSID.name().equalsIgnoreCase(propertyColumn.getName()) ||
+                    Column.Name.name().equalsIgnoreCase(propertyColumn.getName())
                 )
                 {
                     continue;
@@ -1420,7 +1420,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     sql.append(comma);
                     boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
-                    if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
+                    if ("genid".equalsIgnoreCase(propertyColumn.getName()) || propertyColumn.isUniqueIdField())
                     {
                         sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                         hasAliquotColumns = true;

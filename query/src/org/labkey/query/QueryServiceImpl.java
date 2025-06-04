@@ -808,7 +808,7 @@ public class QueryServiceImpl implements QueryService
     {
         Map<String, FieldKey> params = new LinkedHashMap<>();
         for (ColumnInfo pkCol : table.getPkColumns())
-            params.put(pkCol.getColumnName(), pkCol.getFieldKey());
+            params.put(pkCol.getName(), pkCol.getFieldKey());
 
         return urlDefault(container, action, table.getPublicSchemaName(), table.getPublicName(), params);
     }

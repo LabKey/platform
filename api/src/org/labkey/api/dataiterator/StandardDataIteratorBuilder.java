@@ -314,10 +314,10 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 TranslateHelper pair = translateHelperMap.get(getTranslateHelperKey(col));
                 if (null == pair)
                 {
-                    if (additionalRequiredCols.contains(col.getColumnName()))
+                    if (additionalRequiredCols.contains(col.getName()))
                     {
                         List<ColumnValidator> validators = new ArrayList<>();
-                        validators.add(new RequiredValidator(col.getColumnName(), false, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
+                        validators.add(new RequiredValidator(col.getName(), false, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
                         validate.addValidators(index, validators);
                     }
                     continue;

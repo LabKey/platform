@@ -292,17 +292,17 @@ public class DataIteratorUtil
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
-                var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
+                var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getName()));
                 if (!vocabProperties.isEmpty())
                 {
-                    var propCol = target.getColumn(from.getColumnName());
+                    var propCol = target.getColumn(from.getName());
                     if (null != propCol)
                         to = Pair.of(propCol, MatchType.propertyuri);
                 }
             }
             if (null != to && null == to.first)
             {
-                LOG.info("Column Info is null here: - " +  from.getColumnName() + " in " + target.getName());
+                LOG.info("Column Info is null here: - " +  from.getName() + " in " + target.getName());
             }
             matches.add(to);
         }

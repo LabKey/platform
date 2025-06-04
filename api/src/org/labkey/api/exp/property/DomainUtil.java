@@ -276,7 +276,7 @@ public class DomainUtil
             tableInfo = domainKind.getTableInfo(user, container, domain, null);
             if (null != tableInfo)
             {
-                pkColumnNames = new CaseInsensitiveHashSet(tableInfo.getPkColumns().stream().map(ColumnInfo::getColumnName).collect(Collectors.toSet()));
+                pkColumnNames = new CaseInsensitiveHashSet(tableInfo.getPkColumns().stream().map(ColumnInfo::getName).collect(Collectors.toSet()));
                 calculatedFields = getCalculatedFieldsForTableInfo(tableInfo);
             }
         }
@@ -366,7 +366,7 @@ public class DomainUtil
             {
                 List<GWTIndex> indices = allIndices.values().stream()
                         .filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary))
-                        .map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique()))
+                        .map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getName).toList(), index.getKey().isUnique()))
                         .toList();
 
                 gwtDomain.setIndices(indices);

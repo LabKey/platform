@@ -463,7 +463,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected void validateValue(ColumnInfo column, Object value) throws ValidationException
     {
-        DomainProperty dp = getDomain() == null ? null : getDomain().getPropertyByName(column.getColumnName());
+        DomainProperty dp = getDomain() == null ? null : getDomain().getPropertyByName(column.getName());
         List<ColumnValidator> validators = ColumnValidators.create(column, dp);
         for (ColumnValidator v : validators)
         {
@@ -477,7 +477,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         for (ColumnInfo col : getQueryTable().getColumns())
         {
-            Object value = row.get(col.getColumnName());
+            Object value = row.get(col.getName());
 
             // Check required values aren't null or empty
             if (null == value || value instanceof String s && s.isEmpty())
@@ -501,9 +501,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         for (ColumnInfo col : getQueryTable().getColumns())
         {
             // Only validate incoming values
-            if (row.containsKey(col.getColumnName()))
+            if (row.containsKey(col.getName()))
             {
-                Object value = row.get(col.getColumnName());
+                Object value = row.get(col.getName());
                 validateValue(col, value);
             }
         }
@@ -706,9 +706,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (null != getObjectUriColumn())
         {
             SQLFragment lsids = new SQLFragment()
-                    .append("SELECT t.").append(getObjectUriColumn().getColumnName())
+                    .append("SELECT t.").append(getObjectUriColumn().getName())
                     .append(" FROM ").append(getDbTable(), "t")
-                    .append(" WHERE t.").append(getObjectUriColumn().getColumnName()).append(" IS NOT NULL");
+                    .append(" WHERE t.").append(getObjectUriColumn().getName()).append(" IS NOT NULL");
             if (null != getDbTable().getColumn("container"))
             {
                 lsids.append(" AND t.Container = ?");
@@ -750,7 +750,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
             pkVals[idx] = pkValue;
-            if (null == pkVals[idx] && pk.getColumnName().equalsIgnoreCase("Container"))
+            if (null == pkVals[idx] && pk.getName().equalsIgnoreCase("Container"))
             {
                 pkVals[idx] = container;
             }

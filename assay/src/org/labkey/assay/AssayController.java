@@ -1428,7 +1428,7 @@ public class AssayController extends SpringActionController
                 {
                     // assuming that column in storage table has same name
                     Map<String, Object> flagComment = new HashMap<>();
-                    flagComment.put(flagCol.getColumnName(), comment);
+                    flagComment.put(flagCol.getName(), comment);
                     Table.update(getUser(), ti, flagComment, id);
                     rowsAffected++;
                 }

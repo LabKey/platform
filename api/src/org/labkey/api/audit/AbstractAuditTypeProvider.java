@@ -17,7 +17,6 @@ package org.labkey.api.audit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -170,7 +169,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 String[] columnNames = new String[columnIndex.second.size()];
                 for (int i = 0; i < columnIndex.second.size(); i++)
                 {
-                    columnNames[i] = columnIndex.second.get(i).getColumnName();
+                    columnNames[i] = columnIndex.second.get(i).getName();
                 }
                 PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
                 boolean foundIt = false;

@@ -210,7 +210,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
         for (ColumnInfo column : columns)
         {
-            if (column.getColumnName().equalsIgnoreCase(participantIdColumnName))
+            if (column.getName().equalsIgnoreCase(participantIdColumnName))
             {
                 ColumnInfo newColumn = StudyService.get().createAlternateIdColumn(ti, column, c);
                 columns.remove(column);
@@ -421,7 +421,7 @@ public class DatasetDataWriter implements InternalStudyWriter
 
             for (ColumnInfo columnInfo : columnInfoList)
             {
-                columnNames.add(columnInfo.getColumnName());
+                columnNames.add(columnInfo.getName());
             }
 
             IndexInfo indexInfo = new IndexInfo(indexEntry.getValue().getKey(), columnNames);
@@ -461,7 +461,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         List<String> columnInfoListCaseInsensitive = new ArrayList<>();
         for (ColumnInfo columnInfo : columnInfoList)
         {
-            columnInfoListCaseInsensitive.add(columnInfo.getColumnName().toLowerCase());
+            columnInfoListCaseInsensitive.add(columnInfo.getName().toLowerCase());
         }
 
 

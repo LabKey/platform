@@ -106,7 +106,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         if (bound instanceof _BoundColumn)
             from = columns.get(bound.getFieldKey());
         else
-            from = bound.createColumnInfo(getParentTable(), getColumnName(), null);
+            from = bound.createColumnInfo(getParentTable(), getName(), null);
 
         if (null != from)
         {

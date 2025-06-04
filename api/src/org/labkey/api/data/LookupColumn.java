@@ -278,10 +278,4 @@ public class LookupColumn extends BaseColumnInfo
 
         return dialect.truncate(alias, 3 /* leave room for possible suffixes */);
     }
-
-    @Override
-    public String getColumnName()
-    {
-        return _lookupColumn.getName();
-    }
 }

@@ -2115,12 +2115,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
-    public String getColumnName()
-    {
-        return getName();
-    }
-
-    @Override
     public @Nullable String getWrappedColumnName()
     {
         return null;

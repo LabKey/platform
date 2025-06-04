@@ -376,12 +376,6 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getColumnName()
-    {
-        return getName();
-    }
-
-    @Override
     public int findColumn(ResultSet rs) throws SQLException
     {
         return delegate.findColumn(rs);

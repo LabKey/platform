@@ -163,7 +163,7 @@ public class FileLinkFileListener implements FileListener
         AtomicInteger result = new AtomicInteger(0);
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
             // Migrate any paths that match this file move
-            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath);
+            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getName(), TableUpdaterFileListener.Type.filePath);
             int movedCount = updater.fileMoved(srcFile, destFile, user, container);
             result.addAndGet(movedCount);
 
@@ -253,7 +253,7 @@ public class FileLinkFileListener implements FileListener
     {
         final Collection<File> files = new ArrayList<>();
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
-            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath);
+            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getName(), TableUpdaterFileListener.Type.filePath);
             files.addAll(updater.listFiles(container));
         });
         return files;
@@ -304,7 +304,7 @@ public class FileLinkFileListener implements FileListener
 
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
             SQLFragment containerFrag = new SQLFragment("?", containerId);
-            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
+            TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).append("\n");
             frag.append(updater.listFilesQuery(skipCreatedModified, filePath));
         });

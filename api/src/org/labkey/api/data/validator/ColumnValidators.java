@@ -133,7 +133,7 @@ public class ColumnValidators
             ret = new ArrayList<>(validators.size());
             for (IPropertyValidator pv : validators)
             {
-                ret.add(new PropertyValidator(col.getColumnName(), col, pv)
+                ret.add(new PropertyValidator(col.getName(), col, pv)
                 {
                     @Override
                     // a hack so that it does not throw UnsupportedOperationException for not using validate(int rowNum, Object value, ValidatorContext validatorContext)

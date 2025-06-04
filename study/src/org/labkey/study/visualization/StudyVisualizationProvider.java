@@ -280,7 +280,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             for (Pair<FieldKey, ColumnInfo> pair : matches.keySet())
             {
                 ColumnInfo col = pair.second;
-                String columnName = col.getColumnName();
+                String columnName = col.getName();
                 if (subjectColName.equalsIgnoreCase(columnName) || visitColName.equalsIgnoreCase(columnName) || "DataSets".equals(columnName))
                     colsToRemove.add(pair);
             }

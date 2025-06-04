@@ -1779,9 +1779,9 @@ public class MothershipController extends SpringActionController
             {
                 // The 5 columns from the lookup via MostRecentSession are all user editable by default, which is
                 // incorrect for their usage on this page.
-                if (!("Note".equalsIgnoreCase(col.getColumnName()) ||
-                        "ServerHostName".equalsIgnoreCase(col.getColumnName()) ||
-                        "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
+                if (!("Note".equalsIgnoreCase(col.getName()) ||
+                        "ServerHostName".equalsIgnoreCase(col.getName()) ||
+                        "IgnoreExceptions".equalsIgnoreCase(col.getName())))
                 {
                     ((BaseColumnInfo)col).setUserEditable(false);
                 }
