@@ -36,10 +36,6 @@ import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Oct 17, 2007
- */
 public class TypeDisplayColumn extends DataColumn
 {
     private static final Logger LOG = LogManager.getLogger(TypeDisplayColumn.class);

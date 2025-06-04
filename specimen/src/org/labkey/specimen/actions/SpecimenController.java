@@ -115,13 +115,14 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.SelectBuilder;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -194,7 +195,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -210,6 +210,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
 
 public class SpecimenController extends SpringActionController
 {
@@ -551,7 +557,7 @@ public class SpecimenController extends SpringActionController
     public static final class ExcludeSiteDropDown extends DisplayElement
     {
         @Override
-        public void render(RenderContext ctx, Writer out) throws IOException
+        public void render(RenderContext ctx, HtmlWriter out)
         {
             ActionURL url = ctx.getViewContext().cloneActionURL();
             url.deleteParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
@@ -3310,7 +3316,7 @@ public class SpecimenController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Map<String, Object> cols = ctx.getRow();
             SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
@@ -3320,14 +3326,19 @@ public class SpecimenController extends SpringActionController
             {
                 for (Attachment attachment : attachments)
                 {
-                    oldWriter.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
-                    oldWriter.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
-                    oldWriter.write(PageFlowUtil.filter(attachment.getName()));
-                    oldWriter.write("</a><br>");
+                    out.write(LinkBuilder.simpleLink(
+                        SPAN(
+                            IMG(at(style,"padding-right:4pt;", src, _request.getContextPath() + attachment.getFileIcon())),
+                            attachment.getName()
+                        ))
+                        .href(getDownloadURL(event, attachment.getName())));
+                    out.write(HtmlString.BR);
                 }
             }
             else
-                oldWriter.write("&nbsp;");
+            {
+                out.write(HtmlString.NBSP);
+            }
         }
     }
 

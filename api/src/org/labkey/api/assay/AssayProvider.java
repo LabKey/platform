@@ -97,11 +97,18 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** Get a schema that includes queries like Batch, Run, Results, and any additional tables. */
     AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy);
 
+    /** Get a domain that is not intended to be mutated */
     Domain getBatchDomain(ExpProtocol protocol);
+
+    Domain getBatchDomain(ExpProtocol protocol, boolean forUpdate);
 
     Domain getRunDomain(ExpProtocol protocol);
 
+    Domain getRunDomain(ExpProtocol protocol, boolean forUpdate);
+
     Domain getResultsDomain(ExpProtocol protocol);
+
+    Domain getResultsDomain(ExpProtocol protocol, boolean forUpdate);
 
     void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
     void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
@@ -389,7 +396,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
         return null;
     }
 
-    void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
+    void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException;
 
     default void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
     {

@@ -144,7 +144,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
-        super(table, table.getDatasetDefinition().getStorageTableInfo(), createMVMapping(table.getDatasetDefinition().getDomain()));
+        super(table, table.getDatasetDefinition().getStorageTableInfo(false), createMVMapping(table.getDatasetDefinition().getDomain()));
         _dataset = table.getDatasetDefinition();
     }
 
@@ -801,7 +801,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
             dsd.refreshDomain();
             {
-            var domain = dsd.getDomain();
+            var domain = dsd.getDomain(true);
             DomainProperty p;
 
             p = domain.addProperty();

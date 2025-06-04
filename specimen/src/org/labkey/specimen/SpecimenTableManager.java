@@ -139,7 +139,7 @@ public class SpecimenTableManager
 
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(_container, _user, null);
 
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true, false);
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial domain to already be created.");
 
@@ -147,7 +147,7 @@ public class SpecimenTableManager
         for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
             vialProperties.add(domainProperty.getPropertyDescriptor());
 
-        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
+        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", true, false);
         if (null == specimenEventDomain)
             throw new IllegalStateException("Expected SpecimenEvent domain to already be created.");
 

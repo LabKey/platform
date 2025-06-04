@@ -24,9 +24,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -67,8 +87,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -76,16 +96,15 @@ import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssuePage;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -104,10 +123,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 {
     static final Logger LOG = LogManager.getLogger(IssuesTable.class);
 
-    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
-    private IssueListDef _issueDef;
-    private TableExtension _extension;
-    private List<FieldKey> _extraDefaultColumns = new ArrayList<>();
+    private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
+    private final IssueListDef _issueDef;
+    private final List<FieldKey> _extraDefaultColumns = new ArrayList<>();
 
     public IssuesTable(IssuesQuerySchema schema, ContainerFilter cf, IssueListDef issueDef)
     {
@@ -393,7 +411,14 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     @Override
     public Domain getDomain()
     {
-        return _issueDef.getDomain(getUserSchema().getUser());
+        return getDomain(false);
+    }
+
+    @Nullable
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _issueDef.getDomain(getUserSchema().getUser(), forUpdate);
     }
 
     @Nullable
@@ -827,8 +852,9 @@ class URLTitleDisplayColumnFactory implements DisplayColumnFactory
 
 class NotifyListDisplayColumn extends DataColumn
 {
-    private User _user;
-    private static final String DELIM = ", ";
+    private static final HtmlString DELIM = HtmlString.of(", ");
+
+    private final User _user;
 
     public NotifyListDisplayColumn(ColumnInfo col, User curUser)
     {
@@ -837,21 +863,14 @@ class NotifyListDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object o = getValue(ctx);
         if (o != null)
         {
-            List<String> usernames = new ArrayList<>();
-
-            for (String notifyUser : o.toString().split(";"))
-            {
-                notifyUser = parseUserDisplayName(notifyUser);
-                if (notifyUser != null)
-                    usernames.add(notifyUser);
-            }
-
-            oldWriter.write(StringUtils.join(usernames, DELIM));
+            out.write(Arrays.stream(o.toString().split(";"))
+                .map(name -> HtmlString.of(parseUserDisplayName(name)))
+                .collect(LabKeyCollectors.joining(DELIM)));
         }
     }
 
@@ -892,7 +911,7 @@ class PullRequestsDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object o = getValue(ctx);
         if (o != null)
@@ -903,7 +922,7 @@ class PullRequestsDisplayColumn extends DataColumn
             {
                 if (i > 0)
                 {
-                    oldWriter.write("<br>");
+                    out.write(HtmlString.BR);
                 }
 
                 String url = split[i];
@@ -932,11 +951,11 @@ class PullRequestsDisplayColumn extends DataColumn
                         .title(title)
                         .target("_blank")
                         .rel("noopener noreferrer");
-                    link.build().appendTo(oldWriter);
+                    out.write(link);
                 }
                 else
                 {
-                    oldWriter.write(PageFlowUtil.filter(url));
+                    out.write(url);
                 }
             }
         }

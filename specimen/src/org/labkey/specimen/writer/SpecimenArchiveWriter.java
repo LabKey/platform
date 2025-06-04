@@ -103,7 +103,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         {
             TableType tableXml = tablesXml.addNewTable();
 
-            Domain domain = tablesProvider.getDomain(entry.getKey(), false);
+            Domain domain = tablesProvider.getDomain(entry.getKey(), false, false);
             TableInfo table = entry.getValue();
             List<ColumnInfo> columns = new ArrayList<>();
 

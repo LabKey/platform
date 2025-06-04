@@ -75,7 +75,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     public List<DomainProperty> getProperties(Container container)
     {
         List<DomainProperty> properties = new ArrayList<>();
-        Domain domain = getDomain(container);
+        Domain domain = getDomain(container, false);
 
         if (domain != null)
         {
@@ -91,7 +91,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
 
     private Map<String, DomainProperty> getPropertyMap(Container container)
     {
-        Domain domain = getDomain(container);
+        Domain domain = getDomain(container, false);
         Map<String, DomainProperty> propsMap = new HashMap<>();
 
         if (domain != null)
@@ -104,7 +104,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
 
     public synchronized DomainProperty ensureProperty(Container container, User user, String name, String label, PropertyType type) throws ChangePropertyDescriptorException
     {
-        Domain domain = getDomain(container);
+        Domain domain = getDomain(container, false);
         if (domain != null)
         {
             boolean dirty = false;
@@ -114,7 +114,8 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             if (dp == null)
             {
                 dirty = true;
-
+                // Get a mutable version of the domain.
+                domain = getDomain(container, true);
                 DomainProperty prop = domain.addProperty();
                 prop.setName(name);
                 prop.setLabel(label);
@@ -184,13 +185,13 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     }
 
     @Nullable
-    private Domain getDomain(Container container)
+    private Domain getDomain(Container container, boolean forUpdate)
     {
         String uri = getDomainURI(container);
         try (var ignore = SpringActionController.ignoreSqlUpdates())
         {
             DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
-            return PropertyService.get().getDomain(dd.getDomainId());
+            return PropertyService.get().getDomain(dd.getDomainId(), forUpdate);
         }
         catch (RuntimeSQLException e)
         {

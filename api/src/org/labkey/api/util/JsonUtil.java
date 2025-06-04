@@ -71,11 +71,15 @@ public class JsonUtil
                 .enable(JsonWriteFeature.ESCAPE_FORWARD_SLASHES);
     }
 
-    public static JsonLocation expectObjectStart(JsonParser p) throws IOException
+    public static void checkObjectStart(JsonParser p) throws JsonParseException
     {
         if (p.currentToken() != JsonToken.START_OBJECT)
             throw new JsonParseException(p, "Expected object start '{', got '" + p.currentToken() + "'", p.currentTokenLocation());
+    }
 
+    public static JsonLocation expectObjectStart(JsonParser p) throws IOException
+    {
+        checkObjectStart(p);
         JsonLocation loc = p.currentTokenLocation();
         p.nextToken();
         return loc;

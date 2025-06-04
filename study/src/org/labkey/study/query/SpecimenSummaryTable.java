@@ -41,11 +41,10 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -152,7 +151,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, JdbcType.BOOLEAN));
 
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(schema.getContainer(), null, null);
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false, false);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
         addOptionalColumns(specimenDomain.getNonBaseProperties(), false, null);
@@ -247,15 +246,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
             SpecimenComment[] comments = SpecimenManager.get().getSpecimenCommentForSpecimens(container, hashes);
             for (SpecimenComment comment : comments)
             {
-                List<SpecimenComment> commentList = hashToComments.get(comment.getSpecimenHash());
-                if (commentList == null)
-                {
-                    commentList = new ArrayList<>();
-                    hashToComments.put(comment.getSpecimenHash(), commentList);
-                }
+                List<SpecimenComment> commentList = hashToComments.computeIfAbsent(comment.getSpecimenHash(), k -> new ArrayList<>());
                 commentList.add(comment);
             }
-
         }
 
         private Map<String, String> getCommentCache(final RenderContext ctx, String lineSeparator)
@@ -285,7 +278,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
                 {
                     List<SpecimenComment> commentList = entry.getValue();
-                    String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
+                    String formatted = formatCommentText(commentList.toArray(new SpecimenComment[0]), lineSeparator);
                     _commentCache.put(entry.getKey(), formatted);
                 }
             }
@@ -303,12 +296,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 {
                     if (comment.getComment() != null)
                     {
-                        List<String> ids = commentToIds.get(comment.getComment());
-                        if (ids == null)
-                        {
-                            ids = new ArrayList<>();
-                            commentToIds.put(comment.getComment(), ids);
-                        }
+                        List<String> ids = commentToIds.computeIfAbsent(comment.getComment(), k -> new ArrayList<>());
                         ids.add(comment.getGlobalUniqueId());
                     }
                 }
@@ -343,14 +331,14 @@ public class SpecimenSummaryTable extends BaseStudyTable
         private String getDisplayText(RenderContext ctx, boolean renderHtml)
         {
             if (_specimenHashColumn == null)
-                return "ERROR: SpecimenHash column must be added to query to retrive comment information.";
+                return "ERROR: SpecimenHash column must be added to query to retrieve comment information.";
 
             String maxPossibleCount = (String) getValue(ctx);
             StringBuilder sb = new StringBuilder();
             String lineSeparator = renderHtml ? LINE_SEPARATOR_HTML : LINE_SEPARATOR;
 
-            // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
-            // equally effective.  The column type is string so that exports to excel correctly set the column type as string.
+            // the string compare below is a bit of a hack, but it's cheaper than converting the string to a number and
+            // equally effective. The column type is string so that exports to excel correctly set the column type as string.
 
             if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
             {
@@ -358,14 +346,14 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 {
                     String comment = getCommentText(ctx, ctx.getResults().getString("SpecimenHash"), lineSeparator);
                     if (null != comment)
-                        sb.append(comment);
+                        sb.append(renderHtml ? PageFlowUtil.filter(comment) : comment);
                 }
                 catch (SQLException e)
                 {
                     throw new RuntimeSQLException(e);
                 }
             }
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(lineSeparator);
             sb.append(formatParticipantComments(ctx, renderHtml));
 
@@ -379,9 +367,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            oldWriter.write(getDisplayText(ctx, true));
+            out.write(HtmlString.unsafe(getDisplayText(ctx, true)));
         }
     }
 }

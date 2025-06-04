@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-package org.labkey.specimen.actions;
+package org.labkey.api.view;
 
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.view.DisplayElement;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.writer.HtmlWriter;
 
-public class ButtonBarLineBreak extends DisplayElement
+/**
+ * Just renders the Renderable directly into the page
+ */
+public class SimpleRenderableDisplayElement extends DisplayElement
 {
+    private final Renderable _renderable;
+
+    /**
+     * @param renderable the text to be rendered
+     */
+    public SimpleRenderableDisplayElement(Renderable renderable)
+    {
+        _renderable = renderable;
+    }
+
     @Override
     public void render(RenderContext ctx, HtmlWriter out)
     {
-        out.write(HtmlString.BR);
+        _renderable.appendTo(out);
     }
 }

@@ -67,7 +67,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -528,7 +527,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         // Get indices from underlying storage table
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo()));
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
 
         // Index enforced in code not on actual database for demographic datasets only
@@ -663,7 +662,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public Domain getDomain()
     {
-        return _dsd.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dsd.getDomain(forUpdate);
     }
 
     @Override

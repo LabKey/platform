@@ -175,8 +175,8 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         {
             exception = new ValidationException();
             SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
-            Domain domainVial = stp.getDomain("vial", false);
-            Domain domainSpecimen = stp.getDomain("specimen", false);
+            Domain domainVial = stp.getDomain("vial", false, false);
+            Domain domainSpecimen = stp.getDomain("specimen", false, false);
 
             // Check for the same name in Specimen and Vial
             CaseInsensitiveHashSet vialFields = new CaseInsensitiveHashSet();

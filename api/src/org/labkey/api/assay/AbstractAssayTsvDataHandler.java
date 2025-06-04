@@ -395,7 +395,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // results/data domain for TSV-style assays
                 try
                 {
-                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA) ;
+                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA, false) ;
                 }
                 catch (IllegalStateException ignored)
                 {

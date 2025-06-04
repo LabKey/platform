@@ -2068,12 +2068,12 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (isReportView(getViewContext()))
-            renderReportView(model, request, response);
+            renderReportView(request, response);
         else
             renderDataRegion(response.getWriter());
     }
 
-    protected final void renderReportView(Object model, HttpServletRequest request, HttpServletResponse response) throws IOException
+    private void renderReportView(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         if (_report != null)
         {

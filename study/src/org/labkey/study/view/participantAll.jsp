@@ -106,7 +106,7 @@
 
     for (DatasetDefinition def : allDatasets)
     {
-        if (!def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
+        if (!def.isShowByDefault() || null == def.getStorageTableInfo(false) || def.isDemographicData())
             continue;
         TableInfo t = querySchema.getDatasetTableForLookup(def, null);
         if (null==t || !t.hasPermission(user, ReadPermission.class))

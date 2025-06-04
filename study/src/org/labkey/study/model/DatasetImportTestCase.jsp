@@ -197,7 +197,7 @@ Dataset createDataset(Study study, String name, DatasetType type) throws Excepti
     pvLessThan100.setExpressionValue("~lte=100.0");
 
     // define columns
-    Domain domain = dd.getDomain();
+    Domain domain = dd.getDomain(true);
 
     DomainProperty measure = domain.addProperty();
     measure.setName("Measure");

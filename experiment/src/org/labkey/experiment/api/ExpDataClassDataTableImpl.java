@@ -190,7 +190,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Domain getDomain()
     {
-        return _dataClass.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dataClass.getDomain(forUpdate);
     }
 
     @Override
@@ -1246,7 +1252,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
+            Integer rowId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
@@ -1254,10 +1260,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (classId == null)
                 classId = _dataClass.getRowId();
 
-            if (null==rowid && null==lsid && null == name)
+            if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
+            Map<String,Object> row = _select(container, rowId, lsid, name, classId, allowCrossContainer);
 
             //PostgreSQL includes a column named _row for the row index, but since this is selecting by
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -1283,6 +1289,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
+            // FIXME Issue 52886: This retrieves raw db column names, which doesn't work well for comparing existing and new audit records if the name doesn't match the field key
             TableInfo d = getDbTable();
             TableInfo t = _dataClassDataTableSupplier.get();
 

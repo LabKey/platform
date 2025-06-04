@@ -78,6 +78,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -101,8 +102,6 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -209,10 +208,6 @@ public class DatasetQueryView extends StudyQueryView
     {
         DataView view = super.createDataView();
         TableInfo table = view.getTable();
-
-        if (null == table)
-            throw new IllegalStateException("Could not create table from dataset: " + _dataset.getName());
-
         view.getDataRegion().setRecordSelectorValueColumns("lsid");
 
         if (null != _visit)
@@ -290,7 +285,7 @@ public class DatasetQueryView extends StudyQueryView
             @Override
             public Object getValue(RenderContext ctx)
             {
-                String value = (String)super.getValue(ctx);
+                Object value = super.getValue(ctx);
                 if (null == value)
                     return null;
                 String subjectId = (String)ctx.get(subject);
@@ -337,7 +332,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
@@ -346,11 +341,11 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());
-                    LinkBuilder.labkeyLink("assay", dataURL).appendTo(oldWriter);
+                    out.write(LinkBuilder.labkeyLink("assay", dataURL));
                     return;
                 }
             }
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
         }
 
         @Override

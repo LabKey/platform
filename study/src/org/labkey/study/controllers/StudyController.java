@@ -2899,10 +2899,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    LinkBuilder.labkeyLink("Download Data File", url).appendTo(oldWriter);
+                    out.write(LinkBuilder.labkeyLink("Download Data File", url));
                 }
             };
             dr.addDisplayColumn(dc);
@@ -5200,14 +5200,14 @@ public class StudyController extends BaseStudyController
                 // def may not be provisioned yet, create before we start adding properties
                 if (def.isQueryDataset())
                 {
-                    def.provisionQueryDataset();
+                    def.provisionQueryDataset(true);
                 }
                 else
                 {
-                    def.provisionTable();
+                    def.provisionTable(true);
                 }
 
-                Domain d = def.getDomain();
+                Domain d = def.getDomain(true);
 
                 for (ColumnInfo col : columnsToProvision)
                 {
@@ -7122,7 +7122,7 @@ public class StudyController extends BaseStudyController
                                 .setStudy(_study)
                                 .setDemographicData(false)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
@@ -7133,7 +7133,7 @@ public class StudyController extends BaseStudyController
                                 .setDemographicData(false)
                                 .setType(Dataset.TYPE_PLACEHOLDER)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
                         response.put("datasetId", def.getDatasetId());
                         break;
 

@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.FieldKey;
 
 import java.sql.SQLException;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class FieldKeyRowMap implements Map<FieldKey, Object>
+public class FieldKeyRowMap implements Map<FieldKey, Object>
 {
     private final Results _results;
 
@@ -121,6 +122,19 @@ class FieldKeyRowMap implements Map<FieldKey, Object>
         for (FieldKey key : _results.getFieldIndexMap().keySet())
             map.add(new Entry(key));
 
+        return map;
+    }
+
+    public static Map<String, Object> toNameMap(Map<FieldKey, Object> rowMap)
+    {
+        Map<String, Object> map = new CaseInsensitiveHashMap<>();
+        rowMap.forEach((key, value) -> {
+            if (key.getParent() != null)
+                throw new IllegalArgumentException("Multi-part field key '" + key + "' cannot be used as key in string map since it may not be unique.");
+            if (map.containsKey(key.getName()))
+                throw new IllegalArgumentException("Duplicate key '" + key + "' found in fieldKey map.");
+            map.put(key.getName(), value);
+        });
         return map;
     }
 

@@ -86,7 +86,7 @@ public class ImageServlet extends HttpServlet
                     throw new NotFoundException("Auth logo request is missing configuration parameter - " + url);
 
                 int rowId = Integer.valueOf(configuration);
-                SSOAuthenticationConfiguration ssoConfiguration = AuthenticationManager.getSSOConfiguration(rowId);
+                SSOAuthenticationConfiguration<?> ssoConfiguration = AuthenticationManager.getSSOConfiguration(rowId);
 
                 if (null == ssoConfiguration)
                     throw new NotFoundException("Auth logo request specifies an unknown configuration - " + url);
@@ -98,6 +98,10 @@ public class ImageServlet extends HttpServlet
                 throw new NotFoundException("Unknown image requested - " + imageName);
             }
         }
+        catch (NumberFormatException e)
+        {
+            throw new NotFoundException("Invalid auth configuration value");
+        }
         catch (Throwable e)
         {
             ExceptionUtil.handleException(request, response, e, null, false);
@@ -105,7 +109,7 @@ public class ImageServlet extends HttpServlet
     }
 
 
-    protected void sendAuthLogo(String name, SSOAuthenticationConfiguration configuration, HttpServletResponse response) throws IOException, ServletException
+    protected void sendAuthLogo(String name, SSOAuthenticationConfiguration<?> configuration, HttpServletResponse response) throws IOException, ServletException
     {
         String cacheKey = name + "_" + configuration;
         CacheableWriter writer = AttachmentCache.getAuthLogo(cacheKey);

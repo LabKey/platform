@@ -27,19 +27,17 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Jan 25, 2008
- */
+import static org.labkey.api.util.DOM.SCRIPT;
+
 public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFactory
 {
     private ColumnInfo _expRowIdCol;
@@ -106,33 +104,33 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             if (!_renderedFunction)
             {
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
-                oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-                oldWriter.write(
-                        "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
-                        "{\n" +
-                        "    var config = { \n" +
-                        "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
-                        "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
-                        "        url: " + PageFlowUtil.jsString(url.getLocalURIString() + "?") + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
-                        "        method: 'POST'\n" +
-                        "    }\n" +
-                        "    LABKEY.Ajax.request(config); \n" +
-                        "};\n");
-                oldWriter.write("</script>");
+                String script =
+                    "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
+                    "{\n" +
+                    "    var config = { \n" +
+                    "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
+                    "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
+                    "        url: " + PageFlowUtil.jsString(url.getLocalURIString() + "?") + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
+                    "        method: 'POST'\n" +
+                    "    }\n" +
+                    "    LABKEY.Ajax.request(config); \n" +
+                    "};\n";
+                out.write(SCRIPT(JavaScriptFragment.unsafe(script)));
                 _renderedFunction = true;
             }
 
             String id = HttpView.currentPageConfig().makeId("checkbox");
-            oldWriter.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"experimentMembership\" ");
             int currentExpId = getExpId(ctx);
             int currentExpRunId = getRunId(ctx);
             ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
             ExpRun run = ExperimentService.get().getExpRun(currentExpRunId);
+            Boolean checked = (Boolean)getDisplayColumn().getValue(ctx);
+            InputBuilder<?> checkbox = InputBuilder.checkbox().id(id).name("experimentMembership").checked(Boolean.TRUE.equals(checked));
             // Users need to be able to read the run group, and update the run itself
             if (run != null && exp != null &&
                     exp.getContainer().hasPermission(ctx.getViewContext().getUser(), ReadPermission.class) &&
@@ -142,14 +140,9 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
             else
             {
-                oldWriter.write("disabled=\"true\" ");
+                checkbox.disabled(true);
             }
-            Boolean checked = (Boolean)getDisplayColumn().getValue(ctx);
-            if (Boolean.TRUE.equals(checked))
-            {
-                oldWriter.write("checked=\"true\" ");
-            }
-            oldWriter.write("/>");
+            out.write(checkbox);
         }
 
         private int getExpId(RenderContext ctx)
@@ -172,16 +165,12 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                 if (columnInfo != null)
                 {
                     Object value = columnInfo.getValue(ctx);
-                    if (value instanceof Number)
+                    if (value instanceof Number n)
                     {
-                        return ((Number) value).intValue();
+                        return n.intValue();
                     }
-                    return -1;
                 }
-                else
-                {
-                    return -1;
-                }
+                return -1;
             }
             else
             {

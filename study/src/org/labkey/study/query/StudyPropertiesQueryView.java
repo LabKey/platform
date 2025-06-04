@@ -81,10 +81,10 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
-            LinkBuilder.labkeyLink("edit", actionURL).appendTo(oldWriter);
+            out.write(LinkBuilder.labkeyLink("edit", actionURL));
         }
     }
 }

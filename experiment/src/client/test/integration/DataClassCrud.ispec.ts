@@ -74,7 +74,7 @@ describe('Data Class Designer', () => {
         await checkLackDesignerOrReaderPerm(server, 'DataClass', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
     });
 
-    it('Data class name validation', async () => {
+    it('Data class name and field name validation', async () => {
         await checkDomainName(server, 'DataClass', true, topFolderOptions, designerReaderOptions);
     });
 

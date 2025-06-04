@@ -37,9 +37,11 @@ import org.labkey.api.view.ViewContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -78,6 +80,22 @@ public class ProductRegistry
     public static void clearProductFeatureSetCache()
     {
         _productFeaturesCache.clear();
+    }
+
+    @Nullable
+    public String getPrimaryApplicationId(Container container)
+    {
+        Container project = container.getProject();
+        if (project == null) // root container has no application
+            return null;
+
+        // if the container is a project or subfolder from a project with a product defined, use that
+        String productId = getPrimaryProductIdForContainer(project);
+        if (productId != null)
+            return productId;
+
+        // Handle the case of the application folder being a subfolder
+        return getPrimaryProductIdForContainer(container);
     }
 
     public static Set<String> getProductFeatureSet()
@@ -186,27 +204,43 @@ public class ProductRegistry
     }
 
     @Nullable
+    public String getPrimaryProductIdForContainer(@NotNull Container container)
+    {
+        List<String> productIds = getProductIdsForContainer(container);
+        if (productIds.isEmpty())
+            return null;
+        if (productIds.size() == 1)
+            return productIds.get(0);
+        ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
+        return provider != null ? provider.getProductId() : null;
+    }
+
+    @Nullable
     public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
     {
         List<String> productIds = getProductIdsForContainer(container);
         List<ProductMenuProvider> providers = getRegisteredProducts().stream().filter(provider -> productIds.contains(provider.getProductId())).toList();
+        if (providers.isEmpty())
+            return null;
+
         if (providers.size() == 1)
             return providers.get(0);
 
+        // see if there's a provider that matches the folder type (need to check this first so if LabKey LIMS or LKB is the configured product you can still show LKSM folders)
+        Optional<ProductMenuProvider> optionalProvider = providers.stream().filter(provider -> provider.getFolderTypeName() != null && provider.getFolderTypeName().equals(container.getFolderType().getName())).findFirst();
+        if (optionalProvider.isPresent())
+            return optionalProvider.get();
+
+        List<String> orderedProducts = getProducts(true, false).stream().filter(Product::isEnabled).map(Product::getProductGroupId).toList();
+        ProductMenuProvider highestProvider = providers.stream().min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
+        // then see if there's a provider that matches the configured product
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
-            return providers.isEmpty() ? null : providers.get(0);
-        ProductMenuProvider selectedProvider = null;
-        for (ProductMenuProvider provider : providers)
-        {
-            if (product.getProductGroupId().equals(provider.getProductId()))
-                return provider;
-            if (container.getFolderType().getName().equals(provider.getFolderTypeName()))
-                return provider;
-            if (selectedProvider == null)
-                selectedProvider = provider;
-        }
-        return selectedProvider;
+            return highestProvider;
+
+        optionalProvider = providers.stream().filter(provider -> provider.getProductId().equals(product.getProductGroupId())).findFirst();
+        // if neither of those is true (when can this happen?), use the highest provider
+        return optionalProvider.orElseGet(() -> highestProvider);
     }
 
     @Nullable

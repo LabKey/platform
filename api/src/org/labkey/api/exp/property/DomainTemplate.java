@@ -390,7 +390,7 @@ public class DomainTemplate
             try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
                 DomainTemplateGroup.LOG.debug("creating domain '" + domainName + "'");
-                d = DomainUtil.createDomain(this, c, u, domainName);
+                d = DomainUtil.createDomain(this, c, u, domainName, true);
                 tx.commit();
             }
             catch (ValidationException ve)

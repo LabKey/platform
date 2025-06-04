@@ -554,7 +554,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     @Override
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws BatchValidationException, QueryUpdateServiceException
+            throws BatchValidationException
     {
         Map<String, Integer> allContainerResponse = new HashMap<>();
 
@@ -576,7 +576,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
                 catch (ExperimentException e)
                 {
-                    throw new QueryUpdateServiceException(e);
+                    throw new BatchValidationException(new ValidationException(e.getMessage()));
                 }
             }
 
