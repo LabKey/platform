@@ -201,13 +201,13 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
         dd = dd.edit().setDescription(domain.getDescription()).build();
         OntologyManager.ensureDomainDescriptor(dd);
 
-        return PropertyService.get().getDomain(container, dd.getDomainURI());
+        return PropertyService.get().getDomain(container, dd.getDomainURI(), forUpdate);
     }
 
     protected Set<String> getAssayReservedPropertyNames()

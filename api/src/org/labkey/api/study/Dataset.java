@@ -244,6 +244,8 @@ public interface Dataset extends StudyEntity
      */
     @Nullable
     Domain getDomain();
+    @Nullable
+    Domain getDomain(boolean forUpdate);
     boolean isShared();
 
     String getName();

@@ -1752,7 +1752,7 @@ d,seven,twelve,day,month,date,duration,guid
 
             // create a URL expression and MV for suggested columns
             ListDefinition rDef = ListService.get().getList(c, "R");
-            d = rDef.getDomain();
+            d = rDef.getDomain(true);
             d.getPropertyByName("rowid").setURL("https://www.google.com/search?q=${guid}");
             d.getPropertyByName("d").setMvEnabled(true);
             d.getPropertyByName("day").setLookup(new Lookup(d.getContainer(), SchemaKey.fromParts("lists"), "Days$Test"));

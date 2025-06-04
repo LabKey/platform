@@ -581,7 +581,7 @@ public abstract class VisitManager
             TableInfo sti = null;
             try
             {
-                sti = d.getStorageTableInfo();
+                sti = d.getStorageTableInfo(false);
             }
             catch (IllegalArgumentException x)
             {
@@ -611,7 +611,7 @@ public abstract class VisitManager
         DatasetDefinition startDateDataset = getStartDateDataset(getStudy());
         if (null != startDateDataset)
         {
-            TableInfo tInfo = startDateDataset.getStorageTableInfo();
+            TableInfo tInfo = startDateDataset.getStorageTableInfo(false);
             ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
             Container c = startDateDataset.getContainer();
             SQLFragment expr = new SQLFragment()

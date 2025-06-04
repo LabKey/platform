@@ -317,7 +317,7 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                domain = DomainUtil.createDomain(kindName, newDomain, form.getOptionsProperties(), getContainer(), getUser(), domainName, null);
+                domain = DomainUtil.createDomain(kindName, newDomain, form.getOptionsProperties(), getContainer(), getUser(), domainName, null, false);
             }
             else
             {
@@ -2147,7 +2147,7 @@ public class PropertyController extends SpringActionController
 
             gwtDomain.setFields(gwtProps);
 
-            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null);
+            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
         }
 
         @Test

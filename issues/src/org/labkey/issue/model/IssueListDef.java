@@ -139,8 +139,13 @@ public class IssueListDef extends Entity
 
     public Domain getDomain(User user)
     {
+       return getDomain(user, false);
+    }
+
+    public Domain getDomain(User user, boolean forUpdate)
+    {
         String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
-        return PropertyService.get().getDomain(getDomainContainer(user), uri);
+        return PropertyService.get().getDomain(getDomainContainer(user), uri, forUpdate);
     }
 
     public AbstractIssuesListDefDomainKind getDomainKind()

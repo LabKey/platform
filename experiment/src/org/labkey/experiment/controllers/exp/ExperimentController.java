@@ -4080,7 +4080,7 @@ public class ExperimentController extends SpringActionController
             for (ExpSampleType source : sampleTypes)
             {
                 Domain domain = source.getDomain();
-                if (domain != null && !domain.getDomainKind().canDeleteDefinition(getUser(), domain))
+                if (!domain.getDomainKind().canDeleteDefinition(getUser(), domain))
                 {
                     throw new UnauthorizedException();
                 }

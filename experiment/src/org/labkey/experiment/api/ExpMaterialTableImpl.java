@@ -866,8 +866,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Domain getDomain()
     {
-        return _ss == null ? null : _ss.getDomain();
+        return getDomain(false);
     }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _ss == null ? null : _ss.getDomain(forUpdate);
+    }
+
 
     public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {

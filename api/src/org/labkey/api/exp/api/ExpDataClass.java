@@ -58,9 +58,11 @@ public interface ExpDataClass extends ExpObject, ExpSearchable
 
     void setSampleType(Integer sampleType);
 
+    @NotNull
     Domain getDomain();
 
-    void setDomain(Domain d);
+    @NotNull
+    Domain getDomain(boolean forUpdate);
 
     String getDescription();
 
