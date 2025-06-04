@@ -305,11 +305,14 @@ export async function initProject(server: IntegrationTestServer, projectName: st
     }
 }
 
-async function verifyDomainCreateFailure(server: IntegrationTestServer, domainType: string, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
-    const field = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+async function verifyDomainCreateFailure(server: IntegrationTestServer, domainType: string, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
+    const field : Record<string, string> = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+    const fields = [field];
+    if (domainFields)
+        fields.push(...domainFields);
     const badDomainNameResp = await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: badDomainName, fields: [field] },
+        domainDesign: { name: badDomainName, fields },
         options: {
             name: badDomainName,
         }
@@ -319,15 +322,22 @@ async function verifyDomainCreateFailure(server: IntegrationTestServer, domainTy
     expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
 }
 
-async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
     const options = {
         name: badDomainName
     }
     if (dataTypeRowId)
         options['rowId'] = dataTypeRowId;
+    const domainDesign = {
+        name: badDomainName,
+        domainId,
+        domainURI
+    }
+    if (domainFields)
+        domainDesign['fields'] = domainFields;
     const updatedDomainPayload = {
         domainId,
-        domainDesign: {name: badDomainName, domainId, domainURI},
+        domainDesign,
         options
     };
 
@@ -378,6 +388,12 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     for (let i = 0; i < badNameKeys.length; i++)
         await verifyDomainCreateFailure(server, domainType, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
 
+    const domainNameWithBadField = 'FieldNameNewLineInvalid';
+    const fieldNameError = " -- Field name may not contain 'tab', 'new line', or 'return' characters.";
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\nb'}]);
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\rb'}]);
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\tb'}]);
+
     if (!supportNameExpression)
     {
         await verifyDomainCreateSuccess(server, domainType, 'withCounter', folderOptions, userOptions);
@@ -399,6 +415,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
         await verifyDomainUpdateFailure(server, domainId, domainURI, dataTypeRowId, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
     }
 
+    await verifyDomainUpdateFailure(server, domainId, domainURI, dataTypeRowId, domainName, domainName + fieldNameError, folderOptions, userOptions, [{'Name': 'a\nb'}]);
 }
 
 export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServer, domainType: string, topFolderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, designerOptions: RequestOptions) {

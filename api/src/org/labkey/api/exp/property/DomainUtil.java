@@ -1409,6 +1409,13 @@ public class DomainUtil
                 continue;
             }
 
+            // Issue 52746: SM Import: Newlines in field names on import
+            if (StringUtils.containsAny(name, "\t\n\r"))
+            {
+                exception.addFieldError(name, getDomainErrorMessage(updates, "Field name may not contain 'tab', 'new line', or 'return' characters."));
+                continue;
+            }
+
             if (!reservedPrefixes.isEmpty())
             {
                 String lcName = name.toLowerCase();
