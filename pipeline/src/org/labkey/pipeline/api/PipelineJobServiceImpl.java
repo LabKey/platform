@@ -334,6 +334,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             {
                 // First try a normal shutdown
                 LOG.info("Attempting to kill forked process gracefully: {}", p.toHandle());
+                LOG.info("Process supports normal termination: {}", p.supportsNormalTermination());
                 p.destroy();
                 try
                 {
@@ -347,7 +348,18 @@ public class PipelineJobServiceImpl implements PipelineJobService
                         p.destroyForcibly();
                     }
                 }
-                catch (InterruptedException ignored) {}
+                catch (InterruptedException e)
+                {
+                    LOG.info("Process killing was interrupted", e);
+                }
+                finally
+                {
+                    LOG.info("Finished dealing with forked process {}. Alive: {}", p.toHandle(), p.isAlive());
+                    if (!p.isAlive())
+                    {
+                        LOG.info("Process {} exit code: {}", p.toHandle(), p.exitValue());
+                    }
+                }
             }
         }
     }
