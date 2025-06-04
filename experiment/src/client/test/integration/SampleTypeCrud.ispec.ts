@@ -143,7 +143,7 @@ describe('Sample Type Designer', () => {
     });
 
     describe('Create/update/delete designs', () => {
-        it('Sample type name validation', async () => {
+        it('Sample type name and field name validation', async () => {
             await checkDomainName(server, 'SampleSet', true, topFolderOptions, designerReaderOptions);
         });
 

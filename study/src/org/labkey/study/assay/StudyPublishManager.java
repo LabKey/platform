@@ -721,7 +721,7 @@ public class StudyPublishManager implements StudyPublishService
             User user, DatasetDefinition dataset,
             List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws ChangePropertyDescriptorException
     {
-        Domain domain = dataset.getDomain();
+        Domain domain = dataset.getDomain(true);
         if (domain == null)
         {
             domain = PropertyService.get().createDomain(dataset.getContainer(), dataset.getTypeURI(), dataset.getName());

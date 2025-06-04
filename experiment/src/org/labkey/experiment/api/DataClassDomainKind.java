@@ -369,7 +369,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
         if (options.getDescription() == null && domain.getDescription() != null)
@@ -387,7 +387,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 templateInfo,
                 domain.getDisabledSystemFields()
             );
-            return dataClass.getDomain();
+            return dataClass.getDomain(forUpdate);
         }
         catch (ExperimentException e)
         {

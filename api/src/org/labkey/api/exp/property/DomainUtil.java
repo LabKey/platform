@@ -686,7 +686,12 @@ public class DomainUtil
 
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
-        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
+        return createDomain(template, container, user, domainName, false);
+    }
+
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName, boolean forUpdate) throws ValidationException
+    {
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo(), forUpdate);
     }
 
     public static Domain createDomain(
@@ -696,8 +701,8 @@ public class DomainUtil
         Container container,
         User user,
         @Nullable String domainName,
-        @Nullable TemplateInfo templateInfo
-    ) throws ValidationException
+        @Nullable TemplateInfo templateInfo,
+        boolean forUpdate) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
         domain = new GWTDomain(domain);
@@ -734,7 +739,7 @@ public class DomainUtil
 
         arguments = kind.processArguments(container, user, arguments);
         Object options = JsonUtil.DEFAULT_MAPPER.convertValue(arguments, kind.getTypeClass());
-        Domain created = kind.createDomain(domain, options, container, user, templateInfo);
+        Domain created = kind.createDomain(domain, options, container, user, templateInfo, forUpdate);
 
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
@@ -761,7 +766,8 @@ public class DomainUtil
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
-        Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a paritially updated state
+        Domain d = PropertyService.get().getDomain(container, update.getDomainURI(), true);
         if (null == d)
         {
             ValidationException validationException = new ValidationException();
@@ -1406,6 +1412,13 @@ public class DomainUtil
             if (expMatcher.find())
             {
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The '${}' substitution token is reserved for system use."));
+                continue;
+            }
+
+            // Issue 52746: SM Import: Newlines in field names on import
+            if (StringUtils.containsAny(name, "\t\n\r"))
+            {
+                exception.addFieldError(name, getDomainErrorMessage(updates, "Field name may not contain 'tab', 'new line', or 'return' characters."));
                 continue;
             }
 

@@ -374,11 +374,11 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                                                             List<DomainProperty> optionalVialProperties)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", true);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", true, false);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
 
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true, false);
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 

@@ -391,8 +391,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
         if (null != _list)
-            return _list.getDomain();
+            return _list.getDomain(forUpdate);
         return null;
     }
 

@@ -277,6 +277,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     Container getContainer();
     @Nullable Domain getDomain();
 
+    @Nullable Domain getDomain(boolean forUpdate);
+
     String getName();
     String getKeyName();
     void setKeyName(String name);

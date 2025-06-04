@@ -80,7 +80,7 @@ public class SpecimenEventTable extends BaseStudyTable
 
         // Add optional fields
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(schema.getContainer(), null, null);
-        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false, false);
         if (null == specimenEventDomain)
             throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
 
