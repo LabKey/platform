@@ -94,7 +94,7 @@ public class DateUtil
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
 
-    // SimpleDataFormat does not support microseconds, it can only support microseconds
+    // SimpleDataFormat does not support microseconds, it can only support up to milliseconds
     private static Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {
@@ -824,7 +824,7 @@ public class DateUtil
             }
             catch (ParseException ignore)
             {
-                // SimpleDateFormat is not able to parse milliseconds
+                // SimpleDateFormat is not able to parse precision higher than milliseconds
                 if (NON_SIMPLE_PRECISION_TIME_PATTERN.matcher(s).matches())
                     return null;
             }
