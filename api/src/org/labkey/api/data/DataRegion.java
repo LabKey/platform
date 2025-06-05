@@ -2068,7 +2068,6 @@ public class DataRegion extends DisplayElement
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
         {
             if (!hasPermission(ctx, ReadPermission.class))
