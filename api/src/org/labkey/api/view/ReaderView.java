@@ -28,10 +28,8 @@ import java.io.Reader;
 
 /**
  * Streams content directly to the response without reading it all into memory. Backed by a {@link Reader}.
- * User: jeckels
- * Date: Nov 6, 2011
  */
-public class ReaderView extends WebPartView
+public class ReaderView extends WebPartView<Object>
 {
     private final BufferedReader _reader;
     private final boolean _htmlEncode;
@@ -89,15 +87,15 @@ public class ReaderView extends WebPartView
         }
     }
 
-    public void outputLine(PrintWriter out, String line)
+    public void outputLine(PrintWriter oldWriter, String line)
     {
         if (isHtmlEncode())
         {
-            out.println(PageFlowUtil.filter(line, true, true));
+            oldWriter.println(PageFlowUtil.filter(line, true, true));
         }
         else
         {
-            out.println(line);
+            oldWriter.println(line);
         }
     }
 

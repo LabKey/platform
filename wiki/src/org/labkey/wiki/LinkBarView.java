@@ -16,18 +16,21 @@
 
 package org.labkey.wiki;
 
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
+import static org.labkey.api.util.DOM.Attribute.cellpadding;
+import static org.labkey.api.util.DOM.Attribute.colspan;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 
-/**
- * User: Tamra Myers
- * Date: Jun 2, 2006
- * Time: 3:29:33 PM
- */
 public class LinkBarView extends WebPartView<Object>
 {
     private final NavTree[] _links;
@@ -45,18 +48,23 @@ public class LinkBarView extends WebPartView<Object>
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+    protected void renderView(Object model, HtmlWriter out)
     {
-        oldWriter.write("<table width=\"100%\" cellpadding=0><tr><td>");
-        for (NavTree link : _links)
-        {
-            oldWriter.write(LinkBuilder.labkeyLink(link.getText(), link.getHref()) + "&nbsp;");
-        }
-        oldWriter.write("</td></tr>");
-        if (_drawLine)
-        {
-            oldWriter.write("<tr><td colspan=3 class=\"labkey-title-area-line\"></td></tr>");
-        }
-        oldWriter.write("</table>");
+        TABLE(
+            at(width, "100%", cellpadding, 0),
+            TR(
+                TD(
+                    (DOM.Renderable) ret -> {
+                        for (NavTree link : _links)
+                        {
+                            out.write(LinkBuilder.labkeyLink(link.getText(), link.getHref()));
+                            out.write(HtmlString.NBSP);
+                        }
+                        return ret;
+                    }
+                )
+            ),
+            _drawLine ? TR(TD(at(colspan, 3).cl("labkey-title-area-line"))) : null
+        ).appendTo(out);
     }
 }

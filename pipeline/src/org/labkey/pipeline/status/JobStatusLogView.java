@@ -45,7 +45,7 @@ public class JobStatusLogView extends ReaderView
     }
 
     @Override
-    public void outputLine(PrintWriter out, String line)
+    public void outputLine(PrintWriter oldWriter, String line)
     {
         try
         {
@@ -84,12 +84,12 @@ public class JobStatusLogView extends ReaderView
                     if (!_highlightingError && ERROR_LOG_LEVELS.contains(type))
                     {
                         _highlightingError = true;
-                        out.write("<span class=\"labkey-error\">");
+                        oldWriter.write("<span class=\"labkey-error\">");
                     }
                     else if (_highlightingError)
                     {
                         _highlightingError = false;
-                        out.write("</span>");
+                        oldWriter.write("</span>");
                     }
                     logLevel = type;
                     _previousLogLevel = type;
@@ -108,7 +108,7 @@ public class JobStatusLogView extends ReaderView
             {
                 return;
             }
-            out.write("<pre class=\"labkey-log-file\">");
+            oldWriter.write("<pre class=\"labkey-log-file\">");
 
             // Exception report 20876 - limit length of processed lines to avoid running out of memory
             final int maxLineLength = 10_000_000;
@@ -117,8 +117,8 @@ public class JobStatusLogView extends ReaderView
                 line = line.substring(0, maxLineLength);
             }
 
-            super.outputLine(out, line);
-            out.write("</pre>");
+            super.outputLine(oldWriter, line);
+            oldWriter.write("</pre>");
         }
         finally
         {
