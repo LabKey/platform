@@ -37,6 +37,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
@@ -486,10 +487,16 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     protected void renderView(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        renderView(model, response.getWriter());
+        renderView(model, HtmlWriter.of(response));
     }
 
-    protected void renderView(ModelBean model, PrintWriter out) throws Exception
+    protected void renderView(ModelBean model, HtmlWriter out) throws Exception
+    {
+        renderView(model, new PrintWriter(out.unwrap()), out);
+    }
+
+    @Deprecated // Eliminate all overrides
+    protected void renderView(ModelBean model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         throw new IllegalStateException("override renderView");
     }

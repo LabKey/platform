@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
@@ -30,7 +31,7 @@ public class VBox extends AbstractViewBox
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         for (ModelAndView view : _views)
         {

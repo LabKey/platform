@@ -17,7 +17,6 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -111,6 +110,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 import org.springframework.validation.BindException;
@@ -302,7 +302,7 @@ public class FileContentController extends SpringActionController
                         WebPartView<?> webPart = new WebPartView<>(WebPartView.FrameType.DIV)
                         {
                             @Override
-                            protected void renderView(Object model, PrintWriter out) throws Exception
+                            protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
                             {
                                 try (InputStream fis = _resource.getInputStream(getUser()))
                                 {
@@ -310,11 +310,11 @@ public class FileContentController extends SpringActionController
                                         throw new FileNotFoundException();
                                     if (null == fis)
                                         throw new FileNotFoundException();
-                                    IOUtils.copy(Readers.getUnbufferedReader(fis), out);
+                                    IOUtils.copy(Readers.getUnbufferedReader(fis), oldWriter);
                                 }
                                 catch (FileNotFoundException x)
                                 {
-                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                    oldWriter.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
                                 }
                             }
                         };
@@ -326,9 +326,9 @@ public class FileContentController extends SpringActionController
                         WebPartView<?> webPart = new WebPartView<>(_resource.getName())
                         {
                             @Override
-                            protected void renderView(Object model, PrintWriter out)
+                            protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
                             {
-                                renderResourceContents(out, _resource);
+                                renderResourceContents(oldWriter, _resource);
                             }
                         };
 

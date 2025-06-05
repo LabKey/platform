@@ -20,6 +20,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -53,25 +54,25 @@ public class ResultSetView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
-        out.println("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+        oldWriter.println("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
         try
         {
             ResultSetMetaData md = _rs.getMetaData();
             int columnCount = md.getColumnCount();
 
-            out.print("  <tr>");
+            oldWriter.print("  <tr>");
 
             for (int i = 1; i <= columnCount; i++)
             {
-                out.print("<td class=\"labkey-column-header\">");
-                out.print(PageFlowUtil.filter(md.getColumnLabel(i)));
-                out.print("</td>");
+                oldWriter.print("<td class=\"labkey-column-header\">");
+                oldWriter.print(PageFlowUtil.filter(md.getColumnLabel(i)));
+                oldWriter.print("</td>");
             }
 
-            out.println("</tr>\n");
+            oldWriter.println("</tr>\n");
 
             long rowCount = 0;
 
@@ -79,37 +80,37 @@ public class ResultSetView extends WebPartView
             {
                 if (rowCount % 2 == 0)
                 {
-                    out.print("  <tr class=\"labkey-row\">");
+                    oldWriter.print("  <tr class=\"labkey-row\">");
                 }
                 else
                 {
-                    out.print("  <tr class=\"labkey-alternate-row\">");
+                    oldWriter.print("  <tr class=\"labkey-alternate-row\">");
                 }
 
                 for (int i = 1; i <= columnCount; i++)
                 {
                     Object val = _rs.getObject(i);
 
-                    out.print("<td>");
+                    oldWriter.print("<td>");
 
                     boolean createLink = null != _unencodedLink && _linkColumn == i && null != val && shouldLink(_rs);
 
                     if (createLink)
                     {
-                        out.print("<a href=\"");
-                        out.print(PageFlowUtil.filter(_unencodedLink + val.toString()));
-                        out.print("\">");
+                        oldWriter.print("<a href=\"");
+                        oldWriter.print(PageFlowUtil.filter(_unencodedLink + val));
+                        oldWriter.print("\">");
                     }
 
-                    out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
+                    oldWriter.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
 
                     if (createLink)
-                        out.print("</a>");
+                        oldWriter.print("</a>");
 
-                    out.print("</td>");
+                    oldWriter.print("</td>");
                 }
 
-                out.println("</tr>\n");
+                oldWriter.println("</tr>\n");
                 rowCount++;
             }
         }
@@ -118,7 +119,7 @@ public class ResultSetView extends WebPartView
             ResultSetUtil.close(_rs);
         }
 
-        out.println("</table>\n");
+        oldWriter.println("</table>\n");
     }
 
     protected boolean shouldLink(ResultSet rs) throws SQLException

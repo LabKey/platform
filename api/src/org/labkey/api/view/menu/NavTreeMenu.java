@@ -29,6 +29,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -38,11 +39,6 @@ import java.util.Objects;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
-/**
- * User: brittp
- * Date: Apr 9, 2007
- * Time: 10:06:16 AM
- */
 public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 {
     private List<NavTree> _elements;
@@ -132,7 +128,7 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         if (_elements != null)
         {
@@ -142,15 +138,15 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
                 if (element.hasChildren())
                     indentForExpansionGifs = true;
             }
-            out.print("<table class=\"labkey-nav-tree\">");
+            oldWriter.print("<table class=\"labkey-nav-tree\">");
             for (NavTree element : _elements)
-                renderLinks(element, 0, "", element.getId(), getViewContext(), out, indentForExpansionGifs);
-            out.print("</table>");
+                renderLinks(element, 0, "", element.getId(), getViewContext(), oldWriter, indentForExpansionGifs);
+            oldWriter.print("</table>");
         }
     }
 
     private void renderLinks(NavTree nav, int level, String pathToHere, String rootId,
-                             ViewContext context, PrintWriter out, boolean indentForExpansionGifs)
+                             ViewContext context, PrintWriter oldWriter, boolean indentForExpansionGifs)
     {
         var config = HttpView.currentPageConfig();
 
@@ -183,9 +179,9 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 
         if (level > 0)
         {
-            out.print("<tr class=\"labkey-nav-tree-row labkey-header\">");
+            oldWriter.print("<tr class=\"labkey-nav-tree-row labkey-header\">");
 
-            out.print("<td class=\"labkey-nav-tree-node\">\n");
+            oldWriter.print("<td class=\"labkey-nav-tree-node\">\n");
 
             if (hasChildren)
             {
@@ -193,50 +189,50 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 
                 String image = collapsed ? "plus.gif" : "minus.gif";
                 id = config.makeId("navtree");
-                out.printf("<a id=\"%s\" href=\"%s\">", id, filter(expandCollapseUrl));
+                oldWriter.printf("<a id=\"%s\" href=\"%s\">", id, filter(expandCollapseUrl));
                 config.addHandler(id, "click", "return LABKEY.Utils.toggleLink(this,true);");
-                out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
+                oldWriter.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
-                out.printf("<div class=\"labkey-nav-tree-indenter\"></div>");
+                oldWriter.printf("<div class=\"labkey-nav-tree-indenter\"></div>");
 
             id = config.makeId("navtree");
-            out.printf("</td><td id=\"%s\" class=\"labkey-nav-tree-text\"", id);
+            oldWriter.printf("</td><td id=\"%s\" class=\"labkey-nav-tree-text\"", id);
             config.addHandler(id, "click", onClickScript);
-            out.println(">");
+            oldWriter.println(">");
 
             if (null == link)
-                out.print(filter(nav.getText()));
+                oldWriter.print(filter(nav.getText()));
             else
             {
                 if (!StringUtils.isEmpty(nav.getId()))
-                    out.printf("<a id=\"%s\" href=\"%s\"", filter(nav.getId()), filter(link));
+                    oldWriter.printf("<a id=\"%s\" href=\"%s\"", filter(nav.getId()), filter(link));
                 else
-                    out.printf("<a href=\"%s\"", filter(link));
+                    oldWriter.printf("<a href=\"%s\"", filter(link));
 
                 if (nav.isNoFollow())
-                    out.print(" rel=\"nofollow\"");
+                    oldWriter.print(" rel=\"nofollow\"");
 
                 // always open links to external sites in a new window or tab
                 if (null != nav.getTarget())
-                    out.print(" target=\"" + nav.getTarget() + "\"");
+                    oldWriter.print(" target=\"" + nav.getTarget() + "\"");
                 else if ((link.indexOf("http://") == 0) || (link.indexOf("https://") == 0))
-                    out.print(" target=\"_blank\"");
+                    oldWriter.print(" target=\"_blank\"");
 
                 if (selected)
                 {
-                    out.print(" class=\"nav-tree-selected\"");
+                    oldWriter.print(" class=\"nav-tree-selected\"");
                 }
                 if (null != nav.getScript())
                 {
                     config.addHandler(nav.getId(), "click", nav.getScript());
                 }
-                out.print(">");
-                out.print(filter(nav.getText()));
-                out.print("</a>");
+                oldWriter.print(">");
+                oldWriter.print(filter(nav.getText()));
+                oldWriter.print("</a>");
             }
 
-            out.print("</td></tr>");
+            oldWriter.print("</td></tr>");
         }
 
         //Render children as nested table in a row...
@@ -247,10 +243,10 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
                 if (element.hasChildren())
                     indentForExpansionGifs = true;
             }
-            out.printf("<tr%s>\n<td></td><td>\n<table class=\"labkey-nav-tree-child\">", collapsed ? " style=display:none" : "");
+            oldWriter.printf("<tr%s>\n<td></td><td>\n<table class=\"labkey-nav-tree-child\">", collapsed ? " style=display:none" : "");
             for (NavTree child : nav.getChildren())
-                renderLinks(child, level + 1, pathToHere, rootId, context, out, indentForExpansionGifs);
-            out.println("</table>\n</td></tr>");
+                renderLinks(child, level + 1, pathToHere, rootId, context, oldWriter, indentForExpansionGifs);
+            oldWriter.println("</table>\n</td></tr>");
         }
     }
 

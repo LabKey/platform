@@ -61,6 +61,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.GroupSecurityType;
 import org.labkey.study.model.SecurityType;
@@ -776,9 +777,9 @@ public class SecurityController extends SpringActionController
 
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
         {
-            include(_vbox, out);
+            include(_vbox, oldWriter);
         }
     }
 
@@ -803,12 +804,12 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
-            out.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
-            out.print(PageFlowUtil.button("Study Security").href(urlStudy));
-            out.print("<br/>&nbsp;</p>");
+            oldWriter.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
+            oldWriter.print(PageFlowUtil.button("Study Security").href(urlStudy));
+            oldWriter.print("<br/>&nbsp;</p>");
         }
     }
 }

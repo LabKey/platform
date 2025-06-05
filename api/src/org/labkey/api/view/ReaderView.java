@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -64,22 +65,22 @@ public class ReaderView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         try
         {
             if (getPrefix() != null)
             {
-                out.write(getPrefix());
+                oldWriter.write(getPrefix());
             }
             String line;
             while ((line = getReader().readLine()) != null)
             {
-                outputLine(out, line);
+                outputLine(oldWriter, line);
             }
             if (getSuffix() != null)
             {
-                out.write(getSuffix());
+                oldWriter.write(getSuffix());
             }
         }
         finally

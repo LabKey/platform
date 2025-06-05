@@ -19,7 +19,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.pipeline.status.PipelineQueryView;
 import org.labkey.pipeline.status.StatusController;
 
@@ -41,7 +41,7 @@ public class PipelineWebPart extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         if (!PipelineService.get().hasValidPipelineRoot(getViewContext().getContainer()) &&
                 !PipelineService.get().canModifyPipelineRoot(getViewContext().getUser(), getViewContext().getContainer()))

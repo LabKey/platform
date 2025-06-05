@@ -47,7 +47,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -203,11 +202,12 @@ public class MenuViewFactory
         {
             return new WebPartView<>(title) {
                 @Override
-                protected void renderView(Object model, PrintWriter out)
+                protected void renderView(Object model, HtmlWriter out)
                 {
-                    out.write("<table><tr><td style='vertical-align:top;padding:4px;white-space:pre;'>");
-                    out.write("No schema or query selected.");
-                    out.write("</td></tr></table>");
+                    TABLE(TR(TD(
+                        at(style, "vertical-align:top;padding:4px;white-space:pre;"),
+                        "No schema or query selected."
+                    ))).appendTo(out);
                 }
             };
         }
@@ -256,11 +256,12 @@ public class MenuViewFactory
 
         WebPartView<?> view = new WebPartView<>(title) {
             @Override
-            protected void renderView(Object model, PrintWriter oldWriter)
+            protected void renderView(Object model, HtmlWriter out)
             {
                 final String filterFolderName = form.getFolderTypes();
                 StringExpression expr;
                 String urlBase = form.getUrl();
+
                 if (null != StringUtils.trimToNull(urlBase))
                 {
                     expr = StringExpressionFactory.createURL(form.getUrl());
@@ -270,7 +271,6 @@ public class MenuViewFactory
                     expr = null;
                 }
 
-                HtmlWriter out = HtmlWriter.of(oldWriter);
                 MutableBoolean seenAtLeastOne = new MutableBoolean(false);
                 DIV(
                     at(style, "max-width: 40vw; overflow-x: auto;"),

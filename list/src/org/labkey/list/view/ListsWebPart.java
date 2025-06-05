@@ -30,6 +30,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.list.controllers.ListController;
 
 import java.io.PrintWriter;
@@ -71,10 +72,10 @@ public class ListsWebPart extends WebPartView<ViewContext>
     }
 
     @Override
-    protected void renderView(ViewContext model, PrintWriter out) throws Exception
+    protected void renderView(ViewContext model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         if (_narrow)
-            renderNarrowView(model, out);
+            renderNarrowView(model, oldWriter);
         else
             include(new JspView<Object>("/org/labkey/list/view/listsWebPart.jsp", model));
     }

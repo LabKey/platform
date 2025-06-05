@@ -17,9 +17,9 @@
 package org.labkey.wiki;
 
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.PrintWriter;
 
@@ -45,18 +45,18 @@ public class LinkBarView extends WebPartView<Object>
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out)
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
     {
-        out.write("<table width=\"100%\" cellpadding=0><tr><td>");
+        oldWriter.write("<table width=\"100%\" cellpadding=0><tr><td>");
         for (NavTree link : _links)
         {
-            out.write(LinkBuilder.labkeyLink(link.getText(), link.getHref()) + "&nbsp;");
+            oldWriter.write(LinkBuilder.labkeyLink(link.getText(), link.getHref()) + "&nbsp;");
         }
-        out.write("</td></tr>");
+        oldWriter.write("</td></tr>");
         if (_drawLine)
         {
-            out.write("<tr><td colspan=3 class=\"labkey-title-area-line\"></td></tr>");
+            oldWriter.write("<tr><td colspan=3 class=\"labkey-title-area-line\"></td></tr>");
         }
-        out.write("</table>");
+        oldWriter.write("</table>");
     }
 }

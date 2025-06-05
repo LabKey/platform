@@ -84,6 +84,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -138,6 +139,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.util.DOM.P;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * View that generates the majority of standard data grids/tables in the LabKey Server UI.
@@ -368,12 +371,13 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
     protected void renderErrors(HtmlWriter out, String message, List<? extends Throwable> errors)
     {
-        PrintWriter oldWriter = new PrintWriter(out.unwrap());
-        oldWriter.write("<p class=\"labkey-error\">");
-        oldWriter.print(PageFlowUtil.filter(message));
-        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getQueryDef().isSqlEditable())
-            oldWriter.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
-        oldWriter.write("</p>");
+        boolean isEditable = getQueryDef() != null && getQueryDef().canEdit(getUser()) && getQueryDef().isSqlEditable();
+        P(
+            cl("labkey-error"),
+            message,
+            isEditable ? HtmlString.NBSP : null,
+            isEditable ? LinkBuilder.simpleLink("Edit Query", Objects.requireNonNull(getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()))) : null
+        ).appendTo(out);
 
         Set<String> seen = new HashSet<>();
 
@@ -383,11 +387,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 if (e instanceof QueryParseException)
                 {
-                    oldWriter.print(PageFlowUtil.filter(e.getMessage()));
+                    out.write(e.getMessage());
                 }
                 else
                 {
-                    oldWriter.print(PageFlowUtil.filter(e.toString()));
+                    out.write(e.toString());
                 }
 
                 String resolveURL = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
@@ -396,11 +400,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
                     if (getUser().isPlatformDeveloper())
                     {
-                        oldWriter.write(" ");
-                        oldWriter.print(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL));
+                        out.write(" ");
+                        out.write(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL));
                     }
                 }
-                oldWriter.write("<br>");
+                out.write(HtmlString.BR);
             }
         }
     }

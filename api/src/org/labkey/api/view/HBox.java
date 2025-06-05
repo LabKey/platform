@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
@@ -45,21 +46,21 @@ public class HBox extends AbstractViewBox
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
         if (_views != null && !_views.isEmpty())
         {
-            out.write("<table width=\"" + _tableWidth + "\"><tr>");
+            oldWriter.write("<table width=\"" + _tableWidth + "\"><tr>");
             for (ModelAndView view : _views)
             {
                 if (null == view)
                     continue;
                 String width = _widths.get(view);
-                out.write("<td valign=top align=left" + (width != null ? " width=" + width : "") + ">");
+                oldWriter.write("<td valign=top align=left" + (width != null ? " width=" + width : "") + ">");
                 include(view);
-                out.write("</td>");
+                oldWriter.write("</td>");
             }
-            out.write("</tr></table>");
+            oldWriter.write("</tr></table>");
         }
     }
 }

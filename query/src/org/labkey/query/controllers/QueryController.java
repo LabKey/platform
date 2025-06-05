@@ -252,6 +252,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
@@ -1854,7 +1855,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
         {
             StringBuilder sb = new StringBuilder("<table>\n");
 
@@ -1879,7 +1880,7 @@ public class QueryController extends SpringActionController
             sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
             sb.append("</table>\n");
 
-            out.print(sb);
+            oldWriter.print(sb);
         }
     }
 
