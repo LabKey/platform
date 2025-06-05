@@ -1155,11 +1155,7 @@ public class ExpDataIterators
             {
                 try
                 {
-                    boolean allowBulkLoadRemapCache = true;
-                    if (_context.getConfigParameterBoolean(SkipBulkRemapCache))
-                        allowBulkLoadRemapCache = false;
-
-                    RemapCache cache = new RemapCache(allowBulkLoadRemapCache);
+                    RemapCache cache = new RemapCache(!_context.getConfigParameterBoolean(SkipBulkRemapCache));
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
@@ -3185,19 +3181,21 @@ public class ExpDataIterators
 
     public static class AliquotResolutionDataIterator extends SimpleTranslator
     {
-        public static final String ALIQUOT_FROM_IS_ALIQUOT = ALIQUOTED_FROM_INPUT + "#IsAliquot";
-        public static final String ALIQUOT_FROM_RESOLVED_NAME = ALIQUOTED_FROM_INPUT + "#Name";
-        public static final String ALIQUOT_FROM_RESOLVED_ROW_ID = ALIQUOTED_FROM_INPUT + "#RowId";
+        public static final String ALIQUOT_FROM_IS_ALIQUOT = "_" + AliquotResolutionDataIterator.class.getName() + "#IsAliquot";
+        public static final String ALIQUOT_FROM_RESOLVED_NAME = "_" + AliquotResolutionDataIterator.class.getName() + "#Name";
+        public static final String ALIQUOT_FROM_RESOLVED_ROW_ID = "_" + AliquotResolutionDataIterator.class.getName() + "#RowId";
 
         final Integer _aliquotFromCol;
-        final Integer _aliquotNameCol;
-        final Integer _aliquotRowIdCol;
         final Container _container;
         final Integer _isAliquotCol;
         final Map<Integer, ExpMaterial> _materialCache;
         final RemapCache _remapCache;
         final ExpSampleTypeImpl _sampleType;
         final User _user;
+
+        String aliquotName = null;
+        Integer aliquotRowId = null;
+        boolean isAliquot = false;
 
         public AliquotResolutionDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpSampleTypeImpl sampleType)
         {
@@ -3214,17 +3212,12 @@ public class ExpDataIterators
 
             _materialCache = hasAliquotFromCol ? new HashMap<>() : null;
             _remapCache = hasAliquotFromCol ? new RemapCache() : null;
-            _isAliquotCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_IS_ALIQUOT, JdbcType.BOOLEAN), (Supplier<Boolean>)() -> hasAliquotFromCol);
+            _isAliquotCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_IS_ALIQUOT, JdbcType.BOOLEAN), (Supplier<Boolean>)() -> isAliquot);
 
             if (hasAliquotFromCol)
             {
-                _aliquotNameCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_NAME, JdbcType.VARCHAR), (Supplier<String>)() -> null);
-                _aliquotRowIdCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_ROW_ID, JdbcType.INTEGER), (Supplier<Integer>)() -> null);
-            }
-            else
-            {
-                _aliquotNameCol = null;
-                _aliquotRowIdCol = null;
+                addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_NAME, JdbcType.VARCHAR), (Supplier<String>)() -> aliquotName);
+                addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_ROW_ID, JdbcType.INTEGER), (Supplier<Integer>)() -> aliquotRowId);
             }
         }
 
@@ -3235,6 +3228,10 @@ public class ExpDataIterators
 
             if (hasNext && _aliquotFromCol != null)
             {
+                aliquotName = null;
+                aliquotRowId = null;
+                isAliquot = false;
+
                 Object aliquotedFromObj = get(_aliquotFromCol);
                 if (aliquotedFromObj != null)
                 {
@@ -3251,8 +3248,7 @@ public class ExpDataIterators
                         aliquotedFrom = aliquotedFromObj.toString();
                     }
 
-                    boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
-                    _row[_isAliquotCol] = isAliquot;
+                    isAliquot = !StringUtils.isEmpty(aliquotedFrom);
 
                     if (isAliquot)
                     {
@@ -3261,8 +3257,8 @@ public class ExpDataIterators
                             ExpMaterial aliquotParent = ExperimentService.get().findExpMaterial(_container, _user, aliquotedFrom, _sampleType, _remapCache, _materialCache);
                             if (aliquotParent != null)
                             {
-                                _row[_aliquotNameCol] = aliquotParent.getName();
-                                _row[_aliquotRowIdCol] = aliquotParent.getRowId();
+                                aliquotName = aliquotParent.getName();
+                                aliquotRowId = aliquotParent.getRowId();
                             }
                         }
                         catch (ValidationException e)
@@ -3270,10 +3266,6 @@ public class ExpDataIterators
                             addRowError(e.getMessage());
                         }
                     }
-                }
-                else
-                {
-                    _row[_isAliquotCol] = false;
                 }
             }
 
