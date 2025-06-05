@@ -107,6 +107,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -365,13 +366,14 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return getSettings() != null && getSettings().getIgnoreViewFilter();
     }
 
-    protected void renderErrors(PrintWriter out, String message, List<? extends Throwable> errors)
+    protected void renderErrors(HtmlWriter out, String message, List<? extends Throwable> errors)
     {
-        out.write("<p class=\"labkey-error\">");
-        out.print(PageFlowUtil.filter(message));
+        PrintWriter oldWriter = new PrintWriter(out.unwrap());
+        oldWriter.write("<p class=\"labkey-error\">");
+        oldWriter.print(PageFlowUtil.filter(message));
         if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getQueryDef().isSqlEditable())
-            out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
-        out.write("</p>");
+            oldWriter.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
+        oldWriter.write("</p>");
 
         Set<String> seen = new HashSet<>();
 
@@ -381,11 +383,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 if (e instanceof QueryParseException)
                 {
-                    out.print(PageFlowUtil.filter(e.getMessage()));
+                    oldWriter.print(PageFlowUtil.filter(e.getMessage()));
                 }
                 else
                 {
-                    out.print(PageFlowUtil.filter(e.toString()));
+                    oldWriter.print(PageFlowUtil.filter(e.toString()));
                 }
 
                 String resolveURL = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
@@ -394,11 +396,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
                     if (getUser().isPlatformDeveloper())
                     {
-                        out.write(" ");
-                        out.print(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL));
+                        oldWriter.write(" ");
+                        oldWriter.print(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL));
                     }
                 }
-                out.write("<br>");
+                oldWriter.write("<br>");
             }
         }
     }
@@ -503,6 +505,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         _schema = schema;
     }
 
+    @Override
     public Container getContainer()
     {
         return _schema.getContainer();
@@ -2070,7 +2073,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         if (isReportView(getViewContext()))
             renderReportView(request, response);
         else
-            renderDataRegion(response.getWriter());
+            renderDataRegion(HtmlWriter.of(response));
     }
 
     private void renderReportView(HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -2109,7 +2112,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             }
             catch (Exception e)
             {
-                renderErrors(response.getWriter(), "Error rendering report :  " + _report.getDescriptor().getReportName(), Collections.singletonList(e));
+                renderErrors(HtmlWriter.of(response), "Error rendering report :  " + _report.getDescriptor().getReportName(), Collections.singletonList(e));
             }
         }
     }
@@ -2351,17 +2354,19 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     }
 
 
-    protected void renderDataRegion(PrintWriter out) throws Exception
+    protected void renderDataRegion(HtmlWriter out) throws Exception
     {
         // make sure table has been instantiated
         getTable();
         List<QueryException> errors = getParseErrors();
-        if (!errors.isEmpty())
+        if (errors.isEmpty())
+        {
+            include(createDataView(), out.unwrap());
+        }
+        else
         {
             renderErrors(out, "Query '" + getQueryDef().getName() + "' has errors", errors);
-            return;
         }
-        include(createDataView(), out);
     }
 
 
