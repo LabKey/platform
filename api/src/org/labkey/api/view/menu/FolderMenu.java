@@ -139,43 +139,43 @@ public class FolderMenu extends NavTreeMenu
             cl(String.join(" ", liCls)),
             SPAN(
                 cl(hasChildren, "marked"),
-                HtmlString.NBSP,  // Safari
-                (Renderable) ret -> {
-                    String link = nav.getHref();
-                    if (null != link)
-                    {
-                        LinkBuilder builder = nav.toSimpleLinkBuilder();
+                HtmlString.NBSP   // Safari
+            ),
+            (Renderable) ret -> {
+                String link = nav.getHref();
+                if (null != link)
+                {
+                    LinkBuilder builder = nav.toSimpleLinkBuilder();
 
-                        if (isSelected)
-                            builder.addClass("nav-tree-selected").id("folder-target");
+                    if (isSelected)
+                        builder.addClass("nav-tree-selected").id("folder-target");
 
-                        out.write(builder);
-                    }
-                    else
-                    {
-                        SPAN(
-                            cl("noread"),
-                            nav.getText()
-                        ).appendTo(out);
-                    }
-
-                    if (hasChildren)
-                    {
-                        try
-                        {
-                            if (finalShouldExpand)
-                                renderChildLinks(nav, rootId, context, out, null);
-                            else
-                                renderChildLinks(nav, rootId, context, out, false);
-                        }
-                        catch (URISyntaxException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                     }
-                    return ret;
+                    out.write(builder);
                 }
-            )
+                else
+                {
+                    SPAN(
+                        cl("noread"),
+                        nav.getText()
+                    ).appendTo(out);
+                }
+
+                if (hasChildren)
+                {
+                    try
+                    {
+                        if (finalShouldExpand)
+                            renderChildLinks(nav, rootId, context, out, null);
+                        else
+                            renderChildLinks(nav, rootId, context, out, false);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                 }
+                return ret;
+            }
         ).appendTo(out);
     }
 }
