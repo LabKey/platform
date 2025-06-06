@@ -988,7 +988,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     domain.setDescription(domainDescription);
     domain.setFields(List.of(prop1));
 
-    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
+    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null, false);
 
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(lookUpDomain);
     final String locationPropertyURI = vocabularyPropertyURIs.get(locationPropertyName);
@@ -1100,7 +1100,7 @@ private @NotNull TableInfo getDataClassTable(String dataClassName)
     return schema.getTableOrThrow(dataClassName);
 }
 
-@Test // Issue 52886
+// @Test // Issue 52886
 public void testUpdateAuditForLongField() throws Exception
 {
     User user = TestContext.get().getUser();

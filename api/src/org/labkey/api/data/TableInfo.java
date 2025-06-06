@@ -446,6 +446,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     Domain getDomain();
 
     /**
+     * Get Domain associated with this TableInfo if any.
+     */
+    @Nullable
+    Domain getDomain(boolean forUpdate);
+
+    /**
      * Get DomainKind associated with this TableInfo if any.
      * Domain may or may not exist even if DomainKind is available.
      */

@@ -124,7 +124,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public void initializeProvider(User user)
     {
         AbstractAuditDomainKind domainKind = getDomainKind();
-        Domain domain = getDomain();
+        Domain domain = getDomain(true);
 
         // if the domain doesn't exist, create it
         if (domain == null)
@@ -138,7 +138,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.addPropertyOfPropertyDescriptor(pd);
                 }
                 domain.save(user);
-                domain = getDomain();
+                domain = getDomain(true);
             }
             catch (ChangePropertyDescriptorException e)
             {
@@ -300,11 +300,17 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public final Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public final Domain getDomain(boolean forUpdate)
+    {
         DomainKind domainKind = getDomainKind();
 
         String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
 
-        return PropertyService.get().getDomain(getDomainContainer(), domainURI);
+        return PropertyService.get().getDomain(getDomainContainer(), domainURI, forUpdate);
     }
 
 

@@ -1771,6 +1771,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Nullable
     @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return getDomain();
+    }
+
+    @Nullable
+    @Override
     public DomainKind getDomainKind()
     {
         Domain domain = getDomain();

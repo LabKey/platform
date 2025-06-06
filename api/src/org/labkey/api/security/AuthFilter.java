@@ -168,7 +168,7 @@ public class AuthFilter implements Filter
             {
                 // Issue 51904: Strict-Transport-Security header when HTTPS is required
                 // Avoid setting when in dev mode to make it easier to toggle HTTPS on and off again for local deployments
-                resp.setHeader("Strict-Transport-Security", "max-age=31536000");
+                resp.setHeader("Strict-Transport-Security", "max-age=31536000;includeSubdomains");
             }
         }
 

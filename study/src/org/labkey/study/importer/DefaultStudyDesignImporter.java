@@ -116,7 +116,8 @@ public class DefaultStudyDesignImporter
 
             if (table != null)
             {
-                final Domain domain = schema.getTable(tableName).getDomain();
+                // TODO this is possibly inefficient since we'll be bypassing the cache even if there's nothing new to save
+                final Domain domain = schema.getTable(tableName).getDomain(true);
 
                 if (domain != null)
                 {
