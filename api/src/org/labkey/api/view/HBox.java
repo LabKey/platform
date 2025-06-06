@@ -15,12 +15,21 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.DOM;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.labkey.api.util.DOM.Attribute.align;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 
 /** Lays out child {@link ModelAndView} horizontally */
 public class HBox extends AbstractViewBox
@@ -46,21 +55,34 @@ public class HBox extends AbstractViewBox
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
         if (_views != null && !_views.isEmpty())
         {
-            oldWriter.write("<table width=\"" + _tableWidth + "\"><tr>");
-            for (ModelAndView view : _views)
-            {
-                if (null == view)
-                    continue;
-                String width = _widths.get(view);
-                oldWriter.write("<td valign=top align=left" + (width != null ? " width=" + width : "") + ">");
-                include(view);
-                oldWriter.write("</td>");
-            }
-            oldWriter.write("</tr></table>");
+            TABLE(
+                at(width, _tableWidth),
+                TR(
+                    _views.stream()
+                        .filter(Objects::nonNull)
+                        .map(view -> {
+                            String w = _widths.get(view);
+                            return TD(
+                                at(valign, "top", align, "left").at(w != null, width, w),
+                                (DOM.Renderable) ret -> {
+                                    try
+                                    {
+                                        include(view);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return ret;
+                                }
+                            );
+                        })
+                )
+            ).appendTo(out);
         }
     }
 }
