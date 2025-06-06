@@ -38,7 +38,6 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.wiki.model.Wiki;
 
-import java.io.PrintWriter;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Stack;
@@ -180,7 +179,7 @@ public class WikiTOC extends NavTreeMenu
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+    protected void renderView(Object model, HtmlWriter out)
     {
         ViewContext context = getViewContext();
 
@@ -279,7 +278,7 @@ public class WikiTOC extends NavTreeMenu
             (DOM.Renderable) ret -> {
                 try
                 {
-                    super.renderView(model, oldWriter, out);
+                    super.renderView(model, out);
                 }
                 catch (Exception e)
                 {

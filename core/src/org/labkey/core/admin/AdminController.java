@@ -9083,7 +9083,7 @@ public class AdminController extends SpringActionController
             }
 
             @Override
-            protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+            protected void renderView(Object model, HtmlWriter out)
             {
                 boolean isDevMode = AppProps.getInstance().isDevMode();
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
@@ -9095,7 +9095,7 @@ public class AdminController extends SpringActionController
 
                 if (_contexts.isEmpty())
                 {
-                    oldWriter.println(_noModulesDescriptionHtml);
+                    out.write(_noModulesDescriptionHtml);
                 }
                 else
                 {
@@ -9163,7 +9163,7 @@ public class AdminController extends SpringActionController
                                     );
                                 })
                         )
-                    ).appendTo(oldWriter);
+                    ).appendTo(out);
                 }
             }
         }

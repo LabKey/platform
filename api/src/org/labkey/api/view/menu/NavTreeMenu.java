@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Collapsible;
@@ -37,6 +38,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class NavTreeMenu extends WebPartView<Object> implements Collapsible
@@ -128,25 +131,33 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
         if (_elements != null)
         {
             boolean indentForExpansionGifs = false;
+
             for (NavTree element : _elements)
             {
                 if (element.hasChildren())
                     indentForExpansionGifs = true;
             }
-            oldWriter.print("<table class=\"labkey-nav-tree\">");
-            for (NavTree element : _elements)
-                renderLinks(element, 0, "", element.getId(), getViewContext(), oldWriter, indentForExpansionGifs);
-            oldWriter.print("</table>");
+
+            boolean indent = indentForExpansionGifs;
+
+            TABLE(
+                cl("labkey-nav-tree"),
+                (DOM.Renderable) ret -> {
+                    for (NavTree element : _elements)
+                        renderLinks(element, 0, "", element.getId(), getViewContext(), out, indent);
+                    return ret;
+                }
+            ).appendTo(out);
         }
     }
 
     private void renderLinks(NavTree nav, int level, String pathToHere, String rootId,
-                             ViewContext context, PrintWriter oldWriter, boolean indentForExpansionGifs)
+                             ViewContext context, HtmlWriter out, boolean indentForExpansionGifs)
     {
         var config = HttpView.currentPageConfig();
 
@@ -176,6 +187,8 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 
         boolean collapsed = nav.isCollapsed();
         String id;
+
+        PrintWriter oldWriter = new PrintWriter(out.unwrap());
 
         if (level > 0)
         {
@@ -245,7 +258,7 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
             }
             oldWriter.printf("<tr%s>\n<td></td><td>\n<table class=\"labkey-nav-tree-child\">", collapsed ? " style=display:none" : "");
             for (NavTree child : nav.getChildren())
-                renderLinks(child, level + 1, pathToHere, rootId, context, oldWriter, indentForExpansionGifs);
+                renderLinks(child, level + 1, pathToHere, rootId, context, out, indentForExpansionGifs);
             oldWriter.println("</table>\n</td></tr>");
         }
     }

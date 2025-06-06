@@ -88,6 +88,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.P;
+
 /**
  * User: Matthew
  * Date: Apr 24, 2006
@@ -796,7 +798,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private static class StudySecurityPermissionsView extends WebPartView
+    private static class StudySecurityPermissionsView extends WebPartView<Object>
     {
         private StudySecurityPermissionsView()
         {
@@ -804,12 +806,16 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+        protected void renderView(Object model, HtmlWriter out)
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
-            oldWriter.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
-            oldWriter.print(PageFlowUtil.button("Study Security").href(urlStudy));
-            oldWriter.print("<br/>&nbsp;</p>");
+            P(
+                "Permissions for datasets in a study are managed separately.",
+                HtmlString.BR,
+                PageFlowUtil.button("Study Security").href(urlStudy),
+                HtmlString.BR,
+                HtmlString.NBSP
+            ).appendTo(out);
         }
     }
 }

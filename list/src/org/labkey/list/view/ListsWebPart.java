@@ -80,27 +80,27 @@ public class ListsWebPart extends WebPartView<ViewContext>
             include(new JspView<Object>("/org/labkey/list/view/listsWebPart.jsp", model));
     }
 
-    private void renderNarrowView(ViewContext model, PrintWriter out)
+    private void renderNarrowView(ViewContext model, PrintWriter oldWriter)
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer(), model.getUser(), true, true, false);
-        out.write("<table>");
+        oldWriter.write("<table>");
         if (lists.isEmpty())
         {
-            out.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");
+            oldWriter.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");
         }
         else
         {
             for (ListDefinition list : new TreeSet<>(lists.values()))
             {
-                out.write("<tr><td><a href=\"");
-                out.write(PageFlowUtil.filter(list.urlShowData()));
-                out.write("\">");
-                out.write(PageFlowUtil.filter(list.getName()));
-                out.write("</a></td></tr>");
+                oldWriter.write("<tr><td><a href=\"");
+                oldWriter.write(PageFlowUtil.filter(list.urlShowData()));
+                oldWriter.write("\">");
+                oldWriter.write(PageFlowUtil.filter(list.getName()));
+                oldWriter.write("</a></td></tr>");
             }
         }
-        out.write("</table>");
+        oldWriter.write("</table>");
         if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            out.write(LinkBuilder.labkeyLink("manage lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
+            oldWriter.write(LinkBuilder.labkeyLink("manage lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
     }
 }

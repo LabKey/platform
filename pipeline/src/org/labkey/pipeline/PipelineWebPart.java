@@ -23,9 +23,7 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.pipeline.status.PipelineQueryView;
 import org.labkey.pipeline.status.StatusController;
 
-import java.io.PrintWriter;
-
-public class PipelineWebPart extends WebPartView
+public class PipelineWebPart extends WebPartView<Object>
 {
     private static final String partName = "Data Pipeline";
 
@@ -41,20 +39,22 @@ public class PipelineWebPart extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
+        WebPartView<?> view;
+
         if (!PipelineService.get().hasValidPipelineRoot(getViewContext().getContainer()) &&
                 !PipelineService.get().canModifyPipelineRoot(getViewContext().getUser(), getViewContext().getContainer()))
         {
-            HtmlView view = HtmlView.unsafe("<table class=\"DataRegion\"><tr><td>Setup required.  Please contact your project administrator.</td></tr></table>");
+            view = HtmlView.unsafe("<table class=\"DataRegion\"><tr><td>Setup required.  Please contact your project administrator.</td></tr></table>");
             view.setTitle(getPartName());
-            include(view);
         }
         else
         {
-            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), null, StatusController.ShowPartRegionAction.class, PipelineService.PipelineButtonOption.Minimal, getViewContext().getActionURL());
-            gridView.setPortalLinks(getPortalLinks());
-            include(gridView);
+            view = new PipelineQueryView(getViewContext(), null, StatusController.ShowPartRegionAction.class, PipelineService.PipelineButtonOption.Minimal, getViewContext().getActionURL());
+            view.setPortalLinks(getPortalLinks());
         }
+
+        include(view);
     }
 }
