@@ -21,8 +21,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
-
 /** Renders a fixed set of HTML at the content of the view */
 public class HtmlView extends WebPartView<Object>
 {
@@ -112,7 +110,7 @@ public class HtmlView extends WebPartView<Object>
     }
 
     @Override
-    public void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+    public void renderView(Object model, HtmlWriter out)
     {
         assert null == _contentType || getFrame() == FrameType.NONE || getFrame() == FrameType.NOT_HTML;
 
@@ -120,8 +118,8 @@ public class HtmlView extends WebPartView<Object>
             getViewContext().getResponse().setContentType(_contentType);
 
         if (_html != null)
-            oldWriter.print(_html);
+            out.write(_html);
         else if (_renderable != null)
-            _renderable.appendTo(oldWriter);
+            _renderable.appendTo(out);
     }
 }

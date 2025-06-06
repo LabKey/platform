@@ -26,14 +26,15 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
 
-public class CrosstabView extends WebPartView
+public class CrosstabView extends WebPartView<Object>
 {
     ActionURL _exportAction;
     Crosstab _crosstab;
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+    protected void renderView(Object model, HtmlWriter out)
     {
+        PrintWriter oldWriter = new PrintWriter(out.unwrap());
         StringBuilder errStr = new StringBuilder();
         if (null == _crosstab.getStatField())
             errStr.append("Stat field is not defined.<br>");

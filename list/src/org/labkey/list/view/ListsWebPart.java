@@ -33,10 +33,12 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.list.controllers.ListController;
 
-import java.io.PrintWriter;
 import java.util.Map;
 import java.util.TreeSet;
 
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.view.WebPartFactory.LOCATION_BODY;
 import static org.labkey.api.view.WebPartFactory.LOCATION_RIGHT;
 
@@ -72,35 +74,25 @@ public class ListsWebPart extends WebPartView<ViewContext>
     }
 
     @Override
-    protected void renderView(ViewContext model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+    protected void renderView(ViewContext model, HtmlWriter out) throws Exception
     {
         if (_narrow)
-            renderNarrowView(model, oldWriter);
+            renderNarrowView(model, out);
         else
             include(new JspView<Object>("/org/labkey/list/view/listsWebPart.jsp", model));
     }
 
-    private void renderNarrowView(ViewContext model, PrintWriter oldWriter)
+    private void renderNarrowView(ViewContext model, HtmlWriter out)
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer(), model.getUser(), true, true, false);
-        oldWriter.write("<table>");
-        if (lists.isEmpty())
-        {
-            oldWriter.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");
-        }
-        else
-        {
-            for (ListDefinition list : new TreeSet<>(lists.values()))
-            {
-                oldWriter.write("<tr><td><a href=\"");
-                oldWriter.write(PageFlowUtil.filter(list.urlShowData()));
-                oldWriter.write("\">");
-                oldWriter.write(PageFlowUtil.filter(list.getName()));
-                oldWriter.write("</a></td></tr>");
-            }
-        }
-        oldWriter.write("</table>");
+
+        TABLE(
+            lists.isEmpty() ?
+                TR(TD("There are no user-defined lists in this folder.")) :
+                new TreeSet<>(lists.values()).stream().map(list -> TR(TD(LinkBuilder.simpleLink(list.getName(), list.urlShowData()))))
+        ).appendTo(out);
+
         if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            oldWriter.write(LinkBuilder.labkeyLink("manage lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
+            out.write(LinkBuilder.labkeyLink("manage lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())));
     }
 }

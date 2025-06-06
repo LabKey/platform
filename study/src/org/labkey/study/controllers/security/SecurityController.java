@@ -77,7 +77,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,11 +89,6 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.util.DOM.P;
 
-/**
- * User: Matthew
- * Date: Apr 24, 2006
- * Time: 5:31:02 PM
- */
 public class SecurityController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class);
@@ -105,7 +99,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -123,7 +117,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SaveStudyPermissionsAction extends FormHandlerAction
+    public static class SaveStudyPermissionsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -191,7 +185,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportSecurityPolicyAction extends ExportAction<Object>
+    public static class ExportSecurityPolicyAction extends ExportAction<Object>
     {
         @Override
         public void export(Object form, HttpServletResponse response, BindException errors)
@@ -223,7 +217,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
+    public static class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
     {
         private HtmlString _messageText = null;
 
@@ -351,7 +345,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ApplyDatasetPermissionsAction extends FormHandlerAction
+    public static class ApplyDatasetPermissionsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -779,9 +773,9 @@ public class SecurityController extends SpringActionController
 
 
         @Override
-        protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+        protected void renderView(Object model, HtmlWriter out) throws Exception
         {
-            include(_vbox, oldWriter);
+            include(_vbox, out.unwrap());
         }
     }
 
