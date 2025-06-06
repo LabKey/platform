@@ -334,16 +334,24 @@ public class PipelineJobServiceImpl implements PipelineJobService
             {
                 // First try a normal shutdown
                 LOG.info("Attempting to kill forked process gracefully: {}", p.toHandle());
-                LOG.info("Process supports normal termination: {}", p.supportsNormalTermination());
+                LOG.debug("Process supports normal termination: {}", p.supportsNormalTermination());
                 p.destroy();
+                p.descendants().forEach(ph -> {
+                    LOG.info("Attempting to kill descendant process gracefully: {}", ph);
+                    ph.destroy();
+                });
                 try
                 {
-                    // Wait in the hopes it will terminate gracefully
+                    // Wait for the primary process in the hopes it will terminate gracefully
                     p.waitFor(15, TimeUnit.SECONDS);
 
                     // Make sure it dies
                     if (p.isAlive())
                     {
+                        p.descendants().forEach(ph -> {
+                            LOG.info("Attempting to kill descendant process forcibly: {}", ph);
+                            ph.destroyForcibly();
+                        });
                         LOG.info("Attempting to kill forked process forcibly: {}", p.toHandle());
                         p.destroyForcibly();
                     }
