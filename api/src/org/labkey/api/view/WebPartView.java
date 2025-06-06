@@ -495,10 +495,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         renderView(model, new PrintWriter(out.unwrap()), out);
     }
 
-    @Deprecated // Eliminate all overrides
+    @Deprecated // Eliminate remaining overrides!
     protected void renderView(ModelBean model, PrintWriter oldWriter, HtmlWriter out) throws Exception
     {
-        throw new IllegalStateException("override renderView");
+        throw new IllegalStateException("Must override renderView()!");
     }
 
     public boolean isEmbedded()

@@ -16,18 +16,25 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.stream.IntStream;
 
-public class ResultSetView extends WebPartView
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.cl;
+
+public class ResultSetView extends WebPartView<Object>
 {
     private final ResultSet _rs;
     private final int _linkColumn;
@@ -54,72 +61,76 @@ public class ResultSetView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
-        oldWriter.println("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
-
-        try
-        {
-            ResultSetMetaData md = _rs.getMetaData();
-            int columnCount = md.getColumnCount();
-
-            oldWriter.print("  <tr>");
-
-            for (int i = 1; i <= columnCount; i++)
-            {
-                oldWriter.print("<td class=\"labkey-column-header\">");
-                oldWriter.print(PageFlowUtil.filter(md.getColumnLabel(i)));
-                oldWriter.print("</td>");
-            }
-
-            oldWriter.println("</tr>\n");
-
-            long rowCount = 0;
-
-            while (_rs.next())
-            {
-                if (rowCount % 2 == 0)
+        TABLE(
+            cl("labkey-data-region-legacy", "labkey-show-borders"),
+            (Renderable) ret -> {
+                try
                 {
-                    oldWriter.print("  <tr class=\"labkey-row\">");
-                }
-                else
-                {
-                    oldWriter.print("  <tr class=\"labkey-alternate-row\">");
-                }
+                    ResultSetMetaData md = _rs.getMetaData();
+                    int columnCount = md.getColumnCount();
 
-                for (int i = 1; i <= columnCount; i++)
-                {
-                    Object val = _rs.getObject(i);
+                    TR(
+                        IntStream.rangeClosed(1, columnCount).mapToObj(i -> {
+                            try
+                            {
+                                return TD(
+                                    cl("labkey-column-header"),
+                                    md.getColumnLabel(i)
+                                );
+                            }
+                            catch (SQLException e)
+                            {
+                                throw new RuntimeSQLException(e);
+                            }
+                        })
+                    ).appendTo(out);
 
-                    oldWriter.print("<td>");
+                    long rowCount = 0;
 
-                    boolean createLink = null != _unencodedLink && _linkColumn == i && null != val && shouldLink(_rs);
-
-                    if (createLink)
+                    while (_rs.next())
                     {
-                        oldWriter.print("<a href=\"");
-                        oldWriter.print(PageFlowUtil.filter(_unencodedLink + val));
-                        oldWriter.print("\">");
+                        TR(
+                            cl(rowCount % 2 == 0, "labkey-row", "labkey-alternate-row"),
+                            (Renderable) ret2 -> {
+                                try
+                                {
+                                    for (int i = 1; i <= columnCount; i++)
+                                    {
+                                        Object val = _rs.getObject(i);
+
+                                        boolean createLink = null != _unencodedLink && _linkColumn == i && null != val && shouldLink(_rs);
+                                        Renderable value = null == val ? HtmlString.NBSP : HtmlString.of(val);
+
+                                        TD(
+                                            createLink ? LinkBuilder.simpleLink(value).href(_unencodedLink + val) : value
+                                        ).appendTo(out);
+                                    }
+                                }
+                                catch (SQLException e)
+                                {
+                                    throw new RuntimeSQLException(e);
+                                }
+                                return ret2;
+                            }
+                        ).appendTo(out);
+
+                        rowCount++;
                     }
-
-                    oldWriter.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
-
-                    if (createLink)
-                        oldWriter.print("</a>");
-
-                    oldWriter.print("</td>");
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+                finally
+                {
+                    ResultSetUtil.close(_rs);
                 }
 
-                oldWriter.println("</tr>\n");
-                rowCount++;
+                return ret;
             }
-        }
-        finally
-        {
-            ResultSetUtil.close(_rs);
-        }
-
-        oldWriter.println("</table>\n");
+        ).appendTo(out);
     }
 
     protected boolean shouldLink(ResultSet rs) throws SQLException
