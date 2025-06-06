@@ -89,8 +89,10 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -123,8 +125,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,6 +136,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.cl;
 
 
 public class FileContentController extends SpringActionController
@@ -302,7 +305,7 @@ public class FileContentController extends SpringActionController
                         WebPartView<?> webPart = new WebPartView<>(WebPartView.FrameType.DIV)
                         {
                             @Override
-                            protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out) throws Exception
+                            protected void renderView(Object model, HtmlWriter out) throws Exception
                             {
                                 try (InputStream fis = _resource.getInputStream(getUser()))
                                 {
@@ -310,11 +313,14 @@ public class FileContentController extends SpringActionController
                                         throw new FileNotFoundException();
                                     if (null == fis)
                                         throw new FileNotFoundException();
-                                    IOUtils.copy(Readers.getUnbufferedReader(fis), oldWriter);
+                                    IOUtils.copy(Readers.getUnbufferedReader(fis), out.unwrap());
                                 }
                                 catch (FileNotFoundException x)
                                 {
-                                    oldWriter.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                    SPAN(
+                                        cl("labkey-error"),
+                                        "file not found: " + PageFlowUtil.filter(_resource.getName())
+                                    ).appendTo(out);
                                 }
                             }
                         };
@@ -326,9 +332,9 @@ public class FileContentController extends SpringActionController
                         WebPartView<?> webPart = new WebPartView<>(_resource.getName())
                         {
                             @Override
-                            protected void renderView(Object model, PrintWriter oldWriter, HtmlWriter out)
+                            protected void renderView(Object model, HtmlWriter out)
                             {
-                                renderResourceContents(oldWriter, _resource);
+                                renderResourceContents(out, _resource);
                             }
                         };
 
@@ -353,7 +359,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
-        private void renderResourceContents(PrintWriter out, WebdavResource resource)
+        private void renderResourceContents(HtmlWriter out, WebdavResource resource)
         {
             StringBuilder contents = new StringBuilder();
             String line;
@@ -361,7 +367,7 @@ public class FileContentController extends SpringActionController
             final int MAX_SIZE = 5000;
             int size = 0;
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(getUser()))))
+            try (BufferedReader reader = Readers.getReader(resource.getInputStream(getUser())))
             {
                 while ((line = reader.readLine()) != null)
                 {
@@ -371,29 +377,36 @@ public class FileContentController extends SpringActionController
                     if (size++ > MAX_SIZE)
                         break;
                 }
-
-                if (size > MAX_SIZE)
-                {
-                    String sb = "<span class='labkey-error'>" +
-                            "The requested file is too large to display on a page, only part of the file is shown. To download the entire file contents " +
-                            "click on the download link below." + "</span><br>" +
-                            "<br>" + "<a href=\"" + resource.getHref(getViewContext()) + "?contentDisposition=attachment" +
-                            "\">download " + PageFlowUtil.filter(resource.getName()) + "</a>" +
-                            "<br><br>";
-
-                    out.write(sb);
-                }
-
-                out.write(PageFlowUtil.filter(contents.toString(), true, true));
             }
             catch (FileNotFoundException x)
             {
-                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(resource.getName()) + "</span>");
+                renderError("file not found: " + resource.getName(), out);
             }
             catch (IOException e)
             {
-                out.write("<span class='labkey-error'>IOException: " + PageFlowUtil.filter(resource.getName()) + "</span>");
+                renderError("IOException: " + resource.getName(), out);
             }
+
+            if (size > MAX_SIZE)
+            {
+                renderError("The requested file is too large to display on a page, only part of the file is shown. " +
+                    "To download the entire file contents click on the download link below.", out);
+
+                DOM.createHtmlFragment(
+                    HtmlString.BR,
+                    HtmlString.BR,
+                    LinkBuilder.simpleLink("download " + resource.getName(), resource.getHref(getViewContext()) + "?contentDisposition=attachment"),
+                    HtmlString.BR,
+                    HtmlString.BR
+                ).appendTo(out);
+            }
+
+            out.write(HtmlString.unsafe(PageFlowUtil.filter(contents.toString(), true, true)));
+        }
+
+        private void renderError(String message, HtmlWriter out)
+        {
+            SPAN(cl("labkey-error"), message).appendTo(out);
         }
 
         @Override

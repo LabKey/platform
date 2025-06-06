@@ -26,11 +26,6 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: migra
- * Date: Mar 2, 2006
- * Time: 4:32:20 PM
- */
 public class CrosstabView extends WebPartView
 {
     ActionURL _exportAction;
@@ -43,7 +38,7 @@ public class CrosstabView extends WebPartView
         if (null == _crosstab.getStatField())
             errStr.append("Stat field is not defined.<br>");
 
-        if (errStr.length() > 0)
+        if (!errStr.isEmpty())
         {
             oldWriter.write("<b>Crosstab Error<b><br>");
             oldWriter.write(errStr.toString());
