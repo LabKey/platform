@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -75,7 +76,7 @@ public class HBox extends AbstractViewBox
                                     }
                                     catch (Exception e)
                                     {
-                                        throw new RuntimeException(e);
+                                        throw UnexpectedException.wrap(e);
                                     }
                                     return ret;
                                 }

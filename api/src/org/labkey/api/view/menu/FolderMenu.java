@@ -25,7 +25,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,14 +68,7 @@ public class FolderMenu extends NavTreeMenu
             DIV(
                 cl("folder-nav"),
                 (Renderable) ret -> {
-                    try
-                    {
-                        renderChildLinks(root, root.getId(), context, out, null);
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    renderChildLinks(root, root.getId(), context, out, null);
                     return ret;
                 }
             ).appendTo(out);
@@ -84,20 +76,13 @@ public class FolderMenu extends NavTreeMenu
     }
 
     private void renderChildLinks(NavTree nav, String rootId,
-                                  ViewContext context, HtmlWriter out, @Nullable Boolean shouldExpand) throws URISyntaxException
+                                  ViewContext context, HtmlWriter out, @Nullable Boolean shouldExpand)
     {
         UL(
             (Renderable) ret -> {
                 for (NavTree child: nav.getChildren())
                 {
-                    try
-                    {
-                        renderLink(child, rootId, context, out, shouldExpand);
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    renderLink(child, rootId, context, out, shouldExpand);
                 }
                 return ret;
             }
@@ -105,7 +90,7 @@ public class FolderMenu extends NavTreeMenu
     }
 
     private void renderLink(NavTree nav, String rootId,
-                            ViewContext context, HtmlWriter out, Boolean shouldExpand) throws URISyntaxException
+                            ViewContext context, HtmlWriter out, Boolean shouldExpand)
     {
         // 34137: Support folder path expansion for containers where label != name
         final Container container = ContainerManager.getForId(nav.getId());
@@ -162,18 +147,11 @@ public class FolderMenu extends NavTreeMenu
 
                 if (hasChildren)
                 {
-                    try
-                    {
-                        if (finalShouldExpand)
-                            renderChildLinks(nav, rootId, context, out, null);
-                        else
-                            renderChildLinks(nav, rootId, context, out, false);
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                 }
+                    if (finalShouldExpand)
+                        renderChildLinks(nav, rootId, context, out, null);
+                    else
+                        renderChildLinks(nav, rootId, context, out, false);
+                }
                 return ret;
             }
         ).appendTo(out);

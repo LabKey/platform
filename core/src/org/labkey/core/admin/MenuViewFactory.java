@@ -41,6 +41,7 @@ import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -157,7 +158,7 @@ public class MenuViewFactory
                                     }
                                     catch (IOException e)
                                     {
-                                        throw new RuntimeException(e);
+                                        throw UnexpectedException.wrap(e);
                                     }
                                 }
 

@@ -28,8 +28,8 @@ import java.util.Set;
 
 public class CrosstabView extends WebPartView<Object>
 {
-    ActionURL _exportAction;
-    Crosstab _crosstab;
+    private final ActionURL _exportAction;
+    private final Crosstab _crosstab;
 
     @Override
     protected void renderView(Object model, HtmlWriter out)
@@ -56,7 +56,10 @@ public class CrosstabView extends WebPartView<Object>
         List<Object> colHeaders = _crosstab.getColHeaders();
         Set<Stats.StatDefinition> statSet = _crosstab.getStatSet();
 
-        oldWriter.write("<table id=\"report\" class=\"table-xtab-report\"><tr>");
+        oldWriter.write("<table id=\"report\" class=\"table-xtab-report\">");
+
+        oldWriter.write("<tr>");
+
         if (null != _crosstab.getColField())
         {
             oldWriter.write("<th>&nbsp;</th>");
@@ -84,13 +87,15 @@ public class CrosstabView extends WebPartView<Object>
         else
             oldWriter.write("Total");
 
-        oldWriter.write("</td></tr>");
+        oldWriter.write("</td>");
+        oldWriter.write("</tr>");
 
         if (null != _crosstab.getRowField())
         {
             for (Object rowVal : _crosstab.getRowHeaders())
             {
-                oldWriter.printf("<tr><td class=\"xtab-row-header\" rowspan=\"%d\">%s</td>", statSet.size(), rowVal == null ? "" : str(rowVal));
+                oldWriter.write("<tr>");
+                oldWriter.printf("<td class=\"xtab-row-header\" rowspan=\"%d\">%s</td>", statSet.size(), rowVal == null ? "" : str(rowVal));
 
                 int statRow = 0;
                 for (Stats.StatDefinition rowStat : statSet)
@@ -114,7 +119,6 @@ public class CrosstabView extends WebPartView<Object>
                         oldWriter.write("</tr>");
                 }
                 oldWriter.write("</tr>");
-
             }
         }
 
@@ -148,7 +152,9 @@ public class CrosstabView extends WebPartView<Object>
                 oldWriter.write("</tr>");
         }
 
-        oldWriter.write("</tr></table>");
+        oldWriter.write("</tr>");
+
+        oldWriter.write("</table>");
     }
 
     public CrosstabView(Crosstab crosstab, ActionURL exportAction)
