@@ -259,7 +259,7 @@ public class PropertyController extends SpringActionController
         @Override
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
-            GWTDomain<?> newDomain = form.getDomainDesign();
+            GWTDomain<GWTPropertyDescriptor> newDomain = form.getDomainDesign();
             Domain domain = null;
             List<Domain> domains = null;
 
@@ -825,7 +825,7 @@ public class PropertyController extends SpringActionController
         private String domainTemplate;
         private boolean createDomain = true;
         private boolean importData = true;
-        private GWTDomain<?> domainDesign;
+        private GWTDomain<GWTPropertyDescriptor> domainDesign;
         private JSONObject options;
         private String containerPath;
         private String schemaName;
@@ -955,13 +955,13 @@ public class PropertyController extends SpringActionController
             this.importData = importData;
         }
 
-        public GWTDomain<?> getDomainDesign()
+        public GWTDomain<GWTPropertyDescriptor> getDomainDesign()
         {
             return domainDesign;
         }
 
         @SuppressWarnings("unused")
-        public void setDomainDesign(GWTDomain<?> domainDesign)
+        public void setDomainDesign(GWTDomain<GWTPropertyDescriptor> domainDesign)
         {
             this.domainDesign = domainDesign;
         }
