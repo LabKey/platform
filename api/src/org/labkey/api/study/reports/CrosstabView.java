@@ -95,7 +95,7 @@ public class CrosstabView extends WebPartView<Object>
                     TD(cl("xtab-col-header"), null == _crosstab.getColField() && null != stat ? stat.getName() : "Total")
                 ),
 
-                // Value rows... one per stat per value row
+                // Value rows (one per stat per value row)
                 null != _crosstab.getRowField() ?
                     _crosstab.getRowHeaders().stream()
                         .flatMap(rowVal -> statSet.stream().map(rowStat -> TR(
