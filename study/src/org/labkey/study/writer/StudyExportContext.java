@@ -62,7 +62,7 @@ public class StudyExportContext extends SimpleStudyExportContext
         super(user, c, getStudyDocument(), dataTypes, phiLevel, participantMapper, maskClinic, logger, null);
         _fileRootPath = fileRootPath;
 
-        if (_datasets.size() == 0)
+        if (_datasets.isEmpty())
             initializeDatasets(study);
     }
 

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspContext" %>
 -- CTE comments are used as a marker to split up this file
 -- we could have multiple files, or multiple multi-line string constants, but it's easier to develop this way.
@@ -28,7 +29,7 @@
 <%
     SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
     var bean = (ExpLineageOptions) HttpView.currentModel();
-    String expType = StringUtils.defaultString(bean.getExpTypeValue(), "ALL");
+    String expType = Objects.toString(bean.getExpTypeValue(), "ALL");
     // See Issue 37332, better (but more complicated) fix for sql server would be to use "option (maxrecursion 1000)"
     int depth = bean.getConfiguredDepth();
     var CONCAT = HtmlString.unsafe(dialect.isPostgreSQL() ? "||" : "+");

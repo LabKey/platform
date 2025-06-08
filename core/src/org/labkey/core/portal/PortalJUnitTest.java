@@ -74,7 +74,7 @@ public class PortalJUnitTest extends Assert
         Portal.addPart(folder, pagesFactory, WebPartFactory.LOCATION_RIGHT);
 
         List<WebPart> parts = Portal.getParts(folder);
-        assertEquals(parts.size(), 3);
+        assertEquals(3, parts.size());
 
         assertEquals("Wrong body webparts", Arrays.asList("Wiki", "Files"), getWebPartNames(location_body, parts));
         assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
@@ -86,30 +86,30 @@ public class PortalJUnitTest extends Assert
         Portal.saveParts(folder, modifiedParts);
 
         parts = Portal.getParts(folder);
-        assertEquals(parts.size(), 2);
+        assertEquals(2, parts.size());
         assertEquals("Wrong body webparts", Arrays.asList("Wiki"), getWebPartNames(location_body, parts));
         assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
 
         ///Now add it back at a specific position
         Portal.addPart(folder, filesFactory, location_body, 0);
         parts = Portal.getParts(folder);
-        assertEquals(parts.size(), 3);
+        assertEquals(3, parts.size());
         assertEquals("Wrong body webparts", Arrays.asList("Files", "Wiki"), getWebPartNames(location_body, parts));
         assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
 
         //Create some parts on a new page
         String newPageGuid = GUID.makeGUID();
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.size(), 0);
+        assertEquals(0, parts.size());
         Portal.addPart(folder, newPageGuid, wikiFactory, location_body, -1, PageFlowUtil.map("pageName", "testPage"));
         //Make sure we have a part on our new page
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.size(), 1);
+        assertEquals(1, parts.size());
         Map<String,String> props = parts.get(0).getPropertyMap();
-        assertEquals(props.get("pageName"), "testPage");
+        assertEquals("testPage", props.get("pageName"));
         Portal.addPart(folder,  newPageGuid, filesFactory, location_body, -1, null);
         parts = Portal.getEditableParts(folder, newPageGuid);
-        assertEquals(parts.size(), 2);
+        assertEquals(2, parts.size());
         assertEquals("Wrong body webparts", Arrays.asList("Wiki", "Files"), getWebPartNames(location_body, parts));
         //Now swap the parts
         //Should come back in index order
@@ -121,16 +121,16 @@ public class PortalJUnitTest extends Assert
 
         //Check to see that the old page is still the same length
         parts = Portal.getParts(folder);
-        assertEquals(parts.size(), 3);
+        assertEquals(3, parts.size());
 
         // clean up
         ContainerManager.deleteAll(proj, user);
 
         //
         parts = Portal.getParts(folder);
-        assertEquals(parts.size(), 0);
+        assertEquals(0, parts.size());
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.size(), 0);
+        assertEquals(0, parts.size());
     }
 
     private List<String> getWebPartNames(String body, List<WebPart> parts)

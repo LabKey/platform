@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -395,7 +394,6 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
      * Setting this options asks the TableSelector to add additional display columns to the generated SQL, as well
 
      * as forcing the results to be sorted.
-     * @param forDisplay
      * @return this
      */
     public TableSelector setForDisplay(boolean forDisplay)
@@ -406,7 +404,6 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     /**
      * This forces the results to be sorted as they would be for setForDisplay(true)
-     * @param forceSort
      * @return this
      */
     public TableSelector setForceSortForDisplay(boolean forceSort)

@@ -19,7 +19,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.pipeline.status.PipelineQueryView;
 import org.labkey.pipeline.status.StatusController;
 

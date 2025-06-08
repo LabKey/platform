@@ -16,7 +16,6 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 
 public class PageTemplate extends JspView<PageConfig>
 {
@@ -152,8 +152,8 @@ public class PageTemplate extends JspView<PageConfig>
             impersonatedUser = user;
             authenticatedUser = user.getImpersonatingUser();
         }
-        page.setMetaTag("authenticatedUser", null == authenticatedUser ? "-" : StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
-        page.setMetaTag("impersonatedUser", null == impersonatedUser ? "-" : StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
+        page.setMetaTag("authenticatedUser", null == authenticatedUser ? "-" : Objects.toString(authenticatedUser.getEmail(),user.getDisplayName(user)));
+        page.setMetaTag("impersonatedUser", null == impersonatedUser ? "-" : Objects.toString(impersonatedUser.getEmail(),user.getDisplayName(user)));
     }
 
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
@@ -326,24 +326,14 @@ public class PageTemplate extends JspView<PageConfig>
     public static String getTemplatePrefix(PageConfig page)
     {
         PageConfig.Template t = page.getTemplate();
-        final String templateCls;
 
-        switch (t)
+        return switch (t)
         {
-            case Wizard:
-                templateCls = "wizard";
-                break;
-            case Dialog:
-                templateCls = "dialog";
-                break;
-            case Print:
-                templateCls = "print";
-                break;
-            default:
-                templateCls = "default";
-        }
-
-        return templateCls;
+            case Wizard -> "wizard";
+            case Dialog -> "dialog";
+            case Print -> "print";
+            default -> "default";
+        };
     }
 
     @Override

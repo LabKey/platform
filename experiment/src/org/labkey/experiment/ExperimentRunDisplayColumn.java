@@ -25,7 +25,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
 {
-    private ExpRun _run;
+    private final ExpRun _run;
 
     public ExperimentRunDisplayColumn(ExpRun run)
     {

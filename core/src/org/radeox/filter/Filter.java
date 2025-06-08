@@ -40,13 +40,13 @@ import org.radeox.filter.context.FilterContext;
  */
 
 public interface Filter {
-  public String filter(String input, FilterContext context);
+  String filter(String input, FilterContext context);
 
-  public String[] replaces();
+  String[] replaces();
 
-  public String[] before();
+  String[] before();
 
-  public void setInitialContext(InitialRenderContext context);
+  void setInitialContext(InitialRenderContext context);
 
-  public String getDescription();
+  String getDescription();
 }

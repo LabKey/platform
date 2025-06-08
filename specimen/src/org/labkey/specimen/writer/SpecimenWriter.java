@@ -204,7 +204,6 @@ public class SpecimenWriter extends AbstractSpecimenWriter
 
             sql.append(convertListToString(ctx.getParticipants(), true));
             sql.append(")");
-            conjunction = " AND ";
         }
 
         sql.append("\nORDER BY se.ExternalId");

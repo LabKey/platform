@@ -36,8 +36,6 @@ public interface DataStateHandler<FORM extends AbstractManageDataStatesForm>
     /**
      * Check if a given state allows for changes based on things like if it is in-use, etc. and return the error
      * message to show to the user if that state change is not allowed.
-     * @param container
-     * @param state The QC state being changed
      * @param rowUpdates The map of row changes for this state
      * @return Error message to show the user if the change is not allowed
      */

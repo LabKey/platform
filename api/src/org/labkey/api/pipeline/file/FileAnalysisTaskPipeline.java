@@ -93,13 +93,11 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      * @see org.labkey.api.pipeline.file.AbstractFileAnalysisJob#writeJobInfoTSV(java.io.File)
      * @see org.labkey.api.qc.TsvDataExchangeHandler
      * @link https://www.labkey.org/Documentation/wiki-page.view?name=runProperties
-     * @return
      */
     boolean isWriteJobInfoFile();
 
     /**
      * Allow the job to be split if there are multiple file inputs.
-     * @return
      */
     boolean isSplittable();
 

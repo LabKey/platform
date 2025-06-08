@@ -1460,7 +1460,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    private class IdColumnRenderer extends DataColumn
+    private static class IdColumnRenderer extends DataColumn
     {
         public IdColumnRenderer(ColumnInfo col)
         {

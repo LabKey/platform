@@ -97,7 +97,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        SharedStudyTest initTest = (SharedStudyTest)getCurrentTest();
+        SharedStudyTest initTest = getCurrentTest();
 
         initTest.doSetup();
     }

@@ -269,7 +269,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         ArrayList<String> group2and3ptids = new ArrayList<>();
         group2and3ptids.addAll(Arrays.asList(GROUP2_PTIDS));
         group2and3ptids.addAll(Arrays.asList(GROUP3_PTIDS));
-        verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[group2and3ptids.size()]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
+        verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[0]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
 
         if (_studyHelper.isSpecimenModulePresent())
         {
@@ -1049,7 +1049,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         String filterStr = "";
         for (String val : values)
         {
-            if (!filterStr.equals(""))
+            if (!filterStr.isEmpty())
                 filterStr = filterStr + ";";
 
             filterStr = filterStr + val;

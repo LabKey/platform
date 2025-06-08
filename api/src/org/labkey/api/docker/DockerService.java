@@ -109,7 +109,7 @@ public interface DockerService
         appArmorProfile("APPARMOR_PROFILE"),
         labKeyHostIP("LABKEY_HOST_IP");
 
-        private String _altName;
+        private final String _altName;
         private boolean _isInt = false;
 
         DockerConfigKey(String altName)
@@ -286,6 +286,7 @@ public interface DockerService
 
         ImageConfigBuilder setCapDrops(String... capDrops);
 
+        @Override
         ImageConfig build();
     }
 

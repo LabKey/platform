@@ -126,7 +126,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         return new WorkbookUpdateService(this);
     }
 
-    private class WorkbookUpdateService extends AbstractQueryUpdateService
+    private static class WorkbookUpdateService extends AbstractQueryUpdateService
     {
         WorkbookUpdateService(TableInfo queryTable)
         {

@@ -38,7 +38,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetFileFieldTest init = (StudyDatasetFileFieldTest) getCurrentTest();
+        StudyDatasetFileFieldTest init = getCurrentTest();
         init.doCreateSteps();
     }
 

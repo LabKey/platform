@@ -47,7 +47,7 @@ public class Rate
         if (duration == 1)
             _toString = "" + count + "/" + StringUtils.stripEnd(unit.toString(), "S");
         else
-            _toString = "" + count + "/(" + duration + " "  + unit.toString()+ ")";
+            _toString = "" + count + "/(" + duration + " "  + unit + ")";
     }
 
     // Count per millisecond

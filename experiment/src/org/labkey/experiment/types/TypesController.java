@@ -99,7 +99,7 @@ public class TypesController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            JspView jspView = new JspView("/org/labkey/experiment/types/begin.jsp");
+            JspView jspView = new JspView<>("/org/labkey/experiment/types/begin.jsp");
             jspView.setTitle("Type Administration");
             return jspView;
         }
@@ -287,7 +287,7 @@ public class TypesController extends SpringActionController
                 dd = OntologyManager.getDomainDescriptor(typeName, getContainer());
                 properties = OntologyManager.getPropertiesForType(typeName, getContainer());
 
-                d = dd != null ? d = PropertyService.get().getDomain(dd.getDomainId()) : null;
+                d = dd != null ? PropertyService.get().getDomain(dd.getDomainId()) : null;
                 kind = d != null ? d.getDomainKind() : null;
             }
 

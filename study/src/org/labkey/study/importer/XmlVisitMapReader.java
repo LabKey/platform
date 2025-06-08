@@ -72,9 +72,8 @@ public class XmlVisitMapReader implements VisitMapReader
     {
         try
         {
-            if (xmlObj instanceof VisitMapDocument)
+            if (xmlObj instanceof VisitMapDocument doc)
             {
-                VisitMapDocument doc = (VisitMapDocument)xmlObj;
                 XmlBeansUtil.validateXmlDocument(doc);
                 _visitMapXml = doc.getVisitMap();
             }

@@ -43,5 +43,5 @@ public interface Substitution {
    * @param buffer StringBuffer to append the output to
    * @param result MatchResult with the match
    */
-    public void handleMatch(StringBuffer buffer, MatchResult result);
+  void handleMatch(StringBuffer buffer, MatchResult result);
 }

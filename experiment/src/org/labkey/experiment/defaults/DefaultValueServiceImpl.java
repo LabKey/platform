@@ -161,7 +161,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
                     }
                 }
             }
-            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
+            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[0]));
             t.commit();
         }
         catch (ValidationException e)

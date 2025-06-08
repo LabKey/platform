@@ -36,9 +36,9 @@ public class RunDetailOptions
         LongFormat("Long Format", false, new String[0]),
         DefaultFormat("Default Format", false, new String[0]);
 
-        private String _caption;
-        private boolean _selectable;
-        private String[] _requiredProperties;
+        private final String _caption;
+        private final boolean _selectable;
+        private final String[] _requiredProperties;
 
         DataIdentifier(String caption, boolean selectable, String[] requiredProperties)
         {

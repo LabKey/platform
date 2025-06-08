@@ -194,7 +194,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     {
 
         public ViewActionParameterPropertyValues(ServletRequest request) {
-            this(request, (String)null, (String)null);
+            this(request, null, null);
         }
 
         public ViewActionParameterPropertyValues(ServletRequest request, @Nullable String prefix, @Nullable String prefixSeparator)
@@ -289,12 +289,14 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
+    @Override
     public Container getContainer()
     {
         return getViewContext().getContainer();
     }
 
 
+    @Override
     public User getUser()
     {
         return getViewContext().getUser();
@@ -507,7 +509,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
                 else if (propClass.isArray())
                 {
                     if (value instanceof Collection)
-                        value = ((Collection) value).toArray(new String[((Collection) value).size()]);
+                        value = ((Collection) value).toArray(new String[0]);
                     else if (!value.getClass().isArray())
                         value = new String[] {String.valueOf(value)};
                     converted = ConvertUtils.convert((String[])value, propClass);

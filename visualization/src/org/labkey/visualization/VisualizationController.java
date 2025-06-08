@@ -248,7 +248,7 @@ public class VisualizationController extends SpringActionController
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
-    public class GetMeasuresAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
+    public static class GetMeasuresAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
         @Override
         public ApiResponse execute(Form measureRequest, BindException errors)
@@ -274,7 +274,7 @@ public class VisualizationController extends SpringActionController
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
-    public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
+    public static class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
         @Override
         public ApiResponse execute(Form measureRequest, BindException errors)
@@ -305,7 +305,7 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ClearMeasuresCacheAction extends MutatingApiAction<Object>
+    public static class ClearMeasuresCacheAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object measureRequest, BindException errors)
@@ -422,7 +422,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetVisualizationTypes extends ReadOnlyApiAction
+    public static class GetVisualizationTypes extends ReadOnlyApiAction<Object>
     {
         Map<String, Object> getBaseTypeProperties(Study study)
         {
@@ -499,7 +499,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     @Marshal(Marshaller.Jackson)
-    public class GetDataAction extends MutatingApiAction<VisDataRequest>
+    public static class GetDataAction extends MutatingApiAction<VisDataRequest>
     {
         @Override
         protected ObjectReader getObjectReader(Class c)
@@ -535,7 +535,7 @@ public class VisualizationController extends SpringActionController
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
             sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
             String filterDescription = sqlGenerator.getFilterDescription();
-            if (filterDescription != null && filterDescription.length() > 0)
+            if (filterDescription != null && !filterDescription.isEmpty())
                 extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
@@ -574,7 +574,7 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class TestGetDataAction extends SimpleViewAction<Object>
+    public static class TestGetDataAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object noform, BindException errors)
@@ -626,7 +626,7 @@ public class VisualizationController extends SpringActionController
             sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
 
             String filterDescription = sqlGenerator.getFilterDescription();
-            if (filterDescription.length() > 0)
+            if (!filterDescription.isEmpty())
                 extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
@@ -666,7 +666,7 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class cdsTestGetDataAction extends SimpleViewAction<Object>
+    public static class cdsTestGetDataAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object noform, BindException errors)
@@ -685,7 +685,7 @@ public class VisualizationController extends SpringActionController
      * Alternately a form-encoded post with a parameter called svg to allow JavaScript clients to access it
      */
     @RequiresPermission(ReadPermission.class)
-    abstract class ExportSVGAction extends BaseViewAction<Object>
+    abstract static class ExportSVGAction extends BaseViewAction<Object>
     {
         private SvgSource _svgSource;
 
@@ -1335,7 +1335,7 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetGenericReportColumnsAction extends ReadOnlyApiAction<ColumnListForm>
+    public static class GetGenericReportColumnsAction extends ReadOnlyApiAction<ColumnListForm>
     {
         @Override
         public ApiResponse execute(ColumnListForm form, BindException errors)

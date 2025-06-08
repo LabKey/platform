@@ -5673,6 +5673,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getRunsUsingDataIds(ids);
     }
 
+    @Override
     public List<ExpRunImpl> getRunsUsingDataIds(List<Integer> ids)
     {
         SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
@@ -7217,16 +7218,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             List<List<?>> expObjectParams = params.stream().map(
                     runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
             ).collect(toList());
-            StringBuilder expObjectSql = new StringBuilder("INSERT INTO ").append(OntologyManager.getTinfoObject())
-                    .append(" (ObjectUri, Container) VALUES (?, ?)");
-            Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
+            String expObjectSql = "INSERT INTO " + OntologyManager.getTinfoObject() +
+                    " (ObjectUri, Container) VALUES (?, ?)";
+            Table.batchExecute(getExpSchema(), expObjectSql, expObjectParams);
 
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(getTinfoExperimentRun().toString()).
-                    append(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
-                            "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '").
-                    append(c.getId()).append("')");
+            String sql = "INSERT INTO " + getTinfoExperimentRun().toString() +
+                    " (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
+                    "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '" +
+                    c.getId() + "')";
 
-            Table.batchExecute(getExpSchema(), sql.toString(), params);
+            Table.batchExecute(getExpSchema(), sql, params);
 
             List<String> runLsids = params.stream().map(p -> (String) p.get(0)).toList();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.LSID.name()), runLsids, IN);
@@ -10039,7 +10040,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         // if not otherwise referenced, move the file. Otherwise, copy the file
         boolean isMove = getFileReferenceCount(user, sourceFileContainer, sourceFile) == 0; // source record already moved to target folder
-        FileSystemAuditProvider.FileSystemAuditEvent event = null;
+        FileSystemAuditProvider.FileSystemAuditEvent event;
         if (isMove)
         {
             boolean success = sourceFile.renameTo(targetFile);
@@ -10283,7 +10284,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
             assertEquals(sampleIn, materialRunInput.getMaterial());
             assertEquals("Sample Goo", materialRunInput.getRole());
-            assertEquals(materialRunInput.getLSIDNamespacePrefix(), MaterialInput.NAMESPACE);
+            assertEquals(MaterialInput.NAMESPACE, materialRunInput.getLSIDNamespacePrefix());
             assertTrue(materialRunInput.getLSID().contains(":MaterialInput:" + sampleIn.getRowId() + "." + pa.getRowId()));
 
             ExpMaterialRunInputImpl x = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());
@@ -10402,7 +10403,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         static public final int AZ = startId+9;
         static public final int Z21 = startId+10;
 
-        static edge e(int a,int b) {return new edge(a,b);};
+        static edge e(int a,int b) {return new edge(a,b);}
+
         static public final List<edge> edges = List.of(
                 e(Q,QQ),
                 e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),

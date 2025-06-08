@@ -17,7 +17,6 @@
 package org.labkey.wiki;
 
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 

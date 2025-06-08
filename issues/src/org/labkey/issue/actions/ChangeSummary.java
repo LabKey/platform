@@ -388,19 +388,17 @@ public class ChangeSummary
                         m.setTextContent(template.renderTextBody(container));
 
                     // html body plus some additional content
-                    StringBuilder html = new StringBuilder();
-                    html.append("<html><head></head><body>");
-                    html.append(template.renderHtmlBody(container));
-                    html.append(
+                    String html = "<html><head></head><body>" +
+                            template.renderHtmlBody(container) +
                             "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
-                                    "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
-                                    "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
-                                    "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
-                                    "  </div>\n" +
-                                    "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(container, _issueListDef.getName()).singularName) + "\"></meta>\n" +
-                                    "</div>\n");
-                    html.append("</body></html>");
-                    m.setEncodedHtmlContent(html.toString());
+                            "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
+                            "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
+                            "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
+                            "  </div>\n" +
+                            "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(container, _issueListDef.getName()).singularName) + "\"></meta>\n" +
+                            "</div>\n" +
+                            "</body></html>";
+                    m.setEncodedHtmlContent(html);
 
                     emailer.addMessage(recipient.getEmail(), m);
                     Notification notification = createNotification(recipient, m,

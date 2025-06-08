@@ -24,7 +24,7 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 public class SampleTypePublishStartAction extends AbstractPublishStartAction<SampleTypePublishStartAction.SampleTypePublishStartForm>
 {
     private List<Integer> _ids = new ArrayList<>();
-    private List<Integer> _sampleTypeIds = new ArrayList<>();
+    private final List<Integer> _sampleTypeIds = new ArrayList<>();
     private ExpSampleType _sampleType;
 
     public static class SampleTypePublishStartForm extends ViewForm implements PublishStartForm
@@ -47,6 +47,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
+        @Override
         public String getContainerFilterName()
         {
             return _containerFilterName;

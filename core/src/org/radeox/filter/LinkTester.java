@@ -40,5 +40,5 @@ public interface LinkTester {
    *
    * @return exists returns true if the objects exists
    */
-  public boolean exists(String link);
+  boolean exists(String link);
 }

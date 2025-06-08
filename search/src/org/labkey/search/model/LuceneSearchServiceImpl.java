@@ -143,7 +143,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -1539,7 +1538,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         for (Map.Entry<FIELD_NAME, Float> entry : enumMap.entrySet())
             boosts.put(entry.getKey().toString(), entry.getValue());
 
-        standardFields = boosts.keySet().toArray(new String[boosts.size()]);
+        standardFields = boosts.keySet().toArray(new String[0]);
     }
 
     @Override

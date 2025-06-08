@@ -87,7 +87,7 @@ public class Crosstab
 
         int rowFieldIndex = 0;
         int colFieldIndex = 0;
-        int statFieldIndex = 0;
+        int statFieldIndex;
         String statCol = null;
 
         try {
@@ -277,14 +277,14 @@ public class Crosstab
         if (type == StatType.numeric)
         {
             if (data != null)
-                statData = data.toArray(new Number[data.size()]);
+                statData = data.toArray(new Number[0]);
             else
                 statData = new Number[0];
         }
         else if (type == StatType.string)
         {
             if (data != null)
-                statData = data.toArray(new String[data.size()]);
+                statData = data.toArray(new String[0]);
             else
                 statData = new String[0];
         }

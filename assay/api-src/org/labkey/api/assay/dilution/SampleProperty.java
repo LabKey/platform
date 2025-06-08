@@ -33,8 +33,8 @@ public enum SampleProperty
     ReverseDilutionDirection(PropertyType.BOOLEAN, true),
     FitError(PropertyType.DOUBLE, false);
 
-    private PropertyType _type;
-    private boolean _isTemplateProperty;
+    private final PropertyType _type;
+    private final boolean _isTemplateProperty;
 
     SampleProperty(PropertyType type, boolean setInTemplateEditor)
     {

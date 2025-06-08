@@ -58,7 +58,7 @@ public class StudyVisitTagTest extends StudyBaseTest
     protected final String[] SINGLE_USE_TAG_ERRORS = {DATE_FOLDER_STUDY5}; //, DATE_FOLDER_STUDY6};
     protected final String[] VISIT_BASED_STUDIES = {VISIT_FOLDER_STUDY1}; //, VISIT_FOLDER_STUDY2, VISIT_FOLDER_STUDY3, VISIT_FOLDER_STUDY4, VISIT_FOLDER_STUDY5, VISIT_FOLDER_STUDY6, VISIT_FOLDER_STUDY7, VISIT_FOLDER_STUDY8};
 
-    private List<String> ALL_STUDIES = new ArrayList<>();
+    private final List<String> ALL_STUDIES = new ArrayList<>();
 
     @Override
     protected BrowserType bestBrowser()
@@ -188,7 +188,7 @@ public class StudyVisitTagTest extends StudyBaseTest
         clickAndWait(Locator.linkWithSpan("Submit"));
     }
 
-    public class VisitTag
+    public static class VisitTag
     {
         protected String name;
         protected String caption;
@@ -204,7 +204,7 @@ public class StudyVisitTagTest extends StudyBaseTest
         }
     }
 
-    public class VisitTagMap
+    public static class VisitTagMap
     {
         protected String visitTag;
         protected String visit;

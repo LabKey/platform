@@ -17,7 +17,6 @@
 package org.labkey.list.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryUpdateService;

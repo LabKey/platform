@@ -1,7 +1,6 @@
 package org.labkey.test.pages.mothership;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
@@ -10,16 +9,12 @@ import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementCache>
 {
-    private MothershipHelper mothershipHelper;
+    private final MothershipHelper mothershipHelper;
 
     public ClientExceptionPage(WebDriver driver)
     {

@@ -17,7 +17,6 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -100,8 +99,7 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     public boolean equals(Object o)
     {
         if (this == o) return true;
-        if (!(o instanceof DataClass)) return false;
-        DataClass dataClass = (DataClass) o;
+        if (!(o instanceof DataClass dataClass)) return false;
         return Objects.equals(this.getLSID(), dataClass.getLSID());
     }
 

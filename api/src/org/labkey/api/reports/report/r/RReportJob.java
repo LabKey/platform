@@ -277,7 +277,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
         protected void processOutputs(RReport report, List<ParamReplacement> outputSubst) throws Exception
         {
-            if (outputSubst.size() > 0)
+            if (!outputSubst.isEmpty())
             {
                 // write the output substitution map to disk so we can render the view later
                 FileLike reportDirFileLike = report.getReportDirFileLike(getJob().getContainerId());

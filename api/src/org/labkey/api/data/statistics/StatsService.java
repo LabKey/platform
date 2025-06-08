@@ -18,7 +18,6 @@ package org.labkey.api.data.statistics;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
-import java.awt.geom.Arc2D;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -48,10 +47,10 @@ public interface StatsService
         LINEAR("Linear", "linear"),
         NONE("None", "none");
 
-        private String _label;
-        private String _colSuffix;
+        private final String _label;
+        private final String _colSuffix;
 
-        private CurveFitType(String label, String colSuffix)
+        CurveFitType(String label, String colSuffix)
         {
             _label = label;
             _colSuffix = colSuffix;
@@ -94,9 +93,9 @@ public interface StatsService
         POSITIVE("Positive"),
         NEGATIVE("Negative");
 
-        private String _label;
+        private final String _label;
 
-        private AUCType(String label)
+        AUCType(String label)
         {
             _label = label;
         }
@@ -110,7 +109,6 @@ public interface StatsService
     /**
      * Factory to return a statistics instance for the specified data
      * @param data an array of data to compute statistics over
-     * @return
      */
     MathStat getStats(double[] data);
     MathStat getStats(Collection<Double> data);

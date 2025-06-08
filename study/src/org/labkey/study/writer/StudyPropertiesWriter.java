@@ -19,7 +19,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;

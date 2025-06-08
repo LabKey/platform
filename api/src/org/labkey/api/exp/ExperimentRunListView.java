@@ -188,7 +188,7 @@ public class ExperimentRunListView extends QueryView
             addToExperimentButton.addMenuItem("Create new run group...", javascript);
 
             List<? extends ExpExperiment> experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
-            if (experiments.size() > 0)
+            if (!experiments.isEmpty())
             {
                 addToExperimentButton.addSeparator();
             }

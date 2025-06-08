@@ -115,11 +115,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
                 return bound._getter.invoke(_bean);
             }
         }
-        catch (IllegalAccessException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (InvocationTargetException x)
+        catch (IllegalAccessException | InvocationTargetException x)
         {
             throw new RuntimeException(x);
         }

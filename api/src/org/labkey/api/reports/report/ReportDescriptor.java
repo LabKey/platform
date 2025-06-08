@@ -244,7 +244,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             {
                 return (String)o;
             }
-            throw new IllegalStateException("Property value for: " + prop.toString() + " is not a String");
+            throw new IllegalStateException("Property value for: " + prop + " is not a String");
         }
         return null;
     }

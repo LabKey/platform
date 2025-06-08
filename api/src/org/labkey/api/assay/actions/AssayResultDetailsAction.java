@@ -53,10 +53,9 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         _dataRowId = form.getDataRowId();
 
         AssayProvider provider = form.getProvider();
-        if (!(provider instanceof AbstractAssayProvider))
+        if (!(provider instanceof AbstractAssayProvider aap))
             throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayResultDetailsAction");
 
-        AbstractAssayProvider aap = (AbstractAssayProvider) provider;
         _data = aap.getDataForDataRow(_dataRowId, _protocol);
         if (_data == null)
         {

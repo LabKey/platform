@@ -212,7 +212,7 @@ public abstract class BrowserEndpoint extends Endpoint
                         partial.append(s);
                         return;
                     }
-                    if (partial.length() > 0)
+                    if (!partial.isEmpty())
                     {
                         partial.append(s);
                         s = partial.toString();

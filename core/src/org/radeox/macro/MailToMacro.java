@@ -41,9 +41,9 @@ import java.io.Writer;
  */
 
 public class MailToMacro extends LocalePreserved {
-  private static Logger log = LogManager.getLogger(MailToMacro.class);
+  private static final Logger log = LogManager.getLogger(MailToMacro.class);
 
-  private String[] paramDescription = {"1: mail address"};
+  private final String[] paramDescription = {"1: mail address"};
 
   @Override
   public String getLocaleKey() {

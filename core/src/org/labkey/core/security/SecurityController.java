@@ -115,7 +115,6 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -142,7 +141,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.user.SecurityAccessView;
 import org.labkey.core.user.UserController;
@@ -412,7 +410,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetMaxPhiLevelAction extends ReadOnlyApiAction<Object>
+    public static class GetMaxPhiLevelAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -432,7 +430,7 @@ public class SecurityController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ActionNames("permissions,project")
-    public class PermissionsAction extends SimpleViewAction<PermissionsForm>
+    public static class PermissionsAction extends SimpleViewAction<PermissionsForm>
     {
         @Override
         public ModelAndView getView(PermissionsForm form, BindException errors)
@@ -975,7 +973,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompleteMemberAction extends ReadOnlyApiAction<CompleteMemberForm>
+    public static class CompleteMemberAction extends ReadOnlyApiAction<CompleteMemberForm>
     {
         @Override
         public ApiResponse execute(CompleteMemberForm form, BindException errors)
@@ -1051,7 +1049,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompleteUserAction extends ReadOnlyApiAction<CompleteUserForm>
+    public static class CompleteUserAction extends ReadOnlyApiAction<CompleteUserForm>
     {
         @Override
         public ApiResponse execute(CompleteUserForm form, BindException errors)
@@ -1081,7 +1079,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CompleteUserReadAction extends ReadOnlyApiAction<CompleteUserForm>
+    public static class CompleteUserReadAction extends ReadOnlyApiAction<CompleteUserForm>
     {
         @Override
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
@@ -1100,7 +1098,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GroupExportAction extends ExportAction<GroupForm>
+    public static class GroupExportAction extends ExportAction<GroupForm>
     {
         @Override
         public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1204,7 +1202,7 @@ public class SecurityController extends SpringActionController
     }
    
     @RequiresPermission(AdminPermission.class)
-    public class UpdatePermissionsAction extends FormHandlerAction
+    public static class UpdatePermissionsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors) {}
@@ -1222,7 +1220,7 @@ public class SecurityController extends SpringActionController
             if(null != oldPolicy)
             {
                 List<Role> oldRoles = oldPolicy.getAssignedRoles(group);
-                if(oldRoles.size() > 0)
+                if(!oldRoles.isEmpty())
                     oldRole = oldRoles.get(0);
             }
 
@@ -1230,7 +1228,7 @@ public class SecurityController extends SpringActionController
             if(null != newPolicy)
             {
                 List<Role> newRoles = newPolicy.getAssignedRoles(group);
-                if(newRoles.size() > 0)
+                if(!newRoles.isEmpty())
                     newRole = newRoles.get(0);
             }
 
@@ -2411,19 +2409,19 @@ public class SecurityController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new CompleteUserReadAction()
+                    new CompleteUserReadAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new PermissionsAction(),
+                    new PermissionsAction(),
                 controller.new StandardDeleteGroupAction(),
                 controller.new GroupAction(),
-                controller.new CompleteMemberAction(),
-                controller.new CompleteUserAction(),
-                controller.new GroupExportAction(),
+                    new CompleteMemberAction(),
+                    new CompleteUserAction(),
+                    new GroupExportAction(),
                 controller.new GroupPermissionAction(),
-                controller.new UpdatePermissionsAction(),
+                    new UpdatePermissionsAction(),
                     new ShowRegistrationEmailAction(),
                     new GroupDiagramAction(),
                 controller.new FolderAccessAction()

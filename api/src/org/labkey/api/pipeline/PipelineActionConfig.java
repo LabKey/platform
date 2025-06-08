@@ -54,11 +54,6 @@ public class PipelineActionConfig
 
     /**
      *
-     * @param id
-     * @param state
-     * @param label
-     * @param isSingleAction - true if this action does not handle multiple subactions, will
-     * usually result in a button without a menu
      */
     public PipelineActionConfig(String id, displayState state, String label, boolean isSingleAction)
     {

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.pipeline.PipelineController.ResetEmailNotificationAction" %>
 <%@ page import="org.labkey.pipeline.PipelineController.UpdateEmailNotificationAction" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -49,8 +50,8 @@
     String notifyUsersOnError = StringUtils.defaultString(PipelineEmailPreferences.get().getNotifyUsersOnError(c)).replaceAll(";", "\n");
     String successNotifyInterval = StringUtils.defaultString(PipelineEmailPreferences.get().getSuccessNotificationInterval(c));
     String failureNotifyInterval = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotificationInterval(c));
-    String successNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getSuccessNotifyStart(c), "12:00");
-    String failureNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotifyStart(c), "12:00");
+    String successNotifyStart = Objects.toString(PipelineEmailPreferences.get().getSuccessNotifyStart(c), "12:00");
+    String failureNotifyStart = Objects.toString(PipelineEmailPreferences.get().getFailureNotifyStart(c), "12:00");
 
     HtmlString displaySuccess = h(notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none");
     HtmlString displayError = h(notifyOwnerOnError || !StringUtils.isEmpty(notifyUsersOnError) ? "" : "none");

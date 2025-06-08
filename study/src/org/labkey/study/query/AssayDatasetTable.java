@@ -48,9 +48,8 @@ public class AssayDatasetTable extends LinkedDatasetTable
 
         TableInfo assayResultTable = getAssayResultTable();
         ExpObject publishSource = _dsd.resolvePublishSource();
-        if (assayResultTable != null && publishSource instanceof ExpProtocol)
+        if (assayResultTable != null && publishSource instanceof ExpProtocol protocol)
         {
-            ExpProtocol protocol = (ExpProtocol) publishSource;
 
             AssayProvider provider = AssayService.get().getProvider(protocol);
             AssayTableMetadata tableMeta = provider.getTableMetadata(protocol);
@@ -81,9 +80,8 @@ public class AssayDatasetTable extends LinkedDatasetTable
             return _defaultVisibleColumns;
 
         ExpObject publishSource = _dsd.resolvePublishSource();
-        if (publishSource instanceof ExpProtocol)
+        if (publishSource instanceof ExpProtocol protocol)
         {
-            ExpProtocol protocol = (ExpProtocol)publishSource;
 
             // compute default visible columns for assay dataset
             List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
@@ -144,9 +142,8 @@ public class AssayDatasetTable extends LinkedDatasetTable
         // so transform to do a lookup instead
         ExpObject source = _dsd.resolvePublishSource();
         FieldKey fieldKey = null;
-        if (source instanceof ExpProtocol)
+        if (source instanceof ExpProtocol protocol)
         {
-            ExpProtocol protocol = (ExpProtocol)source;
             if (protocol != null)
             {
                 // First, if it's Properties,
@@ -191,7 +188,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
                 if (name.toLowerCase().startsWith("run"))
                 {
                     String runProperty = name.substring("run".length()).trim();
-                    if (runProperty.length() > 0 && runFieldKey != null)
+                    if (!runProperty.isEmpty() && runFieldKey != null)
                     {
                         fieldKey = new FieldKey(runFieldKey, runProperty);
                     }
@@ -199,7 +196,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
                 else if (name.toLowerCase().startsWith("batch"))
                 {
                     String batchPropertyName = name.substring("batch".length()).trim();
-                    if (batchPropertyName.length() > 0 && runFieldKey != null)
+                    if (!batchPropertyName.isEmpty() && runFieldKey != null)
                     {
                         fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
                     }
@@ -207,7 +204,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
                 else if (name.toLowerCase().startsWith("analyte"))
                 {
                     String analytePropertyName = name.substring("analyte".length()).trim();
-                    if (analytePropertyName.length() > 0)
+                    if (!analytePropertyName.isEmpty())
                     {
                         fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
                         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
@@ -289,11 +286,10 @@ public class AssayDatasetTable extends LinkedDatasetTable
         if (_assayResultTable == null)
         {
             ExpObject source = _dsd.resolvePublishSource();
-            if (!(source instanceof ExpProtocol))
+            if (!(source instanceof ExpProtocol protocol))
             {
                 return null;
             }
-            ExpProtocol protocol = (ExpProtocol)source;
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
             {

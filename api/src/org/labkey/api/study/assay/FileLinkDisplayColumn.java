@@ -378,7 +378,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 
             if (!f.exists())
             {
-                String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value.toString();
+                String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value;
                 f = new File(fullPath);
             }
 

@@ -7,7 +7,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.query.ExprColumn;
 
 public class FieldsTable extends BaseFieldsTable
 {

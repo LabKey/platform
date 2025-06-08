@@ -225,9 +225,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
     {
         if (report != null)
         {
-            if (report instanceof AttachmentReport)
+            if (report instanceof AttachmentReport attachmentReport)
             {
-                AttachmentReport attachmentReport = (AttachmentReport)report;
                 String filename = attachmentReport.getFilePath();
 
                 if (null == filename)
@@ -239,10 +238,9 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 return Attachment.getFileIcon(StringUtils.trimToEmpty(filename));
             }
 
-            if (report instanceof LinkReport)
+            if (report instanceof LinkReport linkReport)
             {
                 Container c = ContainerManager.getForId(report.getContainerId());
-                LinkReport linkReport = (LinkReport)report;
                 // external link versus internal link
                 String url = linkReport.getUrl(c);
                 if (url != null)
@@ -274,9 +272,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
     {
         if (report != null)
         {
-            if (report instanceof AttachmentReport)
+            if (report instanceof AttachmentReport attachmentReport)
             {
-                AttachmentReport attachmentReport = (AttachmentReport)report;
                 String filename = attachmentReport.getFilePath();
 
                 if (null == filename)
@@ -288,10 +285,9 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 return Attachment.getFileIconFontCls(StringUtils.trimToEmpty(filename));
             }
 
-            if (report instanceof LinkReport)
+            if (report instanceof LinkReport linkReport)
             {
                 Container c = ContainerManager.getForId(report.getContainerId());
-                LinkReport linkReport = (LinkReport)report;
                 // external link versus internal link
                 String url = linkReport.getUrl(c);
                 if (url != null)

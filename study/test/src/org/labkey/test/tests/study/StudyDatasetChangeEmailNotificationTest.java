@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.dumbster.EmailRecordTable;
@@ -28,7 +27,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetChangeEmailNotificationTest init = (StudyDatasetChangeEmailNotificationTest) getCurrentTest();
+        StudyDatasetChangeEmailNotificationTest init = getCurrentTest();
         init.doCreateSteps();
     }
 

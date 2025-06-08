@@ -142,7 +142,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
+    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
@@ -267,10 +267,10 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertNull(FileUtil.normalize(".."));
             assertNull(FileUtil.normalize("/.."));
             assertNull(FileUtil.normalize("/./.."));
-            assertEquals(FileUtil.normalize("/dir//down"), "/dir/down");
+            assertEquals("/dir/down", FileUtil.normalize("/dir//down"));
             assertNull(FileUtil.normalize("/dir/../down/../.."));
-            assertEquals(FileUtil.normalize("./dir/..//"), "/");
-            assertEquals(FileUtil.normalize("/dir/./../down/"), "/down");
+            assertEquals("/", FileUtil.normalize("./dir/..//"));
+            assertEquals("/down", FileUtil.normalize("/dir/./../down/"));
         }
 
 

@@ -91,7 +91,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             case RecordCount:
                 return wrapColumn(alias, _rootTable.getColumn("RecordCount"));
             case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
+                return createPropertiesColumn(alias);
             case EntityId:
                 return wrapColumn(alias, _rootTable.getColumn("EntityId"));
         }

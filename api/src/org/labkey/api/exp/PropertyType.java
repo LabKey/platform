@@ -924,7 +924,7 @@ public enum PropertyType
     private final Class javaType;
     private final Class[] additionalTypes;
 
-    private static Map<String, PropertyType> uriToProperty = null;
+    private static Map<String, PropertyType> uriToProperty;
     private static Map<String, PropertyType> xarToProperty = null;
 
     PropertyType(String typeURI,

@@ -59,7 +59,7 @@ public class AssayProviderSchema extends AssaySchema
     private Map<String, ExpProtocol> _protocolsByName;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
-    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
+    private final Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
 
     public AssayProviderSchema(User user, Container container, @NotNull AssayProvider provider, @Nullable Container targetStudy)
     {
@@ -182,10 +182,10 @@ public class AssayProviderSchema extends AssaySchema
 
     public static class TestCase extends Assert
     {
-        private Mockery _context;
-        private ExpProtocol _protocol1;
-        private AssayProvider _provider1;
-        private AssayProviderSchema _schemaImpl;
+        private final Mockery _context;
+        private final ExpProtocol _protocol1;
+        private final AssayProvider _provider1;
+        private final AssayProviderSchema _schemaImpl;
 
         public TestCase()
         {

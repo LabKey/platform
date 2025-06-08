@@ -2,7 +2,6 @@ package org.labkey.experiment.api;
 
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;

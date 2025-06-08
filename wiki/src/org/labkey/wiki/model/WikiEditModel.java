@@ -18,7 +18,6 @@ package org.labkey.wiki.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
@@ -130,7 +129,7 @@ public class WikiEditModel
 
     public boolean hasAttachments()
     {
-        return null != _wiki && null != _wiki.getAttachments() && _wiki.getAttachments().size() > 0;
+        return null != _wiki && null != _wiki.getAttachments() && !_wiki.getAttachments().isEmpty();
     }
 
     public String getDefName()

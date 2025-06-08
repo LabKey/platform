@@ -112,12 +112,12 @@ public class StudyPipeline extends PipelineProvider
             urlReset.replaceParameter("path", directory.getPathParameter());
 
             String actionId = StudyController.ResetPipelineAction.class.getName() + ":Delete lock";
-            directory.addAction(new PipelineAction(actionId, "Delete lock", urlReset, lockFiles.toArray(new File[lockFiles.size()]), true));
+            directory.addAction(new PipelineAction(actionId, "Delete lock", urlReset, lockFiles.toArray(new File[0]), true));
         }
 
         files = new File[0];
         if (!datasetFiles.isEmpty())
-            files = datasetFiles.toArray(new File[datasetFiles.size()]);
+            files = datasetFiles.toArray(new File[0]);
 
         String actionId = createActionId(StudyController.ImportStudyBatchAction.class, "Import Datasets");
         addAction(actionId, StudyController.ImportStudyBatchAction.class, "Import Datasets", directory, files, false, false, includeAll);

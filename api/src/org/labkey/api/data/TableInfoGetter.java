@@ -22,5 +22,5 @@ package org.labkey.api.data;
  */
 public interface TableInfoGetter
 {
-    public TableInfo getTableInfo();
+    TableInfo getTableInfo();
 }

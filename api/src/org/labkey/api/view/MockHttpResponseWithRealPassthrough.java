@@ -76,7 +76,7 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
     /** Checks the size of the current output to make sure it hasn't exceeded the limit before appending the new content */
     private class SizeLimitingPrintWriter extends PrintWriter
     {
-        private PrintWriter _out;
+        private final PrintWriter _out;
 
         public SizeLimitingPrintWriter(PrintWriter out)
         {

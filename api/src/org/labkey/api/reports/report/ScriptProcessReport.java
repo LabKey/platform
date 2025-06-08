@@ -23,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.ResultsFactory;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -44,14 +42,12 @@ import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.reports.report.ScriptEngineReport.DATA_INPUT;
 import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 
 /**
@@ -179,7 +175,8 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
 
     public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
     {
-        return handleParameters(this, parameters, new ParameterHandler<Thumbnail>(){
+        return handleParameters(this, parameters, new ParameterHandler<>()
+        {
             private Thumbnail _thumbnail = null;
 
             @Override
@@ -253,9 +250,6 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
     }
     /**
      * Create the script to be executed by the scripting engine
-     * @param outputSubst
-     * @return
-     * @throws Exception
      */
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
@@ -272,11 +266,6 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
 
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
-     * @param script
-     * @param inputFile
-     * @param outputSubst
-     * @param inputParameters - client-passed params that get injected into the prolog of the report script
-     * @throws Exception
      */
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
@@ -326,12 +315,14 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
     }
 
 
+    @Override
     protected String getSerializedScriptFileName()
     {
         return getSerializedScriptFileName(null);
     }
 
 
+    @Override
     protected String getSerializedScriptFileName(FolderExportContext context)
     {
         String extension = "script";

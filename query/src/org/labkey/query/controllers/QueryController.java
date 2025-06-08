@@ -2641,7 +2641,7 @@ public class QueryController extends SpringActionController
             {
                 returnUrl.replaceParameter(regionName + "." + QueryParam.viewName, name);
             }
-            returnUrl.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+            returnUrl.deleteParameter(regionName + "." + QueryParam.ignoreFilter);
             if (saveFilter)
             {
                 for (String key : returnUrl.getKeysByPrefix(regionName + "."))
@@ -4031,9 +4031,8 @@ public class QueryController extends SpringActionController
                 Set<Aggregate> colAggregates = new HashSet<>();
                 for (ColumnAnalyticsProvider analyticsProvider : displayColumn.getAnalyticsProviders())
                 {
-                    if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
+                    if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider baseAggProvider)
                     {
-                        BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
                         Map<String, Object> props = new HashMap<>();
                         props.put("label", baseAggProvider.getLabel());
 
@@ -4227,7 +4226,7 @@ public class QueryController extends SpringActionController
             settings.setShowRows(ShowRows.ALL);
 
             //add container filter if supplied
-            if (form.getContainerFilter() != null && form.getContainerFilter().length() > 0)
+            if (form.getContainerFilter() != null && !form.getContainerFilter().isEmpty())
             {
                 ContainerFilter.Type containerFilterType =
                     ContainerFilter.Type.valueOf(form.getContainerFilter());
@@ -5044,7 +5043,7 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("Empty request");
 
             JSONArray commands = json.optJSONArray("commands");
-            if (commands == null || commands.length() == 0)
+            if (commands == null || commands.isEmpty())
             {
                 throw new NotFoundException("Empty request");
             }
@@ -6390,7 +6389,6 @@ public class QueryController extends SpringActionController
             CstmView view;
             if (!existing.isEmpty())
             {
-                view = existing.get(0);
             }
             else
             {
@@ -7012,7 +7010,7 @@ public class QueryController extends SpringActionController
                                 }
                             }
 
-                            if (columns.size() > 0)
+                            if (!columns.isEmpty())
                                 qinfo.put("columns", columns);
                         }
 
@@ -8210,9 +8208,9 @@ public class QueryController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class UpdateQueryImportTemplateAction extends MutatingApiAction<QueryImportTemplateForm>
+    public static class UpdateQueryImportTemplateAction extends MutatingApiAction<QueryImportTemplateForm>
     {
-        private DomainKind _kind;
+        private DomainKind<?> _kind;
         private UserSchema _schema;
         private TableInfo _tInfo;
         private QueryDefinition _queryDef;
@@ -8364,7 +8362,7 @@ public class QueryController extends SpringActionController
             {
                 TablesDocument doc = null;
                 TableType xmlTable = null;
-                TableType.ImportTemplates xmlImportTemplates = null;
+                TableType.ImportTemplates xmlImportTemplates;
 
                 if (queryDef != null)
                 {

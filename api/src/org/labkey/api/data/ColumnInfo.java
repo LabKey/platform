@@ -169,8 +169,6 @@ public interface ColumnInfo extends ColumnRenderProperties
      *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
-     * @param tableAliasName
-     * @return
      */
     SQLFragment getValueSql(String tableAliasName);
 

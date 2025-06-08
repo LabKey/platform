@@ -27,9 +27,9 @@ import java.net.URI;
  */
 public class DirectRequest
 {
-    private String _method;
-    private URI _endpoint;
-    private Multimap<String, String> _headers;
+    private final String _method;
+    private final URI _endpoint;
+    private final Multimap<String, String> _headers;
 
     public DirectRequest(String method, URI endpoint, Multimap<String, String> headers)
     {

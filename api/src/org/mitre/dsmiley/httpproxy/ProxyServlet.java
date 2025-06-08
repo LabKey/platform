@@ -325,7 +325,7 @@ public class ProxyServlet extends HttpServlet {
         //Usually, clients implement Closeable:
         if (proxyClient instanceof Closeable) {
             try {
-                ((Closeable) proxyClient).close();
+                proxyClient.close();
             } catch (IOException e) {
                 log("While destroying servlet, shutting down HttpClient: "+e, e);
             }
@@ -635,7 +635,7 @@ public class ProxyServlet extends HttpServlet {
                 String cookieName = cookieSplit[0].trim();
                 if (cookieName.startsWith(getCookieNamePrefix(cookieName))) {
                     cookieName = cookieName.substring(getCookieNamePrefix(cookieName).length());
-                    if (escapedCookie.length() > 0) {
+                    if (!escapedCookie.isEmpty()) {
                         escapedCookie.append("; ");
                     }
                     escapedCookie.append(cookieName).append("=").append(cookieSplit[1].trim());
@@ -720,7 +720,7 @@ public class ProxyServlet extends HttpServlet {
         }
 
         queryString = rewriteQueryStringFromRequest(servletRequest, queryString);
-        if (queryString != null && queryString.length() > 0) {
+        if (queryString != null && !queryString.isEmpty()) {
             uri.append('?');
             // queryString is not decoded, so we need encodeUriQuery not to encode "%" characters, to avoid double-encoding
             uri.append(encodeUriQuery(queryString, false));

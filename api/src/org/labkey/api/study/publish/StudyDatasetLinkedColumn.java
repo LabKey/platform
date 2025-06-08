@@ -1,11 +1,9 @@
 package org.labkey.api.study.publish;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;

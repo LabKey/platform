@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public interface DataViewProvider
 {
-    public interface Type
+    interface Type
     {
         String getName();
         String getDescription();
@@ -67,11 +67,10 @@ public interface DataViewProvider
      * Perform any first time initialization of the provider before a request to return views, this
      * is generally called once per provider to perform any first time initialization.
      *
-     * @param context
      */
     void initialize(ContainerUser context) throws Exception;
 
-    public interface EditInfo
+    interface EditInfo
     {
         // the list of actions that are allowed
         enum Actions
@@ -122,7 +121,6 @@ public interface DataViewProvider
          * @param id the unique identifier for the data object being updated.
          * @param props the map of properties that are changing
          *
-         * @throws org.labkey.api.query.ValidationException
          */
         void validateProperties(Container container, User user, String id, Map<String, Object> props) throws ValidationException;
 
@@ -132,22 +130,17 @@ public interface DataViewProvider
          * @param id the unique identifier for the data object being updated.
          * @param props the map of properties to update
          *
-         * @throws Exception
          */
         void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception;
 
         /**
          * Return the array of actions that this edit provider supports
-         * @param container
-         * @param user
-         * @return
          */
         Actions[] getAllowableActions(Container container, User user);
 
         /**
          * Deletes the view identified by the id
          * @param id the unique identifier for the data object being updated.
-         * @throws ValidationException
          */
         void deleteView(Container container, User user, String id) throws ValidationException;
     }

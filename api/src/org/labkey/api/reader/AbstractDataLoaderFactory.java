@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser implements DataLoaderFactory
 {
-    private boolean _indexable;
+    private final boolean _indexable;
 
     public AbstractDataLoaderFactory()
     {
@@ -114,9 +114,8 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
                 Object value = row.get(cd.name);
                 if (value != null)
                 {
-                    if (value instanceof String)
+                    if (value instanceof String str)
                     {
-                        String str = (String)value;
                         if (str.contains("<"))
                             str = PageFlowUtil.filterXML(str);
                         write(h, str);

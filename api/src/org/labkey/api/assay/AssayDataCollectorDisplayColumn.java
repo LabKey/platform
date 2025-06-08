@@ -33,7 +33,7 @@ import org.labkey.api.writer.HtmlWriter;
 public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
 {
     private final AssayRunUploadForm _form;
-    private ColumnInfo _col;
+    private final ColumnInfo _col;
 
     public AssayDataCollectorDisplayColumn(TableInfo table, AssayRunUploadForm form)
     {

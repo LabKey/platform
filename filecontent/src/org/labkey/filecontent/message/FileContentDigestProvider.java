@@ -218,9 +218,9 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     public static class FileDigestForm
     {
-        private Map<Path, List<FileSystemAuditEvent>> _records;
-        private User _user;
-        private Container _container;
+        private final Map<Path, List<FileSystemAuditEvent>> _records;
+        private final User _user;
+        private final Container _container;
 
         public FileDigestForm(User user, Container container, Map<Path, List<FileSystemAuditEvent>> records)
         {

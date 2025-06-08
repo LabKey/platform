@@ -26,8 +26,8 @@ package org.labkey.api.pipeline;
  */
 public class PipelineJobWarning
 {
-    private String _message;
-    private Throwable _t;
+    private final String _message;
+    private final Throwable _t;
 
     public PipelineJobWarning(String message)
     {

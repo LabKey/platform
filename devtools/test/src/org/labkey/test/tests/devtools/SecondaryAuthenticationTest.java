@@ -200,7 +200,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         selectCmd.setFilters(Arrays.asList(new Filter("Date", dateFormat.format(date), Filter.Operator.DATE_GTE)));
         selectCmd.setColumns(Arrays.asList("*"));
 
-        SelectRowsResponse selectResp = null;
+        SelectRowsResponse selectResp;
         try
         {
             selectResp = selectCmd.execute(cn, "/");

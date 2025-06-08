@@ -107,11 +107,11 @@ public interface PropertyService
 
     Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, DomainDescriptorType xDomain);
 
-    DomainKind getDomainKind(String typeURI);
+    DomainKind<?> getDomainKind(String typeURI);
 
-    DomainKind getDomainKindByName(String name);
+    DomainKind<?> getDomainKindByName(String name);
 
-    void registerDomainKind(DomainKind type);
+    void registerDomainKind(DomainKind<?> type);
 
     /** register a property validator type */
     void registerValidatorKind(ValidatorKind kind);

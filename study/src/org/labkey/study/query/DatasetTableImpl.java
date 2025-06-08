@@ -763,7 +763,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     var ciContainer = tiParticipant.getColumn("Container");
                     SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
-                    if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                    if (getDataset().getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
                         sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
                     }
@@ -908,7 +908,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return foundTitle;
     }
 
-    private class QCStateDisplayColumn extends DataColumn
+    private static class QCStateDisplayColumn extends DataColumn
     {
         private Map<Integer, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
@@ -1199,6 +1199,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         canModifyParticipantPredicate = edit;
     }
 
+    @Override
     public boolean canUpdateRowForParticipant(String subjectid)
     {
         if (null == updatePredicate)

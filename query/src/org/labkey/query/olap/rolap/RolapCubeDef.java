@@ -48,10 +48,9 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-
-import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * Created by matthew on 8/16/14.
@@ -161,9 +160,6 @@ public class RolapCubeDef
      * Note: that the any code that generates any usages of fact table columns must cooperate in this scheme.
      * They need to correctly use the columns expression or the column alias and add factTableColumns entries.
      *
-     * @param factTableColumns
-     * @param levels
-     * @return
      */
     public String getFromSQLWithFactTableDistinct(Map<String,String> factTableColumns, LevelDef... levels)
     {
@@ -211,7 +207,7 @@ public class RolapCubeDef
             sb.append(innerSql);
         }
 
-        if (joinsIn.size() == 0)
+        if (joinsIn.isEmpty())
             return sb.toString();
 
         LinkedList<Join> list = new LinkedList(joinsIn);
@@ -458,9 +454,9 @@ public class RolapCubeDef
             }
 
             if (null == leftAlias && null != left)
-                leftAlias = StringUtils.defaultString(left.tableName, left.rightAlias);
+                leftAlias = Objects.toString(left.tableName, left.rightAlias);
             if (null != right && null == rightAlias)
-                rightAlias = StringUtils.defaultString(right.tableName, right.leftAlias);
+                rightAlias = Objects.toString(right.tableName, right.leftAlias);
 
             if (null != left && null == leftAlias)
                 throw new IllegalArgumentException("Could not infer leftAlias for join");
@@ -512,10 +508,9 @@ public class RolapCubeDef
         @Override
         public boolean equals(Object obj)
         {
-            if (!(obj instanceof Join))
+            if (!(obj instanceof Join b))
                 throw new IllegalStateException();
             Join a = this;
-            Join b = (Join)obj;
             return a.left.equals(b.left) && a.right.equals(b.right);
         }
 
@@ -1041,7 +1036,7 @@ public class RolapCubeDef
                 orderBy = parent.getOrderBy() + ", ";
             }
 
-            String expression = defaultString(ordinalExpression, defaultString(keyExpression, nameExpression));
+            String expression = Objects.toString(ordinalExpression, Objects.toString(keyExpression, nameExpression));
             // we don't need to force NULLs first for our loading code
             //return orderBy + "CASE WHEN " + expression + " IS NULL THEN 0 ELSE 1 END ASC, " + expression + " ASC";
             return orderBy + expression + " ASC";

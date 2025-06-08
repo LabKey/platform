@@ -70,7 +70,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -926,7 +925,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     String oldValue = (String) propertyChangeEvent.getOldValue();
                     String newValue = (String) propertyChangeEvent.getNewValue();
 
-                    java.nio.file.Path location = null;
+                    java.nio.file.Path location;
                     try
                     {
                         location = getMappedDirectory(c, false);
@@ -1277,6 +1276,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return frag;
     }
 
+    @Override
     public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty)
     {
         _fileRootSetViaStartupProperty = fileRootSetViaStartupProperty;

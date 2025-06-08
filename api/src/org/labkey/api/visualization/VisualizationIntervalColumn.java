@@ -59,7 +59,7 @@ public class VisualizationIntervalColumn
                     return "AGE(" + startCol.getSQLAlias() + ", " + endCol.getSQLOther() + ", SQL_TSI_YEAR)";
             }};
 
-        private String _label;
+        private final String _label;
         Interval(String label)
         {
             _label = label;
@@ -73,10 +73,10 @@ public class VisualizationIntervalColumn
         public abstract String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery);
     }
 
-    private VisualizationSourceColumn _startCol;
-    private VisualizationSourceColumn _endCol;
-    private Interval _interval;
-    private boolean _isVisitTagQuery;
+    private final VisualizationSourceColumn _startCol;
+    private final VisualizationSourceColumn _endCol;
+    private final Interval _interval;
+    private final boolean _isVisitTagQuery;
 
     public VisualizationIntervalColumn(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, String interval, boolean isVisitTagQuery)
     {

@@ -6900,7 +6900,7 @@ public class AdminController extends SpringActionController
             }
             if (form.getQueryName() == null)
                 missingRequired += sep + "queryName";
-            if (missingRequired.length() > 0)
+            if (!missingRequired.isEmpty())
                 errors.reject(SpringActionController.ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
 
             // validate that, if provided, the containerId matches an existing container
@@ -7985,9 +7985,8 @@ public class AdminController extends SpringActionController
                         UserPrincipal p = SecurityManager.getPrincipal(userId);
                         Role r = assignment.getRole();
 
-                        if (p instanceof Group)
+                        if (p instanceof Group g)
                         {
-                            Group g = (Group) p;
                             if (!g.isProjectGroup())
                             {
                                 np.addRoleAssignment(p, r, false);
@@ -8508,7 +8507,7 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
-            if(null == form.getTo() || form.getTo().equals(""))
+            if(null == form.getTo() || form.getTo().isEmpty())
             {
                 errors.reject(ERROR_MSG, "To field cannot be blank.");
                 form.setException(new ConfigurationException("To field cannot be blank"));

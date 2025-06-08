@@ -34,6 +34,7 @@ import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: Karl Lum
@@ -51,7 +52,7 @@ public class ReportsWebPart extends WebPartView
         _webPart = part;
         Map<String, String> properties = part.getPropertyMap();
 
-        String title = StringUtils.defaultString(properties.get("title"), "Reports");
+        String title = Objects.toString(properties.get("title"), "Reports");
         setTitle(title);
 
         try

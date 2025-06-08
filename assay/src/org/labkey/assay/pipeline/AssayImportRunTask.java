@@ -99,13 +99,12 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
 
-            if (!(xobj instanceof AssayImportRunTaskType))
+            if (!(xobj instanceof AssayImportRunTaskType xtask))
                 throw new IllegalArgumentException("XML instance must be a AssayImportRunTaskType");
 
             Factory factory = new Factory(taskId);
             factory.setDeclaringModule(module);
 
-            AssayImportRunTaskType xtask = (AssayImportRunTaskType)xobj;
             if (xtask.isSetProviderName())
                 factory._providerName = xtask.getProviderName();
             if (xtask.isSetProtocolName())
@@ -440,7 +439,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
-        private FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
+        private final FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
 
         private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
         private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
@@ -636,7 +635,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         {
             RecordedActionSet actionSet = job.getActionSet();
             List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
-            if (actions.size() < 1)
+            if (actions.isEmpty())
                 throw new PipelineJobException("No recorded actions");
 
             outputs = new ArrayList<>();
@@ -677,7 +676,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     {
         RecordedActionSet actionSet = job.getActionSet();
         List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
-        if (actions.size() < 1)
+        if (actions.isEmpty())
             return Collections.emptyMap();
 
         Map<File, String> inputs = new LinkedHashMap<>();
@@ -769,8 +768,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
      * 2. If match is found (using the assay's FileType), import into an assay.
      * 3. Result domain type's columns may be of exp.data type.... .. CONSIDER: Propagate the ptid, specimen ids, etc.
      *
-     * @return
-     * @throws PipelineJobException
      */
     @Override
     @NotNull

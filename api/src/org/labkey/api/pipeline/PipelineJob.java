@@ -1667,6 +1667,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * @return the user who started the job
      * @throws IllegalStateException if invoked on a remote pipeline server
      */
+    @Override
     public User getUser()
     {
         if (!PipelineJobService.get().isWebServer())
@@ -1683,6 +1684,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * @return the container in which the job was started
      * @throws IllegalStateException if invoked on a remote pipeline server
      */
+    @Override
     public Container getContainer()
     {
         if (!PipelineJobService.get().isWebServer())

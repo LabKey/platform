@@ -47,7 +47,7 @@ import java.util.Objects;
  */
 public class ReplacedRunFilter
 {
-    private static ReplacedRunFilter DEFAULT_FILTER = new ReplacedRunFilter(Type.CURRENT_ONLY);
+    private static final ReplacedRunFilter DEFAULT_FILTER = new ReplacedRunFilter(Type.CURRENT_ONLY);
 
     public enum Type
     {
@@ -76,7 +76,7 @@ public class ReplacedRunFilter
             }
         };
 
-        private String _title;
+        private final String _title;
 
         Type(String title)
         {
@@ -116,7 +116,7 @@ public class ReplacedRunFilter
         }
     }
 
-    private Type _type;
+    private final Type _type;
 
     public ReplacedRunFilter(Type type)
     {

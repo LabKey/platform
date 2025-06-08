@@ -120,7 +120,7 @@ public class AuditController extends SpringActionController
 
     // An admin console action, but we want Troubleshooters to be able to POST (for export)
     @RequiresPermission(TroubleshooterPermission.class)
-    public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
+    public static class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
         {
@@ -493,7 +493,7 @@ public class AuditController extends SpringActionController
     }
 
     @RequiresPermission(CanSeeAuditLogPermission.class)
-    public class AuditLogAction extends SimpleViewAction<AuditLogForm>
+    public static class AuditLogAction extends SimpleViewAction<AuditLogForm>
     {
         private String _eventType;
 

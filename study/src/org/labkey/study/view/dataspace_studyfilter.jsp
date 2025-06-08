@@ -94,7 +94,7 @@
     <div>No study found in this folder</div>
 <% } else if (!isSharedStudy) { %>
     <div>Current folder: <%=h(studyLabel)%></div>
-<% } else if (studies.size() == 0) { %>
+<% } else if (studies.isEmpty()) { %>
     <div>All studies</div>
 <% } else { %>
     <% int count = 1; %>

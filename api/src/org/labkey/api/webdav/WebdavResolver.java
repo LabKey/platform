@@ -30,7 +30,7 @@ import java.util.Date;
  */
 public interface WebdavResolver extends Resolver
 {
-    static final Path.Part INDEX_HTML = Path.toPathPart("index.html");
+    Path.Part INDEX_HTML = Path.toPathPart("index.html");
 
     class LookupResult
     {

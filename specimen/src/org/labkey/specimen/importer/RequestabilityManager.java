@@ -498,7 +498,7 @@ public class RequestabilityManager
             _schemaName = values[0];
             _queryName = values[1];
             _viewName = values[2];
-            if (_viewName != null && _viewName.length() == 0)
+            if (_viewName != null && _viewName.isEmpty())
                 _viewName = null;
             _markRequestable = Boolean.parseBoolean(values[3]);
         }
@@ -600,7 +600,7 @@ public class RequestabilityManager
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
@@ -643,7 +643,7 @@ public class RequestabilityManager
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
@@ -666,7 +666,7 @@ public class RequestabilityManager
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
                 sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
@@ -802,7 +802,7 @@ public class RequestabilityManager
                      .append(" SET Available = ?, AvailabilityReason = ? ");
             updateSQL.add(Boolean.TRUE);
             updateSQL.add(null);
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 updateSQL.append("WHERE RowId IN (");
                 String sep = "";

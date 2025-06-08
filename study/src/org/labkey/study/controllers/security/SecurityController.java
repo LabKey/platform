@@ -102,7 +102,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -120,7 +120,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SaveStudyPermissionsAction extends FormHandlerAction
+    public static class SaveStudyPermissionsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -188,7 +188,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportSecurityPolicyAction extends ExportAction<Object>
+    public static class ExportSecurityPolicyAction extends ExportAction<Object>
     {
         @Override
         public void export(Object form, HttpServletResponse response, BindException errors)
@@ -348,7 +348,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ApplyDatasetPermissionsAction extends FormHandlerAction
+    public static class ApplyDatasetPermissionsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -454,7 +454,7 @@ public class SecurityController extends SpringActionController
 
     private static class ReportPermissionsTabStrip extends TabStripView
     {
-        private PermissionsForm _bean;
+        private final PermissionsForm _bean;
 
         public ReportPermissionsTabStrip(PermissionsForm bean)
         {
@@ -491,7 +491,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
+    public static class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
         @Override
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors)
@@ -590,7 +590,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
+    public static class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
     {
         @Override
         public void validateCommand(StudySecurityForm target, Errors errors)

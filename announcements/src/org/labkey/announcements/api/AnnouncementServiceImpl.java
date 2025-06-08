@@ -96,7 +96,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
                 }
             }
 
-            if (validMemberListIds.size() > 0)
+            if (!validMemberListIds.isEmpty())
             {
                 // insert.setMemberListIds(validMemberListIds); // This gets set in AnnouncementManager.validateModelWithSideEffects by parsing the memberListInput
                 insert.setMemberListInput(StringUtils.join(validMemberListIds, "\n")); // Pretend this is coming as comma-separated input from a form

@@ -1735,7 +1735,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public static class DatasetAuditHandler extends AbstractAuditHandler
     {
-        private Dataset _dataset;
+        private final Dataset _dataset;
 
         public DatasetAuditHandler(Dataset dataset)
         {
@@ -1776,7 +1776,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                             batch.clear();
                         }
                     }
-                    if (batch.size() > 0)
+                    if (!batch.isEmpty())
                     {
                         auditLog.addEvents(user, batch);
                         batch.clear();
@@ -1813,13 +1813,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
-            else if (existingRecord != null && existingRecord.size() > 0)
+            else if (existingRecord != null && !existingRecord.isEmpty())
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
-                if (rowPair.second.size() == 0 )
+                if (rowPair.second.isEmpty())
                 {
                     auditComment = "Dataset row was processed, but no changes detected";
                     // Record values that were processed
@@ -2091,6 +2091,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
+    @Override
     public Integer getPublishSourceId()
     {
         return _publishSourceId;
@@ -2203,15 +2204,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
                 errors, checkDuplicates);
 
-        if (null != failedReplaceMap && failedReplaceMap.size() > 0)
+        if (null != failedReplaceMap && !failedReplaceMap.isEmpty())
         {
-            StringBuilder error = new StringBuilder();
-            error.append("Only one row is allowed for each ");
-            error.append(getKeyTypeDescription());
-            error.append(".  ");
 
-            error.append("Duplicates were found in the ").append(checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ").append("imported data.");
-            errors.addRowError(new ValidationException(error.toString()));
+            String error = "Only one row is allowed for each " +
+                    getKeyTypeDescription() +
+                    ".  " +
+                    "Duplicates were found in the " + (checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ") + "imported data.";
+            errors.addRowError(new ValidationException(error));
 
             int errorCount = 0;
             for (Map.Entry<String, Object[]> e : failedReplaceMap.entrySet())
@@ -2397,7 +2397,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
-        DataIteratorBuilder persist = null;
+        DataIteratorBuilder persist;
 
         persist = ((UpdateableTableInfo)table).persistRows(existing, context);
 
@@ -2461,7 +2461,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
         }
 
-        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
+        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[0]));
     }
 
 
@@ -2519,7 +2519,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     if (uniq.contains(("'")))
                         uniq = uniq.replaceAll("'","''");
                     sbIn.append(sep).append("'").append(uniq).append("'");
-                    sep = ", ";
                 }
                 count++;
             }
@@ -2530,7 +2529,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // then we cannot proceed.
             if (checkDuplicates == CheckForDuplicates.sourceOnly)
             {
-                if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+                if (!noDeleteMap.isEmpty() && getKeyManagementType() == KeyManagementType.None)
                     return noDeleteMap;
                 else
                     return null;
@@ -2590,10 +2589,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         // If we have duplicates, and we don't have an auto-keyed dataset,
         // then we cannot proceed.
-        if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+        if (!noDeleteMap.isEmpty() && getKeyManagementType() == KeyManagementType.None)
             return noDeleteMap;
 
-        if (deleteSet.size() == 0)
+        if (deleteSet.isEmpty())
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();

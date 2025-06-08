@@ -734,15 +734,13 @@ public class DatasetQueryView extends StudyQueryView
             super.addHeaderMessage(headerMessage, ctx);
 
             UserSchema s = getTable().getUserSchema();
-            if (!(s instanceof DataspaceQuerySchema))
+            if (!(s instanceof DataspaceQuerySchema dqs))
                 return;
-            DataspaceQuerySchema dqs = (DataspaceQuerySchema)s;
             ContainerFilter cf = dqs.getDefaultContainerFilter();
-            if (!(cf instanceof DataspaceContainerFilter))
+            if (!(cf instanceof DataspaceContainerFilter dcf))
                 return;
 
             StringBuilder msg = new StringBuilder();
-            DataspaceContainerFilter dcf = (DataspaceContainerFilter)cf;
             if (dcf.isSubsetOfStudies())
             {
                 // DISPLAY the current subset
@@ -789,8 +787,8 @@ public class DatasetQueryView extends StudyQueryView
 
         private static class LinkedResultsChecker implements AssayService.ResultsCheckHelper
         {
-            private DatasetDefinition _dataset;
-            private User _user;
+            private final DatasetDefinition _dataset;
+            private final User _user;
             private FieldKey _assaySubject;
             private FieldKey _assayVisit;
 

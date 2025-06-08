@@ -244,7 +244,7 @@ public class LocationImpl extends AbstractStudyCachable<Integer, LocationImpl> i
         else
         {
             String type = getTypeString();
-            if (type.length() == 0)
+            if (type.isEmpty())
                 return label;
             else
                 return label + " (" + type + ")";
@@ -259,19 +259,19 @@ public class LocationImpl extends AbstractStudyCachable<Integer, LocationImpl> i
             typeString.append("Endpoint Lab");
         if (isRepository().booleanValue())
         {
-            if (typeString.length() > 0)
+            if (!typeString.isEmpty())
                 typeString.append(", ");
             typeString.append("Repository");
         }
         if (isSal().booleanValue())
         {
-            if (typeString.length() > 0)
+            if (!typeString.isEmpty())
                 typeString.append(", ");
             typeString.append("Site Affiliated Lab");
         }
         if (isClinic().booleanValue())
         {
-            if (typeString.length() > 0)
+            if (!typeString.isEmpty())
                 typeString.append(", ");
             typeString.append("Clinic");
         }

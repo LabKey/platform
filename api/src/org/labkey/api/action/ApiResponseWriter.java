@@ -531,9 +531,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
                     msg = msg.substring(0, idx);
             }
 
-            if (error instanceof SimpleValidationError.FieldWarning)
+            if (error instanceof SimpleValidationError.FieldWarning fieldWarning)
             {
-                SimpleValidationError.FieldWarning fieldWarning = (SimpleValidationError.FieldWarning) error;
                 severity = fieldWarning.getSeverity();
                 key = fieldWarning.getField();
                 propertyId = fieldWarning.getObjectName();

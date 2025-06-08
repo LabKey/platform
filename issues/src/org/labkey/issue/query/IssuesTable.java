@@ -609,7 +609,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         private DataIteratorContext _context;
         private final DataIteratorBuilder _in;
 
-        private User _user;
+        private final User _user;
 
         IssuesDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
         {
@@ -653,9 +653,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
      */
     private class DefaultValuesIteratorBuilder implements DataIteratorBuilder
     {
-        private DataIteratorContext _context;
+        private final DataIteratorContext _context;
         private final DataIteratorBuilder _in;
-        private User _user;
+        private final User _user;
 
         DefaultValuesIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
         {

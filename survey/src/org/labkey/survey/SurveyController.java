@@ -108,7 +108,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CreateSurveyTemplateAction extends MutatingApiAction<SurveyTemplateForm>
+    public static class CreateSurveyTemplateAction extends MutatingApiAction<SurveyTemplateForm>
     {
         @Override
         public ApiResponse execute(SurveyTemplateForm form, BindException errors)
@@ -151,7 +151,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class) // readpermissions because this action can be used to see the read-only view of a submitted request
-    public class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
+    public static class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
     {
         private String _title = null;
 
@@ -212,7 +212,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
+    public static class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
     {
         private String _title = "Create Survey Design";
 
@@ -764,7 +764,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                     Class targetType = col.getJavaClass();
                                     Converter converter = ConvertUtils.lookup(targetType);
                                     if(null == converter)
-                                        throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass().toString() + " into a " + targetType.toString());
+                                        throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass() + " into a " + targetType.toString());
 
                                     value = converter.convert(targetType, value);
                                 }
@@ -881,7 +881,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                     tvf.setViewContext(getViewContext());
 
                                     AttachmentFile af = files.get(0);
-                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)af), false);
+                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), af), false);
 
                                     // add the survey answer row pk
                                     Map<String, Object> keys = new HashMap<>();
@@ -904,7 +904,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteSurveysAction extends FormHandlerAction<QueryForm>
+    public static class DeleteSurveysAction extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnUrl;
 
@@ -941,7 +941,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteSurveyDesignsAction extends FormHandlerAction<QueryForm>
+    public static class DeleteSurveyDesignsAction extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnUrl;
 
@@ -978,7 +978,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetValidDesignQueries extends ReadOnlyApiAction<QueryForm>
+    public static class GetValidDesignQueries extends ReadOnlyApiAction<QueryForm>
     {
         @Override
         public ApiResponse execute(QueryForm form, BindException errors)

@@ -56,7 +56,7 @@ public class SimpleList implements ListFormatter {
       writer.write(")");
     }
     writer.write("</div>");
-    if (c.size() > 0) {
+    if (!c.isEmpty()) {
       writer.write("<blockquote>");
       Iterator nameIterator = c.iterator();
       while (nameIterator.hasNext()) {

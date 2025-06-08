@@ -513,7 +513,7 @@ public class SequenceVisitManager extends VisitManager
         info(logger, "Select distinct sequence numbers from participant visit table");
         new SqlSelector(schema, sql).forEach(rs -> sequenceNums.add(rs.getBigDecimal(1)));
 
-        if (sequenceNums.size() > 0)
+        if (!sequenceNums.isEmpty())
         {
             info(logger, "Ensure visits for " + sequenceNums.size() + " distinct sequence numbers");
             errors = StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null, failForUndefinedVisits);
@@ -642,7 +642,7 @@ public class SequenceVisitManager extends VisitManager
             List<VisitImpl> visitList = new ArrayList<>(visits);
             StringBuilder sb = new StringBuilder();
             _indent(sb,indent); sb.append("CASE");
-            int partStart = 0, partEnd = 0;
+            int partStart = 0, partEnd;
             for (int part=1 ; part<4 ; part++)
             {
                 partEnd = visitList.size()*part / 4;

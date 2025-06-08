@@ -33,7 +33,7 @@ public interface ViewOptions
     void save(User user) throws SQLException;
     void delete(User user) throws SQLException;
 
-    public interface ViewFilterItem
+    interface ViewFilterItem
     {
         String getViewType();
         boolean isEnabled();

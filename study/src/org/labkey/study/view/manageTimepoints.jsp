@@ -56,7 +56,7 @@
         <td>Assign data to the correct timepoint</td>
         <td><%=link("Recompute Timepoints", urlFor(UpdateParticipantVisitsAction.class)).usePost()%></td>
     </tr>
-<% if (timepoints.size() > 0) { %>
+<% if (!timepoints.isEmpty()) { %>
     <tr>
         <td>Timepoints may be deleted by an administrator</td>
         <td><%= link("Delete Multiple Timepoints", BulkDeleteVisitsAction.class) %></td>
@@ -104,7 +104,7 @@
 </labkey:form>
 </labkey:panel>
 
-<% if (timepoints.size() > 0) { %>
+<% if (!timepoints.isEmpty()) { %>
 <labkey:panel title="Timepoints" width="800">
 <p>NOTE: If you edit the day range of timepoints, use <%=simpleLink("Recompute Timepoints", urlFor(UpdateParticipantVisitsAction.class)).usePost()%>
 to assign dataset data to the correct timepoints.</p>

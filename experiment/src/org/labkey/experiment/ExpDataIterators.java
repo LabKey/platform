@@ -914,7 +914,7 @@ public class ExpDataIterators
     static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
     {
         if (parentObj instanceof String parentStr && parentStr.trim().isEmpty())
-            return Arrays.asList(((String) parentObj).trim()); // This is needed to remove existing lineage
+            return Arrays.asList(parentStr.trim()); // This is needed to remove existing lineage
 
         Stream<String> values = NameGenerator.parentNames(parentObj, fieldName, tsvWriter, errors);
         return values == null ? null : values.collect(Collectors.toList());
@@ -1562,7 +1562,7 @@ public class ExpDataIterators
         ExpProtocol protocol = existingDerivationRun.getProtocol();
 
         if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
-            return Pair.of(previousMaterialParents, previousMaterialChildren);;
+            return Pair.of(previousMaterialParents, previousMaterialChildren);
 
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
@@ -1753,7 +1753,6 @@ public class ExpDataIterators
      *                will be incorporated into the resolved inputs and outputs
      * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate the parent should be removed.
-     * @throws ValidationException
      */
     @NotNull
     private static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(
@@ -2579,7 +2578,7 @@ public class ExpDataIterators
             int totalRowCount = 0;
             if (_isCrossFolderUpdate && !typeData.folderFiles.keySet().isEmpty())
             {
-                boolean hasCrossFolderData = typeData.folderFiles.keySet().stream().anyMatch(id -> id != _container.getRowId());;
+                boolean hasCrossFolderData = typeData.folderFiles.keySet().stream().anyMatch(id -> id != _container.getRowId());
 
                 if (hasCrossFolderData)
                 {
@@ -3027,8 +3026,8 @@ public class ExpDataIterators
 
                 Map<String, List<Integer>> containerRows = new HashMap<>();
 
-                TableInfo tableInfo = null;
-                SimpleFilter filter = null;
+                TableInfo tableInfo;
+                SimpleFilter filter;
 
                 if (_isSamples)
                 {
@@ -3209,7 +3208,7 @@ public class ExpDataIterators
         final DataIteratorContext _context;
         private final Integer _sampleStateCol;
         private final Integer _oldSampleStateCol;
-        private Map<Integer, DataState> _allStates;
+        private final Map<Integer, DataState> _allStates;
         private final boolean _noStatusChangeCol;
         private final boolean _hasNonStatusChangeCol;
 

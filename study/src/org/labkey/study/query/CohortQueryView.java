@@ -38,7 +38,7 @@ import org.labkey.study.model.StudyManager;
 
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
-    boolean canEditDelete = false;
+    boolean canEditDelete;
 
     public CohortQueryView(User user, StudyImpl study, ViewContext viewContext)
     {

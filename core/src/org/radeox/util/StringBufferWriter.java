@@ -38,7 +38,7 @@ import java.io.Writer;
 
 public class StringBufferWriter extends Writer {
 
-  private StringBuffer buffer;
+  private final StringBuffer buffer;
 
   private boolean closed = false;
 

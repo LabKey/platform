@@ -92,7 +92,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
 
         // for the webPartContainer property, try to get the container ID from the specified path
         // if a container does not exist for the given path, use the current container ID
-        if (deserializedPropertyMap.size() > 0)
+        if (!deserializedPropertyMap.isEmpty())
         {
             String containerId = ctx.getContainer().getId();
             if (deserializedPropertyMap.containsKey("webPartContainer"))

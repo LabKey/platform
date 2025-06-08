@@ -117,7 +117,7 @@ public interface Role extends Parameter.JdbcParameterValue
     default boolean isExcludedPrincipal(@NotNull UserPrincipal principal)
     {
         return getExcludedPrincipals().contains(principal);
-    };
+    }
 
     /**
      * @return Whether this role is applicable to the policy. For example, some roles might only make sense in the context of a

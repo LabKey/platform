@@ -105,7 +105,7 @@ public class NotificationController extends SpringActionController
     @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class MarkNotificationAsReadAction extends MutatingApiAction<RowIdsForm>
     {
-        private List<Notification> _notifications = new ArrayList<>();
+        private final List<Notification> _notifications = new ArrayList<>();
 
         @Override
         public void validateForm(RowIdsForm form, Errors errors)
@@ -142,7 +142,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class MarkAllNotificationAsReadAction extends MutatingApiAction<NotificationsForm>
+    public static class MarkAllNotificationAsReadAction extends MutatingApiAction<NotificationsForm>
     {
         @Override
         public ApiResponse execute(NotificationsForm form, BindException errors)
@@ -186,7 +186,7 @@ public class NotificationController extends SpringActionController
     @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class DeleteNotificationAction extends MutatingApiAction<RowIdsForm>
     {
-        private List<Notification> _notifications = new ArrayList<>();
+        private final List<Notification> _notifications = new ArrayList<>();
 
         @Override
         public void validateForm(RowIdsForm form, Errors errors)
@@ -261,7 +261,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class UserNotificationsAction extends SimpleViewAction
+    public static class UserNotificationsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -277,7 +277,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsAction extends ReadOnlyApiAction<NotificationsForm>
+    public static class GetUserNotificationsAction extends ReadOnlyApiAction<NotificationsForm>
     {
         @Override
         public ApiResponse execute(NotificationsForm form, BindException errors)
@@ -371,7 +371,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsForPanelAction extends ReadOnlyApiAction<Object>
+    public static class GetUserNotificationsForPanelAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)

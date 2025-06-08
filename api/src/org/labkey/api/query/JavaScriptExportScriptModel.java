@@ -223,43 +223,39 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
     {
         String indent = StringUtils.repeat(" ", 4);
 
-        StringBuilder sb = new StringBuilder();
 
-        sb.append("<script type=\"text/javascript\">").append("\n");
-        sb.append("\n");
-        sb.append("LABKEY.Query.selectRows({").append("\n");
-        sb.append(getStandardJavaScriptParameters(4, true)).append("\n");
-        sb.append("});").append("\n");
-        sb.append("\n");
-        sb.append("function onSuccess(results) {\n");
-        sb.append(indent).append("var data = '';\n");
-        sb.append(indent).append("var length = Math.min(10, results.rows.length);").append("\n");
-        sb.append("\n");
-        sb.append(indent).append("// Display first 10 rows in a popup dialog").append("\n");
-        sb.append(indent).append("for (var idxRow = 0; idxRow < length; idxRow++) {").append("\n");
-        sb.append(indent).append(indent).append("var row = results.rows[idxRow];").append("\n");
-        sb.append("\n");
-        sb.append(indent).append(indent).append("for (var col in row) {").append("\n");
-        sb.append(indent).append(indent).append(indent).append("data = data + row[col].value + ' ';").append("\n");
-        sb.append(indent).append(indent).append("}").append("\n");
-        sb.append("\n");
+        String sb = "<script type=\"text/javascript\">" + "\n" +
+                "\n" +
+                "LABKEY.Query.selectRows({" + "\n" +
+                getStandardJavaScriptParameters(4, true) + "\n" +
+                "});" + "\n" +
+                "\n" +
+                "function onSuccess(results) {\n" +
+                indent + "var data = '';\n" +
+                indent + "var length = Math.min(10, results.rows.length);" + "\n" +
+                "\n" +
+                indent + "// Display first 10 rows in a popup dialog" + "\n" +
+                indent + "for (var idxRow = 0; idxRow < length; idxRow++) {" + "\n" +
+                indent + indent + "var row = results.rows[idxRow];" + "\n" +
+                "\n" +
+                indent + indent + "for (var col in row) {" + "\n" +
+                indent + indent + indent + "data = data + row[col].value + ' ';" + "\n" +
+                indent + indent + "}" + "\n" +
+                "\n" +
+                indent + indent + "data = data + '\\n';" + "\n" +
+                indent + "}" + "\n" +
+                "\n" +
+                indent + "alert(data);" + "\n" +
+                "}" + "\n" +
+                "\n" +
+                "function onError(errorInfo) {" + "\n" +
+                indent + "alert(errorInfo.exception);" + "\n" +
+                "}" + "\n" +
+                "\n" +
+                "</script>" +
+                "\n\n------\n\n" +
+                getJSON(17.1).toString(2);
 
-        sb.append(indent).append(indent).append("data = data + '\\n';").append("\n");
-        sb.append(indent).append("}").append("\n");
-        sb.append("\n");
-        sb.append(indent).append("alert(data);").append("\n");
-        sb.append("}").append("\n");
-        sb.append("\n");
-        sb.append("function onError(errorInfo) {").append("\n");
-        sb.append(indent).append("alert(errorInfo.exception);").append("\n");
-        sb.append("}").append("\n");
-        sb.append("\n");
-        sb.append("</script>");
-
-
-        sb.append("\n\n------\n\n");
-        sb.append(getJSON(17.1).toString(2));
-
-        return sb.toString();
+        return sb;
     }
 }

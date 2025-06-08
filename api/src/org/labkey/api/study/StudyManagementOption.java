@@ -22,11 +22,11 @@ import org.labkey.api.view.ActionURL;
 
 public class StudyManagementOption
 {
-    private String _title;
-    private String _linkText;
-    private ActionURL _linkUrl;
+    private final String _title;
+    private final String _linkText;
+    private final ActionURL _linkUrl;
     private Container _container;
-    private Class<? extends Permission> _permission;
+    private final Class<? extends Permission> _permission;
 
     public StudyManagementOption(String title, String linkText, ActionURL linkUrl)
     {

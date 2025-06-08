@@ -800,7 +800,7 @@ public class PropertyManager
             for (String category : test.getCategories())
             {
                 Map<String, String> m = store.getProperties(user, child, category);
-                assertSame(m, AbstractPropertyStore.NULL_MAP);
+                assertSame(AbstractPropertyStore.NULL_MAP, m);
             }
         }
 
@@ -818,15 +818,15 @@ public class PropertyManager
             m.save();
 
             m = store.getWritableProperties(user, test, category, false);
-            assertEquals(m.get("foo"), "bar");
-            assertEquals(m.get("this"), "that");
+            assertEquals("bar", m.get("foo"));
+            assertEquals("that", m.get("this"));
             assertFalse(m.containsKey("zoo"));
 
             m.remove("this");
             m.save();
 
             Map<String, String> map = store.getProperties(user, test, category);
-            assertEquals(map.get("foo"), "bar");
+            assertEquals("bar", map.get("foo"));
             assertFalse(map.containsKey("this"));
             assertFalse(map.containsKey("zoo"));
 

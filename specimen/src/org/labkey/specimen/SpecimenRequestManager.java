@@ -850,7 +850,7 @@ public class SpecimenRequestManager
     public String[] getGroupedValueAllowedColumns()
     {
         Set<String> keySet = _groupedValueAllowedColumnMap.keySet();
-        String[] allowedColumns = keySet.toArray(new String[keySet.size()]);
+        String[] allowedColumns = keySet.toArray(new String[0]);
         Arrays.sort(allowedColumns, new ComparableComparator<>());
         return allowedColumns;
     }

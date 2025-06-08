@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.repeat;
@@ -62,7 +63,7 @@ public class Lsid
         this.src = b.src;
         this.authority = b.getAuthority();
         this.namespace = b.getNamespace();
-        this.objectId = StringUtils.defaultString(b.getObjectId(),"");
+        this.objectId = Objects.toString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = b.valid;
     }
@@ -81,7 +82,7 @@ public class Lsid
         this.src = b.src;
         this.authority = b.getAuthority();
         this.namespace = b.getNamespace();
-        this.objectId = StringUtils.defaultString(b.getObjectId(),"");
+        this.objectId = Objects.toString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
     }
@@ -100,7 +101,7 @@ public class Lsid
         this.src = b.src;
         this.authority = b.getAuthority();
         this.namespace = b.getNamespace();
-        this.objectId = StringUtils.defaultString(b.getObjectId(),"");
+        this.objectId = Objects.toString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
     }
@@ -111,7 +112,7 @@ public class Lsid
         this.src = src;
         this.authority = authority;
         this.namespace = namespace;
-        this.objectId = StringUtils.defaultString(objectId,"");
+        this.objectId = Objects.toString(objectId,"");
         this.version = version;
         this.valid = valid;
     }
@@ -214,10 +215,9 @@ public class Lsid
 
     public boolean equals(Object o)
     {
-        if (null == o || !(o instanceof Lsid))
+        if (null == o || !(o instanceof Lsid lsid))
             return false;
 
-        Lsid lsid = (Lsid) o;
         if (!valid)
             return StringUtils.equals(toString(),lsid.toString());
 
@@ -244,7 +244,7 @@ public class Lsid
     public String toString()
     {
         if (!valid)
-            return StringUtils.defaultString(src,"");
+            return Objects.toString(src,"");
 
         String encodedAuthority = encodePart(authority);
         String encodedNamespace = encodePart(namespace);
@@ -351,7 +351,7 @@ public class Lsid
         protected String namespace = "";
         protected String objectId = "";
         protected String version = null;
-        protected boolean valid = false;
+        protected boolean valid;
         private String prefix = "";
         private String suffix = "";
 
@@ -467,7 +467,7 @@ public class Lsid
 
         public String getAuthority()
         {
-            return StringUtils.defaultString(authority,"");
+            return Objects.toString(authority,"");
         }
 
         public LsidBuilder setAuthority(String authority)
@@ -478,12 +478,12 @@ public class Lsid
 
         public String getNamespace()
         {
-            return StringUtils.defaultString(namespace, "");
+            return Objects.toString(namespace, "");
         }
 
         public String getObjectId()
         {
-            return StringUtils.defaultString(objectId, "");
+            return Objects.toString(objectId, "");
         }
 
         public LsidBuilder setObjectId(String objectId)
@@ -688,7 +688,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro+Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test

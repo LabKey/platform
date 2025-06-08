@@ -1021,11 +1021,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (roleName == null)
         {
             roleName = relatedFile.getName().substring(baseName.length());
-            while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
+            while (!roleName.isEmpty() && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
             {
                 roleName = roleName.substring(1);
             }
-            if ("".equals(roleName))
+            if (roleName.isEmpty())
             {
                 roleName = null;
             }

@@ -35,7 +35,7 @@ package org.radeox.regex;
  */
 
 public class JdkMatchResult extends MatchResult {
-  private java.util.regex.Matcher matcher;
+  private final java.util.regex.Matcher matcher;
 
   public JdkMatchResult(java.util.regex.Matcher matcher) {
     this.matcher = matcher;

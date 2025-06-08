@@ -16,7 +16,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     final Container container;
     Set<String> keyColumns = null;
     Set<String> addlSkipColumns = null;
-    Set<String> dontUpdate = null;
+    Set<String> dontUpdate;
     boolean commitRowsBeforeContinuing = false;
     private Set<DomainProperty> vocabularyProperties;
     Map<String, String> remapSchemaColumns = null;

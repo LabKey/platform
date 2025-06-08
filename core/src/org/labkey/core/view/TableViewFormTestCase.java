@@ -57,8 +57,8 @@ public class TableViewFormTestCase extends Assert
         Assert.assertTrue((Boolean) tf.getTypedValue("bitNull"));
 
         tf.setPkVal(20);
-        Assert.assertEquals(tf.get("rowId"), "20");
-        Assert.assertEquals(tf.getTypedValue("rowId"), 20);
+        Assert.assertEquals("20", tf.get("rowId"));
+        Assert.assertEquals(20, tf.getTypedValue("rowId"));
     }
 
     @Test
@@ -83,9 +83,9 @@ public class TableViewFormTestCase extends Assert
 
         BindException errors = new NullSafeBindException(tf, "form");
         tf.validateBind(errors);
-        Assert.assertEquals("1 error", errors.getErrorCount(), 1);
-        Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").size(), 1);
-        Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").get(0).getDefaultMessage(), "Could not convert value: garbage");
+        Assert.assertEquals("1 error", 1, errors.getErrorCount());
+        Assert.assertEquals("Date conversion error", 1, errors.getFieldErrors("datetimeNull").size());
+        Assert.assertEquals("Date conversion error", "Could not convert value: garbage", errors.getFieldErrors("datetimeNull").get(0).getDefaultMessage());
 
         tf.setTypedValue("datetimeNull", new Date("6/20/2004"));
         Assert.assertTrue("Final form should be valid", tf.isValid());
@@ -125,7 +125,7 @@ public class TableViewFormTestCase extends Assert
 
         tf.setPkVal(firstPk);
         tf.refreshFromDb();
-        Assert.assertEquals("reselect", tf.getTypedValue("text"), "First test record");
+        Assert.assertEquals("reselect", "First test record", tf.getTypedValue("text"));
 
         tf.doDelete();
         tf.forceReselect();

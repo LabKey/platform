@@ -197,9 +197,9 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
             try
             {
                 String result1 = h.translateParticipantId("IdAnimal01");
-                assertEquals(result1, "IdAnimal01_ID");
+                assertEquals("IdAnimal01_ID", result1);
                 String result3 = h.translateParticipantId("IdAnimal03");
-                assertEquals(result3, "IdAnimal03_ID");
+                assertEquals("IdAnimal03_ID", result3);
             }
             catch (ValidationException e) {
                 assert(false); // fail
@@ -217,9 +217,9 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
             {
                 // the map is empty, so values should be "translated" back to themselves
                 String result1 = h.translateParticipantId("IdAnimal01");
-                assertEquals(result1, "IdAnimal01");
+                assertEquals("IdAnimal01", result1);
                 String result3 = h.translateParticipantId("IdAnimal03");
-                assertEquals(result3, "IdAnimal03");
+                assertEquals("IdAnimal03", result3);
             }
             catch (ValidationException e)
             {

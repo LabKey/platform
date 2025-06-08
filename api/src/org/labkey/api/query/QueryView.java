@@ -503,6 +503,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         _schema = schema;
     }
 
+    @Override
     public Container getContainer()
     {
         return _schema.getContainer();

@@ -31,8 +31,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.timeline.view.TimelineView;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -74,7 +72,7 @@ public class TimelineModule extends CodeOnlyModule
                     }
                     catch (InvocationTargetException | IllegalAccessException e)
                     {
-                        throw new UnexpectedException(e);
+                        throw UnexpectedException.wrap(e);
                     }
                     settings.setDivId("TimelineWebPart." + webPart.getIndex());
                     return new TimelineView(settings);

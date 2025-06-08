@@ -117,22 +117,22 @@ public interface WorkDirectory
      * Pipeline inputs are copied to the working directory.  If the passed file was already copied to the work directory, this will
      * return the local copy.
      */
-    public File getWorkingCopyForInput(File f);
+    File getWorkingCopyForInput(File f);
 
     /**
      * Ensures that we have a lock, if needed. The lock must be released by the caller. Locks can be configured so that
      * we do not have too many separate network file operations in place across multiple machines.
      */
-    public CopyingResource ensureCopyingLock() throws IOException;
+    CopyingResource ensureCopyingLock() throws IOException;
 
     List<File> getWorkFiles(Function f, TaskPath tp);
 
     File newWorkFile(Function output, TaskPath taskPath, String baseName);
 
     /** A lock for copying files over a network share, for convenient use with try-with-resources */
-    public interface CopyingResource extends AutoCloseable
+    interface CopyingResource extends AutoCloseable
     {
         @Override
-        public void close();
+        void close();
     }
 }

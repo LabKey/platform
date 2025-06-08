@@ -473,7 +473,7 @@ public class QubeQuery
                         // For now we're only expecting a single optional property in the json map, to use a previously
                         // saved named set substition for the members enumeration.
                         Object setName = membersJson.get("namedSet");
-                        if (!(setName instanceof String) || setName.toString().equals(""))
+                        if (!(setName instanceof String) || setName.toString().isEmpty())
                         {
                             errors.reject(SpringActionController.ERROR_MSG, "Could not parse namedSet for members property");
                             throw errors;

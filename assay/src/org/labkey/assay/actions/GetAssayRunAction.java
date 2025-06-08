@@ -23,7 +23,7 @@ public class GetAssayRunAction extends ReadOnlyApiAction<GetAssayRunAction.LoadA
     @Override
     public ApiResponse execute(LoadAssayRunForm loadAssayRunForm, BindException errors)
     {
-        ExpRun run = null;
+        ExpRun run;
         if (loadAssayRunForm.getLsid() != null)
             run = getRun(loadAssayRunForm.getLsid());
         else if (loadAssayRunForm.getRunId() != null)

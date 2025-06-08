@@ -77,7 +77,7 @@ public class DiffMatchPatch
   public short Patch_Margin = 4;
 
   // The number of bits in an int.
-  private int Match_MaxBits = 32;
+  private final int Match_MaxBits = 32;
 
 
   //  DIFF FUNCTIONS
@@ -169,13 +169,13 @@ public class DiffMatchPatch
                                           boolean checklines) {
     LinkedList<Diff> diffs = new LinkedList<>();
 
-    if (text1.length() == 0) {
+    if (text1.isEmpty()) {
       // Just add some text (speedup)
       diffs.add(new Diff(Operation.INSERT, text2));
       return diffs;
     }
 
-    if (text2.length() == 0) {
+    if (text2.isEmpty()) {
       // Just delete some text (speedup)
       diffs.add(new Diff(Operation.DELETE, text1));
       return diffs;
@@ -193,9 +193,9 @@ public class DiffMatchPatch
       diffs.add(new Diff(op, longtext.substring(i + shorttext.length())));
       return diffs;
     }
-    longtext = shorttext = null;  // Garbage collect
+      // Garbage collect
 
-    // Check to see if the problem can be split in two.
+      // Check to see if the problem can be split in two.
     String[] hm = diff_halfMatch(text1, text2);
     if (hm != null) {
       // A half-match was found, sort out the return data.
@@ -400,7 +400,7 @@ public class DiffMatchPatch
       }
 
       // Walk the front path one step.
-      v_map1.add(new HashSet<Long>());  // Adds at index 'd'.
+      v_map1.add(new HashSet<>());  // Adds at index 'd'.
       for (int k = -d; k <= d; k += 2) {
         if (k == -d || k != d && v1.get(k - 1) < v1.get(k + 1)) {
           x = v1.get(k + 1);
@@ -448,7 +448,7 @@ public class DiffMatchPatch
 
       if (doubleEnd) {
         // Walk the reverse path one step.
-        v_map2.add(new HashSet<Long>());  // Adds at index 'd'.
+        v_map2.add(new HashSet<>());  // Adds at index 'd'.
         for (int k = -d; k <= d; k += 2) {
           if (k == -d || k != d && v2.get(k - 1) < v2.get(k + 1)) {
             x = v2.get(k + 1);
@@ -672,7 +672,7 @@ public class DiffMatchPatch
   protected String[] diff_halfMatch(String text1, String text2) {
     String longtext = text1.length() > text2.length() ? text1 : text2;
     String shorttext = text1.length() > text2.length() ? text2 : text1;
-    if (longtext.length() < 10 || shorttext.length() < 1) {
+    if (longtext.length() < 10 || shorttext.isEmpty()) {
       return null;  // Pointless.
     }
 
@@ -914,7 +914,7 @@ public class DiffMatchPatch
    * @return The score.
    */
   private int diff_cleanupSemanticScore(String one, String two) {
-    if (one.length() == 0 || two.length() == 0) {
+    if (one.isEmpty() || two.isEmpty()) {
       // Edges are the best.
       return 5;
     }
@@ -949,9 +949,9 @@ public class DiffMatchPatch
   }
 
 
-  private Pattern BLANKLINEEND
+  private final Pattern BLANKLINEEND
       = Pattern.compile("\\n\\r?\\n\\Z", Pattern.DOTALL);
-  private Pattern BLANKLINESTART
+  private final Pattern BLANKLINESTART
       = Pattern.compile("\\A\\r?\\n\\r?\\n", Pattern.DOTALL);
 
 
@@ -1158,7 +1158,7 @@ public class DiffMatchPatch
       thisDiff = pointer.hasNext() ? pointer.next() : null;
     }
     // System.out.println(diff);
-    if (diffs.getLast().text.length() == 0) {
+    if (diffs.getLast().text.isEmpty()) {
       diffs.removeLast();  // Remove the dummy entry at the end.
     }
 
@@ -1411,7 +1411,7 @@ public class DiffMatchPatch
     int pointer = 0;  // Cursor in text1
     String[] tokens = delta.split("\t");
     for (String token : tokens) {
-      if (token.length() == 0) {
+      if (token.isEmpty()) {
         // Blank tokens are ok (from a trailing \t).
         continue;
       }
@@ -1492,7 +1492,7 @@ public class DiffMatchPatch
     if (text.equals(pattern)) {
       // Shortcut (potentially not guaranteed by the algorithm)
       return 0;
-    } else if (text.length() == 0) {
+    } else if (text.isEmpty()) {
       // Nothing to match.
       return -1;
     } else if (text.substring(loc, loc + pattern.length()).equals(pattern)) {
@@ -2096,7 +2096,7 @@ public class DiffMatchPatch
   public List<Patch> patch_fromText(String textline)
       throws IllegalArgumentException {
     List<Patch> patches = new LinkedList<>();
-    if (textline.length() == 0) {
+    if (textline.isEmpty()) {
       return patches;
     }
     List<String> textList = Arrays.asList(textline.split("\n"));
@@ -2116,7 +2116,7 @@ public class DiffMatchPatch
       patch = new Patch();
       patches.add(patch);
       patch.start1 = Integer.parseInt(m.group(1));
-      if (m.group(2).length() == 0) {
+      if (m.group(2).isEmpty()) {
         patch.start1--;
         patch.length1 = 1;
       } else if (m.group(2).equals("0")) {
@@ -2127,7 +2127,7 @@ public class DiffMatchPatch
       }
 
       patch.start2 = Integer.parseInt(m.group(3));
-      if (m.group(4).length() == 0) {
+      if (m.group(4).isEmpty()) {
         patch.start2--;
         patch.length2 = 1;
       } else if (m.group(4).equals("0")) {

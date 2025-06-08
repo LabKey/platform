@@ -590,7 +590,7 @@ public abstract class Method
     }
 
 
-    class TimestampInfo extends JdbcMethodInfoImpl
+    static class TimestampInfo extends JdbcMethodInfoImpl
     {
         public TimestampInfo(Method method)
         {
@@ -647,7 +647,7 @@ public abstract class Method
     }
 
 
-    class ConvertInfo extends AbstractMethodInfo
+    static class ConvertInfo extends AbstractMethodInfo
     {
         public ConvertInfo()
         {
@@ -685,7 +685,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] fragments)
         {
-            JdbcType jdbcType = null;
+            JdbcType jdbcType;
             SQLFragment length = null;
             if (fragments.length >= 2)
             {
@@ -817,7 +817,7 @@ public abstract class Method
         }
     }
 
-	class RoundInfo extends JdbcMethodInfoImpl
+	static class RoundInfo extends JdbcMethodInfoImpl
 	{
 		RoundInfo()
 		{
@@ -891,7 +891,7 @@ public abstract class Method
     }
 
 
-    class AgeInYearsMethodInfo extends AbstractMethodInfo
+    static class AgeInYearsMethodInfo extends AbstractMethodInfo
     {
         AgeInYearsMethodInfo()
         {
@@ -927,7 +927,7 @@ public abstract class Method
     }
 
 
-    class AgeInMonthsMethodInfo extends AbstractMethodInfo
+    static class AgeInMonthsMethodInfo extends AbstractMethodInfo
     {
         AgeInMonthsMethodInfo()
         {
@@ -966,7 +966,7 @@ public abstract class Method
     }
 
 
-    class StartsWithInfo extends AbstractMethodInfo
+    static class StartsWithInfo extends AbstractMethodInfo
     {
         StartsWithInfo()
         {
@@ -1005,7 +1005,7 @@ public abstract class Method
 
 
 
-    class IsEqualInfo extends AbstractMethodInfo
+    static class IsEqualInfo extends AbstractMethodInfo
     {
         IsEqualInfo()
         {
@@ -1029,7 +1029,7 @@ public abstract class Method
         }
     }
 
-    class VersionMethodInfo extends AbstractMethodInfo
+    static class VersionMethodInfo extends AbstractMethodInfo
     {
         VersionMethodInfo()
         {
@@ -1043,7 +1043,7 @@ public abstract class Method
         }
     }
 
-    class UserIdInfo extends AbstractMethodInfo
+    static class UserIdInfo extends AbstractMethodInfo
     {
         UserIdInfo()
         {
@@ -1074,7 +1074,7 @@ public abstract class Method
         }
     }
 
-    class UserNameInfo extends AbstractMethodInfo
+    static class UserNameInfo extends AbstractMethodInfo
     {
         UserNameInfo()
         {
@@ -1159,7 +1159,7 @@ public abstract class Method
             return new SQLFragment("CAST(NULL AS VARCHAR)");
         }
     }
-    class JavaConstantInfo extends AbstractMethodInfo
+    static class JavaConstantInfo extends AbstractMethodInfo
     {
         JavaConstantInfo()
         {
@@ -1444,7 +1444,7 @@ public abstract class Method
         // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size()==1)
             return f.getParams().get(0) instanceof String;
-        if (f.getParams().size() > 0)
+        if (!f.getParams().isEmpty())
             return false;
         if (s.endsWith("::VARCHAR"))
             s = s.substring(0, s.length()-"::VARCHAR".length());

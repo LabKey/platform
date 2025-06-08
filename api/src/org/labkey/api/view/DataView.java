@@ -240,7 +240,8 @@ public abstract class DataView extends WebPartView<RenderContext>
                 {
                     String msg = e.getMessage();
                     if (!StringUtils.isEmpty(queryName) && !msg.contains(queryName))
-                        msg += " in query " + queryName;
+                    {
+                    }
                     out.write(PageFlowUtil.filter(e.getMessage()));
                 }
                 else

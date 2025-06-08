@@ -118,10 +118,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (settings.getProtocolActionName() != null)
                 _protocolActionName = settings.getProtocolActionName();
 
-            if (settings.getInputPaths() != null && settings.getInputPaths().size() > 0)
+            if (settings.getInputPaths() != null && !settings.getInputPaths().isEmpty())
                 _inputPaths = settings.getInputPaths();
 
-            if (settings.getOutputPaths() != null && settings.getOutputPaths().size() > 0)
+            if (settings.getOutputPaths() != null && !settings.getOutputPaths().isEmpty())
                 _outputPaths = settings.getOutputPaths();
 
             if (settings.getEnvironment() != null && !settings.getEnvironment().isEmpty())
@@ -280,7 +280,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             // If there were no output paths, then the command is run for some
             // other reason than its outputs.
-            return (getOutputPaths().size() > 0);
+            return (!getOutputPaths().isEmpty());
         }
 
         @Override
@@ -293,7 +293,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             
             // The first converter is responsible for the command name.
             List<TaskToCommandArgs> converters = getConverters();
-            assert converters != null && converters.size() > 0 :
+            assert converters != null && !converters.isEmpty() :
                     "No converters found in " + getId();
             TaskToCommandArgs commandNameConverter = converters.get(0);
 
@@ -304,7 +304,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             try
             {
                 // If it produces nothing for the command line, then this command should not be executed.
-                return commandNameConverter.toArgs(task, job.getParameters(), new HashSet<TaskToCommandArgs>()).size() != 0;
+                return !commandNameConverter.toArgs(task, job.getParameters(), new HashSet<>()).isEmpty();
             }
             finally
             {
@@ -365,7 +365,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         public List<String> toArgs(CommandTask task, Map<String, String> params) throws IOException
         {
-            return _converter.toArgs(task, params, new HashSet<TaskToCommandArgs>());
+            return _converter.toArgs(task, params, new HashSet<>());
         }
 
         public boolean isCopyInput()
@@ -488,7 +488,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             ArrayList<String> paths = new ArrayList<>();
             for (File file : _wd.getWorkFiles(f, tp))
                 paths.add(_wd.getRelativePath(file));
-            return paths.toArray(new String[paths.size()]);
+            return paths.toArray(new String[0]);
         }
     }
 

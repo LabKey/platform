@@ -26,7 +26,7 @@ public interface DiscussionSrcTypeProvider
     default String getEmailSubject(Container container, User user, int announcementRowId, String discussionSrcIdentifier, String body, String title, String parentBody)
     {
         return null;
-    };
+    }
 
     default Set<User> getRecipients(Container container, User user, String discussionSrcIdentifier)
     {

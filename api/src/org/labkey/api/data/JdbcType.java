@@ -670,27 +670,27 @@ public enum JdbcType
         @Test
         public void testPromote()
         {
-            assertEquals(promote(NULL, INTEGER), INTEGER);
-            assertEquals(promote(NULL, VARCHAR), VARCHAR);
-            assertEquals(promote(NULL, TIMESTAMP), TIMESTAMP);
-            assertEquals(promote(SMALLINT, NULL), SMALLINT);
-            assertEquals(promote(REAL, NULL), REAL);
-            assertEquals(promote(LONGVARCHAR, NULL), LONGVARCHAR);
+            assertEquals(INTEGER, promote(NULL, INTEGER));
+            assertEquals(VARCHAR, promote(NULL, VARCHAR));
+            assertEquals(TIMESTAMP, promote(NULL, TIMESTAMP));
+            assertEquals(SMALLINT, promote(SMALLINT, NULL));
+            assertEquals(REAL, promote(REAL, NULL));
+            assertEquals(LONGVARCHAR, promote(LONGVARCHAR, NULL));
 
-            assertEquals(promote(INTEGER, DOUBLE), DOUBLE);
-            assertEquals(promote(INTEGER, SMALLINT), INTEGER);
-            assertEquals(promote(INTEGER, DECIMAL), DECIMAL);
-            assertEquals(promote(DECIMAL, DOUBLE), DOUBLE);
+            assertEquals(DOUBLE, promote(INTEGER, DOUBLE));
+            assertEquals(INTEGER, promote(INTEGER, SMALLINT));
+            assertEquals(DECIMAL, promote(INTEGER, DECIMAL));
+            assertEquals(DOUBLE, promote(DECIMAL, DOUBLE));
 
-            assertEquals(promote(VARCHAR, DOUBLE), VARCHAR);
-            assertEquals(promote(VARCHAR, SMALLINT), VARCHAR);
-            assertEquals(promote(INTEGER, VARCHAR), VARCHAR);
-            assertEquals(promote(DECIMAL, VARCHAR), VARCHAR);
+            assertEquals(VARCHAR, promote(VARCHAR, DOUBLE));
+            assertEquals(VARCHAR, promote(VARCHAR, SMALLINT));
+            assertEquals(VARCHAR, promote(INTEGER, VARCHAR));
+            assertEquals(VARCHAR, promote(DECIMAL, VARCHAR));
 
-            assertEquals(promote(TIME, DATE), TIMESTAMP);
+            assertEquals(TIMESTAMP, promote(TIME, DATE));
 
-            assertEquals(promote(BOOLEAN, DATE), OTHER);
-            assertEquals(promote(VARBINARY, INTEGER), OTHER);
+            assertEquals(OTHER, promote(BOOLEAN, DATE));
+            assertEquals(OTHER, promote(VARBINARY, INTEGER));
         }
 
         @Test

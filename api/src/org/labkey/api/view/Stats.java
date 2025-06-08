@@ -48,10 +48,9 @@ public abstract class Stats
     {
         if (data instanceof String[])
             return new StringStats((String[]) data, requestedStats);
-        else if (data instanceof Number[])
+        else if (data instanceof Number[] numData)
         {
             double[] doubleData = new double[data.length];
-            Number[] numData = (Number[]) data;
             for (int i = 0; i < data.length; i++)
                 doubleData[i] = data[i] == null ? Double.NaN : numData[i].doubleValue();
 
@@ -83,7 +82,7 @@ public abstract class Stats
         return requestedStats;
     }
 
-    public static interface Statistic
+    public interface Statistic
     {
         Object getValue();
 
@@ -92,7 +91,7 @@ public abstract class Stats
 
     public static class StatDefinition
     {
-        private String name;
+        private final String name;
 
         private StatDefinition(String name)
         {
@@ -122,7 +121,7 @@ public abstract class Stats
 
     public static class PercentileDefinition extends StatDefinition
     {
-        private double percentile; //0-1
+        private final double percentile; //0-1
 
         public PercentileDefinition(double percentile)
         {
@@ -299,7 +298,7 @@ public abstract class Stats
         protected double sum;
         protected double[] data;
         private boolean sorted = false;
-        private DecimalFormat formatter = new DecimalFormat("0.###");
+        private final DecimalFormat formatter = new DecimalFormat("0.###");
 
         private Double mode;
         private Double median;

@@ -603,7 +603,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private static class _ProvisionedTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
     {
         private final SchemaTableInfo _inner;
-        private Domain _domain;
+        private final Domain _domain;
 
         _ProvisionedTable(DbSchema schema, String name, SchemaTableInfo inner, Domain domain)
         {

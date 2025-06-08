@@ -113,7 +113,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
      * Returns the table info for this query. The table does not apply any external metadata except module
      * scoped metadata.
      *
-     * @throws MetadataUnavailableException
      */
     private static TableInfo getRawTableInfo(UserSchema schema, String tableName, @Nullable String updatedTableName) throws MetadataUnavailableException
     {
@@ -426,7 +425,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         xmlColumn.unsetImportAliases();
                     }
                     // when there is no existing import aliases, add import aliases xml
-                    if (!metadataColumnJSON.getImportAliases().equals(""))
+                    if (!metadataColumnJSON.getImportAliases().isEmpty())
                     {
                         addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
                     }
@@ -550,7 +549,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
                 // May be empty, or may have empty text between the start and end tags
                 if (childNodes.getLength() == 0 ||
-                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text txt && txt.getData().trim().length() == 0))
+                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text txt && txt.getData().trim().isEmpty()))
                 {
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);

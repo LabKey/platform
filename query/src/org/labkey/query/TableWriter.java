@@ -76,7 +76,7 @@ public class TableWriter
     {
         QueryService queryService = QueryService.get();
         List<QueryView> views = new ArrayList<>();
-        if (null == schemas || schemas.size() == 0)
+        if (null == schemas || schemas.isEmpty())
         {
             // TBD
         }
@@ -190,7 +190,7 @@ public class TableWriter
         public void writeTable(TableType tableXml)
         {
             super.writeTable(tableXml);
-            if (_tableInfo.getPkColumnNames().size() > 0)
+            if (!_tableInfo.getPkColumnNames().isEmpty())
                 tableXml.setPkColumnName(_tableInfo.getPkColumnNames().get(0));
         }
 
@@ -201,7 +201,7 @@ public class TableWriter
 
             String columnName = column.getName();
 
-            if (_tableInfo.getPkColumnNames().size() > 0 && columnName.equals(_tableInfo.getPkColumnNames().get(0)))
+            if (!_tableInfo.getPkColumnNames().isEmpty() && columnName.equals(_tableInfo.getPkColumnNames().get(0)))
             {
                 columnXml.setIsKeyField(true);
 

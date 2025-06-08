@@ -113,7 +113,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetsTest init = (StudyDatasetsTest)getCurrentTest();
+        StudyDatasetsTest init = getCurrentTest();
         init.doCreateSteps();
     }
 
@@ -512,7 +512,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifyExpectedReportsAndViewsExist()
     {
-        if (EXPECTED_REPORTS.size() == 0)
+        if (EXPECTED_REPORTS.isEmpty())
         {
             EXPECTED_REPORTS.put("Chart View: Systolic vs Diastolic", "APX-1: Abbreviated Physical Exam");
             EXPECTED_REPORTS.put("Crosstab: MouseId Counts", "APX-1: Abbreviated Physical Exam");
@@ -522,7 +522,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             EXPECTED_REPORTS.put(PTID_REPORT_NAME, "Stand-alone views");
         }
 
-        if (EXPECTED_CUSTOM_VIEWS.size() == 0)
+        if (EXPECTED_CUSTOM_VIEWS.isEmpty())
         {
             EXPECTED_CUSTOM_VIEWS.put(CUSTOM_VIEW_WITH_DATASET_JOINS, "CPS-1: Screening Chemistry Panel");
             EXPECTED_CUSTOM_VIEWS.put("Abbreviated Demographics", "DEM-1: Demographics");

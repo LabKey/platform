@@ -46,6 +46,7 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
         return _instance;
     }
 
+    @Override
     public String getDataType()
     {
         return "Data Classes";

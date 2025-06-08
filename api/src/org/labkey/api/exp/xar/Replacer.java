@@ -24,9 +24,9 @@ import org.labkey.api.exp.XarFormatException;
  */
 public interface Replacer
 {
-    public String getReplacement(String original) throws XarFormatException;
+    String getReplacement(String original) throws XarFormatException;
 
-    public static class CompoundReplacer implements Replacer
+    class CompoundReplacer implements Replacer
     {
         private final Replacer _replacer1;
         private final Replacer _replacer2;

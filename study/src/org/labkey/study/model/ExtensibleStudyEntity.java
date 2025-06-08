@@ -146,6 +146,6 @@ public abstract class ExtensibleStudyEntity<K, E> extends AbstractStudyEntity<K,
         }
 
         if (!objectProperties.isEmpty())
-            OntologyManager.insertProperties(container, ownerLsid, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
+            OntologyManager.insertProperties(container, ownerLsid, objectProperties.toArray(new ObjectProperty[0]));
     }
 }

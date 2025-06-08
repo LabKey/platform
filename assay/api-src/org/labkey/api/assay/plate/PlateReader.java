@@ -21,7 +21,6 @@ import org.labkey.api.query.ValidationException;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: klum
@@ -41,10 +40,6 @@ public interface PlateReader
 
     /**
      * Parse the specified datafile and populate an array of well values
-     * @param template
-     * @param dataFile
-     * @return
-     * @throws ExperimentException
      */
     double[][] loadFile(Plate template, File dataFile) throws ExperimentException;
 
@@ -52,32 +47,22 @@ public interface PlateReader
      * Parse the specified datafile and populate a map of array of well values. This is designed to process files
      * that have multiple grids of data embedded and the caller is interested in all of the data. The parser will
      * attempt to annotate the grids with metadata that it may discover during parsing.
-     * @param template
-     * @param dataFile
-     * @return
-     * @throws ExperimentException
      */
     List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException;
 
     /**
      * Determines whether the specified well value should be used in any analytical calculations
-     * @param value
-     * @return
      */
     boolean isWellValueValid(double value);
 
     /**
      * Return the display value for a specified well value. Used for cases where the underlying value may
      * be a rejection code (above), and an alternate display value should be rendered.
-     * @param value
-     * @return
      */
     String getWellDisplayValue(Object value);
 
     /**
      * Converts the string token value to a numeric well value.
-     * @param token
-     * @return
      * @throws ValidationException - if the value cannot be converted, will halt parsing of the plate
      */
     double convertWellValue(String token) throws ValidationException;

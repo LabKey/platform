@@ -273,7 +273,7 @@ public class CustomViewXmlReader
         }
         catch (IOException ioe)
         {
-            throw new UnexpectedException(ioe);
+            throw UnexpectedException.wrap(ioe);
         }
     }
 

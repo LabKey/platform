@@ -42,9 +42,9 @@ public class CrosstabMember
     public static final String CAPTION_NAME = "**caption**";
     public static final String CAPTION_TOKEN = "${" + CAPTION_NAME + "}";
 
-    private @Nullable Object _value = null;
-    private @Nullable String _caption = null;
-    private @NotNull FieldKey _dimensionFieldKey = null;
+    private @Nullable Object _value;
+    private @Nullable String _caption;
+    private @NotNull FieldKey _dimensionFieldKey;
 
     public CrosstabMember(@Nullable Object value, @NotNull CrosstabDimension dimension, @Nullable String caption)
     {

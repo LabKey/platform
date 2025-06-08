@@ -279,7 +279,6 @@ public interface AuthenticationProvider
         /**
          * @param id user email string
          * @return Login delay in milliseconds
-         * @throws LoginDisabledException
          */
         long getUserDelay(String id) throws LoginDisabledException;
 

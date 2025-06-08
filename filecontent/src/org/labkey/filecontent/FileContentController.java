@@ -17,7 +17,6 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -182,7 +181,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SendFileAction extends SimpleViewAction<SendFileForm>
+    public static class SendFileAction extends SimpleViewAction<SendFileForm>
     {
         private WebdavResource _resource;
 
@@ -1556,7 +1555,7 @@ public class FileContentController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new SendFileAction(),
+                    new SendFileAction(),
                     new FrameAction(),
                     new BeginAction(),
                     new FileContentSummaryAction(),

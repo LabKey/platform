@@ -36,17 +36,17 @@ public class GroupTableInfo extends VirtualTable
 {
     private final static String ALIAS = "grp";
     private final static String ALIAS_SOURCE = "src";
-    private TableInfo _source;
-    private List<ColumnInfo> _groupByCols;
-    private List<CrosstabMeasure> _measures;
-    private SimpleFilter _sourceFilter;
+    private final TableInfo _source;
+    private final List<ColumnInfo> _groupByCols;
+    private final List<CrosstabMeasure> _measures;
+    private final SimpleFilter _sourceFilter;
 
     public GroupTableInfo(TableInfo source, SimpleFilter sourceFilter, List<ColumnInfo> groupByCols, List<CrosstabMeasure> measures)
     {
         super(source.getSchema(), ALIAS, source.getUserSchema());
 
-        assert null != groupByCols && groupByCols.size() > 0 : "No group by columns passed to GroupTableInfo constructor!";
-        assert null != measures && measures.size() > 0 : "No measures passed to GroupTableInfo constructor!";
+        assert null != groupByCols && !groupByCols.isEmpty() : "No group by columns passed to GroupTableInfo constructor!";
+        assert null != measures && !measures.isEmpty() : "No measures passed to GroupTableInfo constructor!";
         
         _source = source;
         _groupByCols = groupByCols;

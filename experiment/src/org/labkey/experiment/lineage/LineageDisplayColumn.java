@@ -30,7 +30,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;

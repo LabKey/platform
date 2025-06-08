@@ -31,13 +31,13 @@ import java.io.Serializable;
  */
 public class VersionNumber implements Serializable
 {
-    private int _major = 0;
+    private int _major;
     private int _minor = 0;
     private Object _revision = null;
 
     public VersionNumber(String version)
     {
-        if (null == version || version.length() == 0)
+        if (null == version || version.isEmpty())
             throw new RuntimeException("Null or empty version number string!");
 
         String[] versionParts = version.split("\\.");
@@ -121,7 +121,7 @@ public class VersionNumber implements Serializable
     public String toString()
     {
         if (null != _revision)
-            return _major + "." + _minor + "." + _revision.toString();
+            return _major + "." + _minor + "." + _revision;
         else
             return _major + "." + _minor;
     }

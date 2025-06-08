@@ -40,7 +40,7 @@ import org.radeox.macro.parameter.MacroParameter;
  */
 
 public interface FilterContext {
-  public MacroParameter getMacroParameter();
-  public void setRenderContext(RenderContext context);
-  public RenderContext getRenderContext();
+  MacroParameter getMacroParameter();
+  void setRenderContext(RenderContext context);
+  RenderContext getRenderContext();
 }

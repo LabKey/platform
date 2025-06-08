@@ -34,10 +34,10 @@ import java.util.Map;
  */
 public abstract class AbstractParticipantVisitResolver implements ParticipantVisitResolver
 {
-    private Container _runContainer;
-    private Container _targetStudyContainer;
-    private User _user;
-    private Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<>();
+    private final Container _runContainer;
+    private final Container _targetStudyContainer;
+    private final User _user;
+    private final Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<>();
 
     /**
      * Create the resolver.
@@ -72,12 +72,12 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
     public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
     {
         specimenID = specimenID == null ? null : specimenID.trim();
-        if (specimenID != null && specimenID.length() == 0)
+        if (specimenID != null && specimenID.isEmpty())
         {
             specimenID = null;
         }
         participantID = participantID == null ? null : participantID.trim();
-        if (participantID != null && participantID.length() == 0)
+        if (participantID != null && participantID.isEmpty())
         {
             participantID = null;
         }

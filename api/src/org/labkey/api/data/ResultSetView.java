@@ -97,7 +97,7 @@ public class ResultSetView extends WebPartView
                     if (createLink)
                     {
                         out.print("<a href=\"");
-                        out.print(PageFlowUtil.filter(_unencodedLink + val.toString()));
+                        out.print(PageFlowUtil.filter(_unencodedLink + val));
                         out.print("\">");
                     }
 

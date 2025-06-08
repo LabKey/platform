@@ -53,7 +53,7 @@ import java.util.logging.Level;
  */
 public class ImageUtil
 {
-    private static Logger LOG = LogManager.getLogger(ImageUtil.class);
+    private static final Logger LOG = LogManager.getLogger(ImageUtil.class);
     public static final String FILE_SESSION_PARAM = "fileCacheKey";
     public static final String DELETE_FILE_PARAM = "deleteFile";
     public static final String CACHE_FILE_PARAM = "cacheFile";

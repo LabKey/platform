@@ -51,6 +51,7 @@ public class PlateTypeBean implements PlateType
         _cols = cols;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -61,6 +62,7 @@ public class PlateTypeBean implements PlateType
         _description = description;
     }
 
+    @Override
     public Integer getRows()
     {
         return _rows;
@@ -71,6 +73,7 @@ public class PlateTypeBean implements PlateType
         _rows = rows;
     }
 
+    @Override
     public boolean isArchived()
     {
         return _archived;

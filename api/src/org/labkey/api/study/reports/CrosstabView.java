@@ -42,7 +42,7 @@ public class CrosstabView extends WebPartView
         if (null == _crosstab.getStatField())
             errStr.append("Stat field is not defined.<br>");
 
-        if (errStr.length() > 0)
+        if (!errStr.isEmpty())
         {
             pw.write("<b>Crosstab Error<b><br>");
             pw.write(errStr.toString());

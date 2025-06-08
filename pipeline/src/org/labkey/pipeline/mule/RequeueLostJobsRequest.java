@@ -39,9 +39,9 @@ public class RequeueLostJobsRequest implements StatusRequest
 {
     private static final Logger _log = LogManager.getLogger(RequeueLostJobsRequest.class);
 
-    private Collection<String> _locations;
-    private Collection<String> _jobIds;
-    private String _hostName;
+    private final Collection<String> _locations;
+    private final Collection<String> _jobIds;
+    private final String _hostName;
     private static final Object LOCK = new Object();
 
     public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds, @Nullable String hostName)

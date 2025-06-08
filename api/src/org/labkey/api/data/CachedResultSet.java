@@ -439,9 +439,8 @@ public class CachedResultSet implements ResultSet, TableResultSet
     {
         if (null == o)
             return null;
-        if (o instanceof BigDecimal)
+        if (o instanceof BigDecimal d)
         {
-            BigDecimal d = (BigDecimal) o;
             if (d.scale() == scale)
                 return d;
             return d.setScale(scale);
@@ -709,13 +708,13 @@ public class CachedResultSet implements ResultSet, TableResultSet
     @Override
     public boolean isFirst()
     {
-        return _rowMaps.size() > 0 && _row == 0;
+        return !_rowMaps.isEmpty() && _row == 0;
     }
 
     @Override
     public boolean isLast()
     {
-        return _rowMaps.size() > 0 && _row == _rowMaps.size() - 1;
+        return !_rowMaps.isEmpty() && _row == _rowMaps.size() - 1;
     }
 
     @Override

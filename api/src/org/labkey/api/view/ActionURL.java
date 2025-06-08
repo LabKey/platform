@@ -536,7 +536,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
         String controller = null;
 
-        if (path.size() < 1)
+        if (path.isEmpty())
             throw new IllegalArgumentException(path.toString());
         String action = path.get(path.size()-1);
         path = path.getParent();
@@ -559,7 +559,7 @@ public class ActionURL extends URLHelper implements Cloneable
         // parse controller
         if (null == controller)
         {
-            if (path.size() < 1)
+            if (path.isEmpty())
                 throw new IllegalArgumentException(path.toString());
             controller = path.get(0);
             path = path.subpath(1, path.size());

@@ -29,8 +29,6 @@ public interface Resolver
 
     /**
      * Locate a Resource at the given path.
-     * @param path
-     * @return
      */
     @Nullable Resource lookup(Path path);
 

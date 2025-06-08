@@ -153,7 +153,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
         try {
             String l;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while ((l = br.readLine()) != null)
             {
                 sb.append(l);
@@ -307,7 +307,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             else
                 params.add(scriptFilePath);
 
-            return params.toArray(new String[params.size()]);
+            return params.toArray(new String[0]);
         }
         catch (Exception e)
         {

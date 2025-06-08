@@ -148,6 +148,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _entireListIndexSetting;
     }
 
+    @Override
     public @Nullable String getEntireListTitleTemplate()
     {
         return _entireListTitleTemplate;
@@ -176,6 +177,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _eachItemIndex;
     }
 
+    @Override
     public @Nullable String getEachItemTitleTemplate()
     {
         return _eachItemTitleTemplate;

@@ -59,42 +59,43 @@ import java.util.Set;
  * Date: Feb 6, 2007
  * Time: 3:56:25 PM
  */
+@SuppressWarnings("Convert2Diamond")
 public class TemplateView extends HorizontalPanel
 {
-    private RootPanel _rootPanel;
-    private int _plateId;
-    private String _templateName;
+    private final RootPanel _rootPanel;
+    private final int _plateId;
+    private final String _templateName;
     private TemplateGrid _grid;
-    private List<GroupChangeListener> _groupListeners = new ArrayList<GroupChangeListener>();
+    private final List<GroupChangeListener> _groupListeners = new ArrayList<>();
     private GWTWellGroup _activeGroup;
     private StatusBar _statusBar;
     private GWTPlate _plate;
     private GroupTypesTabPanel _typePanel;
-    private ColorGenerator _colorGenerator = new ColorGenerator();
-    private Map<GWTWellGroup, String> _groupToColorMap = new HashMap<GWTWellGroup, String>();
+    private final ColorGenerator _colorGenerator = new ColorGenerator();
+    private final Map<GWTWellGroup, String> _groupToColorMap = new HashMap<>();
     private PlateDataServiceAsync _testService;
     private boolean _dirty = false;
     private Set<String> _existingTemplateNames;
     private String _originalTemplateName;
     private TextBox _nameBox;
     private boolean _copyMode;
-    private Map<String, List<String>> _cellWarnings = new HashMap<String, List<String>>();
+    private final Map<String, List<String>> _cellWarnings = new HashMap<>();
     private TabPanel _propertyTabPanel;
     private boolean _showWarningPanel;
     private WarningPanel _warningPanel;
     private WellGroupPropertyPanel _wellGroupPropertyPanel;
     private PlatePropertyPanel _platePropertyPanel;
-    private String _assayTypeName;
-    private String _templateTypeName;
-    private int _rowCount;
-    private int _columnCount;
+    private final String _assayTypeName;
+    private final String _templateTypeName;
+    private final int _rowCount;
+    private final int _columnCount;
     private boolean _mouseDown = false;
     private TemplateGridCell _selectionStartCell;
     private TemplateGridCell _prevSelectionEndCell;
     private boolean _setSelected;
     private GWTWellGroup[][] _assignmentShapshot;
-    private final List<TemplateGridCell> _updatedCellList = new ArrayList<TemplateGridCell>();
-    private Timer _warningUpdateTimer = new Timer()
+    private final List<TemplateGridCell> _updatedCellList = new ArrayList<>();
+    private final Timer _warningUpdateTimer = new Timer()
     {
         @Override
         public void run()
@@ -307,12 +308,12 @@ public class TemplateView extends HorizontalPanel
             setDirty(true);
     }
 
-    private Set getAllTemplateNames()
+    private Set<String> getAllTemplateNames()
     {
         if (_existingTemplateNames == null)
         {
             String current;
-            _existingTemplateNames = new HashSet<String>();
+            _existingTemplateNames = new HashSet<>();
             int idx = 0;
             do
             {
@@ -338,14 +339,14 @@ public class TemplateView extends HorizontalPanel
     public void saveChanges(final AsyncCallback<Integer> callback)
     {
         String templateName = _nameBox.getText().trim();
-        if (templateName == null || templateName.length() == 0)
+        if (templateName == null || templateName.isEmpty())
         {
             Window.alert("A plate name must be specified.");
             return;
         }
         if (_copyMode || !templateName.equals(_originalTemplateName))
         {
-            Set allTemplateNames = getAllTemplateNames();
+            Set<?> allTemplateNames = getAllTemplateNames();
             if (allTemplateNames.contains(templateName))
             {
                 Window.alert("A plate template with this name already exists.  Please choose another name.");

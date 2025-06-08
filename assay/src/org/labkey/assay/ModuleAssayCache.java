@@ -61,7 +61,7 @@ public class ModuleAssayCache
         }
     }
 
-    class ModuleAssayCollections
+    static class ModuleAssayCollections
     {
         private final List<AssayProvider> _assayProviders = new LinkedList<>();
         private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();

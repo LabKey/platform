@@ -60,7 +60,7 @@ class TabFileType extends FileType
         int fieldLen = -1;
         for (String line : lines)
         {
-            if (line.length() == 0 || line.charAt(0) == TabLoader.COMMENT_CHAR)
+            if (line.isEmpty() || line.charAt(0) == TabLoader.COMMENT_CHAR)
                 continue;
 
             String[] fields = line.split(delim, -1);
@@ -101,7 +101,7 @@ class TabFileType extends FileType
 
     /*package*/ boolean isHeader(@NotNull String cs)
     {
-        if (cs.length() == 0)
+        if (cs.isEmpty())
             return false;
 
         return HEADER.matcher(cs).matches();
