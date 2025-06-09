@@ -68,7 +68,6 @@
     <%
         AllowListForm bean = (AllowListForm) HttpView.currentModel();
         List<String> exitingValues = bean.getExistingValuesList();
-        exitingValues.sort(SortHelpers.getNaturalOrderStringComparator());
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>

@@ -10914,7 +10914,7 @@ public class AdminController extends SpringActionController
             if (form.isDelete())
             {
                 String urlToDelete = form.getExistingValue();
-                List<String> values = allowListType.getValues();
+                List<String> values = new ArrayList<>(allowListType.getValues());
                 for (String value : values)
                 {
                     if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
