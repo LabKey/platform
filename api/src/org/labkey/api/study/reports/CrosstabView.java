@@ -99,7 +99,7 @@ public class CrosstabView extends WebPartView<Object>
                 null != _crosstab.getRowField() ?
                     _crosstab.getRowHeaders().stream()
                         .flatMap(rowVal -> statSet.stream().map(rowStat -> TR(
-                            rowStat == firstStat ? TD(cl("xtab-row-header").at(rowspan, statSet.size()), rowVal) : null,
+                            rowStat == firstStat ? TD(cl("xtab-row-header").at(rowspan, statSet.size()), HtmlString.of(rowVal)) : null,
                             multipleStats ? TD(cl("xtab-stat-title"), rowStat.getName()) : null,
                             colHeaders.stream().map(colVal -> TD(_crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat))),
                             TD(cl("xtab-row-total"), _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat))
