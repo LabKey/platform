@@ -247,7 +247,10 @@ public class ReportsController extends BaseStudyController
             form.setErrors(errors);
             if (form.getReport(getViewContext()) != null)
             {
-                return new JspView<>("/org/labkey/study/view/saveReportView.jsp", form);
+                JspView<SaveReportViewForm> result = new JspView<>("/org/labkey/study/view/saveReportView.jsp", form);
+                result.setTitle("Save Report");
+                result.setFrame(WebPartView.FrameType.PORTAL);
+                return result;
             }
             else
             {
@@ -420,6 +423,8 @@ public class ReportsController extends BaseStudyController
             form.setColumns(getColumns(form));
 
             JspView<CrosstabDesignBean> view = new JspView<>("/org/labkey/study/view/crosstabDesigner.jsp", form);
+            view.setTitle("Design Crosstab Report");
+            view.setFrame(WebPartView.FrameType.PORTAL);
             VBox v = new VBox(view);
 
             if (reshow)
@@ -448,6 +453,8 @@ public class ReportsController extends BaseStudyController
                     if (!getUser().isGuest())
                     {
                         JspView<SaveReportViewForm> saveWidget = new JspView<>("/org/labkey/study/view/saveReportView.jsp", bean);
+                        saveWidget.setFrame(WebPartView.FrameType.PORTAL);
+                        saveWidget.setTitle("Save Report");
                         v.addView(saveWidget);
                     }
                 }
