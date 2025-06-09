@@ -387,7 +387,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 filters: filters,
                 cacheResults: this.cacheFacetResults,
                 listeners: {
-                    invalidfilter : function() {
+                    invalidfacetedfilter : function() {
                         this.carryfilter = false;
                         this.getContainer().setActiveTab(0);
                         this.getContainer().getActiveTab().doLayout();
@@ -1329,7 +1329,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 if (recordNotFound) {
                     // cannot find any matching records
                     if (me.column.facetingBehaviorType != 'ALWAYS_ON')
-                        me.fireEvent('invalidfilter');
+                        me.fireEvent('invalidfacetedfilter');
                     return;
                 }
 
@@ -1369,11 +1369,26 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 this.setValue(filter.getURLParameterValue(), negated);
 
                 if (!me.filterOptimization && negated) {
-                    me.fireEvent('invalidfilter');
+                    me.fireEvent('invalidfacetedfilter');
                 }
             },
             scope : this
         };
+    },
+
+    shouldShowFaceted : function(filter) {
+        const CHOOSE_VALUE_FILTERS =  [
+            LABKEY.Filter.Types.EQUAL.getURLSuffix(),
+            LABKEY.Filter.Types.IN.getURLSuffix(),
+            LABKEY.Filter.Types.NEQ.getURLSuffix(),
+            LABKEY.Filter.Types.NEQ_OR_NULL.getURLSuffix(),
+            LABKEY.Filter.Types.NOT_IN.getURLSuffix(),
+        ];
+
+        if (!filter)
+            return true;
+
+        return CHOOSE_VALUE_FILTERS.indexOf(filter.getFilterType().getURLSuffix()) >= 0;
     },
 
     onViewReady : function() {
@@ -1394,6 +1409,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 else
                     grid.selectFilter(this.filters[0]);
 
+                // Issue 52547: LKS filter dialog treats many filter types as if they are Equals
+                if (numFilters > 1 || !this.shouldShowFaceted(this.filters[0]))
+                    this.fireEvent('invalidfacetedfilter');
+
                 if (!grid.headerClick) {
                     grid.headerClick = true;
                     var div = Ext.fly(grid.getView().getHeaderCell(1)).first('div');
@@ -1410,7 +1429,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 Ext.getCmp(this.gridID + 'OverflowLabel').setVisible(this.overflow);
 
                 if (this.loadError || this.overflow) {
-                    this.fireEvent('invalidfilter');
+                    this.fireEvent('invalidfacetedfilter');
                 }
             }
         }
