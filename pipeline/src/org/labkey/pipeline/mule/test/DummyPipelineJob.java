@@ -30,7 +30,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -79,7 +78,7 @@ public class DummyPipelineJob extends PipelineJob
         }
         catch (IOException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
         setActiveTaskId(getTaskPipeline().getTaskProgression()[0], false);
     }
@@ -103,7 +102,7 @@ public class DummyPipelineJob extends PipelineJob
 
     @Nullable
     @Override
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(DummyPipelineJob.class));
     }
