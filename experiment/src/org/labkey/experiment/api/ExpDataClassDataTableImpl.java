@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -39,13 +40,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.FieldKeyRowMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -1262,19 +1263,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            try
+            Map<String,Object> row = _select(container, rowId, lsid, name, classId, allowCrossContainer);
+
+            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
+            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
+            if (null != row)
             {
-                return _select(container, rowId, lsid, name, classId, allowCrossContainer);
+                if (row instanceof ArrayListMap arrayListMap)
+                    arrayListMap.getFindMap().remove("_row");
+                else
+                    row.remove("_row");
             }
-            catch (SQLException e)
-            {
-                String key = rowId != null ? "rowId (" + rowId + ")" : "";
-                if (key.isEmpty() && lsid != null)
-                    key = "lsid (" + lsid + ")";
-                if (key.isEmpty())
-                    key = "name (" + name + ")";
-                throw new InvalidKeyException("Unable to select data for provided " + key);
-            }
+
+            return row;
         }
 
         @Override
@@ -1283,32 +1284,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
-            SimpleFilter filter = new SimpleFilter();
+            // FIXME Issue 52886: This retrieves raw db column names, which doesn't work well for comparing existing and new audit records if the name doesn't match the field key
+            TableInfo d = getDbTable();
+            TableInfo t = _dataClassDataTableSupplier.get();
+
+            SQLFragment sql = new SQLFragment()
+                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+                    .append(" FROM ").append(d, "d")
+                    .append(" LEFT OUTER JOIN ").append(t, "t")
+                    .append(" ON d.lsid = t.lsid WHERE ");
+
             if (null != rowid)
-                filter.addCondition(FieldKey.fromParts("rowId"), rowid);
+                sql.append("d.rowid=?").add(rowid);
             else if (null != lsid)
-                filter.addCondition(FieldKey.fromParts("lsid"), lsid);
+                sql.append("d.lsid=?").add(lsid);
             else
-                filter.addCondition(FieldKey.fromParts("classid"), classId)
-                        .addCondition(FieldKey.fromParts("name"), name);
+                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
+
             if (!allowCrossContainer)
-                filter.addCondition(FieldKey.fromParts("Folder"), container.getEntityId());
+                sql.append(" AND d.Container=?").add(container.getEntityId());
 
-            TableInfo queryTable = getQueryTable();
-            TableSelector selector = new TableSelector(queryTable, filter, null);
-
-            try (var results = selector.getResults()) {
-                if (results.next())
-                {
-                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
-                }
-            }
-            return Collections.emptyMap();
+            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
 
         @Override

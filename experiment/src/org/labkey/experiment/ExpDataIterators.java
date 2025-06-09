@@ -2967,7 +2967,9 @@ public class ExpDataIterators
 
         private Object getSerializingObject(Object data)
         {
-            if (data instanceof Date d && !(data instanceof Time))
+            if (data instanceof Time t)
+                return DateUtil.formatIsoLongTime(t);
+            if (data instanceof Date d)
                 return DateUtil.formatIsoDateLongTime(d, true);
             if (data instanceof String s)
                 return _tsvWriter.quoteValue(s.trim());
