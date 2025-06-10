@@ -44,9 +44,7 @@
     List<String> stats = Arrays.asList(bean.getStats());
 %>
 
-<labkey:form action="" method="post">
-    Design crosstab report.
-
+<labkey:form method="post">
     <table>
         <tr>
             <td></td>
@@ -55,41 +53,41 @@
     <tr>
         <td class="labkey-bordered" style="padding:3px;font-weight:bold">Row&nbsp;Field<br><%=fieldDropDown("rowField", "rowSelection", bean.getColumns(), bean.getRowField(), false, true, null)%>
         </td>
-        <td class="labkey-bordered" style="padding:3px;font-weight:bold" width="100%">Measurement Field<br>
+        <td class="labkey-bordered" style="padding:3px;font-weight:bold; width: 100%">Measurement Field<br>
             <%=fieldDropDown("statField", "statSelection", bean.getColumns(), bean.getStatField(), true, false, "updateSelection();")%><br>
             <br>
             Compute<br>
             <table><tr>
                 <td>
                     <label>
-                        <input id="cbCount" type=checkbox name=stats value=Count<%=checked(stats.contains("Count"))%>><span>&nbsp;Count of Records</span>
+                        <input id="cbCount" type="checkbox" name="stats" value="Count" <%=checked(stats.contains("Count"))%>><span>&nbsp;Count of Records</span>
                     </label>
                     <br>
                     <label>
-                        <input id="cbSum" type=checkbox name=stats value=Sum <%=checked(stats.contains("Sum"))%>><span>&nbsp;Sum</span>
+                        <input id="cbSum" type="checkbox" name="stats" value="Sum" <%=checked(stats.contains("Sum"))%>><span>&nbsp;Sum</span>
                     </label>
                 </td>
-                <td>
+                <td style="padding-left: 1em;">
                     <label>
-                        <input id="cbStdDev" type=checkbox name=stats value=StdDev<%=checked(stats.contains("StdDev"))%>><span>&nbsp;StdDev</span>
+                        <input id="cbStdDev" type="checkbox" name="stats" value=StdDev <%=checked(stats.contains("StdDev"))%>><span>&nbsp;StdDev</span>
                     </label>
                     <br>
                     <label>
-                        <input id="cbMean" type=checkbox name=stats value=Mean<%=checked(stats.contains("Mean"))%>><span>&nbsp;Mean</span>
+                        <input id="cbMean" type="checkbox" name="stats" value="Mean" <%=checked(stats.contains("Mean"))%>><span>&nbsp;Mean</span>
                     </label>
                 </td>
-                <td>
+                <td style="padding-left: 1em;">
                     <label>
-                        <input id="cbMin" type=checkbox name=stats value=Min<%=checked(stats.contains("Min"))%>><span>&nbsp;Min</span>
+                        <input id="cbMin" type="checkbox" name="stats" value="Min" <%=checked(stats.contains("Min"))%>><span>&nbsp;Min</span>
                     </label>
                     <br>
                     <label>
-                        <input id="cbMax" type=checkbox name=stats value=Max<%=checked(stats.contains("Max"))%>><span>&nbsp;Max</span>
+                        <input id="cbMax" type="checkbox" name="stats" value="Max" <%=checked(stats.contains("Max"))%>><span>&nbsp;Max</span>
                     </label>
                 </td>
-                <td valign=top>
+                <td style="vertical-align: top; padding-left: 1em">
                     <label>
-                        <input id="cbMedian" type=checkbox name=stats value=Median<%=checked(stats.contains("Median"))%>><span>&nbsp;Median</span>
+                        <input id="cbMedian" type="checkbox" name="stats" value="Median" <%=checked(stats.contains("Median"))%>><span>&nbsp;Median</span>
                     </label>
                     <br>
                 </td>
@@ -125,7 +123,7 @@
             if (isStatField && !isValidStatColumn(col))
                 continue;
 
-            if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
+            if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey()))
                 continue;
 
             builder.addOption(col.getLabel(), col.getFieldKey().encode())
@@ -136,7 +134,7 @@
 
     boolean isValidStatColumn(ColumnInfo col)
     {
-        Class cls = col.getJavaClass();
+        Class<?> cls = col.getJavaClass();
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive())
             return true;
 
@@ -150,7 +148,7 @@
     var columnTypeMap = {};
 <%  for (ColumnInfo col : bean.getColumns().values())
     {
-        Class cls = col.getJavaClass();
+        Class<?> cls = col.getJavaClass();
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive()) { %>
             columnTypeMap[<%=q(col.getFieldKey().encode())%>] = 'numeric';
 <%      }

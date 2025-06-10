@@ -32,8 +32,6 @@ import java.util.Map;
 /**
  * A {@link java.sql.ResultSet} with additional metadata to make it easier to use. Understands the mapping of a
  * {@link org.labkey.api.query.FieldKey} that was part of the query to its value in the result set.
- * User: matthewb
- * Date: Nov 18, 2010
  */
 public interface Results extends ResultSet, TableResultSet
 {
@@ -43,11 +41,9 @@ public interface Results extends ResultSet, TableResultSet
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();
 
-    @NotNull
-    public Map<FieldKey, Integer> getFieldIndexMap();
+    @NotNull Map<FieldKey, Integer> getFieldIndexMap();
 
-    @NotNull
-    public Map<FieldKey, Object> getFieldKeyRowMap();
+    @NotNull Map<FieldKey, Object> getFieldKeyRowMap();
 
     @Nullable
     ResultSet getResultSet();

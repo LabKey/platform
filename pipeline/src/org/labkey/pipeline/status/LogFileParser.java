@@ -1,11 +1,14 @@
 package org.labkey.pipeline.status;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Parse a pipeline job log file.
@@ -14,6 +17,8 @@ import java.util.List;
  */
 public class LogFileParser
 {
+    private static final Set<String> LOG_LEVELS = Collections.unmodifiableSet(new CaseInsensitiveHashSet(PageFlowUtil.set("DEBUG", "INFO", "WARN", "ERROR", "FATAL")));
+
     public static List<Record> parseLines(String data)
     {
         if (data.isBlank())
@@ -91,7 +96,7 @@ public class LogFileParser
         {
             var dateTime = line.substring(0, 24);
             var type = line.substring(25, 30).trim();
-            if (JobStatusLogView.LOG_LEVELS.contains(type))
+            if (LOG_LEVELS.contains(type))
             {
                 var record = new Record();
                 record.setDateTime(dateTime);

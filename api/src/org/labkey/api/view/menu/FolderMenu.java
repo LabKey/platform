@@ -18,21 +18,24 @@ package org.labkey.api.view.menu;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import static org.labkey.api.util.PageFlowUtil.filter;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: Nick
- * Date: 4/10/13
- */
 public class FolderMenu extends NavTreeMenu
 {
     public FolderMenu(ViewContext context)
@@ -53,34 +56,41 @@ public class FolderMenu extends NavTreeMenu
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
         NavTree root;
         List<NavTree> elements = getElements();
         ViewContext context = getViewContext();
 
-        // as shown above in getNavTree, if elements is not null, then there will only be one element.
+        // as shown above in getNavTree, if elements is not null, then there will be only one element.
         if (null != elements && (root = elements.get(0)) != null && root.hasChildren())
         {
-            out.print("<div class=\"folder-nav\">");
-            renderChildLinks(root, root.getId(), context, out, null);
-            out.print("</div>");
+            DIV(
+                cl("folder-nav"),
+                (Renderable) ret -> {
+                    renderChildLinks(root, root.getId(), context, out, null);
+                    return ret;
+                }
+            ).appendTo(out);
         }
     }
 
     private void renderChildLinks(NavTree nav, String rootId,
-                                  ViewContext context, PrintWriter out, @Nullable Boolean shouldExpand) throws URISyntaxException
+                                  ViewContext context, HtmlWriter out, @Nullable Boolean shouldExpand)
     {
-        out.print("<ul>");
-        for (NavTree child: nav.getChildren())
-        {
-            renderLink(child, rootId, context, out, shouldExpand);
-        }
-        out.print("</ul>");
+        UL(
+            (Renderable) ret -> {
+                for (NavTree child: nav.getChildren())
+                {
+                    renderLink(child, rootId, context, out, shouldExpand);
+                }
+                return ret;
+            }
+        ).appendTo(out);
     }
 
     private void renderLink(NavTree nav, String rootId,
-                            ViewContext context, PrintWriter out, Boolean shouldExpand) throws URISyntaxException
+                            ViewContext context, HtmlWriter out, Boolean shouldExpand)
     {
         // 34137: Support folder path expansion for containers where label != name
         final Container container = ContainerManager.getForId(nav.getId());
@@ -92,11 +102,11 @@ public class FolderMenu extends NavTreeMenu
 
         final String currentPath = container.getPath().toLowerCase();
         final String containerPath = context.getContainer().getPath().toLowerCase();
+        final boolean finalShouldExpand;
 
-        if (shouldExpand == null)
-            shouldExpand = containerPath.startsWith(currentPath);
+        finalShouldExpand = Objects.requireNonNullElseGet(shouldExpand, () -> containerPath.startsWith(currentPath));
 
-        boolean isSelected = shouldExpand && currentPath.equals(containerPath);
+        boolean isSelected = finalShouldExpand && currentPath.equals(containerPath);
         boolean hasChildren = nav.hasChildren();
 
         List<String> liCls = new ArrayList<>();
@@ -104,48 +114,46 @@ public class FolderMenu extends NavTreeMenu
         if (hasChildren)
         {
             liCls.add("clbl");
-            if (shouldExpand)
+            if (finalShouldExpand)
                 liCls.add("expand-folder");
             else
                 liCls.add("collapse-folder");
         }
 
-        out.print("<li" + (!liCls.isEmpty() ? " class=\"" + String.join(" ", liCls) + "\"" : "") + ">");
+        LI(
+            cl(String.join(" ", liCls)),
+            SPAN(
+                cl(hasChildren, "marked"),
+                HtmlString.NBSP   // Safari
+            ),
+            (Renderable) ret -> {
+                String link = nav.getHref();
+                if (null != link)
+                {
+                    LinkBuilder builder = nav.toSimpleLinkBuilder();
 
-        out.print("<span");
-        if (hasChildren)
-            out.print(" class=\"marked\"");
-        out.print(">&nbsp;</span>"); // Safari
+                    if (isSelected)
+                        builder.addClass("nav-tree-selected").id("folder-target");
 
-        String link = nav.getHref();
-        if (null != link)
-        {
-            out.printf("<a href=\"%s\"", filter(link));
+                    out.write(builder);
+                }
+                else
+                {
+                    SPAN(
+                        cl("noread"),
+                        nav.getText()
+                    ).appendTo(out);
+                }
 
-            if (isSelected)
-                out.print(" class=\"nav-tree-selected\" id=\"folder-target\"");
-
-            if (nav.isNoFollow())
-                out.print(" rel=\"nofollow\"");
-
-            out.print(">");
-            out.print(filter(nav.getText()));
-            out.print("</a>");
-        }
-        else
-        {
-            out.print("<span class=\"noread\">");
-            out.print(filter(nav.getText()));
-            out.print("</span>");
-        }
-
-        if (hasChildren)
-        {
-            if (shouldExpand)
-                renderChildLinks(nav, rootId, context, out, null);
-            else
-                renderChildLinks(nav, rootId, context, out, false);
-        }
-        out.print("</li>");
+                if (hasChildren)
+                {
+                    if (finalShouldExpand)
+                        renderChildLinks(nav, rootId, context, out, null);
+                    else
+                        renderChildLinks(nav, rootId, context, out, false);
+                }
+                return ret;
+            }
+        ).appendTo(out);
     }
 }

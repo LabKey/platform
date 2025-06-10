@@ -23,8 +23,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -34,12 +35,20 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.wiki.model.Wiki;
 
-import java.io.PrintWriter;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Stack;
+
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 
 public class WikiTOC extends NavTreeMenu
 {
@@ -170,7 +179,7 @@ public class WikiTOC extends NavTreeMenu
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out)
     {
         ViewContext context = getViewContext();
 
@@ -189,7 +198,7 @@ public class WikiTOC extends NavTreeMenu
         }
 
         //Generate a root node to simplify finding subtrees
-        //NOTE:  This is an artifact of the detail that we can't use the
+        //NOTE: This is an artifact of the detail that we can't use the
         //NavTreeMenu (this) as the root because it won't recurse into its children
         //See NavTreeMenu.findSubtree
 
@@ -264,34 +273,38 @@ public class WikiTOC extends NavTreeMenu
             }
         }
 
-        out.println("<div id=\"NavTree-"+ getId() +"\">");
-        super.renderView(model, out);
-        out.println("</div>");
+        DIV(
+            at(id, "NavTree-"+ getId()),
+            (DOM.Renderable) ret -> {
+                try
+                {
+                    super.renderView(model, out);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+                return ret;
+            }
+        ).appendTo(out);
 
         if (getElements().size() > 1)
         {
-            out.println("<br>");
-            out.println("<table width=\"100%\">");
-            out.println("<tr>\n<td>");
-
-            if (prevURL != null)
-            {
-                LinkBuilder.labkeyLink("previous", prevURL).appendTo(out);
-            }
-
-            if (nextURL != null)
-            {
-                LinkBuilder.labkeyLink("next", nextURL).appendTo(out);
-            }
-
-            if (showExpandOption)
-            {
-                out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                LinkBuilder.labkeyLink("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)").appendTo(out);
-                LinkBuilder.labkeyLink("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)").appendTo(out);
-            }
-
-            out.println("</td>\n</tr>\n</table>");
+            out.write(HtmlString.BR);
+            TABLE(
+                at(width, "100%"),
+                TR(
+                    TD(
+                        prevURL != null ? LinkBuilder.labkeyLink("previous", prevURL) : null,
+                        nextURL != null ? LinkBuilder.labkeyLink("next", nextURL) : null
+                    )
+                ),
+                showExpandOption ? TR(TD(HtmlString.NBSP)) : null,
+                showExpandOption ? TR(TD(
+                    LinkBuilder.labkeyLink("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)"),
+                    LinkBuilder.labkeyLink("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)")
+                )) : null
+            ).appendTo(out);
         }
     }
 
