@@ -2035,7 +2035,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
-            add(map, "targz_sample.tar.gz", 74, "\n\ntargz_sample/._hello.txt\n\n\n\n\n\ntargz_sample/hello.txt");
+            add(map, "targz_sample.tar.gz", 74, "targz_sample/._hello.txt", "targz_sample/hello.txt");
             return map;
         }
 
