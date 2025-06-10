@@ -326,7 +326,7 @@ public class FileUtil
         {
             String badExtension = checkExtension(s, AppProps.getInstance());
             if (badExtension != null)
-                return "This file type [" + badExtension + "] is not allowed.";
+                return "This file type [" + badExtension + "] is not allowed. Accepted file extensions: " + AppProps.getInstance().getAllowedExtensions();
         }
         return null;
     }
@@ -1532,11 +1532,6 @@ quickScan:
         char ch = ret[lastIndex];
         if (ch == ' ' || ch == '.')
             ret[lastIndex] = '_';
-
-        String result = new String(ret);
-
-        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result, true) == null :
-                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result, true);
 
         return new String(ret);
     }
