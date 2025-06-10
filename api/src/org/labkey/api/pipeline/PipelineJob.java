@@ -236,8 +236,8 @@ abstract public class PipelineJob extends Job implements Serializable, Container
          * Do the work of the task. The task should not set the status of the job to complete - this will be handled
          * by the caller.
          * @return the files used as inputs and generated as outputs, and the steps that operated on them
-         * @throws PipelineJobException if something went wrong during the exception of the job. The caller will
-         * handle setting the job's status to ERROR
+         * @throws PipelineJobException if something went wrong during the execution of the job. The caller will
+         * handle setting the job's status to ERROR.
          */
         @NotNull
         public abstract RecordedActionSet run() throws PipelineJobException;
@@ -1578,7 +1578,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         }
     }
 
-    // Multiple threads log messages, so synchronize to make sure that no one gets a partially intitialized logger
+    // Multiple threads log messages, so synchronize to make sure that no one gets a partially initialized logger
     public synchronized Logger getLogger()
     {
         if (_logger == null)

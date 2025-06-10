@@ -17,19 +17,13 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.statistics.MathStat;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * User: migra
- * Date: Mar 3, 2006
- * Time: 8:42:04 AM
- */
 public abstract class Stats
 {
     public abstract int getCount();
@@ -40,7 +34,7 @@ public abstract class Stats
 
     public abstract Object getStat(StatDefinition stat);
 
-    public abstract String getFormattedStat(StatDefinition stat);
+    public abstract HtmlString getFormattedStat(StatDefinition stat);
 
     protected Set<StatDefinition> requestedStats;
 
@@ -200,15 +194,6 @@ public abstract class Stats
 
         throw new IllegalArgumentException("Unknown stat: " + stat);
     }
-    
-    public static Set<StatDefinition> statSet(StatDefinition... stats)
-    {
-        Set<StatDefinition> set = new HashSet<>();
-        for (StatDefinition stat : stats)
-            set.add(stat);
-
-        return set;
-    }
 
     public static class StringStats extends Stats
     {
@@ -272,16 +257,16 @@ public abstract class Stats
         }
 
         @Override
-        public String getFormattedStat(StatDefinition stat)
+        public HtmlString getFormattedStat(StatDefinition stat)
         {
             if (stat == MIN)
-                return StringUtils.trimToEmpty(PageFlowUtil.filter(getMin()));
+                return HtmlString.of(StringUtils.trimToEmpty(getMin()));
             if (stat == MAX)
-                return StringUtils.trimToEmpty(PageFlowUtil.filter(getMax()));
+                return HtmlString.of(StringUtils.trimToEmpty(getMax()));
             if (stat == COUNT)
-                return String.valueOf(getCount());
+                return HtmlString.of(getCount());
             else
-                return "";
+                return HtmlString.EMPTY_STRING;
         }
     }
 
@@ -298,11 +283,12 @@ public abstract class Stats
         protected double sum;
         protected double[] data;
         private boolean sorted = false;
-        private final DecimalFormat formatter = new DecimalFormat("0.###");
 
         private Double mode;
         private Double median;
         private Double mad;
+
+        private final DecimalFormat formatter = new DecimalFormat("0.###");
 
         public DoubleStats(double[] data)
         {
@@ -348,13 +334,12 @@ public abstract class Stats
             double sumSquares = 0;
             int positiveCount = 0;
             mean = 0.0;
-            for (int i = 0; i < n; i++)
+            for (double d : data)
             {
-                double d = data[i];
                 if (Double.isNaN(d))
                     continue;
 
-                count ++;
+                count++;
                 sum += d;
                 sumSquares += (d * d);
                 if (d > 0)
@@ -370,7 +355,7 @@ public abstract class Stats
             this.min = min;
             this.max = max;
 
-            // calculate the variance, stardard deviation, and geomtric mean
+            // calculate the variance, standard deviation, and geometric mean
             if (count > 0)
             {
                 mean = sum / count;
@@ -458,15 +443,15 @@ public abstract class Stats
         }
 
         @Override
-        public String getFormattedStat(StatDefinition stat)
+        public HtmlString getFormattedStat(StatDefinition stat)
         {
             if (stat == COUNT)
-                return String.valueOf(getCount());
+                return HtmlString.of(getCount());
 
             if (Double.isNaN((Double)getStat(stat)))
-                return "";
+                return HtmlString.EMPTY_STRING;
             
-            return formatter.format(getStat(stat));
+            return HtmlString.of(formatter.format(getStat(stat)));
         }
 
         @Override

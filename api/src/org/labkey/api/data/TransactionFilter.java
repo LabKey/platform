@@ -25,6 +25,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -63,9 +64,14 @@ public class TransactionFilter implements Filter
         @Override
         public String toString()
         {
-            String url = request.getRequestURI() + "?" + trimToEmpty(request.getQueryString());
+            String url = getUrl();
             Principal user = request.getUserPrincipal();
             return url + " running for " + (System.currentTimeMillis() - startTime) + "ms by " + (user == null ? "guest" : user.getName());
+        }
+
+        public @NotNull String getUrl()
+        {
+            return request.getRequestURI() + "?" + trimToEmpty(request.getQueryString());
         }
     }
 

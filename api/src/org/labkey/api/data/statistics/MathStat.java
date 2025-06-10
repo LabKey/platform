@@ -15,8 +15,6 @@
  */
 package org.labkey.api.data.statistics;
 
-import org.labkey.api.view.Stats;
-
 /**
  * Created by klum on 1/16/14.
  */
@@ -27,8 +25,6 @@ public interface MathStat
     double getGeometricMean();
     double getMinimum();
     double getMaximum();
-
-    String getFormattedStat(Stats.StatDefinition stat);
 
     double getStdDev();
     double getVar();

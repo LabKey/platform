@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiUsageException;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -50,7 +51,7 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
     }
 
     @Override
-    public PrintWriter getWriter() throws UnsupportedEncodingException
+    public @NotNull PrintWriter getWriter() throws UnsupportedEncodingException
     {
         if (_writer == null)
         {
@@ -100,28 +101,28 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
         }
 
         @Override
-        public void write(char[] buf, int off, int len)
+        public void write(char @NotNull [] buf, int off, int len)
         {
             checkSize();
             _out.write(buf, off, len);
         }
 
         @Override
-        public void write(char[] buf)
+        public void write(char @NotNull [] buf)
         {
             checkSize();
             _out.write(buf);
         }
 
         @Override
-        public void write(String s, int off, int len)
+        public void write(@NotNull String s, int off, int len)
         {
             checkSize();
             _out.write(s, off, len);
         }
 
         @Override
-        public void write(String s)
+        public void write(@NotNull String s)
         {
             checkSize();
             _out.write(s);
@@ -170,7 +171,7 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
         }
 
         @Override
-        public void print(char[] s)
+        public void print(char @NotNull [] s)
         {
             checkSize();
             _out.print(s);
@@ -240,7 +241,7 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
         }
 
         @Override
-        public void println(char[] x)
+        public void println(char @NotNull [] x)
         {
             checkSize();
             _out.println(x);
@@ -261,28 +262,28 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
         }
 
         @Override
-        public PrintWriter printf(String format, Object... args)
+        public PrintWriter printf(@NotNull String format, Object... args)
         {
             checkSize();
             return _out.printf(format, args);
         }
 
         @Override
-        public PrintWriter printf(Locale l, String format, Object... args)
+        public PrintWriter printf(Locale l, @NotNull String format, Object... args)
         {
             checkSize();
             return _out.printf(l, format, args);
         }
 
         @Override
-        public PrintWriter format(String format, Object... args)
+        public PrintWriter format(@NotNull String format, Object... args)
         {
             checkSize();
             return _out.format(format, args);
         }
 
         @Override
-        public PrintWriter format(Locale l, String format, Object... args)
+        public PrintWriter format(Locale l, @NotNull String format, Object... args)
         {
             checkSize();
             return _out.format(l, format, args);

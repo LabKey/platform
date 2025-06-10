@@ -244,6 +244,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionReportingLevel;
@@ -405,11 +406,13 @@ import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
@@ -1154,7 +1157,7 @@ public class AdminController extends SpringActionController
 
     private static class CreditsView extends WebPartView<Object>
     {
-        private HtmlString _html;
+        private Renderable _html;
 
         CreditsView(@Nullable String wikiSource, String title)
         {
@@ -1166,14 +1169,14 @@ public class AdminController extends SpringActionController
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
                 HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource, "Credits page");
-                _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
+                _html = DOM.createHtmlFragment(STYLE(at(type, "text/css"), "tr.table-odd td { background-color: #EEEEEE; }"), html);
             }
         }
 
         @Override
-        public void renderView(Object model, PrintWriter out)
+        public void renderView(Object model, HtmlWriter out)
         {
-            out.print(_html);
+            out.write(_html);
         }
     }
 
@@ -9079,7 +9082,7 @@ public class AdminController extends SpringActionController
             }
 
             @Override
-            protected void renderView(Object model, PrintWriter out)
+            protected void renderView(Object model, HtmlWriter out)
             {
                 boolean isDevMode = AppProps.getInstance().isDevMode();
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
@@ -9091,7 +9094,7 @@ public class AdminController extends SpringActionController
 
                 if (_contexts.isEmpty())
                 {
-                    out.println(_noModulesDescriptionHtml);
+                    out.write(_noModulesDescriptionHtml);
                 }
                 else
                 {
@@ -10913,7 +10916,7 @@ public class AdminController extends SpringActionController
             if (form.isDelete())
             {
                 String urlToDelete = form.getExistingValue();
-                List<String> values = allowListType.getValues();
+                List<String> values = new ArrayList<>(allowListType.getValues());
                 for (String value : values)
                 {
                     if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))

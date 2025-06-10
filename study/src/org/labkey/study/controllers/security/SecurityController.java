@@ -61,6 +61,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.GroupSecurityType;
 import org.labkey.study.model.SecurityType;
@@ -76,7 +77,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,11 +87,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-/**
- * User: Matthew
- * Date: Apr 24, 2006
- * Time: 5:31:02 PM
- */
+import static org.labkey.api.util.DOM.P;
+
 public class SecurityController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class);
@@ -220,7 +217,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
+    public static class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
     {
         private HtmlString _messageText = null;
 
@@ -776,9 +773,9 @@ public class SecurityController extends SpringActionController
 
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, HtmlWriter out) throws Exception
         {
-            include(_vbox, out);
+            include(_vbox, out.unwrap());
         }
     }
 
@@ -795,7 +792,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private static class StudySecurityPermissionsView extends WebPartView
+    private static class StudySecurityPermissionsView extends WebPartView<Object>
     {
         private StudySecurityPermissionsView()
         {
@@ -803,12 +800,16 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderView(Object model, HtmlWriter out)
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
-            out.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
-            out.print(PageFlowUtil.button("Study Security").href(urlStudy));
-            out.print("<br/>&nbsp;</p>");
+            P(
+                "Permissions for datasets in a study are managed separately.",
+                HtmlString.BR,
+                PageFlowUtil.button("Study Security").href(urlStudy),
+                HtmlString.BR,
+                HtmlString.NBSP
+            ).appendTo(out);
         }
     }
 }

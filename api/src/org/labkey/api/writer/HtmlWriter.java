@@ -1,5 +1,6 @@
 package org.labkey.api.writer;
 
+import jakarta.servlet.ServletResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.util.DOM;
@@ -24,6 +25,11 @@ public class HtmlWriter implements Appendable
     public static HtmlWriter of(Writer writer)
     {
         return new HtmlWriter(writer);
+    }
+
+    public static HtmlWriter of(ServletResponse response) throws IOException
+    {
+        return new HtmlWriter(response.getWriter());
     }
 
     public Writer unwrap()
