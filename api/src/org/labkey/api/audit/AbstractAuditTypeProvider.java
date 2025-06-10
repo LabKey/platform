@@ -17,7 +17,6 @@ package org.labkey.api.audit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -74,10 +73,6 @@ import static org.labkey.api.audit.query.AbstractAuditDomainKind.AUDIT_RECORD_DA
 import static org.labkey.api.audit.query.AbstractAuditDomainKind.NEW_RECORD_PROP_NAME;
 import static org.labkey.api.audit.query.AbstractAuditDomainKind.OLD_RECORD_PROP_NAME;
 
-/**
- * User: klum
- * Date: 7/11/13
- */
 public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_SCHEMA_NAME = "auditLog";

@@ -216,7 +216,7 @@ public class Crosstab
 
     public List<Object> getRowHeaders()
     {
-        List<Object> l = new ArrayList(_crossTab.keySet());
+        List<Object> l = new ArrayList<>(_crossTab.keySet());
         l.sort(new GenericComparator());
         return l;
     }
@@ -226,7 +226,7 @@ public class Crosstab
         return _colHeaders;
     }
 
-    private static class GenericComparator implements Comparator
+    private static class GenericComparator implements Comparator<Object>
     {
         @Override
         public int compare(Object o1, Object o2)
@@ -241,8 +241,8 @@ public class Crosstab
             if (null == o2)
                 return 1;
 
-            if (o1 instanceof Comparable)
-                return ((Comparable) o1).compareTo(o2);
+            if (o1 instanceof Comparable c)
+                return c.compareTo(o2);
             else
                 return 0;
         }
@@ -333,7 +333,7 @@ public class Crosstab
         {
             super(ExcelDocumentType.xls);
             _crosstab = crosstab;
-            Class statColumnCls;
+            Class<?> statColumnCls;
 
             if (_crosstab.getStatType() == StatType.numeric)
                 statColumnCls = Double.class;
@@ -376,7 +376,7 @@ public class Crosstab
         }
 
         @Override
-        public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+        public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
         {
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
 
@@ -426,9 +426,9 @@ public class Crosstab
 
     public static class CrosstabDisplayColumn extends SimpleDisplayColumn
     {
-        Class _valueClass = String.class;
+        Class<?> _valueClass = String.class;
 
-        public CrosstabDisplayColumn(String caption, Class valueClass)
+        public CrosstabDisplayColumn(String caption, Class<?> valueClass)
         {
             setCaption(caption);
             if (valueClass != null)
@@ -450,7 +450,7 @@ public class Crosstab
         }
 
         @Override
-        public Class getDisplayValueClass()
+        public Class<?> getDisplayValueClass()
         {
             return _valueClass;
         }

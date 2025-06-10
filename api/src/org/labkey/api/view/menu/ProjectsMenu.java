@@ -25,11 +25,6 @@ import org.labkey.api.view.ViewContext;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Apr 9, 2007
- * Time: 10:19:50 AM
- */
 public class ProjectsMenu extends NavTreeMenu
 {
     public ProjectsMenu(ViewContext context)
