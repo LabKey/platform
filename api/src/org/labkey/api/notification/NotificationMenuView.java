@@ -25,18 +25,16 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Popup menu for upper-right corner of main frame
- * User: jeckels
- * Date: Oct 20, 2011
  */
 public class NotificationMenuView extends JspView<Object>
 {
     public static final String EXPERIMENTAL_NOTIFICATION_MENU = "experimental-notificationmenu";
 
-    public static HttpView createView(ViewContext context)
+    public static HttpView<Object> createView(ViewContext context)
     {
         if (context.getUser().isGuest())
             return null;
-        HttpView view = new NotificationMenuView();
+        var view = new NotificationMenuView();
         view.setViewContext(context);
         return view;
     }

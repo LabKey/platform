@@ -19,11 +19,11 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.SortHelpers" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.SortHelpers" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -84,12 +84,8 @@
                 String inputNameExisting = "existingValue" + num;
         %>
         <tr>
-
             <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
-
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
-
-            </td>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %></td>
         </tr>
         <%
             num++;
