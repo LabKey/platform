@@ -19,7 +19,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
@@ -29,6 +28,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.study.DatasetDefinition;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.StudyHelper;
@@ -144,7 +144,7 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         Random rand = new Random();
         for (String dataset : datasets)
         {
-            createDataset(conn, "StudyDatasetVisit", dataset, containerPath);
+            createDataset(conn, dataset, containerPath);
 
             // populate with some rows
             List<Map<String, Object>> rows = ptids.stream().<Map<String, Object>>map(ptid -> Map.of(
@@ -185,18 +185,19 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
             assertFalse(String.format("Participant %s was not successfully deleted", ptid), currentPtids.contains(ptid));
     }
 
-    private void createDataset(Connection conn, String kindName, String datasetName, String folderName) throws Exception
+    private void createDataset(Connection conn, String datasetName, String folderName) throws Exception
     {
-        CreateDomainCommand cmd = new CreateDomainCommand(kindName, datasetName);
-
-        cmd.getDomainDesign().setFields(List.of(
+        DatasetDefinition dataset = new DatasetDefinition(datasetName, DatasetDefinition.VISIT_BASED_STUDY);
+        dataset.setFields(List.of(
                 new FieldDefinition("Name", FieldDefinition.ColumnType.String),
                 new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer),
                 new FieldDefinition("DoubleField", FieldDefinition.ColumnType.Double)
         ));
+
         if ("Demographics".equalsIgnoreCase(datasetName))
-            cmd.setOptions(Map.of("demographics", true));
-        cmd.execute(conn, folderName);
+            dataset.setDemographics(true);
+
+        dataset.create(conn, folderName);
     }
 
     private void deleteParticipant(String participantId)

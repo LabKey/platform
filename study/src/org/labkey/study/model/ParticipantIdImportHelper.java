@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -165,7 +166,7 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
                 participantId = p.toString();
         }
 
-        participantId = participantId != null ? participantId.trim() : null;
+        participantId = StringUtils.trimToNull(participantId);
 
         if (_duplicateAliasLookup.contains(participantId))
             throw new ValidationException("There are multiple entries for the alias " + participantId + " which must be corrected before the import may continue.");
