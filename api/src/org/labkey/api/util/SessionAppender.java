@@ -15,17 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.Core;
-import org.apache.logging.log4j.core.Filter;
-import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.appender.AbstractAppender;
-import org.apache.logging.log4j.core.config.Property;
-import org.apache.logging.log4j.core.config.plugins.Plugin;
-import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
-import org.apache.logging.log4j.core.config.plugins.PluginElement;
-import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
@@ -33,6 +23,7 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -40,29 +31,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * User: matthewb
- * Date: Aug 18, 2009
- * Time: 2:18:21 PM
+ * Makes trigger script logging available to developers in the web UI.
  */
-@Plugin(name = "SessionAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
-public class SessionAppender extends AbstractAppender
+public class SessionAppender
 {
-    @PluginFactory
-    public static SessionAppender createAppender(@PluginAttribute("name") String name,
-                                                 @PluginElement("Layout") Layout<? extends Serializable> layout,
-                                                 @PluginElement("Filter") final Filter filter)
-    {
-        return new SessionAppender(name, filter, layout, false, null);
-    }
-
-    protected SessionAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
-    {
-        super(name, filter, layout, ignoreExceptions, properties);
-    }
-
-    static class AppenderInfo implements Serializable
+    public static class AppenderInfo implements Serializable
     {
         AppenderInfo(String key, boolean on)
         {
@@ -85,6 +61,25 @@ public class SessionAppender extends AbstractAppender
     }
 
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
+
+    static
+    {
+        try
+        {
+            Class<?> cl = Class.forName("org.labkey.embedded.SessionAppender");
+            Field f = cl.getDeclaredField("_consumer");
+            f.set(null, (Consumer<LogEvent>) event -> {
+                AppenderInfo info = localInfo.get();
+                if (null == info || !info.on)
+                    return;
+                info.eventIdMap.put(event, ++info.eventId);
+            });
+        }
+        catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
 
     // AppenderInfos are thread-local variables initialized with the user session. This Map allows background threads to share an
     // active session's appenderInfo to output logs to that session's SessionAppender. When the session is ended, the
@@ -109,16 +104,6 @@ public class SessionAppender extends AbstractAppender
     {
         return _getLoggingForSession(request).key;
     }
-
-    @Override
-    public void append(LogEvent event)
-    {
-        AppenderInfo info = localInfo.get();
-        if (null == info || !info.on)
-            return;
-        info.eventIdMap.put(event, ++info.eventId);
-    }
-
 
     /**
      * @return serialization-suitable list of events with eventId, level, message, and timestamp properties

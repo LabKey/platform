@@ -18,8 +18,8 @@ package org.labkey.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -211,7 +211,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    enum SetupField { path, email }
+    protected enum SetupField { path, email }
 
     private static URI validatePath(String path, BindException errors)
     {

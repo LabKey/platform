@@ -26,7 +26,7 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
         @Override
         public void setValue(WriteableAppProps writeable, String value)
         {
-            writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_HOST_DELIMITER)));
+            writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, AppPropsImpl.ALLOW_LIST_DELIMITER)));
         }
     },
     allowedFileExtensions("Allowed file extensions")
@@ -34,7 +34,7 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
         @Override
         public void setValue(WriteableAppProps writeable, String value)
         {
-            writeable.setAllowedFileExtensions(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_HOST_DELIMITER)));
+            writeable.setAllowedFileExtensions(Arrays.asList(StringUtils.split(value, AppPropsImpl.ALLOW_LIST_DELIMITER)));
             FileUtil.clearExtensionChecker();  // Not sure this is needed, but better safe than sorry.
         }
     },

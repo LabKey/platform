@@ -203,9 +203,9 @@ public abstract class DataView extends WebPartView<RenderContext>
 
 
     @Override
-    public void renderView(RenderContext model, PrintWriter out) throws IOException
+    public void renderView(RenderContext model, HtmlWriter out) throws IOException
     {
-        _renderDataRegion(getRenderContext(), HtmlWriter.of(out));
+        _renderDataRegion(getRenderContext(), out);
     }
 
     public String createVerifySelectedScript(ActionURL url, String objectsDescription)
