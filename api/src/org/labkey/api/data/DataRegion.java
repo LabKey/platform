@@ -2071,31 +2071,19 @@ public class DataRegion extends DisplayElement
             LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
             if (null == valueMap)
             {
-                //For updates, the valueMap is the OLD version of the data.
-                //If there is no old data, we reselect to get it
-                if (null != viewForm.getOldValues())
-                {
-                    //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
-                    Object old = viewForm.getOldValues();
-                    if (old instanceof Map m)
-                        valueMap = m;
-                    else
-                        valueMap = new BoundMap(old);
-                }
-                else
-                {
-                    if (!hasPermission(ctx, ReadPermission.class))
-                        throw new UnauthorizedException();
+                if (!hasPermission(ctx, ReadPermission.class))
+                    throw new UnauthorizedException();
 
-                    TableInfo tinfoMain = getTable();
-                    var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
+                // For update the Results holds the current version of the data.
+                // The posted values (for reshow) are help by TableViewForm (RenderContext.getForm()). see DisplayColumn.getInputValue()
+                TableInfo tinfoMain = getTable();
+                var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
+                // NOTE MissingValueDisplayColumn does not work without Results, it relies on using .get(FieldKey) that it enables
+                if (results.next())
+                {
                     ctx.setResults(results);
-                    if (results.next())
-                    {
-                        valueMap = results.getRowMap();
-                    }
+                    ctx.setRow(results.getRowMap());
                 }
-                ctx.setRow(valueMap);
             }
 
             renderForm(ctx, out);
