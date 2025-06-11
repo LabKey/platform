@@ -214,12 +214,6 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getLegalName()
-    {
-        return delegate.getLegalName();
-    }
-
-    @Override
     public String getPropertyName()
     {
         return delegate.getPropertyName();

@@ -905,12 +905,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
-    public String getLegalName()
-    {
-        return legalNameFromName(getName());
-    }
-
-    @Override
     public String getPropertyName()
     {
         // this is surprisingly expensive, cache it!
