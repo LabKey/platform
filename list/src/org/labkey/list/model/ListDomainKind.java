@@ -193,8 +193,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     /**
      * Returns the List's primary key as a field to get special treatment elsewhere, despite being property driven.
-     * @param domain
-     * @return
      */
     @Override
     public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)

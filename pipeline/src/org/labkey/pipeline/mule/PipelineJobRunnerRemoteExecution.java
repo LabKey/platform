@@ -42,7 +42,7 @@ import java.util.Set;
 
 public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDescriptor
 {
-    private static Logger _log = LogManager.getLogger(PipelineJobRunnerRemoteExecution.class);
+    private static final Logger _log = LogManager.getLogger(PipelineJobRunnerRemoteExecution.class);
 
     public PipelineJobRunnerRemoteExecution()
     {
@@ -56,9 +56,8 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
     {
         for (UMOEndpoint endpoint : (List<UMOEndpoint>)descriptor.getInboundRouter().getEndpoints())
         {
-            if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
+            if (endpoint.getFilter() instanceof TaskJmsSelectorFilter filter)
             {
-                TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
                 final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<>();
                 Map<String, RemoteExecutionEngine> configuredLocations = new CaseInsensitiveHashMap<>();
                 for (RemoteExecutionEngine<?> engine : PipelineJobService.get().getRemoteExecutionEngines())

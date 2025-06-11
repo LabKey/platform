@@ -55,7 +55,7 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ContainerFilterQueryTest init = (ContainerFilterQueryTest) getCurrentTest();
+        ContainerFilterQueryTest init = getCurrentTest();
 
         init.doSetup();
     }

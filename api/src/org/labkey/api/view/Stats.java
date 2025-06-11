@@ -76,7 +76,7 @@ public abstract class Stats
         return requestedStats;
     }
 
-    public static interface Statistic
+    public interface Statistic
     {
         Object getValue();
 

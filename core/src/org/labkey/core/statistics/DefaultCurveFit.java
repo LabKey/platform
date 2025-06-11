@@ -351,8 +351,8 @@ public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements 
 
     private static class AUCRange
     {
-        private StatsService.AUCType _type;
-        private double _start;
+        private final StatsService.AUCType _type;
+        private final double _start;
         private double _end;
 
         public AUCRange(double start, double end, StatsService.AUCType type)

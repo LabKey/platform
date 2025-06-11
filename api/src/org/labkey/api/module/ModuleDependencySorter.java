@@ -131,7 +131,7 @@ public class ModuleDependencySorter
         StringBuilder sb = new StringBuilder();
         for (Pair<Module, Set<String>> dependencyInfo : dependencies)
         {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
             {
                 sb.append(", ");
             }
@@ -141,7 +141,7 @@ public class ModuleDependencySorter
         // Generate an SVG diagram that shows all remaining dependencies
         graphModuleDependencies(dependencies, "involved");
 
-        throw new IllegalArgumentException("Unable to resolve module dependencies. The following modules are somehow involved: " + sb.toString());
+        throw new IllegalArgumentException("Unable to resolve module dependencies. The following modules are somehow involved: " + sb);
     }
 
 
@@ -258,14 +258,14 @@ public class ModuleDependencySorter
             ModuleDependencySorter sorter = new ModuleDependencySorter();
             List<Module> sortedModules = sorter.sortModulesByDependencies(testModules);
             assertEquals(sortedModules.size(), testModules.size());
-            assertEquals(sortedModules.get(0).getName(), "e");
-            assertEquals(sortedModules.get(1).getName(), "d");
-            assertEquals(sortedModules.get(2).getName(), "g");
-            assertEquals(sortedModules.get(3).getName(), "f");
-            assertEquals(sortedModules.get(4).getName(), "h");
-            assertEquals(sortedModules.get(5).getName(), "c");
-            assertEquals(sortedModules.get(6).getName(), "b");
-            assertEquals(sortedModules.get(7).getName(), "a");
+            assertEquals("e", sortedModules.get(0).getName());
+            assertEquals("d", sortedModules.get(1).getName());
+            assertEquals("g", sortedModules.get(2).getName());
+            assertEquals("f", sortedModules.get(3).getName());
+            assertEquals("h", sortedModules.get(4).getName());
+            assertEquals("c", sortedModules.get(5).getName());
+            assertEquals("b", sortedModules.get(6).getName());
+            assertEquals("a", sortedModules.get(7).getName());
         }
     }
 }

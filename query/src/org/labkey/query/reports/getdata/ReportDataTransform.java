@@ -21,5 +21,5 @@ package org.labkey.query.reports.getdata;
  */
 public interface ReportDataTransform extends ReportDataSource
 {
-    public ReportDataSource getSource();
+    ReportDataSource getSource();
 }

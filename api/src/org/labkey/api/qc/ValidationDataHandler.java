@@ -24,7 +24,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Map;
 
 /*

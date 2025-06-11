@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.XML;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;

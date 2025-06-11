@@ -112,7 +112,7 @@ public class CohortWriter implements InternalStudyWriter
             {
                 Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
                 if (null != ids)
-                    cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
+                    cohortXml.setIdArray(ids.toArray(new String[0]));
             }
         }
 

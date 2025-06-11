@@ -116,7 +116,7 @@ public interface Result<T> extends Supplier<T>
 
     static <T> Result<T> failure(String s)
     {
-        return new Failure<T>(s);
+        return new Failure<>(s);
     }
 
     static <T> Result<T> failure(Exception x)

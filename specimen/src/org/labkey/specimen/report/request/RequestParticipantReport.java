@@ -78,7 +78,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
             summaryString.append(summary.getVialCount());
         if (isViewVolume())
         {
-            if (summaryString.length() > 0)
+            if (!summaryString.isEmpty())
                 summaryString.append("/");
             summaryString.append(summary.getTotalVolume());
         }

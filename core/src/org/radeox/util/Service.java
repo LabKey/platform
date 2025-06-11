@@ -116,12 +116,10 @@ public class Service {
         Object obj = klass.newInstance();
         // stick it into our vector...
         providers.add(obj);
-      } catch (InstantiationException e) {
-        throw new RuntimeException(e);
-      } catch (IllegalAccessException e) {
+      } catch (InstantiationException | IllegalAccessException e) {
         throw new RuntimeException(e);
       }
-      //Logger.debug("Service: loaded "+ obj.getClass().getName());
+        //Logger.debug("Service: loaded "+ obj.getClass().getName());
     }
   }
 }

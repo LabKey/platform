@@ -36,6 +36,7 @@ public interface FolderWriter extends Writer<Container, FolderExportContext>
     }
 
     boolean show(Container c);
+    @Override
     boolean selectedByDefault(ExportType type, boolean forTemplate);
     void initialize(FolderExportContext context);
 }

@@ -37,7 +37,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -75,7 +74,6 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.CrawlerRunningState;
 import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneDirectoryType;
-import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -89,7 +87,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class SearchController extends SpringActionController
@@ -256,7 +253,7 @@ public class SearchController extends SpringActionController
     
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class AdminAction extends FormViewAction<AdminForm>
+    public static class AdminAction extends FormViewAction<AdminForm>
     {
         @SuppressWarnings("UnusedDeclaration")
         public AdminAction()
@@ -427,7 +424,7 @@ public class SearchController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ExportIndexContentsAction extends ExportAction<ExportForm>
+    public static class ExportIndexContentsAction extends ExportAction<ExportForm>
     {
         @Override
         public void export(ExportForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -683,7 +680,7 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class TestJson extends SimpleViewAction<Object>
+    public static class TestJson extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -855,7 +852,7 @@ public class SearchController extends SpringActionController
     // does not guarantee that all indexed content has been committed... but that may not be required in practice.
 
     @RequiresPermission(ApplicationAdminPermission.class)
-    public class WaitForIndexerAction extends ExportAction<PriorityForm>
+    public static class WaitForIndexerAction extends ExportAction<PriorityForm>
     {
         @Override
         public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception

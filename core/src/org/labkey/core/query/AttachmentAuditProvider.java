@@ -26,7 +26,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -390,7 +390,7 @@ public class ChildStudyDefinition
                              /* PHI.Restricted == phi */ "Deidentified, Limited PHI, Full PHI or Restricted";
         String phiDescription = "Include columns marked as " + phiIncluded;
         publishOptions.add(phiDescription);
-        return publishOptions.toArray(new String[publishOptions.size()]);
+        return publishOptions.toArray(new String[0]);
     }
 
     private String arrayToString(Object[] arr)

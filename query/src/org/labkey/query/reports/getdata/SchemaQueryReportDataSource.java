@@ -68,7 +68,7 @@ public class SchemaQueryReportDataSource extends AbstractQueryReportDataSource
     @Override
     public String getLabKeySQL()
     {
-        return LinkedSchema.generateLabKeySQL(getQueryDefinition().getTable(getSchema(), new ArrayList<QueryException>(), true), new LinkedSchema.SQLWhereClauseSource()
+        return LinkedSchema.generateLabKeySQL(getQueryDefinition().getTable(getSchema(), new ArrayList<>(), true), new LinkedSchema.SQLWhereClauseSource()
         {
             @Override
             public List<String> getWhereClauses(TableInfo sourceTable)

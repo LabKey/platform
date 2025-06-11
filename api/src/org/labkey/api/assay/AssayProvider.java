@@ -159,7 +159,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** @return a view to plug into the import UI that describes the expected data files.
      * Reasonable things to include might be things like the file type (Excel/TSV/XML), layout (column headers/XSD), etc
      */
-    HttpView getDataDescriptionView(AssayRunUploadForm form);
+    HttpView<?> getDataDescriptionView(AssayRunUploadForm form);
 
     @Nullable
     Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
@@ -376,10 +376,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     {
         default void beforeXarExportRun(ExpRun run, ExperimentRunType xrun)
         {
-        };
+        }
+
         default void beforeXarImportRun(ExperimentRunType xrun)
         {
-        };
+        }
     }
 
     default XarCallbacks getXarCallbacks(User user, Container container)

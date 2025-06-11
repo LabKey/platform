@@ -46,16 +46,16 @@ public class GWTProtocol implements IsSerializable
     private List<GWTDomain<GWTPropertyDescriptor>> _domains;
 
     private List<String> _availablePlateTemplates;
-    private Map<String, String> _availableMetadataInputFormats = new HashMap<String, String>();
+    private Map<String, String> _availableMetadataInputFormats = new HashMap<>();
     private String _metadataInputFormatHelp;
 
     private String _selectedPlateTemplate;
     private String _selectedMetadataInputFormat;
 
     /** Scripts defined in the module itself, associated with the assay provider */
-    private List<String> _moduleTransformScripts = new ArrayList<String>();
+    private List<String> _moduleTransformScripts = new ArrayList<>();
     /** Scripts defined in the assay definition */
-    private List<Map<String, Object>> _protocolTransformScripts = new ArrayList<>();
+    private final List<Map<String, Object>> _protocolTransformScripts = new ArrayList<>();
 
     private List<String> _availableDetectionMethods;
     private String _selectedDetectionMethod;

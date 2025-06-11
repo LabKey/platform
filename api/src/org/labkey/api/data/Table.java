@@ -75,6 +75,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -819,7 +820,8 @@ public class Table
         {
             // note  if(version) is not an no-op, it protects the isautoinc test from version columns implemented using sequences
             if (column.isVersionColumn())
-                versionColumn = column;
+            {
+            }
             else if (column.isAutoIncrement())
                 autoIncColumn = column;
 
@@ -1618,13 +1620,12 @@ public class Table
 
     public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
     {
-        if (!(tableDelete instanceof UpdateableTableInfo))
+        if (!(tableDelete instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException();
 
         if (null == conn)
             conn = tableDelete.getSchema().getScope().getConnection();
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo)tableDelete;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (!(table instanceof SchemaTableInfo))
@@ -1682,7 +1683,7 @@ public class Table
             SQLFragment sqlfSelectKey = new SQLFragment();
             if (null != objectIdColumnName)
             {
-                String keyName = StringUtils.defaultString(objectIdColumnName, objectURIColumnName);
+                String keyName = Objects.toString(objectIdColumnName, objectURIColumnName);
                 ColumnInfo keyCol = table.getColumn(keyName);
                 sqlfSelectKey.append("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
                 sqlfSelectKey.append("FROM ").append(table.getFromSQL("X"));

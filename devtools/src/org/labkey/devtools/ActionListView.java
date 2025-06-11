@@ -5,7 +5,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.SpringActionController.ActionDescriptor;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 

@@ -15,7 +15,7 @@ public abstract class SpecimensViewBean
                              boolean showRecordSelectors, boolean disableLowVialIndicators, boolean restrictRecordSelectors)
     {
         _vials = vials;
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             _specimenQueryView = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS);
             _specimenQueryView.setShowHistoryLinks(showHistoryLinks);

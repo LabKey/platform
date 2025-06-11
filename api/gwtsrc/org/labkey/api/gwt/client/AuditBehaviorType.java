@@ -25,7 +25,7 @@ public enum AuditBehaviorType
     DETAILED("Detailed"),
     SUMMARY("Summary");
 
-    private String _label;
+    private final String _label;
 
     AuditBehaviorType(String label)
     {

@@ -37,7 +37,7 @@
     List<PropertyDescriptor> properties = bean.properties;
     DomainDescriptor dd = bean.dd;
 
-    Domain d = dd != null ? d = PropertyService.get().getDomain(dd.getDomainId()) : null;
+    Domain d = dd != null ? PropertyService.get().getDomain(dd.getDomainId()) : null;
     DomainKind kind = d != null ? d.getDomainKind() : null;
 
     String name = dd == null ? typeName : dd.getName();

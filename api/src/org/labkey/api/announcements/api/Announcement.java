@@ -18,7 +18,6 @@ package org.labkey.api.announcements.api;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;

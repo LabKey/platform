@@ -170,7 +170,7 @@ public class StudyTest extends StudyBaseTest
         selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
         selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
         selectCmd.setColumns(Collections.singletonList("*"));
-        SelectRowsResponse selectResp = null;
+        SelectRowsResponse selectResp;
         try
         {
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
@@ -254,7 +254,7 @@ public class StudyTest extends StudyBaseTest
     protected void emptyParticipantPickerList()
     {
         goToManageParticipantClassificationPage(PROJECT_NAME, STUDY_NAME, SUBJECT_NOUN);
-        while(persistingLists.size()!=0)
+        while(!persistingLists.isEmpty())
         {
             deleteListTest(persistingLists.pop());
         }
@@ -654,7 +654,7 @@ public class StudyTest extends StudyBaseTest
         _extHelper.waitForExtDialog("Define Mouse Group");
         waitForElement(Locators.pageSignal(DataRegionTable.UPDATE_SIGNAL));
         String dataset = getFormElement(Locator.name("infoCombo"));
-        if (dataset.length() > 0)
+        if (!dataset.isEmpty())
         {
             DataRegion(getDriver()).withName("demoDataRegion").waitFor();
         }
@@ -1006,7 +1006,7 @@ public class StudyTest extends StudyBaseTest
         selectCmd.setColumns(Collections.singletonList("*"));
         selectCmd.setSorts(Collections.singletonList(new Sort("Date", Sort.Direction.ASCENDING)));
         Connection cn = new Connection(getBaseURL(), getUsername(), PasswordUtil.getPassword());
-        SelectRowsResponse selectResp = null;
+        SelectRowsResponse selectResp;
         try
         {
             selectResp = selectCmd.execute(cn,  "/" +  getProjectName());

@@ -682,7 +682,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * Finds a TableInfo with the given domain URI.
      * This is expensive as each TableInfo and Domain in the schema is created just to ask for the Domain's URI.
      *
-     * @param domainURI
      * @return The TableInfo if found.
      */
     @Nullable

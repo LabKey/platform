@@ -168,7 +168,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         containerDisplayColumn.setReadOnly(true);
         addColumn(containerDisplayColumn);
 
-        col = getMutableColumn("CreatedBy");
+        getMutableColumn("CreatedBy");
 
         var title = getMutableColumn("Title");
         title.setURL(detailsURL);

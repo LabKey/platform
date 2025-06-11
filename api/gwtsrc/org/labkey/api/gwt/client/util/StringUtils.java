@@ -32,7 +32,7 @@ public class StringUtils
 {
     public static boolean isEmpty(String str)
     {
-        return null == str || str.length()==0;
+        return null == str || str.isEmpty();
     }
     
     public static String trimToNull(String str)
@@ -41,7 +41,7 @@ public class StringUtils
             return str;
 
         str = str.trim();
-        return str.length() == 0 ? null : str;
+        return str.isEmpty() ? null : str;
     }
 
     public static String trimToEmpty(String str)
@@ -73,7 +73,7 @@ public class StringUtils
 
     static public String filter(String s, boolean encodeSpace)
     {
-        if (null == s || 0 == s.length())
+        if (null == s || s.isEmpty())
             return "";
 
         int len = s.length();

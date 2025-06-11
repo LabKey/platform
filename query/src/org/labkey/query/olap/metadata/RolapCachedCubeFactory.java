@@ -62,8 +62,6 @@ public class RolapCachedCubeFactory
     /**
      * Not much to see here, just loop through the dimensions and hierarchies to load members
      *
-     * @return
-     * @throws SQLException
      */
     public CachedCube createCachedCube() throws SQLException
     {

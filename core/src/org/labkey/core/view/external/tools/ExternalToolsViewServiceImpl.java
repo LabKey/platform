@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExternalToolsViewServiceImpl implements ExternalToolsViewService
 {
-    private List<ExternalToolsViewProvider> _externalToolsViewProvider = new CopyOnWriteArrayList<>();
+    private final List<ExternalToolsViewProvider> _externalToolsViewProvider = new CopyOnWriteArrayList<>();
 
     @Override
     public void registerExternalAccessViewProvider(ExternalToolsViewProvider provider)

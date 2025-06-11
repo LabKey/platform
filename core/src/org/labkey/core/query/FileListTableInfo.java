@@ -18,7 +18,6 @@ package org.labkey.core.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -50,7 +49,7 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
 
     private static class FileUnionTable extends VirtualTable
     {
-        private SQLFragment _query;
+        private final SQLFragment _query;
 
         public FileUnionTable(@NotNull UserSchema schema)
         {

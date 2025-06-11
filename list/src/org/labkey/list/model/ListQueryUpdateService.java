@@ -279,7 +279,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new UnauthorizedException("You do not have permission to update data into this table.");
 
         List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
-        if (result.size() > 0)
+        if (!result.isEmpty())
             ListManager.get().indexList(_list);
         return result;
     }
@@ -338,9 +338,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     modifiedAttachmentColumns.add(column);
 
                     // setup any new attachments
-                    if (r.getValue() instanceof AttachmentFile)
+                    if (r.getValue() instanceof AttachmentFile file)
                     {
-                        AttachmentFile file = (AttachmentFile) r.getValue();
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
                     }

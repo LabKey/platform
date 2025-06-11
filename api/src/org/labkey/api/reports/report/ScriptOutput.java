@@ -36,7 +36,7 @@ public class ScriptOutput
         file,
         postscript,
         json
-    };
+    }
 
     public ScriptOutputType _type;
     public String _name;

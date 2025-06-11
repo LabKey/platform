@@ -31,8 +31,8 @@ public class IndexInfo
     private static final Logger _log = LogManager.getLogger(IndexInfo.class);
 
 
-    private TableInfo.IndexType _type;
-    private List<String> _columns;
+    private final TableInfo.IndexType _type;
+    private final List<String> _columns;
 
     public IndexInfo(TableInfo.IndexType type, List<String> columns)
     {

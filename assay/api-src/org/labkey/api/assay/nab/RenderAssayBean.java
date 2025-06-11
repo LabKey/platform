@@ -78,7 +78,7 @@ public class RenderAssayBean extends RenderAssayForm
     private ViewContext _context;
     private DilutionAssayRun _assay;
     private boolean _printView;
-    private Set<String> _hiddenRunColumns;
+    private final Set<String> _hiddenRunColumns;
     private Map<String, Object> _displayProperties;
     private Boolean _dupFile = null;
     private int _graphHeight = NabGraph.DEFAULT_HEIGHT;
@@ -169,9 +169,8 @@ public class RenderAssayBean extends RenderAssayForm
         }
         // Note: Changed this from (pd.getPropertyType() == PropertyType.DATE_TIME && value instanceof Date) because
         // "Created" was showing up as PropertyType.RESOURCE (??). Change ensures that Created gets formatted correctly.
-        else if (value instanceof Date)
+        else if (value instanceof Date date)
         {
-            Date date = (Date) value;
             if (date.getHours() == 0 &&
                     date.getMinutes() == 0 &&
                     date.getSeconds() == 0)
@@ -329,9 +328,9 @@ public class RenderAssayBean extends RenderAssayForm
         {
             Lsid fitErrorURI = new Lsid(DilutionDataHandler.NAB_PROPERTY_LSID_PREFIX, getAssay().getProtocol().getName(), DilutionDataHandler.FIT_ERROR_PROPERTY);
             PropertyDescriptor fitErrorPd =
-                    _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.FIT_ERROR_PROPERTY, new HashMap<Integer, String>());
+                    _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.FIT_ERROR_PROPERTY, new HashMap<>());
             if (null != fitErrorPd)
-                return new Pair<PropertyDescriptor, Object>(fitErrorPd, result.getDilutionSummary().getFitError());
+                return new Pair<>(fitErrorPd, result.getDilutionSummary().getFitError());
         }
         catch (FitFailedException e)
         {       // ignore
@@ -342,11 +341,11 @@ public class RenderAssayBean extends RenderAssayForm
     public Pair<PropertyDescriptor, Object> getStandardDev(DilutionAssayRun.SampleResult result, Container container)
     {
         PropertyDescriptor stdDevPd =
-                _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.STD_DEV_PROPERTY_NAME, new HashMap<Integer, String>());
+                _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.STD_DEV_PROPERTY_NAME, new HashMap<>());
         if (null != stdDevPd)
         {
             DilutionSummary summary = result.getDilutionSummary();
-            return new Pair<PropertyDescriptor, Object>(stdDevPd, summary.getFirstWellGroup().getStdDev());
+            return new Pair<>(stdDevPd, summary.getFirstWellGroup().getStdDev());
         }
         return null;
     }
@@ -354,7 +353,7 @@ public class RenderAssayBean extends RenderAssayForm
     public Pair<PropertyDescriptor, Object> getAuc(DilutionAssayRun.SampleResult result, Container container)
     {
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.AUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.AUC_PREFIX, getFitTypeEnum());
-        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
+        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<>());
         if (null != aucPD)
             return new Pair<>(aucPD, result.getDataProperty(aucPropertyName));
         return null;
@@ -363,7 +362,7 @@ public class RenderAssayBean extends RenderAssayForm
     public Pair<PropertyDescriptor, Object> getPositiveAuc(DilutionAssayRun.SampleResult result, Container container)
     {
         String aucPropertyName = getFitType() == null ? DilutionDataHandler.pAUC_PREFIX : getAssay().getDataHandler().getPropertyName(DilutionDataHandler.pAUC_PREFIX, getFitTypeEnum());
-        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
+        PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<>());
         if (null != aucPD)
             return new Pair<>(aucPD, result.getDataProperty(aucPropertyName));
         return null;

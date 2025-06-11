@@ -221,7 +221,7 @@ selModel.addListener('rowdeselect', updateTableTitle);
 
 <%
 ArrayList<String> tables = new ArrayList<>();
-if (def.getTables() != null && def.getTables().length() > 0)
+if (def.getTables() != null && !def.getTables().isEmpty())
 {
     tables.addAll(Arrays.asList(def.getTables().split(",")));
 }

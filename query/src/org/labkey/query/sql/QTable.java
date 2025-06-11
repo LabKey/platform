@@ -83,7 +83,7 @@ public class QTable implements QJoinOrTable
     public void appendSql(SqlBuilder sql, QuerySelect select)
     {
         SQLFragment sqlRelation = getQueryRelation().getFromSql();
-        assert sqlRelation != null || select.getParseErrors().size() > 0;
+        assert sqlRelation != null || !select.getParseErrors().isEmpty();
         if (null == sqlRelation)
             return;
         sql.append(sqlRelation);

@@ -442,56 +442,56 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
             ArrayListMap<String, String> a = createAndPopulate();
 
             {
-                assertEquals(a.get("Z"), "one");
-                assertEquals(a.get(0), "one");
-                assertEquals(a.get("B"), "two");
-                assertEquals(a.get(1), "two");
-                assertEquals(a.get("C"), "three");
-                assertEquals(a.get(2), "three");
-                assertEquals(a.get("D"), "four");
-                assertEquals(a.get(3), "four");
+                assertEquals("one", a.get("Z"));
+                assertEquals("one", a.get(0));
+                assertEquals("two", a.get("B"));
+                assertEquals("two", a.get(1));
+                assertEquals("three", a.get("C"));
+                assertEquals("three", a.get(2));
+                assertEquals("four", a.get("D"));
+                assertEquals("four", a.get(3));
             }
 
             {
                 var it = a.iterator();
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "one");
+                assertEquals("one", it.next());
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "two");
+                assertEquals("two", it.next());
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "three");
+                assertEquals("three", it.next());
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "four");
+                assertEquals("four", it.next());
                 assertFalse(it.hasNext());
             }
 
             {
                 var it = a.entrySet().iterator();
                 assertTrue(it.hasNext());
-                assertEquals(it.next().getKey(), "Z");
-                assertEquals(it.next().getKey(), "B");
-                assertEquals(it.next().getKey(), "C");
-                assertEquals(it.next().getKey(), "D");
+                assertEquals("Z", it.next().getKey());
+                assertEquals("B", it.next().getKey());
+                assertEquals("C", it.next().getKey());
+                assertEquals("D", it.next().getKey());
                 assertFalse(it.hasNext());
             }
 
             {
                 var it = a.keySet().iterator();
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "Z");
-                assertEquals(it.next(), "B");
-                assertEquals(it.next(), "C");
-                assertEquals(it.next(), "D");
+                assertEquals("Z", it.next());
+                assertEquals("B", it.next());
+                assertEquals("C", it.next());
+                assertEquals("D", it.next());
                 assertFalse(it.hasNext());
             }
 
             {
                 var it = a.values().iterator();
                 assertTrue(it.hasNext());
-                assertEquals(it.next(), "one");
-                assertEquals(it.next(), "two");
-                assertEquals(it.next(), "three");
-                assertEquals(it.next(), "four");
+                assertEquals("one", it.next());
+                assertEquals("two", it.next());
+                assertEquals("three", it.next());
+                assertEquals("four", it.next());
                 assertFalse(it.hasNext());
             }
 
@@ -503,8 +503,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
             a.put("F", "six");
             b.put("G", "SEVEN");
 
-            assertEquals(a.get("Z"), "one");
-            assertEquals(b.get("Z"), "ONE");
+            assertEquals("one", a.get("Z"));
+            assertEquals("ONE", b.get("Z"));
 
             assertFalse(a.containsKey("E"));
             assertNull(a.get("E"));

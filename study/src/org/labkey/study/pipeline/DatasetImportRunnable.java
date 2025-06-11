@@ -272,7 +272,7 @@ public class DatasetImportRunnable implements Runnable
                         }
                         if (0 < b.getUpdated())
                         {
-                            count += b.getUpdated();
+                            b.getUpdated();
                             importMessages.add(_datasetDefinition.getLabel() + ": Updated " + b.getUpdated() + " rows");
                         }
                     }

@@ -240,7 +240,7 @@ public class TestController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class CancelLongRunningAction extends ReadOnlyApiAction<Object>
+    public static class CancelLongRunningAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public SimpleResponse<Void> execute(Object o, BindException errors) throws Exception
@@ -260,7 +260,7 @@ public class TestController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class LongRunningAction extends ReadOnlyApiAction<LongRunningJobForm>
+    public static class LongRunningAction extends ReadOnlyApiAction<LongRunningJobForm>
     {
         private void validateCommand(LongRunningJobForm form, Errors errors)
         {
@@ -404,7 +404,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(ComplexForm complexForm, boolean reshow, BindException errors)
         {
-            if (complexForm.getBeans().size() == 0)
+            if (complexForm.getBeans().isEmpty())
             {
                 ArrayList<TestBean> a = new ArrayList<>(2);
                 a.add(new TestBean());
@@ -732,7 +732,7 @@ public class TestController extends SpringActionController
     // allow simple testing of exception logging and display, both with and without a message
 
     @RequiresSiteAdmin
-    public class NpeAction extends SimpleViewAction<ExceptionForm>
+    public static class NpeAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -754,7 +754,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class NpeOtherAction extends SimpleViewAction<ExceptionForm>
+    public static class NpeOtherAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -776,7 +776,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class MultiExceptionAction extends SimpleViewAction<ExceptionForm>
+    public static class MultiExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
@@ -808,7 +808,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class IllegalStateAction extends SimpleViewAction<ExceptionForm>
+    public static class IllegalStateAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -830,7 +830,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class ConfigurationExceptionAction extends SimpleViewAction<Object>
+    public static class ConfigurationExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -846,7 +846,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class NotFoundAction extends SimpleViewAction<ExceptionForm>
+    public static class NotFoundAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -865,7 +865,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class UnauthorizedAction extends SimpleViewAction<ExceptionForm>
+    public static class UnauthorizedAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -884,7 +884,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class DeadlockAction extends SimpleViewAction<ExceptionForm>
+    public static class DeadlockAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
@@ -902,7 +902,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class HtmlViewAction extends SimpleViewAction
+    public static class HtmlViewAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -918,7 +918,7 @@ public class TestController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ButtonAction extends SimpleViewAction<ButtonForm>
+    public static class ButtonAction extends SimpleViewAction<ButtonForm>
     {
         @Override
         public ModelAndView getView(ButtonForm form, BindException errors)
@@ -1122,7 +1122,7 @@ public class TestController extends SpringActionController
 
     // useful for stress testing and deadlock testing
     @RequiresNoPermission
-    public class IFrameAction extends SimpleViewAction<URLForm>
+    public static class IFrameAction extends SimpleViewAction<URLForm>
     {
         @Override
         public ModelAndView getView(URLForm form, BindException errors) throws Exception
@@ -1144,7 +1144,7 @@ public class TestController extends SpringActionController
 
     @RequiresNoPermission
     @MethodsAllowed(GET)
-    public class GetAction extends SimpleViewAction
+    public static class GetAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception

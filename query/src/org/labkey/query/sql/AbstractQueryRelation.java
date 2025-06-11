@@ -85,6 +85,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         MemTracker.getInstance().put(this);
     }
 
+    @Override
     public void setAlias(String alias)
     {
         _alias = alias;
@@ -227,6 +228,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         return _commonTableExpressions;
     }
 
+    @Override
     public void setCommonTableExpressions(CommonTableExpressions queryWith)
     {
         _commonTableExpressions = queryWith;

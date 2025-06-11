@@ -32,7 +32,7 @@ public interface IssuesListDefProvider
     String getDescription();
     default Domain getDomain()
     {
-        DomainKind domainKind = getDomainKind();
+        DomainKind<?> domainKind = getDomainKind();
         if (null != domainKind)
             return PropertyService.get().getDomain(getDomainContainer(), domainKind.generateDomainURI(IssuesSchema.SCHEMA_NAME, getName(), getDomainContainer(), null));
         return null;
@@ -44,7 +44,7 @@ public interface IssuesListDefProvider
     }
 
     @Nullable
-    DomainKind getDomainKind();
+    DomainKind<?> getDomainKind();
 
     default boolean isEnabled(Container container)
     {

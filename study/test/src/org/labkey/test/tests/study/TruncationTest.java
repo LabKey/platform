@@ -63,7 +63,7 @@ public class TruncationTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        TruncationTest init = (TruncationTest)getCurrentTest();
+        TruncationTest init = getCurrentTest();
         init.initTest();
     }
 

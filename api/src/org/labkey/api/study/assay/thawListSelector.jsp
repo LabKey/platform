@@ -39,7 +39,7 @@
     JspView<RenderContext> thisView = HttpView.currentView();
     RenderContext ctx = thisView.getModelBean();
     boolean renderAll = ctx.get(RenderSubSelectors.class.getSimpleName()) == null ? true : ctx.get(RenderSubSelectors.class.getSimpleName()).equals(RenderSubSelectors.ALL);
-    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
+    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
     boolean textType = !listType;
 
     String containerPath = ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);

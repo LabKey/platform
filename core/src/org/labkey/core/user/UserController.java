@@ -960,7 +960,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
-    public class AttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    public static class AttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Override
         public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
@@ -1002,7 +1002,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
-    public class ShowUpdateAction extends UserSchemaAction
+    public static class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
         Integer _pkVal;
@@ -1279,9 +1279,9 @@ public class UserController extends SpringActionController
 
     public static class AccessDetail
     {
-        private List<AccessDetailRow> _rows;
-        private boolean _showGroups;
-        private boolean _showUserCol;
+        private final List<AccessDetailRow> _rows;
+        private final boolean _showGroups;
+        private final boolean _showUserCol;
         private boolean _active = true;
 
         public AccessDetail(List<AccessDetailRow> rows)
@@ -2837,7 +2837,7 @@ public class UserController extends SpringActionController
 
 
     // All three impersonate API actions have the same form
-    private abstract class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
+    private abstract static class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
     {
         @Override
         protected String getCommandClassMethodName()
@@ -2905,7 +2905,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationGroupsAction extends MutatingApiAction
+    public static class GetImpersonationGroupsAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -3237,7 +3237,7 @@ public class UserController extends SpringActionController
                 //TODO controller.new UserAccessAction(),
                 new GetImpersonationUsersAction(),
                 controller.new ImpersonateUserAction(),
-                controller.new GetImpersonationGroupsAction(),
+                    new GetImpersonationGroupsAction(),
                 controller.new ImpersonateGroupAction()
 //                controller.new GetImpersonationRolesAction()   Annotated as "no permission", to allow impersonation adjustments
 //                controller.new ImpersonateRolesAction()        Annotated as "no permission", to allow impersonation adjustments

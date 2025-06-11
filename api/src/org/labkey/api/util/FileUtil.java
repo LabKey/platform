@@ -835,7 +835,7 @@ public class FileUtil
     public static FileLike appendPath(FileLike dir, org.labkey.api.util.Path path)
     {
         path = path.normalize();
-        if (path.size() > 0 && "..".equals(path.get(0)))
+        if (!path.isEmpty() && "..".equals(path.get(0)))
             throw new IllegalArgumentException(path.toString());
         return dir.resolveFile(path);
     }
@@ -1056,7 +1056,7 @@ public class FileUtil
         // of which home is a subdirectory.
         if (j < 0)
         {
-            if (path.length() == 0)
+            if (path.isEmpty())
                 path.append(".");
             else
                 path.delete(path.length() - 1, path.length());  // remove trailing sep
@@ -1236,7 +1236,7 @@ quickScan:
                 if (start < i)
                 {
                     String part = str.substring(start, i);
-                    if (part.length()==0 || equals(part,'.'))
+                    if (part.isEmpty() || equals(part,'.'))
                     {
                     }
                     else if (part.equals(".."))
@@ -1286,7 +1286,7 @@ quickScan:
 
     static boolean startsWith(String s, char ch)
     {
-        return s.length() > 0 && s.charAt(0) == ch;
+        return !s.isEmpty() && s.charAt(0) == ch;
     }
 
 
@@ -1305,7 +1305,7 @@ quickScan:
         if (!filePath.toLowerCase().startsWith(dir.toLowerCase()))
             return null;
         String relPath = filePath.substring(dir.length());
-        if (relPath.length() == 0)
+        if (relPath.isEmpty())
             return relPath;
         if (relPath.startsWith("/"))
             return relPath.substring(1);
@@ -1471,7 +1471,7 @@ quickScan:
 
     public static boolean isLegalName(String name)
     {
-        if (name == null || 0 == name.trim().length())
+        if (name == null || name.trim().isEmpty())
             return false;
 
         if (name.length() > 255)

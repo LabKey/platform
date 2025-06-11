@@ -122,7 +122,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
      * NIOFSDirectory) instead.
      * @param path The path in the file system to store the index
      * @return The opened Directory implementation
-     * @throws IOException
      */
     static Directory openDirectory(Path path) throws IOException
     {

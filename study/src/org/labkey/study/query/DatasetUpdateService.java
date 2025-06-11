@@ -140,7 +140,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
-    private boolean _skipAuditLogging = false;
+    private final boolean _skipAuditLogging = false;
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
@@ -937,7 +937,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             assertNotNull(map.get("lsid"));
             // unchanged
             assertTrue(((String)map.get("lsid")).endsWith(":1001.S2.1.2345"));
-            lsid = (String)map.get("lsid");
+            map.get("lsid");
         }
 
         @Before

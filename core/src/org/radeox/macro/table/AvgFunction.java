@@ -36,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
  */
 
 public class AvgFunction implements Function {
-  private static Logger log = LogManager.getLogger(AvgFunction.class);
+  private static final Logger log = LogManager.getLogger(AvgFunction.class);
 
 
   @Override

@@ -41,5 +41,5 @@ public interface IncludeRenderEngine {
    * @param name Name of the object to include, e.g. wiki page name
    * @return result A string representation of the included object
    */
-  public String include(String name);
+    String include(String name);
 }

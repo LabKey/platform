@@ -129,7 +129,7 @@ public class ArchiveURLRewriter extends URLRewriter
     private String uniquifyFileName(String originalName, String directoryName, Integer copy)
     {
         String name;
-        if (directoryName == null || directoryName.equals(""))
+        if (directoryName == null || directoryName.isEmpty())
         {
             name = originalName;
         }
@@ -157,7 +157,7 @@ public class ArchiveURLRewriter extends URLRewriter
         if (copy != null)
         {
             sb.append("-");
-            sb.append(copy.toString());
+            sb.append(copy);
         }
         sb.append(suffix);
 

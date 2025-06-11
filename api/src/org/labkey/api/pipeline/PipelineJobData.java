@@ -21,8 +21,8 @@ import java.util.List;
 
 public class PipelineJobData
 {
-    private List<PipelineJob> _running;
-    private List<PipelineJob> _pending;
+    private final List<PipelineJob> _running;
+    private final List<PipelineJob> _pending;
 
     public PipelineJobData()
     {

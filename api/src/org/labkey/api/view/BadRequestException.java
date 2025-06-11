@@ -62,7 +62,7 @@ public class BadRequestException extends HttpStatusException
         };
 
         abstract boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious);
-    };
+    }
 
     private final HowBad severity;
 

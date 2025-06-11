@@ -408,7 +408,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (!getMustCheckPermissions())
             return true;
         if (perm == ReadPermission.class && user instanceof User)
-            return _userSchema.getContainer().hasOneOf((User)user, Set.of(ReadPermission.class, SeeUserDetailsPermission.class));
+            return _userSchema.getContainer().hasOneOf(user, Set.of(ReadPermission.class, SeeUserDetailsPermission.class));
         else
             return super.hasPermission(user, perm);
     }

@@ -131,9 +131,9 @@ public class MultiValuedRenderContext extends RenderContextDecorator
 
     public static class TestCase extends Assert
     {
-        private FieldKey _fk1 = FieldKey.fromParts("Parent", "Child");
-        private FieldKey _fk2 = FieldKey.fromParts("Standalone");
-        private FieldKey _otherFK = FieldKey.fromParts("NotInRow");
+        private final FieldKey _fk1 = FieldKey.fromParts("Parent", "Child");
+        private final FieldKey _fk2 = FieldKey.fromParts("Standalone");
+        private final FieldKey _otherFK = FieldKey.fromParts("NotInRow");
 
         @Test
         public void testMatchingValues()
@@ -203,7 +203,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
 
         private class TestRenderContext extends RenderContext
         {
-            private Map<FieldKey, String> _values;
+            private final Map<FieldKey, String> _values;
 
             public TestRenderContext(Map<FieldKey, String> values)
             {

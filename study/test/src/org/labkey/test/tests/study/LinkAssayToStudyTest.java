@@ -62,7 +62,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
     @BeforeClass
     public static void setupProject() throws Exception
     {
-        LinkAssayToStudyTest initTest = (LinkAssayToStudyTest) getCurrentTest();
+        LinkAssayToStudyTest initTest = getCurrentTest();
         initTest.doSetup(); // Perform shared setup steps here
     }
 

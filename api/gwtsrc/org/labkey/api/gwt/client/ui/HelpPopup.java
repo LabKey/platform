@@ -16,10 +16,6 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.event.dom.client.MouseOutEvent;
-import com.google.gwt.event.dom.client.MouseOutHandler;
-import com.google.gwt.event.dom.client.MouseOverEvent;
-import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.InlineLabel;
@@ -31,8 +27,8 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  */
 public class HelpPopup extends InlineLabel
 {
-    private Element _element;
-    private String _title;
+    private final Element _element;
+    private final String _title;
     private String _body;
 
     public HelpPopup(String title, String body)

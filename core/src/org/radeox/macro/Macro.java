@@ -46,7 +46,7 @@ public interface Macro extends Comparable {
    *
    * @return Name of the Macro
    */
-  public String getName();
+  String getName();
 
   /**
    * Get a description of the macro. This description explains
@@ -54,7 +54,7 @@ public interface Macro extends Comparable {
    *
    * @return description A string describing the macro
    */
-  public String getDescription();
+  String getDescription();
 
   /**
    * Get a description of the paramters of the macro. The method
@@ -64,9 +64,9 @@ public interface Macro extends Comparable {
    *
    * @return description Array describing the parameters of the macro
    */
-  public String[] getParamDescription();
+  String[] getParamDescription();
 
-  public void setInitialContext(InitialRenderContext context);
+  void setInitialContext(InitialRenderContext context);
 
   /**
    * Execute the macro. This method is called by MacroFilter to
@@ -75,6 +75,6 @@ public interface Macro extends Comparable {
    * @param writer A write where the macro should write its output to
    * @param params Macro parameters with the parameters the macro is called with
    */
-  public void execute(Writer writer, MacroParameter params)
+  void execute(Writer writer, MacroParameter params)
       throws IllegalArgumentException, IOException;
 }

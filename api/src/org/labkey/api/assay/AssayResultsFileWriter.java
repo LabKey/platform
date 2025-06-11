@@ -158,9 +158,9 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
     public static class TestCase extends Assert
     {
-        private Mockery _context;
-        private ExpRun _run;
-        private ExpProtocol _protocol;
+        private final Mockery _context;
+        private final ExpRun _run;
+        private final ExpProtocol _protocol;
 
         public TestCase()
         {

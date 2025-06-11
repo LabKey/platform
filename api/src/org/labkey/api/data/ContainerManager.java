@@ -2958,11 +2958,11 @@ public class ContainerManager
             LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
             Container newFolder = createContainer(_testRoot, "folderTypeTest", TestContext.get().getUser());
             FolderType ft = newFolder.getFolderType();
-            assertEquals(ft, FolderType.NONE);
+            assertEquals(FolderType.NONE, ft);
 
             Container newFolderFromCache = getForId(newFolder.getId());
             assertNotNull(newFolderFromCache);
-            assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
+            assertEquals(FolderType.NONE, newFolderFromCache.getFolderType());
             LOG.info("testOneFolderType(" + folderType.getName() + "): setting folder type");
             newFolder.setFolderType(folderType, TestContext.get().getUser());
 

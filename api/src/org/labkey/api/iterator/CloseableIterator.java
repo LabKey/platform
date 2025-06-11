@@ -15,10 +15,7 @@
  */
 package org.labkey.api.iterator;
 
-import org.labkey.api.query.ValidationException;
-
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Iterator;
 
 /**

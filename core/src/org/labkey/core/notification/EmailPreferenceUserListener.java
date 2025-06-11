@@ -3,8 +3,6 @@ package org.labkey.core.notification;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
-import java.beans.PropertyChangeEvent;
-
 public class EmailPreferenceUserListener implements UserManager.UserListener
 {
     @Override

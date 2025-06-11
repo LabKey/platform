@@ -47,8 +47,8 @@ public class PlateUtils
      */
     public static class GridInfo
     {
-        private List<String> _annotations;
-        private double[][] _data;
+        private final List<String> _annotations;
+        private final double[][] _data;
 
         public GridInfo(double[][] data, List<String> annotations)
         {

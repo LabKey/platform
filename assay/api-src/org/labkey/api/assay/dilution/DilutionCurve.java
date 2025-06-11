@@ -55,7 +55,6 @@ public interface DilutionCurve
 
     /**
      * Is there enough data to render a dilution curve
-     * @return
      */
     boolean isValid();
 

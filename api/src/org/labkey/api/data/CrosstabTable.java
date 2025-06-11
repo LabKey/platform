@@ -43,11 +43,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     public static final String COL_INSTANCE_COUNT = "InstanceCount";
     public static final String COL_SORT_PATTERN = "SortPattern";
 
-    private CrosstabSettings _settings = null;
-    private List<CrosstabMember> _colMembers = null;
+    private CrosstabSettings _settings;
+    private List<CrosstabMember> _colMembers;
     private Filter _aggFilter = null;
     private boolean _orAggFilters = false;
-    private GroupTableInfo _groupTable = null;
+    private GroupTableInfo _groupTable;
 
     protected static final String AGG_ALIAS = "agg";
     protected static final String AGG_OR_ALIAS = "aggo";
@@ -545,7 +545,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         else if (jdbcType.isText())
             return "'" + memberValue.toString().replace("'", "''") + "'";
         else if (jdbcType == JdbcType.BOOLEAN)
-            return "CAST('" + Boolean.valueOf(memberValue.toString()).toString() +"' AS " + getSqlDialect().getBooleanDataType() + ")";
+            return "CAST('" + Boolean.valueOf(memberValue.toString()) +"' AS " + getSqlDialect().getBooleanDataType() + ")";
 
         //if you get this, add support for the type you want.
         throw new IllegalArgumentException("Crosstab table info supports numeric and character types for the column dimension.");

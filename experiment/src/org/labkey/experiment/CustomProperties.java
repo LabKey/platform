@@ -54,7 +54,7 @@ public class CustomProperties
                 {
                     handler.handle(stack.size() - 1, renderer.getDescription(value, values), renderer.getValue(value, values, c));
                 }
-                if (value.retrieveChildProperties().size() > 0)
+                if (!value.retrieveChildProperties().isEmpty())
                 {
                     stack.add(new ArrayList<>(value.retrieveChildProperties().values()));
                     indices.add(0);

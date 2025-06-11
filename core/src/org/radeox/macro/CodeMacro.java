@@ -54,7 +54,7 @@ import java.util.*;
  */
 
 public class CodeMacro extends LocalePreserved {
-  private static Logger log = LogManager.getLogger(CodeMacro.class);
+  private static final Logger log = LogManager.getLogger(CodeMacro.class);
 
   private final Map<String, SourceCodeFormatter> formatters;
 

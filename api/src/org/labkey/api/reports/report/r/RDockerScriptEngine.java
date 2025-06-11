@@ -115,7 +115,7 @@ public class RDockerScriptEngine extends RScriptEngine
             }
             catch (Exception e)
             {
-                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', msg " + e.getMessage() + ").\n" + e.toString());
+                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', msg " + e.getMessage() + ").\n" + e);
             }
         }
         else
@@ -131,7 +131,6 @@ public class RDockerScriptEngine extends RScriptEngine
 
     /**
      * Filter for the input script files in the report temp folder to copy to the Docker container which will run R
-     * @return
      */
     private static FileFilter InputFiles()
     {

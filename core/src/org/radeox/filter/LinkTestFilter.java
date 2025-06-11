@@ -50,7 +50,7 @@ import java.io.Writer;
  */
 
 public class LinkTestFilter extends LocaleRegexTokenFilter {
-  private static Logger log = LogManager.getLogger(LinkTestFilter.class);
+  private static final Logger log = LogManager.getLogger(LinkTestFilter.class);
 
 
   /**
@@ -76,9 +76,8 @@ public class LinkTestFilter extends LocaleRegexTokenFilter {
   public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context) {
     RenderEngine engine = context.getRenderContext().getRenderEngine();
 
-    if (engine instanceof WikiRenderEngine) {
-      WikiRenderEngine wikiEngine = (WikiRenderEngine) engine;
-      Writer writer = new StringBufferWriter(buffer);
+    if (engine instanceof WikiRenderEngine wikiEngine) {
+        Writer writer = new StringBufferWriter(buffer);
 
       String name = result.group(1);
       if (name != null) {

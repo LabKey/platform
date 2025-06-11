@@ -78,7 +78,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     protected final String _dataTableName;
 
     private static final Logger LOG = LogManager.getLogger(AbstractMatrixDataHandler.class);
-    private static boolean autoCreateSamples = true;     // CONSIDER: move this flag to the assay design
+    private static final boolean autoCreateSamples = true;     // CONSIDER: move this flag to the assay design
 
     public AbstractMatrixDataHandler(String idColName, String dbSchemaName, String dataTableName)
     {

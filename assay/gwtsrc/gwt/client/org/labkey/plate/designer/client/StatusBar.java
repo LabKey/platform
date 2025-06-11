@@ -36,9 +36,9 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
     private final String _doneLink;
     private final SaveButtonBar _saveButtonBar;
 
-    private TemplateView _view;
-    private Label _statusLabel;
-    private Timer _clearTimer;
+    private final TemplateView _view;
+    private final Label _statusLabel;
+    private final Timer _clearTimer;
     private boolean _dirty;
 
     public StatusBar(TemplateView view, final String doneLink)
@@ -80,10 +80,10 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
     @Override
     public void save(final SaveListener<Object> listener)
     {
-        _view.saveChanges(new ErrorDialogAsyncCallback()
+        _view.saveChanges(new ErrorDialogAsyncCallback<Integer>()
         {
             @Override
-            public void onSuccess(Object result)
+            public void onSuccess(Integer result)
             {
                 setDirty(false);
                 if (listener != null)
@@ -101,7 +101,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
             @Override
             public void saveSuccessful(Object result, String designerUrl)
             {
-                if (_doneLink != null && _doneLink.length() > 0)
+                if (_doneLink != null && !_doneLink.isEmpty())
                     WindowUtil.setLocation(_doneLink);
                 else
                     cancel();

@@ -29,5 +29,5 @@ public interface ResumableDescriptor
      * the jobs.
      * @param descriptor Mule configuration for this descriptor
      */
-    public void resume(UMODescriptor descriptor);
+    void resume(UMODescriptor descriptor);
 }

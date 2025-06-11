@@ -456,7 +456,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             int offset = 2;
 
             MutableInt testCount = new MutableInt(0);
-            selector.forEach(clazz, new ForEachBlock<K>()
+            selector.forEach(clazz, new ForEachBlock<>()
             {
                 @Override
                 public void exec(K object) throws StopIteratingException

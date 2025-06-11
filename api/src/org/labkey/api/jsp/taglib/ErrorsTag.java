@@ -54,9 +54,8 @@ public class ErrorsTag extends TagSupport
                 if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
                 {
                     Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
-                    if (!(o instanceof BindingResult))
+                    if (!(o instanceof BindingResult errors))
                         continue;
-                    BindingResult errors = (BindingResult)o;
                     if (null != errors.getAllErrors())
                         for (ObjectError m : errors.getAllErrors())
                         {

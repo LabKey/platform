@@ -186,8 +186,6 @@ public class DataIteratorUtil
         /**
          * Update rowMap content based on passed in col.
          * For example, the original rowMap may contain encoded field name. This util substitute the key in rowMap to reflect the actual col name
-         * @param col
-         * @param rowMap
          * @return If rowMap has been updated
          */
         public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)

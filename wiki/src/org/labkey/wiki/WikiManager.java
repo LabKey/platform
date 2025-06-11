@@ -156,7 +156,7 @@ public class WikiManager implements WikiService
     // Used to verify that entityId is a wiki and belongs in the specified container
     public Wiki getWikiByEntityId(Container c, String entityId)
     {
-        if (null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
+        if (null == c || c.getId().isEmpty() || null == entityId || entityId.isEmpty())
             return null;
 
         return new TableSelector(comm.getTableInfoPages(),
@@ -416,7 +416,7 @@ public class WikiManager implements WikiService
         //get page's children
         List<Wiki> children = wiki.children();
 
-        if (children.size() > 0)
+        if (!children.isEmpty())
         {
             if(isDeletingSubtree)
             {
@@ -634,7 +634,7 @@ public class WikiManager implements WikiService
         }
 
         //add any files as attachments
-        if (null != files && files.size() > 0)
+        if (null != files && !files.isEmpty())
         {
             try
             {

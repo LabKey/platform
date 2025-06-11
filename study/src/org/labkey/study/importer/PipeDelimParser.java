@@ -24,8 +24,8 @@ package org.labkey.study.importer;
 class PipeDelimParser
 {
     private int _left = 0;
-    private int _right = 0;
-    private String _data;
+    private int _right;
+    private final String _data;
 
     public PipeDelimParser(String data)
     {

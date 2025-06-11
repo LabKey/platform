@@ -323,7 +323,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             Container container;
-            if (containerName == null || "".equals(containerName))
+            if (containerName == null || containerName.isEmpty())
             {
                 container = context.getContainer();
             }

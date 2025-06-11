@@ -24,7 +24,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -112,7 +111,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
         }
     }
 
-    private class PersonnelTableTransform extends PreserveExistingProjectData
+    private static class PersonnelTableTransform extends PreserveExistingProjectData
     {
         public PersonnelTableTransform(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
         {
@@ -166,7 +165,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
         }
     }
 
-    private class StudyPropertiesTransform implements TransformHelper
+    private static class StudyPropertiesTransform implements TransformHelper
     {
         Set PROPS_TO_SKIP = new CaseInsensitiveHashSet("Label", "StartDate", "EndDate", "SubjectNounSingular",
             "SubjectNounPlural", "SubjectColumnName", "Grant", "Investigator", "Species", "AssayPlan",

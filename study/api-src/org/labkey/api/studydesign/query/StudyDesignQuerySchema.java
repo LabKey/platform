@@ -47,8 +47,8 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
 
     protected Study _study;
-    private Role _contextualRole;
-    private UserSchema _parentSchema;
+    private final Role _contextualRole;
+    private final UserSchema _parentSchema;
 
     // study design tables in the study schema that can exist without a study
     private static final Set<String> ALWAYS_AVAILABLE_TABLES = Set.of(

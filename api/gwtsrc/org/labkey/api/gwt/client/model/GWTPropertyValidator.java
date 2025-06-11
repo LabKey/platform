@@ -171,10 +171,8 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
     {
         if (this == o) return true;
         if (o == null) return false;
-        if (!(o instanceof GWTPropertyValidator))
+        if (!(o instanceof GWTPropertyValidator that))
             return false;
-
-        GWTPropertyValidator that = (GWTPropertyValidator) o;
 
         if (getRowId() != that.getRowId()) return false;
         if (!StringUtils.equals(getName(), that.getName())) return false;

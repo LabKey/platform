@@ -116,9 +116,9 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
     private static class SubscriptionTarget
     {
-        @NotNull private User _user;
-        @NotNull private Container _container;
-        @NotNull private String _srcIdentifier;
+        @NotNull private final User _user;
+        @NotNull private final Container _container;
+        @NotNull private final String _srcIdentifier;
 
         private SubscriptionTarget(@NotNull User user, @NotNull Container container, @NotNull String srcIdentifier)
         {
@@ -203,7 +203,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
                 targetContainer = ContainerManager.getForId(folderId.toString());
                 if (targetContainer == null)
                 {
-                    throw new InvalidKeyException("No such Folder: " + folderId.toString());
+                    throw new InvalidKeyException("No such Folder: " + folderId);
                 }
             }
 

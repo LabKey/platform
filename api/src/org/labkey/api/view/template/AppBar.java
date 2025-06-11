@@ -185,7 +185,7 @@ public class AppBar extends NavTree
             setPageTitle(null);
             return Collections.emptyList();
         }
-        else if (crumbTrail.size() >= 1)
+        else if (!crumbTrail.isEmpty())
         {
             // Last item is page title, strip it off the crumb trail
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getText());
@@ -236,7 +236,7 @@ public class AppBar extends NavTree
             if (lastTabs == null)
             {
                 // Need to synchronize since multiple requests may be happening concurrently
-                lastTabs = Collections.synchronizedMap(new HashMap<String, String>());
+                lastTabs = Collections.synchronizedMap(new HashMap<>());
                 session.setAttribute(LAST_TAB_KEY, lastTabs);
             }
             return lastTabs;

@@ -16,18 +16,14 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -206,7 +206,7 @@ public class StatementDataIterator extends AbstractDataIterator
                                             (null != mvName ? getMvParameter(stmt, mvName) : null)));
                 }
             }
-            _bindings[set] = bindings.toArray(new Triple[bindings.size()]);
+            _bindings[set] = bindings.toArray(new Triple[0]);
         }
         _currentStmt = _stmts[0];
         _currentBinding = _bindings[0];

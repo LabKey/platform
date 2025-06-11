@@ -27,7 +27,7 @@ public enum VisitDatasetType
     OPTIONAL("Optional"),
     REQUIRED("Required");
 
-    private String _label;
+    private final String _label;
     VisitDatasetType(String label)
     {
         _label = label;

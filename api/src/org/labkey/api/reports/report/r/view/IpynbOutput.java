@@ -279,7 +279,7 @@ public class IpynbOutput extends HtmlOutput
             // TODO collapsed sections
             boolean collapsed = false;
             if (output.has("collapsed"))
-                collapsed = (Boolean)JdbcType.BOOLEAN.convert(output.get("collapsed"));
+                JdbcType.BOOLEAN.convert(output.get("collapsed"));
 
             switch ((String)output.get("output_type"))
             {

@@ -242,9 +242,8 @@ public class ReportContentEmailManager
         {
             if (!item.isEmpty())
             {
-                Integer rowId = Integer.valueOf(item);
-                if (null != rowId)
-                    subscriptionSet.add(rowId);
+                int rowId = Integer.parseInt(item);
+                subscriptionSet.add(rowId);
             }
         }
         return subscriptionSet;

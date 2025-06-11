@@ -28,7 +28,7 @@ import java.util.HashSet;
 */
 public class RScriptEngineFactory extends ExternalScriptEngineFactory
 {
-    private static HashSet<String> _supportedExtensions = new HashSet<>();
+    private static final HashSet<String> _supportedExtensions = new HashSet<>();
 
     static {
         _supportedExtensions.add("r");

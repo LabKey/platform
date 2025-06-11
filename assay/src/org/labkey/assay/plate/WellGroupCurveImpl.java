@@ -45,7 +45,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     protected boolean assumeDecreasing;
     private final PercentCalculator _percentCalculator;
     protected WellSummary[] _wellSummaries = null;
-    private CurveFit _curveFit;
+    private final CurveFit _curveFit;
 
     public WellGroupCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws FitFailedException
     {
@@ -182,10 +182,10 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
         return !data.isEmpty();
     }
 
-    protected class WellSummary
+    protected static class WellSummary
     {
-        private double _neutralization;
-        private double _dilution;
+        private final double _neutralization;
+        private final double _dilution;
 
         public WellSummary(double neutralization, double dilution)
         {
@@ -239,7 +239,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
             else if (low > cutoff)
                 dataAbove = true;
         }
-        if (possibleMatches.size() > 0)
+        if (!possibleMatches.isEmpty())
         {
             double total = 0;
             for (Double d : possibleMatches)

@@ -37,8 +37,8 @@ import java.util.Objects;
  */
 public class XMLFileType extends FileType
 {
-    private String _namespace;
-    private Collection<String> _rootElements;
+    private final String _namespace;
+    private final Collection<String> _rootElements;
 
     public XMLFileType(String namespaceURI, String rootElement)
     {

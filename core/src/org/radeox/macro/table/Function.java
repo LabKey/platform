@@ -35,6 +35,6 @@ package org.radeox.macro.table;
  */
 
 public interface Function {
-  public String getName();
-  public void execute(Table table, int posx, int posy, int startX, int startY, int endX, int endY);
+  String getName();
+  void execute(Table table, int posx, int posy, int startX, int startY, int endX, int endY);
 }

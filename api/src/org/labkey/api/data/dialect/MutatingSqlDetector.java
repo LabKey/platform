@@ -158,7 +158,7 @@ public class MutatingSqlDetector
             }
         });
 
-        return _firstWord.length() > 0;
+        return !_firstWord.isEmpty();
     }
 
     public String getFirstWord()

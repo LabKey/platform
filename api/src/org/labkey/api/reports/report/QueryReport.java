@@ -41,6 +41,8 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
+import java.util.Objects;
+
 /**
  * User: Karl Lum
  * Date: Oct 6, 2006
@@ -109,10 +111,10 @@ public class QueryReport extends AbstractReport
                 }
             }
 
-            if (view != null && sb.length() == 0)
+            if (view != null && sb.isEmpty())
                 return view;
 
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
             {
                 return HtmlView.unsafe("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
             }
@@ -132,7 +134,7 @@ public class QueryReport extends AbstractReport
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
 
         // query reports can be rendered within another data region, need to make sure inner and outer data regions are unique
-        String dataRegionName = StringUtils.defaultString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT) + "_" + getReportId().toString();
+        String dataRegionName = Objects.toString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT) + "_" + getReportId().toString();
 
         if (schemaName == null)
             errors.addError(new LabKeyError("Schema name cannot be empty"));

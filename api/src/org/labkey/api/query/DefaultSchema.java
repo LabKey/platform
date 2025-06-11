@@ -341,11 +341,10 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         for (String schemaName : getSchemaNames())
         {
             QuerySchema schema = getSchema(schemaName);
-            if (!(schema instanceof UserSchema))
+            if (!(schema instanceof UserSchema userSchema))
             {
                 continue;
             }
-            UserSchema userSchema = (UserSchema) schema;
             if (userSchema.isFolder())
                 continue;
             if (!includeHidden && userSchema.isHidden())

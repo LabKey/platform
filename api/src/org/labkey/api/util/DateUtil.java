@@ -95,7 +95,7 @@ public class DateUtil
     private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
 
     // SimpleDataFormat does not support microseconds, it can only support up to milliseconds
-    private static Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
+    private static final Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {
         ISO_LONG_TIME_FORMAT_STRING,
@@ -132,7 +132,7 @@ public class DateUtil
         return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
     }
 
-    public record DateTimeFormat(String datePortion, @Nullable String timePortion) {};
+    public record DateTimeFormat(String datePortion, @Nullable String timePortion) {}
 
     // Splits the date and time portions of a standard date-time format, where date portion is required and time portion
     // is optional. Returns null if the format is non-standard, which means we can't split it.
@@ -1372,7 +1372,7 @@ Parse:
 
         long hour = r / DateUtils.MILLIS_PER_HOUR;
         r = r % DateUtils.MILLIS_PER_HOUR;
-        if (hour != 0 || s.length() > 0)
+        if (hour != 0 || !s.isEmpty())
             s.append(String.valueOf(hour)).append("h");
         if (r == 0)
             return s.toString();

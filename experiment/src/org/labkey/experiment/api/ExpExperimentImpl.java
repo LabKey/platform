@@ -180,7 +180,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 }
                 catch (BatchValidationException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
 
@@ -234,7 +234,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                         }
                         catch (BatchValidationException e)
                         {
-                            throw new UnexpectedException(e);
+                            throw UnexpectedException.wrap(e);
                         }
                     }
 

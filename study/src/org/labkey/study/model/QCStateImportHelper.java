@@ -14,11 +14,11 @@ import java.util.concurrent.Callable;
 
 public class QCStateImportHelper
 {
-    private User _user;
-    private DatasetDefinition _datasetDefinition;
-    private DataState _defaultQCState;
-    private Map<String, DataState> _qcLabels;
-    private boolean _autoCreate;
+    private final User _user;
+    private final DatasetDefinition _datasetDefinition;
+    private final DataState _defaultQCState;
+    private final Map<String, DataState> _qcLabels;
+    private final boolean _autoCreate;
 
     public QCStateImportHelper(User user, DatasetDefinition datasetDefinition, boolean autoCreate, DataState defaultQCState)
     {

@@ -102,9 +102,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
             ExportedSchemaType exportedXml;
             AbstractExternalSchemaForm form;
-            if (schemaXmlFile instanceof ExternalSchemaDocument)
+            if (schemaXmlFile instanceof ExternalSchemaDocument schemaDoc)
             {
-                ExternalSchemaDocument schemaDoc = (ExternalSchemaDocument)schemaXmlFile;
                 XmlBeansUtil.validateXmlDocument(schemaDoc, relativePath);
 
                 ExternalSchemaType schemaXml = schemaDoc.getExternalSchema();

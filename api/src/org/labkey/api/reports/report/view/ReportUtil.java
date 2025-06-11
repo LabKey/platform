@@ -160,10 +160,9 @@ public class ReportUtil
 
     public static Resource getModuleImageFile(Report r, String fileTypePrefix)
     {
-        if (!(r.getDescriptor().isModuleBased() && r.getDescriptor() instanceof ModuleReportDescriptor))
+        if (!(r.getDescriptor().isModuleBased() && r.getDescriptor() instanceof ModuleReportDescriptor descriptor))
             return null;
 
-        ModuleReportDescriptor descriptor = (ModuleReportDescriptor) r.getDescriptor();
         Resource parent = descriptor.getSourceFile().parent();
         if (null == parent)
             return null;
@@ -255,7 +254,7 @@ public class ReportUtil
         final String dataRegion = descriptor.getProperty(ReportDescriptor.Prop.dataRegionName);
         if (StringUtils.isEmpty(queryName) && !StringUtils.isEmpty(dataRegion))
         {
-            queryName = descriptor.getProperty(dataRegion + '.' + QueryParam.queryName.toString());
+            queryName = descriptor.getProperty(dataRegion + '.' + QueryParam.queryName);
         }
 
         // issue 19206: if we don't have either a query or a schema, just return the name of the report as the
@@ -406,15 +405,15 @@ public class ReportUtil
         return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
     }
 
-    public static interface ReportFilter
+    public interface ReportFilter
     {
-        public boolean accept(Report report, Container c, User user);
+        boolean accept(Report report, Container c, User user);
 
         /**
          * Returns the run and edit urls for query views
          */
-        public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view);
-        public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user);
+        ActionURL getViewRunURL(User user, Container c, CustomViewInfo view);
+        ActionURL getViewEditURL(Container c, CustomViewInfo view, User user);
     }
 
     public static class DefaultReportFilter implements ReportFilter

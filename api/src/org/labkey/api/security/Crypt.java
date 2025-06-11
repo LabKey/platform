@@ -345,7 +345,7 @@ public enum Crypt
 
         public void update(String s)
         {
-            if (null == s || s.length()==0)
+            if (null == s || s.isEmpty())
             {
                 digest.update(nul);
                 return;

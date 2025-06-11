@@ -41,9 +41,9 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
 
     protected static class StatusChecker implements Supplier<Boolean>
     {
-        private BaseWebDriverTest _test;
-        private String _waitForMessage;
-        private Locator _loc = Locator.id("vq-status");
+        private final BaseWebDriverTest _test;
+        private final String _waitForMessage;
+        private final Locator _loc = Locator.id("vq-status");
 
         public StatusChecker(String waitForMessage, BaseWebDriverTest test)
         {

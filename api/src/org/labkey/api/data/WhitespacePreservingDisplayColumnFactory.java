@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Renders the value in HTML preserving whitespace, including spaces and newlines.

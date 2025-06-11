@@ -76,13 +76,7 @@ public abstract class AbstractSpecimenTransformTask
      * During the transform, it's expected that any lab, primary, derivative and additive
      * information would be extracted.
      *
-     * @param inputRow
-     * @param rowIndex
-     * @param labIds
-     * @param primaryIds
-     * @param derivativeIds
      * @return the transformed specimen row
-     * @throws java.io.IOException
      */
     protected abstract Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds);
 
@@ -92,7 +86,7 @@ public abstract class AbstractSpecimenTransformTask
     protected abstract  Map<String,Integer> getDerivativeIds();
     protected abstract  Map<String,Integer> getAdditiveIds();
     private int rowIndex = 0;
-    private Set<String> hashes = new HashSet<>();
+    private final Set<String> hashes = new HashSet<>();
 
     protected List<Map<String, Object>> transformRows(List<Map<String, Object>> inputRows)
     {

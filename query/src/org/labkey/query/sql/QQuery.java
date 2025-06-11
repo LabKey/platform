@@ -16,7 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -134,7 +133,7 @@ public class QQuery extends QExpr
         SQLFragment f = _select.getSql();
         if (null == f)
         {
-            if (null != _select && _select.getParseErrors().size() > 0)
+            if (null != _select && !_select.getParseErrors().isEmpty())
                 return;
             String message = "Unexpected error parsing subselect: " + getSourceText();
             _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));

@@ -148,17 +148,17 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             suffixBuilder.append(" (Vial Count");
         if (isViewVolume())
         {
-            suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
+            suffixBuilder.append(!suffixBuilder.isEmpty() ? "/" : " (");
             suffixBuilder.append("Total Volume");
         }
         if (isViewParticipantCount())
         {
-            suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
+            suffixBuilder.append(!suffixBuilder.isEmpty() ? "/" : " (");
             suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getContainer()))).append(" Count");
         }
         if (isViewPtidList())
         {
-            suffixBuilder.append(suffixBuilder.length() > 0 ? ", " : " (");
+            suffixBuilder.append(!suffixBuilder.isEmpty() ? ", " : " (");
             suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectColumnName(getContainer()))).append(" Group");
         }
         suffixBuilder.append(")");
@@ -188,7 +188,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     protected String getFilterQueryString(Visit visit, CELLDATA summary)
     {
         ActionURL url = new ActionURL();
-        if (_parameters.getBaseCustomViewName() != null && _parameters.getBaseCustomViewName().length() > 0)
+        if (_parameters.getBaseCustomViewName() != null && !_parameters.getBaseCustomViewName().isEmpty())
         {
             if (!SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(_parameters.getBaseCustomViewName()))
                 url.addParameter("SpecimenDetail.viewName",  _parameters.getBaseCustomViewName());
@@ -227,7 +227,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         }
 
         String baseParams = geBaseViewFilter().toQueryString("SpecimenDetail");
-        if (baseParams != null && baseParams.length() > 0)
+        if (baseParams != null && !baseParams.isEmpty())
             return baseParams + "&" + url.getQueryString();
         else
             return url.getQueryString();
@@ -326,7 +326,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             return false;
         for (String str : strArray)
         {
-            if (str != null && str.length() > 0)
+            if (str != null && !str.isEmpty())
                 return true;
         }
         return false;
@@ -343,7 +343,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             boolean first = true;
             for (String str : summaryString)
             {
-                if (str != null && str.length() > 0)
+                if (str != null && !str.isEmpty())
                 {
                     if (!first)
                         cellHtml.append("<br>");

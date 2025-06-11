@@ -438,7 +438,7 @@ public class SimpleFilter implements Filter
                 if (clause.getParamVals() != null)
                     result.addAll(Arrays.asList(clause.getParamVals()));
             }
-            return result.toArray(new Object[result.size()]);
+            return result.toArray(new Object[0]);
         }
 
         @Override
@@ -763,7 +763,7 @@ public class SimpleFilter implements Filter
 
             return in.toString();
         }
-;
+
         private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())

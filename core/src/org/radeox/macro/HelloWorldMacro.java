@@ -38,7 +38,7 @@ import java.io.Writer;
  */
 
 public class HelloWorldMacro extends BaseMacro {
-  private String[] paramDescription = {"1: name to print"};
+  private final String[] paramDescription = {"1: name to print"};
 
   @Override
   public String getName() {

@@ -120,7 +120,7 @@ public class StudyDesignController extends SpringActionController
 
     @ActionNames("manageAssaySchedule, manageAssaySpecimen")
     @RequiresPermission(UpdatePermission.class)
-    public class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
+    public static class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
     {
         @Override
         public ModelAndView getView(AssayScheduleForm form, BindException errors)
@@ -154,7 +154,7 @@ public class StudyDesignController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ManageStudyProductsAction extends SimpleViewAction<ReturnUrlForm>
+    public static class ManageStudyProductsAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
@@ -188,7 +188,7 @@ public class StudyDesignController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ManageTreatmentsAction extends SimpleViewAction<ManageTreatmentsBean>
+    public static class ManageTreatmentsAction extends SimpleViewAction<ManageTreatmentsBean>
     {
         @Override
         public ModelAndView getView(ManageTreatmentsBean form, BindException errors)
@@ -633,10 +633,10 @@ public class StudyDesignController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
     {
-        private Map<String, Integer> _tempTreatmentIdMap = new HashMap<>();
-        private Set<Integer> usedTreatmentIds = new HashSet<>(); // treatmentIds referenced in single table Treatment Schedule UI
-        private List<Integer> treatmentRowIds = new ArrayList<>(); // treatmentIds defined in 2 table UI's Treatment section
-        private List<Integer> cohortRowIds = new ArrayList<>();
+        private final Map<String, Integer> _tempTreatmentIdMap = new HashMap<>();
+        private final Set<Integer> usedTreatmentIds = new HashSet<>(); // treatmentIds referenced in single table Treatment Schedule UI
+        private final List<Integer> treatmentRowIds = new ArrayList<>(); // treatmentIds defined in 2 table UI's Treatment section
+        private final List<Integer> cohortRowIds = new ArrayList<>();
 
         @Override
         public void validateForm(StudyTreatmentSchedule form, Errors errors)

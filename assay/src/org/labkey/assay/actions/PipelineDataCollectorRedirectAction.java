@@ -184,7 +184,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         throw new RedirectException(url);
     }
 
-    private class FakeConfirmAction extends ConfirmAction<Object>
+    private static class FakeConfirmAction extends ConfirmAction<Object>
     {
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors) throws Exception { throw new IllegalStateException(); }

@@ -296,7 +296,7 @@ public class IpynbReport extends DockerScriptReport
         try (TarArchiveInputStream tar = new TarArchiveInputStream(in))
         {
             TarArchiveEntry entry;
-            while ((entry = (TarArchiveEntry) tar.getNextEntry()) != null)
+            while ((entry = tar.getNextEntry()) != null)
             {
                 File path = new File(targetDirectory, entry.getName());
                 if (entry.isDirectory())

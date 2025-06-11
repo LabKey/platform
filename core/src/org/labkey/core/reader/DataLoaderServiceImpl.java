@@ -55,9 +55,9 @@ public class DataLoaderServiceImpl implements DataLoaderService
 {
     private static final Logger _log = LogManager.getLogger(DataLoaderService.class);
 
-    private Map<FileType, DataLoaderFactory> _fileTypeToFactory;
-    private MultiValuedMap<String, DataLoaderFactory> _extensionToFactory;
-    private List<DataLoaderFactory> _factories;
+    private final Map<FileType, DataLoaderFactory> _fileTypeToFactory;
+    private final MultiValuedMap<String, DataLoaderFactory> _extensionToFactory;
+    private final List<DataLoaderFactory> _factories;
 
     public static DataLoaderServiceImpl get()
     {
@@ -184,7 +184,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
             Collection<DataLoaderFactory> factories = _extensionToFactory.get(ext);
             if (factories.isEmpty() && !ext.startsWith("."))
                 factories = _extensionToFactory.get("." + ext);
-            if (factories != null && factories.size() > 0)
+            if (factories != null && !factories.isEmpty())
             {
                 if (factories.size() == 1)
                 {
@@ -199,7 +199,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
             }
         }
 
-        if (matches.size() > 0)
+        if (!matches.isEmpty())
         {
             // If more than one DataLoader matches the extension, override
             // FileType.isHeaderMatch() on your DataLoader FileType and sniff the header.
@@ -216,7 +216,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
 
         matches.addAll(matches(null, contentType, header, _factories));
 
-        if (matches.size() > 0)
+        if (!matches.isEmpty())
         {
             // If more than one DataLoader matches the extension, override
             // FileType.isHeaderMatch() on your DataLoader FileType and sniff the header.

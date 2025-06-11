@@ -37,5 +37,5 @@ import org.radeox.filter.regex.RegexReplaceFilter;
 public class SmileyFilter extends RegexReplaceFilter implements CacheFilter {
   public SmileyFilter() {
     super(":-\\(", ":-)");
-  };
+  }
 }

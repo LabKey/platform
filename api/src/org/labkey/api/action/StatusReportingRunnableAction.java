@@ -68,7 +68,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
-        return new JspView("/org/labkey/api/action/statusReport.jsp");
+        return new JspView<>("/org/labkey/api/action/statusReport.jsp");
     }
 
     @Override

@@ -360,7 +360,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
     // this is used for form-binding
     public void setRelated(String relatedText)
     {
-        if (null != relatedText && relatedText.equals("")) relatedText = null;
+        if (null != relatedText && relatedText.isEmpty()) relatedText = null;
         this.related = relatedText;
     }
 
@@ -578,7 +578,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
             ValidEmail v = null;
             User u = null;
 
-            try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
+            try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { }
 
             if (u == null)
                 u = UserManager.getUserByDisplayName(id);

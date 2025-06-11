@@ -596,7 +596,7 @@ public class CoreController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class CustomStylesheetAction extends BaseStylesheetAction
+    public static class CustomStylesheetAction extends BaseStylesheetAction
     {
         @Override
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -1272,7 +1272,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetExtSecurityContainerTreeAction extends GetExtContainerTreeAction
+    public static class GetExtSecurityContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
         protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
@@ -1324,7 +1324,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetExtMWBContainerTreeAction extends GetExtContainerTreeAction
+    public static class GetExtMWBContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
         protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
@@ -1337,7 +1337,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetExtContainerAdminTreeAction extends GetExtContainerTreeAction
+    public static class GetExtContainerAdminTreeAction extends GetExtContainerTreeAction
     {
         @Override
         protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
@@ -1589,7 +1589,7 @@ public class CoreController extends SpringActionController
                             o.put("options", ModuleProperty.toOptionMaps(mp.getOptionsSupplier().get(ct)));
                         }
                         containers.add(o);
-                        ct = ct.getParent();
+                        ct.getParent();
                     }
                     record.put("effectiveValue", mp.getEffectiveValue(getContainer()));
                     Collections.reverse(containers);  //reverse so root first
@@ -1850,7 +1850,7 @@ public class CoreController extends SpringActionController
                             }
                         }
 
-                        if (children.size() > 0)
+                        if (!children.isEmpty())
                             writerMap.put("children", children);
                     }
 
@@ -2165,7 +2165,7 @@ public class CoreController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/core/view/configReportsAndScripts.jsp");
+            return new JspView<>("/org/labkey/core/view/configReportsAndScripts.jsp");
         }
 
         @Override
@@ -2490,9 +2490,9 @@ public class CoreController extends SpringActionController
                     new ProjectsAction(),
                     new DownloadFileLinkAction(),
                     new GetExtContainerTreeAction(),
-                controller.new GetExtSecurityContainerTreeAction(),
-                controller.new GetExtMWBContainerTreeAction(),
-                controller.new GetExtContainerAdminTreeAction(),
+                    new GetExtSecurityContainerTreeAction(),
+                    new GetExtMWBContainerTreeAction(),
+                    new GetExtContainerAdminTreeAction(),
                     new GetFolderTypesAction(),
                     new SaveModulePropertiesAction(),
                     new GetContainerInfoAction(),
@@ -2821,7 +2821,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetCustomLabelsAction extends ReadOnlyApiAction<CustomLabelForm>
+    public static class GetCustomLabelsAction extends ReadOnlyApiAction<CustomLabelForm>
     {
         @Override
         public Object execute(CustomLabelForm form, BindException errors)
@@ -2834,7 +2834,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CustomLabelsAction extends MutatingApiAction<CustomLabelForm>
+    public static class CustomLabelsAction extends MutatingApiAction<CustomLabelForm>
     {
         CustomLabelProvider _customLabelProvider;
         @Override

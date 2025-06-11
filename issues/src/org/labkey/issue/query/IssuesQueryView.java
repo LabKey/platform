@@ -42,7 +42,7 @@ import java.util.LinkedHashSet;
 
 public class IssuesQueryView extends QueryView
 {
-    private IssueListDef _issueDef;
+    private final IssueListDef _issueDef;
 
     public IssuesQueryView(IssueListDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {

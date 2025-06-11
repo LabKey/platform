@@ -23,9 +23,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 public class CreateIssueDisplayColumn extends DataColumn
 {
     private final ActionButton _saveButton;

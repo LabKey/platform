@@ -255,7 +255,7 @@ public class EmailServiceImpl implements EmailService
         public MimeMessage createMessage() throws MessagingException
         {
             MimeMessage msg = new MimeMessage(MailHelper.getSession());
-            boolean multipart = _contentMap.size() > 1 || (_files != null && _files.size() > 0);
+            boolean multipart = _contentMap.size() > 1 || (_files != null && !_files.isEmpty());
             MimeMultipart multiPartContent = null;
 
             if (multipart)
@@ -283,7 +283,7 @@ public class EmailServiceImpl implements EmailService
                 for (String email : entry.getValue())
                     addresses.add(new InternetAddress(email));
 
-                msg.setRecipients(entry.getKey(), addresses.toArray(new InternetAddress[addresses.size()]));
+                msg.setRecipients(entry.getKey(), addresses.toArray(new InternetAddress[0]));
             }
 
             for (Entry<String, String> entry : _headers.entrySet())
@@ -304,7 +304,7 @@ public class EmailServiceImpl implements EmailService
                     msg.setContent(entry.getValue(), entry.getKey().getContentType());
             }
 
-            if (_files != null && _files.size() > 0)
+            if (_files != null && !_files.isEmpty())
             {
                 for (File file : _files)
                 {

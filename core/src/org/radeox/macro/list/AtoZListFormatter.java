@@ -49,7 +49,7 @@ public class AtoZListFormatter implements ListFormatter {
   @Override
   public void format(Writer writer, Linkable current, String listComment, Collection c, String emptyText, boolean showSize)
       throws IOException {
-    if (c.size() > 0) {
+    if (!c.isEmpty()) {
       Iterator it = c.iterator();
       Map atozMap = new HashMap();
       List numberRestList = new ArrayList();
@@ -177,7 +177,7 @@ public class AtoZListFormatter implements ListFormatter {
     writer.write("</td></tr>");
   }
 
-  private class EmptyIterator implements Iterator {
+  private static class EmptyIterator implements Iterator<Object> {
     @Override
     public boolean hasNext() {
       return false;

@@ -32,7 +32,7 @@ public class ThawListFileResolver implements ParticipantVisitResolver
 {
     private final ParticipantVisitResolver _childResolver;
 
-    private Map<String, ParticipantVisit> _aliases;
+    private final Map<String, ParticipantVisit> _aliases;
     private final Container _runContainer;
 
     public ThawListFileResolver(ParticipantVisitResolver childResolver, Map<String, ParticipantVisit> aliases, Container runContainer)

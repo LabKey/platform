@@ -696,7 +696,7 @@ public class DomainUtil
 
     public static Domain createDomain(
         String kindName,
-        GWTDomain domain,
+        GWTDomain<?> domain,
         Map<String, Object> arguments,
         Container container,
         User user,
@@ -705,7 +705,7 @@ public class DomainUtil
         boolean forUpdate) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
-        domain = new GWTDomain(domain);
+        domain = new GWTDomain<>(domain);
 
         DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
         if (kind == null)

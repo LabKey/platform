@@ -420,7 +420,7 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.AddToPicklist
         ));
 
-        Set<SampleTypeService.SampleOperations> _permittedOps = Collections.emptySet();
+        Set<SampleTypeService.SampleOperations> _permittedOps;
 
         SampleStateType(Set<SampleTypeService.SampleOperations> permittedOps)
         {
@@ -431,7 +431,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             return _permittedOps;
         }
-    };
+    }
 
 
     /**

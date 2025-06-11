@@ -29,12 +29,12 @@ import java.util.Date;
 */
 public class DilutionMaterialKey
 {
-    private Container _container;
-    private String _specimenId;
-    private String _participantId;
-    private Double _visitId;
-    private Date _date;
-    private String _virusName;
+    private final Container _container;
+    private final String _specimenId;
+    private final String _participantId;
+    private final Double _visitId;
+    private final Date _date;
+    private final String _virusName;
 
     public DilutionMaterialKey(Container container, String specimenId, String participantId, Double visitId, Date date, String virusName)
     {
@@ -50,7 +50,7 @@ public class DilutionMaterialKey
     {
         if (append != null)
         {
-            if (builder.length() > 0)
+            if (!builder.isEmpty())
                 builder.append(", ");
             builder.append(append);
         }

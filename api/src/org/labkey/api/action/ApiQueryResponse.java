@@ -74,7 +74,7 @@ public class ApiQueryResponse implements ApiResponse
     private long _numRespRows = 0;              //number of response rows
     private RenderContext _ctx = null;
     private boolean _schemaEditable = false;
-    private boolean _metaDataOnly = false;
+    private boolean _metaDataOnly;
     private DataRegion _dataRegion;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;

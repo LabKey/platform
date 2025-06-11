@@ -333,7 +333,7 @@ public class IssueManager
         for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
             IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt, false);
-            if (relatedIssue != null && relatedIssue.getCommentObjects().size() > 0)
+            if (relatedIssue != null && !relatedIssue.getCommentObjects().isEmpty())
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
                 if (hasReadPermission)
@@ -596,7 +596,7 @@ public class IssueManager
 
         public String getIndefiniteSingularArticle()
         {
-            if (singularName.length() == 0)
+            if (singularName.isEmpty())
                 return "";
             char first = Character.toLowerCase(singularName.charAt(0));
             if (first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u')
@@ -903,7 +903,6 @@ public class IssueManager
 
     /**
      *
-     * @param container
      * @return combined Required fields of "current" and "inherited from" container if admin settings are inherited
      */
     public static String getRequiredIssueFields(Container container)

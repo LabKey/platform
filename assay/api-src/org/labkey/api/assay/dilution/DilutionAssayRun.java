@@ -343,8 +343,8 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     public static class DilutionResultProperties
     {
-        private Map<PropertyDescriptor, Object> _dataProperties;
-        private CaseInsensitiveHashMap<Object> _virusProperties;
+        private final Map<PropertyDescriptor, Object> _dataProperties;
+        private final CaseInsensitiveHashMap<Object> _virusProperties;
 
         public DilutionResultProperties(Map<PropertyDescriptor, Object> dataProperties,
                                         CaseInsensitiveHashMap<Object> virusProperties)
@@ -366,16 +366,16 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     public static class SampleResult
     {
-        private String _dataRowLsid;
-        private Container _dataContainer;
+        private final String _dataRowLsid;
+        private final Container _dataContainer;
         private Integer _objectId;
-        private DilutionSummary _dilutionSummary;
-        private DilutionMaterialKey _materialKey;
-        private Map<PropertyDescriptor, Object> _sampleProperties;
-        private Map<PropertyDescriptor, Object> _dataProperties;
-        private CaseInsensitiveHashMap<Object> _virusProperties;
+        private final DilutionSummary _dilutionSummary;
+        private final DilutionMaterialKey _materialKey;
+        private final Map<PropertyDescriptor, Object> _sampleProperties;
+        private final Map<PropertyDescriptor, Object> _dataProperties;
+        private final CaseInsensitiveHashMap<Object> _virusProperties;
         private boolean _longCaptions = false;
-        private DilutionManager _mgr = new DilutionManager();
+        private final DilutionManager _mgr = new DilutionManager();
 
         public SampleResult(DilutionAssayProvider provider, ExpData data, DilutionSummary dilutionSummary, DilutionMaterialKey materialKey,
                             Map<PropertyDescriptor, Object> sampleProperties, DilutionResultProperties dilutionResultProperties)
@@ -544,8 +544,6 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     /**
      * Generate a key for the sample level property map
-     * @param material
-     * @return
      */
     protected String getSampleKey(ExpMaterial material)
     {
@@ -554,8 +552,6 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     /**
      * Generate a key for the sample level property map
-     * @param summary
-     * @return
      */
     protected String getSampleKey(DilutionSummary summary)
     {

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONString;
-import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Serializable;

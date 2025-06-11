@@ -36,7 +36,6 @@ public class PepXMLFileType extends FileType
 
     /**
      * optionally allows .xml, .pepxml, to support older Out2XML, Mascot2XML etc
-     * @param supportAncientConverters
      */
     public PepXMLFileType(boolean supportAncientConverters)
     {

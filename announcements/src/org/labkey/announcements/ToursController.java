@@ -53,7 +53,7 @@ public class ToursController extends SpringActionController
     // Anyone with read permission can attempt to view the list.  ToursTable will do further permission checking.
     @RequiresPermission(ReadPermission.class)
     @SuppressWarnings("UnusedDeclaration")
-    public class BeginAction extends SimpleViewAction<QueryForm>
+    public static class BeginAction extends SimpleViewAction<QueryForm>
     {
         @Override
         public ModelAndView getView(QueryForm queryForm, BindException errors)
@@ -86,7 +86,7 @@ public class ToursController extends SpringActionController
 
     @ActionNames("edit, editTour")
     @RequiresPermission(ReadPermission.class) //will check below
-    public class EditTourAction extends SimpleViewAction<EditTourForm>
+    public static class EditTourAction extends SimpleViewAction<EditTourForm>
     {
         @Override
         public ModelAndView getView(EditTourForm editTourForm, BindException errors)
@@ -118,7 +118,7 @@ public class ToursController extends SpringActionController
 
     @ActionNames("tours, saveTour")
     @RequiresPermission(ReadPermission.class) //will check below
-    public class SaveTourAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class SaveTourAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
@@ -173,7 +173,7 @@ public class ToursController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetTourAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class GetTourAction extends MutatingApiAction<SimpleApiJsonForm>
     {
 
         @Override

@@ -31,7 +31,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDateAndContinuousTimepointTest init = (StudyDateAndContinuousTimepointTest) getCurrentTest();
+        StudyDateAndContinuousTimepointTest init = getCurrentTest();
         init.doCreateSteps();
     }
 

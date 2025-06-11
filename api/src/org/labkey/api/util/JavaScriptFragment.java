@@ -28,7 +28,7 @@ public class JavaScriptFragment implements SafeToRender, DOM.Renderable
     public static final JavaScriptFragment TRUE = JavaScriptFragment.unsafe(" true ");
     public static final JavaScriptFragment FALSE = JavaScriptFragment.unsafe(" false ");
 
-    public static JavaScriptFragment bool(boolean b) { return b ? TRUE : FALSE;};
+    public static JavaScriptFragment bool(boolean b) { return b ? TRUE : FALSE;}
 
     private final @NotNull String _s;
 

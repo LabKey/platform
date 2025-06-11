@@ -291,12 +291,12 @@ public class NameGeneratorState implements AutoCloseable
         Map<FieldKey, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps, altNameGenerator);
 
         StringExpressionFactory.FieldKeyStringExpression expression = activeNameGenerator.getParsedNameExpression();
-        String name = null;
+        String name;
         if (expression instanceof NameGenerator.NameGenerationExpression)
             name = ((NameGenerator.NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
         else
             name = expression.eval(ctx);
-        if (name == null || name.length() == 0)
+        if (name == null || name.isEmpty())
             throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
         return name;

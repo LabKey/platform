@@ -34,11 +34,11 @@ import java.util.List;
  */
 public class DefaultViewInfo implements DataViewInfo
 {
-    private String _id;
+    private final String _id;
     private String _reportId;
-    private DataViewProvider.Type _dataType;
-    private String _name;
-    private Container _container;
+    private final DataViewProvider.Type _dataType;
+    private final String _name;
+    private final Container _container;
 
     private String _type;
     private String _description;

@@ -471,9 +471,9 @@ public class SecurityPolicyManager
 
         new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
                 "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
-                sb.toString() + "))");
+                sb + "))");
         new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-                "WHERE Container IN (" + sb.toString() + ")");
+                "WHERE Container IN (" + sb + ")");
 
         removeAll();
     }

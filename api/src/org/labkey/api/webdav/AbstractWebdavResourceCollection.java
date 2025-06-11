@@ -15,7 +15,6 @@
  */
 package org.labkey.api.webdav;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
@@ -23,7 +22,6 @@ import org.labkey.api.util.Path;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**

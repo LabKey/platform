@@ -472,7 +472,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             rowId = map.get("rowid");
         if (null == rowId)
             throw new InvalidKeyException("No value provided for 'rowId' column");
-        Long rowLong = (Long)new LongConverter(null).convert(Long.class, rowId);
+        Long rowLong = new LongConverter(null).convert(Long.class, rowId);
         if (null == rowLong)
             throw new InvalidKeyException("Unable to convert rowId of '" + rowId + "' to a long");
         return rowLong;
@@ -516,7 +516,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new IllegalStateException("Expected one and only one count of rows.");
-        else if (counts.size() > 0 && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.get(0) != 0)
             throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
     }
 

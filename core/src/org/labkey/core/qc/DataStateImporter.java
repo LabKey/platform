@@ -1,22 +1,17 @@
 package org.labkey.core.qc;
 
 import org.apache.xmlbeans.XmlObject;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.qc.export.AbstractDataStateImporter;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class DataStateImporter extends AbstractDataStateImporter implements FolderImporter
 {

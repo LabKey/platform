@@ -378,7 +378,7 @@ public class PipelineManager
             if (!StringUtils.isEmpty(notifyUsers))
                 sb.append(notifyUsers);
 
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
             {
                 PipelineMessage message = new PipelineMessage(c, template, statusFile);
                 message.setRecipients(sb.toString());
@@ -428,16 +428,16 @@ public class PipelineManager
                 PipelineDigestMessage message = new PipelineDigestMessage(c, template, statusFiles, min, max, sb.toString());
                 messages.add(message);
             }
-            return messages.toArray(new PipelineDigestMessage[messages.size()]);
+            return messages.toArray(new PipelineDigestMessage[0]);
         }
         return null;
     }
 
     private static class PipelineMessage
     {
-        private Container _c;
-        private PipelineEmailTemplate _template;
-        private PipelineStatusFileImpl _statusFile;
+        private final Container _c;
+        private final PipelineEmailTemplate _template;
+        private final PipelineStatusFileImpl _statusFile;
         private String _recipients;
 
         public PipelineMessage(Container c, PipelineEmailTemplate template, PipelineStatusFileImpl statusFile)
@@ -686,7 +686,7 @@ public class PipelineManager
                     if (errors.hasErrors())
                         throw errors;
                 }
-                return rowList.size() > 0;
+                return !rowList.isEmpty();
             }
         }
         return false;
@@ -754,7 +754,7 @@ public class PipelineManager
         validateConfigJson(triggerType, config.getConfiguration(), pipelineId, isEnabled, errors, container, user);
 
         Object customConfiguration = config.getCustomConfiguration();
-        if (customConfiguration != null && !customConfiguration.toString().equals(""))
+        if (customConfiguration != null && !customConfiguration.toString().isEmpty())
             validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true, container, user);
     }
 

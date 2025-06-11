@@ -228,9 +228,8 @@ public class NabGraph
 
     private static String formatCaption(Container c, Object captionValue)
     {
-        if (captionValue instanceof Date)
+        if (captionValue instanceof Date date)
         {
-            Date date = (Date) captionValue;
             if (date.getHours() == 0 && date.getMinutes() == 0 && date.getSeconds() == 0)
                 return DateUtil.formatDate(c, date);
             else
@@ -278,7 +277,7 @@ public class NabGraph
                     }
                 }
             }
-            if (caption == null || caption.length() == 0)
+            if (caption == null || caption.isEmpty())
                 caption = getCaption(summary, identifier);
             summaryMap.add(new Pair<>(caption, summary));
         }

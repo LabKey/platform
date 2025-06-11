@@ -24,8 +24,8 @@ import org.labkey.api.query.ViewOptions;
  */
 public class ViewFilterItemImpl implements ViewOptions.ViewFilterItem
 {
-    private String _type;
-    private boolean _enabled;
+    private final String _type;
+    private final boolean _enabled;
 
     public ViewFilterItemImpl(String type, boolean enabled)
     {

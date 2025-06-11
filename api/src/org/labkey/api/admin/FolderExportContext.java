@@ -18,14 +18,12 @@ package org.labkey.api.admin;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.exp.xar.LSIDRelativizer;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -53,7 +51,7 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<Integer> _listIds;
     private List<Pair<Integer, Container>> _lists;
     private Set<String> _queryKeys;
-    private String _fileRootPath;
+    private final String _fileRootPath;
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
 

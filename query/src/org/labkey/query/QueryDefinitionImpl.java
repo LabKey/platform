@@ -919,7 +919,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 if (table != null)
                 {
                     List<ColumnInfo> pkColumns = table.getPkColumns();
-                    if (pkColumns.size() > 0)
+                    if (!pkColumns.isEmpty())
                     {
                         Map<String, String> params = new HashMap<>();
                         for (ColumnInfo column : pkColumns)

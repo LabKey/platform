@@ -475,7 +475,7 @@ public class ServerManager
                             s = System.currentTimeMillis();
                             execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
-                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
+                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery);
 
                             jsonQuery.remove("countDistinctLevel");
                         }
@@ -648,7 +648,7 @@ public class ServerManager
         }
         catch (Exception x)
         {
-            LOG.debug("Shutdown Mondrian server flush cache failed: " + s.toString());
+            LOG.debug("Shutdown Mondrian server flush cache failed: " + s);
             LOG.debug(x.getMessage());
         }
 
@@ -671,11 +671,11 @@ public class ServerManager
     }
 
 
-    static Map<_DataSourceChangeListener, Boolean> changeListeners = Collections.synchronizedMap(new WeakHashMap<_DataSourceChangeListener, Boolean>());
+    static Map<_DataSourceChangeListener, Boolean> changeListeners = Collections.synchronizedMap(new WeakHashMap<>());
 
     public static class _DataSourceChangeListener implements DataSourceChangeListener
     {
-        final Map<String,Boolean> ischanged = Collections.synchronizedMap(new HashMap<String, Boolean>());
+        final Map<String,Boolean> ischanged = Collections.synchronizedMap(new HashMap<>());
 
         public _DataSourceChangeListener()
         {
@@ -721,7 +721,7 @@ public class ServerManager
             }
             catch (IOException x)
             {
-                throw new UnexpectedException(x);
+                throw UnexpectedException.wrap(x);
             }
         }
     }

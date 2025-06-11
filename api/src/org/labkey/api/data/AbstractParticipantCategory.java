@@ -212,7 +212,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
 
     public boolean canEdit(Container container, User user)
     {
-        return canEdit(container, user, new ArrayList<ValidationError>());
+        return canEdit(container, user, new ArrayList<>());
     }
 
     public boolean canEdit(Container container, User user, List<ValidationError> errors)
@@ -240,7 +240,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
 
     public boolean canDelete(Container container, User user)
     {
-        return canDelete(container, user, new ArrayList<ValidationError>());
+        return canDelete(container, user, new ArrayList<>());
     }
 
     public boolean canDelete(Container container, User user, List<ValidationError> errors)

@@ -91,7 +91,7 @@ public class ProtocolManagementWebPart extends GridView
             ActionURL url = new ActionURL(AnalysisController.ProtocolManagementAction.class, getViewContext().getContainer());
             url.addParameter("action", action.toString()).addReturnUrl(getContextURLHelper());
             ActionButton button = new ActionButton(url, action.toString());
-            String confirmMessage = "Are you sure you want to " + action.toString() + " the selected ";
+            String confirmMessage = "Are you sure you want to " + action + " the selected ";
             button.setRequiresSelection(true, confirmMessage + "protocol?", confirmMessage + "protocols?");
             bb.add(button);
         }

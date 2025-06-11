@@ -38,7 +38,7 @@ import org.radeox.macro.PluginRepository;
  */
 
 public class FunctionLoader extends PluginLoader {
-  private static Logger log = LogManager.getLogger(FunctionLoader.class);
+  private static final Logger log = LogManager.getLogger(FunctionLoader.class);
 
   protected static FunctionLoader instance;
 

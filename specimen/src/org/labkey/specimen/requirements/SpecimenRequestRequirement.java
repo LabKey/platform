@@ -188,7 +188,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
             builder.append(" (").append(getLocation().getLabel()).append(")");
         if (_description != null)
         {
-            if (builder.length() > 0 && _description.length() > 0)
+            if (!builder.isEmpty() && !_description.isEmpty())
                 builder.append(", ");
             builder.append(_description);
         }

@@ -82,7 +82,7 @@ public class BitSetQueryImpl
 {
     private final boolean mondrianCompatibleNullHandling = false;
 
-    private static Logger _log = LogManager.getLogger(BitSetQueryImpl.class);
+    private static final Logger _log = LogManager.getLogger(BitSetQueryImpl.class);
     private final static User olapServiceUser = new LimitedUser(User.guest, ReaderRole.class);
     static
     {
@@ -98,12 +98,12 @@ public class BitSetQueryImpl
     private final QubeQuery qq;
     private final RolapCubeDef rolap;
     private MeasureDef measure;
-    private OlapConnection connection;
+    private final OlapConnection connection;
     private final String cachePrefix;
     private SqlDialect dialect = null;
     private final User serviceUser;
     private final User user;
-    private IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
+    private final IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
 
     private MemberSet containerMembers = null;  // null == all
 
@@ -249,7 +249,7 @@ public class BitSetQueryImpl
 
 
 
-    abstract class Result
+    abstract static class Result
     {
         // return level if all members are in the same level, null otherwise
         @Nullable abstract Level getLevel();
@@ -441,7 +441,7 @@ public class BitSetQueryImpl
     {
         EmptyResult()
         {
-            super(new HashSet<Member>());
+            super(new HashSet<>());
         }
     }
 
@@ -795,7 +795,7 @@ public class BitSetQueryImpl
             return processMembers((QubeQuery.QubeMembersExpr)expr);
         }
 
-        if (null == expr.arguments || 0 == expr.arguments.size())
+        if (null == expr.arguments || expr.arguments.isEmpty())
             throw new IllegalArgumentException("No arguments provided");
 
         List<Result> results = new ArrayList<>(expr.arguments.size());
@@ -890,30 +890,30 @@ public class BitSetQueryImpl
             sb.append("\n\tmeasure   ").append(measure.toString());
             if (null != rowsExpr)
             {
-                sb.append("\n\tonrows    ").append(rowsExpr.toString());
+                sb.append("\n\tonrows    ").append(rowsExpr);
             }
             if (null != colsExpr)
             {
-                sb.append("\n\toncolumns ").append(colsExpr.toString());
+                sb.append("\n\toncolumns ").append(colsExpr);
             }
             if (null != filterExpr)
             {
-                sb.append("\n\tfilter    ").append(filterExpr.toString());
+                sb.append("\n\tfilter    ").append(filterExpr);
             }
             if (null != filterSet)
             {
-                sb.append("\n\teval      ").append(filterSet.toString());
+                sb.append("\n\teval      ").append(filterSet);
             }
             if (null != whereExpr)
             {
-                sb.append("\n\twhere    ").append(whereExpr.toString());
+                sb.append("\n\twhere    ").append(whereExpr);
             }
             if (null != whereSet)
             {
                 if (whereSet.size() > 20)
                     sb.append("\n\teval      ").append("{" + whereSet.size() + " members}");
                 else
-                    sb.append("\n\teval      ").append(whereSet.toString());
+                    sb.append("\n\teval      ").append(whereSet);
             }
             logDebug(sb.toString());
         }
@@ -1273,7 +1273,7 @@ public class BitSetQueryImpl
 
     Result intersect(OP op, Collection<Result> results) throws OlapException
     {
-        if (results.size() == 0)
+        if (results.isEmpty())
             throw new IllegalArgumentException();
         if (results.size() == 1)
             return results.iterator().next();
@@ -1303,7 +1303,7 @@ public class BitSetQueryImpl
             results.add(r);
         }
 
-        if (results.size() == 0)
+        if (results.isEmpty())
             return new EmptyResult();
         if (results.size() == 1)
             return results.get(0);
@@ -1336,7 +1336,7 @@ public class BitSetQueryImpl
 
     Result except(OP op, Collection<Result> results) throws OlapException
     {
-        if (results.size() == 0)
+        if (results.isEmpty())
             throw new IllegalArgumentException();
         if (results.size() == 1)
             return results.iterator().next();
@@ -1873,24 +1873,22 @@ public class BitSetQueryImpl
 
             if (to.getLevelType() == Level.Type.ALL)
             {
-                StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
                 Map<String,String> factTableAliases = new HashMap<>();
-                sb.append(defFrom.getAllColumnsSQL(factTableAliases));
-                sb.append("\nFROM ");
-                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom));
-                return sb.toString();
+                String sb = "SELECT DISTINCT " + defFrom.getAllColumnsSQL(factTableAliases) +
+                        "\nFROM " +
+                        rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom);
+                return sb;
             }
             else
             {
                 RolapCubeDef.LevelDef defTo = getRolapFromCube(to);
-                StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
                 Map<String,String> factTableAliases = new HashMap<>();
-                sb.append(defFrom.getAllColumnsSQL(factTableAliases));
-                sb.append(", ");
-                sb.append(defTo.getAllColumnsSQL(factTableAliases));
-                sb.append("\nFROM ");
-                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom, defTo));
-                return sb.toString();
+                String sb = "SELECT DISTINCT " + defFrom.getAllColumnsSQL(factTableAliases) +
+                        ", " +
+                        defTo.getAllColumnsSQL(factTableAliases) +
+                        "\nFROM " +
+                        rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom, defTo);
+                return sb;
             }
         }
 
@@ -2279,9 +2277,8 @@ public class BitSetQueryImpl
                 sets.put(sub.getUniqueName(), new MemberSet());
 
             boolean isShortList = false;
-            if (inner instanceof MemberSetResult)
+            if (inner instanceof MemberSetResult msr)
             {
-                MemberSetResult msr = (MemberSetResult)inner;
                 if (msr.members != null && msr.members.size() <= 20)
                     isShortList = true;
             }

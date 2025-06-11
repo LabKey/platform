@@ -45,8 +45,8 @@ import java.util.Map;
 
 public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
 {
-    private TemplateView _view;
-    private String _type;
+    private final TemplateView _view;
+    private final String _type;
 
     private String _newGroupFieldValue;
     private ImageButton _createButton;
@@ -168,7 +168,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
                 ListBox source = (ListBox)changeEvent.getSource();
                 _newGroupFieldValue = source.getSelectedValue();
 
-                boolean enable = (_newGroupFieldValue.length() > 0);
+                boolean enable = (!_newGroupFieldValue.isEmpty());
 
                 _createButton.setEnabled(enable);
                 _multiCreateButton.setEnabled(enable);

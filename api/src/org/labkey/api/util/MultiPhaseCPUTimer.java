@@ -103,7 +103,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
         private final Map<K2, MutableLong> _map;
 
         private K2 _currentPhase = null;
-        private long _beginningNanos = 0;
+        private long _beginningNanos;
         private boolean _closed = false;
 
         private InvocationTimer(Class<K2> clazz, K2[] values)

@@ -227,9 +227,8 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (!(evt instanceof ContainerManager.ContainerPropertyChangeEvent))
+                if (!(evt instanceof ContainerManager.ContainerPropertyChangeEvent event))
                     return;
-                ContainerManager.ContainerPropertyChangeEvent event = (ContainerManager.ContainerPropertyChangeEvent) evt;
 
                 if (!event.container.isRoot())
                     studiesCache.remove(event.container.getProject().getId());

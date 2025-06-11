@@ -52,6 +52,7 @@ public class ValidateQueryAction extends ReadOnlyApiAction<ValidateQueryAction.V
     UserSchema schema;
     TableInfo table;
 
+    @Override
     protected ApiResponseWriter createResponseWriter() throws IOException
     {
         ApiResponseWriter result = super.createResponseWriter();

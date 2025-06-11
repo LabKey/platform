@@ -23,12 +23,12 @@ public class AssayFolderRenameTest extends BaseWebDriverTest
     private final static String PROJECT_NAME = "Assay Folder Rename Project";
     private final static String RENAMED_PROJECT_NAME = PROJECT_NAME + " Renamed";
     private final static String ASSAY_NAME = "Test Assay";
-    private AbstractAssayHelper _assayHelper = new APIAssayHelper(this);
+    private final AbstractAssayHelper _assayHelper = new APIAssayHelper(this);
 
     @BeforeClass
     public static void setupProject()
     {
-        AssayFolderRenameTest initTest = (AssayFolderRenameTest) getCurrentTest();
+        AssayFolderRenameTest initTest = getCurrentTest();
         initTest.doSetup();
     }
 

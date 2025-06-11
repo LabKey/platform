@@ -50,7 +50,7 @@ import static java.util.Collections.emptyList;
 public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPropertiesBean>
 {
     private static final CustomPropertyRenderer DEFAULT_RENDERER = new DefaultCustomPropertyRenderer();
-    private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<String, CustomPropertyRenderer>()
+    private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<>()
     {
         @Override
         public CustomPropertyRenderer get(Object key)
@@ -138,7 +138,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 map.put(pd.getName(), entry.getValue());
             }
         }
-        ExpSampleTypeImpl st = (ExpSampleTypeImpl)m.getSampleType();
+        ExpSampleTypeImpl st = m.getSampleType();
         if (null != st)
         {
             Domain d = st.getDomain();

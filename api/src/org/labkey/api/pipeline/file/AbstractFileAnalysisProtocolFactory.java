@@ -258,7 +258,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return new FileDefaultsReader(fileDefault).readXML();
     }
 
-    protected class FileDefaultsReader extends DefaultsReader
+    protected static class FileDefaultsReader extends DefaultsReader
     {
         private final Path _fileDefaults;
 
@@ -274,7 +274,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
     }
     
-    abstract protected class DefaultsReader
+    abstract protected static class DefaultsReader
     {
         abstract public Reader createReader() throws IOException;
 

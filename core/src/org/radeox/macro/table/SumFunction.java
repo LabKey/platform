@@ -36,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
  */
 
 public class SumFunction implements Function {
-  private static Logger log = LogManager.getLogger(SumFunction.class);
+  private static final Logger log = LogManager.getLogger(SumFunction.class);
 
 
   @Override

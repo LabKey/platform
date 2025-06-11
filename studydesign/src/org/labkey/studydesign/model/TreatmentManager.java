@@ -805,11 +805,11 @@ public class TreatmentManager
         {
             _cohorts.add(CohortService.get().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
             _cohorts.add(CohortService.get().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));
-            assertEquals(_cohorts.size(), 2);
+            assertEquals(2, _cohorts.size());
 
             _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE));
             _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP));
-            assertEquals(_visits.size(), 2);
+            assertEquals(2, _visits.size());
 
             for (Cohort cohort : _cohorts)
             {
@@ -843,7 +843,7 @@ public class TreatmentManager
                 _treatments.add(treatment2);
             }
 
-            assertEquals(_treatments.size(), 2);
+            assertEquals(2, _treatments.size());
         }
 
         private void addProductsForTreatment(int treatmentId)
@@ -887,7 +887,7 @@ public class TreatmentManager
                 _products.add(Table.insert(_user, ti, product4));
             }
 
-            assertEquals(_products.size(), 4);
+            assertEquals(4, _products.size());
 
             for (ProductImpl product : _products)
                 addAntigenToProduct(product.getRowId());
@@ -942,7 +942,7 @@ public class TreatmentManager
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignRouteLabelByName(_container, "UNK"));
             _lookups.put("Route", name);
 
-            assertEquals(_lookups.keySet().size(), 4);
+            assertEquals(4, _lookups.keySet().size());
         }
 
         private void verifyTreatmentVisitMapRecords(int expectedCount)
@@ -1079,7 +1079,7 @@ public class TreatmentManager
         {
             _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE));
             _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP));
-            assertEquals(_visits.size(), 2);
+            assertEquals(2, _visits.size());
 
             for (AssaySpecimenConfigImpl assay : _assays)
             {
@@ -1123,7 +1123,7 @@ public class TreatmentManager
             _lookups.put("Lab", name);
 
             data.put("Name", name = "Test Sample Type");
-            data.put("Label", label = "Test Sample Type Label");
+            data.put("Label", "Test Sample Type Label");
             data.put("PrimaryType", "Test Primary Type");
             data.put("ShortSampleCode", "TP");
             Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);

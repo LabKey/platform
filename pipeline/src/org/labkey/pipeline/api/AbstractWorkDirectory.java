@@ -205,11 +205,11 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         {
                             role = f.getName().substring(f.getName().indexOf(".") + 1);
                         }
-                        while (role.length() > 0 && !Character.isJavaIdentifierPart(role.charAt(0)))
+                        while (!role.isEmpty() && !Character.isJavaIdentifierPart(role.charAt(0)))
                         {
                             role = role.substring(1);
                         }
-                        if ("".equals(role))
+                        if (role.isEmpty())
                         {
                             role = "Output";
                         }
@@ -508,11 +508,10 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
                         // TODO - change from holding a reference to FileAnalysisJobSupport to a PipelineJob directly.
                         // It's the only implementation and the extra layer of indirection doesn't help anything.
-                        if (fileDest.exists() && _support instanceof PipelineJob)
+                        if (fileDest.exists() && _support instanceof PipelineJob job)
                         {
                             // If it's still there, make sure we don't auto-retry because this task will think it's
                             // already been run successfully if its expected outputs are on disk
-                            PipelineJob job = (PipelineJob) _support;
                             job.setErrors(Math.max(1, job.getActiveTaskFactory().getAutoRetry() + 1));
                         }
                     }

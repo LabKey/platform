@@ -53,7 +53,7 @@ import java.util.Set;
  */
 public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    private static Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
+    private static final Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
 
     protected SecurityEscalationAuditProvider()
     {

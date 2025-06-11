@@ -179,7 +179,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         Object rowId = map.get("rowId");
         if (rowId == null)
             throw new InvalidKeyException("No value provided for 'rowId' column");
-        Integer rowInteger = (Integer)new IntegerConverter(null).convert(Integer.class, rowId);
+        Integer rowInteger = new IntegerConverter(null).convert(Integer.class, rowId);
         if (rowInteger == null)
             throw new InvalidKeyException("Unable to convert rowId of '" + rowId + "' to an int");
         return rowInteger.intValue();

@@ -217,7 +217,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         private static void logJspPath(File jspSource, String errors)
         {
             int idx = errors.indexOf("_jsp.java:");
-            String path = "";
+            String path;
             if (idx != -1)
             {
                 int begin = idx + 10;

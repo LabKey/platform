@@ -433,9 +433,8 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         super.copyTo(to);
-        if (to instanceof PropertyDescriptor)
+        if (to instanceof PropertyDescriptor toPD)
         {
-            PropertyDescriptor toPD = (PropertyDescriptor)to;
             toPD._containerId = _containerId; // ?
             toPD._lookupContainer = _lookupContainer;
             toPD._lookupSchema = _lookupSchema;

@@ -45,8 +45,8 @@ public class ModuleInfoTestCase
 
         }
 
-        if (sb.length() > 0)
-            Assert.fail("Missing expected properties on 'LabKey' modules:" + sb.toString());
+        if (!sb.isEmpty())
+            Assert.fail("Missing expected properties on 'LabKey' modules:" + sb);
     }
 }
 

@@ -94,7 +94,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
     protected List<? extends SpecimenVisitReport> createReports()
     {
         Collection<String> participantIds;
-        if (!isAllSubjectsOption(_participantId) && _participantId != null && _participantId.trim().length() > 0)
+        if (!isAllSubjectsOption(_participantId) && _participantId != null && !_participantId.trim().isEmpty())
         {
             Study study = StudyService.get().getStudy(getContainer());
             if (!StudyService.get().participantExists(study, _participantId))

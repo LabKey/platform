@@ -69,7 +69,7 @@ public class FilterProtocolInputCriteria extends AbstractProtocolInputCriteria
         }
         catch (URISyntaxException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

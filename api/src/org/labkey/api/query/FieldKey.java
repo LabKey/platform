@@ -259,29 +259,29 @@ public class FieldKey extends QueryKey<FieldKey>
     };
 
 
-    public static final Comparator<FieldKey> CASE_INSENSITIVE_ORDER = new Comparator<FieldKey>()
+    public static final Comparator<FieldKey> CASE_INSENSITIVE_ORDER = new Comparator<>()
     {
         @Override
         public int compare(FieldKey a, FieldKey b)
         {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
+            if (a == b) return 0;
+            if (null == a) return -1;
+            if (null == b) return 1;
             int c = compare(a.getParent(), b.getParent());
-            return c!=0 ? c : String.CASE_INSENSITIVE_ORDER.compare(a.getName(),b.getName());
+            return c != 0 ? c : String.CASE_INSENSITIVE_ORDER.compare(a.getName(), b.getName());
         }
     };
 
-    public static final Comparator<FieldKey> CASE_SENSITIVE_ORDER = new Comparator<FieldKey>()
+    public static final Comparator<FieldKey> CASE_SENSITIVE_ORDER = new Comparator<>()
     {
         @Override
         public int compare(FieldKey a, FieldKey b)
         {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
+            if (a == b) return 0;
+            if (null == a) return -1;
+            if (null == b) return 1;
             int c = compare(a.getParent(), b.getParent());
-            return c!=0 ? c : a.getName().compareTo(b.getName());
+            return c != 0 ? c : a.getName().compareTo(b.getName());
         }
     };
 

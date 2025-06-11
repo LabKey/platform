@@ -260,7 +260,7 @@ public class ListController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
+    public static class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
     {
         @Override
         public Object execute(ListDefinitionForm form, BindException errors) throws Exception
@@ -471,7 +471,7 @@ public class ListController extends SpringActionController
     }
 
 
-    public abstract class InsertUpdateAction extends FormViewAction<ListDefinitionForm>
+    public abstract static class InsertUpdateAction extends FormViewAction<ListDefinitionForm>
     {
         protected abstract ActionURL getActionView(ListDefinition list, BindException errors);
         protected abstract Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues);

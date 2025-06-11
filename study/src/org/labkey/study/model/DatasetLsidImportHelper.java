@@ -30,9 +30,9 @@ import static org.labkey.study.model.SequenceNumImportHelper.parseDateTime;
 
 public class DatasetLsidImportHelper
 {
-    private DatasetDefinition _datasetDefinition;
+    private final DatasetDefinition _datasetDefinition;
     private final Map<String, String> _map = new HashMap<>();
-    private Converter _convertDate = ConvertUtils.lookup(Date.class);
+    private final Converter _convertDate = ConvertUtils.lookup(Date.class);
 
     public DatasetLsidImportHelper(DatasetDefinition datasetDefinition)
     {
@@ -71,7 +71,7 @@ public class DatasetLsidImportHelper
     private String getURNPrefix(String container)
     {
         Container c = null;
-        String entityId = null;
+        String entityId;
         if (_datasetDefinition.isShared() && _datasetDefinition.getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
         {
             c = _datasetDefinition.getDefinitionContainer();

@@ -35,5 +35,5 @@ package org.radeox.util;
  */
 
 public interface Linkable {
-  public String getLink();
+  String getLink();
 }

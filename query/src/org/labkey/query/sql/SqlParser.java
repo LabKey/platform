@@ -209,7 +209,7 @@ public class SqlParser
     public QNode parseQuery(@NotNull String str, @NotNull List<? super QueryParseException> errors, @Nullable List<QueryParseException> warnings)
     {
         _parseErrors = new ArrayList<>();
-        _parseWarnings = null==warnings ? new ArrayList<QueryParseException>() : warnings;
+        _parseWarnings = null==warnings ? new ArrayList<>() : warnings;
         try (var parser = getAntlrParser())
         {
             parser.reset(str, _parseErrors);
@@ -237,7 +237,7 @@ public class SqlParser
                 _parseErrors.add(x);
             }
 
-            if (_parseErrors.size() == 0)
+            if (_parseErrors.isEmpty())
             {
                 CommonTree parseRoot = (CommonTree) selectScope.getTree();
                 assert parseRoot != null;
@@ -355,7 +355,7 @@ public class SqlParser
 
     public ArrayList<QParameter> getParameters()
     {
-        return null==_parameters ? new ArrayList<QParameter>(0) : _parameters;
+        return null==_parameters ? new ArrayList<>(0) : _parameters;
     }
 
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
@@ -527,7 +527,7 @@ public class SqlParser
 
     static public boolean isLegalIdentifier(String str)
     {
-        if (str.length() == 0)
+        if (str.isEmpty())
             return false;
         if (keywords.contains(str))
             return false;
@@ -598,9 +598,8 @@ public class SqlParser
 //        {
 //            e = ((TokenStreamRecognitionException) e).recog;
 //        }
-        else if (e instanceof RecognitionException)
+        else if (e instanceof RecognitionException re)
         {
-            RecognitionException re = (RecognitionException)e;
             String message = formatRecognitionException(re);
             return new QueryParseException(message, re, re.line, re.charPositionInLine);
         }
@@ -623,9 +622,8 @@ public class SqlParser
         
         if (null != re.token)
             near = re.token.getText();
-        if (re instanceof MissingTokenException)
+        if (re instanceof MissingTokenException mte)
         {
-            MissingTokenException mte = (MissingTokenException)re;
             if (null != mte.inserted)
             missing = tokenName(((CommonToken)mte.inserted).getType());
         }
@@ -784,14 +782,12 @@ public class SqlParser
             }
         }
 
-        if (!(nodeName instanceof QIdentifier) || !(nodeType instanceof QIdentifier) || (null != nodeDefault && !(nodeDefault instanceof QExpr)))
+        if (!(nodeName instanceof QIdentifier identName) || !(nodeType instanceof QIdentifier identType) || (null != nodeDefault && !(nodeDefault instanceof QExpr)))
         {
             _parseErrors.add(new QueryParseException("Parse exception in parameter declaration", null, node.getLine(), node.getCharPositionInLine()));
             return null;
         }
 
-        QIdentifier identName = (QIdentifier)nodeName;
-        QIdentifier identType = (QIdentifier)nodeType;
         QExpr exprDefault = (QExpr)nodeDefault;
         boolean required = exprDefault == null;
         ParameterType type = ParameterType.resolve(identType.getIdentifier());
@@ -834,7 +830,7 @@ public class SqlParser
             if (q != null)
                 l.add(q);
             else
-                assert _parseErrors.size() > 0;
+                assert !_parseErrors.isEmpty();
         }
         return convertNode(node, l, constExpr);
     }
@@ -1160,9 +1156,8 @@ public class SqlParser
         AliasManager aliasManager = new AliasManager(_dialect);     // Need to assign unique names to selected fields for them to be used in outer select
         for (QNode child : select.children())                       // Claim existing aliases
         {
-            if (child instanceof QAs)
+            if (child instanceof QAs as)
             {
-                QAs as = (QAs)child;
                 QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
                 if (null != identifier)
                     aliasManager.claimAlias(identifier.getIdentifier(), identifier.getIdentifier());
@@ -1184,9 +1179,8 @@ public class SqlParser
         List<QNode> innerSelectNewChildren = new ArrayList<>();
         for (QNode child : select.children())
         {
-            if (child instanceof QAs)
+            if (child instanceof QAs as)
             {
-                QAs as = (QAs)child;
                 QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
                 innerSelectNewChildren.addAll(transformInnerExpr(as, identifier, groupBy, aliasManager, groupByAliasMap));
 
@@ -1213,9 +1207,8 @@ public class SqlParser
         if (null != expr.getFieldKey() && groupByAliasMap.containsKey(expr.getFieldKey()))
             groupByAliasMap.put(expr.getFieldKey(), null != identifier ? identifier : expr);
 
-        if (expr instanceof QAggregate)
+        if (expr instanceof QAggregate aggregate)
         {
-            QAggregate aggregate = (QAggregate) expr;
 
             if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
             {
@@ -1331,9 +1324,8 @@ public class SqlParser
         List<QNode> outList = new ArrayList<>();
         for (QNode node : qnodes)
         {
-            if (node instanceof QAs)
+            if (node instanceof QAs as)
             {
-                QAs as = (QAs) node;
                 if (as.getExpression() instanceof QIdentifier && as.childList().size() == 1)
                 {
                     FieldKey fieldKey = as.getExpression().getFieldKey();
@@ -1391,7 +1383,7 @@ public class SqlParser
     private QFieldKey substitutePath(String pathString)
     {
         Path p = Path.parse(pathString);
-        if (0 == p.size())
+        if (p.isEmpty())
         {
             _parseErrors.add(new QueryParseException("Path substition is empty", null, -1, -1));
             return null;
@@ -1458,7 +1450,7 @@ public class SqlParser
 
     private static QNode first(LinkedList<QNode> children)
     {
-        return children.size() > 0 ? children.get(0) : null;
+        return !children.isEmpty() ? children.get(0) : null;
     }
 
 
@@ -1567,7 +1559,7 @@ public class SqlParser
         QNode q = qnode(n, constExpr);
         if (null == q)
             return null;
-        if (q instanceof QDot && children.size() == 0)
+        if (q instanceof QDot && children.isEmpty())
             return q;
         q._replaceChildren(children);
         return q;
@@ -1747,7 +1739,7 @@ public class SqlParser
                 return null;
         }
 
-        assert q != null || _parseErrors.size() > 0;
+        assert q != null || !_parseErrors.isEmpty();
         
         // default behavior for nodes that don't have QNode(Node N) constructors
         if (q != null)
@@ -2022,7 +2014,7 @@ public class SqlParser
         {
             List<QueryParseException> errors = new ArrayList<>();
             QNode q = (new SqlParser()).parseQuery(sql,errors,null);
-            if (errors.size() > 0)
+            if (!errors.isEmpty())
                 fail(errors.get(0), sql);
             assertNotNull(q);
         }
@@ -2039,7 +2031,7 @@ public class SqlParser
         {
             List<QueryParseException> errors = new ArrayList<>();
             QNode q = (new SqlParser()).parseQuery(sql,errors,null);
-            if (errors.size() == 0)
+            if (errors.isEmpty())
                 fail("BAD: " + sql);
         }
 
