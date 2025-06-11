@@ -178,7 +178,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return _missingValues.containsKey(mv);
     }
 
-    protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
+    protected Object handleConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
         String msg;
         if (x instanceof ConversionExceptionWithMessage)
@@ -650,7 +650,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             catch (ConversionException x)
             {
-                return addConversionException(fieldName, value, type, x);
+                return handleConversionException(fieldName, value, type, x);
             }
         }
 
@@ -1912,7 +1912,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             catch (ConversionException x)
             {
                 // preferable to handle in call()
-                _row[i] = addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
+                _row[i] = handleConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
             }
             catch (RuntimeException x)
             {
