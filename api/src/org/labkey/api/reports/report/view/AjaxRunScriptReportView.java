@@ -60,7 +60,7 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
         }
 
         // for late-bound client dependencies
-        if (null != bean.getClientDependencies() && bean.getClientDependencies().size() > 0)
+        if (null != bean.getClientDependencies() && !bean.getClientDependencies().isEmpty())
         {
             addClientDependencies(bean.getClientDependencies());
         }

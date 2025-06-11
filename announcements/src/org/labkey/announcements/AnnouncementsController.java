@@ -130,6 +130,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -2240,7 +2241,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, HtmlWriter out) throws Exception
         {
             include(_vbox);
         }

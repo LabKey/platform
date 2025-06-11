@@ -252,6 +252,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
@@ -1854,35 +1855,31 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderView(Object model, HtmlWriter out)
         {
-            StringBuilder sb = new StringBuilder("<table>\n");
+            TABLE(
+                null != _schemaName ? getLabelAndContents("Schema", _url == null ? _schemaName : LinkBuilder.simpleLink(_schemaName, _url)) : null,
+                null != _tableName ? getLabelAndContents("Table", _tableName) : null,
+                getLabelAndContents("Scope", _scope.getDisplayName()),
+                getLabelAndContents("Dialect", _scope.getSqlDialect().getClass().getSimpleName()),
+                getLabelAndContents("URL", _scope.getDatabaseUrl())
+            ).appendTo(out);
+        }
 
-            if (null != _schemaName)
-            {
-                sb.append("<tr><td class=\"labkey-form-label\">Schema</td><td>");
-                if (_url == null)
-                {
-                    sb.append(PageFlowUtil.filter(_schemaName));
-                }
-                else
-                {
-                    sb.append("<a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a>");
-                }
-                sb.append("</td></tr>\n");
-            }
-            if (null != _tableName)
-                sb.append("<tr><td class=\"labkey-form-label\">Table</td><td>").append(PageFlowUtil.filter(_tableName)).append("</td></tr>\n");
-
-            sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
-            sb.append("</table>\n");
-
-            out.print(sb);
+        // Return a single row (TR) with styled label and contents in separate TDs
+        private Renderable getLabelAndContents(String label, Object contents)
+        {
+            return TR(
+                TD(
+                    cl("labkey-form-label"),
+                    label
+                ),
+                TD(
+                    contents
+                )
+            );
         }
     }
-
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermission(ReadPermission.class)

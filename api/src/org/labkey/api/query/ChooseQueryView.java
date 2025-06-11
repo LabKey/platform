@@ -16,18 +16,23 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
 import java.util.Map;
 
-public class ChooseQueryView extends WebPartView
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+
+public class ChooseQueryView extends WebPartView<Object>
 {
-    UserSchema _schema;
-    ActionURL _urlExecuteQuery;
-    String _dataRegionName;
+    private final UserSchema _schema;
+    private final ActionURL _urlExecuteQuery;
+    private final String _dataRegionName;
 
     public ChooseQueryView(UserSchema schema, ActionURL urlExecuteQuery, String dataRegionName)
     {
@@ -38,52 +43,44 @@ public class ChooseQueryView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out)
+    protected void renderView(Object model, HtmlWriter out)
     {
-        out.write("<table>");
         Map<String, QueryDefinition> queryDefs = _schema.getQueryDefs();
 
-        for (String queryName : _schema.getTableAndQueryNames(true))
-        {
-            ActionURL url;
-            QueryDefinition queryDef = queryDefs.get(queryName);
+        TABLE(
+            (Renderable) ret -> {
+                for (String queryName : _schema.getTableAndQueryNames(true))
+                {
+                    ActionURL url;
+                    QueryDefinition queryDef = queryDefs.get(queryName);
 
-            if (queryDef == null)
-                queryDef = _schema.getQueryDefForTable(queryName);
+                    if (queryDef == null)
+                        queryDef = _schema.getQueryDefForTable(queryName);
 
-            if (queryDef == null)
-                continue;
+                    if (queryDef == null)
+                        continue;
 
-            if (_urlExecuteQuery != null)
-            {
-                url = _urlExecuteQuery.clone();
-                url.replaceParameter(_dataRegionName + "." + QueryParam.queryName, queryDef.getName());
+                    if (_urlExecuteQuery != null)
+                    {
+                        url = _urlExecuteQuery.clone();
+                        url.replaceParameter(_dataRegionName + "." + QueryParam.queryName, queryDef.getName());
+                    }
+                    else
+                    {
+                        url = _schema.urlFor(QueryAction.executeQuery, queryDef);
+                    }
+
+                    String queryTitle = queryDef.getName();
+                    if (null != queryDef.getTitle())
+                        queryTitle = queryDef.getTitle();
+
+                    TR(
+                        TD(LinkBuilder.simpleLink(queryTitle, url)),
+                        TD(queryDef.getDescription())
+                    ).appendTo(out);
+                }
+                return ret;
             }
-            else
-            {
-                url = _schema.urlFor(QueryAction.executeQuery, queryDef);
-            }
-
-            String queryTitle = queryDef.getName();
-            if (null != queryDef.getTitle())
-                queryTitle = queryDef.getTitle();
-
-            out.write("<tr><td>");
-            out.write("<a href=\"");
-            out.write(PageFlowUtil.filter(url));
-            out.write("\">");
-            out.write(PageFlowUtil.filter(queryTitle));
-            out.write("</a>");
-            out.write("</td>");
-            out.write("<td>");
-
-            if (queryDef.getDescription() != null)
-                out.write(PageFlowUtil.filter(queryDef.getDescription()));
-
-            out.write("</td>");
-            out.write("</tr>");
-        }
-
-        out.write("</table>");
+        ).appendTo(out);
     }
 }
