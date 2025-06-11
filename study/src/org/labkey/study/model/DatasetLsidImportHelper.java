@@ -196,7 +196,7 @@ public class DatasetLsidImportHelper
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(1.0000000, null), null, null, null));
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("1.0", null), null, null, null));
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("Enrollment", "2025-4-1"), null, null, null));
-            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("Enrollment", parseDateTime("2025/4/1")), new Date(), null, null));
+            assertEquals(nonDemographics, lsid.translateLsid(" 222\t", seq.translateSequenceNum("Enrollment", parseDateTime("2025/4/1")), new Date(), null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("Enrollment", null), new Date(), 123, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(100.0, null), null, null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("SR", null), null, null, null));
@@ -240,7 +240,7 @@ public class DatasetLsidImportHelper
             String nonDemographics = lsid.translateLsid("222", seq.translateSequenceNum(null, parseDateTime("2025-4-15")), null, null, null);
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025-4-15"), null, null, null));
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, parseDateTime("15 April 2025 1:00pm")), null, null, null));
-            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025/4/15"), new Date(), null, null));
+            assertEquals(nonDemographics, lsid.translateLsid("222\t", seq.translateSequenceNum(null, "2025/4/15"), new Date(), null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025-4-16"), null, null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "15 April 2025 1:00pm"), null, null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("1.0", "15 April 2025"), null, null, null));
