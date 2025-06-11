@@ -137,6 +137,20 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
         checker().verifyTrue("Incorrect file content ", FileUtils.contentEquals(downloadedFile, inputFile));
 
+        log("Update with validation error, reshow test.");
+         _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData();
+
+        table = new DataRegionTable("Dataset", getDriver());
+        table.clickEditRow(0);
+        checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
+        setFormElement(Locator.name("quf_intField"), "NOT A NUMBER");
+        clickButton("Submit");
+
+        // assert correct reshow with error
+        assertTextPresent("Could not convert value:");
+        checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
     }
 
     protected void createDataset(String name)
