@@ -31,10 +31,13 @@ import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
+import org.labkey.api.view.ViewContext;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -140,7 +143,13 @@ public class AsyncQueryRequest<T>
             }
         };
 
-        Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
+        String threadName = "AsyncQueryRequest: " + Thread.currentThread().getName();
+        TransactionFilter.RequestTracker requestTracker = TransactionFilter.getRequestSummary(Thread.currentThread());
+        if (requestTracker != null)
+        {
+            threadName += " for " + requestTracker.getUrl();
+        }
+        Thread thread = new Thread(runnable, threadName);
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
         try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread);
