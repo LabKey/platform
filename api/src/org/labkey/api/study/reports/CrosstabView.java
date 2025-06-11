@@ -48,9 +48,6 @@ public class CrosstabView extends WebPartView<Object>
     protected void renderView(Object model, HtmlWriter out)
     {
         if (null == _crosstab.getStatField())
-            errStr.append("Stat field is not defined.<br>");
-
-        if (!errStr.isEmpty())
         {
             DOM.createHtmlFragment(
                 B("Crosstab Error"),
