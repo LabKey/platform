@@ -471,14 +471,6 @@ public class Sort
         return requiredFieldKeys;
     }
 
-    // This method is still used by MS2 query generation code
-    // It would be better to provide a column Map if possible
-    @Deprecated
-    public SQLFragment getOrderByClauseUnchecked(SqlDialect dialect)
-    {
-        return _getOrderByClause(dialect, null);
-    }
-
     public SQLFragment getOrderByClause(SqlDialect dialect, @NotNull Map<FieldKey, ? extends ColumnInfo> columns)
     {
         return _getOrderByClause(dialect, columns);
@@ -574,7 +566,7 @@ public class Sort
     // Return an English version of the sort
     public String getSortText()
     {
-        String sql = getOrderByClauseUnchecked(null).getRawSQL().replaceFirst("ORDER BY ", "");
+        String sql = getOrderByClause(null, null).getRawSQL().replaceFirst("ORDER BY ", "");
         return sql.replaceAll(" ,", ",").replaceAll("\"", "");
     }
 
