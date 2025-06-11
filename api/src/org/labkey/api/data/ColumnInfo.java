@@ -217,8 +217,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isShouldLog();
 
-    String getLegalName();
-
     String getPropertyName();
 
     /**
