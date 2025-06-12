@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -409,7 +408,8 @@ public class ExceptionUtil
     private static void prepareClientStackTrace(StringBuilder sb, BufferedReader reader) throws IOException
     {
         // Skip message part of the exception for hashing as this can differ easily between browsers
-        String line = reader.readLine();
+        reader.readLine();
+        String line;
 
         // Our client-side applications generate resource paths that are prefixed with webpack://<app-name>
         // where the <app-name> is configured by the application entry in entryPoints.js. This pattern

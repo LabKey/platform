@@ -213,9 +213,9 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
         Object key = map.get(propName);
         if(null == key)
             throw new InvalidKeyException("No key value defined for key field '" + propName + "'!", map);
-        Integer ikey = (Integer)(_converter.convert(Integer.class, key));
+        Integer ikey = _converter.convert(Integer.class, key);
         if(null == ikey)
-            throw new InvalidKeyException("Key value '" + key.toString() + "' could not be converted to an Integer!", map);
+            throw new InvalidKeyException("Key value '" + key + "' could not be converted to an Integer!", map);
         return ikey;
     }
 }

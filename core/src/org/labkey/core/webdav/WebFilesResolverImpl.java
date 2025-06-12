@@ -133,7 +133,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         _webfilesCache.remove(path);
         if (recursive)
             _webfilesCache.removeUsingFilter(test -> test.startsWith(path));
-        if (containerPath.size() == 0)
+        if (containerPath.isEmpty())
         {
             synchronized (WebFilesResolverImpl.this)
             {
@@ -193,7 +193,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     // Cache with short-lived entries to make webfiles perform reasonably.  WebFilesResolverImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
+    private final Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
 
     @Override
     public boolean isEnabled()
@@ -203,7 +203,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     public class WebFilesFolderResource extends AbstractWebFolderResource
     {
-        private Map<String, String> folderNamesMap = new HashMap<>();
+        private final Map<String, String> folderNamesMap = new HashMap<>();
 
         WebFilesFolderResource(WebdavResolver resolver, Container c)
         {

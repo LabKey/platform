@@ -25,8 +25,6 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TextChoiceValidator extends RegExValidator implements ValidatorKind
 {

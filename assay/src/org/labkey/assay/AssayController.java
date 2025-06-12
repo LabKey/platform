@@ -509,7 +509,7 @@ public class AssayController extends SpringActionController
                         {
                             String key = null;
                             List<String> pks = table.getPkColumnNames();
-                            if (null != pks && pks.size() > 0)
+                            if (null != pks && !pks.isEmpty())
                                 key = pks.get(0);
                             if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
                                 key = pks.get(1);
@@ -751,7 +751,7 @@ public class AssayController extends SpringActionController
             {
                 FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
-                if (fileNames != null && fileNames.length() > 0)
+                if (fileNames != null && !fileNames.isEmpty())
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
@@ -1406,11 +1406,10 @@ public class AssayController extends SpringActionController
             String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
             AssaySchema schema = form.getProvider().createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo table = schema.getTable(tableName);
-            if (!(table instanceof AssayResultTable))
+            if (!(table instanceof AssayResultTable assayResultTable))
                 throw new NotFoundException();
             if (null == form.getColumnName())
                 throw new NotFoundException();
-            AssayResultTable assayResultTable = (AssayResultTable) table;
             TableInfo ti = assayResultTable.getSchemaTableInfo();
             String comment = StringUtils.trimToNull(form.getComment());
 
@@ -1630,9 +1629,8 @@ public class AssayController extends SpringActionController
             _protocol = form.getProtocol();
 
             AssayProvider ap = form.getProvider();
-            if (!(ap instanceof ModuleAssayProvider))
+            if (!(ap instanceof ModuleAssayProvider provider))
                 throw new NotFoundException("Assay must be a ModuleAssayProvider, but assay design " + _protocol.getName() + " was of type '" + ap.getName() + "', implemented by " + ap.getClass().getName());
-            ModuleAssayProvider provider = (ModuleAssayProvider) ap;
             return provider.createUploadView(form);
         }
 

@@ -22,7 +22,7 @@ package org.labkey.api.exp;
  */
 public class DuplicateMaterialException extends ExperimentException
 {
-    private String _colName;
+    private final String _colName;
 
     public DuplicateMaterialException(String message, String colName)
     {

@@ -57,7 +57,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             throw new PipelineValidationException("User " + user + " does not have access to " + job.getContainer());
         }
 
-        LOG.debug("PENDING: " + job.toString());
+        LOG.debug("PENDING: " + job);
 
         // Make sure status file path and Job ID are in sync.
         Path logFile = job.getLogFilePath();
@@ -80,7 +80,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         }
         else
         {
-            LOG.debug("Unable to set status to waiting for job: " + job.toString() + ", GUID: " + job.getJobGUID());
+            LOG.debug("Unable to set status to waiting for job: " + job + ", GUID: " + job.getJobGUID());
         }
     }
 

@@ -77,9 +77,6 @@ public interface SpecimenTransform
 
     /**
      * Returns and saved configuration information
-     * @param c
-     * @param user
-     * @return
      */
     ExternalImportConfig getExternalImportConfig(Container c, User user) throws ValidationException;
 

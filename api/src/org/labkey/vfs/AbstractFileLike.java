@@ -1,14 +1,9 @@
 package org.labkey.vfs;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Collection;
-import java.util.List;
 
 abstract public class AbstractFileLike implements FileLike
 {

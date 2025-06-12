@@ -29,10 +29,10 @@ import java.util.Set;
  */
 public class CrosstabSettings
 {
-    private TableInfo _sourceTable = null;
-    private CrosstabAxis _rowAxis = new CrosstabAxis(this);
-    private CrosstabAxis _colAxis = new CrosstabAxis(this);
-    private List<CrosstabMeasure> _measures = new ArrayList<>();
+    private TableInfo _sourceTable;
+    private final CrosstabAxis _rowAxis = new CrosstabAxis(this);
+    private final CrosstabAxis _colAxis = new CrosstabAxis(this);
+    private final List<CrosstabMeasure> _measures = new ArrayList<>();
     private String _instanceCountCaption = "Instance Count";
     private SimpleFilter _sourceTableFilter;
 

@@ -229,7 +229,7 @@ public class AnalysisController extends SpringActionController
      * Called from LABKEY.Pipeline.getProtocols().
      */
     @RequiresPermission(ReadPermission.class)
-    public class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
+    public static class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
     {
         @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)

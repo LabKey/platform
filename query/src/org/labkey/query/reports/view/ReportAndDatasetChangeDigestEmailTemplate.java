@@ -57,7 +57,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         }
         catch (IOException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.survey;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -366,10 +365,6 @@ public class SurveyManager
 
     /**
      * Deletes a specified survey design
-     * @param c
-     * @param user
-     * @param surveyDesignId
-     * @param deleteSurveyInstances - true to delete survey instances of this design
      */
     public void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances)
     {
@@ -502,7 +497,7 @@ public class SurveyManager
         FieldKey pk = null;
         if (table.supportsAuditTracking())
         {
-            pk = ((AuditConfigurable)table).getAuditRowPk();
+            pk = table.getAuditRowPk();
         }
         else
         {
@@ -702,7 +697,6 @@ public class SurveyManager
 
     /**
      * Used to validate the basic shape of the survey design JSON
-     * @param metadata
      * @return the error messages
      */
     public static String validateSurveyMetadata(String metadata) throws IOException
@@ -721,7 +715,7 @@ public class SurveyManager
                 {
                     JSONArray jsonSections = jsonSurvey.getJSONArray("sections");
 
-                    if (jsonSections.length() == 0)
+                    if (jsonSections.isEmpty())
                         sb.append("The sections JSON array cannot be empty");
 
                     for (int i=0; i < jsonSections.length(); i++)
@@ -757,7 +751,7 @@ public class SurveyManager
         {
             sb.append(e.getMessage());
         }
-        return sb.length() > 0 ? sb.toString() : null;
+        return !sb.isEmpty() ? sb.toString() : null;
     }
 
     public static class TestCase extends Assert

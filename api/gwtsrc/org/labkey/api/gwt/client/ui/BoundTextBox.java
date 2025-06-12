@@ -156,7 +156,7 @@ public class BoundTextBox extends HorizontalPanel
     protected String validateValue(String text)
     {
         text = text.trim();
-        if (_required && (text == null || text.length() == 0))
+        if (_required && (text == null || text.isEmpty()))
             return "\"" + _caption + "\" is required.";
         return null;
     }

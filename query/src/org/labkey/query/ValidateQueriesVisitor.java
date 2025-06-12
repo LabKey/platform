@@ -35,10 +35,10 @@ import java.util.List;
  */
 public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
 {
-    private List<Pair<String, ? extends Throwable>> _warnings = new ArrayList<>();
+    private final List<Pair<String, ? extends Throwable>> _warnings = new ArrayList<>();
     private int _totalCount = 0;
     private int _validCount = 0;
-    private QueryManager _mgr;
+    private final QueryManager _mgr;
 
     public ValidateQueriesVisitor()
     {

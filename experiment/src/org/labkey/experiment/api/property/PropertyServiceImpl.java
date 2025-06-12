@@ -217,9 +217,9 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public DomainKind getDomainKindByName(String name)
+    public DomainKind<?> getDomainKindByName(String name)
     {
-        for (DomainKind type : _domainTypes)
+        for (DomainKind<?> type : _domainTypes)
         {
             if (type.getKindName().equalsIgnoreCase(name))
                 return type;
@@ -228,13 +228,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public DomainKind getDomainKind(String typeURI)
+    public DomainKind<?> getDomainKind(String typeURI)
     {
         return Handler.Priority.findBestHandler(_domainTypes, typeURI);
     }
 
     @Override
-    public void registerDomainKind(DomainKind type)
+    public void registerDomainKind(DomainKind<?> type)
     {
         _domainTypes.add(type);
     }
@@ -414,7 +414,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         catch (XarFormatException e)
         {
             // shouldn't happen: XarFormatExceptions only thrown when resolving lsids with non-null XarContext
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 
@@ -490,7 +490,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             String uri = xProp.getOntologyURI().trim();
             if (context != null && uri.contains("${"))
             {
-                uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
+                LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
             }
         }
         
@@ -734,6 +734,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         return _conceptUriVocabularyProvider.get(conceptUri);
     }
 
+    @Override
     public Set<String> getDomainPropertyImportAliases(DomainProperty property)
     {
         if (property == null)

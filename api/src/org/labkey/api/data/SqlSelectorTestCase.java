@@ -127,13 +127,13 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 if (scope.getSqlDialect().isPostgreSQL())
                 {
                     assertNotEquals(conn, conn2);
-                    assertEquals(conn2.getTransactionIsolation(), TRANSACTION_READ_UNCOMMITTED);
+                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
                     assertFalse(conn2.getAutoCommit());
                 }
                 else
                 {
                     assertEquals(conn, conn2);
-                    assertEquals(conn2.getTransactionIsolation(), TRANSACTION_READ_COMMITTED);
+                    assertEquals(TRANSACTION_READ_COMMITTED, conn2.getTransactionIsolation());
                     assertTrue(conn2.getAutoCommit());
                 }
             }

@@ -315,7 +315,7 @@ public class ParamReplacementSvc
         while (m.find())
         {
             String token = pattern.getTokenString(m);
-            if (token != null && token.length() > 0)
+            if (token != null && !token.isEmpty())
                 tokens.add(token);
         }
 

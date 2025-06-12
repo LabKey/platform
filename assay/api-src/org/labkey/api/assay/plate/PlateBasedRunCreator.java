@@ -106,7 +106,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     visitProperty = property.getKey();
                     try
                     {
-                        if (property.getValue() != null && property.getValue().length() > 0)
+                        if (property.getValue() != null && !property.getValue().isEmpty())
                             visitID = Double.parseDouble(property.getValue());
                     }
                     catch (NumberFormatException e)
@@ -171,7 +171,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 originalMaterials.put(key, originalMaterial);
             }
         }
-        if (resolverErrors.length() > 0)
+        if (!resolverErrors.isEmpty())
             throw new ExperimentException(resolverErrors.toString());
 
         Map<ExpMaterial, String> newMaterials = createDerivedMaterials(context, originalMaterials, materialProperties);
@@ -239,7 +239,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 {
                     // See bug 10643.  If we somehow end up with an invalid LSID (because we didn't properly encode a character, etc.),
                     // the call to setObjectId in the loop below will no-op, causing an infinite loop.
-                    throw new ExperimentException("Unable to generate valid LSID for derived sample: " + derivedLsid.toString());
+                    throw new ExperimentException("Unable to generate valid LSID for derived sample: " + derivedLsid);
                 }
                 String baseObjectId = derivedLsid.getObjectId();
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)

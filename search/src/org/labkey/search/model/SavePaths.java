@@ -129,7 +129,7 @@ public class SavePaths implements DavCrawler.SavePaths
         if (null != id)
             return id;
         int parentId = _getParentId(path);
-        String name = path.size() == 0 ? "/" : path.getName();
+        String name = path.isEmpty() ? "/" : path.getName();
 
         SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
         find.append(pathFilter(parentId, name));
@@ -369,7 +369,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
                     java.sql.Timestamp lastCrawl = rs.getTimestamp(4);
                     java.sql.Timestamp nextCrawl = rs.getTimestamp(5);
-                    map.put(Path.parse(path), new Pair<Date, Date>(lastCrawl, nextCrawl));
+                    map.put(Path.parse(path), new Pair<>(lastCrawl, nextCrawl));
                     paths.add(path);
 
                     updWHERE.append(or).append(" (Parent=? AND Name=?)");

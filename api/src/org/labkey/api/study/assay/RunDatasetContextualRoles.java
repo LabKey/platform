@@ -29,7 +29,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.HasContextualRoles;
@@ -132,7 +131,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
         }
 
         // table contains no dataset columns if results haven't been linked
-        if (datasetColumnNames.size() == 0)
+        if (datasetColumnNames.isEmpty())
             return null;
 
         Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter(runIdFieldKey, run.getRowId()), null).getMapArray();
@@ -140,7 +139,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
         if (results.length == 0)
             return null;
 
-        List<ColumnInfo> datasetColumns = resultsTable.getColumns(datasetColumnNames.toArray(new String[datasetColumnNames.size()]));
+        List<ColumnInfo> datasetColumns = resultsTable.getColumns(datasetColumnNames.toArray(new String[0]));
 
         for (Map<String, Object> result : results)
         {

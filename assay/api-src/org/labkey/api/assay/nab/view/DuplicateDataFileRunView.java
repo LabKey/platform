@@ -37,7 +37,7 @@ import org.labkey.api.view.DataView;
  */
 public class DuplicateDataFileRunView extends RunListQueryView
 {
-    private Luc5Assay _assay;
+    private final Luc5Assay _assay;
     private ExpRun _run;
 
     public DuplicateDataFileRunView(AssayProtocolSchema schema, QuerySettings settings, Luc5Assay assay, ExpRun run)

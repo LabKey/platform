@@ -38,7 +38,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
 {
     protected static final String PREFIX = "db:";
 
-    private static Logger LOG = LogManager.getLogger(DbReportIdentifier.class);
+    private static final Logger LOG = LogManager.getLogger(DbReportIdentifier.class);
 
     private final int _id;
 

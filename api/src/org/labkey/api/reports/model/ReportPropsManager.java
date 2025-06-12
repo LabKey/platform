@@ -60,7 +60,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     private static final String NAMESPACE_PREFIX = "ReportProperties";
     private static final String TYPE_PROPERTIES = "Properties";
 
-    private static ReportPropsManager _instance = new ReportPropsManager();
+    private static final ReportPropsManager _instance = new ReportPropsManager();
 
     private ReportPropsManager()
     {

@@ -416,12 +416,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             ParamParser.Error err = parser.getErrors()[0];
             if (err.getLine() == 0)
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile + "'.\n" +
                         err.getMessage());
             }
             else
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile + "'.\n" +
                         "Line " + err.getLine() + ": " + err.getMessage());
             }
         }
@@ -486,7 +486,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (baseName != null && !baseName.equals(dataName) &&
                 !(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME.equals(baseName) || baseName.equals(joinedBaseName)))   // For cluster
         {
-            if (description.length() > 0)
+            if (!description.isEmpty())
                 description.append("/");
             description.append(baseName);
         }

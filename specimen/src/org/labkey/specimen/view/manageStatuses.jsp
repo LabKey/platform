@@ -56,14 +56,14 @@ function showSystemRows(value)
 
     <table class="lk-fields-table">
         <tr>
-            <td style="font-weight: bold;"><%= unsafe(statuses != null && statuses.size()> 0 ? "Step Number" : "&nbsp;") %></td>
+            <td style="font-weight: bold;"><%= unsafe(statuses != null && !statuses.isEmpty() ? "Step Number" : "&nbsp;") %></td>
             <td style="font-weight: bold;">Status Name</td>
             <td style="font-weight: bold;">Final State<%= helpPopup("Final States", "States are final if they indicate no further processing will occur for a request.  For example, 'Completed', or 'Rejected' could be final states.")%></td>
             <td style="font-weight: bold;">Lock Specimens<%= helpPopup("Locked Specimen States", "Specifies whether specimens should be available for additional requests while in each status.")%></td>
             <td>&nbsp;</td>
         </tr>
         <%
-        if (statuses != null && statuses.size() > 0)
+        if (statuses != null && !statuses.isEmpty())
         {
             for(SpecimenRequestStatus status : statuses)
             {

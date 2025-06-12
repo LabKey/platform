@@ -46,7 +46,7 @@ public class RemapCache
         _allowBulkLoads = allowBulkLoads;
     }
 
-    class Key
+    static class Key
     {
         final SchemaKey _schemaKey;
         final String _queryName;

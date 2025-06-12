@@ -20,7 +20,6 @@ import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.core.CoreController;

@@ -79,7 +79,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Override
-    public FilteredTable createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns)
+    public FilteredTable<?> createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
         return new _AssayResultTable(this, cf, includeLinkedToStudyColumns);
     }
@@ -101,7 +101,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
 
     private TableInfo createExclusionReportTable(ContainerFilter cf)
     {
-        FilteredTable result = new _AssayExcludedResultTable(this, cf, false);
+        FilteredTable<?> result = new _AssayExcludedResultTable(this, cf, false);
         result.setName(EXCLUSION_REPORT_TABLE_NAME);
         return result;
     }
@@ -250,7 +250,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         return null;
     }
 
-    private class _AssayPlateReplicateStatsTable extends FilteredTable<AssayProtocolSchema>
+    private static class _AssayPlateReplicateStatsTable extends FilteredTable<AssayProtocolSchema>
     {
         private final boolean _allowInsertUpdate;
 
@@ -309,7 +309,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         }
     }
 
-    class _FlagDisplayColumnFactory implements RemappingDisplayColumnFactory
+    static class _FlagDisplayColumnFactory implements RemappingDisplayColumnFactory
     {
         FieldKey rowId = new FieldKey(null, "RowId");
         final ExpProtocol protocol;

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -242,7 +241,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                 if (_columnName == null)
                 {
                     List<ColumnInfo> pkColumns = table.getPkColumns();
-                    if (pkColumns != null && pkColumns.size() > 0)
+                    if (pkColumns != null && !pkColumns.isEmpty())
                     {
                         int first = 0;
                         if (pkColumns.size() > 1 && isContainerColumn(pkColumns.get(0)))

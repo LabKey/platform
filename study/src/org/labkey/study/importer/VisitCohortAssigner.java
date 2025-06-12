@@ -160,7 +160,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                             Integer rowId = studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
                             visitTagMapKeys.add(visitTagMapKey);
                             if (!visitTagToVisitTagEntries.containsKey(visitTagRecord.getVisitTagName()))
-                                visitTagToVisitTagEntries.put(visitTagRecord.getVisitTagName(), new ArrayList<VisitTagMapEntry>());
+                                visitTagToVisitTagEntries.put(visitTagRecord.getVisitTagName(), new ArrayList<>());
                             visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName()).add(new VisitTagMapEntry(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId, rowId));
                         }
                     }

@@ -40,7 +40,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
         {
             List<SpecimenRequestRequirement> requirements = new ArrayList<>();
             List<Vial> vials = owner.getVials();
-            if (vials.size() > 0)
+            if (!vials.isEmpty())
             {
                 // get a list of all providing and originating sites:
                 Set<Integer> originatingLocationIds = new HashSet<>();
@@ -68,7 +68,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
         {
             List<SpecimenRequestRequirement> requirements = new ArrayList<>();
             List<Vial> vials = owner.getVials();
-            if (vials.size() > 0)
+            if (!vials.isEmpty())
             {
                 // get a list of all providing and originating sites:
                 Set<Integer> providerLocationIds = new HashSet<>();

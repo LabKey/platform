@@ -329,11 +329,11 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
 
     public static class DataToVerify
     {
-        private String name;
-        private List<String> columns;
-        private int rowCount;
-        private String columnNameToVerify;
-        private List<String> columnValuesToVerify;
+        private final String name;
+        private final List<String> columns;
+        private final int rowCount;
+        private final String columnNameToVerify;
+        private final List<String> columnValuesToVerify;
 
         public DataToVerify(String name, List<String> columns, int rowCount, String columnNameToVerify, List<String> columnValuesToVerify)
         {

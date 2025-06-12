@@ -164,7 +164,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             if (null != r.getFile())
                 _log.debug(normalized + " -> " + r.getFile().getPath());
             else
-                _log.debug(normalized + " -> " + r.toString());
+                _log.debug(normalized + " -> " + r);
             if (r instanceof _PublicResource)
                 _allStaticFiles.put(normalized,r);
         }
@@ -272,8 +272,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
      * 2) from.getParent() must exist
      * 3) only links within the static webdav tree are supported
      *
-     * @param from
-     * @param target
      */
     @Override
     public void addLink(@NotNull Path from, @NotNull Path target, String indexPage)

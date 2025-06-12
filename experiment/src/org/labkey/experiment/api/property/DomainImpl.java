@@ -952,7 +952,7 @@ public class DomainImpl implements Domain
         for (String field : added)
         {
             GWTPropertyDescriptor descriptor = newFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSON = null;
+            MetadataColumnJSON metadataColumnJSON;
             if (descriptor instanceof MetadataColumnJSON)
                 metadataColumnJSON = (MetadataColumnJSON) descriptor;
             else
@@ -966,7 +966,7 @@ public class DomainImpl implements Domain
         for (String field : deleted)
         {
             GWTPropertyDescriptor descriptor = oldFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSON = null;
+            MetadataColumnJSON metadataColumnJSON;
             if (descriptor instanceof MetadataColumnJSON)
                 metadataColumnJSON = (MetadataColumnJSON) descriptor;
             else
@@ -980,14 +980,14 @@ public class DomainImpl implements Domain
         for (String field : retained)
         {
             GWTPropertyDescriptor oldDescriptor = oldFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSONOld = null;
+            MetadataColumnJSON metadataColumnJSONOld;
             if (oldDescriptor instanceof MetadataColumnJSON)
                 metadataColumnJSONOld = (MetadataColumnJSON) oldDescriptor;
             else
                 metadataColumnJSONOld = new MetadataColumnJSON(oldDescriptor);
 
             GWTPropertyDescriptor newDescriptor = newFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSONNew = null;
+            MetadataColumnJSON metadataColumnJSONNew;
             if (newDescriptor instanceof MetadataColumnJSON)
                 metadataColumnJSONNew = (MetadataColumnJSON) newDescriptor;
             else

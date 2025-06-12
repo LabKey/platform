@@ -10,9 +10,9 @@ import org.labkey.api.view.ActionURL;
  */
 public class ExpRunEditor
 {
-    private ActionURL _editUrl;
-    private String _displayName;
-    private String _protocolName;
+    private final ActionURL _editUrl;
+    private final String _displayName;
+    private final String _protocolName;
 
     public ExpRunEditor(String displayName, String protocolName, ActionURL editUrl)
     {

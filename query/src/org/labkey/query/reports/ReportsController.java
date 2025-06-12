@@ -1650,7 +1650,7 @@ public class ReportsController extends SpringActionController
         return url;
     }
 
-    protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport> extends FormViewAction<F>
+    protected abstract static class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport> extends FormViewAction<F>
     {
         protected void initialize(F form) throws Exception
         {

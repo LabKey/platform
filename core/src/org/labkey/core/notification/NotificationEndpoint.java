@@ -19,7 +19,6 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.security.SecurityManager;
@@ -73,7 +72,7 @@ public class NotificationEndpoint extends Endpoint
         Integer id = (Integer)endpointConfig.getUserProperties().get("userId");
         this.userId = null==id ? 0 : id;
 
-        LOG.debug(this.toString() + " onOpen");
+        LOG.debug(this + " onOpen");
         synchronized (endpointsMap)
         {
             if (this.userId > 0)
@@ -95,7 +94,7 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onClose(Session session, CloseReason closeReason)
     {
-        LOG.debug(this.toString() + " onClose: " + closeReason.toString());
+        LOG.debug(this + " onClose: " + closeReason.toString());
         synchronized (endpointsMap)
         {
             endpointsMap.removeMapping(this.userId, this);
@@ -108,7 +107,7 @@ public class NotificationEndpoint extends Endpoint
     public void onError(Session session, Throwable throwable)
     {
         this.errored = true;
-        LOG.debug(this.toString() + " onError: " + throwable.getMessage());
+        LOG.debug(this + " onError: " + throwable.getMessage());
         super.onError(session, throwable);
     }
 
@@ -148,7 +147,7 @@ public class NotificationEndpoint extends Endpoint
             Collection<NotificationEndpoint> coll = endpointsMap.get(userId);
             // prune errored or closed endpoints
             coll.removeIf(e -> e.errored || !e.session.isOpen());
-            arr = coll.toArray(new NotificationEndpoint[coll.size()]);
+            arr = coll.toArray(new NotificationEndpoint[0]);
         }
         return Arrays.asList(arr);
     }
@@ -182,7 +181,7 @@ public class NotificationEndpoint extends Endpoint
         }
         catch (Exception x)
         {
-            LOG.debug(toString() + ": " + x.getMessage());
+            LOG.debug(this + ": " + x.getMessage());
             // NOTE: This NotificationEndpoint will be removed from the endpointsMap in onClose, called from WsSocket.close()
             // but remember it is a bad endpoint if someone tries to use it before the onClose method runs.
             this.errored = true;
@@ -206,7 +205,7 @@ public class NotificationEndpoint extends Endpoint
         {
             endpoint.safely(() -> {
                 endpoint.session.getBasicRemote().sendText(data);
-                LOG.debug(endpoint.toString() + " sendText: " + eventName);
+                LOG.debug(endpoint + " sendText: " + eventName);
             });
             count++;
         }

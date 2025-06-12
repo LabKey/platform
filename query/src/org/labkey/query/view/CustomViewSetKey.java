@@ -53,9 +53,8 @@ public class CustomViewSetKey implements Serializable
 
     public boolean equals(Object other)
     {
-        if (!(other instanceof CustomViewSetKey))
+        if (!(other instanceof CustomViewSetKey that))
             return false;
-        CustomViewSetKey that = (CustomViewSetKey) other;
         return Objects.equals(_containerId, that._containerId) &&
                 Objects.equals(_queryName.toLowerCase(), that._queryName.toLowerCase()) &&
                 Objects.equals(_schema, that._schema);

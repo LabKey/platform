@@ -26,7 +26,7 @@ package org.labkey.query.sql;
 
 public interface QJoinOrTable
 {
-    public void appendSource(SourceBuilder builder);
+    void appendSource(SourceBuilder builder);
 
-    public void appendSql(SqlBuilder sql, QuerySelect query);
+    void appendSql(SqlBuilder sql, QuerySelect query);
 }

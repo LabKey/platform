@@ -89,6 +89,7 @@ public class SqlBuilder extends Builder
     }
 
 //    @Override
+    @Override
     public SQLFragment appendStringLiteral(CharSequence s)
     {
         return super.appendStringLiteral(s, _dialect);

@@ -29,10 +29,10 @@ public class ColorGradient
         int b2 = two.getBlue();
         int a2 = two.getAlpha();
 
-        int newR = 0;
-        int newG = 0;
-        int newB = 0;
-        int newA = 0;
+        int newR;
+        int newG;
+        int newB;
+        int newA;
 
         List<Color> gradient = new ArrayList<>();
         double iNorm;

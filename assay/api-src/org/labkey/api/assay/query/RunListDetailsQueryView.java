@@ -34,9 +34,9 @@ import java.util.Map;
  */
 public class RunListDetailsQueryView extends RunListQueryView
 {
-    private Class<? extends Controller> _detailsActionClass;
-    private String _detailsIdColumn;
-    private String _dataIdColumn;
+    private final Class<? extends Controller> _detailsActionClass;
+    private final String _detailsIdColumn;
+    private final String _dataIdColumn;
     private Map<String, Object> _extraDetailsUrlParams = new HashMap<>();
 
     public RunListDetailsQueryView(AssayProtocolSchema schema, QuerySettings settings, Class<? extends Controller> detailsActionClass,

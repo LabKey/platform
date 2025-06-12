@@ -54,7 +54,7 @@
     PageConfig pageConfig = (PageConfig) me.getModelBean();
     AppBar appBar = pageConfig.getAppBar();
 
-    boolean hasContainerTabs = appBar != null && appBar.getSubContainerTabs() != null && appBar.getSubContainerTabs().size() > 0;
+    boolean hasContainerTabs = appBar != null && appBar.getSubContainerTabs() != null && !appBar.getSubContainerTabs().isEmpty();
 
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
             && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();

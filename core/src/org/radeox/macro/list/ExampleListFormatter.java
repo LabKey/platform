@@ -58,7 +58,7 @@ public class ExampleListFormatter implements ListFormatter {
       writer.write(")");
     }
     writer.write("</div>");
-    if (c.size() > 0) {
+    if (!c.isEmpty()) {
       writer.write("<ol>");
       Iterator nameIterator = c.iterator();
       while (nameIterator.hasNext()) {

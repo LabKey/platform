@@ -134,7 +134,6 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
             @Override
             public CachePair load(@NotNull String moduleName, Object argument)
             {
-                @SuppressWarnings("unchecked")
                 Module module = (Module)argument;
                 ModuleResourceCache<V> cache = ModuleResourceCache.this;
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
@@ -262,7 +261,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
         if (_pathsWithListeners.add(getPathsWithListenersKey(module, mdr.getDir().toPath())))
         {
-            LOG.debug("registering a listener on: " + resource.toString());
+            LOG.debug("registering a listener on: " + resource);
             mdr.registerListener(_watcher, getListener(module), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         }
     }

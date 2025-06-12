@@ -39,8 +39,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.data.DataRegion.MessagePart.filter;
-
 /**
  * User: matthew
  * Date: 5/11/13
@@ -85,7 +83,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         _schema = schema;
         _container = _schema.getContainer();
         _user = _schema.getUser();
-        _schemaKey = ((UserSchema)_schema).getSchemaPath();
+        _schemaKey = _schema.getSchemaPath();
 
         _queryName = query;
         _sql = sql;

@@ -223,8 +223,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public boolean equals(Object o)
     {
         if (this == o) return true;
-        if (!(o instanceof MaterialSource)) return false;
-        MaterialSource ms = (MaterialSource) o;
+        if (!(o instanceof MaterialSource ms)) return false;
         return !(getRowId() == 0 || getRowId() != ms.getRowId());
     }
 

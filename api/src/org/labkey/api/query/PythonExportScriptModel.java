@@ -135,19 +135,18 @@ public class PythonExportScriptModel extends ExportScriptModel
     @Override
     public String getScriptExportText()
     {
-        StringBuilder sb = new StringBuilder();
 
-        sb.append("# This script targets the Python client API version 2.0.0 and later").append("\n");
-        sb.append("import labkey").append("\n"); // for filters
-        sb.append("from labkey.api_wrapper import APIWrapper").append("\n\n");
+        String sb = "# This script targets the Python client API version 2.0.0 and later" + "\n" +
+                "import labkey" + "\n" + // for filters
+                "from labkey.api_wrapper import APIWrapper" + "\n\n" +
 
-        //Generate server context object
-        sb.append(getPythonApiWrapper()).append("\n");
-        sb.append("my_results = api.query.select_rows(\n");
+                //Generate server context object
+                getPythonApiWrapper() + "\n" +
+                "my_results = api.query.select_rows(\n" +
 
-        //Generate query parameters
-        sb.append(getStandardScriptParameters()).append("\n");
-        sb.append(")\n");
-        return sb.toString();
+                //Generate query parameters
+                getStandardScriptParameters() + "\n" +
+                ")\n";
+        return sb;
     }
 }

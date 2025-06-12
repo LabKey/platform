@@ -788,11 +788,10 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
      */
     private static void fixupPropertyURL(ColumnInfo fk, MutableColumnInfo col)
     {
-        if (null == fk || !(col.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression))
+        if (null == fk || !(col.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression fkse))
             return;
 
         TableInfo table = fk.getParentTable();
-        StringExpressionFactory.FieldKeyStringExpression fkse = (StringExpressionFactory.FieldKeyStringExpression)col.getURL();
         // quick check
         Set<FieldKey> keys = fkse.getFieldKeys();
         Map<FieldKey,FieldKey> map = new HashMap<>();

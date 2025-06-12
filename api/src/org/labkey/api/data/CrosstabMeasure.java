@@ -123,8 +123,8 @@ public class CrosstabMeasure
         }
     }
 
-    private ColumnInfo _sourceColumn = null;
-    private AggregateFunction _aggregateFunction = AggregateFunction.COUNT;
+    private ColumnInfo _sourceColumn;
+    private AggregateFunction _aggregateFunction;
     private String _caption;
     private DetailsURL _url;
 

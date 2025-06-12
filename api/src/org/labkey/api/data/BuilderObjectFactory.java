@@ -46,7 +46,7 @@ import java.util.Map;
 
 public class BuilderObjectFactory<K> implements ObjectFactory<K>
 {
-    private static Logger _log = LogManager.getLogger(BuilderObjectFactory.class);
+    private static final Logger _log = LogManager.getLogger(BuilderObjectFactory.class);
 
     private final Class<K> _class;
     private final Class<? extends Builder> _classBuilder;

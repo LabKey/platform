@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class ExperimentPipelineJob extends PipelineJob
 {
-    private static Logger _log = LogManager.getLogger(ExperimentPipelineJob.class);
+    private static final Logger _log = LogManager.getLogger(ExperimentPipelineJob.class);
 
     private static final Object _experimentLock = new Object();
 

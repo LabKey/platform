@@ -30,7 +30,7 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        StudyPublishQueriesTest init = (StudyPublishQueriesTest) getCurrentTest();
+        StudyPublishQueriesTest init = getCurrentTest();
         init.doSetup();
     }
 
@@ -158,7 +158,7 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
     {
         Locator.CssLocator gridLoc = Locator.css("div.studyWizardQueryList");
         WebElement columnHeader = gridLoc.append(Locator.css("tr.x-grid3-hd-row > td")).withText("Schema Name").findElement(getDriver());
-        Integer colIndex = getElementIndex(columnHeader);
+        int colIndex = getElementIndex(columnHeader);
         Locator selectedColLoc = gridLoc.append(Locator.css("div.x-grid3-row-selected div.x-grid3-col-" + colIndex));
         List<WebElement> selectedRows = selectedColLoc.findElements(getDriver());
         Set<String> selectedSchemaNames = new HashSet<>(getTexts(selectedRows));

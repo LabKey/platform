@@ -325,7 +325,7 @@ public class FolderTypeManager
             {
                 return "Comma-separated list of folder types to disable on this server";
             }
-        };
+        }
     }
 
     private static final String SCOPE_FOLDER_TYPES = "FolderTypes";

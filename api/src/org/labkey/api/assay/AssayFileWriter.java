@@ -32,7 +32,6 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 
 import org.labkey.vfs.FileLike;

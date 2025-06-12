@@ -68,7 +68,7 @@
 <%
     FrameFactoryClassic.endTitleFrame(out);
 
-    if (conceptURIs.size() > 0)
+    if (!conceptURIs.isEmpty())
     {
         FrameFactoryClassic.startTitleFrame(out, "Existing Mappings");
 

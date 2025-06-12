@@ -47,7 +47,7 @@ import java.io.Writer;
  */
 
 public class TableMacro extends BaseLocaleMacro {
-  private String[] paramDescription = {};
+  private final String[] paramDescription = {};
 
   @Override
   public String[] getParamDescription() {

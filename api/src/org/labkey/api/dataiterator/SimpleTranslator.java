@@ -178,7 +178,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return _missingValues.containsKey(mv);
     }
 
-    protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
+    protected Object handleConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
         String msg;
         if (x instanceof ConversionExceptionWithMessage)
@@ -542,7 +542,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param isDerivationField if this field is a child only field
      * @param presentDerivationWarning the warning msg to log if a child field is present for a parent record
      * @param presentNonDerivationWarning the warning msg to log if a parent field is present for a child record
-     * @return
      */
     private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
     {
@@ -651,7 +650,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             catch (ConversionException x)
             {
-                return addConversionException(fieldName, value, type, x);
+                return handleConversionException(fieldName, value, type, x);
             }
         }
 
@@ -828,7 +827,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 if (!validMissingValue(mv))
                 {
-                    getRowError().addFieldError(_data.getColumnInfo(index).getName(),"Value is not a valid missing value indicator: " + mv.toString());
+                    getRowError().addFieldError(_data.getColumnInfo(index).getName(),"Value is not a valid missing value indicator: " + mv);
                     return null;
                 }
 
@@ -1035,7 +1034,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-    protected class NullColumn implements Supplier
+    protected static class NullColumn implements Supplier
     {
         @Override
         public Object get()
@@ -1703,7 +1702,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final int _batchSize;
 
         // sequence state
-        private Map<String, DbSequence> _sequences = new HashMap<>();
+        private final Map<String, DbSequence> _sequences = new HashMap<>();
 
         public PairedSequenceColumn(@Nullable Integer columnIndex, Container seqContainer, String sequencePrefix, CounterDefinition counterDefinition, List<Integer> pairedIndexes, @Nullable Integer seqId, @Nullable Integer batchSize)
         {
@@ -1820,7 +1819,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final int _index;
         private final String _dirName;
         private final String _fileRootPath;
-        private Map<Object, String> _savedFiles = new HashMap<>();
+        private final Map<Object, String> _savedFiles = new HashMap<>();
 
         public FileColumn(User user, Container c, String name, int idx, String dirName, String fileRootPath)
         {
@@ -1913,7 +1912,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             catch (ConversionException x)
             {
                 // preferable to handle in call()
-                _row[i] = addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
+                _row[i] = handleConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
             }
             catch (RuntimeException x)
             {
@@ -2001,9 +2000,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return _data.getConstantValue(((PassthroughColumn)c).index);
         if (c instanceof AliasColumn)
             return getConstantValue(((AliasColumn)c).index);
-        if (c instanceof SimpleConvertColumn)
+        if (c instanceof SimpleConvertColumn scc)
         {
-            SimpleConvertColumn scc = (SimpleConvertColumn)c;
             return scc.convert(_data.getConstantValue(scc.index));
         }
         if (c instanceof TimestampColumn)

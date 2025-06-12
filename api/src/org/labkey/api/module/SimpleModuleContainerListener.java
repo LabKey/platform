@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class SimpleModuleContainerListener extends ContainerManager.AbstractContainerListener
 {
-    private Module _owner;
+    private final Module _owner;
 
     public SimpleModuleContainerListener(Module owner)
     {

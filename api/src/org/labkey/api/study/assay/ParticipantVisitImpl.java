@@ -102,7 +102,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             }
             if (_visitID != null)
             {
-                if (name.length() > 0)
+                if (!name.isEmpty())
                 {
                     name.append(".");
                 }
@@ -111,7 +111,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             }
             if (_date != null)
             {
-                if (name.length() > 0)
+                if (!name.isEmpty())
                 {
                     name.append(".");
                 }
@@ -120,7 +120,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             }
             if (_specimenID != null)
             {
-                if (name.length() > 0)
+                if (!name.isEmpty())
                 {
                     name.append(".");
                 }
@@ -128,7 +128,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
                 name.append(truncate(_specimenID, 40));
             }
 
-            if (name.length() == 0)
+            if (name.isEmpty())
             {
                 name.append("Unknown");
             }

@@ -28,9 +28,8 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
 
     private void convertStringArrayParam(PropertyValue pv)
     {
-        if (null != pv && pv.getValue() instanceof String)
+        if (null != pv && pv.getValue() instanceof String str)
         {
-            String str = (String) pv.getValue();
             if (str.contains("\t"))
                 pv.setConvertedValue(StringUtils.splitPreserveAllTokens(str, '\t'));
         }

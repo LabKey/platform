@@ -134,7 +134,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         for (ViewCategory vc : categoriesToDelete)
             errors.addAll(fireDeleteCategory(user, vc));
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)
@@ -203,7 +203,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
         }
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)
@@ -391,10 +391,10 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         }
         sb.append(trailing);
 
-        if (sb.length() > 0)
+        if (!sb.isEmpty())
             names.add(sb.toString());
 
-        return names.toArray(new String[names.size()]);
+        return names.toArray(new String[0]);
     }
 
     static

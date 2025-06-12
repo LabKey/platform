@@ -30,8 +30,8 @@ import org.labkey.api.view.ViewContext;
 */
 public abstract class CustomRReport extends RReport
 {
-    private String[] _forwardParams = null;
-    private String _type = null;
+    private String[] _forwardParams;
+    private String _type;
 
     protected CustomRReport(String[] forwardParams, String type)
     {

@@ -25,7 +25,7 @@ import java.util.List;
 */
 public class SubstitutionWithSwitch extends AbstractValueToNamedSwitch
 {
-    private StringSubstitution _converter = new StringSubstitution();
+    private final StringSubstitution _converter = new StringSubstitution();
 
     public String getRegex()
     {

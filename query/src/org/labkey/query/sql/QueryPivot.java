@@ -44,10 +44,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
-import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * User: matthewb
@@ -368,7 +368,7 @@ public class QueryPivot extends AbstractQueryRelation
 
     String toName(String s)
     {
-        return defaultString(s, "NULL");
+        return Objects.toString(s, "NULL");
     }
 
 
@@ -426,6 +426,7 @@ public class QueryPivot extends AbstractQueryRelation
             _s = s;
         }
 
+        @Override
         public String getUniqueName()
         {
             return _s.getUniqueName();
@@ -752,9 +753,8 @@ public class QueryPivot extends AbstractQueryRelation
             if (!isAgg)
             {
                 String wrappedAgg = "MAX";
-                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn)col)._field instanceof QAggregate)
+                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn) col)._field instanceof QAggregate aggregate)
                 {
-                    QAggregate aggregate = (QAggregate)((QuerySelect.SelectColumn)col)._field;
                     switch (aggregate.getType())
                     {
                         case COUNT:

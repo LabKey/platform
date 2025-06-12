@@ -45,19 +45,19 @@ import java.util.Set;
  */
 public class VisualizationSourceColumn
 {
-    private String _queryName;
-    private UserSchema _schema;
+    private final String _queryName;
+    private final UserSchema _schema;
     private boolean _allowNullResults;
     private boolean _inNotNullSet;
     private boolean _requireLeftJoin;
-    private String _name;
+    private final String _name;
     protected String _alias;
     protected String _clientAlias;
     private String _otherAlias;
     protected String _label;
     private JdbcType _type = null;
     private boolean _hidden = false;
-    private Set<Object> _values = new LinkedHashSet<>();
+    private final Set<Object> _values = new LinkedHashSet<>();
 
     // used by CDS, not used by VisualizationSQLGenerator, just copy it around please
     private String _axisName = null;
@@ -90,8 +90,8 @@ public class VisualizationSourceColumn
 
     public static class Factory
     {
-        private Map<Path, VisualizationSourceColumn> _currentCols = new HashMap<>();
-        private Map<String,VisualizationSourceColumn> _aliasMap = new CaseInsensitiveHashMap<>();
+        private final Map<Path, VisualizationSourceColumn> _currentCols = new HashMap<>();
+        private final Map<String,VisualizationSourceColumn> _aliasMap = new CaseInsensitiveHashMap<>();
 
         private VisualizationSourceColumn findOrAdd(VisualizationSourceColumn col)
         {
@@ -301,7 +301,7 @@ public class VisualizationSourceColumn
         }
         catch (SQLGenerationException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

@@ -91,7 +91,6 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         if (_pivotBuilder != null)
         {
             sb.append(separator);
-            separator = ", ";
             sb.append(_pivotBuilder.getBy().toSQLString());
         }
 

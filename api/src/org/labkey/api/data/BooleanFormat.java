@@ -56,7 +56,7 @@ public class BooleanFormat extends Format
     /**
      * Static map of common parse associations
      */
-    private static HashMap<String, Boolean> _parseAssocs = new HashMap<>();
+    private static final HashMap<String, Boolean> _parseAssocs = new HashMap<>();
 
     static
     {
@@ -79,7 +79,7 @@ public class BooleanFormat extends Format
     protected String _false;
     protected String _null;
 
-    private static BooleanFormat _definstance = new BooleanFormat();
+    private static final BooleanFormat _definstance = new BooleanFormat();
 
 
     /**
@@ -188,7 +188,7 @@ public class BooleanFormat extends Format
      */
     public static boolean testForNull(String source)
     {
-        return (null == source || source.length() == 0 || source.equalsIgnoreCase("null"));
+        return (null == source || source.isEmpty() || source.equalsIgnoreCase("null"));
     }
 
     /**
@@ -216,7 +216,7 @@ public class BooleanFormat extends Format
     @Override
     public Boolean parseObject(String source, ParsePosition pos)
     {
-        if(null == source || source.length() == 0 || !Character.isLetterOrDigit(source.codePointAt(0)))
+        if(null == source || source.isEmpty() || !Character.isLetterOrDigit(source.codePointAt(0)))
         {
             pos.setErrorIndex(pos.getIndex());
             return null;
@@ -273,7 +273,7 @@ public class BooleanFormat extends Format
             fmt = new BooleanFormat("Y;N; ");
             assertTrue(fmt.format(Boolean.TRUE).equals("Y"));
             assertTrue(fmt.format(Boolean.FALSE).equals("N"));
-            assertTrue(fmt.format(null).equals(""));
+            assertTrue(fmt.format(null).isEmpty());
 
             fmt = new BooleanFormat("Yes;No");
             assertTrue(fmt.format(Boolean.TRUE).equals("Yes"));

@@ -39,7 +39,7 @@ public class UnexpectedException extends RuntimeException
         {
             throw (Error) cause;
         }
-        throw new UnexpectedException(cause);
+        throw UnexpectedException.wrap(cause);
     }
 
     static public RuntimeException wrap(Throwable cause)
@@ -56,14 +56,14 @@ public class UnexpectedException extends RuntimeException
         return new UnexpectedException(cause, message);
     }
 
-    @Deprecated // use wrap()
-    public UnexpectedException(Throwable cause)
+    /** Callers should use wrap() */
+    private UnexpectedException(Throwable cause)
     {
         super(cause);
     }
 
-    @Deprecated // use wrap()
-    public UnexpectedException(Throwable cause, String message)
+     /** Callers should use wrap() */
+    private UnexpectedException(Throwable cause, String message)
     {
         super(message, cause);
     }

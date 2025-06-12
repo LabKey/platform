@@ -100,7 +100,6 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     /**
      * Called before the report is saved to allow any additional save tasks by
      * individual reports.
-     * @param context
      */
     void beforeSave(ContainerUser context);
 
@@ -112,7 +111,6 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     /**
      * Called before the report is deleted to allow any additional cleanup by
      * individual reports.
-     * @param context
      */
     void beforeDelete(ContainerUser context);
 
@@ -121,7 +119,6 @@ public interface Report extends AttachmentParent, ThumbnailProvider
 
     /**
      * Anchor target (e.g., "_blank") use when rendering run report href.
-     * @return
      */
     String getRunReportTarget();
 

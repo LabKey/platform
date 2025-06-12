@@ -78,9 +78,8 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
     ) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider instanceof AbstractPlateBasedAssayProvider)
+        if (provider instanceof AbstractPlateBasedAssayProvider plateProvider)
         {
-            AbstractPlateBasedAssayProvider plateProvider = (AbstractPlateBasedAssayProvider)provider;
             Plate template = plateProvider.getPlate(viewContext.getContainer(), protocol);
             List<? extends DomainProperty> props = plateProvider.getSampleWellGroupDomain(protocol).getProperties();
 

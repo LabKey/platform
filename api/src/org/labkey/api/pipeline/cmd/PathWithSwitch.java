@@ -41,7 +41,7 @@ public class PathWithSwitch extends PathToCommandArgs
         ArrayList<String> args = new ArrayList<>();
         for (String path : paths)
         {
-            if (path != null && path.length() > 0)
+            if (path != null && !path.isEmpty())
                 args.addAll(getSwitchFormat().format(getSwitchName(), path));
         }
         return args;

@@ -139,9 +139,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         this.typeTag = propertyType.getStorageType();
         //TODO: For resource, need to override with known type
         this.rangeURI = propertyType.getTypeUri();
-        if (value instanceof MvFieldWrapper)
+        if (value instanceof MvFieldWrapper wrapper)
         {
-            MvFieldWrapper wrapper = (MvFieldWrapper)value;
             this.mvIndicator = wrapper.getMvIndicator();
             value = wrapper.getValue();
         }
@@ -242,10 +241,9 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         if (null == o)
             return false;
 
-        if (!(o instanceof ObjectProperty))
+        if (!(o instanceof ObjectProperty pv))
             return false;
 
-        ObjectProperty pv = (ObjectProperty) o;
         if (pv.getObjectId() != objectId || !pv.getPropertyURI().equals(propertyURI))
             return false;
 

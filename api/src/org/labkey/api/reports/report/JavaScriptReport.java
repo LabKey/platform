@@ -17,11 +17,8 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
@@ -30,7 +27,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 
-import javax.script.ScriptEngine;
 import java.util.LinkedHashSet;
 
 /*

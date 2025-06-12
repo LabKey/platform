@@ -94,7 +94,6 @@ public interface IssuesListDefService
      * Get the set of registered issue list definition providers that are enabled based on the given container (most likely
      * based on the set of active modules for that container).
      * @param container the container to check for enabled providers
-     * @return
      */
     List<IssuesListDefProvider> getEnabledIssuesListDefProviders(Container container);
 
@@ -180,7 +179,6 @@ public interface IssuesListDefService
 
     /**
      * Clears the issue list definition cache
-     * @param container
      */
     void uncache(Container container);
 

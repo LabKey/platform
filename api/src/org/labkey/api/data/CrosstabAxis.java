@@ -30,8 +30,8 @@ import java.util.List;
 public class CrosstabAxis
 {
     private String _caption = null;
-    private ArrayList<CrosstabDimension> _dimensions = new ArrayList<>();
-    private CrosstabSettings _settings = null;
+    private final ArrayList<CrosstabDimension> _dimensions = new ArrayList<>();
+    private CrosstabSettings _settings;
 
     public CrosstabAxis(CrosstabSettings settings)
     {

@@ -25,7 +25,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.ZipUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

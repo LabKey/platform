@@ -29,8 +29,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.Writer;
-
 import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.at;

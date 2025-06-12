@@ -218,6 +218,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     /**
      * @return null if we're operating in a background thread, divorced from an in-process HTTP request
      */
+    @Override
     @Nullable
     public HttpServletRequest getRequest()
     {
@@ -408,13 +409,13 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     {
         if (_messageSource == null)
         {
-            if (_messageBundles.size() == 0)
+            if (_messageBundles.isEmpty())
                 _messageSource = _defaultMessageSource;
             else
             {
                 _messageSource = new ResourceBundleMessageSource();
                 _messageSource.setParentMessageSource(_defaultMessageSource);
-                _messageSource.setBasenames(_messageBundles.toArray(new String[_messageBundles.size()]));
+                _messageSource.setBasenames(_messageBundles.toArray(new String[0]));
             }
         }
         return _messageSource;

@@ -1435,7 +1435,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
-        OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
+        OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[0]));
         deleteWellGroupPositions(plate);
 
         // delete any plate metadata values from the provisioned table

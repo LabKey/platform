@@ -179,7 +179,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<>();
         String visitKey = study.getTimepointType() == TimepointType.VISIT ? SimpleSpecimenImporter.VISIT : SimpleSpecimenImporter.DRAW_TIMESTAMP;
 
-        if (specimenRows.size() == 0)
+        if (specimenRows.isEmpty())
             errors.reject(SpringActionController.ERROR_MSG, "No specimen data was provided.");
         int rowNum = 1;
         for (Map<String,Object> row : specimenRows)
@@ -209,7 +209,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             }
             if (null != sampleId)
             {
-                Pair<Object,Object> participantVisit = new Pair<Object,Object>(participant, row.get(visitKey));
+                Pair<Object,Object> participantVisit = new Pair<>(participant, row.get(visitKey));
                 if (sampleIdMap.containsKey(sampleId))
                 {
                     if (!participantVisit.equals(sampleIdMap.get(sampleId)))
@@ -264,10 +264,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             if (!errors.hasErrors())
                 importer.process(specimenRows, form.isMerge());
         }
-        catch (IllegalStateException | ValidationException e)
-        {
-            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-        }
         catch (RuntimeSQLException e)
         {
             String message = e.getMessage();
@@ -275,7 +271,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 message = e.getSQLException().getNextException().getMessage();
             errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + message);
         }
-        catch (RuntimeException e)
+        catch (ValidationException | RuntimeException e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }

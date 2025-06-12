@@ -30,7 +30,7 @@
     }
 %>
 <%
-    String projectDefaultRoot = "";
+    String projectDefaultRoot;
 
     File siteRoot = FileContentService.get().getSiteDefaultRoot();
     File projRoot = new File(siteRoot, getContainer().getProject().getName());

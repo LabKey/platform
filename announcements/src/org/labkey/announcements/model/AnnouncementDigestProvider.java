@@ -174,7 +174,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             }
             catch (IOException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
 
@@ -194,20 +194,19 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         private void initReason()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("You have received this email because you are signed up for a daily digest of new posts to <a href=\"");
-            sb.append(PageFlowUtil.filter(dailyDigestBean.boardURL.getURIString()));
-            sb.append("\">");
-            sb.append(PageFlowUtil.filter(dailyDigestBean.boardPath));
-            sb.append("</a> at <a href=\"");
-            sb.append(PageFlowUtil.filter(dailyDigestBean.siteUrl));
-            sb.append("\">");
-            sb.append(PageFlowUtil.filter(dailyDigestBean.siteUrl));
-            sb.append("</a>. If you no longer wish to receive these notifications, please <a href=\"");
-            sb.append(PageFlowUtil.filter(dailyDigestBean.removeURL.getURIString()));
-            sb.append("\">change your email preferences</a>.");
+            String sb = "You have received this email because you are signed up for a daily digest of new posts to <a href=\"" +
+                    PageFlowUtil.filter(dailyDigestBean.boardURL.getURIString()) +
+                    "\">" +
+                    PageFlowUtil.filter(dailyDigestBean.boardPath) +
+                    "</a> at <a href=\"" +
+                    PageFlowUtil.filter(dailyDigestBean.siteUrl) +
+                    "\">" +
+                    PageFlowUtil.filter(dailyDigestBean.siteUrl) +
+                    "</a>. If you no longer wish to receive these notifications, please <a href=\"" +
+                    PageFlowUtil.filter(dailyDigestBean.removeURL.getURIString()) +
+                    "\">change your email preferences</a>.";
 
-            reasonForEmail = sb.toString();
+            reasonForEmail = sb;
         }
 
         private void initPosts()

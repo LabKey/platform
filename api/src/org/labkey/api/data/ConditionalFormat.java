@@ -230,7 +230,7 @@ public class ConditionalFormat extends GWTConditionalFormat
             }
             catch (URISyntaxException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
             if (xmlFormat.isSetBold() && xmlFormat.getBold())
             {
@@ -335,9 +335,8 @@ public class ConditionalFormat extends GWTConditionalFormat
                 {
                     ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
 
-                    if (filterClause instanceof CompareType.AbstractCompareClause)
+                    if (filterClause instanceof CompareType.AbstractCompareClause compareClause)
                     {
-                        CompareType.AbstractCompareClause compareClause = (CompareType.AbstractCompareClause)filterClause;
                         xmlFilter.setOperator(compareClause.getCompareType().getXmlType());
                         String value = compareClause.toURLParamValue();
                         if (value != null)

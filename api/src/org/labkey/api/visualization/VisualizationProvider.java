@@ -62,7 +62,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     public abstract String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName);
 
-    protected static enum ColumnMatchType
+    protected enum ColumnMatchType
     {
         DATETIME_COLS()
                 {
@@ -282,7 +282,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         return getMatchingColumns(queryType, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
     }
 
-    public static enum ChartType
+    public enum ChartType
     {
         TIME_DATEBASED,
         TIME_VISITBASED

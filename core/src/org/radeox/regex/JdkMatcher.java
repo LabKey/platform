@@ -35,9 +35,9 @@ package org.radeox.regex;
  */
 
 public class JdkMatcher extends Matcher {
-  private JdkPattern pattern;
-  private String input;
-  private java.util.regex.Matcher internalMatcher;
+  private final JdkPattern pattern;
+  private final String input;
+  private final java.util.regex.Matcher internalMatcher;
 
   @Override
   public String substitute(Substitution substitution) {

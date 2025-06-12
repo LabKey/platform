@@ -44,7 +44,7 @@ public class ModuleQueryMetadataDef
     private static final Logger LOG = LogManager.getLogger(ModuleQueryMetadataDef.class);
 
     private String _name;
-    private Path _path;
+    private final Path _path;
     private QueryDef.ParsedMetadata _queryMetaData = QueryDef.createParsedMetadata(null);
     private String _description;
     private double _schemaVersion;

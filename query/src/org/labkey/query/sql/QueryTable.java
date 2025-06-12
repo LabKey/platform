@@ -75,7 +75,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
     private TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
     private final HashMap<FieldKey, String> _uniqueNameMap = new HashMap<>();
     private String _innerAlias;
-    private Boolean _selectAllColumns = false;
+    private final Boolean _selectAllColumns = false;
 
     protected Boolean _generateSelectSQL = null;
 

@@ -50,7 +50,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
 
     public interface FastaIteratorElementFactory<U>
     {
-        public U createNext(String header, byte[] body);
+        U createNext(String header, byte[] body);
     }
 
     public class FastaIterator implements Iterator<T>
@@ -77,7 +77,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                 String line = getLine();
 
                 //Iterator expects _header to be initialized... strip initial ">"
-                if (null != line && line.length() > 0 && line.charAt(0) == '>')
+                if (null != line && !line.isEmpty() && line.charAt(0) == '>')
                 {
                     _header = line.substring(1);
                     _currentHeaderLineNum = _currentLineNum;
@@ -166,7 +166,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
             {
                 while((line = getLine()) != null)
                 {
-                    if (line.length() > 0 && line.charAt(0) == '>')
+                    if (!line.isEmpty() && line.charAt(0) == '>')
                     {
                         T next = createNextElement(_header, bodyStream);
                         _header = line.substring(1);
@@ -256,7 +256,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
 
     public interface CharacterFilter
     {
-        public boolean accept(char c);
+        boolean accept(char c);
     }
 
     public static class UpperAndLowercaseCharacterFilter implements CharacterFilter

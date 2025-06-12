@@ -118,7 +118,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<Portal.PortalPage> sortedPages = Portal.getTabPages(container, showHiddenTabs);
 
         // No page index should be 0
-        assert !(sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0);
+        assert !(!sortedPages.isEmpty() && sortedPages.get(0).getIndex() <= 0);
 
         String activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<>();
@@ -202,7 +202,6 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 if (!nav.isDisabled())
                 {
                     // Mark the first visible tab as selected
-                    activePortalPage = entry.getKey();
                     nav.setSelected(true);
                     break;
                 }
@@ -220,7 +219,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
 
         // if startURL for this folderType specified in the folderType.xml use that
-        if (_startUrl != null && !_startUrl.equals(""))
+        if (_startUrl != null && !_startUrl.isEmpty())
         {
             return new ActionURL(c.getEncodedPath() + _startUrl);
         }

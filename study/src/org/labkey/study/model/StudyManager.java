@@ -4120,7 +4120,7 @@ public class StudyManager
         return new DatasetModifiedRunnable(def, fireNotification);
     }
 
-    private class DatasetModifiedRunnable implements Runnable
+    private static class DatasetModifiedRunnable implements Runnable
     {
         private final @NotNull
         DatasetDefinition _def;

@@ -310,7 +310,7 @@ public class DilutionManager
     // Class for parsing a Data Property Descriptor name and categorizing it
     public static class PropDescCategory
     {
-        private String _origName = null;
+        private String _origName;
         private String _type = null;         // ic_4pl, ic_5pl, ic_poly, point, null
         private boolean _oor = false;
         private String _rangeOrNum = null;   // inrange, number, null

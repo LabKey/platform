@@ -10,7 +10,6 @@ import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 
 public class LayoutEngine

@@ -44,6 +44,6 @@ public class QueryReportDescriptor extends ReportDescriptor
 
     public interface QueryViewGenerator
     {
-        public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception;
+        ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception;
     }
 }

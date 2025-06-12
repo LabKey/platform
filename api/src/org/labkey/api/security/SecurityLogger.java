@@ -121,13 +121,13 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
         }
     }
 
-    static ThreadLocal<List<ThreadSecurityContext>> threadsecuritycontexts = new ThreadLocal<List<ThreadSecurityContext>>()
+    static ThreadLocal<List<ThreadSecurityContext>> threadsecuritycontexts = new ThreadLocal<>()
     {
         @Override
         protected ArrayList<ThreadSecurityContext> initialValue()
         {
             ArrayList<ThreadSecurityContext> ret = new ArrayList<>();
-            ret.add(new ThreadSecurityContext(null,"<root>",null));
+            ret.add(new ThreadSecurityContext(null, "<root>", null));
             return ret;
         }
     };

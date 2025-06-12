@@ -25,7 +25,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.util.Collection;
 
@@ -35,7 +34,7 @@ import java.util.Collection;
  */
 public class RenderBackgroundRReportView extends HttpView
 {
-    private RReport _report;
+    private final RReport _report;
 
     public RenderBackgroundRReportView(RReport report)
     {

@@ -307,7 +307,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * Invoked from a maintenance task, clean up temporary report files and folders that are of a
      * certain age.
      *
-     * @param log
      */
     public static void scheduledFileCleanup(Logger log)
     {
@@ -336,8 +335,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * Delete any thread specific subfolders if they are older than the
      * specified cutoff, and if there are no thread subfolders, delete the parent.
      *
-     * @param dir
-     * @param cutoff
      */
     protected static void deleteReportDir(File dir, long cutoff)
     {
@@ -523,7 +520,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
     {
-        return handleParameters(this, parameters, new ParameterHandler<Thumbnail>()
+        return handleParameters(this, parameters, new ParameterHandler<>()
         {
             private Thumbnail _thumbnail = null;
 
@@ -601,9 +598,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /**
      * Create the script to be executed by the scripting engine
      *
-     * @param outputSubst
-     * @return
-     * @throws Exception
      */
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
@@ -621,11 +615,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
      *
-     * @param script
-     * @param inputFile
-     * @param outputSubst
-     * @param inputParameters - client-passed params that get injected into the prolog of the report script
-     * @throws Exception
      */
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
@@ -672,7 +661,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     @Override
     public ScriptReportDescriptor getDescriptor()
     {
-        return (ScriptReportDescriptor) super.getDescriptor();
+        return super.getDescriptor();
     }
 
 

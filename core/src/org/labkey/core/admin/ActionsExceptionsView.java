@@ -59,7 +59,7 @@ public class ActionsExceptionsView extends HttpView
                     if (!stats.hasExceptions())
                         continue;
 
-                    HashSet<String> dupes = new HashSet<String>();
+                    HashSet<String> dupes = new HashSet<>();
 
                     rowCount++;
                     out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");

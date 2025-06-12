@@ -119,8 +119,8 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
-                        ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
-                        ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
+                        ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+                        ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
 
                         content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING));
                         content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING));

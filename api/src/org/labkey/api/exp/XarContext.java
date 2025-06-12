@@ -190,7 +190,7 @@ public class XarContext
             String pathWithDrive = path;
             if (null != drivePrefix)
             {
-                if (path.length() > 0 && path.charAt(0) != '\\' && path.charAt(0) != '/')
+                if (!path.isEmpty() && path.charAt(0) != '\\' && path.charAt(0) != '/')
                 {
                     pathWithDrive = drivePrefix + "/" + path;
                 }

@@ -96,13 +96,12 @@ public class ParticipantGroupImporter implements InternalStudyImporter
 
     public void process(StudyImpl study, StudyImportContext ctx, XmlObject xmlObject) throws Exception
     {
-        if (xmlObject instanceof ParticipantGroupsDocument)
+        if (xmlObject instanceof ParticipantGroupsDocument doc)
         {
             ctx.getLogger().info("Loading " + getDescription());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            ParticipantGroupsDocument doc = (ParticipantGroupsDocument)xmlObject;
             XmlBeansUtil.validateXmlDocument(doc);
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -160,7 +159,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
 
                         if (!ids.isEmpty())
                         {
-                            pg.setParticipantIds(ids.toArray(new String[ids.size()]));
+                            pg.setParticipantIds(ids.toArray(new String[0]));
                             ParticipantGroupManager.getInstance().setParticipantGroup(ctx.getContainer(), ctx.getUser(), pg);
                         }
                         else

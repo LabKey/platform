@@ -175,7 +175,7 @@ public class XMLWriter {
         // CONSIDER: api could be cleaner
         assert isValidXmlElementName(name.contains(" ") ? name.substring(0,name.indexOf(' ')) : name);
 
-        if ((namespace != null) && (namespace.length() > 0)) {
+        if ((namespace != null) && (!namespace.isEmpty())) {
             switch (type) {
             case OPENING:
                 if (namespaceInfo != null) {
@@ -348,7 +348,7 @@ public class XMLWriter {
                 }
 
                 String data = node.getNodeValue();
-                if ( data != null && data.length() > 0 ) {
+                if ( data != null && !data.isEmpty()) {
                     buffer.append(' ');
                     buffer.append(data);
                 }
@@ -380,7 +380,7 @@ public class XMLWriter {
             array[i] = (Attr)attrs.item(i);
         }
         for ( int i = 0; i < len - 1; i++ ) {
-            String name = null;
+            String name;
             if (this.qualifiedNames) {
                 name  = array[i].getNodeName();
             } else {
@@ -388,7 +388,7 @@ public class XMLWriter {
             }
             int    index = i;
             for ( int j = i + 1; j < len; j++ ) {
-                String curName = null;
+                String curName;
                 if (this.qualifiedNames) {
                     curName = array[j].getNodeName();
                 } else {

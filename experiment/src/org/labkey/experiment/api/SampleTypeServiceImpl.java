@@ -1309,7 +1309,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     max = id;
             }
             catch (NumberFormatException ignored) {
-                ;
             }
         }
 

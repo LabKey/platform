@@ -34,8 +34,8 @@ public class TemplateGridCell extends FocusPanel
 {
     private Set<GWTWellGroup> _groups;
     private String _activeType;
-    private TemplateView _view;
-    private GWTPosition _position;
+    private final TemplateView _view;
+    private final GWTPosition _position;
 
     public TemplateGridCell(TemplateView view, GWTPosition position, Set<GWTWellGroup> groups, String activeType)
     {
@@ -110,7 +110,7 @@ public class TemplateGridCell extends FocusPanel
     private Set<GWTWellGroup> getGroups()
     {
         if (_groups == null)
-            _groups = new HashSet<GWTWellGroup>();
+            _groups = new HashSet<>();
         return _groups;
     }
 
@@ -170,7 +170,7 @@ public class TemplateGridCell extends FocusPanel
     private List<String> addWarning(List<String> warnings, String warning)
     {
         if (warnings == null)
-            warnings = new ArrayList<String>();
+            warnings = new ArrayList<>();
         warnings.add(warning);
         return warnings;
     }

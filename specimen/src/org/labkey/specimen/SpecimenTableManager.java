@@ -190,7 +190,7 @@ public class SpecimenTableManager
         if (null == typeName)
             typeName = dialect.getSqlTypeName(property.getJdbcType());
         if (null == typeName)
-            throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType().toString());
+            throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType());
         if ("VARCHAR".equals(typeName))
             typeName = String.format("VARCHAR(%d)", property.getScale());
         return typeName;

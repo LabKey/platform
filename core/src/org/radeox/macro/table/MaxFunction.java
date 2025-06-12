@@ -36,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
  */
 
 public class MaxFunction implements Function {
-  private static Logger log = LogManager.getLogger(MaxFunction.class);
+  private static final Logger log = LogManager.getLogger(MaxFunction.class);
 
 
   @Override

@@ -29,7 +29,7 @@ public class PathInLine extends PathToCommandArgs
         List<String> args = new ArrayList<>();
         for (String path : paths)
         {
-            if (path != null && path.length() > 0)
+            if (path != null && !path.isEmpty())
                 args.add(path);
         }
         return args;

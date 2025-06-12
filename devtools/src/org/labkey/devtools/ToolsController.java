@@ -318,7 +318,7 @@ public class ToolsController extends SpringActionController
             return new JspFinderView(ModuleLoader.getInstance().getModules());
         }
 
-        private class JspFinderView extends HttpView
+        private static class JspFinderView extends HttpView<Object>
         {
             private final Collection<Module> _modules;
 
@@ -623,7 +623,7 @@ public class ToolsController extends SpringActionController
             root.addChild("Check Crawler Actions");
         }
 
-        private class ControllerActionId implements Comparable<ControllerActionId>
+        private static class ControllerActionId implements Comparable<ControllerActionId>
         {
             private final String _controller;
             private final String _action;

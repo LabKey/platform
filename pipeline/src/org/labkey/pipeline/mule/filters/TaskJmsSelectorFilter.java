@@ -33,9 +33,9 @@ import java.util.Set;
  */
 public class TaskJmsSelectorFilter extends JmsSelectorFilter
 {
-    private static Set<String> ALL_LOCAL_LOCATIONS = new HashSet<>();
+    private static final Set<String> ALL_LOCAL_LOCATIONS = new HashSet<>();
 
-    private static Logger _log = LogManager.getLogger(TaskJmsSelectorFilter.class);
+    private static final Logger _log = LogManager.getLogger(TaskJmsSelectorFilter.class);
 
     private boolean _includeMonolithic;
 
@@ -99,7 +99,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
         expr.append(" AND ");
         expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY);
         expr.append(" = '");
-        expr.append(PipelineJob.TaskStatus.waiting.toString());
+        expr.append(PipelineJob.TaskStatus.waiting);
         expr.append("'");
         expr.append(")");
 

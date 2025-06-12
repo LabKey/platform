@@ -511,9 +511,8 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
                 // If this is a background request then push the original stack trace into the statement wrapper so it gets
                 // logged and stored in the query profiler.
-                if (stmt instanceof StatementWrapper)
+                if (stmt instanceof StatementWrapper sw)
                 {
-                    StatementWrapper sw = (StatementWrapper)stmt;
                     sw.setStackTrace(asyncRequest.getCreationStackTrace());
                     sw.setRequestThread(true);      // AsyncRequests aren't really background threads; treat them as request threads.
                     sw.setQueryLogging(getQueryLogging());
@@ -521,9 +520,8 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
             else
             {
-                if (stmt instanceof StatementWrapper)
+                if (stmt instanceof StatementWrapper sw)
                 {
-                    StatementWrapper sw = (StatementWrapper)stmt;
                     sw.setQueryLogging(getQueryLogging());
                 }
             }

@@ -15,10 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.util.GUID;

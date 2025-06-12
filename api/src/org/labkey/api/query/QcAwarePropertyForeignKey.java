@@ -152,7 +152,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         return cols.get(otherKey);
     }
 
-    private class LateBoundOORDisplayColumnFactory implements DisplayColumnFactory
+    private static class LateBoundOORDisplayColumnFactory implements DisplayColumnFactory
     {
         private final String _baseName;
 

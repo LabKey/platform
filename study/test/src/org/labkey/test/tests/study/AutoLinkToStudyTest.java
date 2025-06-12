@@ -329,7 +329,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     {
         goToProjectHome(projectName);
         _studyHelper.goToManageDatasets().clickDeleteMultipleDatasets();
-        if (Locator.css("[class='table labkey-data-region-legacy'] tr").findElements(getDriver()).size() > 0)
+        if (!Locator.css("[class='table labkey-data-region-legacy'] tr").findElements(getDriver()).isEmpty())
         {
             checkCheckbox(Locator.name("datasetIds"));
             clickButton("Delete Selected");

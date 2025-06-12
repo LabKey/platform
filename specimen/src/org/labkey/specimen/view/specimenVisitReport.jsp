@@ -125,7 +125,7 @@ The request has produced no records.
                 for (int col = 0; col<colMax ; col++)
                 {
                     String title = rowtitles[rowIndex][col].first.getDisplayValue();
-                    if (title == null || title.length() == 0)
+                    if (title == null || title.isEmpty())
                         title = "[unspecified]";
                     int rowspan = rowtitles[rowIndex][col].second;
                     if (rowspan==0)

@@ -39,11 +39,11 @@ public interface Pattern {
    *
    * @return String representation of the regular expression
    */
-  public String getRegex();
+  String getRegex();
   /**
    * Return whether the pattern is multiline or not
    *
    * @return Ture if the pattern is multiline
    */
-  public boolean getMultiline();
+  boolean getMultiline();
 }

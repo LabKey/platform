@@ -303,9 +303,9 @@ public class StudyExportTest extends StudyManualTest
 
         // test auto-fill:
         clickButton("Create New Request");
-        assertNotEquals(getFormElement(Locator.id("input1")), "Duke University, NC");
+        assertNotEquals("Duke University, NC", getFormElement(Locator.id("input1")));
         selectOptionByText(Locator.name("destinationLocation"), "Duke University (Repository, Site Affiliated Lab, Clinic)");
-        assertEquals(getFormElement(Locator.id("input1")), "Duke University, NC");
+        assertEquals("Duke University, NC", getFormElement(Locator.id("input1")));
         clickButton("Cancel");
 
         // manage new request

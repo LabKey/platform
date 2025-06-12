@@ -144,8 +144,8 @@ if (settings.hasExpires())
                     for (Attachment att : ann.getAttachments())
                 {
                     x++;
-                    id = makeId("remove_");
-                    %><tr id="attach-<%=x%>">
+                    makeId("remove_");
+                %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
                         <td><%= link("remove").onClick("LABKEY.discuss.removeAttachment(" + q(ann.getEntityId()) + "," + q(att.getName()) + "," +  q("attach-"+x) + ");") %></td>
                     </tr><%

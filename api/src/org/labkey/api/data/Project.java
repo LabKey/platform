@@ -27,7 +27,7 @@ import java.io.Serializable;
  */
 public class Project implements Serializable
 {
-    private @NotNull Container _c;
+    private final @NotNull Container _c;
 
     public Project(@NotNull Container c)
     {

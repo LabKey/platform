@@ -367,7 +367,7 @@ public class BufferedReader extends Reader {
                 // attempt to fill buffer
                 if (fillbuf() == -1) {
                     // characters or null.
-                    return result.length() > 0 || eol != '\0' ? result
+                    return !result.isEmpty() || eol != '\0' ? result
                             .toString() : null;
                 }
                 for (int charPos = pos; charPos < count; charPos++) {

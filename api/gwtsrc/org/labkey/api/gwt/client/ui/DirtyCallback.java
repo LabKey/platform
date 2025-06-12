@@ -22,5 +22,5 @@ package org.labkey.api.gwt.client.ui;
  */
 public interface DirtyCallback
 {
-    public void setDirty(boolean dirty);
+    void setDirty(boolean dirty);
 }

@@ -66,7 +66,7 @@ public class RScriptEngine extends ExternalScriptEngine
 
     protected File prepareScriptFile(String script, ScriptContext context, List<String> extensions, boolean createWrapper)
     {
-        File scriptFile = null;
+        File scriptFile;
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
         {
             //
@@ -169,7 +169,7 @@ public class RScriptEngine extends ExternalScriptEngine
 
     protected String getOutputFilename(File inputScript)
     {
-        String outputFilename = null;
+        String outputFilename;
         // do not call getInputFilename here as we do not want to invoke
         // any overrides.  The output file name should be the local path even
         // in the Rserve case since this file is manipulated on the labkey

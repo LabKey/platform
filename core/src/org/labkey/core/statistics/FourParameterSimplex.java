@@ -104,6 +104,7 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
         }
     }
 
+    @Override
     protected double calculateFitError(SigmoidalParameters parameters)
     {
         return rSquared(parameters);

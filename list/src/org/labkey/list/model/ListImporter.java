@@ -392,7 +392,7 @@ public class ListImporter
         {
             log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
-        if (fileTypeMap.size() > 0)
+        if (!fileTypeMap.isEmpty())
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
             for (String s : fileTypeMap.keySet())

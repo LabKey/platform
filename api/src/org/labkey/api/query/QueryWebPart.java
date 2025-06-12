@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class QueryWebPart extends VBox
 {
@@ -70,7 +71,7 @@ public class QueryWebPart extends VBox
         _properties = part.getPropertyMap();
         _extendedProperties = part.getExtendedProperties();
         String title = _properties.get("title");
-        _errorType = StringUtils.defaultString(_properties.get("errorType"), "html");
+        _errorType = Objects.toString(_properties.get("errorType"), "html");
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = _properties.get(QueryParam.schemaName.toString());

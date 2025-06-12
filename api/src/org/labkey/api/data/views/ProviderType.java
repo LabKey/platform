@@ -21,9 +21,9 @@ package org.labkey.api.data.views;
  */
 public class ProviderType implements DataViewProvider.Type
 {
-    private String _name;
-    private String _description;
-    private boolean _showByDefault;
+    private final String _name;
+    private final String _description;
+    private final boolean _showByDefault;
 
     public ProviderType(String name, String description, boolean showByDefault)
     {
@@ -62,10 +62,9 @@ public class ProviderType implements DataViewProvider.Type
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof ProviderType))
+        if (!(obj instanceof ProviderType type))
             return false;
 
-        ProviderType type = (ProviderType)obj;
         if (!type.getName().equals(this.getName())) return false;
 
         return true;

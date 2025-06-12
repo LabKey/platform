@@ -380,14 +380,13 @@ final class ExternalScriptable implements Scriptable
                 } else {
                     throw Context.reportRuntimeError(
                         "Invalid JavaScript value of type " +
-                        typeHint.toString());
+                                typeHint);
                 }
                 args[0] = hint;
             }
             Object v = ScriptableObject.getProperty(this, methodName);
-            if (!(v instanceof Function))
+            if (!(v instanceof Function fun))
                 continue;
-            Function fun = (Function) v;
             Context cx = RhinoScriptEngine.enterContext();
             try {
                 v = fun.call(cx, fun.getParentScope(), this, args);
@@ -464,8 +463,7 @@ final class ExternalScriptable implements Scriptable
     * and hence the following function is used.
     */
     private Object jsToJava(Object jsObj) {
-        if (jsObj instanceof Wrapper) {
-            Wrapper njb = (Wrapper) jsObj;
+        if (jsObj instanceof Wrapper njb) {
             /* importClass feature of ImporterTopLevel puts
              * NativeJavaClass in global scope. If we unwrap
              * it, importClass won't work.

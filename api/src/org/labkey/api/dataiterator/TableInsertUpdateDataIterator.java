@@ -64,7 +64,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
     private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
     private boolean _skipCurrentIterator = false; // if StatementUtils generates a bad or meaningless (empty) statement, skip this iterator
-    private boolean _failOnEmptyUpdate;
+    private final boolean _failOnEmptyUpdate;
 
     private boolean _preferPKOverObjectUriAsKey = false;
 
@@ -140,7 +140,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             ret = emb;
         }
 
-        if (null != vocabularyColumns && vocabularyColumns.size() > 0)
+        if (null != vocabularyColumns && !vocabularyColumns.isEmpty())
         {
             ti.setAdhocPropColumns(vocabularyColumns);
         }

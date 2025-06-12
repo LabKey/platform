@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class PlateQueryViewImpl extends PlateQueryView
 {
-    private SimpleFilter _filter;
+    private final SimpleFilter _filter;
     private Sort _sort;
     private List<ActionButton> _buttons;
     private Map<String, String> _hiddenFormFields;

@@ -115,11 +115,11 @@ public enum DataURLRelativizer
             };
         }
     };
-    private String _description;
+    private final String _description;
 
     public abstract URLRewriter createURLRewriter();
 
-    private DataURLRelativizer(String description)
+    DataURLRelativizer(String description)
     {
         _description = description;
     }

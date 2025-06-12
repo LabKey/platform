@@ -242,9 +242,8 @@ public class RelativeDateVisitManager extends VisitManager
 //                }
 //            }
 
-        StringBuilder participantSequenceNum = new StringBuilder("(");
-        participantSequenceNum.append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"));
-        participantSequenceNum.append(")");
+        String participantSequenceNum = "(" + StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum") +
+                ")";
 
         String sqlUpdateParticipantSeqNum = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceNum = " +
                 participantSequenceNum + " WHERE Container = ? AND ParticipantSequenceNum IS NULL";

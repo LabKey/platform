@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.*;
 
+@SuppressWarnings("Convert2Diamond")
 public class GWTPlate implements IsSerializable
 {
     private int _rowId;
@@ -100,7 +101,7 @@ public class GWTPlate implements IsSerializable
     public boolean addGroup(GWTWellGroup group)
     {
         if (!_groups.containsKey(group.getType()))
-            _groups.put(group.getType(), new ArrayList<GWTWellGroup>());
+            _groups.put(group.getType(), new ArrayList<>());
 
         // verify the group rowId is unique
         if (_allGroups.contains(group))

@@ -18,7 +18,6 @@ package org.labkey.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -82,7 +81,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -954,7 +952,7 @@ public class StudyPublishManager implements StudyPublishService
         Path file;
         do
         {
-            String extension = StringUtils.defaultString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
+            String extension = Objects.toString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
             String extra = id++ == 0 ? "" : String.valueOf(id);
             String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
@@ -1332,8 +1330,6 @@ public class StudyPublishManager implements StudyPublishService
     /**
      * @param row The data row
      * @param fieldKeyMap Map of link to study keys to the configured column field key
-     * @param isVisitBased
-     * @param translateMap Map of visit label to sequence numbers
      */
     private Object getTimepointValue(Map<FieldKey, Object> row, Map<LinkToStudyKeys, FieldKey> fieldKeyMap, boolean isVisitBased, Map<String, BigDecimal> translateMap)
     {

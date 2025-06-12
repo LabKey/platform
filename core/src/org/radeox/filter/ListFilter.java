@@ -96,9 +96,9 @@ public class ListFilter extends LocaleRegexTokenFilter implements CacheFilter {
     closeList.put(Character.valueOf('k'), OL_CLOSE);
     closeList.put(Character.valueOf('K'), OL_CLOSE);
     closeList.put(Character.valueOf('j'), OL_CLOSE);
-  };
+  }
 
-  @Override
+    @Override
   public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context) {
     try {
       BufferedReader reader = new BufferedReader(new StringReader(result.group(0)));
@@ -116,11 +116,11 @@ public class ListFilter extends LocaleRegexTokenFilter implements CacheFilter {
    */
   private void addList(StringBuffer buffer, BufferedReader reader) throws IOException {
     char[] lastBullet = new char[0];
-    String line = null;
+    String line;
     while ((line = reader.readLine()) != null) {
       // no nested list handling, trim lines:
       line = line.trim();
-      if (line.length() == 0) {
+      if (line.isEmpty()) {
         continue;
       }
 

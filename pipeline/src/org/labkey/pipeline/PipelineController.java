@@ -1777,16 +1777,6 @@ public class PipelineController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    public static class PipelineConfigurationAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new PipelineGWTServiceImpl(getViewContext());
-        }
-    }
-
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -1805,8 +1795,7 @@ public class PipelineController extends SpringActionController
                 controller.new GetPipelineActionConfigAction(),
                 controller.new GetPipelineFilePropertiesAction(),
                 controller.new DownloadAction(),
-                    new GetPipelineContainerAction(),
-                    new PipelineConfigurationAction()
+                    new GetPipelineContainerAction()
             );
 
             // @RequiresPermission(DeletePermission.class)

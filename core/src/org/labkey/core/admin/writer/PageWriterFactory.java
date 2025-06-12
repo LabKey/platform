@@ -67,7 +67,7 @@ public class PageWriterFactory implements FolderWriterFactory
             PagesDocument.Pages pagesXML = pagesDocXML.addNewPages();
 
             Map<String,Portal.PortalPage> tabs = Portal.getPages(c, true);
-            if (tabs.size() == 0)
+            if (tabs.isEmpty())
             {
                 // if there are no tabs, try getting webparts for the default page ID
                 PagesDocument.Pages.Page pageXml = pagesXML.addNewPage();
@@ -102,7 +102,7 @@ public class PageWriterFactory implements FolderWriterFactory
             {
                 WebPartFactory factory = null;
 
-                if (webPart.getPropertyMap().size() > 0)
+                if (!webPart.getPropertyMap().isEmpty())
                 {
                     factory = Portal.getPortalPart(webPart.getName());
                 }
@@ -119,7 +119,7 @@ public class PageWriterFactory implements FolderWriterFactory
                 if (webPart.getPermissionContainer() != null)
                     webpartXml.setPermissionContainerPath(webPart.getPermissionContainer().getPath());
 
-                if (webPart.getPropertyMap().size() > 0)
+                if (!webPart.getPropertyMap().isEmpty())
                 {
                     if (null != factory)        // old old webpart could have been left behind and have no factory
                     {

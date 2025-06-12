@@ -45,7 +45,7 @@ public class GWTIndex implements IsSerializable, Serializable
 
     public GWTIndex(GWTIndex other)
     {
-        setColumnNames(new ArrayList<String>(other.getColumnNames()));
+        setColumnNames(new ArrayList<>(other.getColumnNames()));
         setUnique(other.isUnique());
     }
 

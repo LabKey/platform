@@ -100,9 +100,9 @@ public class MultipleCohortFilter extends BaseCohortFilter
             FieldKey fk = _type.getFilterColumn(study.getContainer());
             fk = new FieldKey(fk.getParent(), "Enrolled");
             if (_includeUnassigned)
-                url.addParameter(dataregion + "." + fk.toString() + "~neqornull", Boolean.FALSE);
+                url.addParameter(dataregion + "." + fk + "~neqornull", Boolean.FALSE);
             else
-                url.addParameter(dataregion + "." + fk.toString() + "~eq", Boolean.TRUE);
+                url.addParameter(dataregion + "." + fk + "~eq", Boolean.TRUE);
         }
         else
         {

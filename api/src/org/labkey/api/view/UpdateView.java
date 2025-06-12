@@ -24,8 +24,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-
 /**
  * Provides a view to update a single row from a {@link DataRegion} in a simple HTML form.
  */

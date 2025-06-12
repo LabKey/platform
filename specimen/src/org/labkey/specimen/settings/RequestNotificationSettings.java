@@ -155,7 +155,7 @@ public class RequestNotificationSettings
 
     public Address[] getCCAddresses() throws ValidEmail.InvalidEmailException
     {
-        if (_cc == null || _cc.length() == 0)
+        if (_cc == null || _cc.isEmpty())
             return null;
         StringTokenizer splitter = new StringTokenizer(_cc, ",;:\t\n\r");
         List<Address> addresses = new ArrayList<>();
@@ -165,12 +165,12 @@ public class RequestNotificationSettings
             ValidEmail tester = new ValidEmail(token);
             addresses.add(tester.getAddress());
         }
-        return addresses.toArray(new Address[addresses.size()]);
+        return addresses.toArray(new Address[0]);
     }
 
     public Address[] getNewRequestNotifyAddresses() throws ValidEmail.InvalidEmailException
     {
-        if (_newRequestNotify == null || _newRequestNotify.length() == 0)
+        if (_newRequestNotify == null || _newRequestNotify.isEmpty())
             return null;
         StringTokenizer splitter = new StringTokenizer(_newRequestNotify, ",;:\t\n\r");
         List<Address> addresses = new ArrayList<>();
@@ -180,7 +180,7 @@ public class RequestNotificationSettings
             ValidEmail tester = new ValidEmail(token);
             addresses.add(tester.getAddress());
         }
-        return addresses.toArray(new Address[addresses.size()]);
+        return addresses.toArray(new Address[0]);
     }
 
     public boolean isReplyToCurrentUser()

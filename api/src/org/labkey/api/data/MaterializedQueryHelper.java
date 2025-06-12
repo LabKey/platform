@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +65,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
         protected final Lock _loadingLock = new ReentrantLock();
-        public enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
+        public enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR }
+
         public final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
         public RuntimeException _loadException = null;
 
@@ -190,7 +192,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     public static abstract class Invalidator
     {
-        private int _coalesceDelay = 0;
+        private final int _coalesceDelay = 0;
 
         public CacheCheck checkValid(long createdTime)
         {
@@ -307,7 +309,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
                                     boolean isSelectIntoSql)
     {
-        _prefix = StringUtils.defaultString(prefix,"mat");
+        _prefix = Objects.toString(prefix,"mat");
         _scope = scope;
         _selectQuery = select;
         _uptodateQuery = uptodate;
@@ -359,7 +361,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    private Set<Integer> _pending = null;
+    private final Set<Integer> _pending = null;
 
     // this is a method so you can subclass MaterializedQueryHelper
     protected String getUpToDateKey()

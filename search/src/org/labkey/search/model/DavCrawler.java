@@ -203,8 +203,6 @@ public class DavCrawler implements ShutdownListener
     /**
      * Aggressively scan the file system for new directories and new/updated files to index
      *
-     * @param path
-     * @param force if (force==true) then don't check lastindexed and modified dates
      */
 
 
@@ -232,7 +230,7 @@ public class DavCrawler implements ShutdownListener
     {
         if (null != start)
         {
-            _log.debug("START CONTINUOUS " + start.toString());
+            _log.debug("START CONTINUOUS " + start);
             // make sure path exists
             if (null == nextCrawl)
             {
@@ -259,7 +257,7 @@ public class DavCrawler implements ShutdownListener
         Path _path;
         WebdavResource _directory;
         boolean _full;
-        Date _lastCrawl=null;
+        Date _lastCrawl;
         Date _nextCrawl=null;
         Date _indexTime = null;
 
@@ -378,7 +376,7 @@ public class DavCrawler implements ShutdownListener
                         props.put(SearchService.PROPERTY.title.toString(), wrap.getPath().getName());
                         props.put(SearchService.PROPERTY.keywordsMed.toString(), FileUtil.getSearchKeywords(wrap.getPath().getName()));
 
-                        child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), "text/plain", (String)null, url, props) {
+                        child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), "text/plain", null, url, props) {
                             @Override
                             public long getLastModified()
                             {
@@ -464,7 +462,7 @@ public class DavCrawler implements ShutdownListener
             Date d = new Date(System.currentTimeMillis());
             while (_recent.size() > 40)
                 _recent.removeFirst();
-            while (_recent.size() > 0 && _recent.getFirst().second.getTime() < d.getTime()-10*60000)
+            while (!_recent.isEmpty() && _recent.getFirst().second.getTime() < d.getTime()-10*60000)
                 _recent.removeFirst();
             String text = r.isCollection() ? r.getName() + "/" : r.getName();
             _recent.add(new Pair(text,d));

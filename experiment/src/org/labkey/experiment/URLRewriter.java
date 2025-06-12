@@ -41,7 +41,7 @@ public abstract class URLRewriter
 {
     protected Map<Path, FileInfo> _files = new HashMap<>();
 
-    private boolean _includeXarXml;
+    private final boolean _includeXarXml;
 
     public URLRewriter()
     {

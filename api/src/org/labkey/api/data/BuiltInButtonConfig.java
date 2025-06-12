@@ -33,7 +33,7 @@ public class BuiltInButtonConfig implements ButtonConfig
 {
     private String _iconCls;
     private String _caption;
-    private String _originalCaption;
+    private final String _originalCaption;
     private String _insertAfter, _insertBefore;
     private Integer _insertPosition;
     private boolean _hidden = false;

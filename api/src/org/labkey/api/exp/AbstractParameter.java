@@ -280,14 +280,7 @@ public abstract class AbstractParameter extends BoundMap
                 val = stringValue;
             }
         }
-        catch (ConversionException e)
-        {
-            log.error("Failed to load value " + stringValue
-                    + ". Declared as type ;" + type + "' Saved as string instead");
-            type = SimpleTypeNames.STRING;
-            val = stringValue;
-        }
-        catch (NumberFormatException e)
+        catch (ConversionException | NumberFormatException e)
         {
             log.error("Failed to load value " + stringValue
                     + ". Declared as type ;" + type + "' Saved as string instead");

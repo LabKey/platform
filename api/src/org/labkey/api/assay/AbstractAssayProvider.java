@@ -582,7 +582,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (includeStandardProperties)
         {
             List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
-            if (resolverTypes != null && resolverTypes.size() > 0)
+            if (resolverTypes != null && !resolverTypes.isEmpty())
             {
                 DomainProperty resolverProperty = addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING);
                 resolverProperty.setHidden(true);
@@ -720,7 +720,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // Not all datas are associated with a file
         if (inputData.getFile() != null)
         {
-            reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
+            reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.isEmpty() ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
         }
     }
 
@@ -1128,13 +1128,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // remove the DetailsColumn from the column list
         List<DisplayColumn> columns = queryView.getDisplayColumns();
-        ListIterator<DisplayColumn> iter = columns.listIterator();
-        while (iter.hasNext())
-        {
-            DisplayColumn column = iter.next();
-            if (column instanceof DetailsColumn)
-                iter.remove();
-        }
+        columns.removeIf(column -> column instanceof DetailsColumn);
         region.setDisplayColumns(columns);
 
         ExpRun run = data.getRun();

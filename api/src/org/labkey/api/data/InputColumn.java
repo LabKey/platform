@@ -17,9 +17,6 @@ package org.labkey.api.data;
 
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 /**
  * Renders a bound ColumnInfo as an HTML form input in a grid view.
  */

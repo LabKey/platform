@@ -80,7 +80,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ExperimentAPITest init = (ExperimentAPITest) getCurrentTest();
+        ExperimentAPITest init = getCurrentTest();
 
         init.doSetup();
     }
@@ -312,8 +312,8 @@ public class ExperimentAPITest extends BaseWebDriverTest
         DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription,fields);
 
         //verifying properties got added in domainResponse
-        assertEquals("First Adhoc property not found.", domainResponse.getDomain().getFields().get(0).getName(), prop1Name);
-        assertEquals("Second Adhoc property not found.", domainResponse.getDomain().getFields().get(1).getName(), prop2Name);
+        assertEquals("First Adhoc property not found.", prop1Name, domainResponse.getDomain().getFields().get(0).getName());
+        assertEquals("Second Adhoc property not found.", prop2Name, domainResponse.getDomain().getFields().get(1).getName());
 
         //Save Batch - Use Vocabulary Domain properties while saving batch
         List<PropertyDescriptor> propertyURIS = domainResponse.getDomain().getFields();
@@ -380,7 +380,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         GetAssayRunCommand getAssayRunCommand = new GetAssayRunCommand(addedRunLsid);
         GetAssayRunResponse getAssayRunResponse = getAssayRunCommand.execute(createDefaultConnection(), getProjectName());
 
-        assertEquals("Vocabulary domain property not found in new saved run.", getAssayRunResponse.getRun().getProperties().get(vocabDomainPropURI), vocabDomainPropVal);
+        assertEquals("Vocabulary domain property not found in new saved run.", vocabDomainPropVal, getAssayRunResponse.getRun().getProperties().get(vocabDomainPropURI));
 
         String resultLsid = getAssayRunResponse.getRun().getLsid();
 

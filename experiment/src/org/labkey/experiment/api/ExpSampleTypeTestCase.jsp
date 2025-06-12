@@ -525,7 +525,7 @@ public void testAliases() throws Exception
         BatchValidationException errors = new BatchValidationException();
         QueryUpdateService qus = table.getUpdateService();
 
-        insertedRows = qus.insertRows(user, c, rows, errors, null, null);
+        qus.insertRows(user, c, rows, errors, null, null);
         if (errors.hasErrors())
             throw errors;
         tx.commit();
@@ -624,7 +624,7 @@ public void testBlankRows() throws Exception
     assertEquals("Expected 5 total samples", 5, allSamples.size());
 
     // how about an update
-    var updated = new CaseInsensitiveHashMap<Object>();
+    var updated = new CaseInsensitiveHashMap<>();
     updated.put("name", material1.getName());
     updated.put("lsid", material1.getLSID());
     updated.put("age", age1 + 1);
@@ -1008,7 +1008,7 @@ public void testDetailedAuditLog() throws Exception
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Initial", "Value", 1.0));
     List<Map<String,Object>> ret = qus.insertRows(user, c, rows, errors, config, null);
-    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
     assertFalse(msg, errors.hasErrors());
     assertEquals(1,ret.size());
     assertNotNull(ret.get(0).get("rowid"));
@@ -1091,7 +1091,7 @@ public void testExpMaterialPermissions() throws Exception
             .getTable("MySamples")
             .getUpdateService()
             .insertRows(user, c, List.of(CaseInsensitiveHashMap.of("name", "SampleInSampleType")), errors, null, null);
-    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
     assertFalse(msg, errors.hasErrors());
     assertEquals(1,ret.size());
     assertNotNull(ret.get(0).get("rowid"));
@@ -1267,7 +1267,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
-    String msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
     context = new DataIteratorContext();
@@ -1278,7 +1278,7 @@ public void testInsertOptionUpdate() throws Exception
     context.setConfigParameters(auditOptions);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
-    msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
     // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored
@@ -1291,7 +1291,7 @@ public void testInsertOptionUpdate() throws Exception
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertFalse(context.getErrors().hasErrors());
-    assertEquals(count,3);
+    assertEquals(3, count);
     rows = getSampleRows(sampleTypeName);
     assertNull(rows.get(0).get("AliquotedFromLSID"));
     assertEquals(aliquotedFromLSID, rows.get(1).get("AliquotedFromLSID"));

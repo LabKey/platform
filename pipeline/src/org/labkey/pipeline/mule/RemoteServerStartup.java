@@ -48,7 +48,7 @@ import java.util.Set;
 */
 public class RemoteServerStartup extends AbstractPipelineStartup
 {
-    private static Logger _log = LogManager.getLogger(RemoteServerStartup.class);
+    private static final Logger _log = LogManager.getLogger(RemoteServerStartup.class);
     private static final String JOB_QUEUE_ADDRESS = "job.queue";
 
     /**

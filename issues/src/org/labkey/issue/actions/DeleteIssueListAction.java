@@ -109,8 +109,8 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
     public static class DeleteIssueListForm
     {
         private List<Integer> _issueDefId = new ArrayList<>();
-        private List<Long> _rowCounts = new ArrayList<>();
-        private List<String> _issueDefNames = new ArrayList<>();
+        private final List<Long> _rowCounts = new ArrayList<>();
+        private final List<String> _issueDefNames = new ArrayList<>();
 
         public List<Integer> getIssueDefId()
         {

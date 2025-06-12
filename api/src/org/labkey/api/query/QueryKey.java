@@ -115,7 +115,7 @@ import java.util.Objects;
 
     static protected <T extends QueryKey<T>> T fromParts(Factory<T> factory, List<String> parts)
     {
-        if (parts.size() == 0)
+        if (parts.isEmpty())
             return null;
 
         if (parts.stream().anyMatch(Objects::isNull))

@@ -31,7 +31,7 @@ public class ProjectWizardTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ProjectWizardTest init = (ProjectWizardTest) getCurrentTest();
+        ProjectWizardTest init = getCurrentTest();
 
         init.doSetup();
     }
@@ -49,7 +49,6 @@ public class ProjectWizardTest extends BaseWebDriverTest
 
     /**
      * regression coverage for https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=37736
-     * @throws Exception
      */
     @Test
     public void testCreateFromProjectMenu() throws Exception

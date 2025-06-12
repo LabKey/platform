@@ -312,7 +312,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain<?> domainDesign, Container container)
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
@@ -334,7 +334,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain<?> updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
@@ -450,7 +450,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     @Nullable
     @Override
-    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
         return new DataClassDomainKindProperties(dc);

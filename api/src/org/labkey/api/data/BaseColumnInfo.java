@@ -57,8 +57,6 @@ import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
-import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -104,7 +102,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _isReadOnly = false;
     private boolean _isUserEditable = true;
     private boolean _isUnselectable = false;
-    private TableInfo _parentTable = null;
+    private TableInfo _parentTable;
     protected DatabaseIdentifier _metaDataName = null;
     protected DatabaseIdentifier _selectName = null;
     protected ColumnInfo _displayField;
@@ -1388,7 +1386,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return name;
 
         StringBuilder buf = new StringBuilder(name.length() + 10);
@@ -1424,7 +1422,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return null;
 
         StringBuilder buf = new StringBuilder(name.length());
@@ -1454,7 +1452,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return null;
 
         return Introspector.decapitalize(legalNameFromName(name));
@@ -1464,7 +1462,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     // TODO why is there here? and not something like RequestHelper or PageFlowUtil
     public static boolean booleanFromString(String str)
     {
-        if (null == str || str.trim().length() == 0)
+        if (null == str || str.trim().isEmpty())
             return false;
         if (str.equals("0") || str.equalsIgnoreCase("false"))
             return false;
@@ -1782,7 +1780,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     }
                     else
                     {
-                        assert importedKeys.size() > 0;
+                        assert !importedKeys.isEmpty();
                         ImportedKey key = importedKeys.get(fkName);
                         key.pkColumnNames.add(pkColumnName);
                         key.fkColumnNames.add(colName);

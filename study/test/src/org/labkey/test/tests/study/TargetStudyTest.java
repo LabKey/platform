@@ -163,7 +163,7 @@ public class TargetStudyTest extends AbstractAssayTest
         DataRegionTable drt = new DataRegionTable("AssayList", this);
         int idx = drt.getRowIndex("Name", ASSAY_NAME);
         log("Found \"Assay\" at index " + idx);
-        assertEquals(idx, 0);
+        assertEquals(0, idx);
         clickAndWait(drt.link(idx, 0));
 
         clickButton("Import Data");

@@ -103,7 +103,7 @@ else
 {
     out.print(view.html);
 
-    if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
+    if (null != wiki.getAttachments() && !wiki.getAttachments().isEmpty() && wiki.isShowAttachments())
     {
         %><p/><%
             if (null != wiki.getLatestVersion().getBody())

@@ -38,7 +38,7 @@
     String showMemberSitesIdStr = request.getParameter("showMemberSites");
     int showMemberSitesId = -1;
     Set<Integer> inUseActorIds = SpecimenRequestRequirementProvider.get().getActorsInUseSet(getContainer());
-    if (showMemberSitesIdStr != null && showMemberSitesIdStr.length() > 0)
+    if (showMemberSitesIdStr != null && !showMemberSitesIdStr.isEmpty())
     {
         try
         {
@@ -85,7 +85,7 @@
                 <%
                     if (showMemberSitesId == actor.getRowId())
                     {
-                        if (study.getLocations().size() > 0)
+                        if (!study.getLocations().isEmpty())
                         {
                     %>
                         <b>Choose Site</b>:<br>

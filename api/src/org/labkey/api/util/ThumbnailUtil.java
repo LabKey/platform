@@ -65,9 +65,8 @@ public class ThumbnailUtil
             return new ResourceURL(provider.getStaticThumbnailPath());
 
         // HACK for ThumbnailCacheImpl.getThumbnailWriter()... should clean this up (add provider.getStaticIconPath()?)
-        if (provider instanceof Report)
+        if (provider instanceof Report report)
         {
-            Report report = (Report)provider;
             String path = ReportService.get().getIconPath(report);
 
             return new ResourceURL(path);

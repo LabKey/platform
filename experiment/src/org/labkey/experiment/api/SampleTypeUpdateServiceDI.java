@@ -1252,7 +1252,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 String dataContainer = (String) row.get("container");
                 if (!dataContainer.equals(container.getId()))
-                    throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + (String) row.get("name") + ".");
+                    throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get("name") + ".");
             }
 
         }

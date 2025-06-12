@@ -45,7 +45,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 
 public class QueryUnion extends AbstractQueryRelation implements ColumnResolvingRelation
@@ -77,7 +76,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
     }
     record UnionTerm(QueryRelation relation, ArrayListMap<String, UnionSourceColumn> columns, Map<String,FieldKey> uniqueNameMap)
     {
-    };
+    }
 
     List<UnionTerm> _termList = new ArrayList<>();
     ArrayListMap<String, UnionColumn> _unionColumns = new ArrayListMap<>();
@@ -383,7 +382,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
     {
         SqlDialect dialect = _schema.getDbSchema().getSqlDialect();
         initColumns();
-        if (_query.getParseErrors().size() > 0)
+        if (!_query.getParseErrors().isEmpty())
             return null;
 
 		String unionOperator = "";
@@ -442,7 +441,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 
             if (null == sql)
             {
-                if (_query.getParseErrors().size() > 0)
+                if (!_query.getParseErrors().isEmpty())
                     return null;
                 String src = "";
                 int line = 0, col=0;
@@ -466,7 +465,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 
         List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
 
-        if (null != sort && sort.size() > 0 || null != _limit)
+        if (null != sort && !sort.isEmpty() || null != _limit)
         {
             SqlBuilder wrap = new SqlBuilder(dialect);
             wrap.append("SELECT * FROM (");
@@ -475,7 +474,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             unionSql = wrap;
         }
 
-		if (null != sort && sort.size() > 0)
+		if (null != sort && !sort.isEmpty())
 		{
             unionSql.append("\nORDER BY ");
             String comma = "";
