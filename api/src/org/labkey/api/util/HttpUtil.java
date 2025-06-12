@@ -182,7 +182,7 @@ public class HttpUtil
                     if (urlIndex != -1)
                     {
                         String url = content.substring(urlIndex+"URL=".length());
-                        if (url.length() > 0)
+                        if (!url.isEmpty())
                             return url;
                     }
                 }

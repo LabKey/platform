@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class BatchListQueryView extends QueryView
 {
-    private ExpProtocol _protocol;
+    private final ExpProtocol _protocol;
 
     public BatchListQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
     {

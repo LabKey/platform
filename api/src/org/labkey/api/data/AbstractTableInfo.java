@@ -568,6 +568,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _hasDefaultTitleColumn = defaultTitleColumn;
     }
 
+    @Override
     public void setAllowCalculatedColumns(boolean allowCalculatedColumns)
     {
         _allowCalculatedColumns = allowCalculatedColumns;
@@ -621,6 +622,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             UserSchema schema = getUserSchema();
             throw new IllegalArgumentException("Could not find column '" + colName + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
+        }
+        return result;
+    }
+
+    /** @return a BaseColumnInfo, will throw if column doesn't exist or exists and is locked */
+    @NotNull
+    public MutableColumnInfo getMutableColumnOrThrow(@NotNull FieldKey fieldKey)
+    {
+        MutableColumnInfo result = getMutableColumn(fieldKey);
+        if (result == null)
+        {
+            UserSchema schema = getUserSchema();
+            throw new IllegalArgumentException("Could not find column '" + fieldKey + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
         }
         return result;
     }
@@ -775,9 +789,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * should hold onto columnInfo references by FieldKey, and not by reference.
 
      * during construction.
-     * @param updated
-     * @param existing
-     * @return
      */
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
@@ -956,9 +967,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             containerContext = container;
 
         // Include the ContainerContext FieldKey if it hasn't already been included.
-        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext fieldKeyContext)
         {
-            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
             Set<FieldKey> s = new HashSet<>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;
@@ -984,9 +994,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             containerContext = container;
 
         // Include the ContainerContext FieldKey if it hasn't already been included.
-        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext fieldKeyContext)
         {
-            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
             Set<FieldKey> s = new HashSet<>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;

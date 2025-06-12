@@ -23,6 +23,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -470,12 +471,12 @@ public class Sort
         return requiredFieldKeys;
     }
 
-    public SQLFragment getOrderByClause(SqlDialect dialect)
+    public SQLFragment getOrderByClause(SqlDialect dialect, @NotNull Map<FieldKey, ? extends ColumnInfo> columns)
     {
-        return getOrderByClause(dialect, Collections.emptyMap());
+        return _getOrderByClause(dialect, columns);
     }
 
-    public SQLFragment getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
+    private SQLFragment _getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
         if (_sortList.isEmpty())
             return new SQLFragment();
@@ -489,37 +490,54 @@ public class Sort
             FieldKey fieldKey = sf.getFieldKey();
             if (null == fieldKey)
                 continue;
-            ColumnInfo colinfo = columns.get(fieldKey);
+            ColumnInfo colinfo = null==columns ? null : columns.get(fieldKey);
             if (colinfo == null)
-                continue;
-            List<ColumnInfo> sortFields = null;
-            List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
-            if (null != sortFieldKeys)
             {
-                if (sortFieldKeys.stream().allMatch(sk -> null != columns.get(sk)))
-                    sortFields = sortFieldKeys.stream().map(columns::get).collect(Collectors.toList());
-            }
-            if (null == sortFields || sortFields.isEmpty())
-            {
-                if (colinfo.isSortable())
-                    sortFields = Collections.singletonList(colinfo);
-            }
-
-            if (sortFields != null)
-            {
-                for (ColumnInfo sortCol : sortFields)
+                // if caller provided a columns Map, then ignore columns that are not found
+                if (null != columns)
                 {
-                    appendColumnToSort(sf, dialect, sortCol.getAlias(), distinctKeys, sql);
+                    LogHelper.getLogger(this.getClass().getPackage(),"Sort").debug("Specified sort column was not found: " + fieldKey);
+                    continue;
+                }
+                // NOTE Sort.getSortText() passes in dialect==null
+                DatabaseIdentifier id;
+                if (null != dialect)
+                    id = dialect.makeDatabaseIdentifier(fieldKey.getName());
+                else
+                    id = SqlDialect.makeDatabaseIdentifier(fieldKey.getName(), new SQLFragment(LabKeySql.quoteIdentifier(fieldKey.getName())));
+                appendColumnToSort(sf, dialect, id, distinctKeys, sql);
+            }
+            else
+            {
+                List<ColumnInfo> sortFields = null;
+                List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
+                if (null != sortFieldKeys)
+                {
+                    if (sortFieldKeys.stream().allMatch(sk -> null != columns.get(sk)))
+                        sortFields = sortFieldKeys.stream().map(columns::get).collect(Collectors.toList());
+                }
+                if (null == sortFields || sortFields.isEmpty())
+                {
+                    if (colinfo.isSortable())
+                        sortFields = Collections.singletonList(colinfo);
+                }
 
-                    // If we have an mv indicator column, we need to sort on it secondarily
-                    if (sortCol.isMvEnabled())
+                if (sortFields != null)
+                {
+                    for (ColumnInfo sortCol : sortFields)
                     {
-                        ColumnInfo mvIndicatorColumn = columns.get(sortCol.getMvColumnName());
+                        appendColumnToSort(sf, dialect, sortCol.getAlias(), distinctKeys, sql);
 
-                        if (mvIndicatorColumn != null)
+                        // If we have an mv indicator column, we need to sort on it secondarily
+                        if (sortCol.isMvEnabled())
                         {
-                            SortField mvSortField = new SortField(mvIndicatorColumn.getFieldKey(), sf.getSortDirection());
-                            appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sql);
+                            ColumnInfo mvIndicatorColumn = columns.get(sortCol.getMvColumnName());
+
+                            if (mvIndicatorColumn != null)
+                            {
+                                SortField mvSortField = new SortField(mvIndicatorColumn.getFieldKey(), sf.getSortDirection());
+                                appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sql);
+                            }
                         }
                     }
                 }
@@ -548,7 +566,7 @@ public class Sort
     // Return an English version of the sort
     public String getSortText()
     {
-        String sql = getOrderByClause(null).getRawSQL().replaceFirst("ORDER BY ", "");
+        String sql = getOrderByClause(null, null).getRawSQL().replaceFirst("ORDER BY ", "");
         return sql.replaceAll(" ,", ",").replaceAll("\"", "");
     }
 

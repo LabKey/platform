@@ -76,7 +76,7 @@ public class ExeToCommandArgs extends ListToCommandArgs
     @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
-        if (_exePath == null || _exePath.length() == 0)
+        if (_exePath == null || _exePath.isEmpty())
             return Collections.emptyList();
 
         ArrayList<String> args = new ArrayList<>();

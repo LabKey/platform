@@ -30,7 +30,7 @@ public class QPivot extends QNode
         builder.append("PIVOT ");
         List<QNode> children = childList();
 
-        if (children.size() < 1)
+        if (children.isEmpty())
             return;
         QNode exprList = children.get(0);
         // NO PARENS

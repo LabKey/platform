@@ -282,7 +282,7 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -390,7 +390,7 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ExportTsvAction extends SimpleViewAction<QueryForm>
+    public static class ExportTsvAction extends SimpleViewAction<QueryForm>
     {
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -456,7 +456,7 @@ public class IssuesController extends SpringActionController
             //pass user's update perms to jsp page to determine whether to show notify list
             page.setUserHasUpdatePermissions(IssueValidation.hasUpdatePermission(getUser(), _issue, getContainer()));
             page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
-            page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer(), getUser(), getIssueListDef().getName()).size() != 0);
+            page.setMoveDestinations(!IssueManager.getMoveDestinationContainers(getContainer(), getUser(), getIssueListDef().getName()).isEmpty());
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setIssueListDef(getIssueListDef());
 
@@ -1531,7 +1531,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetMoveDestinationAction extends ReadOnlyApiAction<IssuesForm>
+    public static class GetMoveDestinationAction extends ReadOnlyApiAction<IssuesForm>
     {
         @Override
         public ApiResponse execute(IssuesController.IssuesForm form, BindException errors)
@@ -1552,7 +1552,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetContainersAction extends ReadOnlyApiAction
+    public static class GetContainersAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -1628,7 +1628,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveAction extends MutatingApiAction<MoveIssueForm>
+    public static class MoveAction extends MutatingApiAction<MoveIssueForm>
     {
         @Override
         public ApiResponse execute(MoveIssueForm form, BindException errors)
@@ -1695,7 +1695,7 @@ public class IssuesController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
+    public static class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object form, BindException errors)
@@ -1717,7 +1717,7 @@ public class IssuesController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class GetUsersForGroupAction extends ReadOnlyApiAction<UserGroupForm>
+    public static class GetUsersForGroupAction extends ReadOnlyApiAction<UserGroupForm>
     {
         @Override
         public Object execute(UserGroupForm form, BindException errors)
@@ -2057,7 +2057,7 @@ public class IssuesController extends SpringActionController
 
     @SuppressWarnings({"UnusedDeclaration"})
     @RequiresPermission(ReadPermission.class)
-    public class SearchAction extends SimpleRedirectAction<SearchForm>
+    public static class SearchAction extends SimpleRedirectAction<SearchForm>
     {
         @Override
         public URLHelper getRedirectURL(SearchForm form)

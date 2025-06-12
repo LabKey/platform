@@ -29,7 +29,7 @@ import org.labkey.api.module.Module;
  */
 abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
 {
-    private TaskId _id;
+    private final TaskId _id;
     private TaskId _dependencyId;
     private Boolean _join;
     private Boolean _largeWork;

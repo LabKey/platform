@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
 {
-    private static Map<String, String> _reportTypeMap = new HashMap<>();
+    private static final Map<String, String> _reportTypeMap = new HashMap<>();
 
     static
     {

@@ -4,7 +4,6 @@ import org.labkey.api.data.AbstractParticipantCategory;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 
 import java.util.Collection;

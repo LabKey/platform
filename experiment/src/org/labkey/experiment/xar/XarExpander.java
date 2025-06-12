@@ -701,7 +701,7 @@ public class XarExpander extends AbstractXarImporter
         Integer outputDataPerInstance;
         String outputDataType;
 
-        private Map<String, Object> _properties;
+        private final Map<String, Object> _properties;
 
         ProtocolBean(ProtocolActionStepDetail stepProtocol)
         {

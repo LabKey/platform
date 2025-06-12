@@ -186,7 +186,7 @@ public class VisitMapImporter
 
         for (VisitMapRecord record : records)
         {
-            String errorMsg = "Visit " + StringUtils.defaultString(record.getVisitLabel(), record.toString()) + " range overlaps with another record in the visit map.";
+            String errorMsg = "Visit " + Objects.toString(record.getVisitLabel(), record.toString()) + " range overlaps with another record in the visit map.";
 
             if (uniqueSequenceNums.contains(record.getSequenceNumMin()))
                 throw new VisitMapImportException(errorMsg);

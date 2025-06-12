@@ -351,7 +351,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
         }
     }
 
-    private class ResolveLsidAndFileLinkDataIterator extends WrapperDataIterator
+    private static class ResolveLsidAndFileLinkDataIterator extends WrapperDataIterator
     {
         final XarContext _xarContext;
         final String _baseType;

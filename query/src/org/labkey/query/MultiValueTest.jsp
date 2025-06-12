@@ -100,7 +100,7 @@
         String content = resp.getContentAsString();
 
         ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
-        Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
+        Assert.assertEquals("Expected only one row", 1, n.get("rowCount").asInt());
         ArrayNode rows = n.withArray("rows");
 
         JsonNode row0 = rows.get(0);
@@ -214,7 +214,7 @@
         String content = resp.getContentAsString();
 
         ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
-        Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
+        Assert.assertEquals("Expected only one row", 1, n.get("rowCount").asInt());
         ArrayNode rows = n.withArray("rows");
 
         JsonNode row0 = rows.get(0);
@@ -304,7 +304,7 @@
         //System.out.println("query response:\n" + content);
 
         ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
-        Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
+        Assert.assertEquals("Expected only one row", 1, n.get("rowCount").asInt());
         ArrayNode rows = n.withArray("rows");
 
         JsonNode row0 = rows.get(0);

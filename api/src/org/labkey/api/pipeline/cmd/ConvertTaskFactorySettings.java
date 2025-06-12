@@ -121,10 +121,8 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         for (int i = 0; i < _commands.length; i++)
         {
             Object o = _commands[i];
-            if (o instanceof TaskFactorySettings)
+            if (o instanceof TaskFactorySettings settings)
             {
-                TaskFactorySettings settings =
-                        (TaskFactorySettings) o;
                 settingsList.add(settings);
                 _commands[i] = settings.getId();
             }

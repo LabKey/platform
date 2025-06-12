@@ -148,7 +148,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             }
             catch(Exception e)
             {
-                if (errors.getBuffer().length() > 0)
+                if (!errors.getBuffer().isEmpty())
                     throw new ScriptException(e.getMessage() + errors.getBuffer().toString());
                 else
                     throw new ScriptException(e);
@@ -159,7 +159,6 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
     /**
      * Called before this report is deleted
-     * @param context
      */
     @Override
     public void beforeDelete(ContainerUser context)

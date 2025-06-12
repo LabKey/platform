@@ -69,7 +69,6 @@
                 null, 1000, 0, true);
         assertTrue(test1.toDebugString().contains("ORDER BY A ASC"));
         assertTrue(isSorted(test1,3));
-        test1=null;
 
         // test choose non-PK
         SQLFragment test2 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -77,7 +76,6 @@
                 null, 1000, 0, true);
         assertTrue(test2.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test2,1));
-        test2 = null;
 
         // test explicit in select list
         SQLFragment test3 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -85,7 +83,6 @@
                 new Sort("C"), 1000, 0, true);
         assertTrue(test3.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test3,2));
-        test3 = null;
 
         // test explicit not in select list
         SQLFragment test4 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -93,7 +90,6 @@
                 new Sort("C"), 1000, 0, true);
         assertTrue(test4.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test4,3));
-        test4 = null;
 
         // test sortFieldKeys
         SQLFragment test5 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -102,7 +98,6 @@
         assertFalse(test5.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(test5.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test5,3));
-        test5 = null;
 
         /* broken sortFieldsKey */
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
@@ -114,7 +109,6 @@
         assertFalse(test6.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test6.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test6,1));
-        test6 = null;
 
         // explicit sort, sort by B because D not found
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
@@ -124,7 +118,6 @@
         assertFalse(test7.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test7.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test7,2));
-        test7 = null;
     }
 
     @BeforeClass

@@ -143,9 +143,8 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Partic
                     commentProperty = ColumnInfo.legalNameFromName(commentProperty);
 
                     Object values = updateForm.getOldValues();
-                    if (values instanceof Map)
+                    if (values instanceof Map valueMap)
                     {
-                        Map valueMap = (Map)values;
                         String oldComment = String.valueOf(valueMap.get(commentProperty));
                         String newComment = form.getComment();
 

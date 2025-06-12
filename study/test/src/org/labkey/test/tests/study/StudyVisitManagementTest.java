@@ -61,7 +61,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        StudyVisitManagementTest init = (StudyVisitManagementTest) getCurrentTest();
+        StudyVisitManagementTest init = getCurrentTest();
         init.doSetup();
     }
 

@@ -408,13 +408,12 @@ public class AnnouncementManager
                 msg.setFrom(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
                 msg.setSubject("New " + name.toLowerCase() + " in " + c.getPath() + " (" + c.getTitle() + ") requires moderator review");
 
-                StringBuilder content = new StringBuilder();
-                content.append("Please visit the Moderator Review page at ").append(new ActionURL(ModeratorReviewAction.class, c).getURIString());
-                content.append("\n\nSubject: ").append(ann.getTitle());
-                content.append("\nUser: ").append(user.getDisplayName(user)).append(" (").append(user.getEmail()).append(")");
-                content.append("\n").append(name).append(": ").append(AnnouncementsController.getThreadURL(c, ann.getEntityId(), ann.getRowId()).getURIString());
+                String content = "Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString() +
+                        "\n\nSubject: " + ann.getTitle() +
+                        "\nUser: " + user.getDisplayName(user) + " (" + user.getEmail() + ")" +
+                        "\n" + name + ": " + AnnouncementsController.getThreadURL(c, ann.getEntityId(), ann.getRowId()).getURIString();
 
-                msg.setTextContent(content.toString());
+                msg.setTextContent(content);
                 emailer.addMessage(toList, msg);
                 emailer.start();
             }
@@ -1248,7 +1247,7 @@ public class AnnouncementManager
             }
             catch (IOException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
 

@@ -64,6 +64,6 @@ public class AdminLinkManager
          * in the container before adding links. User might not be an administrator in this container (could be a troubleshooter,
          * for example).
          */
-        public void addAdminLinks(NavTree adminNavTree, Container container, User user);
+        void addAdminLinks(NavTree adminNavTree, Container container, User user);
     }
 }

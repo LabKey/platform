@@ -48,7 +48,7 @@ public class GeneralIssuesListDefProvider implements IssuesListDefProvider
     }
 
     @Override
-    public DomainKind getDomainKind()
+    public DomainKind<?> getDomainKind()
     {
         return PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
     }

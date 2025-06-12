@@ -63,7 +63,7 @@ public interface UserSchemaCustomizer
                 return null;
 
             String className = xmlSchemaCustomizer.getClass1();
-            if (className == null || className.length() == 0)
+            if (className == null || className.isEmpty())
                 throw new MinorConfigurationException("Schema customizer requires class attribute");
 
             try

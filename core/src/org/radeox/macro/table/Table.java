@@ -46,11 +46,11 @@ public class Table {
   private int indexRow = 0;
   // current number of cols
   private int indexCol = 0;
-  private List rows;
+  private final List rows;
   private List currentRow;
   private List functionOccurences;
 
-  private PluginRepository functions;
+  private final PluginRepository functions;
 
   public Table() {
     rows = new ArrayList(10);
@@ -178,7 +178,7 @@ public class Table {
       int colSize = outputCols.length;
       for (int j = 0; j < colSize; j++) {
         writer.write(i == 0 ? "<th>" : "<td>");
-        if (outputCols[j] == null || outputCols[j].trim().length() == 0) {
+        if (outputCols[j] == null || outputCols[j].trim().isEmpty()) {
           writer.write("&#160;");
         } else {
           writer.write(outputCols[j]);

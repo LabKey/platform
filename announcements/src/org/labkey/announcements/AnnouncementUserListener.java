@@ -19,8 +19,6 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager.UserListener;
 
-import java.beans.PropertyChangeEvent;
-
 /**
  * User: adam
  * Date: Nov 5, 2008

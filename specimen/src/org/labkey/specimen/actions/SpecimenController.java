@@ -518,7 +518,6 @@ public class SpecimenController extends SpringActionController
                         if (addSep)
                         {
                             commentsMenuButton.addSeparator();
-                            addSep = false;
                         }
                         NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + PageFlowUtil.filter(subjectNoun) + "/Visit Comments",
                             urlProvider(StudyUrls.class).getDatasetURL(getContainer(), participantVisitCommentDatasetId));
@@ -675,11 +674,11 @@ public class SpecimenController extends SpringActionController
     private String getShortSiteLabel(LocationImpl location)
     {
         String label;
-        if (location.getLabel() != null && location.getLabel().length() > 0)
+        if (location.getLabel() != null && !location.getLabel().isEmpty())
             label = location.getLabel().substring(0, Math.min(location.getLabel().length(), 15));
         else if (location.getLdmsLabCode() != null)
             label = "ldmsId" + location.getLdmsLabCode();
-        else if (location.getLabwareLabCode() != null && location.getLabwareLabCode().length() > 0)
+        else if (location.getLabwareLabCode() != null && !location.getLabwareLabCode().isEmpty())
             label = "labwareId" + location.getLabwareLabCode();
         else
             label = "rowId" + location.getRowId();
@@ -688,10 +687,9 @@ public class SpecimenController extends SpringActionController
 
     private String getSpecimenListFileName(LocationImpl srcLocation, LocationImpl destLocation)
     {
-        StringBuilder filename = new StringBuilder();
-        filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
-        filename.append("_").append(DateUtil.formatIsoDate());
-        return filename.toString();
+        String filename = getShortSiteLabel(srcLocation) + "_to_" + getShortSiteLabel(destLocation) +
+                "_" + DateUtil.formatIsoDate();
+        return filename;
     }
 
     public SimpleFilter getSpecimenListFilter(SpecimenRequest specimenRequest, LocationImpl srcLocation, LabSpecimenListsBean.Type type)
@@ -929,7 +927,7 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SubmitSpecimenBatchImportAction extends FormHandlerAction<PipelineForm>
+    public static class SubmitSpecimenBatchImportAction extends FormHandlerAction<PipelineForm>
     {
         @Override
         public void validateCommand(PipelineForm target, Errors errors)
@@ -965,7 +963,7 @@ public class SpecimenController extends SpringActionController
      * programmatically.
      */
     @RequiresPermission(AdminPermission.class)
-    public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
+    public static class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
     {
         @Override
         public void validateCommand(PipelineForm target, Errors errors)
@@ -1401,7 +1399,7 @@ public class SpecimenController extends SpringActionController
                     relevantRequests = queryView;
                 }
                 else
-                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
+                    relevantRequests = new JspView<>("/org/labkey/specimen/view/relevantRequests.jsp");
                 relevantRequests.setTitle("Relevant Vial Requests");
                 vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
             }
@@ -1427,7 +1425,7 @@ public class SpecimenController extends SpringActionController
 
     private boolean isNullOrBlank(String toCheck)
     {
-        return ((toCheck == null) || toCheck.equals(""));
+        return ((toCheck == null) || toCheck.isEmpty());
     }
 
     @RequiresPermission(ManageNotificationsPermission.class)
@@ -1437,7 +1435,7 @@ public class SpecimenController extends SpringActionController
         public void validateCommand(RequestNotificationSettings form, Errors errors)
         {
             String replyTo = form.getReplyTo();
-            if (replyTo == null || replyTo.length() == 0)
+            if (replyTo == null || replyTo.isEmpty())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Reply-to cannot be empty.");
             }
@@ -1454,7 +1452,7 @@ public class SpecimenController extends SpringActionController
             }
 
             String subjectSuffix = form.getSubjectSuffix();
-            if (subjectSuffix == null || subjectSuffix.length() == 0)
+            if (subjectSuffix == null || subjectSuffix.isEmpty())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Subject suffix cannot be empty.");
             }
@@ -2208,7 +2206,7 @@ public class SpecimenController extends SpringActionController
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
             List<Vial> requestedSpecimens = getSpecimensFromRowIds(getSpecimenRowIds(), container, user);
-            if (requestedSpecimens != null && requestedSpecimens.size() > 0)
+            if (requestedSpecimens != null && !requestedSpecimens.isEmpty())
                 return new RequestedSpecimens(requestedSpecimens);
 
             Set<String> ids;
@@ -2270,7 +2268,7 @@ public class SpecimenController extends SpringActionController
                                  boolean showRecordSelectors, boolean disableLowVialIndicators, boolean restrictRecordSelectors)
         {
             _vials = vials;
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 _specimenQueryView = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS);
                 _specimenQueryView.setShowHistoryLinks(showHistoryLinks);
@@ -2368,7 +2366,7 @@ public class SpecimenController extends SpringActionController
 
             for (int i = 0; i < form.getInputs().length && !missingRequiredInput; i++)
             {
-                if (form.getRequired()[i] && (form.getInputs()[i] == null || form.getInputs()[i].length() == 0))
+                if (form.getRequired()[i] && (form.getInputs()[i] == null || form.getInputs()[i].isEmpty()))
                     missingRequiredInput = true;
             }
 
@@ -2397,7 +2395,7 @@ public class SpecimenController extends SpringActionController
                 if (i > 0)
                     comments.append("\n\n");
                 comments.append(expectedInput.getTitle()).append(":\n");
-                if (inputs[i] != null && inputs[i].length() > 0)
+                if (inputs[i] != null && !inputs[i].isEmpty())
                     comments.append(inputs[i]);
                 else
                     comments.append("[Not provided]");
@@ -2787,7 +2785,7 @@ public class SpecimenController extends SpringActionController
             {
                 for (String label : labels)
                 {
-                    if (label == null || label.length() == 0)
+                    if (label == null || label.isEmpty())
                         errors.reject(ERROR_MSG, "Actor name cannot be empty.");
                 }
             }
@@ -2812,7 +2810,7 @@ public class SpecimenController extends SpringActionController
                     }
                 }
 
-                if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+                if (form.getNewLabel() != null && !form.getNewLabel().isEmpty())
                 {
                     SpecimenRequestActor actor = new SpecimenRequestActor();
                     actor.setLabel(form.getNewLabel());
@@ -2829,7 +2827,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(ActorEditForm form)
         {
-            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+            if (form.getNextPage() != null && !form.getNextPage().isEmpty())
                 return new ActionURL(form.getNextPage());
             else
                 return getManageStudyURL();
@@ -2850,7 +2848,7 @@ public class SpecimenController extends SpringActionController
             ensureSpecimenRequestsConfigured(false);
 
             String order = form.getOrder();
-            if (order != null && order.length() > 0)
+            if (order != null && !order.isEmpty())
             {
                 String[] rowIds = order.split(",");
                 // get a map of id to actor objects before starting our updates; this prevents us from
@@ -3040,7 +3038,7 @@ public class SpecimenController extends SpringActionController
                 }
             }
 
-            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+            if (form.getNewLabel() != null && !form.getNewLabel().isEmpty())
             {
                 SpecimenRequestStatus status = new SpecimenRequestStatus();
                 status.setLabel(form.getNewLabel());
@@ -3085,7 +3083,7 @@ public class SpecimenController extends SpringActionController
             ensureSpecimenRequestsConfigured(false);
 
             String order = form.getOrder();
-            if (order != null && order.length() > 0)
+            if (order != null && !order.isEmpty())
             {
                 String[] rowIdStrings = order.split(",");
                 int[] rowIds = new int[rowIdStrings.length];
@@ -3541,7 +3539,7 @@ public class SpecimenController extends SpringActionController
                 i += 1;
             }
 
-            if (errorList.size() == 0)
+            if (errorList.isEmpty())
             {
                 // Get all the specimen objects. If it throws an exception then there was an error and we'll
                 // root around to figure out what to report
@@ -3565,7 +3563,7 @@ public class SpecimenController extends SpringActionController
                             }
                         }
 
-                        if (errorList.size() == 0)
+                        if (errorList.isEmpty())
                         {
                             ArrayList<Vial> vialList = new ArrayList<>(vials.size());
                             vialList.addAll(vials);
@@ -3806,7 +3804,7 @@ public class SpecimenController extends SpringActionController
             List<AttachmentFile> files = getAttachmentFileList();
             boolean hasAttachments = !files.isEmpty();
 
-            boolean hasComments = form.getComments() != null && form.getComments().length() > 0;
+            boolean hasComments = form.getComments() != null && !form.getComments().isEmpty();
             if (statusChanged || detailsChanged || hasComments || hasAttachments)
             {
                 RequestEventType changeType;
@@ -4094,7 +4092,7 @@ public class SpecimenController extends SpringActionController
         {
             List<Vial> selectedVials = getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
-            if (selectedVials == null || selectedVials.size() == 0)
+            if (selectedVials == null || selectedVials.isEmpty())
             {
                 // are the vial IDs on the URL?
                 int[] rowId = specimenCommentsForm.getRowId();
@@ -4745,7 +4743,7 @@ public class SpecimenController extends SpringActionController
                 eventSummary = "Comment added.";
             }
 
-            if (form.getComment() != null && form.getComment().length() > 0)
+            if (form.getComment() != null && !form.getComment().isEmpty())
                 comment.append("\n").append(form.getComment());
 
             SpecimenRequestEvent event;
@@ -5272,7 +5270,7 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
+    public static class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
     {
         @Override
         public void addNavTrail(NavTree root)

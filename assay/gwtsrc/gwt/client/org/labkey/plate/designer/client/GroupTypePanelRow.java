@@ -31,8 +31,8 @@ import org.labkey.api.gwt.client.ui.TextBoxDialogBox;
  */
 public class GroupTypePanelRow extends GroupChangeListenerAdapter
 {
-    private TemplateView _view;
-    private GWTWellGroup _group;
+    private final TemplateView _view;
+    private final GWTWellGroup _group;
     private FocusPanel _colorPanel;
     private Element _tableRowElement;
     private RadioButton _radioButton;
@@ -118,7 +118,7 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
                     @Override
                     protected boolean commit(String value)
                     {
-                        if (value.length() == 0)
+                        if (value.isEmpty())
                         {
                             Window.alert("You must specify a well group name.");
                             return false;

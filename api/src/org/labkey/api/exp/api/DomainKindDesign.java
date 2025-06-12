@@ -1,6 +1,5 @@
 package org.labkey.api.exp.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.util.JsonUtil;
 

@@ -132,7 +132,7 @@ public class DataClassWebPart extends QueryView
         ActionURL urlInsert = new ActionURL(ExperimentController.EditDataClassAction.class, getContainer());
         urlInsert.addReturnUrl(getViewContext().getActionURL());
         Set<String> templates = DomainTemplateGroup.getTemplatesForDomainKind(getContainer(), DataClassDomainKind.NAME);
-        if (templates.size() > 0)
+        if (!templates.isEmpty())
         {
             MenuButton createMenuButton = new MenuButton("New Data Class");
             createMenuButton.setDisplayPermission(DesignDataClassPermission.class);

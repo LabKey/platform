@@ -35,7 +35,7 @@ import org.radeox.filter.context.FilterContext;
  */
 
 public interface SourceCodeFormatter {
-  public String getName();
-  public int getPriority();
-  public String filter(String content, FilterContext context);
+  String getName();
+  int getPriority();
+  String filter(String content, FilterContext context);
 }

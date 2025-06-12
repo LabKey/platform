@@ -91,6 +91,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -453,7 +454,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             pw.append(writer.quoteValue(entry.getKey().getName()));
             pw.append('\t');
-            pw.append(writer.quoteValue(StringUtils.defaultString(entry.getValue())));
+            pw.append(writer.quoteValue(Objects.toString(entry.getValue())));
             pw.append('\t');
             pw.println(writer.quoteValue(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName()));
         }
@@ -1322,7 +1323,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         public String getSeverityLevel() { return null;}
 
-        public void setSeverityLevel(String severityLevel) {};
+        public void setSeverityLevel(String severityLevel) {}
 
         @Override
         @NotNull

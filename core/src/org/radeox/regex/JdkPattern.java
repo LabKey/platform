@@ -35,9 +35,9 @@ package org.radeox.regex;
  */
 
 public class JdkPattern implements Pattern {
-  private String regex;
-  private boolean multiline;
-  private java.util.regex.Pattern internPattern;
+  private final String regex;
+  private final boolean multiline;
+  private final java.util.regex.Pattern internPattern;
 
   public JdkPattern(String regex, boolean multiline) {
     this.regex = regex;

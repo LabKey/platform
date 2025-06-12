@@ -96,13 +96,13 @@ public class ModuleResourceResolver implements Resolver
 
                 if (_pathsWithListeners.add(path))
                 {
-                    LOG.debug("registering a listener on: " + r.toString());
+                    LOG.debug("registering a listener on: " + r);
 
                     ((DirectoryResource) r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
                 }
                 else
                 {
-                    LOG.debug("NOT registering a listener on: " + r.toString());
+                    LOG.debug("NOT registering a listener on: " + r);
                     // Short-circuit -- if a path is registered then we know its ancestors are registered, so no need to keep looping
                     return;
                 }

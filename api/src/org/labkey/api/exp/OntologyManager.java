@@ -2714,7 +2714,7 @@ public class OntologyManager
 
     public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
-        if (null == pds || 0 == pds.size())
+        if (null == pds || pds.isEmpty())
             return;
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
@@ -2736,7 +2736,7 @@ public class OntologyManager
 
     public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
-        if (null == pds || 0 == pds.size())
+        if (null == pds || pds.isEmpty())
             return;
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
@@ -2790,7 +2790,6 @@ public class OntologyManager
      * @param ownerObjectLsid The "owner" object or "parent" object, which isn't necessarily same as the object.  For example, samples use the ExpSampleType as the owner object.
      * @param insertNullValues When true, a null value will be inserted if the value is null, otherwise any existing property value will be deleted if the value is null.
      * @return The inserted ObjectProperty or null
-     * @throws ValidationException
      */
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable String ownerObjectLsid, boolean insertNullValues) throws ValidationException
     {
@@ -2881,7 +2880,7 @@ public class OntologyManager
         List<FieldKey> fields = List.of(objectId, objectId_objectURI, objectId_container);
         var colMap = QueryService.get().getColumns(getTinfoObjectProperty(), fields);
 
-        int usageCount = 0;
+        int usageCount;
         List<Identifiable> objects = new ArrayList<>(maxUsageCount);
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL);

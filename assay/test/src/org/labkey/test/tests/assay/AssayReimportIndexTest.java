@@ -2,7 +2,6 @@ package org.labkey.test.tests.assay;
 
 import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
@@ -18,8 +17,6 @@ import org.labkey.test.util.search.SearchAdminAPIHelper;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 @Category({Daily.class, Assays.class})
 public class AssayReimportIndexTest extends BaseWebDriverTest

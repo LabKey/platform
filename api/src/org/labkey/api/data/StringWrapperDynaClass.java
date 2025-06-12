@@ -64,7 +64,7 @@ public abstract class StringWrapperDynaClass implements DynaClass
             dynaPropList.add(dynaProp);
             _dynaPropMap.put(key, dynaProp);
         }
-        _dynaProps = dynaPropList.toArray(new DynaProperty[dynaPropList.size()]);
+        _dynaProps = dynaPropList.toArray(new DynaProperty[0]);
     }
 
     @Override

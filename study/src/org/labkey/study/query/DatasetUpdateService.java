@@ -140,7 +140,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
-    private boolean _skipAuditLogging = false;
+    private final boolean _skipAuditLogging = false;
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
@@ -851,7 +851,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             var result = up.insertRows(_user, _container,
                     List.of(Map.of(
-                            "subjectid", "S1",
+                            "subjectid", " S1 \t",
                             "SequenceNum", "1.2345",
                             "Field1", "f",
                             "SELECT", "s",
@@ -883,7 +883,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             // update subjectid column
             result = up.updateRows(_user, _container,
-                    List.of(Map.of("subjectid", "S2")),
+                    List.of(Map.of("subjectid", "\tS2 ")),
                     List.of(Map.of("lsid", lsid)),
                     errors, null, null);
             if (errors.hasErrors())
@@ -937,7 +937,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             assertNotNull(map.get("lsid"));
             // unchanged
             assertTrue(((String)map.get("lsid")).endsWith(":1001.S2.1.2345"));
-            lsid = (String)map.get("lsid");
+            map.get("lsid");
         }
 
         @Before

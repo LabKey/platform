@@ -173,7 +173,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
     }
 
-    public abstract class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
+    public abstract static class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
         protected WebdavResolver _resolver;
         final Container _c;
@@ -307,7 +307,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
     }
 
-    public abstract class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
+    public abstract static class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
     {
         @Override
         public void containerCreated(Container c, User user)

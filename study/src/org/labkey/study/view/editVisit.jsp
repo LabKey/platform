@@ -119,7 +119,7 @@
             <td class="labkey-form-label">Cohort</td>
             <td>
                 <%
-                    if (cohorts == null || cohorts.size() == 0)
+                    if (cohorts == null || cohorts.isEmpty())
                     {
                 %>
                     <em>No cohorts defined</em>

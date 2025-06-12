@@ -261,7 +261,7 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
 
 class ScriptReferenceImpl implements ScriptReference
 {
-    private static final ModuleResourceCacheHandler<Map<Path, CompiledScript>> CACHE_HANDLER = new ModuleResourceCacheHandler<Map<Path, CompiledScript>>()
+    private static final ModuleResourceCacheHandler<Map<Path, CompiledScript>> CACHE_HANDLER = new ModuleResourceCacheHandler<>()
     {
         @Override
         public Map<Path, CompiledScript> load(Stream<? extends Resource> resources, Module module)
@@ -269,13 +269,13 @@ class ScriptReferenceImpl implements ScriptReference
             Map<Path, CompiledScript> map = new HashMap<>();
 
             resources
-                .filter(getFilter(".js"))
-                .forEach(r->{
-                    CompiledScript script = compile(r, module);
+                    .filter(getFilter(".js"))
+                    .forEach(r -> {
+                        CompiledScript script = compile(r, module);
 
-                    if (null != script)
-                        map.put(r.getPath(), script);
-                });
+                        if (null != script)
+                            map.put(r.getPath(), script);
+                    });
 
             return unmodifiable(map);
         }
@@ -412,7 +412,7 @@ class ScriptReferenceImpl implements ScriptReference
             }
             ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, _path.toString());
 
-            LOG.debug("Evaluating script '" + _path.toString() + "'");
+            LOG.debug("Evaluating script '" + _path + "'");
             Object result = _script.eval(ctxt);
             _evaluated = true;
             return result;
@@ -595,7 +595,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         }
         catch (URISyntaxException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

@@ -185,7 +185,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         for (ColumnDescriptor column : getColumns())
             if (column.load)
                 active.add(column);
-        return active.toArray(new ColumnDescriptor[active.size()]);
+        return active.toArray(new ColumnDescriptor[0]);
     }
 
     protected void ensureInitialized(@NotNull Map<String, String> renamedColumns) throws IOException
@@ -212,7 +212,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // where incoming data looks numeric.
     public void setKnownColumns(List<ColumnInfo> cols)
     {
-        if (cols == null || cols.size() == 0)
+        if (cols == null || cols.isEmpty())
             throw new IllegalArgumentException("List of columns cannot be null or empty");
 
         boolean useMv = _mvIndicatorContainer != null && !MvUtil.getIndicatorsAndLabels(_mvIndicatorContainer).isEmpty();
@@ -293,7 +293,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * Most useful if maps are being returned, otherwise use inferColumnInfo(reader, clazz) to
      * use properties of a bean instead.
      *
-     * @throws java.io.IOException
      * @param renamedColumns map from the name used during the data load and the original column name (e.g., SampleId -> Name)
      */
     @SuppressWarnings({"ConstantConditions"})

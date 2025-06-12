@@ -33,7 +33,7 @@ public class TaskRemoteServerJmsSelectorFilter extends TaskJmsSelectorFilter
         if (props != null)
             location = props.getLocation();
 
-        if (location == null || "".equals(location))
+        if (location == null || location.isEmpty())
             throw new IllegalArgumentException("RemoteServerProperties.location must be set to use TaskRemoteServerJmsSelectorFilter.");
 
         _locations.add(location);

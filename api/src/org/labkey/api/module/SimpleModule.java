@@ -86,7 +86,7 @@ public class SimpleModule extends SpringModule
     @Override
     protected void init()
     {
-        if (getName() == null || getName().length() == 0)
+        if (getName() == null || getName().isEmpty())
             throw new ConfigurationException("Simple module must have a name");
 
         addController(getName().toLowerCase(), SimpleController.class);
@@ -281,5 +281,5 @@ public class SimpleModule extends SpringModule
 
 interface ContainerPathMatcher
 {
-    abstract boolean matches(Container c);
+    boolean matches(Container c);
 }

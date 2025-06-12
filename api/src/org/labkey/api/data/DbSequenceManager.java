@@ -551,7 +551,7 @@ public class DbSequenceManager
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = totalCount / (elapsed / 1000.0);
 
-            assertEquals(duplicateValues.size() + " duplicate values were detected: " + duplicateValues.toString(), 0, duplicateValues.size());
+            assertEquals(duplicateValues.size() + " duplicate values were detected: " + duplicateValues, 0, duplicateValues.size());
             assertEquals(totalCount, values.size());
 
             for (long i = 0; i < threads * n; i++)

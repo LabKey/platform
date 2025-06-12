@@ -88,7 +88,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     @BeforeClass
     public static void doSetup()
     {
-        QuerySnapshotTest test = (QuerySnapshotTest)getCurrentTest();
+        QuerySnapshotTest test = getCurrentTest();
 
         // create two study folders (054 and 065) and start importing a study in each
         test.setFolderName(FOLDER_1);

@@ -111,7 +111,7 @@ public class TourModel extends Entity implements Serializable
     public JSONObject toJSON()
     {
         JSONObject out = new JSONObject();
-        if (!getJson().equals(""))
+        if (!getJson().isEmpty())
         {
               out = new JSONObject(getJson());
         }

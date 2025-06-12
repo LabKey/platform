@@ -24,9 +24,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 import static org.labkey.api.util.DOM.I;
 import static org.labkey.api.util.DOM.cl;
 

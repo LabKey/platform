@@ -41,5 +41,5 @@ public interface ImageRenderEngine {
    *
    * @return result String with an HTML link to an image
    */
-  public String getExternalImageLink();
+  String getExternalImageLink();
 }

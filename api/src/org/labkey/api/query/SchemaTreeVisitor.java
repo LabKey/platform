@@ -33,7 +33,7 @@ public interface SchemaTreeVisitor<R, P>
     R visitTableError(UserSchema schema, String name, Exception e, Path path, P param);
 
     /** Provides a path back up to root that can be used while visiting nodes. */
-    public final class Path
+    final class Path
     {
         public final Path parent;
         public final SchemaTreeNode node;

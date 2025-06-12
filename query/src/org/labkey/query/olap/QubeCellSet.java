@@ -71,7 +71,7 @@ public class QubeCellSet implements CellSet
     private final List<CellSetAxis> _axes = new ArrayList<>(3);
     private final int _columnCount;
 //    final CellSetAxis _filterAxis;
-    private List<Number> _results;
+    private final List<Number> _results;
     private boolean _closed = false;
 
 
@@ -1505,7 +1505,7 @@ public class QubeCellSet implements CellSet
 
 
 
-    class _Position implements Position
+    static class _Position implements Position
     {
         int _ordinal;
         Member _member;

@@ -98,7 +98,7 @@ public class TestSecondaryController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
+    public static class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override
         public void validateCommand(TestSecondaryForm form, Errors errors)

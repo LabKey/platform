@@ -2,7 +2,6 @@ package org.labkey.api.ontology;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.Path;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.Date;

@@ -64,9 +64,9 @@ public class PipelineEmailPreferences
     public static final String LAST_FAILURE_NOTIFICATION = "lastFailureNotification";
 
     private static Timer _timer;
-    private static Map<String, TimerTask> _timerTasks = new HashMap<>();
+    private static final Map<String, TimerTask> _timerTasks = new HashMap<>();
 
-    private static PipelineEmailPreferences _instance = new PipelineEmailPreferences();
+    private static final PipelineEmailPreferences _instance = new PipelineEmailPreferences();
     private PipelineEmailPreferences(){}
 
     public static PipelineEmailPreferences get(){return _instance;}

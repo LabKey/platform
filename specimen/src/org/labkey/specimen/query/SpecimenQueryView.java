@@ -607,7 +607,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
 
     protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Vial> vials, ViewType viewType)
     {
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             StringBuilder whereClause = new StringBuilder();
             if (viewType.isVialView())
@@ -657,7 +657,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 params.add(pd.getParticipantId());
                 sep = " OR ";
             }
-            filter = filter.addWhereClause(whereClause.toString(), params.toArray(new Object[params.size()]));
+            filter = filter.addWhereClause(whereClause.toString(), params.toArray(new Object[0]));
         }
         return filter;
     }
@@ -672,7 +672,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
                 + "where r.DestinationSiteId=").appendValue(locationId).append(" AND status.SpecimensLocked=").append(tableInfoVial.getSqlDialect().getBooleanTRUE()).append(")");
 
-        assert(0 == sql.getParams().size());
+        assert(sql.getParams().isEmpty());
 
         filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("SpecimenHash"));
 

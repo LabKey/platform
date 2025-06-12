@@ -26,7 +26,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class ExportException extends Exception
 {
-    private ModelAndView _errorView;
+    private final ModelAndView _errorView;
 
     public ExportException(ModelAndView errorView)
     {

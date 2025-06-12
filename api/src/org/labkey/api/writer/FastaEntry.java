@@ -22,6 +22,6 @@ package org.labkey.api.writer;
 */
 public interface FastaEntry
 {
-    public String getHeader();
-    public String getSequence();
+    String getHeader();
+    String getSequence();
 }

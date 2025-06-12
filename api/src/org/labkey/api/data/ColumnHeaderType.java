@@ -133,8 +133,8 @@ public enum ColumnHeaderType
         }
     };
 
-    private String _optionText;
-    private String _description;
+    private final String _optionText;
+    private final String _description;
 
     ColumnHeaderType(String optionText, String description)
     {
@@ -166,7 +166,7 @@ public enum ColumnHeaderType
 
     public abstract String getText(DisplayColumn dc);
 
-    private static Map<String, ColumnHeaderType> _map;
+    private static final Map<String, ColumnHeaderType> _map;
     static
     {
         _map = new CaseInsensitiveHashMap<>();

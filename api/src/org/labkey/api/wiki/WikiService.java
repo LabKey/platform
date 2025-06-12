@@ -82,7 +82,6 @@ public interface WikiService
      * @param newVersionThreshold The interval in milliseconds since the last update that will trigger a new wiki version
      *                            to be created. This can be useful when frequent updates are made but we want to avoid
      *                            the proliferation of individual wiki versions.
-     * @return
      */
     boolean updateContent(Container c, User user, String wikiName, String content, @Nullable Integer newVersionThreshold);
 

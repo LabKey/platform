@@ -59,9 +59,9 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
 
     public static class StudySummaryBean
     {
-        private Container _container;
+        private final Container _container;
         private StudyImpl _study;
-        private ActionURL _currentURL;
+        private final ActionURL _currentURL;
 
         public StudySummaryBean(ViewContext portalCtx)
         {

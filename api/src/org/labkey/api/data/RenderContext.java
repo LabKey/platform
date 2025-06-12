@@ -233,10 +233,10 @@ public class RenderContext implements Map<String, Object>, Serializable
         assert null != (displayColumns = Collections.unmodifiableList(displayColumns));
         assert Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
 
-        Set<ColumnInfo> ret = new NullPreventingSet<>(new LinkedHashSet<ColumnInfo>());
+        Set<ColumnInfo> ret = new NullPreventingSet<>(new LinkedHashSet<>());
         LinkedHashSet<FieldKey> keys = new LinkedHashSet<>();
 
-        if (null == displayColumns || displayColumns.size() == 0)
+        if (null == displayColumns || displayColumns.isEmpty())
         {
             ret.addAll(tinfo.getColumns());
         }
@@ -612,7 +612,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     @Override
     public boolean containsKey(Object key)
     {
-        if (key instanceof FieldKey)
+        if (key instanceof FieldKey f)
         {
             if (null != _results)
             {
@@ -620,7 +620,6 @@ public class RenderContext implements Map<String, Object>, Serializable
                     return true;
             }
             // <UNDONE>
-            FieldKey f = (FieldKey) key;
             key = f.getParent() == null ? f.getName() : f.encode();
             // </UNDONE>
         }
@@ -690,15 +689,13 @@ public class RenderContext implements Map<String, Object>, Serializable
     /**
      * Overrides get to look first in the map & if not found there look in the current row
      *
-     * @param key
-     * @return
      */
     @Override
     public Object get(Object key)
     {
         Object val = null;
 
-        if (key instanceof FieldKey)
+        if (key instanceof FieldKey f)
         {
             if (null != _results && _results.hasColumn((FieldKey) key))
             {
@@ -735,7 +732,6 @@ public class RenderContext implements Map<String, Object>, Serializable
 
             // NOTE: Ideally we should not need to convert FieldKey to String at all
             // but _row is currently a <String,Object> map (not <FieldKey,Object>)
-            FieldKey f = (FieldKey) key;
             key = f.getParent() == null ? f.getName() : f.encode();
 
             // 13607 : Nonconforming field names in datasets cause data loss on edit
@@ -878,7 +874,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             list = errors.getGlobalErrors();
         else
             list = errors.getFieldErrors(paramName);
-        if (list == null || list.size() == 0)
+        if (list == null || list.isEmpty())
             return HtmlString.EMPTY_STRING;
 
         Set<HtmlString> uniqueErrorStrs = new TreeSet<>();

@@ -66,11 +66,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ExperimentRunGraph
 {
     private static File baseDirectory;
-    private static Logger _log = LogManager.getLogger(ExperimentRunGraph.class);
-    private static int MAX_WIDTH_SMALL_FONT = 8;
-    private static int MAX_WIDTH_BIG_FONT = 3;
-    private static int MAX_SIBLINGS = 5;
-    private static int MIN_SIBLINGS = 3;
+    private static final Logger _log = LogManager.getLogger(ExperimentRunGraph.class);
+    private static final int MAX_WIDTH_SMALL_FONT = 8;
+    private static final int MAX_WIDTH_BIG_FONT = 3;
+    private static final int MAX_SIBLINGS = 5;
+    private static final int MIN_SIBLINGS = 3;
 
     /**
      * It's safe for lots of threads to be reading but only one should be creating or deleting at a time.
@@ -169,7 +169,7 @@ public class ExperimentRunGraph
             Integer focusId = null;
             String typeCode = focusType;
 
-            if (null != focus && focus.length() > 0)
+            if (null != focus && !focus.isEmpty())
             {
                 if (!Character.isDigit(focus.charAt(0)))
                 {

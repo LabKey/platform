@@ -424,7 +424,7 @@ private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) thro
     row.put("alias", "aa,bb");
     rows.add(row);
 
-    int insertedRowId = -1;
+    int insertedRowId;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
         List<Map<String, Object>> ret = helper.insertRows(c, rows, table.getName());
@@ -439,8 +439,8 @@ private void verifyAliases(TableInfo table, int expDataRowId, Set<String> expect
 {
     for (String name : expectedAliases)
     {
-        assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
-                new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount(), 1);
+        assertEquals(1, new TableSelector(ExperimentService.get().getTinfoAlias(),
+                new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount());
     }
 
     ExpData data = ExperimentService.get().getExpData(expDataRowId);

@@ -149,7 +149,7 @@ public class ExtUtil
         {
             isPercentage = true;
             j = j.substring(0,j.length()-1);
-            if (j.length() == 0)
+            if (j.isEmpty())
                 j = "0";
         }
         String x = toExtNumberFormat(j);

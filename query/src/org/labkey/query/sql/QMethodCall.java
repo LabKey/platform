@@ -71,12 +71,12 @@ public class QMethodCall extends QExpr
         if (first instanceof QField && null != ((QField)first).getTable())
         {
             // table.method()
-            builder.append(method.getSQL(((QField)first).getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(method.getSQL(((QField)first).getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[0])));
         }
         else if (method instanceof AbstractQueryMethodInfo)
         {
             // method that supports query parameter
-            builder.append(((AbstractQueryMethodInfo)method).getSQL(query, builder.getDialect(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(((AbstractQueryMethodInfo)method).getSQL(query, builder.getDialect(), arguments.toArray(new SQLFragment[0])));
         }
         else
         {
@@ -100,7 +100,7 @@ public class QMethodCall extends QExpr
             QExpr expr = (QExpr)it.next();
             arguments.add(expr.createColumnInfo(table, "arg" + it.previousIndex(), query));
         }
-        return method.createColumnInfo(table, arguments.toArray(new ColumnInfo[arguments.size()]), alias);
+        return method.createColumnInfo(table, arguments.toArray(new ColumnInfo[0]), alias);
     }
 
     public MethodInfo getMethod(SqlDialect d)

@@ -38,7 +38,7 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        CrossFolderDataClassTest init = (CrossFolderDataClassTest) getCurrentTest();
+        CrossFolderDataClassTest init = getCurrentTest();
 
         init.doSetup();
     }

@@ -281,9 +281,9 @@ public class DefaultStudyDesignImporter
         List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException;
     }
 
-    protected class TransformHelperComposition implements TransformHelper
+    protected static class TransformHelperComposition implements TransformHelper
     {
-        private List<TransformHelper> _transformHelpers = new ArrayList<>();
+        private List<TransformHelper> _transformHelpers;
 
         public TransformHelperComposition(List<TransformHelper> transformHelpers)
         {
@@ -340,7 +340,7 @@ public class DefaultStudyDesignImporter
     /**
      * Transform which manages foreign keys to a non-shared table
      */
-    protected class NonSharedTableMapBuilder implements MapBuilder
+    protected static class NonSharedTableMapBuilder implements MapBuilder
     {
         protected Map<Object, Object> _idMap;
 
@@ -373,7 +373,7 @@ public class DefaultStudyDesignImporter
      * A transform helper which checks whether a data value already exists at the project level before importing the
      * same value at the folder level.
      */
-    protected class PreserveExistingProjectData implements TransformHelper
+    protected static class PreserveExistingProjectData implements TransformHelper
     {
         protected final User _user;
         protected final TableInfo _tableInfo;
@@ -497,7 +497,7 @@ public class DefaultStudyDesignImporter
                     Object obj = currentRow.get(fieldName);
                     if (null != obj)
                     {
-                        result.append(sep).append(obj.toString());
+                        result.append(sep).append(obj);
                         sep = "-";
                     }
                 }

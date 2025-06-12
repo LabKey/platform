@@ -39,7 +39,7 @@ import java.util.*;
  */
 
 public class MacroRepository extends PluginRepository<Macro> {
-  private static Logger log = LogManager.getLogger(MacroRepository.class);
+  private static final Logger log = LogManager.getLogger(MacroRepository.class);
 
   private InitialRenderContext context;
 

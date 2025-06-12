@@ -1,7 +1,6 @@
 package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -249,8 +248,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
                         .findElement(runsTable.findCell(0, "Properties")));
 
         assertEquals("Embedded properties table", expectedProperties, propertiesTable.getTableData());
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", propValueLab, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0));
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", labLocation, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0));
     }
 
     private DataRegionTable createListForVocabPropertyLookup(String listName) throws IOException, CommandException

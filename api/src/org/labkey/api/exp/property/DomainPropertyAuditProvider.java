@@ -147,7 +147,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
     public static class DomainPropertyAuditDomainKind extends AbstractAuditDomainKind
     {
         private static final String NAME = "DomainPropertyAuditDomain";
-        private static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        private static final String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 

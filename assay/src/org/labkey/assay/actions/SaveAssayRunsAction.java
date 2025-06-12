@@ -35,7 +35,7 @@ public class SaveAssayRunsAction extends BaseProtocolAPIAction<SimpleApiJsonForm
         if (runsJsonArray == null)
             throw new IllegalArgumentException("No run array found.");
 
-        if (runsJsonArray.length() == 0)
+        if (runsJsonArray.isEmpty())
             throw new IllegalArgumentException("No runs provided. You must provide at least one run in your runs array.");
 
         ExperimentSaveHandler saveHandler = getExperimentSaveHandler(getAssayProvider());

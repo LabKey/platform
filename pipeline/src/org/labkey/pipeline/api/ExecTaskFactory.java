@@ -130,7 +130,7 @@ public class ExecTaskFactory extends SimpleTaskFactory
         List<String> parts = tokenize(command);
         for (String part : parts)
         {
-            if (part.length() == 0)
+            if (part.isEmpty())
                 continue;
 
             TaskToCommandArgs arg = null;

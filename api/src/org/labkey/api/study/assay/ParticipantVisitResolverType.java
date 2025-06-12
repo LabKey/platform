@@ -142,7 +142,7 @@ public interface ParticipantVisitResolverType
             }
             catch (JsonProcessingException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
     }

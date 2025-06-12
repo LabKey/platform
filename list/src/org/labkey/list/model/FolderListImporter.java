@@ -18,7 +18,6 @@ package org.labkey.list.model;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.admin.AbstractFolderImportFactory;
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportException;

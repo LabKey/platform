@@ -17,8 +17,6 @@
 package org.labkey.study;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;

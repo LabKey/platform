@@ -41,7 +41,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
     @BeforeClass
     public static void setupProject()
     {
-        InProductMessagingTest init = (InProductMessagingTest) getCurrentTest();
+        InProductMessagingTest init = getCurrentTest();
 
         init.doSetup();
     }
@@ -49,7 +49,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
     @AfterClass
     static public void doAfter()
     {
-        InProductMessagingTest after = (InProductMessagingTest) getCurrentTest();
+        InProductMessagingTest after = getCurrentTest();
         after.disableExpFeature();
     }
 

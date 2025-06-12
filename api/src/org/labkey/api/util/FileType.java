@@ -69,7 +69,7 @@ public class FileType implements Serializable
     }
 
     /** handle TPP's native use of .xml.gz **/
-    public static enum gzSupportLevel
+    public enum gzSupportLevel
     {
         NO_GZ,      // we don't support gzip for this filetype
         SUPPORT_GZ, // we support gzip for this filetype, but it's not the norm
@@ -403,7 +403,7 @@ public class FileType implements Serializable
             }
         }
 
-        throw new IllegalArgumentException("No match found for " + filePath + " with " + toString());
+        throw new IllegalArgumentException("No match found for " + filePath + " with " + this);
     }
 
     private String toLowerIfCaseInsensitive(String s)
@@ -699,7 +699,7 @@ public class FileType implements Serializable
      */
     public FileType getDefaultFileType()
     {
-        if (_suffixes.size() > 0)
+        if (!_suffixes.isEmpty())
         {
             FileType ft = new FileType(_defaultSuffix);
             ft._dir = _dir;

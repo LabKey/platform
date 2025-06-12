@@ -626,7 +626,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
                     sb.append(delim).append(error.getMessage());
                     delim = "\n";
                 }
-                throw new ValidationException("Unable to get table or query: " + sb.toString());
+                throw new ValidationException("Unable to get table or query: " + sb);
             }
 
             if (table == null)

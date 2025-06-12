@@ -32,8 +32,8 @@ import java.io.PrintWriter;
  */
 public abstract class DownloadOutputView extends ROutputView
 {
-    private String _fileType;
-    private AttachmentParent _parent;
+    private final String _fileType;
+    private final AttachmentParent _parent;
     private String _lastError;
 
     DownloadOutputView(ParamReplacement param, AttachmentParent parent, String fileType)

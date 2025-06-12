@@ -112,6 +112,6 @@ public class QueryRowReference
     @Override
     public String toString()
     {
-        return _schemaKey.toString() + "." + _queryName + "&" + _pkFilters.stream().map(f -> encodeURIComponent(f.first.toString()) + "=" + encodeURIComponent(String.valueOf(f.second))).collect(Collectors.joining("&"));
+        return _schemaKey + "." + _queryName + "&" + _pkFilters.stream().map(f -> encodeURIComponent(f.first.toString()) + "=" + encodeURIComponent(String.valueOf(f.second))).collect(Collectors.joining("&"));
     }
 }

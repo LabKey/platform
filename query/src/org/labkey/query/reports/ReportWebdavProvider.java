@@ -55,9 +55,8 @@ public class ReportWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
-        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
         return hasViews(null, c) ? PageFlowUtil.set(VIEW_NAME) : null;
@@ -68,9 +67,8 @@ public class ReportWebdavProvider implements WebdavService.Provider
     {
         if (!VIEW_NAME.equalsIgnoreCase(name))
             return null;
-        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
         return VIEW_NAME.equals(name) ? new ViewProviderResource(folder, c) : null;

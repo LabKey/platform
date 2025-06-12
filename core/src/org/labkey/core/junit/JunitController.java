@@ -103,13 +103,13 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView("/org/labkey/core/junit/runner.jsp",
+            return new JspView<>("/org/labkey/core/junit/runner.jsp",
                     new JUnitViewBean(JunitManager.getTestCases(), true),
                     errors);
         }
@@ -220,7 +220,7 @@ public class JunitController extends SpringActionController
     private static final String RESULTS_SESSION_KEY = "JUnit_Results";
 
     @RequiresSiteAdmin
-    public class Run3Action extends SimpleViewAction<TestForm>
+    public static class Run3Action extends SimpleViewAction<TestForm>
     {
         @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
@@ -233,7 +233,7 @@ public class JunitController extends SpringActionController
             if (null != results)
             {
                 session.removeAttribute(RESULTS_SESSION_KEY);
-                view = new TestResultView(new ArrayList<Class>(), results);
+                view = new TestResultView(new ArrayList<>(), results);
             }
             else
             {
@@ -300,7 +300,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class Run2Action extends StatusReportingRunnableAction
+    public static class Run2Action extends StatusReportingRunnableAction
     {
         private List<Class> getTestClasses(TestForm form)
         {
@@ -314,7 +314,7 @@ public class JunitController extends SpringActionController
             List<Class> testClasses = new LinkedList<>();
             String testCase = form.getTestCase();
 
-            if (null == testCase || 0 != testCase.length())
+            if (null == testCase || !testCase.isEmpty())
             {
                 for (String m : allTestClasses.keySet())
                 {
@@ -567,7 +567,7 @@ public class JunitController extends SpringActionController
 
     @SuppressWarnings({"UnusedDeclaration"})
     @RequiresNoPermission
-    public class AliveAction extends SimpleViewAction
+    public static class AliveAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -705,7 +705,7 @@ public class JunitController extends SpringActionController
                     List<String> strOut = new ArrayList<>(Arrays.asList(CPUTimer.header().split("\t")));
                     out.println("<tr>");
                     strOut.forEach((str)->{
-                        if(str.trim().length()==0)
+                        if(str.trim().isEmpty())
                             out.println("<td align=left>Name</td>");
                         else
                             out.println("<td align=right>" + PageFlowUtil.filter(str.trim()) + "</td>");
@@ -735,7 +735,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class EchoFormAction extends PermissionCheckableAction
+    public static class EchoFormAction extends PermissionCheckableAction
     {
         @Override
         public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception
@@ -770,7 +770,7 @@ public class JunitController extends SpringActionController
             if (line.startsWith("org.junit.internal.") || line.startsWith("sun.reflect.") || line.startsWith("java.lang.reflect."))
                 break;
 
-            lines.add("\tat " + ste.toString());
+            lines.add("\tat " + ste);
         }
 
         return lines;

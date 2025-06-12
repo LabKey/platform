@@ -91,7 +91,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
             for (_AttachmentUploadHelper p : attachmentColumns)
             {
                 Object attachmentValue = get(p.index);
-                String filename = null;
+                String filename;
                 AttachmentFile attachmentFile;
 
                 if (null == attachmentValue)

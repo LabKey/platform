@@ -173,7 +173,7 @@ public class UniqueValueCounterTestCase
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 3, "suffix", "SUF1"));        // New sequence will build same name as before
         errors = new BatchValidationException();
-        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertTrue("Expected duplicate key violation: " + errors.getMessage(),
                errors.getMessage().contains("duplicate key"));
@@ -194,7 +194,7 @@ public class UniqueValueCounterTestCase
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", null, "suffix", "SUF1", "three", 20));
         errors = new BatchValidationException();
-        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertThat(errors.getMessage(),
                 containsString("Paired column 'Two' must not be null for counter '" + counterName + "'"));
@@ -204,7 +204,7 @@ public class UniqueValueCounterTestCase
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF1", "three", 20));
         errors = new BatchValidationException();
-        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertThat(errors.getMessage(),
                 containsString("Value (20) of paired column 'Three' is greater than the current counter value (5) for counter '" + counterName + "'"));
@@ -302,7 +302,7 @@ public class UniqueValueCounterTestCase
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("two", 20));
         errors = new BatchValidationException();
-        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertThat(errors.getMessage(),
                 containsString("Paired column 'one' is required for counter '" + counterName + "'"));

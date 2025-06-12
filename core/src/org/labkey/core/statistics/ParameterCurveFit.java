@@ -353,7 +353,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
             else if (low > cutoff)
                 dataAbove = true;
         }
-        if (possibleMatches.size() > 0)
+        if (!possibleMatches.isEmpty())
         {
             double total = 0;
             for (Double d : possibleMatches)

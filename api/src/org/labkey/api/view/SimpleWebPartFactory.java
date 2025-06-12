@@ -43,7 +43,7 @@ import java.lang.reflect.Constructor;
 public class SimpleWebPartFactory extends BaseWebPartFactory
 {
     final Class<? extends ModelAndView> _viewClass;
-    Class _formClass = null;
+    Class _formClass;
     Constructor<? extends ModelAndView> _cons = null;
 
 
@@ -144,7 +144,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             }
             catch (InstantiationException | IllegalAccessException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
             errors = BaseViewAction.simpleBindParameters(form, "command", webPart.getPropertyValues());
         }

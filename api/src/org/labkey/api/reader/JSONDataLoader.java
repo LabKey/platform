@@ -333,7 +333,6 @@ public class JSONDataLoader extends DataLoader
      *
      * Creates the list of ColumnDescriptors for this DataIterator.
      *
-     * @throws IOException
      */
     protected static ColumnDescriptor[] parseFields(JsonParser parser, Container mvIndicatorContainer) throws IOException
     {
@@ -353,7 +352,7 @@ public class JSONDataLoader extends DataLoader
 
         expectArrayEnd(parser);
 
-        return cols.toArray(new ColumnDescriptor[cols.size()]);
+        return cols.toArray(new ColumnDescriptor[0]);
     }
 
     // For testing only
@@ -551,7 +550,6 @@ public class JSONDataLoader extends DataLoader
      *  }
      *
      * @return Array of JSON value types 'Number', 'String', 'Boolean' for the row or null if no row is available.
-     * @throws IOException
      */
     protected static Map<String, Map<ColMapEntry, Object>> parseRow(JsonParser parser) throws IOException
     {
@@ -644,7 +642,7 @@ public class JSONDataLoader extends DataLoader
         return row;
     }
 
-    private static TypeReference rowType = new TypeReference<Map<String, Map<ColMapEntry, Object>>>() { };
+    private static final TypeReference rowType = new TypeReference<Map<String, Map<ColMapEntry, Object>>>() { };
 
     protected static Map<String, Map<ColMapEntry, Object>> parseRow91(JsonParser parser, JsonNode dataNode) throws IOException
     {
@@ -725,7 +723,6 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * NOTE: We don't call super.initializeColumns() which uses inferColumnInfo() from the first N lines.
-     * @throws IOException
      * @param renamedColumns map between column names used in the loader and the original column names
      */
     @Override
@@ -980,11 +977,11 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
 
             parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"foo\": 3 }");
             col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -992,7 +989,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKeyArray\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1000,7 +997,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKeyArray\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1008,7 +1005,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKey\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1016,8 +1013,8 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"A\"], \"type\": \"int\" }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "A");
-            assertEquals(col.clazz, Integer.class);
+            assertEquals("A", col.name);
+            assertEquals(Integer.class, col.clazz);
         }
 
         @Test
@@ -1051,23 +1048,23 @@ public class JSONDataLoader extends DataLoader
             ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser, null);
             assertEquals(6, cols.length);
 
-            assertEquals(cols[0].name, "A");
-            assertEquals(cols[0].clazz, Integer.class);
+            assertEquals("A", cols[0].name);
+            assertEquals(Integer.class, cols[0].clazz);
 
-            assertEquals(cols[1].name, "B");
-            assertEquals(cols[1].clazz, String.class);
+            assertEquals("B", cols[1].name);
+            assertEquals(String.class, cols[1].clazz);
 
-            assertEquals(cols[2].name, "C");
-            assertEquals(cols[2].clazz, String.class);
+            assertEquals("C", cols[2].name);
+            assertEquals(String.class, cols[2].clazz);
 
-            assertEquals(cols[3].name, "D");
-            assertEquals(cols[3].clazz, Double.class);
+            assertEquals("D", cols[3].name);
+            assertEquals(Double.class, cols[3].clazz);
 
-            assertEquals(cols[4].name, "E");
-            assertEquals(cols[4].clazz, BigDecimal.class);
+            assertEquals("E", cols[4].name);
+            assertEquals(BigDecimal.class, cols[4].clazz);
 
-            assertEquals(cols[5].name, "F");
-            assertEquals(cols[5].clazz, Long.class);
+            assertEquals("F", cols[5].name);
+            assertEquals(Long.class, cols[5].clazz);
         }
 
         @Test
@@ -1094,23 +1091,23 @@ public class JSONDataLoader extends DataLoader
             ColumnDescriptor[] cols = loader._columns;
             assertEquals(6, cols.length);
 
-            assertEquals(cols[0].name, "A");
-            assertEquals(cols[0].clazz, Integer.class);
+            assertEquals("A", cols[0].name);
+            assertEquals(Integer.class, cols[0].clazz);
 
-            assertEquals(cols[1].name, "B");
-            assertEquals(cols[1].clazz, String.class);
+            assertEquals("B", cols[1].name);
+            assertEquals(String.class, cols[1].clazz);
 
-            assertEquals(cols[2].name, "C");
-            assertEquals(cols[2].clazz, String.class);
+            assertEquals("C", cols[2].name);
+            assertEquals(String.class, cols[2].clazz);
 
-            assertEquals(cols[3].name, "D");
-            assertEquals(cols[3].clazz, Double.class);
+            assertEquals("D", cols[3].name);
+            assertEquals(Double.class, cols[3].clazz);
 
-            assertEquals(cols[4].name, "E");
-            assertEquals(cols[4].clazz, BigDecimal.class);
+            assertEquals("E", cols[4].name);
+            assertEquals(BigDecimal.class, cols[4].clazz);
 
-            assertEquals(cols[5].name, "F");
-            assertEquals(cols[5].clazz, Long.class);
+            assertEquals("F", cols[5].name);
+            assertEquals(Long.class, cols[5].clazz);
         }
 
         @Test

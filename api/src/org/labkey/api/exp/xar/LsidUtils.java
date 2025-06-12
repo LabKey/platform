@@ -36,9 +36,9 @@ import java.util.regex.Pattern;
  */
 public class LsidUtils
 {
-    private static Logger _log = LogManager.getLogger(LsidUtils.class);
+    private static final Logger _log = LogManager.getLogger(LsidUtils.class);
 
-    private static Pattern REPLACEMENT_PATTERN = Pattern.compile("\\Q${\\E(.*?)\\Q}\\E");
+    private static final Pattern REPLACEMENT_PATTERN = Pattern.compile("\\Q${\\E(.*?)\\Q}\\E");
 
     private static MapReplacer createMapReplacer(XarContext context, String declaredType, String baseType)
     {

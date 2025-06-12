@@ -36,7 +36,7 @@ public class UnauthorizedException extends HttpStatusException
         sendBasicAuth,
         /** Send a 401 and don't solicit BasicAuth credentials */
         sendUnauthorized
-    };
+    }
 
     Type _type = Type.redirectToLogin;
 

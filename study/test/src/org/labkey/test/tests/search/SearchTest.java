@@ -112,7 +112,7 @@ public abstract class SearchTest extends StudyBaseTest
     @BeforeClass
     public static void setup() throws IOException, CommandException
     {
-        SearchTest initTest = (SearchTest)getCurrentTest();
+        SearchTest initTest = getCurrentTest();
         initTest.doSetup();
     }
 

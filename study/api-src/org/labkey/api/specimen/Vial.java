@@ -170,11 +170,10 @@ public class Vial extends AbstractStudyCachable<Long, Vial>
 
     public String getSpecimenDescription()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Global ID ").append(getGlobalUniqueId());
-        builder.append(", ").append(StudyService.get().getSubjectNounSingular(getContainer())).append(" ").append(getPtid());
-        builder.append(", ").append(getVisitDescription()).append(" ").append(getVisitValue());
-        return builder.toString();
+        String builder = "Global ID " + getGlobalUniqueId() +
+                ", " + StudyService.get().getSubjectNounSingular(getContainer()) + " " + getPtid() +
+                ", " + getVisitDescription() + " " + getVisitValue();
+        return builder;
     }
 
     public String getSpecimenHash()

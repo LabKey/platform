@@ -74,7 +74,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ExpSchemaPropagateFilterTest init = (ExpSchemaPropagateFilterTest) getCurrentTest();
+        ExpSchemaPropagateFilterTest init = getCurrentTest();
 
         init.doSetup();
     }

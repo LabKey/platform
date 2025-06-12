@@ -973,7 +973,7 @@ public class PublishResultsQueryView extends QueryView
             }
             // We may not have either a row-level or a default target study 
             Study study = targetStudyContainer == null ? null : StudyService.get().getStudy(targetStudyContainer);
-            Visit visit = null;
+            Visit visit;
 
             String participantID = convertObjectToString(participantObject);
             Double visitDouble = convertObjectToDouble(visitObject);
@@ -986,7 +986,7 @@ public class PublishResultsQueryView extends QueryView
     }
 
     // UNDONE: merge UploadWizardAction.InputDisplayColumn and PublishResultsQueryView.DataInputColumn
-    private class TargetStudyInputColumn extends StudyPickerColumn
+    private static class TargetStudyInputColumn extends StudyPickerColumn
     {
         ResolverHelper _resolverHelper;
 

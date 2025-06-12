@@ -158,15 +158,15 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _rowId = curSF._rowId;
 
         // Preserve original values across updates, if not explicitly changed.
-        if (_email == null || _email.length() == 0)
+        if (_email == null || _email.isEmpty())
             _email = curSF._email;
-        if (_provider == null || _provider.length() == 0)
+        if (_provider == null || _provider.isEmpty())
             _provider = curSF._provider;
-        if (_description == null || _description.length() == 0)
+        if (_description == null || _description.isEmpty())
             _description = curSF._description;
-        if (_job == null || _job.length() == 0)
+        if (_job == null || _job.isEmpty())
             _job = curSF._job;
-        if (_dataUrl == null || _dataUrl.length() == 0)
+        if (_dataUrl == null || _dataUrl.isEmpty())
             _dataUrl = curSF._dataUrl;
         // _hadError?
 
@@ -204,9 +204,9 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         // Otherwise, preserve what is currently in the database.
         else
         {
-            if (_jobStore == null || _jobStore.length() == 0)
+            if (_jobStore == null || _jobStore.isEmpty())
                 _jobStore = curSF._jobStore;
-            if (_activeTaskId == null || _activeTaskId.length() == 0)
+            if (_activeTaskId == null || _activeTaskId.isEmpty())
                 _activeTaskId = curSF._activeTaskId;
         }
 

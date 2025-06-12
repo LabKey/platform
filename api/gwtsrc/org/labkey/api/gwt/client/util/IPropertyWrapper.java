@@ -23,7 +23,7 @@ package org.labkey.api.gwt.client.util;
  */
 public interface IPropertyWrapper
 {
-    public Object get();
-    public void set(Object o);
-    public int hashCode();
+    Object get();
+    void set(Object o);
+    int hashCode();
 }

@@ -79,7 +79,7 @@ public class ResponseHelper
             String safeName = FileUtil.makeLegalName(Path.parse(filename).getName());
             return builder().filename(safeName, StandardCharsets.UTF_8).build().toString();
         }
-    };
+    }
 
 
     public static void setNoCache(HttpServletResponse response)
@@ -171,9 +171,6 @@ public class ResponseHelper
      * Check if the conditions specified in the optional If headers are
      * satisfied.
      *
-     * @param context
-     * @param eTag
-     * @param lastModified
      * @return boolean true if the resource meets all the specified conditions,
      *         and false if any of the conditions is not satisfied, in which case
      *         request processing is stopped
@@ -190,8 +187,6 @@ public class ResponseHelper
      *
      * @param request   The servlet request we are processing
      * @param response  The servlet response we are creating
-     * @param eTag
-     * @param lastModified
      * @return boolean true if the resource meets all the specified conditions,
      *         and false if any of the conditions is not satisfied, in which case
      *         request processing is stopped
@@ -211,8 +206,6 @@ public class ResponseHelper
      * Check if the if-match condition is satisfied.
      *
      *
-     * @param context
-     * @param eTag
      * @return boolean true if the resource meets the specified condition,
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped

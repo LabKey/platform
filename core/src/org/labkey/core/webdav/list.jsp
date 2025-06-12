@@ -111,7 +111,7 @@
     }
 
     boolean shade = true;
-    if (parent != null && parent.getPath().size() > 0)
+    if (parent != null && !parent.getPath().isEmpty())
     {
         String name = "[ up ]";
         WebdavResource info = parent;

@@ -21,9 +21,9 @@ package org.labkey.api.data.views;
  */
 public class DefaultProviderType implements DataViewProvider.Type
 {
-    private String _name;
-    private String _description;
-    private boolean _showByDefault;
+    private final String _name;
+    private final String _description;
+    private final boolean _showByDefault;
 
     public DefaultProviderType(String name, String description, boolean showByDefault)
     {
@@ -62,10 +62,9 @@ public class DefaultProviderType implements DataViewProvider.Type
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof DefaultProviderType))
+        if (!(obj instanceof DefaultProviderType type))
             return false;
 
-        DefaultProviderType type = (DefaultProviderType)obj;
         if (!type.getName().equals(this.getName())) return false;
 
         return true;

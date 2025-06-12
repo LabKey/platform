@@ -142,7 +142,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
      */
     private synchronized void submitJobs()
     {
-        if (_pending.size() == 0)
+        if (_pending.isEmpty())
             return;
         HashSet<String> containers = new HashSet<>();
         boolean singleThreadedJobFound = false;
@@ -154,7 +154,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
                 singleThreadedJobFound = true;
             }
         }
-        for (PipelineJob job : _pending.toArray(new PipelineJob[_pending.size()]))
+        for (PipelineJob job : _pending.toArray(new PipelineJob[0]))
         {
             if (_submitted.contains(job))
                 continue;
@@ -360,21 +360,21 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             for (int i = 0; i < 4; i++)
                 queue.addJob(jobs[i]);
             Thread.sleep(1);
-            data = queue.getJobDataInMemory(containerA);
+            queue.getJobDataInMemory(containerA);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
-            data = queue.getJobDataInMemory(containerB);
+            queue.getJobDataInMemory(containerB);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // wait a bit
             Thread.sleep(100);
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(null);
             //assertEquals(4, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // add remaining jobs
             for (int i = 4; i < jobs.length; i++)
                 queue.addJob(jobs[i]);
             Thread.sleep(1);
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(null);
             //assertEquals(jobs.length, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // wait for last submitted job to finish
@@ -391,14 +391,14 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
                 job.get();
                 assertTrue(job.isDone());
             }
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(null);
             Thread.sleep(10);
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(null);
 
-            data = queue.getJobDataInMemory(containerA);
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(containerA);
+            queue.getJobDataInMemory(null);
 
-            data = queue.getJobDataInMemory(null);
+            queue.getJobDataInMemory(null);
 
 
             assertEquals(0, queue._runner.getJobCount());

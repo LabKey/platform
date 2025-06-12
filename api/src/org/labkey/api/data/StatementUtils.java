@@ -65,7 +65,7 @@ public class StatementUtils
     public enum Operation {insert, update, merge}
 
     // configuration parameters
-    private Operation _operation = Operation.insert;
+    private Operation _operation;
     private SqlDialect _dialect;
     private final TableInfo _targetTable;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
@@ -487,10 +487,9 @@ public class StatementUtils
 
     public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws SQLException, TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
     {
-        if (!(_targetTable instanceof UpdateableTableInfo))
+        if (!(_targetTable instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo) _targetTable;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataIdentifier())
@@ -607,9 +606,9 @@ public class StatementUtils
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT").appendEOS();;
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT").appendEOS();
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();;
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();
                 useVariables = _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
@@ -638,13 +637,13 @@ public class StatementUtils
                 sqlfInsertObject.append( null == ownerObjectId ? "NULL" : String.valueOf(ownerObjectId) ).append(" AS OwnerObjectId");
                 sqlfInsertObject.append(" WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
-                sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();;
+                sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();
 
                 // re-grab the object's ObjectId, in case it was just inserted
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
-                sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();;
+                sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();
 
                 if (Operation.insert != _operation && (!properties.isEmpty() || !_vocabularyProperties.isEmpty()))
                 {
@@ -668,7 +667,7 @@ public class StatementUtils
             if (objectURIVar == null)
             {
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();;
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();
             }
 
             if (!objectUriPreselectSet && (hasObjectURIColumn || !_vocabularyProperties.isEmpty()))
@@ -774,7 +773,7 @@ public class StatementUtils
             }
             else
             {
-                if (null != _skipColumnNames && _skipColumnNames.contains(StringUtils.defaultString(remap.get(name),name)))
+                if (null != _skipColumnNames && _skipColumnNames.contains(Objects.toString(remap.get(name),name)))
                     continue;
                 ParameterHolder ph = createParameter(column);
                 appendParameterOrVariable(valueSQL, ph);
@@ -880,7 +879,7 @@ public class StatementUtils
                     throw new TableInsertUpdateDataIterator.NoUpdatableColumnInDataException(table.getName());
 
                 sqlfUpdate.appendIdentifier(keys.values().iterator().next().getSelectIdentifier());
-                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1").appendEOS();;
+                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1").appendEOS();
             }
             else
             {
@@ -1033,7 +1032,7 @@ public class StatementUtils
                 call.add(ph.p);
                 comma = ",";
             }
-            fn.append("\n)").appendEOS();;
+            fn.append("\n)").appendEOS();
             fn.append("CREATE FUNCTION ").append(fnName).append("(").append(typeName).append(") ");
             fn.append("RETURNS ");
             if (null != sqlfSelectIds)
@@ -1088,7 +1087,7 @@ public class StatementUtils
                 .forEach(fn::append);
             if (null == sqlfSelectIds)
             {
-                fn.append("RETURN").appendEOS();;
+                fn.append("RETURN").appendEOS();
             }
             else
             {

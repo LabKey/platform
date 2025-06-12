@@ -20,7 +20,7 @@ import org.labkey.api.exp.PropertyType;
 
 public class ExperimentProperty
 {
-    static private String EXPERIMENT_PROPERTY_URIBASE = "urn:exp.labkey.org/#";
+    static private final String EXPERIMENT_PROPERTY_URIBASE = "urn:exp.labkey.org/#";
 
     static public SystemProperty COMMENT = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "Comment", PropertyType.STRING);
     static public SystemProperty LOGTEXT = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "LogText", PropertyType.STRING);

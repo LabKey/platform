@@ -17,6 +17,7 @@ package org.labkey.api.dataiterator;
 
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
@@ -86,5 +87,12 @@ public class CoerceDataIterator extends SimpleTranslator
                 addNullColumn(to.getName(), to.getJdbcType());
             }
         }
+    }
+
+    // Ignore conversion exceptions during coercion and just pass back the original value.
+    @Override
+    protected Object handleConversionException(String fieldName, Object value, JdbcType target, Exception x)
+    {
+        return value;
     }
 }

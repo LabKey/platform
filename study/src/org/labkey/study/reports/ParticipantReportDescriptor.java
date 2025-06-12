@@ -139,7 +139,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> d = super.getClientDependencies();
-        JspView v = new JspView(getViewClass());
+        JspView v = new JspView<>(getViewClass());
         d.addAll(v.getClientDependencies());
         return d;
     }

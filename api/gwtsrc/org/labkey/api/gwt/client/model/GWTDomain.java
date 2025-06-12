@@ -221,7 +221,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public void setMandatoryFieldNames(Set<String> mandatoryFieldNames)
     {
-        this.mandatoryPropertyDescriptorNames = new HashSet<String>();
+        this.mandatoryPropertyDescriptorNames = new HashSet<>();
         for (String mandatoryPropertyDescriptor : mandatoryFieldNames)
         {
             this.mandatoryPropertyDescriptorNames.add(mandatoryPropertyDescriptor.toLowerCase());
@@ -248,7 +248,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
-        this.reservedFieldNames = new HashSet<String>();
+        this.reservedFieldNames = new HashSet<>();
         for (String s : reservedFieldNames)
         {
             this.reservedFieldNames.add(s.toLowerCase());
@@ -270,7 +270,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public void setExcludeFromExportFieldNames(Set<String> excludeFromExportFieldNames)
     {
-        this.excludeFromExportFieldNames = new HashSet<String>();
+        this.excludeFromExportFieldNames = new HashSet<>();
         for (String excludeFromExportFieldName : excludeFromExportFieldNames)
         {
             this.excludeFromExportFieldNames.add(excludeFromExportFieldName.toLowerCase());
@@ -298,7 +298,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
 
     public void setPhiNotAllowedFieldNames(Set<String> phiNotAllowedFieldNames)
     {
-        this.phiNotAllowedFieldNames = new HashSet<String>();
+        this.phiNotAllowedFieldNames = new HashSet<>();
         for (String fieldName : phiNotAllowedFieldNames)
         {
             this.phiNotAllowedFieldNames.add(fieldName.toLowerCase());

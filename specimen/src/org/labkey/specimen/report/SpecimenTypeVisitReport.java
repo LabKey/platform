@@ -69,13 +69,13 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
             summaryString.append(summary.getVialCount());
         if (isViewParticipantCount())
         {
-            if (summaryString.length() > 0)
+            if (!summaryString.isEmpty())
                 summaryString.append("/");
             summaryString.append(summary.getParticipantCount());
         }
         if (isViewVolume())
         {
-            if (summaryString.length() > 0)
+            if (!summaryString.isEmpty())
                 summaryString.append("/");
             //summaryString.append(summary.getTotalVolume());
             summaryString.append(Formats.f2.format(summary.getTotalVolume()));
@@ -89,7 +89,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
         String summaryText = getCellSummaryText(summary);
-        boolean hasSummaryText = summaryText != null && summaryText.length() > 0;
+        boolean hasSummaryText = summaryText != null && !summaryText.isEmpty();
         int ptidCount = isViewPtidList() ? summary.getParticipantIds().size() : 0;
         String[] strArray = new String[ptidCount + (hasSummaryText ? 1 : 0)];
         if (hasSummaryText)
@@ -123,7 +123,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
             linkHtml += "&" + getFilterQueryString(visit, summary);
         String summaryString = getCellSummaryText(summary);
         StringBuilder cellHtml = new StringBuilder();
-        if (summaryString.length() > 0)
+        if (!summaryString.isEmpty())
         {
             cellHtml.append("<a href=\"").append(linkHtml).append("\">");
             cellHtml.append(summaryString).append("</a>");
@@ -131,7 +131,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
 
         if (isViewPtidList())
         {
-            if (cellHtml.length() > 0)
+            if (!cellHtml.isEmpty())
                 cellHtml.append("<br>");
             if (summary.getParticipantIds() != null)
             {
@@ -145,7 +145,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVialCount, isViewVialCount());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewParticipantCount, isViewParticipantCount());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVolume, isViewVolume());
-                    if (getBaseCustomViewName() != null && getBaseCustomViewName().length() > 0 &&
+                    if (getBaseCustomViewName() != null && !getBaseCustomViewName().isEmpty() &&
                         !SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(getBaseCustomViewName()))
                     {
                         url.addParameter(SpecimenVisitReportParameters.PARAMS.baseCustomViewName, getBaseCustomViewName());

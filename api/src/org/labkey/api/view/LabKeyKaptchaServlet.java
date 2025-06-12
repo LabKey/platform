@@ -29,13 +29,13 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class LabKeyKaptchaServlet extends HttpServlet implements Servlet
 {
-    private Properties props = new Properties();
+    private final Properties props = new Properties();
 
     private Producer kaptchaProducer = null;
 
     public static final String SESSION_KEY_VALUE = "KAPTCHA_SESSION_KEY";
 
-    private String sessionKeyDateValue = "KaptchaDateKey";
+    private final String sessionKeyDateValue = "KaptchaDateKey";
 
     /*
      * (non-Javadoc)

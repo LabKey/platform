@@ -53,7 +53,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     @BeforeClass
     public static void initProject()
     {
-        StudyLotsOfParticipantsTest init = (StudyLotsOfParticipantsTest)getCurrentTest();
+        StudyLotsOfParticipantsTest init = getCurrentTest();
         init.setupFolder();
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -63,6 +62,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -507,7 +507,7 @@ abstract public class ExpTableImpl<C extends Enum>
         @Override
         public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
         {
-            return new SQLFragment(tableAlias + "." + StringUtils.defaultString(_expObjectColumnName, "_exptable_object_"));
+            return new SQLFragment(tableAlias + "." + Objects.toString(_expObjectColumnName, "_exptable_object_"));
         }
 
         @Override
@@ -517,8 +517,8 @@ abstract public class ExpTableImpl<C extends Enum>
             if (null == _expObjectColumnName)
                 return new NullColumnInfo(parentTable, "_exptable_object_", JdbcType.INTEGER);
             var ret = super.createColumnInfo(parentTable, arguments, "_exptable_object_");
-            ((MutableColumnInfo)ret).setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
-            ((MutableColumnInfo)ret).setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+            ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+            ret.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
             {
                 @Override
                 public Object getValue(RenderContext ctx)

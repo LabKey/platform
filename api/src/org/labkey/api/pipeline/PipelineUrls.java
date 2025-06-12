@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**

@@ -102,7 +102,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
         // set properties based on the expression
         QExpr bound = getBoundExpression(columns);
-        ColumnInfo from = null;
+        ColumnInfo from;
         if (bound instanceof _BoundColumn)
             from = columns.get(bound.getFieldKey());
         else

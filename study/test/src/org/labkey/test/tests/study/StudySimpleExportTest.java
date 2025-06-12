@@ -100,7 +100,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     @BeforeClass
     public static void doSetup()
     {
-        StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
+        StudySimpleExportTest initTest = getCurrentTest();
 
         initTest.initializeFolder();
         initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
@@ -1261,9 +1261,9 @@ public class StudySimpleExportTest extends StudyBaseTest
             log("verifying form element: " + name);
 
             if (isElementPresent(Locator.tagWithName("input", name)))
-                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("input", name)));
+                assertEquals(formData.get(key), getFormElement(Locator.tagWithName("input", name)));
             else if (isElementPresent(Locator.tagWithName("textarea", name)))
-                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("textarea", name)));
+                assertEquals(formData.get(key), getFormElement(Locator.tagWithName("textarea", name)));
             else
                 fail("Unable to locate form element: " + name);
         }

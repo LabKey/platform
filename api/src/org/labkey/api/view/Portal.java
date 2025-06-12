@@ -1279,7 +1279,7 @@ public class Portal implements ModuleChangeListener
                 newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
                 HtmlString rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
-                return HtmlString.unsafe(leftWidget.toString() + rightWidget.toString());
+                return HtmlString.unsafe(leftWidget.toString() + rightWidget);
             }
 
             return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
@@ -1296,7 +1296,7 @@ public class Portal implements ModuleChangeListener
             HtmlString rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
             HtmlString rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
-            return HtmlString.unsafe(leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString());
+            return HtmlString.unsafe(leftBottomWidget.toString() + rightBottomWidget + rightMainWidget);
         }
         else
         {
@@ -1400,7 +1400,7 @@ public class Portal implements ModuleChangeListener
     {
         int count = 0;
         boolean showCustomize = alwaysShowCustomize || PageFlowUtil.isPageAdminMode(context);
-        id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
+        id = Objects.toString(id, DEFAULT_PORTAL_PAGE_ID);
         List<WebPart> parts = getParts(context.getContainer(), id, context);
 
         // Initialize content for non-default portal pages that are folder tabs

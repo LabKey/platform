@@ -80,7 +80,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         replacements.add("itemNamePluralLowerCase", String.class, "Potentially customized plural item name in lower case, typically 'issues'", ContentType.Plain, c -> getEntryTypeName(c, _newIssue).pluralName.toLowerCase());
         replacements.add(new UserIdReplacementParam("user", "The display name of the user performing the operation", c -> _newIssue.getModifiedBy()));
         replacements.add("comment", String.class, "The comment that was just added", ContentType.Plain, c -> _comment);
-        replacements.add("attachments", String.class, "A List of attachments, if applicable", ContentType.Plain, c -> (((_attachments == null) || (_attachments.length() == 0)) ? null : "\nAttachments: " + _attachments));
+        replacements.add("attachments", String.class, "A List of attachments, if applicable", ContentType.Plain, c -> (((_attachments == null) || (_attachments.isEmpty())) ? null : "\nAttachments: " + _attachments));
         replacements.add("recipients", String.class, "All of the recipients of the email notification", ContentType.Plain, c -> _recipients == null ? "user@domain.com" : _recipients);
         replacements.add(new StringReplacementParam("title", "The current title of the issue", c -> _newIssue.getTitle()));
         replacements.add(new StringReplacementParam("status", "The current status of the issue", c -> _newIssue.getStatus()));

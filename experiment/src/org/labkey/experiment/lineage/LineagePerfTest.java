@@ -414,15 +414,14 @@ public class LineagePerfTest extends Assert
     private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType st, ExpData firstData) throws ExperimentException, ValidationException
     {
         // parse the query once
-        final StringBuilder sql = new StringBuilder()
-                .append("SELECT\n")
-                .append("  ss.Name,\n")
-                .append("  ss.Inputs.Data.MyData.Name AS Inputs_MyData_Name,\n")
-                .append("  ss.Inputs.Materials.MySamples.Name AS Inputs_MySamples_Name\n")
-                .append("FROM samples.MySamples AS ss\n");
+        String sql = "SELECT\n" +
+                "  ss.Name,\n" +
+                "  ss.Inputs.Data.MyData.Name AS Inputs_MyData_Name,\n" +
+                "  ss.Inputs.Materials.MySamples.Name AS Inputs_MySamples_Name\n" +
+                "FROM samples.MySamples AS ss\n";
 
         final UserSchema schema = QueryService.get().getUserSchema(_user, _container, "samples");
-        final TableSelector ts = QueryService.get().selector(schema, sql.toString());
+        final TableSelector ts = QueryService.get().selector(schema, sql);
 
         final ExpLineageOptions opt = new ExpLineageOptions();
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);

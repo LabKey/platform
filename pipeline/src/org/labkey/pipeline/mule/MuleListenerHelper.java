@@ -157,11 +157,10 @@ public class MuleListenerHelper implements ServletContext
         boolean hasJms;
         try
         {
-            hasJms = (TransportFactory.getConnectorByProtocol("jms") != null);
+            TransportFactory.getConnectorByProtocol("jms");
         }
         catch (IllegalStateException e)
         {
-            hasJms = true;
         }
 
         _muleContextListener.contextDestroyed(null);

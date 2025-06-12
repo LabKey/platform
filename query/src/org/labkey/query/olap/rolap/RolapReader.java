@@ -150,7 +150,7 @@ public class RolapReader
                 case "Annotations":
                 {
                     // just so as not to give the impression Annotation applies to some cubes and not others
-                    if (0 < cubeDefinitions.size())
+                    if (!cubeDefinitions.isEmpty())
                         throw new ConfigurationException("Annotations element should appear before Cube elements");
                     parseAnnotations(node,schemaAnnotations);
                     break;

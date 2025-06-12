@@ -246,7 +246,7 @@ public class TempTableTracker extends WeakReference<Object>
                                 continue;
                             String schemaName = parts[0].trim();
                             String tableName = parts[1].trim();
-                            if (schemaName.length() == 0 || tableName.length() == 0)
+                            if (schemaName.isEmpty() || tableName.isEmpty())
                                 continue;
                             track(schemaName, tableName, noref);
                         }

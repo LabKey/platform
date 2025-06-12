@@ -87,7 +87,7 @@ public class StudySecurityTest extends BaseWebDriverTest
     {
         USER_ADMIN = getCurrentTest().getCurrentUser();
 
-        StudySecurityTest initTest = (StudySecurityTest)getCurrentTest();
+        StudySecurityTest initTest = getCurrentTest();
 
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest._containerHelper.createSubfolder(initTest.getProjectName(), FOLDER_NAME, "Study");

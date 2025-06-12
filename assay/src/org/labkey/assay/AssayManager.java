@@ -456,7 +456,7 @@ public class AssayManager implements AssayService
             vbox.setNavMenu(menu);
         }
 
-        vbox.addView(new JspView("/org/labkey/assay/view/assaySetup.jsp"));
+        vbox.addView(new JspView<>("/org/labkey/assay/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;
     }

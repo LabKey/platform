@@ -479,13 +479,13 @@
         var dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(assayOutputData, dataList.get(0));
         assertEquals(firstData, dataList.get(1));
-        assertEquals(dataList.size(), 2);
+        assertEquals(2, dataList.size());
 
         log.info("delete the run and verify the duplicate exp.data was also deleted");
         assayRun.delete(user);
         dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(firstData, dataList.get(0));
-        assertEquals(dataList.size(), 1);
+        assertEquals(1, dataList.size());
     }
 
     private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, int resultRowId)

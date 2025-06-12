@@ -105,7 +105,7 @@ public class JspClassLoader
                     _log.error("initLoader exception", mURLe);
                 }
             }
-            cl = new URLClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader());
+            cl = new URLClassLoader(urls.toArray(new URL[0]), Thread.currentThread().getContextClassLoader());
             _loader.set(cl);
         }
         return cl;

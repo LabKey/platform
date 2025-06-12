@@ -1098,7 +1098,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             }
         }
 
-        if (templates.size() == 0)
+        if (templates.isEmpty())
         {
             URLHelper url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.ImportField.name());

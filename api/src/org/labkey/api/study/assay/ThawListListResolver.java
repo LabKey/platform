@@ -61,7 +61,7 @@ import java.util.Set;
  */
 public class ThawListListResolver extends AbstractParticipantVisitResolver
 {
-    private TableInfo _tableInfo;
+    private final TableInfo _tableInfo;
     private final ParticipantVisitResolver _childResolver;
 
     public ThawListListResolver(Container runContainer, @Nullable Container targetStudyContainer,

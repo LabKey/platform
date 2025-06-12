@@ -52,7 +52,7 @@ public class CrawlerTest extends Assert
     //
     // TEST
     //
-    class TestResolver implements WebdavResolver, SecurableResource
+    static class TestResolver implements WebdavResolver, SecurableResource
     {
         private final File _base;
         private final Container _c;
@@ -151,7 +151,7 @@ public class CrawlerTest extends Assert
         }
     }
 
-    class TestSavePaths implements DavCrawler.SavePaths
+    static class TestSavePaths implements DavCrawler.SavePaths
     {
         Map<Path, Pair<Date,Date>> collections = new HashMap<>();
         Map<Path, DavCrawler.ResourceInfo> files = new HashMap<>();

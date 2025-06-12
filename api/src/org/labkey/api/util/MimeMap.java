@@ -31,8 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.commons.lang3.StringUtils.trimToEmpty;
-
 /**
  * A mime type map that implements the java.net.FileNameMap interface.
  * Copied from Tomcat, modified to read from mime.txt, loaded as a classloader resource.

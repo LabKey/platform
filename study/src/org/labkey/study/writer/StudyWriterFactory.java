@@ -23,7 +23,6 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.writer.VirtualFile;
@@ -31,7 +30,6 @@ import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

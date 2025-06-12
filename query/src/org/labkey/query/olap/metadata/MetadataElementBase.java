@@ -169,23 +169,23 @@ public abstract class MetadataElementBase implements MetadataElement, Named
         @Test
         public void testUniqueName()
         {
-            assertEquals(UniqueName.parse("PropertyName"), new UniqueName(null,"PropertyName"));
-            assertEquals(UniqueName.parse("PropertyName").getName(), "PropertyName");
+            assertEquals(new UniqueName(null,"PropertyName"), UniqueName.parse("PropertyName"));
+            assertEquals("PropertyName", UniqueName.parse("PropertyName").getName());
 
-            assertEquals(UniqueName.parse("[a]"), new UniqueName(null, "a"));
-            assertEquals(UniqueName.parse("[a]").toString(), "[a]");
+            assertEquals(new UniqueName(null, "a"), UniqueName.parse("[a]"));
+            assertEquals("[a]", UniqueName.parse("[a]").toString());
 
-            assertEquals(UniqueName.parse("[a.b]"), new UniqueName(null, "a.b"));
-            assertEquals(UniqueName.parse("[a.b]").toString(), "[a.b]");
+            assertEquals(new UniqueName(null, "a.b"), UniqueName.parse("[a.b]"));
+            assertEquals("[a.b]", UniqueName.parse("[a.b]").toString());
 
-            assertEquals(UniqueName.parse("[a].[b]"), new UniqueName(new UniqueName(null, "a"), "b"));
-            assertEquals(UniqueName.parse("[a].[b]").toString(), "[a].[b]");
+            assertEquals(new UniqueName(new UniqueName(null, "a"), "b"), UniqueName.parse("[a].[b]"));
+            assertEquals("[a].[b]", UniqueName.parse("[a].[b]").toString());
 
-            assertEquals(UniqueName.parse("[a].[b].[c]"), new UniqueName(new UniqueName(new UniqueName(null, "a"), "b"), "c"));
-            assertEquals(UniqueName.parse("[a].[b].[c]").toString(), "[a].[b].[c]");
+            assertEquals(new UniqueName(new UniqueName(new UniqueName(null, "a"), "b"), "c"), UniqueName.parse("[a].[b].[c]"));
+            assertEquals("[a].[b].[c]", UniqueName.parse("[a].[b].[c]").toString());
 
-            assertEquals(UniqueName.parse("[a.b].[]"), new UniqueName(new UniqueName(null, "a.b"), ""));
-            assertEquals(UniqueName.parse("[a.b].[]").toString(), "[a.b].[]");
+            assertEquals(new UniqueName(new UniqueName(null, "a.b"), ""), UniqueName.parse("[a.b].[]"));
+            assertEquals("[a.b].[]", UniqueName.parse("[a.b].[]").toString());
         }
     }
 }

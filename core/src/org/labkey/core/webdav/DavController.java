@@ -1129,8 +1129,7 @@ public class DavController extends SpringActionController
             }
             else if (method.equals("CYBERDUCK"))
             {
-                StringBuilder sb = new StringBuilder();
-                sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                String sb = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n" +
                         "<plist version=\"1.0\">\n" +
                         "<dict>\n" +
@@ -1139,7 +1138,7 @@ public class DavController extends SpringActionController
                         "<key>Nickname</key>\n" +
                         "<string>" + PageFlowUtil.filter(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName()) + "</string>\n" +
                         "<key>Path</key>\n" +
-                        "<string>" + url.getEncodedLocalURIString().replace("%40","@") + "</string>\n" +
+                        "<string>" + url.getEncodedLocalURIString().replace("%40", "@") + "</string>\n" +
                         "<key>Port</key>\n" +
                         "<string>" + AppProps.getInstance().getServerPort() + "</string>\n" +
                         "<key>Protocol</key>\n" +
@@ -1147,12 +1146,12 @@ public class DavController extends SpringActionController
                         "<key>Username</key>\n" +
                         "<string>" + PageFlowUtil.filter(getUser().isGuest() ? getUser().getName() : getUser().getEmail()) + "</string>\n" +
                         "</dict>\n" +
-                        "</plist>\n");
+                        "</plist>\n";
 
                 getResponse().setContentType("application/x-cyberduck+xml");
                 ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".duck");
                 Writer w = getResponse().getWriter();
-                w.write(sb.toString());
+                w.write(sb);
                 close(w, "response writer");
             }
 
@@ -1221,9 +1220,8 @@ public class DavController extends SpringActionController
                 String filename = getFilenameParameter();
                 FileStream stream;
                 
-                if (getRequest() instanceof MultipartHttpServletRequest)
+                if (getRequest() instanceof MultipartHttpServletRequest multipartRequest)
                 {
-                    MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)getRequest();
                     if (multipartRequest.getFileMap().size() > 1)
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
                     if (multipartRequest.getFileMap().isEmpty())
@@ -1240,7 +1238,7 @@ public class DavController extends SpringActionController
                 else
                 {
                     // CONSIDER: enforce ContentType=text/plain?
-                    String content = StringUtils.defaultString(getRequest().getParameter("content"),"");
+                    String content = Objects.toString(getRequest().getParameter("content"),"");
                     stream = new FileStream.ByteArrayFileStream(content.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
                 }
 
@@ -1832,7 +1830,7 @@ public class DavController extends SpringActionController
                         if (limitCount > limitMax)
                             break;
 
-                        resourceWriter.writeProperties(resources.get(i), Find.FIND_ALL_PROP, new ArrayList<String>());
+                        resourceWriter.writeProperties(resources.get(i), Find.FIND_ALL_PROP, new ArrayList<>());
 
                         if (limitMax > 0)
                             limitCount++;
@@ -4293,7 +4291,7 @@ public class DavController extends SpringActionController
                                 // "Creating" a lock-null resource
                                 Path parentPath = lock.path.getParent();
 
-                                List<Path> lockNulls = lockNullResources.computeIfAbsent(parentPath, k -> Collections.synchronizedList(new ArrayList<Path>()));
+                                List<Path> lockNulls = lockNullResources.computeIfAbsent(parentPath, k -> Collections.synchronizedList(new ArrayList<>()));
 
                                 lockNulls.add(lock.path);
 
@@ -5427,7 +5425,7 @@ public class DavController extends SpringActionController
                 if (!decodeAgain.equals(destinationPath))
                 {
                     Path pathDecodeAgain = Path.parse(decodeAgain).normalize();
-                    r = resolvePath(pathDecodeAgain);
+                    resolvePath(pathDecodeAgain);
                 }
             }
         }
@@ -6245,7 +6243,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte b[]) throws IOException
+        public int read(byte[] b) throws IOException
         {
             int r = super.read(b);
             if (null != bos && r > 0)
@@ -6254,7 +6252,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte b[], int off, int len) throws IOException
+        public int read(byte[] b, int off, int len) throws IOException
         {
             int r = super.read(b, off, len);
             if (null != bos && r > 0)

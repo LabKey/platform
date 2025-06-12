@@ -34,8 +34,6 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -596,9 +594,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             }
 
             // Check if there was a file uploaded for the column's value
-            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
+            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest request)
             {
-                MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
                 MultipartFile f = request.getFile(getFormFieldName(column));
                 // Only set the parameter value if there was a form element that was posted
                 if (f != null)

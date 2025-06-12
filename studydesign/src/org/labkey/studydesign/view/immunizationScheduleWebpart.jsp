@@ -103,7 +103,7 @@
 %>
                 </tr>
 <%
-                if (cohorts.size() == 0)
+                if (cohorts.isEmpty())
                 {
                     %><tr><td class="cell-display empty" colspan="2">No data to show.</td></tr><%
                 }

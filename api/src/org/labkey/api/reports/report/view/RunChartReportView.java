@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class RunChartReportView extends RunReportView
 {
-    private Report _report;
+    private final Report _report;
     protected ReportIdentifier _reportId;
 
     public RunChartReportView(Report report)

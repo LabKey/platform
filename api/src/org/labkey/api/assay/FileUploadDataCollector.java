@@ -37,10 +37,10 @@ import java.util.Set;
  */
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private int _maxFileInputs = 1;
+    private int _maxFileInputs;
     private final Map<String, File> _reusableFiles;
     // Name of the form <input> for the file.
-    private String _fileInputName;
+    private final String _fileInputName;
 
     public FileUploadDataCollector()
     {

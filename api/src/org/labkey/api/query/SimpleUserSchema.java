@@ -142,7 +142,6 @@ public class SimpleUserSchema extends UserSchema
      * Create the wrapped TableInfo over the source TableInfo.
      *
      * @param name The table name
-     * @param sourceTable
      * @return The wrapped TableInfo.
      */
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)

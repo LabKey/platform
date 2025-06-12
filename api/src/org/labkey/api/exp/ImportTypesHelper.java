@@ -221,7 +221,7 @@ public class ImportTypesHelper
 
             String columnName = pd.getName();
 
-            if (columnName.length() == 0)
+            if (columnName.isEmpty())
             {
                 String e = "'property' field is required";
                 if (!errors.contains(e))
@@ -242,7 +242,7 @@ public class ImportTypesHelper
             pd.setContainer(container);
 
             String propertyURI = StringUtils.trimToEmpty(pd.getPropertyURI());
-            if (propertyURI.length() == 0)
+            if (propertyURI.isEmpty())
             {
                 pd.setPropertyURI(domainURI + "." + Lsid.encodePart(columnName));
             }
@@ -288,7 +288,7 @@ public class ImportTypesHelper
     public static class Builder implements org.labkey.api.data.Builder<PropertyDescriptor>, MutableColumnConceptProperties
     {
         private PropertyType _type;
-        private Container _container;
+        private final Container _container;
         private String _propertyURI;
         private String _name;
         private String _label;

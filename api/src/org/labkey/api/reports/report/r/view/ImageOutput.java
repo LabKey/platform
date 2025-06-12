@@ -108,7 +108,7 @@ public class ImageOutput extends AbstractParamReplacement
 
     public static class ImgReportView extends ROutputView
     {
-        private boolean _deleteFile;
+        private final boolean _deleteFile;
 
         ImgReportView(ParamReplacement param, boolean deleteFile)
         {

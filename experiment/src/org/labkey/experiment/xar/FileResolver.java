@@ -41,16 +41,16 @@ public class FileResolver implements Replacer
 {
     private final File _rootDir;
 
-    private Map<String, List<File>> _unusedFileNames = new HashMap<>();
-    private Map<String, List<String>> _unusedFileNameVariations = new HashMap<>();
-    private Map<String, List<String>> _unusedFileBaseNames = new HashMap<>();
+    private final Map<String, List<File>> _unusedFileNames = new HashMap<>();
+    private final Map<String, List<String>> _unusedFileNameVariations = new HashMap<>();
+    private final Map<String, List<String>> _unusedFileBaseNames = new HashMap<>();
 
-    private Set<String> _fileNamesToAdvance = new HashSet<>();
-    private Set<String> _fileNameVariationsToAdvance = new HashSet<>();
-    private Set<String> _fileBaseNamesToAdvance = new HashSet<>();
+    private final Set<String> _fileNamesToAdvance = new HashSet<>();
+    private final Set<String> _fileNameVariationsToAdvance = new HashSet<>();
+    private final Set<String> _fileBaseNamesToAdvance = new HashSet<>();
 
-    private Map<File, String> _relativePathsCache = new HashMap<>();
-    private Map<File, File[]> _dirContentsCache = new HashMap<>();
+    private final Map<File, String> _relativePathsCache = new HashMap<>();
+    private final Map<File, File[]> _dirContentsCache = new HashMap<>();
 
     public FileResolver(File rootDir)
     {
@@ -63,7 +63,7 @@ public class FileResolver implements Replacer
         if (nameVariations == null)
         {
             List<File> files = calculateFileList(filter);
-            if (files.size() == 0)
+            if (files.isEmpty())
             {
                 throw new XarFormatException("No files found for FileBaseName filter " + filter);
             }
@@ -302,7 +302,7 @@ public class FileResolver implements Replacer
                         sb.append(shortMatcher.group(j));
                     }
                 }
-                if (sb.length() == 0)
+                if (sb.isEmpty())
                 {
                     throw new XarFormatException("No base name found for filter " + originalFilter + " on filename " + f.getName());
                 }

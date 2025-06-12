@@ -15,14 +15,9 @@
  */
 package org.labkey.api.study;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 
 import java.util.Map;

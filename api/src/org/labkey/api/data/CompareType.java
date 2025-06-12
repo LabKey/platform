@@ -397,7 +397,7 @@ public abstract class CompareType
             else
             {
                 List<String> values = new ArrayList<>();
-                if (value != null && !value.toString().trim().equals(""))
+                if (value != null && !value.toString().trim().isEmpty())
                 {
                     values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                 }
@@ -478,7 +478,7 @@ public abstract class CompareType
                 List<String> values = new ArrayList<>();
                 if (value != null)
                 {
-                    if (value.toString().trim().equals(""))
+                    if (value.toString().trim().isEmpty())
                     {
                         values.add(null);
                     }
@@ -526,7 +526,7 @@ public abstract class CompareType
                 List<String> values = new ArrayList<>();
                 if (value != null)
                 {
-                    if (value.toString().trim().equals(""))
+                    if (value.toString().trim().isEmpty())
                     {
                         values.add(null);
                     }
@@ -1181,7 +1181,7 @@ public abstract class CompareType
         @Override
         public Map.Entry<String, String> toURLParam(String dataRegionPrefix)
         {
-            String key = dataRegionPrefix + _fieldKey.toString() + SimpleFilter.SEPARATOR_CHAR + getCompareType().getPreferredUrlKey();
+            String key = dataRegionPrefix + _fieldKey + SimpleFilter.SEPARATOR_CHAR + getCompareType().getPreferredUrlKey();
             return new Pair<>(key, toURLParamValue());
         }
     }
@@ -1374,10 +1374,8 @@ public abstract class CompareType
             // No way to know what to convert it into
             return paramVal;
         }
-        if (!(paramVal instanceof String))
+        if (!(paramVal instanceof String stringValue))
             return paramVal;
-
-        String stringValue = (String)paramVal;
 
         // Expand the magic 'me' value if the column is a userid or a user display name
         if (ME_FILTER_PARAM_VALUE.equals(stringValue))
@@ -1411,12 +1409,11 @@ public abstract class CompareType
         if (col.getJdbcType() != JdbcType.INTEGER)
             return false;
 
-        ForeignKey fk = null;
+        ForeignKey fk;
         String lookupSchemaName = null;
         String lookupQueryName = null;
-        if (col instanceof ColumnInfo)
+        if (col instanceof ColumnInfo colInfo)
         {
-            ColumnInfo colInfo = (ColumnInfo)col;
             String sqlTypeName = colInfo.getSqlTypeName();
             if ("userid".equalsIgnoreCase(sqlTypeName))
                 return true;

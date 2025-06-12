@@ -31,7 +31,7 @@ import java.util.Enumeration;
 
 public class JspLoader
 {
-    private static Logger _log = LogManager.getLogger(JspLoader.class);
+    private static final Logger _log = LogManager.getLogger(JspLoader.class);
     private static final JspClassLoader _jspClassLoader;
 
     static

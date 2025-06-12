@@ -128,20 +128,20 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             {
                 executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=" + site.getSelectName() + ".RowId\n" +
                         "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".EnrollmentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
                 executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=" + site.getSelectName() + ".RowId\n" +
                         "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".CurrentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
             }
 
             if (columnMap.containsKey("StartDate"))
             {
                 executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
                         "FROM " + tinfoTemp + " \n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
             }
             tinfoTemp.delete();
         }

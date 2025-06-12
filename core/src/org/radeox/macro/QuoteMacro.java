@@ -43,9 +43,9 @@ import java.io.Writer;
  */
 
 public class QuoteMacro extends LocalePreserved {
-  private static Logger log = LogManager.getLogger(QuoteMacro.class);
+  private static final Logger log = LogManager.getLogger(QuoteMacro.class);
 
-  private String[] paramDescription =
+  private final String[] paramDescription =
       {"?1: source",
        "?2: displayed description, default is Source"};
 

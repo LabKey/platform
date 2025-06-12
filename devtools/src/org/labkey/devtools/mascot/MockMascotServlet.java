@@ -100,6 +100,6 @@ public class MockMascotServlet extends HttpServlet
     private void throwIfNotEqual(Object expected, Object value)
     {
         if (!expected.equals(value))
-            throw new IllegalStateException("Expected " + expected.toString() + ", but value was " + value.toString());
+            throw new IllegalStateException("Expected " + expected + ", but value was " + value.toString());
     }
 }

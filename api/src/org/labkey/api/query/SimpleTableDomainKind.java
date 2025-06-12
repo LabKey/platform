@@ -58,9 +58,9 @@ import java.util.Set;
  */
 public class SimpleTableDomainKind extends BaseAbstractDomainKind
 {
-    private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
-    private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
-    private static String XAR_SUBSTITUTION_GUID = "GUID";
+    private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
+    private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
+    private static final String XAR_SUBSTITUTION_GUID = "GUID";
 
     public SimpleTableDomainKind()
     {

@@ -70,7 +70,7 @@ public class QueryWriter extends BaseFolderWriter
         if (queryKeysToExport != null)
             queries.removeIf(queryDef -> !queryKeysToExport.contains(queryDef.getQueryKey()));
 
-        if (queries.size() > 0)
+        if (!queries.isEmpty())
         {
             ctx.getXml().addNewQueries().setDir(DEFAULT_DIRECTORY);
             VirtualFile queriesDir = root.getDir(DEFAULT_DIRECTORY);

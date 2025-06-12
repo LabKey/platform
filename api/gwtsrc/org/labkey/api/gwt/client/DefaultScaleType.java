@@ -24,7 +24,7 @@ public enum DefaultScaleType
     LINEAR("Linear"),
     LOG("Log");
 
-    private String _label;
+    private final String _label;
 
     DefaultScaleType(String label)
     {

@@ -248,6 +248,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         delete(user, null);
     }
 
+    @Override
     public void delete(User user, @Nullable final String auditUserComment )
     {
         try

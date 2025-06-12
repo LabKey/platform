@@ -44,9 +44,8 @@
                 message = throwable.getMessage();
             }
         }
-        if (throwable instanceof org.springframework.beans.PropertyBatchUpdateException)
+        if (throwable instanceof org.springframework.beans.PropertyBatchUpdateException batchException)
         {
-            org.springframework.beans.PropertyBatchUpdateException batchException = (org.springframework.beans.PropertyBatchUpdateException)throwable;
             if (batchException.getMostSpecificCause() != null && batchException.getMostSpecificCause().getMessage() != null)
             {
                 message = batchException.getMostSpecificCause().getMessage();

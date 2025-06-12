@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -201,7 +202,7 @@ public class Query
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), StringUtils.defaultString(_debugName, "anonymous"));
+        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), Objects.toString(_debugName, "anonymous"));
         if (_queryRoot != null)
         {
             throw new IllegalStateException("query is already parsed");
@@ -560,7 +561,7 @@ public class Query
 
     private void assertParsed()
     {
-        if (_parseErrors.size() == 0 && null == _queryRoot)
+        if (_parseErrors.isEmpty() && null == _queryRoot)
         {
             assert false : "call parse() first";
             // shouldn't get here, there should be a parse error if parse() failed
@@ -572,7 +573,7 @@ public class Query
     public ArrayList<QueryService.ParameterDecl> getParameters()
     {
         assertParsed();
-        if (_parseErrors.size() > 0)
+        if (!_parseErrors.isEmpty())
             return null;
         // don't return hidden parameters
         ArrayList<QueryService.ParameterDecl> ret = new ArrayList<>(_parameters.size());
@@ -604,14 +605,14 @@ public class Query
         try
         {
             assertParsed();
-            if (_parseErrors.size() > 0)
+            if (!_parseErrors.isEmpty())
                 return null;
 
             QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
 
             TableInfo tinfo = _queryRoot.getTableInfo();
 
-            if (_parseErrors.size() > 0)
+            if (!_parseErrors.isEmpty())
                 return null;
 
             return tinfo;
@@ -801,7 +802,7 @@ public class Query
     {
         ActionURL fromUrl = new QueryController.QueryUrlsImpl().urlSchemaBrowser(_schema.getContainer(), _schema.getName(), _queryName);
         QueryService.DependencyObject from = new QueryService.DependencyObject(QueryService.DependencyType.Query,
-                _schema.getContainer(), ((UserSchema)_schema).getSchemaPath(), requireNonNullElse(_queryName, "~"), fromUrl);
+                _schema.getContainer(), _schema.getSchemaPath(), requireNonNullElse(_queryName, "~"), fromUrl);
 
         QueryService.DependencyObject dep = new QueryService.DependencyObject(type,
                 container, containerRelativeSchemaKey, name, url);
@@ -945,12 +946,12 @@ public class Query
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), userSchema, _parseErrors);
             _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
-            String name = ((TableInfo) t).getName();
+            String name = tableInfo.getName();
 
             if (trackDependency)
             {
                 ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
-                addDependency(QueryService.DependencyType.Table, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
+                addDependency(QueryService.DependencyType.Table, resolvedSchema.getContainer(), resolvedSchema.getSchemaPath(), name, url);
             }
 
             if (!tableInfo.hasPermission(getSchema().getUser(), ReadPermission.class))
@@ -965,7 +966,7 @@ public class Query
             queryDefOUT[0] = def;
             Query query = def.getQuery(resolvedSchema, resolveExceptions, this, true);
 
-            if (query.getParseErrors().size() > 0)
+            if (!query.getParseErrors().isEmpty())
             {
                 resolveExceptions.addAll(query.getParseErrors());
                 return null;
@@ -986,7 +987,7 @@ public class Query
             {
                 String name = def.getName();
                 ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
-                addDependency(QueryService.DependencyType.Query, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
+                addDependency(QueryService.DependencyType.Query, resolvedSchema.getContainer(), resolvedSchema.getSchemaPath(), name, url);
             }
 
             // check for cases where we don't want to merge

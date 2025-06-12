@@ -68,7 +68,6 @@ public interface IVisualizationSourceQuery
     /**
      * True if any select or aggregate requires a left join explicitly. This is an override for any columns
      * that might require some form of an INNER JOIN.
-     * @return
      */
     boolean isRequireLeftJoin();
 }

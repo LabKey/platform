@@ -44,7 +44,7 @@ public abstract class Job implements Future, Runnable
     protected void done(Throwable t)
     {
         if (null != t)
-            JobRunner._log.error("Uncaught exception in Job: " + this.toString(), t);
+            JobRunner._log.error("Uncaught exception in Job: " + this, t);
     }
 
     //

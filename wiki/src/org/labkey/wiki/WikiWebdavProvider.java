@@ -85,9 +85,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
-        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
         return hasWiki(c) ? PageFlowUtil.set(WIKI_NAME) : null;
     }
@@ -98,9 +97,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
     {
         if (!WIKI_NAME.equalsIgnoreCase(name))
             return null;
-        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
         return WIKI_NAME.equals(name) ? new WikiProviderResource(folder,c) : null;
     }

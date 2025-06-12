@@ -48,6 +48,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -124,7 +125,7 @@
     reportConfig.put("schemaName", PageFlowUtil.filter(bean.getSchemaName()));
     reportConfig.put("queryName", PageFlowUtil.filter(bean.getQueryName()));
     reportConfig.put("viewName", PageFlowUtil.filter(bean.getViewName()));
-    reportConfig.put("dataRegionName", PageFlowUtil.filter(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
+    reportConfig.put("dataRegionName", PageFlowUtil.filter(Objects.toString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
     reportConfig.put("reportName", bean.getReportName());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
@@ -181,7 +182,7 @@
                 externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
                 externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
-                externalEditSettings.isDocker = <%=(Boolean)externalConfig.get("isDocker")%>;
+                externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
             <% } %>
 
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {

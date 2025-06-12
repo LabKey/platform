@@ -34,7 +34,7 @@ import java.util.Collection;
  */
 public interface FileListener
 {
-    public String getSourceName();
+    String getSourceName();
     
     /**
      * Called AFTER the file (or directory) has already been created on disk
@@ -76,7 +76,7 @@ public interface FileListener
      * List file paths in the database this FileListener is aware of.
      * @param container If not null, list files in the given container, otherwise from all containers.
      */
-    public Collection<File> listFiles(@Nullable Container container);             // Nobody really calls this
+    Collection<File> listFiles(@Nullable Container container);             // Nobody really calls this
 //    public Collection<Path> listFilePaths(@Nullable Container container);
 
     /**
@@ -93,5 +93,5 @@ public interface FileListener
      *     <li>SourceName</li>
      * </ul>
      */
-    public SQLFragment listFilesQuery();
+    SQLFragment listFilesQuery();
 }

@@ -44,7 +44,6 @@ public class Builder extends SQLFragment
      * next bit of text is output.
      * (for instance, to say, "before the next expression is output,
      * we need to output "FROM", unless there are no more expressions.)
-     * @param prefix
      */
     public void pushPrefix(String prefix)
     {
@@ -107,7 +106,7 @@ public class Builder extends SQLFragment
     @Override
     public Builder append(CharSequence cs)
     {
-        if (cs == null || cs.length() == 0)
+        if (cs == null || cs.isEmpty())
             return this;
         appendPrefix();
         appendIndent();
@@ -118,7 +117,7 @@ public class Builder extends SQLFragment
     @Override
     public SQLFragment appendIdentifier(CharSequence charseq)
     {
-        if (charseq == null || charseq.length() == 0)
+        if (charseq == null || charseq.isEmpty())
             return this;
         appendPrefix();
         appendIndent();
@@ -187,6 +186,7 @@ public class Builder extends SQLFragment
         return super.appendValue(g, d);
     }
 
+    @Override
     public SQLFragment appendValue(@NotNull Container c)
     {
         appendPrefix(); appendIndent();

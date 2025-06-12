@@ -78,11 +78,11 @@ public class NetworkDrive
         args.add("use");
         args.add(driveChar + ":");
         args.add(getPath());
-        if (getPassword() != null && !"".equals(getPassword().trim()))
+        if (getPassword() != null && !getPassword().trim().isEmpty())
         {
             args.add(getPassword());
         }
-        if (getUser() != null && !"".equals(getUser().trim()))
+        if (getUser() != null && !getUser().trim().isEmpty())
         {
             args.add("/USER:" + getUser());
         }

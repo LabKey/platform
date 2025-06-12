@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
+<%@ page import="java.util.Objects" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -31,7 +32,7 @@
 %>
 <%
     OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
-    String configId = StringUtils.defaultString(form.getConfigId(), "");
+    String configId = Objects.toString(form.getConfigId(), "");
 %>
 <h3><%=h(configId.substring(configId.indexOf("/")+1))%></h3>
 <labkey:errors/>

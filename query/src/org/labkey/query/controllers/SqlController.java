@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
@@ -32,15 +31,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.NavTree;
 import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.ServletException;
 import java.io.IOException;
@@ -82,7 +77,7 @@ public class SqlController extends SpringActionController
         private String sep = null;
         private String eol = null;
         private boolean compact = false;
-        private Parameters parameters = new Parameters();
+        private final Parameters parameters = new Parameters();
 
         public Double getApiVersion()
         {
@@ -432,7 +427,7 @@ public class SqlController extends SpringActionController
             for (int column = 1; column <= count; column++)
             {
                 String s = row[column];
-                if (null != s && s.length() > 0)
+                if (null != s && !s.isEmpty())
                 {
                     if (s.equals(prev[column]))
                         out.write(DITTO);

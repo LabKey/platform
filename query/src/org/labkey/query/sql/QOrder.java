@@ -16,14 +16,11 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class QOrder extends QNode
 {
@@ -54,7 +51,7 @@ public class QOrder extends QNode
         builder.popPrefix();
     }
 
-    record SortEntry(QExpr expr, Boolean direction, String selectAlias) {};
+    record SortEntry(QExpr expr, Boolean direction, String selectAlias) {}
 
     public List<SortEntry> getSort()
     {

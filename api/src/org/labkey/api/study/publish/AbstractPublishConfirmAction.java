@@ -220,7 +220,6 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
     /**
      * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
-     * @return
      */
     protected Set<String> getHiddenPublishResultsCaptions(FORM form)
     {

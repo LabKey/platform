@@ -42,7 +42,7 @@ public class QueryWebPartDataRenderer extends AbstractQueryViewReportDataRendere
         }
         catch (Exception e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 }

@@ -46,10 +46,10 @@ public class JoinedBooleanToSwitch extends TaskToCommandArgs
         StringBuilder switches = new StringBuilder();
         for (BooleanToSwitch converter : getConverters())
         {
-            if (converter.toArgs(task, params, visited).size() > 0)
+            if (!converter.toArgs(task, params, visited).isEmpty())
                 switches.append(converter.getSwitchName());
         }
-        if (switches.length() > 0)
+        if (!switches.isEmpty())
             return getSwitchFormat().format(switches.toString());
 
         return Collections.emptyList();

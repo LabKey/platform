@@ -62,7 +62,7 @@ public class ModuleProperty
     private String _description = null;
     private boolean _showDescriptionInline = false;
     private int _inputFieldWidth = 300;
-    private InputType _inputType = InputType.text;
+    private InputType _inputType;
     private List<Option> _options = null;
     // optionsSupplier is intentionally omitted from module.xsd as it must be backed by java code
     private OptionSupplier _optionsSupplier = null;

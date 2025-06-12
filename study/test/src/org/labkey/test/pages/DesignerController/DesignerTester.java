@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class DesignerTester
 {
-    private BaseWebDriverTest _test;
+    private final BaseWebDriverTest _test;
 
     public DesignerTester(BaseWebDriverTest test)
     {

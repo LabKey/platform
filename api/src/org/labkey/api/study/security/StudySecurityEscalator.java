@@ -76,7 +76,6 @@ public class StudySecurityEscalator extends SecurityEscalator {
      *                  specified here.
      * @param comment A useful comment explaining why the user needed to be escalated, or rather, what the code is doing
      *                during the escalation.  For example: "Updating
-     * @return
      */
     public static SecurityEscalator beginEscalation(User user, Container container, String comment) {
         SecurityEscalator securityEscalator = new StudySecurityEscalator(user, container, comment);

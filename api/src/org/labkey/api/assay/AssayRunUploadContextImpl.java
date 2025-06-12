@@ -301,7 +301,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
      * The file will be added as an output ExpData to the imported assay run.
      *
      * @return A singleton map with key {@link AssayDataCollector#PRIMARY_FILE} and value of the uploaded file.
-     * @throws ExperimentException
      */
     @Override
     @NotNull

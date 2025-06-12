@@ -223,11 +223,6 @@ public class QueryManager
      * Get all shared custom views that are applicable.
      * If <code>inheritable</code> is true, custom views from parent and Shared container are included.
      *
-     * @param container
-     * @param schemaName
-     * @param queryName
-     * @param inheritable
-     * @return
      */
     public List<CstmView> getAllSharedCstmViews(Container container, String schemaName, String queryName, boolean inheritable)
     {
@@ -1003,7 +998,7 @@ public class QueryManager
             }
 
             if (!matchCase){
-                warnings.add(new QueryParseWarning("In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + "' did not match the expected case, which was '" + fk + "'", null, 0, 0));
+                warnings.add(new QueryParseWarning("In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f + "' in " + v.getSchemaName() + "." + v.getQueryName() + "' did not match the expected case, which was '" + fk + "'", null, 0, 0));
             }
 
             //queryErrors.addAll(validateColumn(c, user, container));
@@ -1123,8 +1118,8 @@ public class QueryManager
 
         for (String columnStr : viewsColumnStrs)
         {
-            Long lineageColCount = 0L;
-            Long ancestorColCount = 0L;
+            long lineageColCount = 0L;
+            long ancestorColCount = 0L;
             for (Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>> entry : CustomViewInfo.decodeProperties(columnStr))
             {
                 String fieldName = entry.getKey().toString().toLowerCase();

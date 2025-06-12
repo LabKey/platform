@@ -97,9 +97,8 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     {
         ReportDescriptor reportDescriptor = getDescriptor();
 
-        if (reportDescriptor instanceof CrosstabReportDescriptor)
+        if (reportDescriptor instanceof CrosstabReportDescriptor descriptor)
         {
-            CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)reportDescriptor;
             try {
                 Crosstab crosstab = createCrosstab(context, true);
                 if (crosstab != null)

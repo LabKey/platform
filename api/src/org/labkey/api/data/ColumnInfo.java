@@ -169,8 +169,6 @@ public interface ColumnInfo extends ColumnRenderProperties
      *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
-     * @param tableAliasName
-     * @return
      */
     SQLFragment getValueSql(String tableAliasName);
 
@@ -216,8 +214,6 @@ public interface ColumnInfo extends ColumnRenderProperties
     DisplayColumnFactory getDisplayColumnFactory();
 
     boolean isShouldLog();
-
-    String getLegalName();
 
     String getPropertyName();
 

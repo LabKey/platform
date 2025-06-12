@@ -25,6 +25,6 @@ import org.labkey.api.data.DisplayColumnFactory;
  */
 public interface AuditDisplayColumnFactory extends DisplayColumnFactory
 {
-    public void init(ColumnInfo columnInfo);
-    public int getPosition();
+    void init(ColumnInfo columnInfo);
+    int getPosition();
 }

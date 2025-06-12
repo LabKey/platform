@@ -72,7 +72,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
     final Set<String> unionColumns = new HashSet<>(Arrays.asList(COLUMN_NAMES));
     SQLFragment unionSql;
     final private User _user;
-    boolean _crossContainer = false;
+    boolean _crossContainer;
     Collection<DatasetDefinition> _defs;
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user, boolean crossContainer)

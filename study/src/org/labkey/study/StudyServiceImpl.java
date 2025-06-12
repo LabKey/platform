@@ -708,9 +708,8 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                                                   DomainKind kind, Class<? extends BaseStudyTable> tableClass,
                                                   boolean dontAliasColumns, boolean useParticipantIdName)
     {
-        if (!(qsDefault instanceof StudyQuerySchema))
+        if (!(qsDefault instanceof StudyQuerySchema schemaDefault))
             throw new IllegalArgumentException("expected study schema");
-        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
         String publicName = null;
 
@@ -787,7 +786,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                             }
                         };
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
-                        ((BaseColumnInfo)unionCol).setFk(fk);
+                        unionCol.setFk(fk);
                     }
                     else if ("derivativetype".equalsIgnoreCase(name) || "derivativetype2".equalsIgnoreCase(name))
                     {
@@ -897,9 +896,8 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns)
     {
         assert BaseStudyTable.class.isAssignableFrom(tableClass);      // BaseStudyTable could not be in declaration because not visible to interface
-        if (!(qsDefault instanceof StudyQuerySchema))
+        if (!(qsDefault instanceof StudyQuerySchema schemaDefault))
             throw new IllegalArgumentException("expected study schema");
-        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
         String publicName = null;
 

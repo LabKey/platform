@@ -524,7 +524,7 @@ public class ExpGeneratorHelper
                     if (!runDataInputs.contains(dataLsid) && !prevAction.getOutputs().contains(dataFile))
                     {
                         // promote data input to run
-                        ExpData data = null;
+                        ExpData data;
 
                         try
                         {

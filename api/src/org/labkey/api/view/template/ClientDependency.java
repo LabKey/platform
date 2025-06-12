@@ -359,7 +359,7 @@ public abstract class ClientDependency
 
     protected static String getUniqueKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
-        return identifier.toLowerCase() + "|" + mode.toString();
+        return identifier.toLowerCase() + "|" + mode;
     }
 
     protected abstract String getUniqueKey();

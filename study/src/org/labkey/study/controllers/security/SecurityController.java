@@ -451,7 +451,7 @@ public class SecurityController extends SpringActionController
 
     private static class ReportPermissionsTabStrip extends TabStripView
     {
-        private PermissionsForm _bean;
+        private final PermissionsForm _bean;
 
         public ReportPermissionsTabStrip(PermissionsForm bean)
         {
@@ -488,7 +488,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
+    public static class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
         @Override
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors)
@@ -587,7 +587,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
+    public static class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
     {
         @Override
         public void validateCommand(StudySecurityForm target, Errors errors)

@@ -472,9 +472,8 @@ public class CopyFileRootPipelineJob extends PipelineJob
     public List<String> compareJobs(PipelineJob job2)
     {
         List<String> errors = super.compareJobs(job2);
-        if (job2 instanceof CopyFileRootPipelineJob)
+        if (job2 instanceof CopyFileRootPipelineJob copyJob2)
         {
-            CopyFileRootPipelineJob copyJob2 = (CopyFileRootPipelineJob)job2;
             if (!this._migrateFilesOption.equals(copyJob2._migrateFilesOption))
                 errors.add("_migrateFilesOption");
             if (this._sourceInfos.size() != copyJob2._sourceInfos.size())
@@ -489,7 +488,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
 
     public static class TestCase extends PipelineJob.TestSerialization
     {
-        private static Logger LOG = LogManager.getLogger(CopyFileRootPipelineJob.class);
+        private static final Logger LOG = LogManager.getLogger(CopyFileRootPipelineJob.class);
 
         @Test
         public void testSerialize()

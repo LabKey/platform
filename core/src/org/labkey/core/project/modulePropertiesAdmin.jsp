@@ -35,7 +35,7 @@
     List<String> modules = new ArrayList<>();
     for (Module m : getContainer().getActiveModules(getUser()))
     {
-        if(m.getModuleProperties().size() > 0)
+        if(!m.getModuleProperties().isEmpty())
         {
             modules.add(m.getName());
         }

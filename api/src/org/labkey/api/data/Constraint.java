@@ -31,7 +31,7 @@ public class Constraint
     private String name;
     private CONSTRAINT_TYPES type;
     private boolean cluster;
-    private Collection<String> columns = new LinkedHashSet<>();
+    private Collection<String> columns;
 
     public Constraint(@NotNull String tableName, @NotNull CONSTRAINT_TYPES type, boolean cluster, @Nullable Collection<String> columns)
     {

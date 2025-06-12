@@ -1544,7 +1544,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class BulkUpdateAction extends FormHandlerAction<BulkUpdateForm>
+    public static class BulkUpdateAction extends FormHandlerAction<BulkUpdateForm>
     {
         @Override
         public void validateCommand(BulkUpdateForm form, Errors errors)
@@ -1686,13 +1686,13 @@ public class MothershipController extends SpringActionController
                     Map<String, Object> row = ctx.getRow();
 
                     ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
-                    if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
+                    if (si != null && si.getNote() != null && !si.getNote().trim().isEmpty())
                     {
                         return HtmlString.of(si.getNote());
                     }
                     else
                     {
-                        if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
+                        if (si != null && si.getServerHostName() != null && !si.getServerHostName().trim().isEmpty())
                         {
                             return HtmlString.of(si.getServerHostName());
                         }

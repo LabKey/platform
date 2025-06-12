@@ -42,7 +42,7 @@ import java.util.ResourceBundle;
  */
 
 public abstract class BaseLocaleMacro extends BaseMacro implements LocaleMacro {
-  private static Logger log = LogManager.getLogger(BaseLocaleMacro.class);
+  private static final Logger log = LogManager.getLogger(BaseLocaleMacro.class);
 
   private String name;
 

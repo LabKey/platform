@@ -605,7 +605,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
             while (iter.hasNext())
             {
-                RowMap<?> rowMap = (RowMap<?>)iter.next();
+                RowMap<?> rowMap = iter.next();
                 //noinspection unchecked
                 K key = (K)rowMap.get(1);
                 //noinspection unchecked
@@ -651,7 +651,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             {
                 //noinspection unchecked
                 RowMap<K> rowMap = (RowMap<K>)iter.next();
-                fillSet.add((K)rowMap.get(1));
+                fillSet.add(rowMap.get(1));
             }
             return null;
         });

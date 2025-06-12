@@ -67,7 +67,7 @@ public class MdxQueryImpl
         set
     }
 
-    private class _MDX
+    private static class _MDX
     {
         _MDX(FN fn, List<Object> arguments)
         {
@@ -104,7 +104,7 @@ public class MdxQueryImpl
             filterExpr.append(opConnector).append(term);
             opConnector = op;
         }
-        return new _MDX(FN.Filter, levelExpr.level, new Object[]{levelExpr,filterExpr});
+        return new _MDX(FN.Filter, levelExpr.level, new Object[]{levelExpr, filterExpr});
     }
 
 
@@ -114,9 +114,9 @@ public class MdxQueryImpl
         if (membersDef.childrenMember || membersDef.membersMember)
         {
             if (null != membersDef.level && membersDef.membersMember)
-                return new _MDX(FN.MemberSet, membersDef.level, new Object[] {membersDef.level.getUniqueName() + ".members"});
+                return new _MDX(FN.MemberSet, membersDef.level, new Object[]{membersDef.level.getUniqueName() + ".members"});
             else if (null != membersDef.hierarchy)
-                return new _MDX(FN.MemberSet, null, new Object[] {membersDef.hierarchy.getUniqueName() + ".members"});
+                return new _MDX(FN.MemberSet, null, new Object[]{membersDef.hierarchy.getUniqueName() + ".members"});
             errors.reject(SpringActionController.ERROR_MSG, "unexpected members expression");
             throw errors;
         }
@@ -133,7 +133,7 @@ public class MdxQueryImpl
                 throw errors;
             }
             Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
-            _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[] {l.getUniqueName() + ".members"});
+            _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[]{l.getUniqueName() + ".members"});
             if (null == membersDef.membersQuery)
                 return levelExpr;
             _MDX membersExpr = _processExpr(membersDef.membersQuery);
@@ -377,7 +377,7 @@ public class MdxQueryImpl
 
         if (null != qq.joinLevel)
             errors.rejectValue(SpringActionController.ERROR_MSG, "joinLevel not supported");
-        if (null != qq.whereFilters && 0 != qq.whereFilters.arguments.size())
+        if (null != qq.whereFilters && !qq.whereFilters.arguments.isEmpty())
             errors.reject(SpringActionController.ERROR_MSG, "whereFilters not supported");
         if (errors.hasErrors())
             return null;
@@ -391,10 +391,10 @@ public class MdxQueryImpl
         if (null != qq.onRows)
             rowset = _toSetString(_processExpr(qq.onRows));
 
-        if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
+        if (null != qq.countFilters && !qq.countFilters.arguments.isEmpty())
             countFilterSet = _toSetString(_processExpr(qq.countFilters));
 
-        if (null != qq.sliceFilters && qq.sliceFilters.arguments.size() > 0)
+        if (null != qq.sliceFilters && !qq.sliceFilters.arguments.isEmpty())
             slice = _toSetString(_processExpr(qq.sliceFilters));
 
         Measure defaultMeasure = (Measure) qq.cube.getHierarchies().get("Measures").getDefaultMember();
