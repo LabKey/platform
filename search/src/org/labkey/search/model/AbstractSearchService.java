@@ -983,16 +983,24 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             catch (InterruptedException ignored) {}
             catch (Throwable x)
             {
-                success = false;
-                try
+                if (i != null && i._preprocessAttempts++ == 0)
                 {
-                    ExceptionUtil.logExceptionToMothership(null, x);
+                    _log.warn("Error running " + i._id + " (retrying)", x);
+                    _runQueue.add(i);
                 }
-                catch (Throwable t)
+                else
                 {
-                    /* */
+                    success = false;
+                    try
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, x);
+                    }
+                    catch (Throwable t)
+                    {
+                        /* */
+                    }
+                    _log.error("Error running " + (null != i ? i._id : ""), x);
                 }
-                _log.error("Error running " + (null != i ? i._id : ""), x);
             }
             finally
             {
