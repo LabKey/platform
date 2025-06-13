@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertUpdateDataIterator;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 // I pulled these methods out of Table.java in an attempt to get Clover to provide coverage information on them.
@@ -448,7 +450,7 @@ public class StatementUtils
         sqlfDelete.append(")").appendEOS();
     }
 
-    public void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey,ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
+    private void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey, ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
     {
         String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
         if (Operation.merge == _operation || Operation.update == _operation)
@@ -492,8 +494,10 @@ public class StatementUtils
 
         TableInfo table = updatable.getSchemaTableInfo();
 
-        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataIdentifier())
-            throw new IllegalArgumentException();
+        if (table.getTableType() != DatabaseTableType.TABLE)
+            throw new IllegalArgumentException("Table must be a database table");
+        if (null == table.getMetaDataIdentifier())
+            throw new IllegalArgumentException("Table must have a metadata identifier");
 
         if (Operation.merge == _operation)
         {
@@ -519,54 +523,10 @@ public class StatementUtils
         if (null != objectURIColumnName)
             objecturiParameter = createParameter(objectURIColumnName, JdbcType.VARCHAR);
 
-        String comma;
-        Set<String> done = Sets.newCaseInsensitiveHashSet();
-
-        String objectIdVar = null;
-        String objectURIVar = null;
-        String rowIdVar = null;
-        String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
-
         //
         // Keys for UPDATE or MERGE
         //
-
-        LinkedHashMap<FieldKey,ColumnInfo> keys = new LinkedHashMap<>();
-        ColumnInfo col = table.getColumn("Container");
-        if (null != col)
-            keys.put(col.getFieldKey(), col);
-        if (null != _keyColumnNames && !_keyColumnNames.isEmpty())
-        {
-            for (String name : _keyColumnNames)
-            {
-                col = table.getColumn(name);
-                if (null == col)
-                    throw new IllegalArgumentException("Column not found: " + name);
-                keys.put(col.getFieldKey(), col);
-            }
-        }
-        else
-        {
-            // using objectURIColumnName preferentially to be backward compatible with OntologyManager.saveTabDelimited
-            //    which in turn is only called by LuminexDataHandler.saveDataRows()
-            col = objectURIColumnName == null ? null : table.getColumn(objectURIColumnName);
-            if (null != col && !_preferPKOverObjectUriAsKey)
-                keys.put(col.getFieldKey(), col);
-            else
-            {
-                // see 26661 and 41053
-                // NOTE: IMO we should not be using updatable.getPkColumns() here! If the caller doesn't want to use the
-                // 'real' PK from the SchemaTableInfo for update/merge, then the alternate keys should be explicitly specified
-                // using StatementUtils.keys()
-                for (String pkName : updatable.getPkColumnNames())
-                {
-                    col = table.getColumn(pkName);
-                    if (null == col)
-                        throw new IllegalStateException("pk column not found: " + pkName);
-                    keys.put(col.getFieldKey(), col);
-                }
-            }
-        }
+        LinkedHashMap<FieldKey, ColumnInfo> keys = getKeys(updatable, table, objectURIColumnName, _keyColumnNames, _preferPKOverObjectUriAsKey);
 
         //
         // exp.Objects INSERT
@@ -594,6 +554,8 @@ public class StatementUtils
             _dontUpdateColumnNames.add("CreatedBy");
         }
 
+        String objectIdVar = null;
+        String objectURIVar = null;
         boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
         if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
@@ -640,7 +602,7 @@ public class StatementUtils
                 sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();
 
                 // re-grab the object's ObjectId, in case it was just inserted
-                sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
+                sqlfSelectObject.append(_dialect.isPostgreSQL() ? "" : "SET ").append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();
@@ -681,8 +643,10 @@ public class StatementUtils
         // BASE TABLE INSERT()
         //
 
+        ColumnInfo col;
         List<ColumnInfo> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
+        Set<String> done = Sets.newCaseInsensitiveHashSet();
 
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
@@ -782,7 +746,6 @@ public class StatementUtils
             values.add(valueSQL);
         }
 
-        SQLFragment sqlfSelectIds = null;
         boolean selectAutoIncrement = false;
 
         assert cols.size() == values.size() : cols.size() + " columns and " + values.size() + " values - should match";
@@ -791,6 +754,8 @@ public class StatementUtils
         // INSERT
         //
 
+        String comma;
+        String rowIdVar = null;
         SQLFragment sqlfInsertInto = new SQLFragment();
         if (Operation.insert == _operation || Operation.merge == _operation)
         {
@@ -846,8 +811,6 @@ public class StatementUtils
         //
 
         SQLFragment sqlfUpdate = new SQLFragment();
-        SQLFragment sqlfWherePK = getPkWhereClause(keys);
-
         if (Operation.update == _operation || Operation.merge == _operation)
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
@@ -883,7 +846,7 @@ public class StatementUtils
             }
             else
             {
-                sqlfUpdate.append(sqlfWherePK);
+                sqlfUpdate.append(getPkWhereClause(keys));
                 sqlfUpdate.appendEOS();
             }
 
@@ -895,7 +858,7 @@ public class StatementUtils
                 {
                     sqlfUpdate = new SQLFragment();
                     sqlfInsertInto.append("\nWHERE NOT EXISTS (SELECT * FROM ").append(table.getSQLName());
-                    sqlfInsertInto.append(sqlfWherePK);
+                    sqlfInsertInto.append(getPkWhereClause(keys));
                     sqlfInsertInto.append(")");
                 }
                 else
@@ -912,6 +875,8 @@ public class StatementUtils
 
         if (Operation.insert == _operation || Operation.merge == _operation)
             sqlfInsertInto.appendEOS();
+
+        SQLFragment sqlfSelectIds = null;
 
         if ((_selectIds && (null != objectIdVar || null != rowIdVar)) || (_selectObjectUri && null != objectURIVar))
         {
@@ -988,7 +953,7 @@ public class StatementUtils
                 {
                     ParameterHolder ph = e.getValue();
                     sqlfDeclare.append(comma);
-                    String variable = variableDeclaration(sqlfDeclare, ph);
+                    String variable = sqlServerVariableDeclaration(sqlfDeclare, ph);
                     select.append(comma).append(variable).append("=?");
                     select.add(ph.p);
                     comma = ", ";
@@ -1135,7 +1100,57 @@ public class StatementUtils
         return ret;
     }
 
-    private SQLFragment getPkWhereClause(LinkedHashMap<FieldKey,ColumnInfo> keys)
+    private static LinkedHashMap<FieldKey, ColumnInfo> getKeys(
+        UpdateableTableInfo updatable,
+        TableInfo table,
+        String objectURIColumnName,
+        Set<String> keyColumnNames,
+        boolean preferPKOverObjectUriAsKey
+    )
+    {
+        LinkedHashMap<FieldKey, ColumnInfo> keys = new LinkedHashMap<>();
+        ColumnInfo col = table.getColumn("Container");
+
+        if (null != col)
+            keys.put(col.getFieldKey(), col);
+
+        if (null != keyColumnNames && !keyColumnNames.isEmpty())
+        {
+            for (String name : keyColumnNames)
+            {
+                col = table.getColumn(name);
+                if (null == col)
+                    throw new IllegalArgumentException("Column not found: " + name);
+                keys.put(col.getFieldKey(), col);
+            }
+        }
+        else
+        {
+            // using objectURIColumnName preferentially to be backward compatible with OntologyManager.saveTabDelimited
+            //    which in turn is only called by LuminexDataHandler.saveDataRows()
+            col = objectURIColumnName == null ? null : table.getColumn(objectURIColumnName);
+            if (null != col && !preferPKOverObjectUriAsKey)
+                keys.put(col.getFieldKey(), col);
+            else
+            {
+                // See Issue 26661 and Issue 41053
+                // NOTE: IMO we should not be using updatable.getPkColumnNames() here! If the caller doesn't want to use the
+                // 'real' PK from the SchemaTableInfo for update/merge, then the alternate keys should be explicitly specified
+                // using StatementUtils.keys()
+                for (String pkName : updatable.getPkColumnNames())
+                {
+                    col = table.getColumn(pkName);
+                    if (null == col)
+                        throw new IllegalStateException("pk column not found: " + pkName);
+                    keys.put(col.getFieldKey(), col);
+                }
+            }
+        }
+
+        return keys;
+    }
+
+    private SQLFragment getPkWhereClause(LinkedHashMap<FieldKey, ColumnInfo> keys)
     {
         SQLFragment sqlfWherePK = new SQLFragment();
         sqlfWherePK.append("\nWHERE ");
@@ -1164,7 +1179,7 @@ public class StatementUtils
         return sqlfWherePK;
     }
 
-    private String variableDeclaration(SQLFragment sqlfDeclare, ParameterHolder ph)
+    private String sqlServerVariableDeclaration(SQLFragment sqlfDeclare, ParameterHolder ph)
     {
         assert(_dialect.isSqlServer());
         String variable = ph.variableName;
@@ -1193,7 +1208,6 @@ public class StatementUtils
         return variable;
     }
 
-
     /*
      * We could use SQLFragment.appendValue() for most of these. However, here it is important to force
      * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
@@ -1215,49 +1229,154 @@ public class StatementUtils
             f.append("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
             return;
         }
-        if (value instanceof java.sql.Date)
+        if (value instanceof java.sql.Date sqlDate)
         {
-            f.append("{d '").append(DateUtil.formatIsoDate((java.sql.Date)value)).append("'}");
+            f.append("{d ").append(_dialect.getStringHandler().quoteStringLiteral(DateUtil.formatIsoDate(sqlDate))).append("}");
             return;
         }
-        else if (value instanceof java.util.Date)
+        else if (value instanceof java.util.Date date)
         {
-            f.append("{ts '").append(DateUtil.formatIsoDateShortTime((java.util.Date)value)).append("'}");
+            f.append("{ts ").append(_dialect.getStringHandler().quoteStringLiteral(DateUtil.formatIsoDateShortTime(date))).append("}");
             return;
         }
         assert value instanceof String;
         f.append(_dialect.getStringHandler().quoteStringLiteral(String.valueOf(value)));
     }
 
-
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class TestCase extends Assert
     {
-        TableInfo principals;
-        TableInfo test;
-        User user;
-        Container container;
+        final Container container;
+        final TableInfo principalsTable;
+        final UpdateableTableInfo testTable;
+        final User user;
 
-        void init()
+        public TestCase()
         {
-            principals = DbSchema.get("core", DbSchemaType.Module).getTable("principals");
-            test = DbSchema.get("test", DbSchemaType.Module).getTable("testtable2");
             container = JunitUtil.getTestContainer();
+            principalsTable = DbSchema.get("core", DbSchemaType.Module).getTable("principals");
+            testTable = DbSchema.get("test", DbSchemaType.Module).getTable("testtable2");
             user = TestContext.get().getUser();
         }
 
+        @Test
+        public void testToLiteral()
+        {
+            var statement = new StatementUtils(Operation.insert, principalsTable);
+            Function<Object, SQLFragment> runToLiteral = (value) -> {
+                var sql = new SQLFragment();
+                statement.toLiteral(sql, value);
+                return sql;
+            };
+
+            var dateLong = 1749759500016L; // Thu Jun 12 2025 13:18:20 GMT-0700 (Pacific Daylight Time)
+
+            // null value
+            var actual = runToLiteral.apply(null);
+            assertEquals(new SQLFragment("NULL"), actual);
+
+            // NowTimestamp
+            actual = runToLiteral.apply(new SimpleTranslator.NowTimestamp(dateLong));
+            assertEquals(new SQLFragment("CURRENT_TIMESTAMP"), actual);
+
+            // sql.Date
+            actual = runToLiteral.apply(new java.sql.Date(dateLong));
+            assertEquals(new SQLFragment("{d '2025-06-12'}"), actual);
+
+            // util.Date
+            actual = runToLiteral.apply(new java.util.Date(dateLong));
+            assertEquals(new SQLFragment("{ts '2025-06-12 13:18'}"), actual);
+        }
+
+        @Test
+        public void testCreateStatementValidation() throws Exception
+        {
+            try (var conn = getConnection())
+            {
+                var nonUpdateTable = new VirtualTable<>(DbSchema.get("test", DbSchemaType.Module), "virtualInsanity", null);
+
+                var exception = Assert.assertThrows(IllegalArgumentException.class, () -> new StatementUtils(Operation.merge, nonUpdateTable).createStatement(conn, container, user));
+                assertEquals("Table must be an UpdateableTableInfo", exception.getMessage());
+
+                // Unreachable with current mocks
+//                var nonDatabaseTable = QueryService.get().getUserSchema(user, container, "core").getTableOrThrow("Principals");
+//                exception = Assert.assertThrows(IllegalArgumentException.class, () -> new StatementUtils(Operation.merge, nonDatabaseTable).createStatement(conn, container, user));
+//                assertEquals("Table must be a database table", exception.getMessage());
+
+//                exception = Assert.assertThrows(IllegalArgumentException.class, () -> {
+//                    var noIdentifierTable = principalsTable.getMetaDataIdentifier().
+//                    new StatementUtils(Operation.merge, nonDatabaseTable).dialect(new MockSqlDialect()).createStatement(conn, container, user);
+//                });
+//                assertEquals("Table must have a metadata identifier", exception.getMessage());
+
+                exception = Assert.assertThrows(IllegalArgumentException.class, () -> new StatementUtils(Operation.merge, principalsTable).dialect(new MockSqlDialect()).createStatement(conn, container, user));
+                assertEquals("Merge is only supported/tested on postgres and sql server", exception.getMessage());
+            }
+        }
+
+        @Test
+        public void testGetKeys()
+        {
+            var containerFieldKey = FieldKey.fromParts("Container");
+            var rowIdFieldKey = FieldKey.fromParts("RowId");
+            var textFieldKey = FieldKey.fromParts("Text");
+
+            var updateTable = testTable;
+            var table = updateTable.getSchemaTableInfo();
+
+            // Pre-conditions
+            var pkColumnNames = new CaseInsensitiveHashSet(testTable.getPkColumnNames());
+            assertEquals(2, pkColumnNames.size());
+            assertTrue(pkColumnNames.contains(containerFieldKey.getName()));
+            assertTrue(pkColumnNames.contains(textFieldKey.getName()));
+            assertNotNull(testTable.getColumn(rowIdFieldKey));
+
+            // The "Container" column is always resolved if present on the table
+            var keys = StatementUtils.getKeys(updateTable, table, null, Set.of(containerFieldKey.getName()), false);
+            assertEquals(1, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+
+            // The "Container" column is only resolved even when in the explicit name map
+            keys = StatementUtils.getKeys(updateTable, table, null, Set.of(containerFieldKey.getName()), false);
+            assertEquals(1, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+
+            // The "Container" column is also resolved even when not in the explicit key column map. Other key columns are included as well.
+            keys = StatementUtils.getKeys(updateTable, table, null, Set.of(textFieldKey.getName()), false);
+            assertEquals(2, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+            assertTrue(keys.containsKey(textFieldKey));
+
+            // All explicitly named columns should resolve as columns on the table
+            var exception = Assert.assertThrows(IllegalArgumentException.class, () -> StatementUtils.getKeys(updateTable, table, null, Set.of(textFieldKey.getName(), "Beep"), false));
+            assertEquals("Column not found: Beep", exception.getMessage());
+
+            // Furnish an explicit "objectURIColumnName" and expect it to be included when preferPKOverObjectUriAsKey = false
+            keys = StatementUtils.getKeys(updateTable, table, "RowId", null, false);
+            assertEquals(2, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+            assertTrue(keys.containsKey(rowIdFieldKey));
+
+            // Furnish an explicit "objectURIColumnName" and expect it to NOT be included when preferPKOverObjectUriAsKey = true
+            keys = StatementUtils.getKeys(updateTable, table, "RowId", null, true);
+            assertEquals(2, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+            assertTrue(keys.containsKey(textFieldKey));
+
+            keys = StatementUtils.getKeys(updateTable, table, null, null, false);
+        }
 
         @Test
         public void testInsert() throws Exception
         {
-            init();
             ParameterMapStatement m = null;
-            try (Connection conn = principals.getSchema().getScope().getConnection())
+            try (Connection conn = getConnection())
             {
-                m = StatementUtils.insertStatement(conn, principals, null, container, user, null, true, true, false);
+                m = StatementUtils.insertStatement(conn, principalsTable, null, container, user, null, true, true, false);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.insertStatement(conn, test, null, container, user, null, true, true, false);
+                m = StatementUtils.insertStatement(conn, testTable, null, container, user, null, true, true, false);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
@@ -1267,20 +1386,18 @@ public class StatementUtils
                     m.close();
             }
         }
-
 
         @Test
         public void testUpdate() throws Exception
         {
-            init();
             ParameterMapStatement m = null;
-            try (Connection conn = principals.getSchema().getScope().getConnection())
+            try (Connection conn = getConnection())
             {
-                m = StatementUtils.updateStatement(conn, principals, container, user, true, true);
+                m = StatementUtils.updateStatement(conn, principalsTable, container, user, true, true);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.updateStatement(conn, test, container, user, true, true);
+                m = StatementUtils.updateStatement(conn, testTable, container, user, true, true);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
@@ -1291,19 +1408,17 @@ public class StatementUtils
             }
         }
 
-
         @Test
         public void testMerge() throws Exception
         {
-            init();
             ParameterMapStatement m = null;
-            try (Connection conn = principals.getSchema().getScope().getConnection())
+            try (Connection conn = getConnection())
             {
-                m = StatementUtils.mergeStatement(conn, principals, null, null, container, user, false, true);
+                m = StatementUtils.mergeStatement(conn, principalsTable, null, null, container, user, false, true);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.mergeStatement(conn, test, null, null, container, user, false, true);
+                m = StatementUtils.mergeStatement(conn, testTable, null, null, container, user, false, true);
 //                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
@@ -1312,6 +1427,11 @@ public class StatementUtils
                 if (null != m)
                     m.close();
             }
+        }
+
+        private Connection getConnection() throws SQLException
+        {
+            return principalsTable.getSchema().getScope().getConnection();
         }
     }
 }
