@@ -187,11 +187,11 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
             SqlDialect dialect = getOldestSupportedDialect();
             TestUpgradeCode good = new TestUpgradeCode();
-            dialect.runSql(null, goodSql, good, null, null);
+            dialect.runSql("PostgreSQL InlineProcedureTestCase", null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
 
             TestUpgradeCode bad = new TestUpgradeCode();
-            dialect.runSql(null, badSql, bad, null, null);
+            dialect.runSql("PostgreSQL InlineProcedureTestCase", null, badSql, bad, null, null);
             assertEquals(0, bad.getCounter());
         }
     }

@@ -700,8 +700,6 @@ $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-SELECT core.executeJavaInitializationCode('setDefaultExcludedProjects');
-
 -- Switch Name from PK to case-insensitive unique constraint
 ALTER TABLE core.Modules DROP CONSTRAINT PK_Modules;
 ALTER TABLE core.Modules ALTER COLUMN Name SET NOT NULL;

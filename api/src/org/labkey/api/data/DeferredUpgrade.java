@@ -22,8 +22,6 @@ import java.lang.annotation.Target;
 /**
  * Annotation to indicate which (if any) methods from an {@link UpgradeCode} implementation should be run after
  * module startup instead of in-line within the upgrade script as usual.
- * User: klum
- * Date: Jan 10, 2012
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.METHOD)
 @interface DeferredUpgrade

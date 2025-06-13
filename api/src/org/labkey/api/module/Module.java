@@ -31,6 +31,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -371,15 +372,15 @@ public interface Module
     List<FileLike> getStaticFileDirectories();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
-    // if the module no longer exists?  This setting gets saved to the Modules table.
+    // if the module no longer exists? This setting gets saved to the Modules table.
     boolean isAutoUninstall();
 
     /**
      * Methods used by the module loader to add and execute upgrade tasks that need to be invoked after
      * a module is initialized.
      */
-    void addDeferredUpgradeRunnable(String description, Runnable runnable);
-    void runDeferredUpgradeRunnables();
+    void addDeferredUpgradeMethod(ModuleContext moduleContext, UpgradeMethod upgradeMethod);
+    void runDeferredUpgradeMethods(ModuleContext moduleContext);
 
     @JsonIgnore
     Map<String, ModuleProperty> getModuleProperties();

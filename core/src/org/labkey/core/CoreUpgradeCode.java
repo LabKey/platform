@@ -21,7 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -31,7 +30,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
@@ -39,10 +37,7 @@ import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CoreUpgradeCode implements UpgradeCode
 {
@@ -62,21 +57,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnknownModules();
-    }
-
-    /**
-     * Invoked at bootstrap time to set the projects that are excluded from project locking by default
-     */
-    @SuppressWarnings("unused")
-    @DeferredUpgrade
-    public void setDefaultExcludedProjects(ModuleContext context)
-    {
-        List<GUID> guids = Stream.of("home", "Shared")
-            .map(ContainerManager::getForPath)
-            .filter(Objects::nonNull)
-            .map(Container::getEntityId)
-            .collect(Collectors.toList());
-        ContainerManager.setExcludedProjects(guids, () -> {});
     }
 
     /**

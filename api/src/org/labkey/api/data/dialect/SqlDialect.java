@@ -665,9 +665,9 @@ public abstract class SqlDialect
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
 
-    public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    public final void runSql(String script, DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn, getBooleanLiteral(true));
+        SqlScriptExecutor parser = new SqlScriptExecutor(script, sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn);
         parser.execute();
     }
 
