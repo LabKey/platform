@@ -9530,7 +9530,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(dataObjects.size());
@@ -9781,7 +9781,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(assayRuns.size());
