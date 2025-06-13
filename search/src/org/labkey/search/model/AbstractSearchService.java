@@ -987,6 +987,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     _log.warn("Error running " + i._id + " (retrying)", x);
                     _runQueue.add(i);
+                    i = null; // Don't mark as complete
                 }
                 else
                 {
