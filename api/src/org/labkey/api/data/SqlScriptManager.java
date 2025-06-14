@@ -204,7 +204,7 @@ public abstract class SqlScriptManager
             }
             else
             {
-                dialect.runSql(description, schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
+                dialect.runSql(description, schema, contents, moduleContext, conn);
                 LOG.info("Finished running script: {}", description);
             }
         }

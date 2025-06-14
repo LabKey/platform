@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
@@ -57,6 +58,13 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnknownModules();
+    }
+
+    /** Java upgrade method used for testing purposes (see PG and MSSQL InlineProcedureTestCase) */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void upgradeCode(ModuleContext moduleContext)
+    {
+        TestUpgradeCodeCounter.incrementCounter();
     }
 
     /**

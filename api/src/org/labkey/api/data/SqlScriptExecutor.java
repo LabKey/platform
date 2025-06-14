@@ -45,7 +45,6 @@ public class SqlScriptExecutor
     private final Pattern _splitPattern;
     private final Pattern _procPattern;
     private final DbSchema _schema;
-    private final @Nullable UpgradeCode _upgradeCode;
     private final ModuleContext _moduleContext;
     private final @Nullable Connection _conn;
 
@@ -57,18 +56,16 @@ public class SqlScriptExecutor
      * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
      * @param procPattern Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
      * @param schema Current schema. Null is allowed for testing purposes.
-     * @param upgradeCode Implementation of UpgradeCode that provides methods for executeJavaCode to run
      * @param moduleContext Current ModuleContext
      * @param conn Connection to use, if non-null
      */
-    public SqlScriptExecutor(String script, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    public SqlScriptExecutor(String script, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, ModuleContext moduleContext, @Nullable Connection conn)
     {
         _script = script;
         _sql = sql;
         _splitPattern = splitPattern;
         _procPattern = procPattern;
         _schema = schema;
-        _upgradeCode = upgradeCode;
         _moduleContext = moduleContext;
         _conn = conn;
     }
@@ -158,12 +155,12 @@ public class SqlScriptExecutor
         {
             super.execute();
 
-            Method method;
+            UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _script, _methodName);
 
             try
             {
-                UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _script, _methodName);
-                method = upgradeMethod.getMethod();
+                // Retrieve Method in all cases (even deferred upgrade) to proactively validate
+                Method method = upgradeMethod.getMethod();
 
                 if (method.isAnnotationPresent(DeferredUpgrade.class))
                 {
@@ -179,8 +176,7 @@ public class SqlScriptExecutor
             catch (NoSuchMethodException e)
             {
                 // Give the upgrade code a chance to recognize something that doesn't map to a Java method.
-                //noinspection DataFlowIssue UpgradeMethod() ensures _upgradeCode is non-null
-                _upgradeCode.fallthroughHandler(_methodName);
+                upgradeMethod.getUpgradeCode().fallthroughHandler(_methodName);
             }
         }
     }

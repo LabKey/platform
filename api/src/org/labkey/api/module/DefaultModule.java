@@ -1325,7 +1325,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
         }
 
-        public UpgradeMethod(ModuleContext moduleContext, String script, String methodName) throws NoSuchMethodException
+        public UpgradeMethod(ModuleContext moduleContext, String script, String methodName)
         {
             setModuleName(moduleContext.getName());
             _script = script;
@@ -1386,6 +1386,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         public void setRowId(int rowId)
         {
             _rowId = rowId;
+        }
+
+        public UpgradeCode getUpgradeCode()
+        {
+            return _upgradeCode;
         }
 
         public Method getMethod() throws NoSuchMethodException
