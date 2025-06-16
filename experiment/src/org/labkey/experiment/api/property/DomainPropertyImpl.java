@@ -26,6 +26,7 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
@@ -839,6 +840,7 @@ public class DomainPropertyImpl implements DomainProperty
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
+            SqlDialect dialect = OntologyManager.getExpSchema().getSqlDialect();
 
             if (hasProvisioner)
             {
@@ -860,7 +862,7 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
-                                _pd.getStorageColumnName(), _pdOld.getFormat(), null);
+                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null);
                     }
                 }
                 else if (propResized)
@@ -889,7 +891,6 @@ public class DomainPropertyImpl implements DomainProperty
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
                 {
-                    SqlDialect dialect = OntologyManager.getExpSchema().getSqlDialect();
                     String sqlTypeName = dialect.getSqlTypeName(newType.getJdbcType());
                     String update = String.format("CAST(DateTimeValue AS %s)", sqlTypeName);
                     if (newType.getJdbcType() == JdbcType.TIME)
@@ -915,7 +916,7 @@ public class DomainPropertyImpl implements DomainProperty
 
             if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
             {
-                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -943,17 +944,16 @@ public class DomainPropertyImpl implements DomainProperty
      * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
      * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
      */
-    private void updateBooleanValue(String schemaTable, String column, String formatString, @Nullable SQLFragment whereClause)
+    private void updateBooleanValue(String schemaTable, DatabaseIdentifier column, String formatString, @Nullable SQLFragment whereClause)
     {
-        column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);
         BooleanFormat f = BooleanFormat.getInstance(formatString);
         String trueValue = StringUtils.trimToNull(f.format(true));
         String falseValue = StringUtils.trimToNull(f.format(false));
         String nullValue = StringUtils.trimToNull(f.format(null));
         SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
-                append(column).append(" = CASE WHEN ").
-                append(column).append(" IN ('1', 'true') THEN ? WHEN ").
-                append(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+                appendIdentifier(column).append(" = CASE WHEN ").
+                appendIdentifier(column).append(" IN ('1', 'true') THEN ? WHEN ").
+                appendIdentifier(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
         sql.add(trueValue);
         sql.add(falseValue);
         sql.add(nullValue);
