@@ -74,7 +74,7 @@ LABKEY.PasswordGauge = new function() {
                 _pendingScoreRequest.abort();
                 _pendingScoreRequest = null;
             }
-            let passwordAtTimeOfRequest = password.value;
+            const passwordAtTimeOfRequest = password.value;
             _pendingScoreRequest = LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
                 method: 'POST',
