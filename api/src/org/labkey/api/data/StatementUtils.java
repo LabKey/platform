@@ -1863,7 +1863,6 @@ public class StatementUtils
                     }
 
                     statement = mergeStatement(dataClassTable, null, CaseInsensitiveHashSet.of("RunId"), updateColumns, true, true, false);
-                    statement.dialect(otherSqlDialect);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
                     assertTrue(statement._columnTracker.updateColumns.isEmpty());
