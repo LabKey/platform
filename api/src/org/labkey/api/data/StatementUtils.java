@@ -1039,7 +1039,8 @@ public class StatementUtils
                 fn.append("SETOF RECORD");
             else
                 fn.append("void");
-            fn.append(" AS $$\n");
+            String quoteToken = "$x" + GUID.makeHash() + "$";
+            fn.append(" AS ").append(quoteToken).append("\n");
             call.append("))");
 
 
@@ -1095,7 +1096,7 @@ public class StatementUtils
                 fn.append(sqlfSelectIds);
                 fn.appendEOS();
             }
-            fn.append("END").appendEOS().append("$$ LANGUAGE plpgsql").appendEOS();
+            fn.append("END").appendEOS().append(" ").append(quoteToken).append(" LANGUAGE plpgsql").appendEOS();
             _log.debug(fn.toDebugString());
             final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE").appendEOS();
             _log.debug(drop.toDebugString());
