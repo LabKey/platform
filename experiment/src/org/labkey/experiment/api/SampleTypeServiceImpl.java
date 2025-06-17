@@ -1843,7 +1843,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(samples.size());
