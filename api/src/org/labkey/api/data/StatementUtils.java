@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -39,6 +40,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -1263,10 +1265,17 @@ public class StatementUtils
     @SuppressWarnings("JUnitMalformedDeclaration")
     public static class TestCase extends Assert
     {
+        final static String DATA_CLASS_NAME = "StatementUtilsTestDataClass";
+        final static String VOCAB_DOMAIN_KIND = "Vocabulary"; // VocabularyDomainKind.KIND_NAME
+        final static String VOCAB_DOMAIN_NAME = "StatementUtilsVocabularyDomain";
+
         final Container container;
+        final TableInfo dataClassTable;
         final TableInfo principalsTable;
         final UpdateableTableInfo testTable;
         final User user;
+        final Set<String> vocabParameters = CaseInsensitiveHashSet.of("Age", "AgeMVIndicator", "Color", "ColorMVIndicator");
+        final Set<DomainProperty> vocabProps;
 
         // Flag to run tests against one or both (Postgres, SQL Server) SqlDialects. Set to false by default
         // since tests are run in both environments in CI. See "otherSqlDialect".
@@ -1283,8 +1292,18 @@ public class StatementUtils
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
 
+            dataClassTable = QueryService.get().getUserSchema(user, container, ExpSchema.SCHEMA_EXP_DATA).getTableOrThrow(DATA_CLASS_NAME);
             principalsTable = DbSchema.get("core", DbSchemaType.Module).getTable("principals");
             testTable = DbSchema.get("test", DbSchemaType.Module).getTable("testtable2");
+
+            // Initialize vocab domain properties
+            {
+                var vocabDomainKind = PropertyService.get().getDomainKindByName(VOCAB_DOMAIN_KIND);
+                var vocabDomainURI = vocabDomainKind.generateDomainURI(null, VOCAB_DOMAIN_NAME, container, user);
+                var vocabDomain = PropertyService.get().getDomain(container, vocabDomainURI);
+                assertNotNull(vocabDomain);
+                vocabProps = Set.of(vocabDomain.getPropertyByName("Age"), vocabDomain.getPropertyByName("Color"));
+            }
 
             if (runOtherDialect)
             {
@@ -1329,6 +1348,34 @@ public class StatementUtils
             else
             {
                 otherSqlDialect = null;
+            }
+        }
+
+        @BeforeClass
+        public static void createDomains() throws Exception
+        {
+            var container = JunitUtil.getTestContainer();
+            var user = TestContext.get().getUser();
+
+            // Create a data class domain
+            ExperimentService.get().createDataClass(container, user, DATA_CLASS_NAME, null, List.of(new GWTPropertyDescriptor("aa", "int")), List.of(), null, null);
+
+            // Create a vocabulary domain
+            {
+                GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
+                prop1.setRangeURI("int");
+                prop1.setName("Age");
+                prop1.setMvEnabled(true);
+
+                GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
+                prop2.setRangeURI("string");
+                prop2.setName("Color");
+
+                GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+                domain.setName(VOCAB_DOMAIN_NAME);
+                domain.setFields(List.of(prop1, prop2));
+
+                DomainUtil.createDomain(VOCAB_DOMAIN_KIND, domain, null, container, user, VOCAB_DOMAIN_NAME, null, false);
             }
         }
 
@@ -1472,6 +1519,81 @@ public class StatementUtils
         }
 
         @Test
+        public void testInsertWithExtensibleDomain() throws Exception
+        {
+            ParameterMapStatement m = null;
+            try (Connection conn = getConnection(dataClassTable))
+            {
+                StatementUtils statement;
+
+                // Insert
+                {
+                    var validateInsert = new Function<StatementUtils, Object>()
+                    {
+                        @Override
+                        public Object apply(StatementUtils s)
+                        {
+                            boolean isPostgres = s._dialect.isPostgreSQL();
+
+                            assertTrue(s._columnTracker.insertColumns.contains("Created"));
+                            assertTrue(s._columnTracker.insertColumns.contains("CreatedBy"));
+                            assertTrue(s._columnTracker.insertColumns.contains("Modified"));
+                            assertTrue(s._columnTracker.insertColumns.contains("ModifiedBy"));
+                            assertTrue(s._columnTracker.updateColumns.isEmpty());
+
+                            if (isPostgres)
+                            {
+                                assertTrue(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("_$objectid$_"));
+                            }
+                            else
+                            {
+                                // Variables are not used in SQL Server
+                                assertFalse(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("@_objectid_"));
+                            }
+
+                            var parameterKeys = s.parameters.keySet();
+                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
+                            return null;
+                        }
+                    };
+
+                    statement = insertStatement(dataClassTable, true, true);
+                    m = statement.createStatement(conn, container, user);
+                    m.close();
+                    m = null;
+                    validateInsert.apply(statement);
+
+                    if (runOtherDialect)
+                    {
+                        statement = insertStatement(dataClassTable, true, true);
+                        statement.dialect(otherSqlDialect);
+                        m = statement.createStatement(conn, container, user);
+                        m.close();
+                        m = null;
+                        validateInsert.apply(statement);
+                    }
+                }
+
+                // Insert with vocabulary properties
+                {
+                    statement = insertStatement(dataClassTable, true, true);
+                    statement.setVocabularyProperties(vocabProps);
+                    m = statement.createStatement(conn, container, user);
+                    m.close();
+                    m = null;
+                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
+                }
+            }
+            finally
+            {
+                if (null != m)
+                    m.close();
+            }
+        }
+
+        @Test
         public void testUpdate() throws Exception
         {
             ParameterMapStatement m = null;
@@ -1482,6 +1604,80 @@ public class StatementUtils
 
                 m = updateStatement(conn, testTable, container, user, true, true);
                 m.close(); m = null;
+            }
+            finally
+            {
+                if (null != m)
+                    m.close();
+            }
+        }
+
+        @Test
+        public void testUpdateWithExtensibleDomain() throws Exception
+        {
+            ParameterMapStatement m = null;
+            try (Connection conn = getConnection(dataClassTable))
+            {
+                StatementUtils statement;
+
+                // Update
+                {
+                    var validateUpdate = new Function<StatementUtils, Object>()
+                    {
+                        @Override
+                        public Object apply(StatementUtils s)
+                        {
+                            assertTrue(s._columnTracker.insertColumns.isEmpty());
+                            assertFalse(s._columnTracker.updateColumns.contains("Created"));
+                            assertFalse(s._columnTracker.updateColumns.contains("CreatedBy"));
+                            assertTrue(s._columnTracker.updateColumns.contains("Modified"));
+                            assertTrue(s._columnTracker.updateColumns.contains("ModifiedBy"));
+                            assertTrue(s._columnTracker.selectColumns.isEmpty());
+                            var parameterKeys = s.parameters.keySet();
+                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
+                            return null;
+                        }
+                    };
+
+                    statement = updateStatement(dataClassTable, true, true);
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                    validateUpdate.apply(statement);
+
+                    Set<String> allUpdateColumns = new CaseInsensitiveHashSet(statement._columnTracker.updateColumns);
+
+                    if (runOtherDialect)
+                    {
+                        statement = updateStatement(dataClassTable, true, true);
+                        statement.dialect(otherSqlDialect);
+                        m = statement.createStatement(conn, container, user);
+                        m.close(); m = null;
+                        validateUpdate.apply(statement);
+                    }
+
+                    statement = updateStatement(dataClassTable, false, false);
+                    statement.noupdate(CaseInsensitiveHashSet.of("Modified", "ModifiedBy"));
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                    assertFalse(statement._columnTracker.updateColumns.contains("Modified"));
+                    assertFalse(statement._columnTracker.updateColumns.contains("ModifiedBy"));
+
+                    statement = updateStatement(dataClassTable, false, false);
+                    statement.noupdate(allUpdateColumns);
+                    m = statement.createStatement(conn, container, user);
+                    var debugSql = m.getDebugSql();
+                    m.close(); m = null;
+                    assertTrue(debugSql.contains("'noop' WHERE 1 <> 1"));
+                }
+
+                // Update with vocabulary properties
+                {
+                    statement = updateStatement(dataClassTable, true, true);
+                    statement.setVocabularyProperties(vocabProps);
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
+                }
             }
             finally
             {
@@ -1576,157 +1772,47 @@ public class StatementUtils
         }
 
         @Test
-        public void testCreateStatementWithExtensibleTable() throws Exception
+        public void testMerge() throws Exception
         {
-            // Arrange
-            // Create a vocabulary domain
-            Set<DomainProperty> vocabProps = new HashSet<>();
+            ParameterMapStatement m = null;
+            try (Connection conn = getConnection())
             {
-                GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
-                prop1.setRangeURI("int");
-                prop1.setName("Age");
-                prop1.setMvEnabled(true);
+                m = mergeStatement(conn, principalsTable, null, null, null, container, user, false, true, false);
+                m.close(); m = null;
 
-                GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
-                prop2.setRangeURI("string");
-                prop2.setName("Color");
+                if (runOtherDialect)
+                {
+                    StatementUtils statement = mergeStatement(principalsTable, null, null, null, false, true, false);
+                    statement.dialect(otherSqlDialect);
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                }
 
-                String domainName = "TestVocabularyDomain";
-                GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
-                domain.setName(domainName);
-                domain.setFields(List.of(prop1, prop2));
+                m = mergeStatement(conn, testTable, null, null, null, container, user, false, true, false);
+                m.close(); m = null;
 
-                Domain vocabDomain = DomainUtil.createDomain("Vocabulary", domain, null, container, user, domainName, null, false);
-                vocabProps.add(vocabDomain.getPropertyByName("Age"));
-                vocabProps.add(vocabDomain.getPropertyByName("Color"));
+                if (runOtherDialect)
+                {
+                    StatementUtils statement = mergeStatement(testTable, null, null, null, false, true, false);
+                    statement.dialect(otherSqlDialect);
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                }
             }
+            finally
+            {
+                if (null != m)
+                    m.close();
+            }
+        }
 
-            // Create a data class
-            String dataClassName = "StatementUtilsTestDataClass";
-            ExperimentService.get().createDataClass(container, user, dataClassName, null, List.of(new GWTPropertyDescriptor("aa", "int")), List.of(), null, null);
-            TableInfo dataClassTable = QueryService.get().getUserSchema(user, container, ExpSchema.SCHEMA_EXP_DATA).getTableOrThrow(dataClassName);
-            Set<String> vocabParameters = CaseInsensitiveHashSet.of("Age", "AgeMVIndicator", "Color", "ColorMVIndicator");
-
+        @Test
+        public void testMergeWithExtensibleDomain() throws Exception
+        {
             ParameterMapStatement m = null;
             try (Connection conn = getConnection(dataClassTable))
             {
                 StatementUtils statement;
-
-                // Insert
-                {
-                    var validateInsert = new Function<StatementUtils, Object>()
-                    {
-                        @Override
-                        public Object apply(StatementUtils s)
-                        {
-                            boolean isPostgres = s._dialect.isPostgreSQL();
-
-                            assertTrue(s._columnTracker.insertColumns.contains("Created"));
-                            assertTrue(s._columnTracker.insertColumns.contains("CreatedBy"));
-                            assertTrue(s._columnTracker.insertColumns.contains("Modified"));
-                            assertTrue(s._columnTracker.insertColumns.contains("ModifiedBy"));
-                            assertTrue(s._columnTracker.updateColumns.isEmpty());
-
-                            if (isPostgres)
-                            {
-                                assertTrue(s._columnTracker.selectColumns.contains("_rowid_"));
-                                assertTrue(s._columnTracker.selectColumns.contains("_$objectid$_"));
-                            }
-                            else
-                            {
-                                // Variables are not used in SQL Server
-                                assertFalse(s._columnTracker.selectColumns.contains("_rowid_"));
-                                assertTrue(s._columnTracker.selectColumns.contains("@_objectid_"));
-                            }
-
-                            var parameterKeys = s.parameters.keySet();
-                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
-                            return null;
-                        }
-                    };
-
-                    statement = insertStatement(dataClassTable, true, true);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                    validateInsert.apply(statement);
-
-                    if (runOtherDialect)
-                    {
-                        statement = insertStatement(dataClassTable, true, true);
-                        statement.dialect(otherSqlDialect);
-                        m = statement.createStatement(conn, container, user);
-                        m.close(); m = null;
-                        validateInsert.apply(statement);
-                    }
-                }
-
-                // Insert with vocabulary properties
-                {
-                    statement = insertStatement(dataClassTable, true, true);
-                    statement.setVocabularyProperties(vocabProps);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
-                }
-
-                // Update
-                {
-                    var validateUpdate = new Function<StatementUtils, Object>()
-                    {
-                        @Override
-                        public Object apply(StatementUtils s)
-                        {
-                            assertTrue(s._columnTracker.insertColumns.isEmpty());
-                            assertFalse(s._columnTracker.updateColumns.contains("Created"));
-                            assertFalse(s._columnTracker.updateColumns.contains("CreatedBy"));
-                            assertTrue(s._columnTracker.updateColumns.contains("Modified"));
-                            assertTrue(s._columnTracker.updateColumns.contains("ModifiedBy"));
-                            assertTrue(s._columnTracker.selectColumns.isEmpty());
-                            var parameterKeys = s.parameters.keySet();
-                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
-                            return null;
-                        }
-                    };
-
-                    statement = updateStatement(dataClassTable, true, true);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                    validateUpdate.apply(statement);
-
-                    Set<String> allUpdateColumns = new CaseInsensitiveHashSet(statement._columnTracker.updateColumns);
-
-                    if (runOtherDialect)
-                    {
-                        statement = updateStatement(dataClassTable, true, true);
-                        statement.dialect(otherSqlDialect);
-                        m = statement.createStatement(conn, container, user);
-                        m.close(); m = null;
-                        validateUpdate.apply(statement);
-                    }
-
-                    statement = updateStatement(dataClassTable, false, false);
-                    statement.noupdate(CaseInsensitiveHashSet.of("Modified", "ModifiedBy"));
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                    assertFalse(statement._columnTracker.updateColumns.contains("Modified"));
-                    assertFalse(statement._columnTracker.updateColumns.contains("ModifiedBy"));
-
-                    statement = updateStatement(dataClassTable, false, false);
-                    statement.noupdate(allUpdateColumns);
-                    m = statement.createStatement(conn, container, user);
-                    var debugSql = m.getDebugSql();
-                    m.close(); m = null;
-                    assertTrue(debugSql.contains("'noop' WHERE 1 <> 1"));
-                }
-
-                // Update with vocabulary properties
-                {
-                    statement = updateStatement(dataClassTable, true, true);
-                    statement.setVocabularyProperties(vocabProps);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
-                }
 
                 // Merge
                 {
@@ -1790,41 +1876,6 @@ public class StatementUtils
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
                     assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
-                }
-            }
-            finally
-            {
-                if (null != m)
-                    m.close();
-            }
-        }
-
-        @Test
-        public void testMerge() throws Exception
-        {
-            ParameterMapStatement m = null;
-            try (Connection conn = getConnection())
-            {
-                m = mergeStatement(conn, principalsTable, null, null, null, container, user, false, true, false);
-                m.close(); m = null;
-
-                if (runOtherDialect)
-                {
-                    StatementUtils statement = mergeStatement(principalsTable, null, null, null, false, true, false);
-                    statement.dialect(otherSqlDialect);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
-                }
-
-                m = mergeStatement(conn, testTable, null, null, null, container, user, false, true, false);
-                m.close(); m = null;
-
-                if (runOtherDialect)
-                {
-                    StatementUtils statement = mergeStatement(testTable, null, null, null, false, true, false);
-                    statement.dialect(otherSqlDialect);
-                    m = statement.createStatement(conn, container, user);
-                    m.close(); m = null;
                 }
             }
             finally
