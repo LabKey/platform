@@ -70,9 +70,6 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
-// I pulled these methods out of Table.java in an attempt to get Clover to provide coverage information on them.
-// (Clover seems to skip any class that includes a junit TestCase.) I'm looking to refactor the re-select behavior,
-// but want Clover to identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
     private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");
