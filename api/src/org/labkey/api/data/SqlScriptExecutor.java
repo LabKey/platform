@@ -40,7 +40,7 @@ public class SqlScriptExecutor
 {
     private static final Logger _log = LogManager.getLogger(SqlScriptExecutor.class);
 
-    private final String _script;
+    private final String _scriptName;
     private final String _sql;
     private final Pattern _splitPattern;
     private final Pattern _procPattern;
@@ -51,7 +51,7 @@ public class SqlScriptExecutor
     /**
      * Splits a SQL string into blocks and executes each block, one at a time. Blocks are determined in a dialect-specific
      * way, using splitPattern and procPattern.
-     * @param script Description of the SQL script for logging purposes
+     * @param scriptName Name of the SQL script for logging purposes
      * @param sql The SQL string to split and execute
      * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
      * @param procPattern Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
@@ -59,9 +59,9 @@ public class SqlScriptExecutor
      * @param moduleContext Current ModuleContext
      * @param conn Connection to use, if non-null
      */
-    public SqlScriptExecutor(String script, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, ModuleContext moduleContext, @Nullable Connection conn)
+    public SqlScriptExecutor(String scriptName, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, ModuleContext moduleContext, @Nullable Connection conn)
     {
-        _script = script;
+        _scriptName = scriptName;
         _sql = sql;
         _splitPattern = splitPattern;
         _procPattern = procPattern;
@@ -155,7 +155,7 @@ public class SqlScriptExecutor
         {
             super.execute();
 
-            UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _script, _methodName);
+            UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _scriptName, _methodName);
 
             try
             {

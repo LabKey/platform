@@ -1290,7 +1290,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected ApplicationContext _applicationContext = null;
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException
     {
         if (null != _applicationContext)
             throw new IllegalStateException("already set");
@@ -1325,10 +1325,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
         }
 
-        public UpgradeMethod(ModuleContext moduleContext, String script, String methodName)
+        public UpgradeMethod(ModuleContext moduleContext, String scriptName, String methodName)
         {
             setModuleName(moduleContext.getName());
-            _script = script;
+            _script = scriptName;
             setMethodName(methodName);
 
             if (StringUtils.isEmpty(methodName))
@@ -1426,7 +1426,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         filter.addCondition(FieldKey.fromParts("ModuleName"), moduleContext.getName());
         filter.addCondition(FieldKey.fromParts("Executed"), null, CompareType.ISBLANK);
         TableInfo table = CoreSchema.getInstance().getTableInfoUpgradeSteps();
-        new TableSelector(table, filter, new Sort(FieldKey.fromParts("Created"))).stream(UpgradeMethod.class)
+        new TableSelector(table, filter, new Sort(FieldKey.fromParts("RowId"))).stream(UpgradeMethod.class)
             .forEach(upgradeMethod -> {
                 try
                 {
