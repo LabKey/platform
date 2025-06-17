@@ -19,14 +19,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.module.ModuleLoader.ModuleState;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -223,13 +226,33 @@ public class ModuleContext implements Cloneable
         return newSchemaVersion < installedSchemaVersion;
     }
 
-    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
+    public void addDeferredUpgradeMethod(UpgradeMethod upgradeMethod)
     {
         Module module = ModuleLoader.getInstance().getModule(_name);
         if (module != null)
-            module.addDeferredUpgradeRunnable(description, runnable);
+            module.addDeferredUpgradeMethod(this, upgradeMethod);
         else
             ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
+    }
+
+    public void invokeUpgradeMethod(UpgradeMethod upgradeMethod)
+    {
+        // Make sure cached database metadata reflects all previously executed SQL
+        CacheManager.clearAllKnownCaches();
+
+        try
+        {
+            upgradeMethod.invoke(this);
+        }
+        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
+        {
+            throw new RuntimeException("Can't invoke " + upgradeMethod.getDisplayName(), e);
+        }
+        finally
+        {
+            // Just to be safe
+            CacheManager.clearAllKnownCaches();
+        }
     }
 
     @Override

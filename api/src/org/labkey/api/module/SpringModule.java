@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -59,9 +60,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: matthewb
- * Date: May 24, 2007
- * SpringModule knows how to load spring application context information (applicationContext.xml etc)
+ * SpringModule knows how to load spring application context information (applicationContext.xml, etc.)
  */
 public abstract class SpringModule extends DefaultModule
 {
@@ -542,7 +541,6 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void setSessionTrackingModes(Set<SessionTrackingMode> set) throws IllegalStateException, IllegalArgumentException
         {
-
         }
 
         @Override
@@ -560,19 +558,16 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void addListener(String s)
         {
-
         }
 
         @Override
         public <T extends EventListener> void addListener(T t)
         {
-
         }
 
         @Override
         public void addListener(Class<? extends EventListener> aClass)
         {
-
         }
 
         @Override
@@ -584,7 +579,6 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void declareRoles(String... strings)
         {
-
         }
 
         @Override
@@ -602,7 +596,6 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void setSessionTimeout(int sessionTimeout)
         {
-
         }
 
         @Override
@@ -614,7 +607,6 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void setRequestCharacterEncoding(String encoding)
         {
-
         }
 
         @Override
@@ -626,7 +618,6 @@ public abstract class SpringModule extends DefaultModule
         @Override
         public void setResponseCharacterEncoding(String encoding)
         {
-
         }
 
         @Override
@@ -642,7 +633,6 @@ public abstract class SpringModule extends DefaultModule
         }
     }
 
-
     /** Spring BeanFactory likes strings, I don't like strings, so use this as a go-between */
     public <T> T getBean(Class<T> cls)
     {
@@ -653,8 +643,7 @@ public abstract class SpringModule extends DefaultModule
                 return null;
             String name = cls.getSimpleName();
             name = name.substring(0, 1).toLowerCase() + name.substring(1);
-            Object o = bf.getBean(name, cls);
-            return (T)o;
+            return bf.getBean(name, cls);
         }
         catch (NoSuchBeanDefinitionException x)
         {
@@ -662,16 +651,15 @@ public abstract class SpringModule extends DefaultModule
         }
         catch (RuntimeException x)
         {
-            _log.error("Error loading object for class " + cls.getName(), x);
+            _log.error("Error loading object for class {}", cls.getName(), x);
             throw x;
         }
     }
 
-
-    ApplicationContext _parentApplicationContext = null;
+    private ApplicationContext _parentApplicationContext = null;
     
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException
     {
         super.setApplicationContext(applicationContext);
         _parentApplicationContext = applicationContext;

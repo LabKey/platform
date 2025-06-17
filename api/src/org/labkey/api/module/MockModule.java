@@ -26,6 +26,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -416,12 +417,12 @@ public class MockModule implements Module
     }
 
     @Override
-    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
+    public void addDeferredUpgradeMethod(ModuleContext moduleContext, UpgradeMethod upgradeMethod)
     {
     }
 
     @Override
-    public void runDeferredUpgradeRunnables()
+    public void runDeferredUpgradeMethods(ModuleContext moduleContext)
     {
     }
 
