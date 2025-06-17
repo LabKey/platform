@@ -18,6 +18,7 @@ package org.labkey.search;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
@@ -25,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.module.DefaultModule;
@@ -44,7 +46,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -64,7 +65,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 
 public class SearchModule extends DefaultModule
 {
@@ -126,12 +126,6 @@ public class SearchModule extends DefaultModule
             public WebdavResource resolve(@NotNull String path)
             {
                 return WebdavService.get().lookup(path);
-            }
-
-            @Override
-            public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
-            {
-                return null;
             }
         });
     }
@@ -234,7 +228,7 @@ public class SearchModule extends DefaultModule
             _indexFullReasons.add(reason);
         }
 
-        public void reindexIfNeeded(@NotNull SearchService ss)
+        private void reindexIfNeeded(@NotNull SearchService ss)
         {
             if (_deleteIndex)
             {
@@ -247,18 +241,6 @@ public class SearchModule extends DefaultModule
         }
     }
 
-    @Override
-    public void afterUpdate(ModuleContext moduleContext)
-    {
-        // After every search module upgrade, delete the index and clear the last indexed time on all documents
-        // to rebuild the entire index, Issue #35674 & Issue #42617
-        if (!moduleContext.isNewInstall() && moduleContext.needsUpgrade(getSchemaVersion()))
-        {
-            _searchIndexStartupHandler.setDeleteIndex("Search schema upgrade");
-            _searchIndexStartupHandler.setIndexFull("Search schema upgrade");
-        }
-    }
-
     @NotNull
     @Override
     public Set<Class> getIntegrationTests()
@@ -268,5 +250,25 @@ public class SearchModule extends DefaultModule
             LuceneSearchServiceImpl.TestCase.class,
             LuceneSearchServiceImpl.TikaTestCase.class
         );
+    }
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new SearchUpgradeCode();
+    }
+
+    public class SearchUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings("unused")
+        public void reindex(ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                // Delete the index, clear last indexed on all documents, and initiate an aggressive reindexing
+                _searchIndexStartupHandler.setDeleteIndex("initiated by search upgrade code");
+                _searchIndexStartupHandler.setIndexFull("initiated by search upgrade code");
+            }
+        }
     }
 }
