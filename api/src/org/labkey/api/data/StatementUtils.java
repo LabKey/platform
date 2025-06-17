@@ -95,6 +95,9 @@ public class StatementUtils
     private final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
     final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
+    // ColumnTracker is used for test instrumentation and contains sets of column names that were included in
+    // given operations (insert, update, select) after running createStatement().
+    // This is intended for test instrumentation use only.
     private record ColumnTracker(Set<String> insertColumns, Set<String> updateColumns, Set<String> selectColumns)
     {
         public ColumnTracker()
@@ -214,21 +217,6 @@ public class StatementUtils
     {
         return insertStatement(table, selectIds, autoFillDefaultColumns)
                 .createStatement(conn, c, user);
-    }
-
-    public static ParameterMapStatement insertStatement(
-            Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames,
-            @Nullable Container c, @Nullable User user, @Nullable Map<String,Object> constants,
-            boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
-    {
-        StatementUtils utils = new StatementUtils(Operation.insert, table)
-                .skip(skipColumnNames)
-                .allowSetAutoIncrement(supportsAutoIncrementKey)
-                .updateBuiltinColumns(autoFillDefaultColumns)
-                .selectIds(selectIds);
-        if (null != constants)
-            utils.constants(constants);
-        return utils.createStatement(conn, c, user);
     }
 
     private static StatementUtils updateStatement(TableInfo table, boolean selectIds, boolean autoFillDefaultColumns)
@@ -382,7 +370,6 @@ public class StatementUtils
         return ph;
     }
 
-
     private SQLFragment appendParameterOrVariable(SQLFragment f, ParameterHolder ph)
     {
         if (ph.isConstant)
@@ -400,7 +387,6 @@ public class StatementUtils
         }
         return f;
     }
-
 
     private SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
     {
@@ -777,6 +763,8 @@ public class StatementUtils
         String comma;
         String rowIdVar = null;
         SQLFragment sqlfInsertInto = new SQLFragment();
+
+        // Construct a new column tracker for test instrumentation
         _columnTracker = new ColumnTracker();
 
         if (Operation.insert == _operation || Operation.merge == _operation)
@@ -1280,7 +1268,14 @@ public class StatementUtils
         final UpdateableTableInfo testTable;
         final User user;
 
+        // Flag to run tests against one or both (Postgres, SQL Server) SqlDialects. Set to false by default
+        // since tests are run in both environments in CI. See "otherSqlDialect".
         final boolean runOtherDialect = false;
+
+        // This is a mock SqlDialect that mocks the alternative SqlDialect configuration to the current configuration.
+        // So, if the tests are running in a Postgres environment, then this represents a SQL Server SqlDialect
+        // and vice versa. This is useful for getting code coverage across code paths for both dialects in a single
+        // test run. Enabled via the "runOtherDialect" flag.
         final SqlDialect otherSqlDialect;
 
         public TestCase() throws Exception
@@ -1452,6 +1447,9 @@ public class StatementUtils
             assertTrue(keys.containsKey(textFieldKey));
 
             keys = StatementUtils.getKeys(updateTable, table, null, null, false);
+            assertEquals(2, keys.size());
+            assertTrue(keys.containsKey(containerFieldKey));
+            assertTrue(keys.containsKey(textFieldKey));
         }
 
         @Test
@@ -1460,10 +1458,10 @@ public class StatementUtils
             ParameterMapStatement m = null;
             try (Connection conn = getConnection())
             {
-                m = insertStatement(conn, principalsTable, null, container, user, null, true, true, false);
+                m = insertStatement(conn, principalsTable, container, user, true, true);
                 m.close(); m = null;
 
-                m = insertStatement(conn, testTable, null, container, user, null, true, true, false);
+                m = insertStatement(conn, testTable, container, user, true, true);
                 m.close(); m = null;
             }
             finally
@@ -1546,7 +1544,7 @@ public class StatementUtils
                     assertEquals(expectedUpdateColumns, statement._columnTracker.updateColumns);
                 }
 
-                // Act - update statement (selectIds = false, autoFillDefaultColumns = false)
+                // Update statement (selectIds = false, autoFillDefaultColumns = false)
                 {
                     statement = StatementUtils.updateStatement(listTable, false, false);
                     m = statement.createStatement(conn, container, user);
@@ -1607,6 +1605,7 @@ public class StatementUtils
             String dataClassName = "StatementUtilsTestDataClass";
             ExperimentService.get().createDataClass(container, user, dataClassName, null, List.of(new GWTPropertyDescriptor("aa", "int")), List.of(), null, null);
             TableInfo dataClassTable = QueryService.get().getUserSchema(user, container, ExpSchema.SCHEMA_EXP_DATA).getTableOrThrow(dataClassName);
+            Set<String> vocabParameters = CaseInsensitiveHashSet.of("Age", "AgeMVIndicator", "Color", "ColorMVIndicator");
 
             ParameterMapStatement m = null;
             try (Connection conn = getConnection(dataClassTable))
@@ -1615,9 +1614,41 @@ public class StatementUtils
 
                 // Insert
                 {
+                    var validateInsert = new Function<StatementUtils, Object>()
+                    {
+                        @Override
+                        public Object apply(StatementUtils s)
+                        {
+                            boolean isPostgres = s._dialect.isPostgreSQL();
+
+                            assertTrue(s._columnTracker.insertColumns.contains("Created"));
+                            assertTrue(s._columnTracker.insertColumns.contains("CreatedBy"));
+                            assertTrue(s._columnTracker.insertColumns.contains("Modified"));
+                            assertTrue(s._columnTracker.insertColumns.contains("ModifiedBy"));
+                            assertTrue(s._columnTracker.updateColumns.isEmpty());
+
+                            if (isPostgres)
+                            {
+                                assertTrue(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("_$objectid$_"));
+                            }
+                            else
+                            {
+                                // Variables are not used in SQL Server
+                                assertFalse(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("@_objectid_"));
+                            }
+
+                            var parameterKeys = s.parameters.keySet();
+                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
+                            return null;
+                        }
+                    };
+
                     statement = insertStatement(dataClassTable, true, true);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    validateInsert.apply(statement);
 
                     if (runOtherDialect)
                     {
@@ -1625,6 +1656,7 @@ public class StatementUtils
                         statement.dialect(otherSqlDialect);
                         m = statement.createStatement(conn, container, user);
                         m.close(); m = null;
+                        validateInsert.apply(statement);
                     }
                 }
 
@@ -1634,13 +1666,34 @@ public class StatementUtils
                     statement.setVocabularyProperties(vocabProps);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
                 }
 
                 // Update
                 {
+                    var validateUpdate = new Function<StatementUtils, Object>()
+                    {
+                        @Override
+                        public Object apply(StatementUtils s)
+                        {
+                            assertTrue(s._columnTracker.insertColumns.isEmpty());
+                            assertFalse(s._columnTracker.updateColumns.contains("Created"));
+                            assertFalse(s._columnTracker.updateColumns.contains("CreatedBy"));
+                            assertTrue(s._columnTracker.updateColumns.contains("Modified"));
+                            assertTrue(s._columnTracker.updateColumns.contains("ModifiedBy"));
+                            assertTrue(s._columnTracker.selectColumns.isEmpty());
+                            var parameterKeys = s.parameters.keySet();
+                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
+                            return null;
+                        }
+                    };
+
                     statement = updateStatement(dataClassTable, true, true);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    validateUpdate.apply(statement);
+
+                    Set<String> allUpdateColumns = new CaseInsensitiveHashSet(statement._columnTracker.updateColumns);
 
                     if (runOtherDialect)
                     {
@@ -1648,7 +1701,22 @@ public class StatementUtils
                         statement.dialect(otherSqlDialect);
                         m = statement.createStatement(conn, container, user);
                         m.close(); m = null;
+                        validateUpdate.apply(statement);
                     }
+
+                    statement = updateStatement(dataClassTable, false, false);
+                    statement.noupdate(CaseInsensitiveHashSet.of("Modified", "ModifiedBy"));
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                    assertFalse(statement._columnTracker.updateColumns.contains("Modified"));
+                    assertFalse(statement._columnTracker.updateColumns.contains("ModifiedBy"));
+
+                    statement = updateStatement(dataClassTable, false, false);
+                    statement.noupdate(allUpdateColumns);
+                    m = statement.createStatement(conn, container, user);
+                    var debugSql = m.getDebugSql();
+                    m.close(); m = null;
+                    assertTrue(debugSql.contains("'noop' WHERE 1 <> 1"));
                 }
 
                 // Update with vocabulary properties
@@ -1657,21 +1725,62 @@ public class StatementUtils
                     statement.setVocabularyProperties(vocabProps);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
                 }
 
                 // Merge
                 {
-                    statement = mergeStatement(dataClassTable, null, null, null, false, true, false);
+                    var validateMerge = new Function<StatementUtils, Object>()
+                    {
+                        @Override
+                        public Object apply(StatementUtils s)
+                        {
+                            boolean isPostgres = s._dialect.isPostgreSQL();
+
+                            assertTrue(s._columnTracker.insertColumns.contains("Container"));
+                            assertTrue(s._columnTracker.insertColumns.contains("LSID"));
+                            assertFalse(s._columnTracker.updateColumns.contains("Container"));
+                            assertFalse(s._columnTracker.updateColumns.contains("LSID"));
+
+                            if (isPostgres)
+                            {
+                                assertTrue(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("_$objectid$_"));
+                            }
+                            else
+                            {
+                                // Variables are not used in SQL Server
+                                assertFalse(s._columnTracker.selectColumns.contains("_rowid_"));
+                                assertTrue(s._columnTracker.selectColumns.contains("@_objectid_"));
+                            }
+
+                            var parameterKeys = s.parameters.keySet();
+                            assertTrue(vocabParameters.stream().noneMatch(parameterKeys::contains));
+                            return null;
+                        }
+                    };
+
+                    statement = mergeStatement(dataClassTable, null, null, null, true, true, false);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    validateMerge.apply(statement);
+
+                    var updateColumns = new CaseInsensitiveHashSet(statement._columnTracker.updateColumns);
 
                     if (runOtherDialect)
                     {
-                        statement = mergeStatement(dataClassTable, null, null, null, false, true, false);
+                        statement = mergeStatement(dataClassTable, null, null, null, true, true, false);
                         statement.dialect(otherSqlDialect);
                         m = statement.createStatement(conn, container, user);
                         m.close(); m = null;
+                        validateMerge.apply(statement);
                     }
+
+                    statement = mergeStatement(dataClassTable, null, CaseInsensitiveHashSet.of("RunId"), updateColumns, true, true, false);
+                    statement.dialect(otherSqlDialect);
+                    m = statement.createStatement(conn, container, user);
+                    m.close(); m = null;
+                    assertTrue(statement._columnTracker.updateColumns.isEmpty());
                 }
 
                 // Merge with vocabulary properties
@@ -1680,6 +1789,7 @@ public class StatementUtils
                     statement.setVocabularyProperties(vocabProps);
                     m = statement.createStatement(conn, container, user);
                     m.close(); m = null;
+                    assertTrue(statement.parameters.keySet().containsAll(vocabParameters));
                 }
             }
             finally
