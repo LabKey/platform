@@ -106,7 +106,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS = Set.of(
         FieldKey.fromParts("EntityId"),
         FieldKey.fromParts("UserId"),
-        FieldKey.fromParts("DisplayName")
+        FieldKey.fromParts("DisplayName"),
+        FieldKey.fromParts("Active") // Issue 53280
     );
 
     private final static Logger LOG = LogManager.getLogger(UsersTable.class);
