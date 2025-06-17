@@ -454,7 +454,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             pw.append(writer.quoteValue(entry.getKey().getName()));
             pw.append('\t');
-            pw.append(writer.quoteValue(Objects.toString(entry.getValue())));
+            pw.append(writer.quoteValue(Objects.toString(entry.getValue(), "")));
             pw.append('\t');
             pw.println(writer.quoteValue(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName()));
         }
