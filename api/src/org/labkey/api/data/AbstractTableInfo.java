@@ -1204,7 +1204,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if ("junction".equals(type))
                 ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
             else
-                throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                LOG.warn(String.format("Non-junction multi value column type : \"%s\" in schema : \"%s\" is not supported.", type, fromSchema.getSchemaName()));
         }
 
         return ret;

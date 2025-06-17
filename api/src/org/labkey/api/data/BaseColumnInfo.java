@@ -1185,7 +1185,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 if ("junction".equals(type))
                     _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
                 else
-                    throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                    LOG.warn(String.format("Non-junction multi value column type : \"%s\" in table : \"%s\" is not supported.", type, getParentTable().getName()));
             }
         }
 
