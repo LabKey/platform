@@ -235,7 +235,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             try
             {
-                connectionWrapper.close();
+                connectionWrapper.close(expectMatchingConnection);
             }
             catch (SQLException ignored) {}
         }
@@ -440,10 +440,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (!match)
             {
                 String message =  "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection();
-                if (checkConnectionOwnership)
-                {
-                    assert false : message;
-                }
+                assert !checkConnectionOwnership : message;
                 // When another thread is killing the connection, race conditions are possible
                 LOG.info(message);
             }
