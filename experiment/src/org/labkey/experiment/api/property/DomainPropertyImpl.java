@@ -862,7 +862,7 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
-                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null);
+                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GH Issue 755
                     }
                 }
                 else if (propResized)
