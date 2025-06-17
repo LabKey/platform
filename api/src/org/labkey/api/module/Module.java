@@ -21,7 +21,6 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -245,12 +244,13 @@ public interface Module
      * Modules can provide JUnit tests that must be run inside the server
      * VM. These tests will be executed as part of the DRT. These are not true unit tests, and may rely on external
      * resources such as a database connection or services provided by other modules.
+     *
      * @return the integration tests that this module provides
      */
     @JsonIgnore
-    default @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    default @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        return getIntegrationTests().stream().map(c -> (Factory<Class<?>>)() -> c).collect(Collectors.toList());
+        return getIntegrationTests().stream().map(c -> (Supplier<Class<?>>)() -> c).collect(Collectors.toList());
     }
 
     /**

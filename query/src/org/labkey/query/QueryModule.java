@@ -16,7 +16,6 @@
 
 package org.labkey.query;
 
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -133,6 +132,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
 
@@ -361,9 +361,9 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
         ret.add(new JspTestCase("/org/labkey/query/MultiValueTest.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
