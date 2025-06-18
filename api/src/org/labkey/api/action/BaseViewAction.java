@@ -33,7 +33,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
@@ -73,11 +72,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-/**
- * User: matthewb
- * Date: May 16, 2007
- * Time: 1:48:01 PM
- */
 public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig
 {
     protected static final Logger logger = LogHelper.getLogger(BaseViewAction.class, "BaseViewAction");
