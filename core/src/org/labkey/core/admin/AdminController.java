@@ -1121,7 +1121,7 @@ public class AdminController extends SpringActionController
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
-            addCreditsViews(views, modules, "jars.txt", "JAR", null);
+            addCreditsViews(views, modules, "jars.txt", "JAR");
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
             addCreditsViews(views, modules, "source.txt", "Java Source Code");
             addCreditsViews(views, modules, "executables.txt", "Executable");
@@ -1138,11 +1138,6 @@ public class AdminController extends SpringActionController
 
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null);
-    }
-
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String customTitle) throws IOException
-    {
         for (Module module : modules)
         {
             String wikiSource = getCreditsFile(module, creditsFile);
@@ -1150,7 +1145,7 @@ public class AdminController extends SpringActionController
             if (null != wikiSource)
             {
                 String component = "the " + module.getName() + " Module";
-                String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
+                String title = fileType + " Files Distributed with " + component;
                 CreditsView credits = new CreditsView(wikiSource, title);
                 views.addView(credits);
             }
@@ -2844,7 +2839,7 @@ public class AdminController extends SpringActionController
     public class ShowErrorsSinceMarkAction extends ShowLogAction
     {
         @Override
-        public void export(HttpServletResponse response) throws IOException
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, _errorMark, getErrorLogFile());
         }
@@ -2854,7 +2849,7 @@ public class AdminController extends SpringActionController
     public class ShowAllErrorsAction extends ShowLogAction
     {
         @Override
-        public void export(HttpServletResponse response) throws IOException
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, 0, getErrorLogFile());
         }
