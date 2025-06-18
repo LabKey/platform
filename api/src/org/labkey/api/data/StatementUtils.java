@@ -1385,6 +1385,8 @@ public class StatementUtils
         @Test
         public void testToLiteral()
         {
+            boolean isPostgres = principalsTable.getSqlDialect().isPostgreSQL();
+
             var statement = new StatementUtils(Operation.insert, principalsTable);
             Function<Object, SQLFragment> runToLiteral = (value) -> {
                 var sql = new SQLFragment();
@@ -1408,11 +1410,13 @@ public class StatementUtils
 
             // sql.Date
             actual = runToLiteral.apply(new java.sql.Date(dateLong));
-            assertEquals(new SQLFragment("{d '2025-06-12'}"), actual);
+            var expected = isPostgres ? "{d '2025-06-12'}" : "{d N'2025-06-12'}";
+            assertEquals(new SQLFragment(expected), actual);
 
             // util.Date
             actual = runToLiteral.apply(new java.util.Date(dateLong));
-            assertEquals(new SQLFragment("{ts '2025-06-12 13:18'}"), actual);
+            expected = isPostgres ? "{ts '2025-06-12 13:18'}" : "{ts N'2025-06-12 13:18'}";
+            assertEquals(new SQLFragment(expected), actual);
         }
 
         @Test
