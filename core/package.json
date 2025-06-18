@@ -53,12 +53,12 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.49.3-fb-eslint-config.0",
+    "@labkey/components": "6.50.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
     "@labkey/build": "8.5.0",
-    "@labkey/eslint-config": "0.0.1-fb-eslint-config.9",
+    "@labkey/eslint-config": "1.0.0",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.6",
