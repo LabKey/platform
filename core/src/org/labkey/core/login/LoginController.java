@@ -317,7 +317,8 @@ public class LoginController extends SpringActionController
             try
             {
                 // Attempt authentication with all active form providers
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnUrlHelper(), true);
+                String formEmail = form.getEmail();
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, formEmail, form.getPassword(), form.getReturnUrlHelper(), true);
                 AuthenticationStatus status = result.getStatus();
 
                 if (Success == status)
@@ -328,7 +329,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     // Explicit test for valid email
-                    ValidEmail email = new ValidEmail(form.getEmail());
+                    ValidEmail email = "apikey".equals(formEmail) ? null : new ValidEmail(formEmail);
 
                     if (status.handleRedirect())
                     {
@@ -337,7 +338,7 @@ public class LoginController extends SpringActionController
                     else
                     {
                         // Pass in normalized email address, but only if user provided a full email address
-                        status.addUserErrorMessage(errors, result, form.getEmail().contains("@") ? email.getEmailAddress() : null, form.getReturnUrlHelper());
+                        status.addUserErrorMessage(errors, result, formEmail.contains("@") ? email.getEmailAddress() : null, form.getReturnUrlHelper());
                     }
                 }
             }

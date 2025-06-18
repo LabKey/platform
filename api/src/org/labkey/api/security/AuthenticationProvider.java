@@ -27,6 +27,7 @@ import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticati
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
@@ -452,14 +453,14 @@ public interface AuthenticationProvider
     // hackers). We try to be as specific as possible.
     enum FailureReason
     {
-        userDoesNotExist(ReportType.onFailure, "user does not exist"),
-        badPassword(ReportType.onFailure, "incorrect password"),
-        badCredentials(ReportType.onFailure, "invalid credentials"),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
-        complexity(ReportType.onFailure, "password does not meet the complexity requirements"),
-        expired(ReportType.onFailure, "password has expired"),
-        configurationError(ReportType.always, "configuration problem"),
-        notApplicable(ReportType.never, "not applicable"),
-        badApiKey(ReportType.onFailure, "invalid API key") {
+        userDoesNotExist(ReportType.onFailure, "user does not exist", null),
+        badPassword(ReportType.onFailure, "incorrect password", null),
+        badCredentials(ReportType.onFailure, "invalid credentials", null),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
+        complexity(ReportType.onFailure, "password does not meet the complexity requirements", AuthenticationStatus.Complexity),
+        expired(ReportType.onFailure, "password has expired", AuthenticationStatus.PasswordExpired),
+        configurationError(ReportType.always, "configuration problem", null),
+        notApplicable(ReportType.never, "not applicable", null),
+        badApiKey(ReportType.onFailure, "invalid API key", AuthenticationStatus.BadApiKey) {
             @Override
             public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
             {
@@ -471,11 +472,13 @@ public interface AuthenticationProvider
 
         private final ReportType _type;
         private final String _message;
+        private final @Nullable AuthenticationStatus _associatedStatus;
 
-        FailureReason(ReportType type, String message)
+        FailureReason(ReportType type, String message, @Nullable AuthenticationStatus associatedStatus)
         {
             _type = type;
             _message = message;
+            _associatedStatus = associatedStatus;
         }
 
         public ReportType getReportType()
@@ -491,6 +494,11 @@ public interface AuthenticationProvider
         public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
         {
             return email.getEmailAddress();
+        }
+
+        public @Nullable AuthenticationStatus getAssociatedStatus()
+        {
+            return _associatedStatus;
         }
     }
 
