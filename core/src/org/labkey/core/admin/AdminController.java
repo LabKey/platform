@@ -493,8 +493,9 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class, root));
         AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminOperationsPermission.class);
-        AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
+        AdminConsole.addLink(Diagnostics, "view csp report log file", new ActionURL(ShowCspReportLogAction.class, root));
         AdminConsole.addLink(Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
     }
 
@@ -2827,28 +2828,37 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    @AdminConsoleAction
-    public class ShowErrorsSinceMarkAction extends ExportAction<Object>
+    abstract public static class ShowLogAction extends ExportAction<Object>
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public final void export(Object o, HttpServletResponse response, BindException errors) throws IOException
+        {
+            getPageConfig().setNoIndex();
+            export(response);
+        }
+
+        protected abstract void export(HttpServletResponse response) throws IOException;
+    }
+
+    @AdminConsoleAction
+    public class ShowErrorsSinceMarkAction extends ShowLogAction
+    {
+        @Override
+        public void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, _errorMark, getErrorLogFile());
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowAllErrorsAction extends ExportAction<Object>
+    public class ShowAllErrorsAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, 0, getErrorLogFile());
         }
     }
-
 
     @AdminConsoleAction(ApplicationAdminPermission.class)
     public class ResetPrimaryLogMarkAction extends MutatingApiAction<Object>
@@ -2862,26 +2872,33 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowPrimaryLogSinceMarkAction extends ExportAction<Object>
+    public class ShowPrimaryLogSinceMarkAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, _primaryLogMark, getPrimaryLogFile());
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowPrimaryLogAction extends ExportAction<Object>
+    public class ShowPrimaryLogAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected void export(HttpServletResponse response) throws IOException
         {
-            getPageConfig().setNoIndex();
             PageFlowUtil.streamLogFile(response, 0, getPrimaryLogFile());
+        }
+    }
+
+    @AdminConsoleAction
+    public class ShowCspReportLogAction extends ShowLogAction
+    {
+        @Override
+        protected void export(HttpServletResponse response) throws IOException
+        {
+            PageFlowUtil.streamLogFile(response, 0, getCspReportLogFile());
         }
     }
 
@@ -2893,6 +2910,11 @@ public class AdminController extends SpringActionController
     private File getPrimaryLogFile()
     {
         return new File(getLabKeyLogDir(), "labkey.log");
+    }
+
+    private File getCspReportLogFile()
+    {
+        return new File(getLabKeyLogDir(), "csp-report.log");
     }
 
     private static ActionURL getActionsURL()
@@ -12169,6 +12191,7 @@ public class AdminController extends SpringActionController
                 controller.new ShowAllErrorsAction(),
                 controller.new ShowErrorsSinceMarkAction(),
                 controller.new ShowPrimaryLogAction(),
+                controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
                 new ExportQueriesAction(),
