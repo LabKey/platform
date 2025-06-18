@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -779,7 +780,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getDbTable(), null);
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, "datasetdata").toNioPathForWrite();
+        convertTypes(user, c, row,  getDbTable(), path);
     }
 
     // TODO Path->FileObject

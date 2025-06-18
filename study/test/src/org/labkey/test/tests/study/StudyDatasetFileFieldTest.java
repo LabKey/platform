@@ -151,6 +151,13 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         // assert correct reshow with error
         assertTextPresent("Could not convert value:");
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
+
+        // Issue : 53320. Update a file field with a different file
+        click(Locator.linkContainingText("remove"));
+        File updateFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
+        setFormElement(Locator.name("quf_intField"), "2");
+        setFormElement(Locator.name("quf_fileField"), updateFile.toString());
+        clickButton("Submit");
     }
 
     protected void createDataset(String name)
