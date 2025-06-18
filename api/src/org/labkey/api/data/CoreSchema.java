@@ -87,6 +87,11 @@ public class CoreSchema
         return getSchema().getTable("SqlScripts");
     }
 
+    public TableInfo getTableInfoUpgradeSteps()
+    {
+        return getSchema().getTable("UpgradeSteps");
+    }
+
     public TableInfo getTableInfoModules()
     {
         return getSchema().getTable("Modules");

@@ -172,6 +172,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
@@ -350,9 +351,11 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
@@ -566,7 +569,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (IOException e)
         {
-            LOG.warn("Failed to clean up previously uploaded files from " + SpringActionController.getTempUploadDir(), e);
+            LOG.warn("Failed to clean up previously uploaded files from {}", SpringActionController.getTempUploadDir(), e);
         }
     }
 
@@ -908,6 +911,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        List<GUID> guids = Stream.of(ContainerManager.HOME_PROJECT_PATH, ContainerManager.SHARED_CONTAINER_PATH)
+            .map(ContainerManager::getForPath)
+            .filter(Objects::nonNull)
+            .map(Container::getEntityId)
+            .collect(Collectors.toList());
+        ContainerManager.setExcludedProjects(guids, () -> {});
     }
 
 

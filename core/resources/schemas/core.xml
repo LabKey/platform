@@ -775,4 +775,14 @@
       <column columnName="SrcIdentifier"/>
     </columns>
   </table>
+  <table tableName="UpgradeSteps" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="ModuleName"/>
+      <column columnName="Script"/>
+      <column columnName="MethodName"/>
+      <column columnName="Created"/>
+      <column columnName="Executed"/>
+    </columns>
+  </table>
 </tables>
