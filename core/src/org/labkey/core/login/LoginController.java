@@ -329,7 +329,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     // Explicit test for valid email
-                    ValidEmail email = "apikey".equals(formEmail) ? null : new ValidEmail(formEmail);
+                    ValidEmail email = SecurityManager.API_KEY.equals(formEmail) ? null : new ValidEmail(formEmail);
 
                     if (status.handleRedirect())
                     {
