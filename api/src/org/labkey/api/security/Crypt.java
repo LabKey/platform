@@ -208,67 +208,9 @@ public enum Crypt
         @Override
         public String digest(String credentials)
         {
-//            long n = System.nanoTime();
-            String ret = org.labkey.api.security.BCrypt.hashpw(credentials, org.labkey.api.security.BCrypt.gensalt(11));
-//            double d = (System.nanoTime() - n)/1000000000.0;
-            return ret;
+            return org.labkey.api.security.BCrypt.hashpw(credentials, org.labkey.api.security.BCrypt.gensalt(11));
         }
     }
-
-
-/*    public static class _saltaes extends Crypt
-    {
-        private static final String _algorithm = "AES";
-        private static final int _keylen = 24;
-        private static final String _text = "eUpeZclKWup36fRxihyIVcKf"; // don't change me!
-
-
-        public boolean matches(String credentials, String crypt)
-        {
-            return crypt.equals(_digest(credentials,crypt));
-        }
-
-        public String digest(String pwd)
-        {
-            return _digest(pwd, null);
-        }
-
-        private String _digest(String pwd, String salt)
-        {
-            pwd = StringUtils.trimToEmpty(pwd);
-            salt = makeSalt(salt);
-            
-            String crypt = "";
-
-            int[] keyInts = new int[_keylen];
-            for (int i = 0; i < pwd.length() ; i++)
-                keyInts[i % _keylen] = keyInts[i%_keylen] * 31 + pwd.charAt(i);
-            byte[] keyBytes = new byte[_keylen];
-            for (int i = 0; i < _keylen ; i++)
-                keyBytes[i] = (byte)keyInts[i];
-            byte[] textBytes = new byte[_keylen];
-            for (int i = 0; i < _keylen; i++)
-                textBytes[i] = (byte)(salt.charAt(i % salt.length()) ^ _text.charAt(i));
-
-            try
-            {
-                SecretKeySpec skey = new SecretKeySpec(keyBytes, _algorithm);
-                Cipher cipher = Cipher.getInstance(_algorithm);
-                cipher.init(Cipher.ENCRYPT_MODE, skey);
-                byte[] cipherBytes = cipher.doFinal(textBytes);
-                crypt = new String(Base64.encodeBase64(cipherBytes, false));
-            }
-            catch (Exception x)
-            {
-                x.printStackTrace(System.err);
-                return null;
-            }
-
-            return salt + crypt.substring(0, 32);
-        }
-    }
-*/
-
 
     private static String makeSalt(String salt)
     {
@@ -311,7 +253,7 @@ public enum Crypt
 
     private static char _randChar()
     {
-        int i = (int) (Math.random() * 62);
+        int i = (int) (Encryption.SR.nextDouble() * 62);
         if (i > 52)
             return (char) ('0' + i - 52);
         return (char) (0 == (i & 0x0001)
