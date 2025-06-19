@@ -4532,6 +4532,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
+            // There are other tables/rows we could lock, but this is a start
+            // CONSIDER similar behavior for Domain.delete()
+            _lockProvisionedTables(assayService, expProtocols);
+
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -4632,6 +4637,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (assayService != null)
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
+
+
+    private static void _lockProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    {
+        if (null == assayService)
+            return;
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        if (!expSchema.getSqlDialect().isPostgreSQL())
+            return;
+
+        SQLFragment lockSQL = new SQLFragment();
+        for (var expProtocol : expProtocols)
+        {
+            AssayProvider provider = assayService.getProvider(expProtocol);
+            if (provider != null)
+            {
+                for (var domain : provider.getDomains(expProtocol))
+                {
+                    if (null != domain.getStorageTableName())
+                        lockSQL.append("LOCK TABLE ").appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(), domain.getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
+                }
+            }
+        }
+        if (!lockSQL.isEmpty())
+            new SqlExecutor(expSchema).execute(lockSQL);
+    }
+
 
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
     {
@@ -5431,10 +5463,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // If we're a batch, delete all the runs too
             if (experiment.getDataObject().getBatchProtocolId() != null)
             {
-                for (ExpRunImpl expRun : experiment.getRuns())
-                {
-                    expRun.delete(user);
-                }
+                ExperimentServiceImpl.get().deleteExperimentRuns(c, user, null, experiment.getRuns());
             }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
