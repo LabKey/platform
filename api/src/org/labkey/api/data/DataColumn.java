@@ -600,12 +600,22 @@ public class DataColumn extends DisplayColumn
 
     protected boolean isSelectInputSelected(String entryName, Object value, String valueStr)
     {
-        if (value instanceof Collection)
+        if (entryName == null)
+            return false;
+
+        if (value instanceof Collection<?> collection)
         {
-            // CONSIDER: stringify values in collection?
-            return ((Collection)value).contains(entryName);
+            // Issue 53254: Multi-value lookups should reselect values in form
+            for (var item : collection)
+            {
+                if (item != null && entryName.equals(item.toString()))
+                    return true;
+            }
+
+            return false;
         }
-        return null != entryName && entryName.equals(valueStr);
+
+        return entryName.equals(valueStr);
     }
 
     protected String getSelectInputDisplayValue(NamedObject entry)
