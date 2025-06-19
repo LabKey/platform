@@ -5463,7 +5463,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // If we're a batch, delete all the runs too
             if (experiment.getDataObject().getBatchProtocolId() != null)
             {
-                ExperimentServiceImpl.get().deleteExperimentRuns(c, user, null, experiment.getRuns());
+                for (ExpRunImpl expRun : experiment.getRuns())
+                {
+                    expRun.delete(user);
+                }
             }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
