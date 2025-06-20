@@ -4655,6 +4655,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 for (var domain : provider.getDomains(expProtocol))
                 {
+                    // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
                     if (null != domain.getStorageTableName())
                         lockSQL.append("LOCK TABLE ").appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(), domain.getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
                 }
