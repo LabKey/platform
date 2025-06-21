@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.50.1-fb-execute-sql.4",
+    "@labkey/components": "6.50.1-fb-execute-sql.5",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
