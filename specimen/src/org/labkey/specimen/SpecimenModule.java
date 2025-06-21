@@ -48,6 +48,7 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
@@ -274,15 +275,15 @@ public class SpecimenModule extends SpringModule
                             if (settings.isSimple())
                             {
                                 specimenBag.add("simple");
-                                TableInfo simpleSpecimens = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+                                TableInfo simpleSpecimens = schema.getTable(SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME);
                                 specimenBag.add("simpleSpecimens", (int) new TableSelector(simpleSpecimens).getRowCount());
                             }
                             else
                             {
                                 specimenBag.add("advanced");
-                                TableInfo events = schema.getTable(SpecimenQuerySchema.SPECIMEN_EVENT_TABLE_NAME);
-                                TableInfo vials = schema.getTable(SpecimenQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
-                                TableInfo specimens = schema.getTable(SpecimenQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME);
+                                TableInfo events = schema.getTable(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME);
+                                TableInfo vials = schema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME);
+                                TableInfo specimens = schema.getTable(SpecimenTablesProvider.SPECIMEN_SUMMARY_TABLE_NAME);
                                 specimenBag.add("events", (int) new TableSelector(events).getRowCount());
                                 specimenBag.add("vials", (int) new TableSelector(vials).getRowCount());
                                 specimenBag.add("specimens", (int) new TableSelector(specimens).getRowCount());

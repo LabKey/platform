@@ -28,6 +28,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.api.study.Cohort;
@@ -73,7 +74,7 @@ public class SpecimenManager
     {
         Study study = StudyService.get().getStudy(container);
         UserSchema schema = SpecimenQuerySchema.get(study, user);
-        TableInfo tinfo = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+        TableInfo tinfo = schema.getTable(SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME);
 
         FieldKey visitKey = FieldKey.fromParts("Visit");
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
@@ -114,7 +115,7 @@ public class SpecimenManager
     public Set<LocationImpl> getEnrollmentSitesWithRequests(Container container, User user)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
         String tableInfoAlias = "Specimen";
@@ -143,7 +144,7 @@ public class SpecimenManager
     public Set<LocationImpl> getEnrollmentSitesWithSpecimens(Container container, User user)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
         String tableInfoAlias = "Specimen";
@@ -517,7 +518,7 @@ public class SpecimenManager
             throw new NotFoundException("No study in container " + container.getPath());
         }
         UserSchema schema = SpecimenQuerySchema.get(study, user);
-        TableInfo specimenTable = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo specimenTable = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         return new TableSelector(specimenTable, filter, null);
     }
 
@@ -608,13 +609,13 @@ public class SpecimenManager
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container, @NotNull User user)
     {
         UserSchema querySchema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenWrap = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenWrap = querySchema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenWrap)
             throw new IllegalStateException("SpecimenDetail table not found.");
 
-        TableInfo additiveTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_ADDITIVE_TABLE_NAME);
-        TableInfo derivativeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_DERIVATIVE_TABLE_NAME);
-        TableInfo primaryTypeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
+        TableInfo additiveTableInfo = querySchema.getTable(SpecimenTablesProvider.ADDITIVE_TYPE_TABLE_NAME);
+        TableInfo derivativeTableInfo = querySchema.getTable(SpecimenTablesProvider.DERIVATIVE_TYPE_TABLE_NAME);
+        TableInfo primaryTypeTableInfo = querySchema.getTable(SpecimenTablesProvider.PRIMARY_TYPE_TABLE_NAME);
         String tableInfoSelectName = "SpecimenWrap";
 
         // TODO: consider caching

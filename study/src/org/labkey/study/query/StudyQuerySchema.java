@@ -48,7 +48,6 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -89,9 +88,21 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENREQUEST_TABLENAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIALREQUEST_TABLENAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.ADDITIVE_TYPE_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.DERIVATIVE_TYPE_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.LOCATION_SPECIMEN_LIST_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.PRIMARY_TYPE_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_COMMENTS_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_REQUEST_STATUSES_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_REQUEST_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_SUMMARY_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_VIAL_COUNT_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_REQUEST_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_TABLE_NAME;
 
 public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles
 {
@@ -103,18 +114,8 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String SPECIMENS_SCHEMA_NAME = "Specimens";
 
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
-    public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
-    public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
-    public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
-    public static final String SPECIMEN_EVENT_TABLE_NAME = "SpecimenEvent";
-    public static final String SPECIMEN_SUMMARY_TABLE_NAME = "SpecimenSummary";
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
-    public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
     public static final String LOCATION_TABLE_NAME = "Location";
-    public static final String SPECIMEN_PRIMARY_TYPE_TABLE_NAME = "SpecimenPrimaryType";
-    public static final String SPECIMEN_DERIVATIVE_TABLE_NAME = "SpecimenDerivative";
-    public static final String SPECIMEN_ADDITIVE_TABLE_NAME = "SpecimenAdditive";
-    public static final String VIAL_TABLE_NAME = "Vial";
 
     public static final String STUDY_TABLE_NAME = "Study";
     public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
@@ -215,7 +216,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
-        if (null != SpecimenService.get() && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
             ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
@@ -227,7 +228,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new DatasetSchema(this);
         if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME,name) && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -290,26 +291,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                     names.add(VISIT_ALIASES);
                 }
 
-                if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
-                {
-                    names.add(SPECIMEN_EVENT_TABLE_NAME);
-                    names.add(SPECIMEN_DETAIL_TABLE_NAME);
-                    names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                    names.add(SPECIMENVIALCOUNT_TABLENAME);
-                    names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-                    names.add(SPECIMENREQUEST_TABLENAME);
-                    names.add("SpecimenRequestStatus");
-                    names.add(VIALREQUEST_TABLENAME);
-                    names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
-                    names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
-                    names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-                    names.add("SpecimenComment");
-
-                    // specimen report pivots
-                    SpecimenMigrationService.get().addSpecimenPivotTableNames(names);
-
-                    names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-                }
+                addSpecimenTables(names);
 
                 names.add(VISIT_MAP_TABLE_NAME);
 
@@ -349,6 +331,32 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         }
 
         return _tableNames;
+    }
+
+    protected void addSpecimenTables(Set<String> names)
+    {
+        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        {
+            names.add(SPECIMEN_EVENT_TABLE_NAME);
+            names.add(SPECIMEN_DETAIL_TABLE_NAME);
+            names.add(SPECIMEN_SUMMARY_TABLE_NAME);
+            names.add(SPECIMEN_VIAL_COUNT_TABLE_NAME);
+            names.add(SIMPLE_SPECIMEN_TABLE_NAME);
+            names.add(SPECIMEN_REQUEST_TABLE_NAME);
+            names.add(SPECIMEN_REQUEST_STATUSES_TABLE_NAME);
+            names.add(VIAL_REQUEST_TABLE_NAME);
+            names.add(ADDITIVE_TYPE_TABLE_NAME);
+            names.add(DERIVATIVE_TYPE_TABLE_NAME);
+            names.add(PRIMARY_TYPE_TABLE_NAME);
+            names.add(SPECIMEN_COMMENTS_TABLE_NAME);
+
+            // specimen report pivots
+            SpecimenMigrationService sms = SpecimenMigrationService.get();
+            if (sms != null)
+                sms.addSpecimenPivotTableNames(names);
+
+            names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+        }
     }
 
     public Map<String, DatasetDefinition> getDatasetDefinitions()
@@ -537,7 +545,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
             return new SpecimenWrapTable(this, cf);
         }
-        if (SPECIMENVIALCOUNT_TABLENAME.equalsIgnoreCase(name))
+        if (SPECIMEN_VIAL_COUNT_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new SpecimenVialCountTable(this, cf);
         }
@@ -551,11 +559,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             return new ParticipantVisitTable(this, cf, false);
         }
-        if (SPECIMENREQUEST_TABLENAME.equalsIgnoreCase(name))
+        if (SPECIMEN_REQUEST_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new SpecimenRequestTable(this, cf);
         }
-        if ("SpecimenRequestStatus".equalsIgnoreCase(name))
+        if (SPECIMEN_REQUEST_STATUSES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new SpecimenRequestStatusTable(this, cf);
         }
@@ -580,32 +588,32 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             // Moved to core but kept here for backwards compatibility
             return new QCStateTable(this, cf);
         }
-        if (SPECIMEN_ADDITIVE_TABLE_NAME.equalsIgnoreCase(name))
+        if (ADDITIVE_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
 
             return new AdditiveTypeTable(this, cf);
         }
-        if (SPECIMEN_DERIVATIVE_TABLE_NAME.equalsIgnoreCase(name))
+        if (DERIVATIVE_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
 
             return new DerivativeTypeTable(this, cf);
         }
-        if (SPECIMEN_PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(name))
+        if (PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
 
             return new PrimaryTypeTable(this, cf);
         }
-        if ("SpecimenComment".equalsIgnoreCase(name))
+        if (SPECIMEN_COMMENTS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new SpecimenCommentTable(this, cf);
         }
-        if (VIALREQUEST_TABLENAME.equalsIgnoreCase(name))
+        if (VIAL_REQUEST_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VialRequestTable(this, cf);
         }
