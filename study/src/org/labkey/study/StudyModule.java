@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -191,6 +190,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
@@ -709,9 +709,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/study/model/DatasetImportTestCase.jsp"));
         return list;
     }

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class FieldKeyRowMap implements Map<FieldKey, Object>
+class FieldKeyRowMap implements Map<FieldKey, Object>
 {
     private final Results _results;
 
@@ -65,6 +65,8 @@ public class FieldKeyRowMap implements Map<FieldKey, Object>
     {
         try
         {
+            // Avoid ClassCastException if non-FieldKey is passed in. For example, StringExpressionFactory will
+            // convert FieldKeys to Strings if the field doesn't exist in the map (due to PHI column or bad expression)
             return key instanceof FieldKey fk ? _results.getObject(fk) : null;
         }
         catch (SQLException e)

@@ -34,6 +34,8 @@ This implementation has only been changed as follows
  *  -Replaced StringBuilder with StringBuffer
  */
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Reader;
 
@@ -260,7 +262,7 @@ public class BufferedReader extends Reader {
      *             if this reader is closed or some other I/O error occurs.
      */
     @Override
-    public int read(char[] buffer, int offset, int length) throws IOException {
+    public int read(char @NotNull [] buffer, int offset, int length) throws IOException {
         synchronized (lock) {
             if (isClosed()) {
                 throw new IOException();

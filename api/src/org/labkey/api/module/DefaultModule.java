@@ -29,25 +29,34 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
@@ -77,6 +86,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,10 +94,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -103,7 +111,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
-    private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
@@ -1283,7 +1290,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected ApplicationContext _applicationContext = null;
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException
     {
         if (null != _applicationContext)
             throw new IllegalStateException("already set");
@@ -1302,28 +1309,136 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return false;
     }
 
-    @Override
-    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
+    public static class UpgradeMethod
     {
-        _deferredUpgradeRunnables.add(new Pair<>(description, runnable));
+        private Module _module;
+        private UpgradeCode _upgradeCode;
+        private String _script;
+        private String _methodName;
+        private int _rowId;
+
+        /**
+         * Used for bean creation from the database
+         */
+        @SuppressWarnings("unused")
+        public UpgradeMethod()
+        {
+        }
+
+        public UpgradeMethod(ModuleContext moduleContext, String scriptName, String methodName)
+        {
+            setModuleName(moduleContext.getName());
+            _script = scriptName;
+            setMethodName(methodName);
+
+            if (StringUtils.isEmpty(methodName))
+            {
+                throw new IllegalStateException("Upgrade method is empty");
+            }
+        }
+
+        public String getModuleName()
+        {
+            return _module.getName();
+        }
+
+        public void setModuleName(String name)
+        {
+            _module = ModuleLoader.getInstance().getModule(name);
+            _upgradeCode = _module.getUpgradeCode();
+
+            if (_upgradeCode == null)
+            {
+                throw new IllegalStateException("The " + _module.getName() + " module does not have an UpgradeCode implementation");
+            }
+        }
+
+        public String getMethodName()
+        {
+            return _methodName;
+        }
+
+        public void setMethodName(String methodName)
+        {
+            if (StringUtils.isEmpty(methodName))
+            {
+                throw new IllegalStateException("Upgrade method for the " + _module.getName() + " module is empty");
+            }
+
+            _methodName = methodName;
+        }
+
+        public String getScript()
+        {
+            return _script;
+        }
+
+        public void setScript(String script)
+        {
+            _script = script;
+        }
+
+        public int getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public UpgradeCode getUpgradeCode()
+        {
+            return _upgradeCode;
+        }
+
+        public Method getMethod() throws NoSuchMethodException
+        {
+            return _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
+        }
+
+        public String getDisplayName()
+        {
+            return _upgradeCode.getClass().getSimpleName() + "." + _methodName + "(ModuleContext moduleContext)";
+        }
+
+        public void invoke(ModuleContext moduleContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+        {
+            getMethod().invoke(_upgradeCode, moduleContext);
+        }
     }
 
     @Override
-    public void runDeferredUpgradeRunnables()
+    public void addDeferredUpgradeMethod(ModuleContext moduleContext, UpgradeMethod upgradeMethod)
     {
-        while (!_deferredUpgradeRunnables.isEmpty())
-        {
-            Pair<String, Runnable> pair = _deferredUpgradeRunnables.remove();
-            try
-            {
-                ModuleLoader.getInstance().setStartingUpMessage("Running deferred upgrade for module '" + getName() + "': " + pair.first);
-                pair.second.run();
-            }
-            finally
-            {
-                ModuleLoader.getInstance().setStartingUpMessage(null);
-            }
-        }
+        TableInfo table = CoreSchema.getInstance().getTableInfoUpgradeSteps();
+        Table.insert(moduleContext.getUpgradeUser(), table, upgradeMethod);
+    }
+
+    /**
+     * Run all deferred upgrade methods in this module and mark them as executed
+     */
+    @Override
+    public void runDeferredUpgradeMethods(ModuleContext moduleContext)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("ModuleName"), moduleContext.getName());
+        filter.addCondition(FieldKey.fromParts("Executed"), null, CompareType.ISBLANK);
+        TableInfo table = CoreSchema.getInstance().getTableInfoUpgradeSteps();
+        new TableSelector(table, filter, new Sort(FieldKey.fromParts("RowId"))).stream(UpgradeMethod.class)
+            .forEach(upgradeMethod -> {
+                try
+                {
+                    ModuleLoader.getInstance().setStartingUpMessage("Running deferred upgrade method " + upgradeMethod.getDisplayName());
+                    moduleContext.invokeUpgradeMethod(upgradeMethod);
+                    Table.update(moduleContext.getUpgradeUser(), table, Map.of("Executed", DateUtil.now()), upgradeMethod.getRowId());
+                }
+                finally
+                {
+                    ModuleLoader.getInstance().setStartingUpMessage(null);
+                }
+            });
     }
 
     @Override

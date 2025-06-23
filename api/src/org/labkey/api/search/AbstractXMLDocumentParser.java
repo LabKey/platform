@@ -45,6 +45,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             parser.getXMLReader().setFeature("http://xml.org/sax/features/validation", false);
             parser.getXMLReader().setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            parser.getXMLReader().setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             parser.parse(stream, createSAXHandler(handler));
         }
         catch (ParserConfigurationException e)

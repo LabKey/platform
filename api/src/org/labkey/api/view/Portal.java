@@ -17,7 +17,6 @@
 package org.labkey.api.view;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -66,13 +65,13 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -95,6 +94,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.util.DOM.Attribute.action;
@@ -217,7 +217,7 @@ public class Portal implements ModuleChangeListener
     /** Bean object for persisting web part configurations in the core.portalwebparts table
      * NOTE: implements Factory<> so this can be used as a builder for immutable object
      */
-    public static class WebPart implements Serializable, Factory<WebPart>
+    public static class WebPart implements Serializable, Supplier<WebPart>
     {
         Container container;
         String pageId;
@@ -468,12 +468,12 @@ public class Portal implements ModuleChangeListener
         // return an immutable webpart
 
         @Override
-        public WebPart create()
+        public WebPart get()
         {
             return new WebPart(this, true)
             {
                 @Override
-                public WebPart create()
+                public WebPart get()
                 {
                     return this;
                 }
@@ -1897,7 +1897,7 @@ public class Portal implements ModuleChangeListener
         }
     }
 
-    public static class PortalPage implements Cloneable, Factory<PortalPage>
+    public static class PortalPage implements Cloneable, Supplier<PortalPage>
     {
         private GUID entityId;
         private GUID containerId;
@@ -1942,7 +1942,7 @@ public class Portal implements ModuleChangeListener
                 this.propertyMap = Collections.unmodifiableMap(propertyMap);
             // deep copy, note that .create() creates readonly copy
             for (WebPart wp : copyFrom.webparts.values())
-                webparts.put(wp.index, (readonly ? wp.create() : new WebPart(wp)));
+                webparts.put(wp.index, (readonly ? wp.get() : new WebPart(wp)));
             if (readonly)
                 this.webparts = Collections.unmodifiableMap(webparts);
         }
@@ -2110,12 +2110,12 @@ public class Portal implements ModuleChangeListener
 
         /** create a read only copy of this PortalPage suitable for caching */
         @Override
-        public PortalPage create()
+        public PortalPage get()
         {
             return new PortalPage(this, true)
             {
                 @Override
-                public PortalPage create()
+                public PortalPage get()
                 {
                     return this;
                 }
