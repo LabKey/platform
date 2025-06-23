@@ -66,7 +66,7 @@ public abstract class AbstractStudyEntity<K, T> extends AbstractStudyCachable<K,
     @Override
     public Container getContainer()
     {
-        return ContainerManager.getForId(_containerId);
+        return _containerId != null ? ContainerManager.getForId(_containerId) : null;
     }
 
     @Override
