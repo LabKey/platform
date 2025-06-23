@@ -3257,7 +3257,10 @@ public class ExpDataIterators
                             ExpMaterial aliquotParent = ExperimentService.get().findExpMaterial(_container, _user, aliquotedFrom, _sampleType, _remapCache, _materialCache);
                             if (aliquotParent != null)
                             {
-                                _row[_aliquotNameCol] = aliquotParent.getName();
+                                // This is put into a collection to indicate that this is a processed name that does
+                                // not need to be escaped with quotes, etc. which avoids the complexities of the
+                                // default name string handling.
+                                _row[_aliquotNameCol] = List.of(aliquotParent.getName());
                                 _row[_aliquotRowIdCol] = aliquotParent.getRowId();
                             }
                         }
