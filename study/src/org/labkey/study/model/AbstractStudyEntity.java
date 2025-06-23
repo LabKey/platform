@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.StudyEntity;
+import org.labkey.api.util.GUID;
 import org.labkey.study.StudyModule;
 
 import java.io.Serializable;
@@ -42,39 +43,37 @@ import java.util.List;
 
 public abstract class AbstractStudyEntity<K, T> extends AbstractStudyCachable<K, T> implements StudyEntity, Serializable
 {
-    transient private Container _container;
-    private String _containerId;
+    private GUID _containerId;
     protected String _entityId;
     protected String _label;
     protected boolean _showByDefault = true;
     protected int _displayOrder;
 
-
     public AbstractStudyEntity()
     {
-        super();
     }
     
     public AbstractStudyEntity(Container c)
     {
-        super();
         setContainer(c);
+    }
+
+    public GUID getContainerId()
+    {
+        return _containerId;
     }
 
     @Override
     public Container getContainer()
     {
-        if (_container == null && _containerId != null)
-            _container = ContainerManager.getForId(_containerId);
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     @Override
     public void setContainer(Container container)
     {
         verifyMutability();
-        _container = container;
-        _containerId = container == null ? null : container.getId();
+        _containerId = container == null ? null : container.getEntityId();
     }
 
     @Override

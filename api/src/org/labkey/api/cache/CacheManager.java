@@ -17,6 +17,7 @@ package org.labkey.api.cache;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
@@ -197,7 +198,7 @@ public class CacheManager
 
     private static final int MAX_DEPTH = 4;
 
-    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fields, int depth)
+    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fieldPath, int depth)
     {
         if (value != null && depth < MAX_DEPTH)
         {
@@ -208,34 +209,34 @@ public class CacheManager
                 m.entrySet().stream()
                     .findFirst()
                     .ifPresent(entry -> {
-                        analyzeValue(entry.getKey(), cacheName, fields, depth + 1);
-                        analyzeValue(entry.getValue(), cacheName, fields, depth + 1);
+                        analyzeValue(entry.getKey(), cacheName, safeAppend(fieldPath, "Map", "_key"), depth + 1);
+                        analyzeValue(entry.getValue(), cacheName, safeAppend(fieldPath, "Map", "_value"), depth + 1);
                     });
             }
             else if (value instanceof Collection<?> coll)
             {
                 coll.stream()
                     .findFirst()
-                    .ifPresent(element -> analyzeValue(element, cacheName, fields, depth + 1));
+                    .ifPresent(element -> analyzeValue(element, cacheName, safeAppend(fieldPath, coll.getClass().getSimpleName(), "get(0)"), depth + 1));
             }
             else if (clazz.isArray() && Array.getLength(value) > 0)
             {
-                analyzeValue(Array.get(value, 0), cacheName, fields, depth + 1);
+                analyzeValue(Array.get(value, 0), cacheName, safeAppend(fieldPath, "Array", "[0]"), depth + 1);
             }
             else if (value instanceof Reference<?> ref)
             {
-                analyzeValue(ref, cacheName, fields, depth + 1);
+                analyzeValue(ref, cacheName, fieldPath, depth + 1);
             }
             else if (CLASSES.add(clazz))
             {
                 for (Field field : getAllInstanceFields(clazz))
                 {
-                    String fieldPath = (fields != null ? fields + "." : "") + field.getName();
+                    String newFieldPath = safeAppend(fieldPath, clazz.getSimpleName(), field.getName());
                     Class<?> type = field.getType();
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                     }
                     else
                     {
@@ -243,20 +244,25 @@ public class CacheManager
                         {
                             field.setAccessible(true);
                             Object val = field.get(value);
-                            analyzeValue(val, cacheName, fieldPath, depth + 1);
+                            analyzeValue(val, cacheName, newFieldPath, depth + 1);
                         }
                         catch (InaccessibleObjectException e)
                         {
-                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                         }
                         catch (IllegalAccessException e)
                         {
-                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), fieldPath, field.getType().getName(), e);
+                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), newFieldPath, field.getType().getName(), e);
                         }
                     }
                 }
             }
         }
+    }
+
+    private static String safeAppend(@Nullable String fieldPath, @NotNull String currentClass, @NotNull String fieldName)
+    {
+        return (fieldPath == null ? currentClass : fieldPath) + "." + fieldName;
     }
 
     // Recurse up the class hierarchy

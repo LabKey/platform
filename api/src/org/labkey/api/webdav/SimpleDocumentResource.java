@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -32,11 +33,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: matthewb
- * Date: Nov 25, 2009
- * Time: 5:31:23 PM
- */
 public class SimpleDocumentResource extends AbstractDocumentResource
 {
     private final String _documentId;
@@ -48,12 +44,12 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     private final long _created;
     private final long _modified;
 
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, @Nullable String body, URLHelper executeUrl, @Nullable Map<String, Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, GUID containerId, String contentType, @Nullable String body, URLHelper executeUrl, @Nullable Map<String, Object> properties)
     {
         this(path, documentId, containerId, contentType, body, executeUrl, null, null, null, null, properties);
     }
 
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, @Nullable String body, URLHelper executeUrl,
+    public SimpleDocumentResource(Path path, String documentId, GUID containerId, String contentType, @Nullable String body, URLHelper executeUrl,
                                   @Nullable User createdBy, @Nullable Date created,
                                   @Nullable User modifiedBy, @Nullable Date modified,
                                   @Nullable Map<String, Object> properties)
@@ -72,7 +68,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         if (_executeUrl instanceof ActionURL actionURL)
         {
             String extraPath = StringUtils.strip(actionURL.getExtraPath(),"/");
-            assert extraPath.equals(_containerId) || (null != properties && extraPath.equals(properties.get(SearchService.PROPERTY.securableResourceId.toString())));
+            assert extraPath.equals(_containerId.toString()) || (null != properties && extraPath.equals(properties.get(SearchService.PROPERTY.securableResourceId.toString())));
         }
         if (null != properties)
             _properties = new HashMap<>(properties);
@@ -80,7 +76,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
 
     public SimpleDocumentResource(Path path, String documentId, String contentType, @Nullable String body, ActionURL executeUrl, @Nullable Map<String, Object> properties)
     {
-        this(path, documentId, executeUrl.getParsedExtraPath().toString("",""), contentType, body, executeUrl, properties);
+        this(path, documentId, new GUID(executeUrl.getParsedExtraPath().toString("","")), contentType, body, executeUrl, properties);
     }
 
     private static long toTime(String fieldName, @Nullable Date d, @Nullable Map<String, Object> properties)

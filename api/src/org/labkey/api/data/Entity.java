@@ -24,19 +24,14 @@ import org.labkey.api.util.MemTracker;
 import java.util.Date;
 
 
-/**
- * User: mbellew
- * Date: Feb 16, 2005
- * Time: 11:34:34 AM
- */
 public class Entity implements java.io.Serializable, Ownable
 {
     protected GUID entityId;
+    protected GUID containerId;
     private int createdBy;
     private long created = 0;
     private int modifiedBy;
     private long modified;
-    private GUID containerId;
 
     protected void copyTo(Entity to)
     {

@@ -78,6 +78,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
@@ -1388,7 +1389,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             super(path);
 
             Container c = ContainerManager.getForId(parent.getContainerId());
-            _containerId = parent.getContainerId();
+            _containerId = new GUID(parent.getContainerId());
             if (null != c)
                 setSecurableResource(c);
             _downloadUrl = downloadURL;
@@ -1430,7 +1431,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull String name)
         {
             super(folder.getPath(), name);
-            _containerId = parent.getContainerId();
+            _containerId = new GUID(parent.getContainerId());
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
             if (c != null)
