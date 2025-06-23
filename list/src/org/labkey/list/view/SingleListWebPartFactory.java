@@ -27,6 +27,7 @@ import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -85,7 +86,14 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             return new HtmlView(title, HtmlString.of("List does not exist"));
 
         form.setViewName(viewName);
-        return new SingleListWebPart(form, props);
+        try
+        {
+            return new SingleListWebPart(form, props);
+        }
+        catch (NotFoundException notFound)
+        {
+            return new HtmlView(title, HtmlString.of(notFound.getMessage()));
+        }
     }
 
     @Override
