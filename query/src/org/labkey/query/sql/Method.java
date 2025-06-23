@@ -358,7 +358,7 @@ public abstract class Method
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
 			{
-				@Override
+                @Override
 				public MethodInfo getMethodInfo()
 				{
 					return new RoundInfo();
@@ -840,28 +840,42 @@ public abstract class Method
                     return super.getSQL(dialect, new SQLFragment[] {arguments[0]});
             }
 
-            int i = Integer.MIN_VALUE;
-            try
+            if (supportsRoundDouble)
             {
-                i = Integer.parseInt(arguments[1].getSQL());
-            }
-            catch (NumberFormatException x)
-            {
-                /* fall through */
-            }
-
-            if (supportsRoundDouble || i == Integer.MIN_VALUE)
                 return super.getSQL(dialect, arguments);
-
-            // fall back, only supports simple integer
-            SQLFragment scaled = new SQLFragment();
-            scaled.append("(");
-            scaled.append(arguments[0]);
-            scaled.append(")*").appendValue(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
-            ret.append("/");
-            ret.appendValue(Math.pow(10,i));
-            return ret;
+            }
+            else if (dialect.isPostgreSQL())
+            {
+                // Postgres ROUND() requires NUMERIC argument and will error with DOUBLE
+                // This CAST works because in postgres NUMERIC(unspecified) => up to 131072 digits before the decimal point; up to 16383 digits after the decimal point
+                // This is not SQL standard behavior
+                SQLFragment numeric = new SQLFragment();
+                numeric.append("CAST((").append(arguments[0]).append(") AS NUMERIC)");
+                return super.getSQL(dialect, new SQLFragment[] {numeric, arguments[1]});
+            }
+            else
+            {
+                SQLFragment scaled = new SQLFragment();
+                int n = Integer.MIN_VALUE;
+                try
+                {
+                    n = Integer.parseInt(arguments[1].getSQL());
+                }
+                catch (NumberFormatException x)
+                {
+                    /* fall through */
+                }
+                // If 2nd argument isn't a constant, just do the default thing.  This may work or it may cause a server parse error.
+                if (n == Integer.MIN_VALUE)
+                    return super.getSQL(dialect, arguments);
+                scaled.append("(");
+                scaled.append(arguments[0]);
+                scaled.append(")*").appendValue(Math.pow(10, n));
+                SQLFragment ret = super.getSQL(dialect, new SQLFragment[]{scaled});
+                ret.append("/");
+                ret.appendValue(Math.pow(10, n));
+                return ret;
+            }
 		}
 	}
 
