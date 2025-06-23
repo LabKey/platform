@@ -4535,7 +4535,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
             // There are other tables/rows we could lock, but this is a start
             // CONSIDER similar behavior for Domain.delete()
-            _lockProvisionedTables(assayService, expProtocols);
+            _lockDomainsAndProvisionedTables(assayService, expProtocols);
 
             for (ExperimentListener listener : _listeners)
             {
@@ -4638,16 +4638,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
-
-    private static void _lockProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    private static void _lockDomainsAndProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
     {
         if (null == assayService)
             return;
         DbSchema expSchema = ExperimentService.get().getSchema();
-        if (!expSchema.getSqlDialect().isPostgreSQL())
-            return;
-
-        SQLFragment lockSQL = new SQLFragment();
         for (var expProtocol : expProtocols)
         {
             AssayProvider provider = assayService.getProvider(expProtocol);
@@ -4655,16 +4650,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 for (var domain : provider.getDomains(expProtocol))
                 {
-                    // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
-                    if (null != domain.getStorageTableName())
-                        lockSQL.append("LOCK TABLE ").appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(), domain.getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
+                    domain.lockForDelete(expSchema);
                 }
             }
         }
-        if (!lockSQL.isEmpty())
-            new SqlExecutor(expSchema).execute(lockSQL);
     }
-
 
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
     {

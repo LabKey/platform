@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -84,6 +85,7 @@ public interface Domain extends IPropertyType
      * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
      */
     Lock getDatabaseLock();
+    void lockForDelete(DbSchema expSchema);
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     default void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
