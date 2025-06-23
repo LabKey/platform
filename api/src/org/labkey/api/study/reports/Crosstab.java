@@ -22,6 +22,7 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -55,7 +56,7 @@ public class Crosstab
     public static final String TOTAL_ROW = "CROSSTAB_TOTAL_ROW";
 
     private final Set<StatDefinition> _statSet;
-    private final Results _results;
+    private final @NotNull Map<FieldKey, ColumnInfo> _fieldMap;
     private final FieldKey _rowFieldKey;
     private final FieldKey _colFieldKey;
     private final FieldKey _statFieldKey;
@@ -80,10 +81,10 @@ public class Crosstab
     public Crosstab(Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<StatDefinition> statSet) throws SQLException
     {
         _statSet = statSet;
-        _results = results;
         _rowFieldKey = rowFieldKey;
         _colFieldKey = colFieldKey;
         _statFieldKey = statFieldKey;
+        _fieldMap = results.getFieldMap();
 
         int rowFieldIndex = 0;
         int colFieldIndex = 0;
@@ -95,12 +96,12 @@ public class Crosstab
             Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
 
             if (fieldMap.containsKey(rowFieldKey))
-                rowFieldIndex = _results.findColumn(_rowFieldKey);
+                rowFieldIndex = results.findColumn(_rowFieldKey);
             if (fieldMap.containsKey(colFieldKey))
-                colFieldIndex = _results.findColumn(_colFieldKey);
+                colFieldIndex = results.findColumn(_colFieldKey);
             if (fieldMap.containsKey(statFieldKey))
             {
-                statFieldIndex = _results.findColumn(_statFieldKey);
+                statFieldIndex = results.findColumn(_statFieldKey);
                 ColumnInfo col = fieldMap.get(statFieldKey);
                 if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
                     _statType = StatType.numeric;
@@ -110,17 +111,15 @@ public class Crosstab
             else
                 throw new RuntimeException("The specified statistics column: " + _statFieldKey + " is not available in this view");
 
-//        ResultSet rs = _results.getResultSet();
-
             //TODO: Use DisplayField for display & value extraction. Support Grouping fields with custom groupings
-            while (_results.next())
+            while (results.next())
             {
                 Object rowVal = null;
                 List<Object> cellValues = null;
                 List<Object> colDataset = null;
                 if (0 != rowFieldIndex)
                 {
-                    rowVal = _results.getObject(rowFieldIndex);
+                    rowVal = results.getObject(rowFieldIndex);
                     Map<Object, List<Object>> rowMap = _crossTab.get(rowVal);
                     if (null == rowMap)
                     {
@@ -132,11 +131,9 @@ public class Crosstab
                         _rowDatasets.put(rowVal, new ArrayList<>());
                     }
 
-                    cellValues = null;
-                    colDataset = null;
                     if (0 != colFieldIndex)
                     {
-                        Object colVal = _results.getObject(colFieldIndex);
+                        Object colVal = results.getObject(colFieldIndex);
                         cellValues = rowMap.get(colVal);
                         if (null == cellValues)
                         {
@@ -154,7 +151,7 @@ public class Crosstab
                     }
                 }
 
-                Object statFieldVal = _results.getObject(statFieldIndex);
+                Object statFieldVal = results.getObject(statFieldIndex);
                 if (statFieldVal == null)
                 {
                     if (getStatType() == StatType.string)
@@ -176,7 +173,7 @@ public class Crosstab
         }
         finally
         {
-            ResultSetUtil.close(_results);
+            ResultSetUtil.close(results);
         }
     }
 
@@ -207,7 +204,7 @@ public class Crosstab
         if (null == fieldKey)
             return "";
 
-        ColumnInfo col = _results.getFieldMap().get(fieldKey);
+        ColumnInfo col = _fieldMap.get(fieldKey);
         if (null != col)
             return col.getLabel();
 
@@ -312,11 +309,6 @@ public class Crosstab
     public FieldKey getStatField()
     {
         return _statFieldKey;
-    }
-
-    public Results getResults()
-    {
-        return _results;
     }
 
     public ExcelWriter getExcelWriter()
