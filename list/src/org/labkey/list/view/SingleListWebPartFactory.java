@@ -86,14 +86,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             return new HtmlView(title, HtmlString.of("List does not exist"));
 
         form.setViewName(viewName);
-        try
-        {
-            return new SingleListWebPart(form, props);
-        }
-        catch (NotFoundException notFound)
-        {
-            return new HtmlView(title, HtmlString.of(notFound.getMessage()));
-        }
+        return new SingleListWebPart(form, props);
     }
 
     @Override
