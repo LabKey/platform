@@ -2382,6 +2382,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 to.setPrincipalConceptCode(null==c ? null : StringUtils.trimToNull(c.toString()));
             }
 
+            if (_annotations.containsKey("format"))
+            {
+                var format = _annotations.get("format");
+                to.setFormat(null==format ? null : StringUtils.trimToNull(format.toString()));
+            }
+
             boolean hidden = _annotations.containsKey("hidden");
             if (hidden)
                 to.setHidden(hidden);
