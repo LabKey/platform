@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -84,6 +85,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -561,6 +563,16 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
         if (errors.hasErrors())
             throw errors;
+    }
+
+    @Override
+    protected void convertTypes(User user, Container c, Map<String, Object> row, TableInfo t, @Nullable Path fileLinkDirPath) throws ValidationException
+    {
+        // Issue 53320 : ensure a valid file link path
+        if (fileLinkDirPath == null)
+            fileLinkDirPath = AssayFileWriter.getUploadDirectoryPath(c, "datasetdata").toNioPathForWrite();
+
+        super.convertTypes(user, c, row, t, fileLinkDirPath);
     }
 
     @Override

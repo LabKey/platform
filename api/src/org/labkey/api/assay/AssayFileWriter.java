@@ -92,6 +92,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         }
     }
 
+    @NotNull
     public static FileLike getUploadDirectoryPath(Container container, String dirName)
     {
         if (dirName == null)
