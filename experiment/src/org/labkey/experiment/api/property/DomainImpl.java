@@ -415,6 +415,7 @@ public class DomainImpl implements Domain
         // NOTE code relies on the lock returned from Domain.getLock() does not require unlock().
         var lock = getDatabaseLock();
         assert lock instanceof DbScope.ServerLock;
+        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
         lock.lock();
 
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
