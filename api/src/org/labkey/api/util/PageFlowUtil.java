@@ -1064,14 +1064,14 @@ public class PageFlowUtil
     }
 
 
-    public static void streamFileBytes(@NotNull HttpServletResponse response, @NotNull String filename, @NotNull byte[] bytes, boolean asAttachment) throws IOException
+    public static void streamFileBytes(@NotNull HttpServletResponse response, @NotNull String filename, byte @NotNull [] bytes, boolean asAttachment) throws IOException
     {
         prepareResponseForFile(response, Collections.emptyMap(), filename, asAttachment);
         response.getOutputStream().write(bytes);
     }
 
 
-    public static void streamLogFile(HttpServletResponse response, long startingOffset, File logFile) throws Exception
+    public static void streamLogFile(HttpServletResponse response, long startingOffset, File logFile) throws IOException
     {
         if (logFile.exists())
         {
