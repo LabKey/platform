@@ -93,16 +93,14 @@ public class Crosstab
 
         try {
             // map the row, column and stat FieldKey names to result set aliases
-            Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
-
-            if (fieldMap.containsKey(rowFieldKey))
+            if (_fieldMap.containsKey(rowFieldKey))
                 rowFieldIndex = results.findColumn(_rowFieldKey);
-            if (fieldMap.containsKey(colFieldKey))
+            if (_fieldMap.containsKey(colFieldKey))
                 colFieldIndex = results.findColumn(_colFieldKey);
-            if (fieldMap.containsKey(statFieldKey))
+            if (_fieldMap.containsKey(statFieldKey))
             {
                 statFieldIndex = results.findColumn(_statFieldKey);
-                ColumnInfo col = fieldMap.get(statFieldKey);
+                ColumnInfo col = _fieldMap.get(statFieldKey);
                 if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
                     _statType = StatType.numeric;
                 else if (String.class.isAssignableFrom(col.getJavaClass()))
