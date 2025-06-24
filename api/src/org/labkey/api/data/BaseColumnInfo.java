@@ -84,6 +84,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private static final Logger LOG = LogHelper.getLogger(ColumnInfo.class, "BaseColumnInfo logger");
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
+    @NotNull
     private FieldKey _fieldKey;
     private String _name;
     // _propertyName is computed from getName();
@@ -131,9 +132,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private ColumnLogging _columnLogging;
 
     // Always call this constructor
-    public BaseColumnInfo(FieldKey key, TableInfo parentTable)
+    public BaseColumnInfo(@NotNull FieldKey key, TableInfo parentTable)
     {
-        _fieldKey = key;
+        _fieldKey = Objects.requireNonNull(key);
         _parentTable = parentTable;
 
         // I'd kind of prefer using null here.  But this is currently used to column matching in the column logging code using ColumnLogging.equals()
@@ -142,9 +143,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _columnLogging = ColumnLogging.defaultLogging(this);
     }
 
-    public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
+    public BaseColumnInfo(@NotNull String name, TableInfo parentTable, JdbcType type)
     {
-        this(FieldKey.fromParts(name), parentTable, type);
+        this(FieldKey.fromParts(Objects.requireNonNull(name)), parentTable, type);
     }
 
     public BaseColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
@@ -178,25 +179,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Deprecated // Pass in a type!
     public BaseColumnInfo(String name)
     {
-        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
-//        assert -1 == name.indexOf('/');
+        this(name, null, null);
     }
 
     public BaseColumnInfo(String name, JdbcType t)
     {
-        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
-        if (null == name)
-            return;
-//        assert -1 == name.indexOf('/');
-        _jdbcType = t;
+        this(name, null, t);
     }
 
     public BaseColumnInfo(String name, JdbcType t, int scale, boolean nullable)
     {
-        this(null != name ? new FieldKey(null, name) : null, t);
-        if (null == name)
-            return;
-//        assert -1 == name.indexOf('/');
+        this(name, null, t);
         setScale(scale);
         setNullable(nullable);
     }
@@ -254,7 +247,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
 
     /** use setFieldKey() avoid ambiguity when columns have "/" */
-    public void setName(String name)
+    public void setName(@NotNull String name)
     {
         checkLocked();
         // Disallow changing the name completely -- fixing up the casing is allowed;
@@ -267,10 +260,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
-    @Override
+    @Override @NotNull
     public String getName()
     {
-        if (_name == null && _fieldKey != null)
+        if (_name == null)
         {
             if (_fieldKey.getParent() == null)
                 _name = _fieldKey.getName();
@@ -282,16 +275,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
 
     @Override
-    public void setFieldKey(FieldKey key)
+    public void setFieldKey(@NotNull FieldKey key)
     {
         checkLocked();
-        _fieldKey = key;
+        _fieldKey = Objects.requireNonNull(key);
         _name = null;
         _propertyName = null;
     }
 
 
-    @Override
+    @Override @NotNull
     public FieldKey getFieldKey()
     {
         return _fieldKey;
@@ -727,7 +720,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public String getLabel()
     {
-        if (null == _label && getFieldKey() != null)
+        if (null == _label)
             return labelFromName(getFieldKey().getName());
         return _label;
     }

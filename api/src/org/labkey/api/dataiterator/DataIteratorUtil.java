@@ -217,8 +217,8 @@ public class DataIteratorUtil
         {
             // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
             // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
-            // Issue 52777: If the column already has a fieldKey, use that one instead otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
-            String tsvQueryColumnName = col.getFieldKey() != null ? col.getFieldKey().toDisplayString() : FieldKey.fromString(col.getName()).toDisplayString();
+            // Issue 52777: Use the column's FieldKey - otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
+            String tsvQueryColumnName = col.getFieldKey().toDisplayString();
             targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
         }
 
@@ -230,8 +230,8 @@ public class DataIteratorUtil
                     targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
 
                 // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
-                // Issue 52777: If the column already has a fieldKey, use that one instead otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
-                String translatedFieldKey = col.getFieldKey() != null ? col.getFieldKey().toDisplayString() : FieldKey.fromString(col.getName()).toDisplayString();
+                // Issue 52777: Use the column's FieldKey - otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
+                String translatedFieldKey = col.getFieldKey().toDisplayString();
                 targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
             }
         }
