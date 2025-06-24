@@ -675,8 +675,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             resetCreatedColumnsSQL.add(newLsid);
             new SqlExecutor(_dataset.getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
 
-            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, target, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
-                    List.of(mergeData), List.of(oldData));
+            if (!isBulkLoad())
+            {
+                new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, target, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+                        List.of(mergeData), List.of(oldData));
+            }
 
             // Successfully updated
             transaction.commit();
@@ -734,7 +737,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         // Make sure we've found the original participant before doing the delete
         String participant = getParticipant(oldRow, user, container);
-        _dataset.deleteDatasetRows(user, Collections.singleton(keyFromMap(oldRow)));
+        _dataset.deleteDatasetRows(user, Collections.singleton(keyFromMap(oldRow)), isBulkLoad());
         _potentiallyDeletedParticipants.add(participant);
         _participantVisitResyncRequired = true;
         return oldRow;
