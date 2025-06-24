@@ -1,13 +1,14 @@
 package org.labkey.api.util;
 
-import org.apache.commons.collections4.Factory;
 import org.labkey.api.jsp.JspLoader;
+
+import java.util.function.Supplier;
 
 /*
  * NOTE: we could call JspLoader.loadClass() directly in getIntegrationTests(), however,
  * that would cause all test jsp's to be compiled at startup.
  */
-public class JspTestCase implements Factory<Class<?>>
+public class JspTestCase implements Supplier<Class<?>>
 {
     private final String jspPath;
 
@@ -17,7 +18,7 @@ public class JspTestCase implements Factory<Class<?>>
     }
 
     @Override
-    public Class<?> create()
+    public Class<?> get()
     {
         return JspLoader.loadClass(jspPath);
     }

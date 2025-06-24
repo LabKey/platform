@@ -43,7 +43,7 @@ public class JunitManager
         {
             Set<Class> moduleClazzes = new HashSet<>();
 
-            module.getIntegrationTestFactories().forEach(f -> moduleClazzes.add(f.create()));
+            module.getIntegrationTestFactories().forEach(f -> moduleClazzes.add(f.get()));
             moduleClazzes.addAll(module.getUnitTests());
 
             if (!moduleClazzes.isEmpty())

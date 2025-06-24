@@ -45,8 +45,6 @@ import java.util.Map;
 
 /**
  * In-memory cache of the {@link WebPart}s configured for specific {@link Container}s.
- * User: adam
- * Date: 10/21/11
  */
 public class WebPartCache
 {
@@ -93,53 +91,50 @@ public class WebPartCache
     }
 
 
-    static CacheLoader<String, Map<String, Portal.PortalPage>> _webpartLoader = (containerId, o) ->
+    private static final CacheLoader<String, Map<String, Portal.PortalPage>> _webpartLoader = (containerId, o) ->
     {
+        DbSchema schema = CoreSchema.getInstance().getSchema();
+        final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
+        Container container = ContainerManager.getForId(containerId);
+
+        SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).append(" WHERE Container = ? ORDER BY \"index\"").add(container);
+        Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
+
+        Map<Integer, Portal.PortalPage> pagesByRowId = new HashMap<>();       // For webparts to lookup
+        for (Portal.PortalPage p : pagesSelect)
         {
-            DbSchema schema = CoreSchema.getInstance().getSchema();
-            final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
-            Container container = ContainerManager.getForId(containerId);
-
-            SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).append(" WHERE Container = ? ORDER BY \"index\"").add(container);
-            Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
-
-            Map<Integer, Portal.PortalPage> pagesByRowId = new HashMap<>();       // For webparts to lookup
-            for (Portal.PortalPage p : pagesSelect)
+            if (null == p.getEntityId())
             {
-                if (null == p.getEntityId())
-                {
-                    GUID g = new GUID();
-                    SQLFragment updateEntityId = new SQLFragment("UPDATE ").append(Portal.getTableInfoPortalPages()).append(" SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL")
-                        .addAll(g, containerId, p.getRowId());
-                    new SqlExecutor(schema).execute(updateEntityId);
-                    p.setEntityId(g);
-                }
-                if (pages.containsKey(p.getPageId()) && null != container)
-                    LOG.warn("Page '" + p.getPageId() + "' in container '" + container.getPath() +
-                            "' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.");
-                pages.put(p.getPageId(), p);
-                pagesByRowId.put(p.getRowId(), p);
+                GUID g = new GUID();
+                SQLFragment updateEntityId = new SQLFragment("UPDATE ").append(Portal.getTableInfoPortalPages()).append(" SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL")
+                    .addAll(g, containerId, p.getRowId());
+                new SqlExecutor(schema).execute(updateEntityId);
+                p.setEntityId(g);
             }
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
-
-            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(WebPart.class, wp -> {
-                Portal.PortalPage p = pagesByRowId.get(wp.getPortalPageId());
-                if (null != p)
-                {
-                    p.addWebPart(wp);
-                    wp.setPageId(p.getPageId());
-                }
-            });
-
-            // create immutable PortalPage objects for caching
-            CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();
-            for (var entry : pages.entrySet())
-                ret.put(entry.getKey(), entry.getValue().create());
-            return Collections.unmodifiableMap(ret);
+            if (pages.containsKey(p.getPageId()) && null != container)
+                LOG.warn("Page '" + p.getPageId() + "' in container '" + container.getPath() +
+                        "' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.");
+            pages.put(p.getPageId(), p);
+            pagesByRowId.put(p.getRowId(), p);
         }
-    };
 
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
+
+        new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(WebPart.class, wp -> {
+            Portal.PortalPage p = pagesByRowId.get(wp.getPortalPageId());
+            if (null != p)
+            {
+                p.addWebPart(wp);
+                wp.setPageId(p.getPageId());
+            }
+        });
+
+        // create immutable PortalPage objects for caching
+        CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();
+        for (var entry : pages.entrySet())
+            ret.put(entry.getKey(), entry.getValue().get());
+        return Collections.unmodifiableMap(ret);
+    };
 
     private static Map<String, Portal.PortalPage> get(@NotNull final Container c)
     {
@@ -149,8 +144,9 @@ public class WebPartCache
     public static void remove(Container c)
     {
         CoreSchema.getInstance().getSchema().getScope().addCommitTask(
-                () -> CACHE.remove(c.getId()),
-                DbScope.CommitTaskOption.IMMEDIATE,
-                DbScope.CommitTaskOption.POSTCOMMIT);
+            () -> CACHE.remove(c.getId()),
+            DbScope.CommitTaskOption.IMMEDIATE,
+            DbScope.CommitTaskOption.POSTCOMMIT
+        );
     }
 }

@@ -209,8 +209,13 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    /** @return true if there was a connection to close */
-    public static boolean closeConnections()
+    /**
+     * @param expectMatchingConnection whether to check whether the connection is the one we expect for the thread. Use
+     *                                 false in cases where another thread is attempting to kill connections to abort work
+     *                                 as race conditions can cause connection churn that disrupts this check.
+     * @return true if there was a connection to close
+     */
+    public static boolean closeConnections(boolean expectMatchingConnection)
     {
         Thread thread = DbScope.getEffectiveThread();
         List<ConnectionWrapper> toClose = new ArrayList<>();
@@ -230,7 +235,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             try
             {
-                connectionWrapper.close();
+                connectionWrapper.close(expectMatchingConnection);
             }
             catch (SQLException ignored) {}
         }
@@ -421,11 +426,24 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
+        close(true);
+    }
+
+    private void close(boolean checkConnectionOwnership) throws SQLException
+    {
         DbScope.Transaction t;
 
         if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransactionImpl()))
         {
-            assert t.getConnection() == this : "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection(); //Should release same conn we handed out
+            // Should release same conn we handed out
+            boolean match = t.getConnection() == this;
+            if (!match)
+            {
+                String message =  "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection();
+                assert !checkConnectionOwnership : message;
+                // When another thread is killing the connection, race conditions are possible
+                LOG.info(message);
+            }
         }
         else
         {
