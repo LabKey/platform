@@ -68,14 +68,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _assayType = TsvPlateLayoutHandler.TYPE;
     private String _barcode;
     private long _created;
-    private User _createdBy;
+    private int _createdBy;
     private List<PlateCustomField> _customFields = Collections.emptyList();
     private String _dataFileId;
     private List<WellGroupImpl> _deletedGroups;
     private String _description;
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private long _modified;
-    private User _modifiedBy;
+    private int _modifiedBy;
     private String _name;
     private String _plateId;
     private int _plateNumber = 1;
@@ -432,14 +432,13 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonProperty("createdBy")
     public JSONObject getCreatedBy()
     {
-        if (_createdBy == null)
-            return null;
-        return _createdBy.getUserProps();
+        User user = UserManager.getUser(_createdBy);
+        return user != null ? user.getUserProps() : null;
     }
 
     public void setCreatedBy(User createdBy)
     {
-        _createdBy = createdBy;
+        _createdBy = createdBy.getUserId();
     }
 
     public Date getModified()
@@ -455,14 +454,13 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonProperty("modifiedBy")
     public JSONObject getModifiedBy()
     {
-        if (_modifiedBy == null)
-            return null;
-        return _modifiedBy.getUserProps();
+        User user = UserManager.getUser(_modifiedBy);
+        return user != null ? user.getUserProps() : null;
     }
 
     public void setModifiedBy(User modifiedBy)
     {
-        _modifiedBy = modifiedBy;
+        _modifiedBy = modifiedBy.getUserId();
     }
 
     public String getDataFileId()

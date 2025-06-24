@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.GUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -32,7 +33,7 @@ public class PositionImpl implements Position
 
     protected int _row;
     protected int _column;
-    private Container _container;
+    private GUID _containerId;
     private Integer _rowId;
     private String _lsid;
     private Integer _plateId;
@@ -55,7 +56,7 @@ public class PositionImpl implements Position
     public PositionImpl(Container container, @NotNull String description)
     {
         description = description.toUpperCase();
-        _container = container;
+        setContainer(container);
 
         String rowStr = description.substring(0, 1);
         if (description.length() >= 3)
@@ -85,7 +86,7 @@ public class PositionImpl implements Position
 
     public PositionImpl(Container container, int row, int column)
     {
-        _container = container;
+        setContainer(container);
         _row = row;
         _column = column;
     }
@@ -179,12 +180,12 @@ public class PositionImpl implements Position
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public void setContainer(Container container)
     {
-        _container = container;
+        _containerId = container != null ? container.getEntityId() : null;
     }
 
     @Override
@@ -192,7 +193,7 @@ public class PositionImpl implements Position
     {
         if (getRow() > ALPHABET.length)
             return "Row " + (getRow() + 1) + ", Column " + (getColumn() + 1);
-        return "" + ALPHABET[getRow()] + (getColumn() + 1);
+        return ALPHABET[getRow()] + (getColumn() + 1);
     }
 
     public static final class TestCase

@@ -136,15 +136,13 @@ public class Entity implements java.io.Serializable, Ownable
     @Override
     public String getContainerId()
     {
-        return null==containerId?null:containerId.toString();
+        return null == containerId ? null : containerId.toString();
     }
-
 
     public void setContainerId(String containerId)
     {
         this.containerId = containerId == null ? null : new GUID(containerId);
     }
-
 
     // for Table layer
     public void setContainer(String containerId)

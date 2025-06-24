@@ -8,6 +8,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -26,7 +27,6 @@ import java.util.List;
 public class PlateSetImpl extends Entity implements PlateSet
 {
     private boolean _archived;
-    private Container _container;
     private String _description;
     private String _name;
     private String _plateSetId;
@@ -50,14 +50,14 @@ public class PlateSetImpl extends Entity implements PlateSet
 
     public void setContainer(Container container)
     {
-        _container = container;
+        containerId = container.getEntityId();
     }
 
     @JsonIgnore
     @Override
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(containerId);
     }
 
     @JsonIgnore
@@ -71,23 +71,6 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setFolder(Container container)
     {
         setContainer(container);
-    }
-
-    @Override
-    public String getContainerId()
-    {
-        return _container == null ? null : _container.getId();
-    }
-
-    @Override
-    public String getContainerPath()
-    {
-        return _container == null ? null : _container.getPath();
-    }
-
-    public String getContainerName()
-    {
-        return _container == null ? null : _container.getName();
     }
 
     public void setLsid(String lsid)
