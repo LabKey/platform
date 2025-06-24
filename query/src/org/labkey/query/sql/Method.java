@@ -857,6 +857,8 @@ public abstract class Method
             }
             else
             {
+                // NOTE: At the moment there appear to be no Dialects that use this code path (but it still works).
+                // Leave for completeness?
                 int n = Integer.MIN_VALUE;
                 try
                 {
