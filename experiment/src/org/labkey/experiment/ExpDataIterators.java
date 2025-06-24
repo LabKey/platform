@@ -3263,6 +3263,11 @@ public class ExpDataIterators
                                 _row[_aliquotNameCol] = List.of(aliquotParent.getName());
                                 _row[_aliquotRowIdCol] = aliquotParent.getRowId();
                             }
+                            else
+                            {
+                                // The referenced sample may not exist yet (e.g. it may be created in the same import)
+                                _row[_aliquotNameCol] = aliquotedFromObj.toString();
+                            }
                         }
                         catch (ValidationException e)
                         {

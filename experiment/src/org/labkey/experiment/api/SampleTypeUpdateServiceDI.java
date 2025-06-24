@@ -1997,6 +1997,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Object name = map.get(ALIQUOT_FROM_RESOLVED_NAME);
                 if (name instanceof String aliquotParentName)
                     map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotParentName);
+                else if (name instanceof List<?> nameList)
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, nameList.get(0));
             }
 
             String generatedName = null;
