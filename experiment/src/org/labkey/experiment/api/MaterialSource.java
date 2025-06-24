@@ -23,6 +23,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -46,7 +47,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _aliquotNameExpression;
     private String _labelColor;
     private String _metricUnit;
-    private Container _autoLinkTargetContainer;
+    private GUID _autoLinkTargetContainerId;
     private String _autoLinkCategory;
 
     private String _materialParentImportAliasMap;
@@ -163,14 +164,12 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
 
     public Container getAutoLinkTargetContainer()
     {
-        if (_autoLinkTargetContainer == null)
-            return null;
-        return ContainerManager.getForId(_autoLinkTargetContainer.getId());
+        return ContainerManager.getForId(_autoLinkTargetContainerId);
     }
     
     public void setAutoLinkTargetContainer(Container autoLinkTargetContainer)
     {
-        _autoLinkTargetContainer = autoLinkTargetContainer;
+        _autoLinkTargetContainerId = autoLinkTargetContainer != null ? autoLinkTargetContainer.getEntityId() : null;
     }
 
     public String getAutoLinkCategory()

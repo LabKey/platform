@@ -73,6 +73,13 @@ public class PlateSetImpl extends Entity implements PlateSet
         setContainer(container);
     }
 
+    @SuppressWarnings("unused") // Serialized to the client
+    public String getContainerName()
+    {
+        Container container = getContainer();
+        return container == null ? null : container.getName();
+    }
+
     public void setLsid(String lsid)
     {
         _lsid = lsid;
