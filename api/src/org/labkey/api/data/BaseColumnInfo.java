@@ -86,7 +86,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     @NotNull
     private FieldKey _fieldKey;
-    private String _name;
     // _propertyName is computed from getName();
     private String _propertyName = null;
     private DatabaseIdentifier _alias;
@@ -172,7 +171,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public BaseColumnInfo(FieldKey key, JdbcType t)
     {
         this(key, (TableInfo)null);
-        _name = null;
         _jdbcType = t;
     }
 
@@ -255,7 +253,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         FieldKey newFieldKey = new FieldKey(null, name);
         assert !_lockName || 0 == _fieldKey.compareTo(newFieldKey);
         _fieldKey = newFieldKey;
-        _name = null;
         _propertyName = null;
     }
 
@@ -263,14 +260,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override @NotNull
     public String getName()
     {
-        if (_name == null)
-        {
-            if (_fieldKey.getParent() == null)
-                _name = _fieldKey.getName();
-            else
-                _name = _fieldKey.toString();
-        }
-        return _name;
+        if (_fieldKey.getParent() == null)
+            return _fieldKey.getName();
+        else
+            return _fieldKey.toString();
     }
 
 
@@ -279,7 +272,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _fieldKey = Objects.requireNonNull(key);
-        _name = null;
         _propertyName = null;
     }
 
