@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.GUID;
@@ -56,9 +57,9 @@ public class DataState
         return ContainerManager.getForId(_containerId);
     }
 
-    public void setContainer(Container container)
+    public void setContainer(@Nullable Container container)
     {
-        _containerId = container.getEntityId();
+        _containerId = container != null ? container.getEntityId() : null;
     }
 
     public String getDescription()

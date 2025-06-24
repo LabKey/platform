@@ -213,7 +213,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         for (int col = upperLeft.getColumn(); col <= lowerRight.getColumn(); col++)
         {
             for (int row = upperLeft.getRow(); row <= lowerRight.getRow(); row++)
-                allPositions.add(new PositionImpl(_container, row, col));
+                allPositions.add(new PositionImpl(getContainer(), row, col));
         }
         return addWellGroup(name, type, allPositions);
     }
@@ -387,7 +387,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @Override
     public @NotNull PositionImpl getPosition(int row, int col)
     {
-        return new PositionImpl(_container, row, col);
+        return new PositionImpl(getContainer(), row, col);
     }
 
     @Override
@@ -480,9 +480,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _dataFileId = dataFileId;
     }
 
-    public String getContainerId()
+    public GUID getContainerId()
     {
-        return _container.getId();
+        return _containerId;
     }
 
     @JsonIgnore

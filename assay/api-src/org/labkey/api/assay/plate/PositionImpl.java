@@ -37,6 +37,7 @@ public class PositionImpl implements Position
     private String _lsid;
     private Integer _plateId;
 
+    @SuppressWarnings("unused")
     public PositionImpl()
     {
         // no-arg constructor for reflection    
