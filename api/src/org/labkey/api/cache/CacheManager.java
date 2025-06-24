@@ -236,7 +236,9 @@ public class CacheManager
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
+                        String message = cacheName + ": " + clazz.getName() + " field " + newFieldPath + " (" + field.getType().getName() + ")";
+                        throw new IllegalStateException(message);
+//                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                     }
                     else
                     {
