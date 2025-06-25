@@ -27,7 +27,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * Created by matthew on 2/22/16.
  */
-public class ServerPrimaryKeyLock implements DbScope.ServerLock
+public class ServerPrimaryKeyLock extends DbScope.ServerLock
 {
     final DbScope scope;
     final SQLFragment forUpdate;
@@ -65,38 +65,5 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
         Map[] maps = new SqlSelector(scope, forUpdate).getArray(Map.class);
         if (failIfRowNotFound && 0 == maps.length)
             throw OptimisticConflictException.create(Table.ERROR_DELETED);
-    }
-
-    @Override
-    public void lockInterruptibly()
-    {
-        lock();
-    }
-
-    @Override
-    public boolean tryLock()
-    {
-        throw new UnsupportedOperationException("ServerRowLock does not support tryLock()");
-    }
-
-    @Override
-    public boolean tryLock(long time, @NotNull TimeUnit unit)
-    {
-        // We don't really support the timeout but pretend we do to participate in DbScope.Transaction's deadlock prevention
-        lock();
-        return true;
-    }
-
-    @Override
-    public void unlock()
-    {
-        /* nope */
-    }
-
-    @NotNull
-    @Override
-    public Condition newCondition()
-    {
-        throw new UnsupportedOperationException("ServerRowLock does not support newCondition()");
     }
 }

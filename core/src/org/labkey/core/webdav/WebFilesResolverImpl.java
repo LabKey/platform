@@ -56,8 +56,8 @@ import java.util.stream.Stream;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver implements FileListener
 {
-    final private static Path PATH = Path.parse("/_webfiles/");
-    static WebFilesResolverImpl _instance = new WebFilesResolverImpl(PATH);
+    private static final Path PATH = Path.parse("/_webfiles/");
+    private static final WebFilesResolverImpl _instance = new WebFilesResolverImpl(PATH);
 
     final Path _rootPath;
 
@@ -469,5 +469,4 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             return false; // resources in _webdav are already indexed, prevent _webfiles from double indexing
         }
     }
-
 }

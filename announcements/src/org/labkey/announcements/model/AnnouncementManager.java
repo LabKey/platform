@@ -109,11 +109,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-/**
- * User: mbellew
- * Date: Mar 11, 2005
- * Time: 10:08:26 AM
- */
 public class AnnouncementManager
 {
     private static final Logger LOG = LogHelper.getLogger(AnnouncementManager.class, "Announcement handling");
@@ -917,7 +912,7 @@ public class AnnouncementManager
                     SimpleDocumentResource sdr = new SimpleDocumentResource(
                             new Path(docid),
                             docid,
-                            containerId,
+                            c.getEntityId(),
                             "text/html",
                             html.toString(),
                             url,

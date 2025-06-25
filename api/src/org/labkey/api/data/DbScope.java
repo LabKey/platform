@@ -210,26 +210,22 @@ public class DbScope
     }
 
 
-    /* marker interface */
-    public interface ServerLock extends Lock
+    public static abstract class ServerLock implements Lock
     {
         @Override
-        void lock();
-
-        @Override
-        default void lockInterruptibly()
+        public void lockInterruptibly()
         {
             lock();
         }
 
         @Override
-        default boolean tryLock()
+        public boolean tryLock()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        default boolean tryLock(long time, @NotNull TimeUnit unit)
+        public boolean tryLock(long time, @NotNull TimeUnit unit)
         {
             lock();
             return true;
@@ -237,21 +233,21 @@ public class DbScope
         }
 
         @Override
-        default void unlock()
+        final public void unlock()
         {
             /* noop, release with commit/rollback */
         }
 
         @NotNull
         @Override
-        default Condition newCondition()
+        public Condition newCondition()
         {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("ServerRowLock does not support newCondition()");
         }
     }
 
 
-    public static class ServerNoopLock implements ServerLock
+    public static class ServerNoopLock extends ServerLock
     {
         @Override
         public void lock()
@@ -3463,7 +3459,14 @@ public class DbScope
         {
             // test ServerLock failures
 
-            Lock failServerLock = (ServerLock) () -> { throw new PessimisticLockingFailureException("test",null); };
+            Lock failServerLock = new ServerLock()
+            {
+                @Override
+                public void lock()
+                {
+                    throw new PessimisticLockingFailureException("test",null);
+                }
+            };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
             {
