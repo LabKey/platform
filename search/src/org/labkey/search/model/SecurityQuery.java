@@ -159,7 +159,8 @@ class SecurityQuery extends Query
 
     private boolean canReadResource(String resourceId, String containerId)
     {
-        assert !resourceId.equals(containerId);
+        if (!resourceId.equalsIgnoreCase(containerId))
+            throw new IllegalStateException("ResourceId was specified when it equals ContainerId: " + resourceId);
 
         if (_containerIds.containsKey(resourceId))
             return true;
