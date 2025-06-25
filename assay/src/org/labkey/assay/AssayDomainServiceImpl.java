@@ -426,15 +426,20 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 boolean hasNameChange = false;
                 AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
                 String oldAssayName = null;
+
+                // Issue 51321: check reserved domain name: First, All
+                if ("First".equalsIgnoreCase(assay.getName()) || "All".equalsIgnoreCase(assay.getName()))
+                    throw new ValidationException("Assay design name '" + assay.getName() + "' is reserved.");
+
+                String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                if (nameError != null)
+                    throw new ValidationException(nameError);
+
                 if (isNew)
                 {
                     // check for existing assay protocol with the given name before creating
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
                         throw new ValidationException("Assay protocol already exists for this name.");
-
-                    String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
-                    if (nameError != null)
-                        throw new ValidationException(nameError);
 
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
@@ -478,14 +483,16 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (!protocol.getContainer().equals(getContainer()))
                         throw new ValidationException("Assays can only be edited in the folder where they were created.  " +
                                 "This assay was created in folder " + protocol.getContainer().getPath());
+
                     oldAssayName = protocol.getName();
                     hasNameChange = !assay.getName().equals(oldAssayName);
                     if (hasNameChange)
                     {
+                        boolean casingOnlyChange = assay.getName().equalsIgnoreCase(oldAssayName);
+                        if (!casingOnlyChange && AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                            throw new ValidationException("Another assay protocol already exists for this name.");
+
                         changeDetails.append("The name of the assay domain '" + oldAssayName + "' was changed to '" + assay.getName() + "'.");
-                        String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
-                        if (nameError != null)
-                            throw new ValidationException(nameError);
                     }
                     protocol.setName(assay.getName());
                     protocol.setProtocolDescription(assay.getDescription());
@@ -513,16 +520,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
                 protocol.setProtocolParameters(newParams.values());
 
-                // Issue 51321: check reserved sample type name: First
-                if ("First".equalsIgnoreCase(assay.getName()) || "All".equalsIgnoreCase(assay.getName()))
-                    throw new ValidationException("Assay design name '" + assay.getName() + "' is reserved.");
-
                 if (hasNameChange)
-                {
-                    if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
-                        throw new ValidationException("Another assay protocol already exists for this name.");
                     ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
-                }
 
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider instanceof PlateBasedAssayProvider plateProvider && assay.getSelectedPlateTemplate() != null)
