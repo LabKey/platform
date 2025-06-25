@@ -94,24 +94,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
         @Override
-        public boolean exists()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isCollection()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isFile()
-        {
-            return false;
-        }
-
-        @Override
         public Set<Class<? extends Permission>> getPermissions(User user)
         {
             return Collections.emptySet();
@@ -124,12 +106,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
         @Override
-        public Collection<String> listNames()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
         public Collection<WebdavResource> list()
         {
             return Collections.emptyList();
@@ -137,12 +113,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
         @Override
         public long getCreated()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        @Override
-        public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
@@ -164,40 +134,32 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         {
             return 0;
         }
-
-        @Override
-        @NotNull
-        public Collection<History> getHistory()
-        {
-            return Collections.emptyList();
-        }
     }
 
     public abstract static class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
         protected WebdavResolver _resolver;
-        final Container _c;
         protected ArrayList<String> _children = null;
 
         protected AbstractWebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver.getRootPath().append(c.getParsedPath()), resolver);
             _resolver = resolver;
-            _c = c;
-            _containerId = c.getId();
+            _containerId = c.getEntityId();
             setSecurableResource(c);
         }
 
         @Override
         public long getCreated()
         {
-            return null != _c && null != _c.getCreated() ? _c.getCreated().getTime() : Long.MIN_VALUE;
+            Container c = getContainer();
+            return null != c && null != c.getCreated() ? c.getCreated().getTime() : Long.MIN_VALUE;
         }
 
         @Override
         public User getCreatedBy()
         {
-            return UserManager.getUser(_c.getCreatedBy());
+            return UserManager.getUser(getContainer().getCreatedBy());
         }
 
         @Override
@@ -218,14 +180,14 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             // context
             Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
             // _webdav
-            Path path = contextPath.append(getPath().get(0)).append(getContainerId());
+            Path path = contextPath.append(getPath().get(0)).append(getContainerId().toString());
             return path.encode("/", "/");
         }
 
         @Override
         public Container getContainer()
         {
-            return _c;
+            return ContainerManager.getForId(_containerId);
         }
 
         @Override
@@ -244,7 +206,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         {
             if (null == _children)
             {
-                List<Container> list = ContainerManager.getChildren(_c);
+                List<Container> list = ContainerManager.getChildren(getContainer());
                 ArrayList<String> children = new ArrayList<>(list.size() + 2);
                 for (Container aList : list)
                     children.add(aList.getName());

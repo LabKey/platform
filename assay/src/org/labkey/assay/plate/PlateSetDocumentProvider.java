@@ -89,7 +89,7 @@ public class PlateSetDocumentProvider implements SearchService.DocumentProvider
         return new SimpleDocumentResource(
             new Path(documentId),
             documentId,
-            plateSet.getContainer().getId(),
+            plateSet.getContainer().getEntityId(),
             "text/plain",
             body.toString(),
             url,

@@ -24,8 +24,6 @@ import org.labkey.api.view.ActionURL;
 
 /**
  * Base functionality for objects that have an LSID.
- * User: migra
- * Date: Jun 14, 2005
  */
 public interface Identifiable
 {

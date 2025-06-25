@@ -172,7 +172,7 @@ class QueryTracker
 
     public long getAverage()
     {
-        return _count == 0 ? 0 : _cumulative / _count;
+        return _count == 0 ? 0 : Math.round((double)_cumulative / _count);
     }
 
     public int getStackTraceCount()

@@ -16,13 +16,15 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.GUID;
 
 import java.util.Date;
 import java.util.Objects;
 
 public class Participant
 {
-    private Container _container;
+    private GUID _containerId;
     private String _participantId;
     private Integer _enrollmentSiteId;      // This is a locationId, but still needs to match the column in the table
     private Integer _currentSiteId;         // This is a locationId, but still needs to match the column in the table
@@ -32,12 +34,12 @@ public class Participant
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public void setContainer(Container container)
     {
-        _container = container;
+        _containerId = container.getEntityId();
     }
 
     public String getParticipantId()
@@ -106,12 +108,12 @@ public class Participant
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Participant that = (Participant) o;
-        return Objects.equals(_container, that._container) && Objects.equals(_participantId, that._participantId) && Objects.equals(_enrollmentSiteId, that._enrollmentSiteId) && Objects.equals(_currentSiteId, that._currentSiteId) && Objects.equals(_startDate, that._startDate) && Objects.equals(_initialCohortId, that._initialCohortId) && Objects.equals(_currentCohortId, that._currentCohortId);
+        return Objects.equals(_containerId, that._containerId) && Objects.equals(_participantId, that._participantId) && Objects.equals(_enrollmentSiteId, that._enrollmentSiteId) && Objects.equals(_currentSiteId, that._currentSiteId) && Objects.equals(_startDate, that._startDate) && Objects.equals(_initialCohortId, that._initialCohortId) && Objects.equals(_currentCohortId, that._currentCohortId);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(_container, _participantId, _enrollmentSiteId, _currentSiteId, _startDate, _initialCohortId, _currentCohortId);
+        return Objects.hash(_containerId, _participantId, _enrollmentSiteId, _currentSiteId, _startDate, _initialCohortId, _currentCohortId);
     }
 }

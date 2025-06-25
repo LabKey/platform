@@ -19,7 +19,9 @@ package org.labkey.assay.plate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.study.PropertySet;
+import org.labkey.api.util.GUID;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,7 +33,7 @@ public abstract class PropertySetImpl implements PropertySet
 {
     private Map<String, Object> _properties = new HashMap<>();
     private String _lsid;
-    protected Container _container;
+    protected GUID _containerId;
 
     public PropertySetImpl()
     {
@@ -39,7 +41,7 @@ public abstract class PropertySetImpl implements PropertySet
 
     public PropertySetImpl(Container container)
     {
-        _container = container;
+        _containerId = container.getEntityId();
     }
 
     @JsonIgnore
@@ -89,11 +91,11 @@ public abstract class PropertySetImpl implements PropertySet
     @Override
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public void setContainer(Container container)
     {
-        _container = container;
+        _containerId = container.getEntityId();
     }
 }

@@ -121,7 +121,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             super(parent.getPath(), WIKI_NAME);
             _c = c;
-            _containerId = _c.getId();
+            _containerId = _c.getEntityId();
             setSecurableResource(c);
         }
 
@@ -318,7 +318,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             super(folder.getPath(), name);
             _c = folder._c;
-            _containerId = _c.getId();
+            _containerId = _c.getEntityId();
             setSecurableResource(_c);
             _wiki = WikiSelectManager.getWiki(_c, name);
             if (null != _wiki)
@@ -465,7 +465,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         private void init(Container c, String name, String entityId, WikiFolder folder, Map<String, Object> properties)
         {
             _c = c;
-            _containerId = _c.getId();
+            _containerId = _c.getEntityId();
             _name = name;
             _entityId = entityId;
             _folder = folder;
