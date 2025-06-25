@@ -15,6 +15,11 @@
  */
 package org.labkey.api.security.permissions;
 
+/**
+ * Used for places that impact server-wide behavior but don't grant access to arbitrary resources on the underlying
+ * server. Use {@see org.labkey.api.security.permissions.AdminOperationsPermission} for those checks,
+ * including pointing at arbitrary file paths.
+ */
 public class ApplicationAdminPermission extends AbstractSitePermission
 {
     public ApplicationAdminPermission()
