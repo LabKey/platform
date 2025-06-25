@@ -4532,6 +4532,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
+            // There are other tables/rows we could lock, but this is a start
+            // CONSIDER similar behavior for Domain.delete()
+            _lockDomainsAndProvisionedTables(assayService, expProtocols);
+
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -4631,6 +4636,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (assayService != null)
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
+    }
+
+    private static void _lockDomainsAndProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    {
+        if (null == assayService)
+            return;
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        for (var expProtocol : expProtocols)
+        {
+            AssayProvider provider = assayService.getProvider(expProtocol);
+            if (provider != null)
+            {
+                for (var domain : provider.getDomains(expProtocol))
+                {
+                    domain.lockForDelete(expSchema);
+                }
+            }
+        }
     }
 
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
