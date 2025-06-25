@@ -783,7 +783,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             String securityContext = r.getContainerId()
                     + "|" + props.get(PROPERTY.categories.toString()) // multiple categories are separated by spaces, but we shouldn't need to distinguish here
-                    + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+                    + (null != resourceId && !resourceId.equals(r.getContainerId().toString()) ? "|" + resourceId : "");
             doc.add(new BinaryDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
