@@ -186,7 +186,7 @@ public class CacheManager
 
         if (null != description)
         {
-            throw new IllegalStateException(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
+            LOG.error("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
         }
 
         // Flag values that hold a Container or User object
@@ -233,7 +233,7 @@ public class CacheManager
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-                        throw new IllegalStateException(cacheName + ": " + clazz.getName() + " field " + newFieldPath + " (" + field.getType().getName() + ")");
+                        LOG.error("Cached value holds an unsafe object - {}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                     }
                     else
                     {
