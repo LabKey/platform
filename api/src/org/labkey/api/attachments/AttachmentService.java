@@ -44,11 +44,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Jan 3, 2007
- * Time: 7:03:21 PM
- */
 public interface AttachmentService
 {
     String ATTACHMENT_AUDIT_EVENT = "AttachmentAuditEvent";

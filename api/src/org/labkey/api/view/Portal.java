@@ -1714,19 +1714,24 @@ public class Portal implements ModuleChangeListener
 
             return view;
         }
-        catch (BadRequestException x)
-        {
-            BindException errors = new BindException(new Object(), "form");
-            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
-            return new SimpleErrorView(errors,false);
-        }
         catch(Throwable t)
         {
-            int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-            String message = "An unexpected error occurred";
-            WebPartView<?> errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
-            errorView.setTitle(webPart.getName());
+            WebPartView<?> errorView;
+            if (t instanceof HttpStatusException)
+            {
+                BindException errors = new BindException(new Object(), "form");
+                errors.reject(SpringActionController.ERROR_MSG, t.getMessage());
+                errorView = new SimpleErrorView(errors, false);
+            }
+            else
+            {
+                int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                String message = "An unexpected error occurred";
+                errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
+            }
+            errorView.setTitle(Objects.requireNonNullElseGet(webPart.getPropertyMap().get("title"), webPart::getName));
             errorView.setWebPart(webPart);
+            errorView.setFrame(WebPartView.FrameType.PORTAL);
             return errorView;
         }
     }

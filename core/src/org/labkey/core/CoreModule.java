@@ -1574,7 +1574,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             startURL.setExtraPath(c.getId());
             WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                     "link:" + c.getId(),
-                    c.getId(),
+                    c.getEntityId(),
                     "text/plain",
                     body,
                     startURL,

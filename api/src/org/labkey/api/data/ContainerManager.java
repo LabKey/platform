@@ -1116,12 +1116,12 @@ public class ContainerManager
         return selector.getObject(Container.class);
     }
 
-    public static Container getForId(@NotNull GUID id)
+    public static @Nullable Container getForId(@NotNull GUID guid)
     {
-        return getForId(id.toString());
+        return guid != null ? getForId(guid.toString()) : null;
     }
 
-    public static Container getForId(String id)
+    public static @Nullable Container getForId(String id)
     {
         Container d = getFromCacheId(id);
         if (null != d)

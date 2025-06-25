@@ -39,11 +39,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: Apr 29, 2010
- * Time: 9:25:48 AM
- */
 public class ExternalSchemaDocumentProvider implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogManager.getLogger(ExternalSchemaDocumentProvider.class);
@@ -152,7 +147,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                     SimpleDocumentResource r1 = new SimpleDocumentResource(
                             new Path(documentId),
                             documentId,
-                            c.getId(),
+                            c.getEntityId(),
                             "text/plain",
                             body.toString(),
                             url,

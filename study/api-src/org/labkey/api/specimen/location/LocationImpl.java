@@ -17,15 +17,17 @@
 package org.labkey.api.specimen.location;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.Location;
+import org.labkey.api.util.GUID;
 
 import java.util.Map;
 
 public class LocationImpl extends AbstractStudyCachable<Integer, LocationImpl> implements Location
 {
     private int _rowId; // INT IDENTITY(1,1),
-    private Container _container;
+    private GUID _containerId;
     private String _entityId;
 
     private Integer _externalId; // INT,
@@ -60,34 +62,34 @@ public class LocationImpl extends AbstractStudyCachable<Integer, LocationImpl> i
         setContainer(container);
         setEntityId((String)map.get("EntityId"));
         _rowId = (int)map.get("RowId");
-        _label  = (String)map.get("Label");
-        _externalId  = (Integer)map.get("ExternalId");
-        _ldmsLabCode  = (Integer)map.get("LdmsLabCode");
-        _labwareLabCode  = (String)map.get("LabwareLabCode");
-        _labUploadCode  = (String)map.get("LabUploadCode");
-        _repository  = (Boolean)map.get("Repository");
-        _clinic  = (Boolean)map.get("Clinic");
-        _sal  = (Boolean)map.get("SAL");
-        _endpoint  = (Boolean)map.get("Endpoint");
-        _description  = (String)map.get("Description");
-        _streetAddress  = (String)map.get("StreetAddress");
-        _city  = (String)map.get("City");
-        _governingDistrict  = (String)map.get("GoverningDistrict");
-        _country  = (String)map.get("Country");
+        _label = (String)map.get("Label");
+        _externalId = (Integer)map.get("ExternalId");
+        _ldmsLabCode = (Integer)map.get("LdmsLabCode");
+        _labwareLabCode = (String)map.get("LabwareLabCode");
+        _labUploadCode = (String)map.get("LabUploadCode");
+        _repository = (Boolean)map.get("Repository");
+        _clinic = (Boolean)map.get("Clinic");
+        _sal = (Boolean)map.get("SAL");
+        _endpoint = (Boolean)map.get("Endpoint");
+        _description = (String)map.get("Description");
+        _streetAddress = (String)map.get("StreetAddress");
+        _city = (String)map.get("City");
+        _governingDistrict = (String)map.get("GoverningDistrict");
+        _country = (String)map.get("Country");
         _postalArea = (String)map.get("PostalArea");
     }
 
     @Override
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     @Override
     public void setContainer(Container container)
     {
         verifyMutability();
-        _container = container;
+        _containerId = container.getEntityId();
     }
 
     @Override

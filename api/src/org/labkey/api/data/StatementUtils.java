@@ -56,6 +56,7 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1409,13 +1410,19 @@ public class StatementUtils
             assertEquals(new SQLFragment("CURRENT_TIMESTAMP"), actual);
 
             // sql.Date
-            actual = runToLiteral.apply(new java.sql.Date(dateLong));
-            var expected = isPostgres ? "{d '2025-06-12'}" : "{d N'2025-06-12'}";
+            var sqlDate = new java.sql.Date(dateLong);
+            var dateFormat = new SimpleDateFormat(DateUtil.getStandardDateFormatString());
+            var expected = String.format(isPostgres ? "{d '%s'}" : "{d N'%s'}", dateFormat.format(sqlDate));
+
+            actual = runToLiteral.apply(sqlDate);
             assertEquals(new SQLFragment(expected), actual);
 
             // util.Date
-            actual = runToLiteral.apply(new java.util.Date(dateLong));
-            expected = isPostgres ? "{ts '2025-06-12 13:18'}" : "{ts N'2025-06-12 13:18'}";
+            var utilDate = new java.util.Date(dateLong);
+            dateFormat = new SimpleDateFormat(DateUtil.getStandardDateTimeFormatString());
+            expected = String.format(isPostgres ? "{ts '%s'}" : "{ts N'%s'}", dateFormat.format(utilDate));
+
+            actual = runToLiteral.apply(utilDate);
             assertEquals(new SQLFragment(expected), actual);
         }
 
