@@ -94,7 +94,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addSpecimenCommentColumns(_userSchema, true);
 
-        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        boolean enableSpecimenRequest = sms != null && sms.isEnableRequests(getContainer());
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 

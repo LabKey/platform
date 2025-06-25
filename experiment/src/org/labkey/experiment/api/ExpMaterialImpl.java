@@ -425,7 +425,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                container.getId(), "text/plain",
+                container.getEntityId(), "text/plain",
                 body.toString(), url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

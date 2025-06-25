@@ -1013,7 +1013,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                container.getId(), "text/plain",
+                container.getEntityId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

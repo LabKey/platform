@@ -210,26 +210,22 @@ public class DbScope
     }
 
 
-    /* marker interface */
-    public interface ServerLock extends Lock
+    public static abstract class ServerLock implements Lock
     {
         @Override
-        void lock();
-
-        @Override
-        default void lockInterruptibly()
+        public void lockInterruptibly()
         {
             lock();
         }
 
         @Override
-        default boolean tryLock()
+        public boolean tryLock()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        default boolean tryLock(long time, @NotNull TimeUnit unit)
+        public boolean tryLock(long time, @NotNull TimeUnit unit)
         {
             lock();
             return true;
@@ -237,21 +233,21 @@ public class DbScope
         }
 
         @Override
-        default void unlock()
+        final public void unlock()
         {
             /* noop, release with commit/rollback */
         }
 
         @NotNull
         @Override
-        default Condition newCondition()
+        public Condition newCondition()
         {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("ServerRowLock does not support newCondition()");
         }
     }
 
 
-    public static class ServerNoopLock implements ServerLock
+    public static class ServerNoopLock extends ServerLock
     {
         @Override
         public void lock()
@@ -967,7 +963,7 @@ public class DbScope
         /* this "returns" RuntimeException so the caller can do the following to avoid compiler warnings:
          *     throw retryException.throwRuntimeException()
          */
-        public <T extends Throwable> RuntimeException throwRuntimeException() throws RuntimeException
+        public RuntimeException throwRuntimeException() throws RuntimeException
         {
             throw UnexpectedException.wrap(getCause());
         }
@@ -2141,7 +2137,7 @@ public class DbScope
      */
     public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
     {
-        boolean closed = ConnectionWrapper.closeConnections();
+        boolean closed = ConnectionWrapper.closeConnections(false);
         if (!closed)
         {
             // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
@@ -2189,7 +2185,7 @@ public class DbScope
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        ConnectionWrapper.closeConnections();
+        ConnectionWrapper.closeConnections(true);
     }
 
     /**
@@ -3303,6 +3299,7 @@ public class DbScope
                 {
                     Connection c = t.getConnection();
                     assertTrue(getLabKeyScope().isTransactionActive());
+                    //noinspection EmptyTryBlock
                     try (Transaction ignored = getLabKeyScope().ensureTransaction())
                     {
                         // Intentionally don't call t2.commit();
@@ -3343,12 +3340,6 @@ public class DbScope
                         public String getKind()
                         {
                             return "PIPELINESTATUS";  // We can't really see PipelineStatus here, but just need something non-normal to test
-                        }
-
-                        @Override
-                        public boolean isReleaseLocksOnFinalCommit()
-                        {
-                            return false;
                         }
                     }))
                     {
@@ -3468,7 +3459,14 @@ public class DbScope
         {
             // test ServerLock failures
 
-            Lock failServerLock = (ServerLock) () -> { throw new PessimisticLockingFailureException("test",null); };
+            Lock failServerLock = new ServerLock()
+            {
+                @Override
+                public void lock()
+                {
+                    throw new PessimisticLockingFailureException("test",null);
+                }
+            };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
             {
@@ -3507,7 +3505,7 @@ public class DbScope
                 @Override public boolean tryLock() { return false; }
                 @Override public boolean tryLock(long time, @NotNull TimeUnit unit) { throw new NullPointerException(); }
                 @Override public void unlock() { }
-                @NotNull @Override public Condition newCondition() { return null; }
+                @NotNull @Override public Condition newCondition() { throw new UnsupportedOperationException(); }
             };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
@@ -3515,9 +3513,9 @@ public class DbScope
                 fail("shouldn't get here");
                 txFg.commit();
             }
-            catch (Exception x)
+            catch (NullPointerException x)
             {
-                assertTrue(x instanceof NullPointerException);
+                // Expected exception
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 
@@ -3532,9 +3530,9 @@ public class DbScope
                 fail("shouldn't get here");
                 txFg.commit();
             }
-            catch (Exception x)
+            catch (NullPointerException x)
             {
-                assertTrue(x instanceof NullPointerException);
+                // Expected exception
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
         }
