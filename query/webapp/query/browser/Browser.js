@@ -507,8 +507,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     showChildSchemaDetails : function(schemaName, childSchemaName) {
-        this.selectSchema(schemaName + "." + childSchemaName, true);
-        this.showPanel(this.sspPrefix + schemaName + '.' + childSchemaName);
+        var encodedChildName = LABKEY.QueryKey.encodePart(childSchemaName); // GitHub Issue 795
+        this.selectSchema(schemaName + "." + encodedChildName, true);
+        this.showPanel(this.sspPrefix + schemaName + '.' + encodedChildName);
     }
 });
 
