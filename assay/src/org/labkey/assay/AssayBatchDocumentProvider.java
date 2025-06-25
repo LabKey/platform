@@ -74,7 +74,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
         return new SimpleDocumentResource(
             new Path(documentId),
             documentId,
-            batch.getContainer().getId(),
+            batch.getContainer().getEntityId(),
             "text/plain",
             body.toString(),
             url,

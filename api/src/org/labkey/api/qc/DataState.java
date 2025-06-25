@@ -15,18 +15,18 @@
  */
 package org.labkey.api.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.GUID;
 
-/*
- * User: brittp
- * Date: Jul 15, 2008
- * Time: 2:48:55 PM
- */
+import java.util.Objects;
+
 public class DataState
 {
     private int _rowId;
     private String _label;
-    private Container _container;
+    private GUID _containerId;
     private String _description;
     private boolean _publicData;
     private String _stateType;
@@ -54,12 +54,12 @@ public class DataState
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
-    public void setContainer(Container container)
+    public void setContainer(@Nullable Container container)
     {
-        _container = container;
+        _containerId = container != null ? container.getEntityId() : null;
     }
 
     public String getDescription()
@@ -116,13 +116,12 @@ public class DataState
 
         if (_publicData != qcState._publicData) return false;
         if (_rowId != qcState._rowId) return false;
-        if (_container != null ? !_container.equals(qcState._container) : qcState._container != null) return false;
-        if (_description != null ? !_description.equals(qcState._description) : qcState._description != null)
+        if (!Objects.equals(_containerId, qcState._containerId)) return false;
+        if (!Objects.equals(_description, qcState._description))
             return false;
-        if (_label != null ? !_label.equals(qcState._label) : qcState._label != null) return false;
-        if (_stateType != null ? !_stateType.equals(qcState._stateType) : qcState._stateType != null) return false;
+        if (!Objects.equals(_label, qcState._label)) return false;
 
-        return true;
+        return Objects.equals(_stateType, qcState._stateType);
     }
 
     public int hashCode()
@@ -130,7 +129,7 @@ public class DataState
         int result;
         result = _rowId;
         result = 31 * result + (_label != null ? _label.hashCode() : 0);
-        result = 31 * result + (_container != null ? _container.hashCode() : 0);
+        result = 31 * result + (_containerId != null ? _containerId.hashCode() : 0);
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + (_publicData ? 1 : 0);
         result = 31 * result + (_stateType != null ? _stateType.hashCode() : 0);

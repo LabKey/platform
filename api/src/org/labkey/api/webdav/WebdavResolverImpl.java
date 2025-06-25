@@ -41,12 +41,6 @@ import org.labkey.api.util.TestContext;
 
 import java.util.Collection;
 
-
-/**
- * User: matthewb
- * Date: Apr 28, 2008
- * Time: 2:07:13 PM
- */
 public class WebdavResolverImpl extends AbstractWebdavResolver
 {
     static WebdavResolverImpl _instance = new WebdavResolverImpl(WebdavService.getPath());
@@ -151,7 +145,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
-            documentId =  "dav:" + _resolver.getRootPath().append(_c.getId()).toString("/","/");
+            documentId =  "dav:" + _resolver.getRootPath().append(_containerId.toString()).toString("/","/");
         }
 
         @Override
@@ -197,7 +191,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             TestContext context = TestContext.get();
             User guest = UserManager.getGuestUser();
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
             
             Container junitContainer = JunitUtil.getTestContainer();

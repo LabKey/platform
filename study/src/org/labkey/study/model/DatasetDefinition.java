@@ -144,15 +144,11 @@ import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
 public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefinition> implements Cloneable, Dataset, InitializingBean
 {
-    // DatasetQueryUpdateService
-
-
-    //    static final Object MANAGED_KEY_LOCK = new Object();
     private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLockWithName(DatasetDefinition.class, "_lock");
 
-    private Container _definitionContainer;
+    private GUID _definitionContainerId;
     private Boolean _isShared = null;
     private StudyImpl _study;
     private int _datasetId;
@@ -176,8 +172,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     private boolean _useTimeKeyField = false;
     private String _sourceQueryName;
     private String _sourceQuerySchema;
-    private Container _sourceQueryContainer;
-
+    private GUID _sourceQueryContainerId;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -259,7 +254,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
     }
 
-
     public DatasetDefinition(StudyImpl study, int datasetId)
     {
         _study = study;
@@ -271,7 +265,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         _showByDefault = true;
         _isShared = study.getShareDatasetDefinitions();
     }
-
 
     public DatasetDefinition(StudyImpl study, int datasetId, String name, String label, String category, String entityId, @Nullable String typeURI)
     {
@@ -297,7 +290,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         assert isShared();
         DatasetDefinition sub = createMutable();
         assert sub != this;
-        sub._definitionContainer = sub.getContainer();
+        sub._definitionContainerId = sub.getContainer().getEntityId();
         sub.setContainer(substudy.getContainer());
         sub._study = substudy;
 
@@ -332,9 +325,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
         if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
         {
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(getContainer(),
-                    getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription),
-                    getDatasetId());
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(
+                getContainer(),
+                getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription),
+                getDatasetId()
+            );
             AuditLogService.get().addEvent(user, event);
         }
         super.savePolicy(policy, user);
@@ -349,7 +344,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public boolean isInherited()
     {
-        return isShared() && null != _definitionContainer && !_definitionContainer.equals(getContainer());
+        return isShared() && null != _definitionContainerId && !_definitionContainerId.equals(getContainerId());
     }
 
     /**
@@ -359,7 +354,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
         return StudyManager.getInstance().getShadowedDatasets(getStudy(), Arrays.asList(this));
     }
-
 
     //TODO this should probably be driven off the DomainKind to avoid code duplication
     public static boolean isDefaultFieldName(String fieldName, Study study)
@@ -372,19 +366,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return true;
 
         return switch (study.getTimepointType())
-                {
-                    case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
-                    case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
-                    default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
-                };
+        {
+            case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
+            case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+            default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+        };
     }
-
 
     public static boolean showOnManageView(String fieldName, Study study)
     {
         return !HIDDEN_DEFAULT_FIELDS.contains(fieldName);
     }
-
 
     @Override
     public Set<String> getDefaultFieldNames()
@@ -397,7 +389,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         return Collections.unmodifiableSet(fieldNames);
     }
-
 
     @Override
     public String getName()
@@ -484,11 +475,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         _datasetId = datasetId;
     }
 
-    public String getDataSharing()
-    {
-        return getDataSharingEnum().name();
-    }
-
     public void setDataSharing(@NotNull String datasharing)
     {
         // datasharing can == null during server upgrade
@@ -509,7 +495,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return DataSharing.NONE;
         return _datasharing;
     }
-
 
     /**
      * We do not want to invalidate caches every time someone updates a dataset row
@@ -917,14 +902,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public StudyImpl getDefinitionStudy()
     {
         if (isInherited())
-            return StudyManager.getInstance().getStudy(_definitionContainer);
+            return StudyManager.getInstance().getStudy(getDefinitionContainer());
         return getStudy();
     }
 
 
     public Container getDefinitionContainer()
     {
-        return null!=_definitionContainer ? _definitionContainer : getContainer();
+        return null != _definitionContainerId ? ContainerManager.getForId(_definitionContainerId) : getContainer();
     }
 
 
@@ -1227,7 +1212,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public boolean isQueryDataset()
     {
-        return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainer != null;
+        return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainerId != null;
     }
 
     public boolean isQuerySnapshot()
@@ -1257,12 +1242,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public Container getSourceQueryContainer()
     {
-        return _sourceQueryContainer;
+        return _sourceQueryContainerId != null ? ContainerManager.getForId(_sourceQueryContainerId) : null;
     }
 
     public void setSourceQueryContainer(Container sourceQueryContainer)
     {
-        _sourceQueryContainer = sourceQueryContainer;
+        _sourceQueryContainerId = null != sourceQueryContainer ? sourceQueryContainer.getEntityId() : null;
     }
 
     @Override

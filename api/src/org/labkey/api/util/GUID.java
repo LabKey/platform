@@ -247,7 +247,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
         return makeHash("");
     }
 
-   public static String makeHash(String addl)
+    public static String makeHash(String addl)
     {
         return makeLongHash(addl).substring(0, 32);
     }

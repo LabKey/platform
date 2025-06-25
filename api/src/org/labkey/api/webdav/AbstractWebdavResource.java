@@ -47,6 +47,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -75,7 +76,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     private SecurableResource _resource;
     private List<ExpData> _data = null;
 
-    protected String _containerId;
+    protected GUID _containerId;
     protected String _etag = null;
     protected Map<String, Object> _properties = null;
 
@@ -577,7 +578,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
     @Override
-    public String getContainerId()
+    public GUID getContainerId()
     {
         return _containerId;
     }
@@ -712,7 +713,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     Container getContainer()
     {
-        String id = getContainerId();
+        GUID id = getContainerId();
         if (null == id)
             return null;
         return ContainerManager.getForId(id);

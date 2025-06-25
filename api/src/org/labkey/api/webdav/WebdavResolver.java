@@ -23,11 +23,6 @@ import org.labkey.api.util.Path;
 
 import java.util.Date;
 
-/**
- * User: matthewb
- * Date: Apr 28, 2008
- * Time: 2:02:25 PM
- */
 public interface WebdavResolver extends Resolver
 {
     Path.Part INDEX_HTML = Path.toPathPart("index.html");
@@ -44,6 +39,7 @@ public interface WebdavResolver extends Resolver
     }
 
     boolean requiresLogin();
+
     @Override
     Path getRootPath();
 

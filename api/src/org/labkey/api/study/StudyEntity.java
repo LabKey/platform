@@ -22,11 +22,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 
-/**
- * User: Matthew
- * Date: Jun 6, 2006
- * Time: 2:57:59 PM
- */
 public interface StudyEntity extends SecurableResource
 {
     Container getContainer();
@@ -54,5 +49,4 @@ public interface StudyEntity extends SecurableResource
     SecurityPolicy getPolicy();
 
     void savePolicy(MutableSecurityPolicy policy, User user);
-
 }
