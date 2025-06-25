@@ -1375,7 +1375,7 @@ public class QueryController extends SpringActionController
                                             {
                                                 try
                                                 {
-                                                    validateForeignKey(fk, errors);
+                                                    validateForeignKey(fk, column, errors);
                                                     validateLookupFilter(AbstractTableInfo.parseXMLLookupFilters(fk.getFilters()), errors);
                                                 }
                                                 catch (ValidationException e)
@@ -1402,15 +1402,15 @@ public class QueryController extends SpringActionController
             }
         }
 
-        private void validateForeignKey(ColumnType.Fk fk, Errors errors)
+        private void validateForeignKey(ColumnType.Fk fk, ColumnType column, Errors errors)
         {
             if (fk.isSetFkMultiValued())
             {
                 // issue 51695 : don't let users create unsupported MVFK types
                 String type = fk.getFkMultiValued();
-                if (!"junction".equals(type))
+                if (!AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
                 {
-                    errors.reject(ERROR_MSG, String.format("Non-junction multi value column type : \"%s\" is not supported.", type));
+                    errors.reject(ERROR_MSG, String.format("Column : \"%s\" has an invalid fkMultiValued value : \"%s\" is not supported.", column.getColumnName(), type));
                 }
             }
         }
