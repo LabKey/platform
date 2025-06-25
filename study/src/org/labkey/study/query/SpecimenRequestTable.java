@@ -26,19 +26,14 @@ import org.labkey.api.specimen.SpecimenSchema;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENREQUEST_TABLENAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_REQUEST_TABLE_NAME;
 
-/**
- * User: brittp
- * Date: Apr 20, 2007
- * Time: 2:55:18 PM
- */
 public class SpecimenRequestTable extends BaseStudyTable
 {
     public SpecimenRequestTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, SpecimenSchema.get().getTableInfoSampleRequest(), cf);
-        setName(SPECIMENREQUEST_TABLENAME);
+        setName(SPECIMEN_REQUEST_TABLE_NAME);
 
         AliasedColumn rowIdColumn = new AliasedColumn(this, "RequestId", _rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);

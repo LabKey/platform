@@ -50,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.CohortFilter;
@@ -720,7 +721,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     public static SQLFragment getBaseRequestedEnrollmentSql(Container container, User user, boolean isCompleteRequestsOnly)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
         String tableInfoAlias = "Specimen";

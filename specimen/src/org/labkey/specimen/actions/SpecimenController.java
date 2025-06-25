@@ -91,6 +91,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
@@ -746,8 +747,8 @@ public class SpecimenController extends SpringActionController
         DataRegion dr = new DataRegion();
         Container container = specimenRequest.getContainer();
         SpecimenQuerySchema querySchema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), getViewContext().getUser());
-        TableInfo table = querySchema.getTable(SpecimenQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
-        QueryDefinition queryDef = querySchema.getQueryDefForTable(SpecimenQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME);
+        TableInfo table = querySchema.getTable(SpecimenTablesProvider.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
+        QueryDefinition queryDef = querySchema.getQueryDefForTable(SpecimenTablesProvider.LOCATION_SPECIMEN_LIST_TABLE_NAME);
         CustomView defaultView = QueryService.get().getCustomView(getViewContext().getUser(), container, getViewContext().getUser(), querySchema.getName(), queryDef.getName(), null);
         List<ColumnInfo> columns = queryDef.getColumns(defaultView, table);
         dr.setTable(table);
