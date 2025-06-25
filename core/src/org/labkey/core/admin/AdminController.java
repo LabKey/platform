@@ -464,7 +464,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "look and feel settings", new ActionURL(LookAndFeelSettingsAction.class, root));
         AdminConsole.addLink(Configuration, "missing value indicators", new AdminUrlsImpl().getMissingValuesURL(root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
@@ -10392,7 +10392,6 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
     public class ShortURLAdminAction extends AbstractShortURLAdminAction
     {
         @Override
@@ -10402,7 +10401,7 @@ public class AdminController extends SpringActionController
             newView.setTitle("Create New Short URL");
             newView.setFrame(WebPartView.FrameType.PORTAL);
 
-            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", "ShortURL");
+            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", CoreQuerySchema.SHORT_URL_TABLE_NAME);
             qSettings.setBaseSort(new Sort("-Created"));
             QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, errors);
             existingView.setTitle("Existing Short URLs");

@@ -21,6 +21,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -185,11 +187,13 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return canDisplayTable(user, getContainer()) && getContainer().hasPermission(user, perm);
+        return canDisplayTable(user, getContainer()) && (perm.equals(ReadPermission.class) || getContainer().hasPermission(user, perm));
     }
 
     public static boolean canDisplayTable(@NotNull UserPrincipal user, @NotNull Container container)
     {
-        return container.isRoot() && container.hasPermission(user, ApplicationAdminPermission.class);
+        return container.isRoot() &&
+                (container.hasPermission(user, ApplicationAdminPermission.class) ||
+                        container.hasPermission(user, TroubleshooterPermission.class));
     }
 }
