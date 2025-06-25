@@ -684,7 +684,7 @@ public class ListManager implements SearchService.DocumentProvider
                 SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path(documentId),
                     documentId,
-                    list.getContainer().getId(),
+                    list.getContainer().getEntityId(),
                     "text/plain",
                     body,
                     itemURL,
@@ -870,7 +870,7 @@ public class ListManager implements SearchService.DocumentProvider
                 SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path(documentId),
                     documentId,
-                    list.getContainer().getId(),
+                    list.getContainer().getEntityId(),
                     "text/plain",
                     body.toString(),
                     url,

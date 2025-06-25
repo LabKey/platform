@@ -87,6 +87,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -780,7 +781,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         final Container container = (Container) o;
 
-        return _id == null ? container._id == null : _id.equals(container._id);
+        return Objects.equals(_id, container._id);
     }
 
 

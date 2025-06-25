@@ -93,7 +93,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             super(parent.getPath(), Path.toPathPart(FileContentService.PIPELINE_LINK));
 
             this.c = c;
-            _containerId = c.getId();
+            _containerId = c.getEntityId();
             _shouldIndex = root.isSearchable();
             setSecurableResource(root);
             _files = new ArrayList<>(root.getRootFileLikePaths(true));
