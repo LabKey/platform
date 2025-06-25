@@ -876,6 +876,17 @@ public class DOM
                 throw new RuntimeException(e);
             }
         }
+        else if (body instanceof Boolean b)
+        {
+            try
+            {
+                builder.append(Boolean.toString(b));
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
         else if (body instanceof DOM.Renderable)
         {
             ((DOM.Renderable) body).appendTo(builder);
@@ -887,7 +898,7 @@ public class DOM
         }
         else if (body instanceof Iterable)
         {
-            for (var i : ((Iterable)body))
+            for (var i : ((Iterable<?>)body))
                 appendBody(builder, i);
         }
         else if (body instanceof Stream)
