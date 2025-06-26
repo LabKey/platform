@@ -68,7 +68,12 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
 
                         for (Map.Entry<DomainProperty, String> colEntry : entry.entrySet())
                         {
-                            row.put(colEntry.getKey().getLabel(), colEntry.getValue());
+                            String name = colEntry.getKey().getLabel();
+                            if (name == null)
+                            {
+                                name = colEntry.getKey().getName();
+                            }
+                            row.put(name, colEntry.getValue());
                         }
                         rows.add(row);
                     }
