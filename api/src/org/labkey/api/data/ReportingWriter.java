@@ -315,7 +315,9 @@ public class ReportingWriter
             if (fk instanceof MultiValuedForeignKey mvfk)
             {
                 String junctionLookup = mvfk.getJunctionLookup();
-                lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
+                lookupInfo.put("multiValued", junctionLookup != null
+                        ? AbstractTableInfo.MultiValuedFkType.junction.name()
+                        : AbstractTableInfo.MultiValuedFkType.value.name());
                 if (junctionLookup != null)
                     lookupInfo.put("junctionLookup", junctionLookup);
             }
