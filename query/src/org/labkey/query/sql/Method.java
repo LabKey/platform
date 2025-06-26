@@ -685,30 +685,21 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] fragments)
         {
-            JdbcType jdbcType;
-            SQLFragment length = null;
             if (fragments.length >= 2)
             {
-                String sqlEscapeTypeName = getTypeArgument(fragments[1]);
                 try
                 {
-                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    String typeName = dialect.getSqlTypeName(jdbcType);
-                    if (null == typeName)
-                        throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + dialect.getProductName() + " database");
-                    if (fragments.length > 2)
-                        length = fragments[2];
-                    fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
-
+                    String dialectTypeName = getTypeArgument(fragments[1]);
+                    JdbcType jdbcType = dialect.getJdbcType(dialect.sqlTypeIntFromSqlTypeName(dialectTypeName),dialectTypeName);
                     if (jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL)
                     {
                         String s = fragments[0].getRawSQL().toLowerCase();
                         if ("'infinity'".equals(s) || "'+infinity'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
-                        if ("'-infinity'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
-                        if ("'nan'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                        else if ("'-infinity'".equals(s))
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                        else if ("'nan'".equals(s))
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
                     }
                 }
                 catch (IllegalArgumentException x)
@@ -725,10 +716,6 @@ public abstract class Method
             {
                 ret.append(" AS ");
                 ret.append(fragments[1]);
-                if (null != length)
-                {
-                    ret.append("(").append(length).append(")");
-                }
             }
             ret.append(")");                            
             return ret;
@@ -737,9 +724,11 @@ public abstract class Method
         /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
-            String typeName = toSimpleString(typeSqlFragment);
+            String typeName = typeSqlFragment.getRawSQL();
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
+            if (typeName.contains("("))
+                typeName = typeName.substring(0, typeName.indexOf("("));
             return typeName;
         }
 
@@ -755,13 +744,8 @@ public abstract class Method
             if (children.size() < 2)
                 return JdbcType.VARCHAR;
 
-            String sqlEscapeTypeName = ((QString)children.get(1)).getValue();
-            if (sqlEscapeTypeName.startsWith("SQL_"))
-                sqlEscapeTypeName = sqlEscapeTypeName.substring(4);
-
-            JdbcType jdbcType = JdbcType.OTHER;
-            try { jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType; }catch (IllegalArgumentException x) {/* */}
-            return jdbcType;
+            QType type = (QType)children.get(1);
+            return type.getJdbcType();
         }
     }
 

@@ -702,6 +702,9 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
+        new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
+        new MethodSqlTest("SELECT CONVERT('-infinity', DOUBLE)", JdbcType.DOUBLE, Double.NEGATIVE_INFINITY),
+        new MethodSqlTest("SELECT CONVERT('nan', DOUBLE)", JdbcType.DOUBLE, Double.NaN),
         new MethodSqlTest("SELECT COUNT(R.twelve) as cnt FROM R", JdbcType.INTEGER),
         // TODO: cos
         // TODO: cot
