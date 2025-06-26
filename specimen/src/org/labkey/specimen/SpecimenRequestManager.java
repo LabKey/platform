@@ -38,6 +38,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.QueryHelper.StudyCacheCollections;
@@ -941,7 +942,7 @@ public class SpecimenRequestManager
 
                     // Basic SQL with joins
                     UserSchema schema = SpecimenQuerySchema.get(study, user);
-                    TableInfo tableInfo = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+                    TableInfo tableInfo = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
                     Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
 
                     SQLFragment inner = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);

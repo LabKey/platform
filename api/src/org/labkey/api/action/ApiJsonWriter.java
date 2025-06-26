@@ -328,11 +328,20 @@ public class ApiJsonWriter extends ApiResponseWriter
     protected void resetOutput() throws IOException
     {
         var context = jg.getOutputContext();
+        var response = getResponse();
 
-        // If the entire response so far is buffered in memory, we get a do over.
-        if (!getResponse().isCommitted())
+        // If the entire response so far is buffered in memory, we get a do-over.
+        if (!response.isCommitted())
         {
-            getResponse().reset();
+            // Retain content-type and character encoding as reset() clears these
+            var contentType = response.getContentType();
+            var characterEncoding = response.getCharacterEncoding();
+
+            response.reset();
+
+            response.setContentType(contentType);
+            response.setCharacterEncoding(characterEncoding);
+
             jg = new JsonFactory().createGenerator(getWriter());
             initGenerator();
             if (state == WriterState.Started)
