@@ -135,10 +135,20 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                     set.addAll(row.keySet());
                 colNames = set;
             }
+            boolean loggedNullWarning = false;
             for (String name : colNames)
             {
                 if (ROWNUMBER_COLUMNNAME.equals(name))
                     continue;
+                if (name == null)
+                {
+                    if (!loggedNullWarning)
+                    {
+                        loggedNullWarning = true;
+                        LOGGER.error("Null column name in data map. Full list of columns: {}", colNames, new NullPointerException());
+                    }
+                    continue;
+                }
                 _cols.add(new BaseColumnInfo(name, JdbcType.OTHER));
             }
             _rows = initRows(rows);
