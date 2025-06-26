@@ -1182,10 +1182,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             {
                 String type = xfk.getFkMultiValued();
 
-                if ("junction".equals(type))
+                if (AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
                     _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
                 else
-                    throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                    LOG.warn(String.format("Error in FK configuration for table : \"%s\". The multi value FK type : \"%s\" is not supported.", getParentTable().getName(), type));
             }
         }
 
