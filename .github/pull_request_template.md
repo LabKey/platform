@@ -6,3 +6,9 @@
 
 #### Changes
 - <!-- list of descriptions of changes that are worth noting (replace this comment) -->
+
+#### Tasks 📍
+- <!-- list of standard tasks (replace this comment) -->
+- [ ] Manual Testing
+- [ ] Needs Automation
+- [ ] Verify Fix
