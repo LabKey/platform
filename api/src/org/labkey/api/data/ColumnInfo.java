@@ -119,9 +119,10 @@ public interface ColumnInfo extends ColumnRenderProperties
         }
     }
 
-    @Override
+    @Override @NotNull
     String getName();
 
+    @NotNull
     FieldKey getFieldKey();
 
     // use only for debugging, will change after call to getAlias()
@@ -393,7 +394,7 @@ public interface ColumnInfo extends ColumnRenderProperties
         return BaseColumnInfo.legalNameFromName(name);
     }
 
-    static String getFriendlyTypeName(Class javaClass)
+    static String getFriendlyTypeName(Class<?> javaClass)
     {
         return ColumnRenderProperties.getFriendlyTypeName(javaClass);
     }

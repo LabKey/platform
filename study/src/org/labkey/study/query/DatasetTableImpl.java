@@ -80,6 +80,7 @@ import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -367,7 +368,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            TableInfo table = _userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME, null, true, true);
+                            TableInfo table = _userSchema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME, null, true, true);
                             if (table instanceof SpecimenDetailTable)       // Could be a UnionTable, which should already have right containers
                                 ((SpecimenDetailTable)table).addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
                             return table;

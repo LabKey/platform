@@ -25,12 +25,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_VIAL_COUNT_TABLE_NAME;
 
-/**
- * User: klum
- * Date: Jun 2, 2009
- */
 public class SpecimenVialCountTable extends BaseStudyTable
 {
     public SpecimenVialCountTable(StudyQuerySchema schema, ContainerFilter cf)
@@ -50,7 +46,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount"))).setHidden(!enableSpecimenRequest);
 */
         super(schema, SpecimenSchema.get().getTableInfoVial(schema.getContainer()), cf);
-        setName(SPECIMENVIALCOUNT_TABLENAME);
+        setName(SPECIMEN_VIAL_COUNT_TABLE_NAME);
         setTitle("VialCounts");
 
         addContainerColumn(true).setHidden(true);
@@ -58,7 +54,8 @@ public class SpecimenVialCountTable extends BaseStudyTable
 
         addColumn(new ExprColumn(this, "TotalCount", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "VialCount"), JdbcType.INTEGER));
 
-        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        boolean enableSpecimenRequest = sms != null && sms.isEnableRequests(getContainer());
 
         addColumn(new ExprColumn(this, "LockedInRequest", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "LockedInRequestCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
         addColumn(new ExprColumn(this, "AtRepository", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AtRepositoryCount"), JdbcType.INTEGER));

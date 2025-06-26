@@ -40,16 +40,23 @@ public class SpecimenTablesProvider
 {
     public static final String SCHEMA_NAME = "specimentables";
 
-    public static final String SPECIMEN_TABLENAME = "Specimen";
-    public static final String VIAL_TABLENAME = "Vial";
-    public static final String SPECIMENEVENT_TABLENAME = "SpecimenEvent";
-    public static final String LOCATION_TABLENAME = "Site";
-    public static final String PRIMARYTYPE_TABLENAME = "SpecimenPrimaryType";
-    public static final String DERIVATIVETYPE_TABLENAME = "SpecimenDerivative";
-    public static final String ADDITIVETYPE_TABLENAME = "SpecimenAdditive";
-    public static final String SPECIMENVIALCOUNT_TABLENAME = "SpecimenVialCount";
-    public static final String SPECIMENREQUEST_TABLENAME = "SpecimenRequest";
-    public static final String VIALREQUEST_TABLENAME = "VialRequest";
+    public static final String SPECIMEN_TABLE_NAME = "Specimen";
+    public static final String VIAL_TABLE_NAME = "Vial";
+    public static final String SPECIMEN_EVENT_TABLE_NAME = "SpecimenEvent";
+    public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
+    public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
+    public static final String LOCATION_TABLE_NAME = "Site";
+    public static final String PRIMARY_TYPE_TABLE_NAME = "SpecimenPrimaryType";
+    public static final String DERIVATIVE_TYPE_TABLE_NAME = "SpecimenDerivative";
+    public static final String ADDITIVE_TYPE_TABLE_NAME = "SpecimenAdditive";
+    public static final String SPECIMEN_COMMENTS_TABLE_NAME = "SpecimenComment";
+    public static final String SPECIMEN_VIAL_COUNT_TABLE_NAME = "SpecimenVialCount";
+    public static final String SPECIMEN_REQUEST_TABLE_NAME = "SpecimenRequest";
+    public static final String SPECIMEN_REQUEST_STATUSES_TABLE_NAME = "SpecimenRequestStatus";
+    public static final String VIAL_REQUEST_TABLE_NAME = "VialRequest";
+    public static final String SPECIMEN_SUMMARY_TABLE_NAME = "SpecimenSummary";
+    public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
+    public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
 
     private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Specimen domain creation", null);
 
@@ -71,11 +78,11 @@ public class SpecimenTablesProvider
         _template = template;
 
         // Vial depends on Specimen
-        String specimenDomainURI = getDomainKind(SPECIMEN_TABLENAME).generateDomainURI(SCHEMA_NAME, SPECIMEN_TABLENAME, _container, _user);
+        String specimenDomainURI = getDomainKind(SPECIMEN_TABLE_NAME).generateDomainURI(SCHEMA_NAME, SPECIMEN_TABLE_NAME, _container, _user);
         _vialDomainKind = new VialDomainKind(specimenDomainURI);
 
         // SpecimenEvent depends on Vial
-        String vialDomainURI = getDomainKind(VIAL_TABLENAME).generateDomainURI(SCHEMA_NAME, VIAL_TABLENAME, _container, _user);
+        String vialDomainURI = getDomainKind(VIAL_TABLE_NAME).generateDomainURI(SCHEMA_NAME, VIAL_TABLE_NAME, _container, _user);
         _specimenEventDomainKind =  new SpecimenEventDomainKind(vialDomainURI);
     }
 
@@ -151,8 +158,8 @@ public class SpecimenTablesProvider
 
     public void deleteTables()
     {
-        List<String> tableNames = Arrays.asList(SPECIMENEVENT_TABLENAME, VIAL_TABLENAME, SPECIMEN_TABLENAME, LOCATION_TABLENAME,
-                                                PRIMARYTYPE_TABLENAME, DERIVATIVETYPE_TABLENAME, ADDITIVETYPE_TABLENAME);
+        List<String> tableNames = Arrays.asList(SPECIMEN_EVENT_TABLE_NAME, VIAL_TABLE_NAME, SPECIMEN_TABLE_NAME, LOCATION_TABLE_NAME,
+                                                PRIMARY_TYPE_TABLE_NAME, DERIVATIVE_TYPE_TABLE_NAME, ADDITIVE_TYPE_TABLE_NAME);
         for (String tableName : tableNames)
         {
             try
@@ -173,25 +180,25 @@ public class SpecimenTablesProvider
 
     private AbstractSpecimenDomainKind getDomainKind(String tableName)
     {
-        if (SPECIMEN_TABLENAME.equalsIgnoreCase(tableName))
+        if (SPECIMEN_TABLE_NAME.equalsIgnoreCase(tableName))
             return _specimenDomainKind;
 
-        if (VIAL_TABLENAME.equalsIgnoreCase(tableName))
+        if (VIAL_TABLE_NAME.equalsIgnoreCase(tableName))
             return _vialDomainKind;
 
-        if (SPECIMENEVENT_TABLENAME.equalsIgnoreCase(tableName))
+        if (SPECIMEN_EVENT_TABLE_NAME.equalsIgnoreCase(tableName))
             return _specimenEventDomainKind;
 
-        if (LOCATION_TABLENAME.equalsIgnoreCase(tableName))
+        if (LOCATION_TABLE_NAME.equalsIgnoreCase(tableName))
             return _locationDomainKind;
 
-        if (PRIMARYTYPE_TABLENAME.equalsIgnoreCase(tableName))
+        if (PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(tableName))
             return _primaryTypeDomainKind;
 
-        if (DERIVATIVETYPE_TABLENAME.equalsIgnoreCase(tableName))
+        if (DERIVATIVE_TYPE_TABLE_NAME.equalsIgnoreCase(tableName))
             return _derivativeTypeDomainKind;
 
-        if (ADDITIVETYPE_TABLENAME.equalsIgnoreCase(tableName))
+        if (ADDITIVE_TYPE_TABLE_NAME.equalsIgnoreCase(tableName))
             return _additiveTypeDomainKind;
 
         throw new IllegalStateException("Unknown domain kind: " + tableName);
