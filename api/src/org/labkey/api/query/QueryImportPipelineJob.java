@@ -305,7 +305,10 @@ public class QueryImportPipelineJob extends PipelineJob
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())
+            {
+                AbstractQueryImportAction.addImportValidationErrorMetric(_importContextBuilder.getInsertOption(), target, null);
                 throw ve;
+            }
 
             if (auditEvent != null)
                 _transactionAuditId = auditEvent.getRowId();
