@@ -488,6 +488,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             throw new IllegalStateException();
     }
 
+    @SuppressWarnings("unused") // Used via reflection
+    public String getDataSharing()
+    {
+        return getDataSharingEnum().name();
+    }
+
     @Override
     public DataSharing getDataSharingEnum()
     {
