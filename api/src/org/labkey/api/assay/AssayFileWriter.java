@@ -29,7 +29,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
@@ -44,7 +43,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
-import java.util.Date;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -140,25 +138,11 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public static String generateFileName(ExpProtocol protocol, boolean shouldEncode)
     {
-        Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss");
-
         String protocolName = protocol.getName();
         if (shouldEncode)
-        {
-            char[] characters = protocolName.toCharArray();
+            return FileUtil.makeFileNameWithTimestamp(protocolName);
 
-            for (int i = 0; i < characters.length; i++)
-            {
-                char character = characters[i];
-                boolean isAtoZchar = character >= 'A' && character <= 'z';
-                if (!Character.isDigit(character) && !isAtoZchar)
-                    characters[i] = '_';
-            }
-            protocolName = new String(characters);
-        }
-
-        return protocolName + "-" + dateString;
+        return protocolName + "_" + FileUtil.getTimestamp(); // Issue 52075
     }
 
     /**
