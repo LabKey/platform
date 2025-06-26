@@ -59,7 +59,7 @@
     {
         for (ObjectError e : bean.getErrors().getAllErrors())
         {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
         }
     }
 %>
@@ -80,6 +80,7 @@
     if (confirm)
     {
 %>
+        <td></td>
         <td>There is already a report called: <i><%=h(report.getDescriptor().getReportName())%></i>.<br/>Overwrite the existing report?
         <input type=hidden name=confirmed value=1>
         <input type=hidden name=label value="<%=h(bean.getLabel())%>">
@@ -87,8 +88,8 @@
 <%
     } else {
 %>
-        <td><b>Save Report</b></td>
-        <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
+        <td><label for="reportName">Name:</label></td>
+        <td><input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
         <%=generateReturnUrlFormField(getActionURL())%>
 <%
     }
@@ -100,8 +101,8 @@
     </tr>
     <% if (context.hasPermission(AdminPermission.class)) { %>
         <tr>
-            <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this report available to all users.</td>
-            <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
+            <td></td>
+            <td><input type="checkbox" value="true" id="shareReport" name="shareReport"<%=checked(bean.getShareReport())%>> <label for="shareReport">Make this report available to all users.</label></td>
         </tr>
     <% } %>
     <tr>
