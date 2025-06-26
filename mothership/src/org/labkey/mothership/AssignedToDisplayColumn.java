@@ -44,7 +44,7 @@ public class AssignedToDisplayColumn extends DataColumn
         List<User> list = MothershipManager.get().getAssignedToList(_container);
 
         new SelectBuilder()
-            .name(getColumnInfo().getPropertyName())
+            .name(getColumnInfo().getName())
             .addOption("")
             .addOptions(
                 list.stream()

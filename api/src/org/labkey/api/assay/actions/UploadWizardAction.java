@@ -769,9 +769,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static String getInputName(DomainProperty property, String disambiguationId)
     {
         if (disambiguationId != null)
-            return ColumnInfo.propNameFromName(disambiguationId + "_" + property.getName());
+            return disambiguationId + "_" + property.getName();
         else
-            return ColumnInfo.propNameFromName(property.getName());
+            return property.getName();
     }
 
     public static String getInputName(DomainProperty property)
@@ -783,7 +783,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            String name = ColumnInfo.propNameFromName(entry.getKey().getName());
+            String name = entry.getKey().getName();
             String value = entry.getValue();
             insertView.getDataRegion().addHiddenFormField(name, value);
         }

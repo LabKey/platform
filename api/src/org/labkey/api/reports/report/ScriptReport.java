@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -220,7 +221,7 @@ public abstract class ScriptReport extends AbstractReport
             ArrayList<String> ret = new ArrayList<>(count);
             for (int col = 1; col <= count; col++)
             {
-                String alias = r.getColumn(col).getPropertyName();
+                String alias = ColumnInfo.propNameFromName(r.getColumn(col).getName());
                 if (!aliases.add(alias))
                 {
                     int i;

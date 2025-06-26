@@ -86,8 +86,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     @NotNull
     private FieldKey _fieldKey;
-    // _propertyName is computed from getName();
-    private String _propertyName = null;
     private DatabaseIdentifier _alias;
     private String _sqlTypeName;
     private JdbcType _jdbcType = null;
@@ -253,7 +251,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         FieldKey newFieldKey = new FieldKey(null, name);
         assert !_lockName || 0 == _fieldKey.compareTo(newFieldKey);
         _fieldKey = newFieldKey;
-        _propertyName = null;
     }
 
 
@@ -272,7 +269,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _fieldKey = Objects.requireNonNull(key);
-        _propertyName = null;
     }
 
 
@@ -886,16 +882,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         checkLocked();
         _shouldLog = shouldLog;
     }
-
-    @Override
-    public String getPropertyName()
-    {
-        // this is surprisingly expensive, cache it!
-        if (null == _propertyName)
-            _propertyName = propNameFromName(getName());
-        return _propertyName;
-    }
-
 
     /**
      * Version column can be used for optimistic concurrency.
@@ -1727,7 +1713,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     col._label = reader.getLabel();
                     col._description = reader.getDescription();
 
-                    if (NON_EDITABLE_COL_NAMES.contains(col.getPropertyName()))
+                    if (NON_EDITABLE_COL_NAMES.contains(col.getName()))
                         col.setUserEditable(false);
 
                     colMap.put(col.getName(), col);

@@ -781,7 +781,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return column.getPropertyName();
+        return column.getName();
     }
 
     public String getMultiPartFormFieldName(@NotNull ColumnInfo column)

@@ -693,7 +693,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             if (null != col)        // #19358
             {
-                String propName = col.getPropertyName();
+                String propName = BaseColumnInfo.propNameFromName(col.getName());
                 if (null != propName && propName.equalsIgnoreCase(name))
                     return col;
             }

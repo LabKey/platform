@@ -130,7 +130,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         }
     }
 
-    public void addSampleColumns(InsertView view, User user, @Nullable AssayRunUploadForm defaultValueContext, boolean errorReshow) throws ExperimentException
+    public void addSampleColumns(InsertView view, User user, @Nullable AssayRunUploadForm<?> defaultValueContext, boolean errorReshow) throws ExperimentException
     {
         DataRegion region = view.getDataRegion();
         List<String> sampleNames = getSampleNames();

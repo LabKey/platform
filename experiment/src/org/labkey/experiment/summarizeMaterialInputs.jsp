@@ -74,7 +74,7 @@
                             DisplayColumnGroup group = groups.get(propEntry.getKey());
                             if (group != null && group.isCopyable())
                             {
-                                String propName = group.getColumns().get(i).getColumnInfo().getPropertyName();
+                                String propName = group.getColumns().get(i).getColumnInfo().getName();
                                 String propValue = String.valueOf(propEntry.getValue());
                                 handler.append("summarize_setProperty(" + q(propName) + "," + q(propValue) + ");\n");
                             }

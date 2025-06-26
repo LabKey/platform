@@ -216,8 +216,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isShouldLog();
 
-    String getPropertyName();
-
     /**
      * Version column can be used for optimistic concurrency.
      * for now we assume that this column is never updated
