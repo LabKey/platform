@@ -30,6 +30,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -45,6 +46,8 @@ public class SpecimenManager
 {
     private final static SpecimenManager INSTANCE = new SpecimenManager();
 
+    public static final String VIEW_SPECIMEN_TABLES_FLAG = "viewSpecimenTables";
+
     private SpecimenManager()
     {
     }
@@ -58,6 +61,13 @@ public class SpecimenManager
     {
         Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
         return null != specimenModule && c.getActiveModules().contains(specimenModule);
+    }
+
+    // Include specimen queries in the study schema if the specimen module is active or an admin has chosen to expose
+    // them via an optional feature
+    public boolean areSpecimenTablesViewable(Container c)
+    {
+        return isSpecimenModuleActive(c) || OptionalFeatureService.get().isFeatureEnabled(VIEW_SPECIMEN_TABLES_FLAG);
     }
 
     public int getSpecimenCountForVisit(Visit visit)

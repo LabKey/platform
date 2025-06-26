@@ -2,15 +2,11 @@ package org.labkey.study.query;
 
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.StudyService;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIALREQUEST_TABLENAME;
 
 class SpecimenSchema extends StudyQuerySchema
 {
@@ -49,24 +45,7 @@ class SpecimenSchema extends StudyQuerySchema
                     throw new IllegalStateException("No StudyService!");
 
                 names.add(LOCATION_TABLE_NAME);
-                names.add(SPECIMEN_EVENT_TABLE_NAME);
-                names.add(SPECIMEN_DETAIL_TABLE_NAME);
-                names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                names.add(SPECIMENVIALCOUNT_TABLENAME);
-                names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-                names.add("SpecimenRequest");
-                names.add("SpecimenRequestStatus");
-                names.add(VIALREQUEST_TABLENAME);
-                names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
-                names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
-                names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-                names.add("SpecimenComment");
-
-                // CONSIDER: show under queries instead of tables?
-                // specimen report pivots
-                SpecimenMigrationService.get().addSpecimenPivotTableNames(names);
-
-                names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+                addSpecimenTables(names);
             }
             _tableNames = Collections.unmodifiableSet(names);
         }

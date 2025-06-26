@@ -13,18 +13,7 @@ import java.util.Set;
 public class SpecimenQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "Study";
-    public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
-    public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
-    public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
-    public static final String SPECIMEN_EVENT_TABLE_NAME = "SpecimenEvent";
-    public static final String SPECIMEN_SUMMARY_TABLE_NAME = "SpecimenSummary";
-    public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
-    public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
     public static final String LOCATION_TABLE_NAME = "Location";
-    public static final String SPECIMEN_PRIMARY_TYPE_TABLE_NAME = "SpecimenPrimaryType";
-    public static final String SPECIMEN_DERIVATIVE_TABLE_NAME = "SpecimenDerivative";
-    public static final String SPECIMEN_ADDITIVE_TABLE_NAME = "SpecimenAdditive";
-    public static final String VIAL_TABLE_NAME = "Vial";
 
     private final UserSchema _studySchema;
     private final Study _study;

@@ -54,23 +54,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static org.labkey.study.query.StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_SUMMARY_TABLE_NAME;
 
 public class SpecimenSummaryTable extends BaseStudyTable
 {
-    final ColumnInfo _participantidColumn;
-    final ColumnInfo _sequencenumColumn;
-    final BaseColumnInfo _participantSequenceNumColumn;
+    private final ColumnInfo _participantIdColumn;
+    private final ColumnInfo _sequenceNumColumn;
+    private final BaseColumnInfo _participantSequenceNumColumn;
 
     public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf,true);
         setName(SPECIMEN_SUMMARY_TABLE_NAME);
 
-        _participantidColumn = addWrapParticipantColumn("PTID");
+        _participantIdColumn = addWrapParticipantColumn("PTID");
         addContainerColumn(true);
 
-        _sequencenumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType(), true);
+        _sequenceNumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType(), true);
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));
@@ -85,7 +85,8 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantSequenceNumColumn.setIsUnselectable(true);
         addColumn(_participantSequenceNumColumn);
 
-        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        boolean enableSpecimenRequest = sms != null && sms.isEnableRequests(getContainer());
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
@@ -112,9 +113,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
 
-        // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
+        // Create an ExprColumn to get the max *possible* comments for each specimen. It's only the possible number
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
-        // summary table; derivative and additive types are required as well.  We use this number so we know if additional
+        // summary table; derivative and additive types are required as well. We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
         SQLFragment sqlFragComments = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
                 SpecimenSchema.get().getTableInfoSpecimenComment() +
@@ -162,10 +163,10 @@ public class SpecimenSummaryTable extends BaseStudyTable
     {
         name = name.toLowerCase();
         if (name.equals("participantid") || name.equals("ptid") || name.equals(StudyService.get().getSubjectColumnName(_userSchema.getContainer()).toLowerCase()))
-            return _participantidColumn;
+            return _participantIdColumn;
 
         if (name.equals("sequencenum") || name.equals(StudyService.get().getSubjectVisitColumnName(_userSchema.getContainer()).toLowerCase()))
-            return _sequencenumColumn;
+            return _sequenceNumColumn;
 
         // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
         if (name.equals("participantvisit") || name.equals("participantsequencekey"))

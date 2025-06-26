@@ -19,18 +19,14 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
-/**
- * User: brittp
- * Date: Apr 20, 2007
- * Time: 3:18:58 PM
- */
 public class SpecimenRequestStatusTable extends BaseStudyTable
 {
     public SpecimenRequestStatusTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, SpecimenSchema.get().getTableInfoSampleRequestStatus(), cf);
-        setName("SpecimenRequestStatus");
+        setName(SpecimenTablesProvider.SPECIMEN_REQUEST_STATUSES_TABLE_NAME);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
