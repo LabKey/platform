@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayHeaderLinkProvider;
 import org.labkey.api.assay.AssayListener;
@@ -839,15 +840,14 @@ public class AssayManager implements AssayService
     {
         if (name == null)
         {
+            boolean hasFile = file != null && file.isFile();
+            boolean isTmpFile = hasFile && file.getName().toLowerCase().endsWith(".tmp");
+
             // Check if we have a file to use
-            if (file == null || !file.isFile())
-            {
-                name = "[Untitled]";
-            }
-            else
-            {
+            if (hasFile && !isTmpFile)
                 name = file.getName();
-            }
+            else
+                name = AssayFileWriter.generateFileName(protocol, false);
         }
 
         String entityId = GUID.makeGUID();

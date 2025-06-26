@@ -138,33 +138,43 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         }
     }
 
+    public static String generateFileName(ExpProtocol protocol, boolean shouldEncode)
+    {
+        Date dateCreated = new Date();
+        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss");
+
+        String protocolName = protocol.getName();
+        if (shouldEncode)
+        {
+            char[] characters = protocolName.toCharArray();
+
+            for (int i = 0; i < characters.length; i++)
+            {
+                char character = characters[i];
+                boolean isAtoZchar = character >= 'A' && character <= 'z';
+                if (!Character.isDigit(character) && !isAtoZchar)
+                    characters[i] = '_';
+            }
+            protocolName = new String(characters);
+        }
+
+        return protocolName + "-" + dateString;
+    }
+
     /**
      * Create file name based upon the assay protocol's name and the current time.
      * e.g., <code>assayname-2020-04-14-1602345</code>
      */
     public static FileLike createFile(ExpProtocol protocol, FileLike dir, String extension)
     {
-        Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss-SSS");
+        String fileNamePrefix = generateFileName(protocol, true);
         int id = 0;
-
-        String protocolName = protocol.getName();
-        char[] characters = protocolName.toCharArray();
-
-        for (int i = 0; i < characters.length; i++)
-        {
-            char character = characters[i];
-            boolean isAtoZchar = character >= 'A' && character <= 'z';
-            if (!Character.isDigit(character) && !isAtoZchar)
-                characters[i] = '_';
-        }
-        protocolName = new String(characters);
 
         FileLike file;
         do
         {
             String extra = id++ == 0 ? "" : String.valueOf(id);
-            String fileName = protocolName + "-" + dateString + extra + "." + extension;
+            String fileName = fileNamePrefix + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
             file = dir.resolveChild(fileName);
         }
