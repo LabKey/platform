@@ -427,9 +427,9 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
                 String oldAssayName = null;
 
-                // Issue 51321: check reserved domain name: First, All
-                if ("First".equalsIgnoreCase(assay.getName()) || "All".equalsIgnoreCase(assay.getName()))
-                    throw new ValidationException("Assay design name '" + assay.getName() + "' is reserved.");
+                String reservedError = DomainUtil.validateReservedName(assay.getName(), "Assay Design");
+                if (reservedError != null)
+                    throw new ValidationException(reservedError);
 
                 String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
                 if (nameError != null)
