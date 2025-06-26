@@ -192,8 +192,6 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
 
     public static boolean canDisplayTable(@NotNull UserPrincipal user, @NotNull Container container)
     {
-        return container.isRoot() &&
-                (container.hasPermission(user, ApplicationAdminPermission.class) ||
-                        container.hasPermission(user, TroubleshooterPermission.class));
+        return container.isRoot() && container.hasPermission(user, TroubleshooterPermission.class);
     }
 }

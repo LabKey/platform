@@ -10308,7 +10308,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
     public abstract static class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
