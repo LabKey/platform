@@ -39,6 +39,7 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -271,17 +272,15 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     public static Lsid generateDomainURI(String name, Container c, KeyType keyType, @Nullable ListDefinition.Category category)
     {
         String type = getType(keyType, category);
-        StringBuilder typeURI = getBaseURI(name, type, c);
-
-        // Issue 13131: uniqueify the lsid for situations where a preexisting list was renamed
-        int i = 1;
-        String sTypeURI = typeURI.toString();
-        String uniqueURI = sTypeURI;
-        while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
+        Lsid lsid;
+        // assure LSID does not collide with previous lsids that may have had number names
+        do
         {
-            uniqueURI = sTypeURI + '-' + (i++);
-        }
-        return new Lsid(uniqueURI);
+            String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(c, type, 1).next());
+            lsid = new Lsid(type, "Folder-" + c.getRowId(), dbSeqStr);
+        } while (OntologyManager.getDomainDescriptor(lsid.toString(), c) != null);
+
+        return lsid;
     }
 
     public static Lsid createPropertyURI(String listName, String columnName, Container c, ListDefinition.KeyType keyType)

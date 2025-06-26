@@ -23,6 +23,8 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
@@ -70,6 +72,15 @@ public class LsidManager
     public static LsidManager get()
     {
         return INSTANCE;
+    }
+
+    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
+    {
+        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        return DbSequenceManager.getPreallocatingSequence(projectContainer, ExperimentService.LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     public interface LsidHandler<I extends Identifiable>

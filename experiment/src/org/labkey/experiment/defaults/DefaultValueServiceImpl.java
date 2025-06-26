@@ -58,14 +58,23 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
+        Lsid domainLsid = new Lsid(domain.getTypeURI());
         String suffix = "Folder-" + container.getRowId();
-        return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+        if (domain.getDomainKind().isUserCreatedType())
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        else
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+
     }
 
     private String getUserDefaultsParentLSID(Container container, User user, Domain domain)
     {
+        Lsid domainLsid = new Lsid(domain.getTypeURI());
         String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
-        return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
+        if (domain.getDomainKind().isUserCreatedType())
+            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        else
+            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
     }
 
     private static final String WILD_CARD_PLACEHOLDER = "WILDCARD";
