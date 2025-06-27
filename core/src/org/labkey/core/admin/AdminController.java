@@ -10402,7 +10402,11 @@ public class AdminController extends SpringActionController
 
             QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", CoreQuerySchema.SHORT_URL_TABLE_NAME);
             qSettings.setBaseSort(new Sort("-Created"));
-            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, errors);
+            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, null);
+            if (!getUser().hasRootPermission(ApplicationAdminPermission.class))
+            {
+                existingView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            }
             existingView.setTitle("Existing Short URLs");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
