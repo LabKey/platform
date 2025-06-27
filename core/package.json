@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.52.1-cory257FixesV3.0",
+    "@labkey/components": "6.52.1-cory257FixesV3.2",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
