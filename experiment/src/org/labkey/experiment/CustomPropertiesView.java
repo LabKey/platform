@@ -24,6 +24,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -41,6 +42,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -59,11 +61,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         public CustomPropertyRenderer get(Object key)
         {
             CustomPropertyRenderer result = super.get(key);
-            if (result == null)
-            {
-                return DEFAULT_RENDERER;
-            }
-            return result;
+            return Objects.requireNonNullElse(result, DEFAULT_RENDERER);
         }
     };
 
@@ -167,8 +165,20 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 for (ColumnInfo column : cols)
                 {
                     Object value = column.getValue(tableProps);
-                    if (null != value)
-                        map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, column.getLabel()));
+                    PropertyType type = column.getPropertyType();
+                    // Calculated fields don't store an explicit property type
+                    if (type == null)
+                    {
+                        if (value == null)
+                        {
+                            type = PropertyType.STRING;
+                        }
+                        else
+                        {
+                            type = PropertyType.getFromClass(value.getClass());
+                        }
+                    }
+                    map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, type, column.getLabel()));
                 }
             }
         }

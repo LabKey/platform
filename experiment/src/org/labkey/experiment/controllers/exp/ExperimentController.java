@@ -957,7 +957,7 @@ public class ExperimentController extends SpringActionController
             if (_sampleType.hasIdColumns())
             {
                 SimpleDisplayColumn idCols = new SimpleDisplayColumn();
-                idCols.setCaption("Id Column(s)");
+                idCols.setCaption("Id Column(s):");
                 String names = _sampleType.getIdCols().stream()
                     .filter(Objects::nonNull)
                     .map(DomainProperty::getName)
@@ -972,7 +972,7 @@ public class ExperimentController extends SpringActionController
             if (_sampleType.getParentCol() != null)
             {
                 SimpleDisplayColumn parentCol = new SimpleDisplayColumn(PageFlowUtil.filter(_sampleType.getParentCol().getName()));
-                parentCol.setCaption("Parent Column");
+                parentCol.setCaption("Parent Column:");
                 detailsView.getDataRegion().addDisplayColumn(parentCol);
             }
 
@@ -997,7 +997,7 @@ public class ExperimentController extends SpringActionController
                         "\">" +
                         PageFlowUtil.filter(_sampleType.getContainer().getPath()) +
                         "</a>");
-                definedInCol.setCaption("Defined In");
+                definedInCol.setCaption("Defined In:");
                 detailsView.getDataRegion().addDisplayColumn(definedInCol);
             }
 
@@ -1405,7 +1405,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL definitionURL = urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId());
                 LinkBuilder link = LinkBuilder.simpleLink(_dataClass.getContainer().getPath(), definitionURL);
                 SimpleDisplayColumn definedInCol = new SimpleDisplayColumn(link.toString());
-                definedInCol.setCaption("Defined In");
+                definedInCol.setCaption("Defined In:");
                 detailsView.getDataRegion().addDisplayColumn(definedInCol);
             }
 
