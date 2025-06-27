@@ -7,8 +7,9 @@
 #### Changes
 - <!-- list of descriptions of changes that are worth noting (replace this comment) -->
 
+<!-- list of standard tasks (remove this comment to enable)
 #### Tasks 📍
-- <!-- list of standard tasks (replace this comment) -->
 - [ ] Manual Testing
 - [ ] Needs Automation
 - [ ] Verify Fix
+-->
