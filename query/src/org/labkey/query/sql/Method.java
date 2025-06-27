@@ -40,6 +40,7 @@ import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.Queryable;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -1481,7 +1482,12 @@ public abstract class Method
     {
         Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
         if (null == cCompile && null != query)
-            cCompile = query.getSchema().getContainer();
+        {
+            // Issue 53355: A column may be erroneously constructed (e.g. invalid calculated column) which can result in the schema being null
+            QuerySchema querySchema = query.getSchema();
+            if (querySchema != null)
+                cCompile = querySchema.getContainer();
+        }
         return cCompile;
     }
 
