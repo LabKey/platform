@@ -420,7 +420,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception
         {
-            form.setColumns(getColumns(form));
+            form.setColumns(getColumns(form, errors));
 
             JspView<CrosstabDesignBean> view = new JspView<>("/org/labkey/study/view/crosstabDesigner.jsp", form);
             view.setTitle("Design Crosstab Report");
@@ -462,7 +462,7 @@ public class ReportsController extends BaseStudyController
             return v;
         }
 
-        private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form)
+        private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form, BindException errors)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
             Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
@@ -471,7 +471,7 @@ public class ReportsController extends BaseStudyController
             {
                 QuerySettings settings = schema.getSettings(form.getViewContext(), "Dataset", form.getQueryName());
 
-                QueryView qv = schema.createView(getViewContext(), settings);
+                QueryView qv = schema.createView(getViewContext(), settings, errors);
                 List<DisplayColumn> cols = qv.getDisplayColumns();
                 for (DisplayColumn col : cols)
                 {
@@ -534,7 +534,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresNoPermission
-    public class CreateCrosstabReportAction extends SimpleViewAction
+    public class CreateCrosstabReportAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -591,11 +591,11 @@ public class ReportsController extends BaseStudyController
 
     public static class CreateQueryReportBean
     {
-        private List<String> _tableAndQueryNames;
-        private Container _container;
-        private User _user;
-        private String _queryName;
-        private ActionURL _returnUrl;
+        private final List<String> _tableAndQueryNames;
+        private final Container _container;
+        private final User _user;
+        private final String _queryName;
+        private final ActionURL _returnUrl;
         private Map<String, DatasetDefinition> _datasetMap;
 
         public CreateQueryReportBean(ViewContext context, String queryName) throws IllegalStateException
@@ -685,14 +685,6 @@ public class ReportsController extends BaseStudyController
 
         public SaveReportForm()
         {
-        }
-
-        public SaveReportForm(Report report)
-        {
-            this.label = report.getDescriptor().getReportName();
-            this.params = report.getDescriptor().toQueryString();
-            this.reportType = report.getDescriptor().getReportType();
-            this.description = report.getDescriptor().getReportDescription();
         }
 
         public String getLabel()
@@ -862,7 +854,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static HttpView getParticipantNavTrail(ViewContext context, List<String> participantGroup)
+    public static HttpView<?> getParticipantNavTrail(ViewContext context, List<String> participantGroup)
     {
         String participantId = context.getActionURL().getParameter("participantId");
 
@@ -977,9 +969,7 @@ public class ReportsController extends BaseStudyController
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
-        catch (Exception e)
-        {
-        }
+        catch (Exception ignored) {}
         root.addChild(name);
     }
 

@@ -1375,6 +1375,7 @@ public class QueryController extends SpringActionController
                                             {
                                                 try
                                                 {
+                                                    validateForeignKey(fk, column, errors);
                                                     validateLookupFilter(AbstractTableInfo.parseXMLLookupFilters(fk.getFilters()), errors);
                                                 }
                                                 catch (ValidationException e)
@@ -1398,6 +1399,19 @@ public class QueryController extends SpringActionController
             for (XmlError xmle : xmlErrors)
             {
                 errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
+            }
+        }
+
+        private void validateForeignKey(ColumnType.Fk fk, ColumnType column, Errors errors)
+        {
+            if (fk.isSetFkMultiValued())
+            {
+                // issue 51695 : don't let users create unsupported MVFK types
+                String type = fk.getFkMultiValued();
+                if (!AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
+                {
+                    errors.reject(ERROR_MSG, String.format("Column : \"%s\" has an invalid fkMultiValued value : \"%s\" is not supported.", column.getColumnName(), type));
+                }
             }
         }
 

@@ -12,6 +12,8 @@ import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.StudyService;
 
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_COMMENTS_TABLE_NAME;
+
 public class SpecimenSchema
 {
     private static final SpecimenSchema INSTANCE = new SpecimenSchema();
@@ -80,7 +82,7 @@ public class SpecimenSchema
 
     public TableInfo getTableInfoSpecimenComment()
     {
-        return getSchema().getTable("SpecimenComment");
+        return getSchema().getTable(SPECIMEN_COMMENTS_TABLE_NAME);
     }
 
     public TableInfo getTableInfoLocation(Container container)
@@ -91,7 +93,7 @@ public class SpecimenSchema
     public TableInfo getTableInfoLocation(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, SPECIMEN_TABLES_TEMPLATE);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.LOCATION_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.LOCATION_TABLE_NAME);
     }
 
     /*
@@ -122,14 +124,14 @@ public class SpecimenSchema
     public TableInfo getTableInfoVial(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.VIAL_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.VIAL_TABLE_NAME);
     }
 
     @Nullable
     public TableInfo getTableInfoVialIfExists(Container container)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
-        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLENAME);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLE_NAME);
     }
 
     @NotNull
@@ -142,14 +144,14 @@ public class SpecimenSchema
     public TableInfo getTableInfoSpecimen(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_TABLE_NAME);
     }
 
     @Nullable
     public TableInfo getTableInfoSpecimenIfExists(Container container)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
-        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLE_NAME);
     }
 
     @NotNull
@@ -162,14 +164,14 @@ public class SpecimenSchema
     public TableInfo getTableInfoSpecimenEvent(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME);
     }
 
     @Nullable
     public TableInfo getTableInfoSpecimenEventIfExists(Container container)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
-        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME);
     }
 
     public TableInfo getTableInfoSpecimenDetail(Container container)
@@ -185,7 +187,7 @@ public class SpecimenSchema
     public TableInfo getTableInfoSpecimenPrimaryType(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.PRIMARYTYPE_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.PRIMARY_TYPE_TABLE_NAME);
     }
 
     public TableInfo getTableInfoSpecimenAdditive(Container container)
@@ -196,7 +198,7 @@ public class SpecimenSchema
     public TableInfo getTableInfoSpecimenAdditive(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.ADDITIVETYPE_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.ADDITIVE_TYPE_TABLE_NAME);
     }
 
     public TableInfo getTableInfoSpecimenDerivative(Container container)
@@ -207,7 +209,7 @@ public class SpecimenSchema
     public TableInfo getTableInfoSpecimenDerivative(Container container, User user)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
-        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVETYPE_TABLENAME);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVE_TYPE_TABLE_NAME);
     }
 
     // The tables below are managed by study, not by specimen, but lots of specimen code interacts with them

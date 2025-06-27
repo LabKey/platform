@@ -24,11 +24,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
-/**
- * User: jeckels
- * Date: Jun 22, 2009
- */
 public class VialTable extends BaseStudyTable
 {
     public VialTable(final StudyQuerySchema schema, ContainerFilter cf)
@@ -49,7 +46,7 @@ public class VialTable extends BaseStudyTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                TableInfo tableInfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+                TableInfo tableInfo = schema.getTable(SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME);
                 if (tableInfo instanceof ContainerFilterable)
                 {
                     ((ContainerFilterable) tableInfo).setContainerFilter(ContainerFilter.getUnsafeEverythingFilter());    // TODO: what would this do without provisioned?
