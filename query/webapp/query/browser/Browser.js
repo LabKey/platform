@@ -275,7 +275,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
             // Expand along the patch to fetch the schema data
             if (dataSourceRoot) {
                 var partIndex = 0;
-                var schemaPathStr = '/root/' + dataSourceRoot.data.name + '/' + parts[partIndex];
+                var separator = '__SEP__'; // GitHub Issue 795: use a separator that is unlikely to be in the schema name
+                var schemaPathStr = separator + 'root' + separator + dataSourceRoot.data.name + separator + parts[partIndex];
                 var onExpand = function (success, lastNode) {
                     if (!success) {
                         Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
@@ -293,11 +294,11 @@ Ext4.define('LABKEY.query.browser.Browser', {
                         });
                     }
                     else {
-                        schemaPathStr += '/' + parts[partIndex];
-                        tree.expandPath(schemaPathStr, 'name', '/', onExpand);
+                        schemaPathStr += separator + parts[partIndex];
+                        tree.expandPath(schemaPathStr, 'name', separator, onExpand);
                     }
                 };
-                tree.expandPath(schemaPathStr, 'name', '/', onExpand);
+                tree.expandPath(schemaPathStr, 'name', separator, onExpand);
             }
             else {
                 Ext4.Msg.alert('Missing Schema', "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
