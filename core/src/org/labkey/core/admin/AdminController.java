@@ -347,7 +347,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
@@ -465,7 +464,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "look and feel settings", new ActionURL(LookAndFeelSettingsAction.class, root));
         AdminConsole.addLink(Configuration, "missing value indicators", new AdminUrlsImpl().getMissingValuesURL(root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
@@ -1143,8 +1142,7 @@ public class AdminController extends SpringActionController
 
             if (null != wikiSource)
             {
-                String component = "the " + module.getName() + " Module";
-                String title = fileType + " Files Distributed with " + component;
+                String title = fileType + " Files Distributed with the " + module.getName() + " Module";
                 CreditsView credits = new CreditsView(wikiSource, title);
                 views.addView(credits);
             }
@@ -10310,8 +10308,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public abstract class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
+    public abstract static class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
         public void validateCommand(ShortURLForm target, Errors errors) {}
@@ -10394,7 +10391,6 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
     public class ShortURLAdminAction extends AbstractShortURLAdminAction
     {
         @Override
@@ -10404,9 +10400,13 @@ public class AdminController extends SpringActionController
             newView.setTitle("Create New Short URL");
             newView.setFrame(WebPartView.FrameType.PORTAL);
 
-            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", "ShortURL");
+            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", CoreQuerySchema.SHORT_URL_TABLE_NAME);
             qSettings.setBaseSort(new Sort("-Created"));
-            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, errors);
+            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, null);
+            if (!getUser().hasRootPermission(ApplicationAdminPermission.class))
+            {
+                existingView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            }
             existingView.setTitle("Existing Short URLs");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
@@ -10427,7 +10427,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public class UpdateShortURLAction extends AbstractShortURLAdminAction
     {
         @Override
@@ -10598,7 +10598,7 @@ public class AdminController extends SpringActionController
     /** generate URLS to seed web-site scanner */
     @SuppressWarnings("UnusedDeclaration")
     @RequiresSiteAdmin
-    public static class SpiderAction extends SimpleViewAction
+    public static class SpiderAction extends SimpleViewAction<Object>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -11683,7 +11683,7 @@ public class AdminController extends SpringActionController
     public static class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
     {
         @Override
-        protected HttpView getTabView(FilesForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(FilesForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
 
@@ -11722,7 +11722,7 @@ public class AdminController extends SpringActionController
                     for (String errorMessage : pipeRoot.validate())
                         errors.addError(new LabKeyError(errorMessage));
                 }
-                JspView pipelineView = (JspView) PipelineService.get().getSetupView(setupForm);
+                JspView<?> pipelineView = (JspView<?>) PipelineService.get().getSetupView(setupForm);
                 pipelineView.setTitle("Configure Data Processing Pipeline");
                 box.addView(pipelineView);
             }
