@@ -28,6 +28,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.ValidationException;
@@ -58,10 +59,13 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
-        Lsid domainLsid = new Lsid(domain.getTypeURI());
         String suffix = "Folder-" + container.getRowId();
-        if (domain.getDomainKind().isUserCreatedType())
+        DomainKind<?> kind = domain.getDomainKind();
+        if (kind != null && kind.isUserCreatedType())
+        {
+            Lsid domainLsid = new Lsid(domain.getTypeURI());
             return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        }
         else
             return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
 
@@ -69,10 +73,13 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     private String getUserDefaultsParentLSID(Container container, User user, Domain domain)
     {
-        Lsid domainLsid = new Lsid(domain.getTypeURI());
         String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
-        if (domain.getDomainKind().isUserCreatedType())
+        DomainKind<?> kind = domain.getDomainKind();
+        if (kind != null && kind.isUserCreatedType())
+        {
+            Lsid domainLsid = new Lsid(domain.getTypeURI());
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        }
         else
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
     }
