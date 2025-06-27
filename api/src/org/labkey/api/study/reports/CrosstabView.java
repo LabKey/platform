@@ -91,7 +91,7 @@ public class CrosstabView extends WebPartView<Object>
                 TR(
                     TH(_crosstab.getFieldLabel(_crosstab.getRowField())),
                     multipleStats ? TD(cl("xtab-col-header"), HtmlString.NBSP) : null,
-                    null != _crosstab.getColField() ? colHeaders.stream().map(colVal -> TD(cl("xtab-col-header"), colVal)) : null,
+                    null != _crosstab.getColField() ? colHeaders.stream().map(colVal -> TD(cl("xtab-col-header"), HtmlString.of(colVal))) : null,
                     TD(cl("xtab-col-header"), null == _crosstab.getColField() && null != stat ? stat.getName() : "Total")
                 ),
 

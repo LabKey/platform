@@ -16,7 +16,7 @@ import java.util.Set;
 
 public interface MutableColumnInfo extends MutableColumnRenderProperties, ColumnInfo
 {
-    void setFieldKey(FieldKey key);
+    void setFieldKey(@NotNull FieldKey key);
 
     void setAlias(DatabaseIdentifier alias);
 
