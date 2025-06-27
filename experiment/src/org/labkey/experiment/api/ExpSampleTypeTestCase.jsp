@@ -168,7 +168,7 @@ public void reservedNameFirst() throws Exception
     }
     catch (ApiUsageException ee)
     {
-        assertEquals("Invalid sample type name 'First'. 'First' is a reserved name.", ee.getMessage());
+        assertEquals("Sample Type name 'First' is a reserved name.", ee.getMessage());
     }
 }
 
@@ -188,7 +188,7 @@ public void reservedNameAll() throws Exception
     }
     catch (ApiUsageException ee)
     {
-        assertEquals("Invalid sample type name 'All'. 'All' is a reserved name.", ee.getMessage());
+        assertEquals("Sample Type name 'All' is a reserved name.", ee.getMessage());
     }
 }
 
