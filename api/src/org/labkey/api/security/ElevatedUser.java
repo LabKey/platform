@@ -2,6 +2,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.WrappedImpersonationContext;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -26,6 +27,11 @@ public class ElevatedUser extends ClonedUser
         super(user, new WrappedImpersonationContext(user.getImpersonationContext(), rolesToAdd));
     }
 
+    private ElevatedUser(User user, ImpersonationContext ctx)
+    {
+        super(user, ctx);
+    }
+
     /**
      * Wrap the supplied user and unconditionally add the supplied role(s). Always returns an ElevatedUser.
      */
@@ -41,6 +47,14 @@ public class ElevatedUser extends ClonedUser
     public static ElevatedUser getElevatedUser(User user, Collection<Class<? extends Role>> roleClassesToAdd)
     {
         return new ElevatedUser(user, getRoles(roleClassesToAdd));
+    }
+
+    /**
+     * Used to reconstitute an ElevatedUser from its component parts
+     */
+    public static ElevatedUser getElevatedUser(User user, ImpersonationContext ctx)
+    {
+        return new ElevatedUser(user, ctx);
     }
 
     /**
