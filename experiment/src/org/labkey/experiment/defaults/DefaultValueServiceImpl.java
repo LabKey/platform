@@ -66,7 +66,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
             Lsid domainLsid = new Lsid(domain.getTypeURI());
             return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
         }
-        else
+        else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
             return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
 
     }
@@ -80,7 +80,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
             Lsid domainLsid = new Lsid(domain.getTypeURI());
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
         }
-        else
+        else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
     }
 
