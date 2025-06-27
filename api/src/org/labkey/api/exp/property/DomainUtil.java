@@ -982,6 +982,14 @@ public class DomainUtil
         return validationException;
     }
 
+    // Issue 51321: check reserved domain name: First, All
+    public static @Nullable String validateReservedName(@NotNull String domainName, @NotNull String kindName)
+    {
+        if ("First".equalsIgnoreCase(domainName) || "All".equalsIgnoreCase(domainName))
+            return kindName + " name '" + domainName + "' is a reserved name.";
+        return null;
+    }
+
     public static @Nullable String validateDomainName(@NotNull String domainName, String kindName, boolean supportsNamingPattern)
     {
         String prefix = "Invalid " + kindName + " name '" + domainName + "'. ";

@@ -990,9 +990,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
         }
 
-        // Issue 51321: check reserved sample type name: First
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid sample type name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Sample Type");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     @Override
