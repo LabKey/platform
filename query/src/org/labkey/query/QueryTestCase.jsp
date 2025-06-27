@@ -667,8 +667,8 @@ d,seven,twelve,day,month,date,duration,guid
 
             private void verifyType(ColumnInfo column, JdbcType expectedType, @Nullable String expectedFormat)
             {
-                assertEquals("Type discrepancy for " + column.getName(), column.getJdbcType(), expectedType);
-                assertEquals("Format discrepancy for " + column.getName(), column.getFormat(), expectedFormat);
+                assertEquals("Type discrepancy for " + column.getName(), expectedType, column.getJdbcType());
+                assertEquals("Format discrepancy for " + column.getName(), expectedFormat, column.getFormat());
             }
         },
 
