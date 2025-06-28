@@ -12,6 +12,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.util.ApiPermissionsHelper;
@@ -290,7 +291,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         DataRegionTable runTable = new DataRegionTable("Runs", getDriver());
         runTable.clickHeaderButtonAndWait("Import Data");
         clickButton("Next");
-        setFormElement(AssayTest.ASSAY_NAME_FIELD_LOCATOR, runName);
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, runName);
         checkRadioButton(Locator.radioButtonById("Fileupload"));
         setFormElement(Locator.input("__primaryFile__"), runFile);
         clickButton("Save and Finish");

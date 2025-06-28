@@ -24,6 +24,7 @@ import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -168,16 +169,16 @@ public class TargetStudyTest extends AbstractAssayTest
 
         clickButton("Import Data");
 
-        setFormElement(AssayTest.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN1);
-        click(AssayTest.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN1);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
         String data1 = TEST_RUN1_DATA1
             .replace("${Study1ContainerID}", _study1ContainerId)
             .replace("${Study1Label}", _study1Label);
-        setFormElement(AssayTest.TEXT_AREA_DATA_COLLECTOR_LOCATOR, data1);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, data1);
         clickButton("Save and Finish");
         assertTextPresent("Couldn't resolve TargetStudy 'StudyNotExist' to a study folder.");
 
-        click(AssayTest.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
         String data2 = data1.replace("StudyNotExist", "");
         setFormElement(Locator.name("TextAreaDataCollector.textArea"), data2);
         clickButton("Save and Finish");
