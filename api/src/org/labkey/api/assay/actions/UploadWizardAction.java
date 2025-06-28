@@ -940,7 +940,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             {
                 validatePostedProperties(getViewContext(), form.getBatchProperties(), errors);
 
-                if (ThawListResolverType.NAME.equals(form.getRequest().getParameter("participantVisitResolver")))
+                if (ThawListResolverType.NAME.equals(form.getRequest().getParameter(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME)))
                     ThawListResolverType.validationHelper(form, errors);
 
             }

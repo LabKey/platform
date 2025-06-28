@@ -290,7 +290,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         DataRegionTable runTable = new DataRegionTable("Runs", getDriver());
         runTable.clickHeaderButtonAndWait("Import Data");
         clickButton("Next");
-        setFormElement(Locator.name("name"), runName);
+        setFormElement(AssayTest.ASSAY_NAME_FIELD_LOCATOR, runName);
         checkRadioButton(Locator.radioButtonById("Fileupload"));
         setFormElement(Locator.input("__primaryFile__"), runFile);
         clickButton("Save and Finish");
