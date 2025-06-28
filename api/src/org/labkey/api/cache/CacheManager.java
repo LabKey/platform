@@ -176,7 +176,7 @@ public class CacheManager
 
     private static final Set<Class<?>> CLASSES = new HashSet<>();
 
-    // Validate a cached value. For now, just log warnings for mutable collections.
+    // Validate a cached value. Log errors for mutable collections/arrays and for values holding Container or User objects.
     public static <V> void validate(String debugName, @Nullable V value)
     {
         if (value instanceof Wrapper<?>)
