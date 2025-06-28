@@ -16,12 +16,16 @@
 package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.query.DilutionProviderSchema;
 import org.labkey.api.assay.nab.Luc5Assay;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.assay.nab.RenderAssayBean;
 import org.labkey.api.assay.nab.view.RunDetailOptions;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -42,11 +46,10 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
@@ -64,35 +67,43 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-/**
- * User: klum
- * Date: 5/8/13
- */
 public abstract class DilutionAssayRun extends Luc5Assay
 {
     protected ExpProtocol _protocol;
-    protected DilutionAssayProvider _provider;
+    protected DilutionAssayProvider<?> _provider;
     protected Map<PropertyDescriptor, Object> _runProperties;
     protected Map<PropertyDescriptor, Object> _runDisplayProperties;
     protected List<SampleResult> _sampleResults;
     protected Map<String, Object> _virusNames;
     protected ExpRun _run;
-    // Be extremely careful to not leak this user out in any objects (e.g, via schemas or tables) as it may have elevated permissions.
-    protected User _user;
     protected StatsService.CurveFitType _savedCurveFitType = null;
     protected Map<ExpMaterial, List<WellGroup>> _materialWellGroupMapping;
     protected Map<WellGroup, ExpMaterial> _wellGroupMaterialMapping;
 
-    public DilutionAssayRun(DilutionAssayProvider provider, ExpRun run,
+    // Objects of this class are cached (held by NAbRunWrapper), so we don't want to hold onto a User object. The
+    // passed in user might have elevated permissions, so stash the impersonation context along with the user ID.
+    private final int _userId;
+    private final ImpersonationContext _impersonationContext;
+    private final Map<FieldKey, PropertyDescriptor> _fieldKeys;
+
+    public DilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run,
                        User user, List<Integer> cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         super(run.getRowId(), cutoffs, renderCurveFitType);
         _run = run;
-        _user = user;
+        _userId = user.getUserId();
+        _impersonationContext = user instanceof ElevatedUser eu ? eu.getImpersonationContext() : null;
         _protocol = run.getProtocol();
         _provider = provider;
+        _fieldKeys = getFieldKeys(user);
 
-        for (Map.Entry<PropertyDescriptor, Object> property : getRunProperties().entrySet())
+        TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, user, _run.getContainer(), null);
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(runTable, _fieldKeys.keySet());
+        Map<PropertyDescriptor, Object> runProperties = new TreeMap<>(new PropertyDescriptorComparator());
+        runProperties.putAll(getRunProperties(runTable, _fieldKeys, cols));
+        _runProperties = Collections.unmodifiableMap(runProperties);
+
+        for (Map.Entry<PropertyDescriptor, Object> property : _runProperties.entrySet())
         {
             if (DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME.equals(property.getKey().getName()))
             {
@@ -102,7 +113,13 @@ public abstract class DilutionAssayRun extends Luc5Assay
         }
     }
 
-    public DilutionAssayProvider getProvider()
+    protected User getUser()
+    {
+        User user = UserManager.getUser(_userId);
+        return _impersonationContext != null ? ElevatedUser.getElevatedUser(user, _impersonationContext) : user;
+    }
+
+    public DilutionAssayProvider<?> getProvider()
     {
         return _provider;
     }
@@ -120,6 +137,11 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     private Map<FieldKey, PropertyDescriptor> getFieldKeys()
     {
+        return _fieldKeys;
+    }
+
+    private Map<FieldKey, PropertyDescriptor> getFieldKeys(User user)
+    {
         Map<FieldKey, PropertyDescriptor> fieldKeys = new HashMap<>();
         for (DomainProperty property : _provider.getBatchDomain(_protocol).getProperties())
             fieldKeys.put(FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, property.getName()), property.getPropertyDescriptor());
@@ -127,7 +149,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             fieldKeys.put(FieldKey.fromParts(property.getName()), property.getPropertyDescriptor());
 
         // Add all of the hard columns to the set of properties we can show
-        TableInfo runTableInfo = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
+        TableInfo runTableInfo = AssayService.get().createRunTable(_protocol, _provider, user, _run.getContainer(), null);
         for (ColumnInfo runColumn : runTableInfo.getColumns())
         {
             // These columns cause an UnauthorizedException if the user has permission to see the dataset
@@ -149,7 +171,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             }
         }
 
-        return fieldKeys;
+        return Collections.unmodifiableMap(fieldKeys);
     }
 
     public StatsService.CurveFitType getSavedCurveFitType()
@@ -196,7 +218,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         if (_runDisplayProperties == null)
         {
             Map<FieldKey, PropertyDescriptor> fieldKeys = getFieldKeys();
-            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
+            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, getUser(), _run.getContainer(), null);
 
             CustomView runView = getRunsCustomView(context);
             Collection<FieldKey> fieldKeysToShow;
@@ -211,7 +233,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
                 fieldKeysToShow = new ArrayList<>(runTable.getDefaultVisibleColumns());
             }
             // The list of available columns is reduced from the default set because the user may not have
-            // permission to join to all of the lookups. Remove any columns that aren't part of the acceptable set,
+            // permission to join to all the lookups. Remove any columns that aren't part of the acceptable set,
             // which is built up by getFieldKeys()
             List<FieldKey> newFieldKeysToShow = new ArrayList<>();
             for (FieldKey fieldKey : fieldKeysToShow)
@@ -229,9 +251,9 @@ public abstract class DilutionAssayRun extends Luc5Assay
             }
 
             Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(runTable, newFieldKeysToShow);
-            _runDisplayProperties = getRunProperties(runTable, fieldKeys, selectCols);
+            _runDisplayProperties = Collections.unmodifiableMap(getRunProperties(runTable, fieldKeys, selectCols));
         }
-        return Collections.unmodifiableMap(_runDisplayProperties);
+        return _runDisplayProperties;
     }
 
     protected Map<String, Map<PropertyDescriptor, Object>> getSampleProperties()
@@ -256,7 +278,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     {
         Map<String, DilutionResultProperties> dilutionResultPropertiesMap = new HashMap<>();
 
-        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
+        AssayProtocolSchema schema = _provider.createProtocolSchema(getUser(), _run.getContainer(), _protocol, null);
         TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME, null);
 
         // Do a query to get all the info we need to do the linkage
@@ -316,15 +338,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     public Map<PropertyDescriptor, Object> getRunProperties()
     {
-        if (_runProperties == null)
-        {
-            Map<FieldKey, PropertyDescriptor> fieldKeys = getFieldKeys();
-            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
-            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(runTable, fieldKeys.keySet());
-            _runProperties = new TreeMap<>(new PropertyDescriptorComparator());
-            _runProperties.putAll(getRunProperties(runTable, fieldKeys, cols));
-        }
-        return Collections.unmodifiableMap(_runProperties);
+        return _runProperties;
     }
 
     public abstract List<SampleResult> getSampleResults();
@@ -332,7 +346,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     public Map<String, Object> getVirusNames()
     {
         if (_virusNames == null)
-            _virusNames = Collections.EMPTY_MAP;
+            _virusNames = Collections.emptyMap();
         return _virusNames;
     }
 
@@ -377,7 +391,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         private boolean _longCaptions = false;
         private final DilutionManager _mgr = new DilutionManager();
 
-        public SampleResult(DilutionAssayProvider provider, ExpData data, DilutionSummary dilutionSummary, DilutionMaterialKey materialKey,
+        public SampleResult(DilutionAssayProvider<?> provider, ExpData data, DilutionSummary dilutionSummary, DilutionMaterialKey materialKey,
                             Map<PropertyDescriptor, Object> sampleProperties, DilutionResultProperties dilutionResultProperties)
         {
             _dilutionSummary = dilutionSummary;
