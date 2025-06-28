@@ -330,7 +330,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
         }
 
-        protected void validateResults(ResultSet rs) throws Exception
+        protected void validateResults(Results rs) throws Exception
         {
         }
     }
@@ -368,7 +368,7 @@ d,seven,twelve,day,month,date,duration,guid
         }
 
         @Override
-        protected void validateResults(ResultSet rs) throws Exception
+        protected void validateResults(Results rs) throws Exception
         {
             assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
@@ -838,7 +838,40 @@ d,seven,twelve,day,month,date,duration,guid
         new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1)
+        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1),
+
+        // Column annotations
+        new SqlTest("SELECT 1 AS name @title='New Label'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("New Label", rs.getColumn(1).getLabel());
+                assertFalse(rs.getColumn(1).isHidden());
+                assertNull(rs.getColumn(1).getFormat());
+            }
+        },
+        new SqlTest("SELECT 1 AS name @hidden'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("Name", rs.getColumn(1).getLabel());
+                assertTrue(rs.getColumn(1).isHidden());
+                assertNull(rs.getColumn(1).getFormat());
+            }
+        },
+        new SqlTest("SELECT 1 AS name @format='0.00'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("Name", rs.getColumn(1).getLabel());
+                assertFalse(rs.getColumn(1).isHidden());
+                assertEquals("0.00", rs.getColumn(1).getFormat());
+            }
+        }
+
     );
 
     List<SqlTest> postgres = List.of(
