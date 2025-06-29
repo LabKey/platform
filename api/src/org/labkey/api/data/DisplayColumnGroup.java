@@ -91,7 +91,7 @@ public class DisplayColumnGroup
 
     private String getGroupFormFieldName(RenderContext ctx)
     {
-        return ColumnInfo.propNameFromName(getColumns().get(0).getFormFieldName(ctx));
+        return getColumns().get(0).getFormFieldName(ctx);
     }
     
     public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException
