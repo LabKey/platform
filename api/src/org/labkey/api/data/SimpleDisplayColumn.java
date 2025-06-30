@@ -107,7 +107,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     {
         Object value = getValue(ctx);
         if (value != null)
-            out.write(value.toString());
+            out.write(value);
     }
 
     @Override

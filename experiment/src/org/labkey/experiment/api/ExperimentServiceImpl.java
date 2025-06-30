@@ -8096,9 +8096,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
         }
 
-        // Issue 51321: check reserved data class name: First, All
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid DataClass name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Data Class");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
