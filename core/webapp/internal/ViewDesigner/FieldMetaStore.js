@@ -37,7 +37,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
                 type: 'json',
                 root: 'columns',
                 idProperty: function(json) {
-                    return json.fieldKeyPath.toUpperCase();
+                    return encodeURIComponent(json.fieldKeyPath.toUpperCase()); // Issue 53197
                 }
             }
         };
@@ -92,7 +92,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
                 type: 'json',
                 root: 'columns',
                 idProperty: function(json) {
-                    return json.fieldKeyPath.toUpperCase();
+                    return encodeURIComponent(json.fieldKeyPath.toUpperCase()); // Issue 53197
                 }
             }
         };
@@ -109,7 +109,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
     getById : function(id) {
         var _id;
         if (Ext4.isString(id)) {
-            _id = id.toUpperCase();
+            _id = encodeURIComponent(id.toUpperCase()); // Issue 53197
         }
         else {
             _id = id;

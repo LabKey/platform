@@ -1134,7 +1134,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 nodeEl;
 
             for (var i = 0; i < columns.length; i++) {
-                checked[columns[i].get('id')] = true;
+                checked[encodeURIComponent(columns[i].get('id'))] = true; // Issue 53197
             }
 
             this.getColumnTree().getRootNode().cascadeBy(function(node) {
