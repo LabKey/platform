@@ -3187,13 +3187,18 @@ public class PageFlowUtil
      */
     public static int addScriptNonces(Document doc)
     {
-        String nonce = HttpView.currentPageConfig().getScriptNonce().toString();
         NodeList nl = doc.getElementsByTagName("script");
 
-        for (int i = 0, length = nl.getLength(); i < length; i++)
+        if (nl.getLength() > 0)
         {
-            Element script = (Element)nl.item(i);
-            script.setAttribute("nonce", nonce);
+            // If rendering outside a request (e.g., search crawler), substitute blank
+            String nonce = HttpView.hasCurrentView() ? HttpView.currentPageConfig().getScriptNonce().toString() : "";
+
+            for (int i = 0, length = nl.getLength(); i < length; i++)
+            {
+                Element script = (Element) nl.item(i);
+                script.setAttribute("nonce", nonce);
+            }
         }
 
         return nl.getLength();
