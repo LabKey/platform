@@ -74,6 +74,11 @@ public class LsidManager
         return INSTANCE;
     }
 
+    public static DbSequence getLsidPrefixDbSeq(String lsidPrefix, int batchSize)
+    {
+        return getLsidPrefixDbSeq(ContainerManager.getRoot(), lsidPrefix, batchSize);
+    }
+
     public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
     {
         Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
