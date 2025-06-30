@@ -918,7 +918,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             SimpleMetricsService.get().increment("query", featureArea, targetType);
     }
 
-    private static String getMetricPrefix(TableInfo target)
+    private static String getMetricPrefix(@NotNull TableInfo target)
     {
         String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
         return metricPrefix.replace("exp.", "");
