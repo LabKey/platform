@@ -39,6 +39,7 @@ import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.pages.study.QCStateTableRow;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldKey;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -522,7 +523,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn(new String[]{"ParticipantVisit", "Visit"});
+        _customizeViewsHelper.addColumn(FieldKey.fromParts("ParticipantVisit", "Visit"));
         _customizeViewsHelper.saveDefaultView();
         mouseOver(Locator.tagWithText("td", visitLabel));
         waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
