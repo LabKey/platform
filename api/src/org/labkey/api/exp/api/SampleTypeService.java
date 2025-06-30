@@ -32,6 +32,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -40,6 +42,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
@@ -254,4 +257,10 @@ public interface SampleTypeService
     long getCurrentCount(NameGenerator.EntityCounter counterType, Container container);
 
     void ensureMinSampleCount(long newSeqValue, NameGenerator.EntityCounter counterType, Container container) throws ExperimentException;
+
+    /**
+     * Should only be used to get a local instance of a schema and isn't cached. All other usages should get
+     * it from the QueryService.
+     */
+    UserSchema getUserSchema(QuerySchema schema, Set<Role> contextualRoles);
 }
