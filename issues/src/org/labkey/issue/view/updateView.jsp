@@ -351,7 +351,7 @@
 
                     for (DomainProperty prop : column1Props)
                     {%>
-                                <%=bean.renderColumn(prop, getViewContext())%><%
+                        <%=bean.renderColumn(prop, getViewContext(), true, false)%><%
                     }%>
                 </table>
             </td>
@@ -385,7 +385,7 @@
             }
             for (DomainProperty prop : column2Props)
             {%>
-                <%=bean.renderColumn(prop, getViewContext())%><%
+                <%=bean.renderColumn(prop, getViewContext(), true, false)%><%
             }%>
             </table></td>
         </tr>
@@ -393,8 +393,8 @@
         <%
             for (DomainProperty prop : extraColumns)
             {%>
-        <%=bean.renderColumn(prop, getViewContext())%><%
-        }%>
+                <%=bean.renderColumn(prop, getViewContext(), true, false)%><%
+            }%>
         <tr>
             <%=bean.renderLabel(bean.getLabel("Comment", bean.isInsert()))%>
             <td colspan="3">
