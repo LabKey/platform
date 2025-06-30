@@ -244,7 +244,7 @@
             <tr><%=bean.renderLabel(bean.getLabel("Status", false))%><td><%=h(issue.getStatus())%></td></tr><%
             for (DomainProperty prop : extraColumns)
             {%>
-                <%=bean.renderColumn(prop, getViewContext())%><%
+                <%=bean.renderColumn(prop, getViewContext(), true, true)%><%
             }%>
 
             <%=unsafe(bean.renderAdditionalDetailInfo())%>
@@ -277,7 +277,7 @@
             }
             for (DomainProperty prop : column1Props)
             {%>
-            <%=bean.renderColumn(prop, getViewContext())%><%
+                <%=bean.renderColumn(prop, getViewContext(), true, true)%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
@@ -290,7 +290,7 @@
 
             for (DomainProperty prop : column2Props)
             {%>
-            <%=bean.renderColumn(prop, getViewContext())%><%
+                <%=bean.renderColumn(prop, getViewContext(), true, true)%><%
             }%>
         </table></td>
     </tr>
