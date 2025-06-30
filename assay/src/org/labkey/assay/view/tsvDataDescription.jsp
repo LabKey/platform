@@ -32,20 +32,22 @@
 <div id="showExpectedDataFieldsDiv"><%= link("Show Expected Data Fields").onClick("document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;").id("showExpectedDataFieldsLink") %></div>
 <div id="expectedDataFields" style="display: none">
     <strong>Expected Data Fields</strong>
-    <table class="labkey-show-borders" cellpadding="3" cellspacing="0">
+    <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
-            <td><strong>Name</strong></td>
-            <td><strong>Type</strong></td>
-            <td><strong>Required</strong></td>
-            <td><strong>Description</strong></td>
+            <td class="labkey-column-header">Name</td>
+            <td class="labkey-column-header">Type</td>
+            <td class="labkey-column-header">Required</td>
+            <td class="labkey-column-header">Description</td>
         </tr>
     <%
+    int row = 0;
     for (DomainProperty pd : bean.getRunDataProperties()) { %>
-    <tr>
-        <td><%= h(pd.getName()) %></td>
-        <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
-        <td><%= unsafe(pd.isRequired() ? "yes" : "no") %></td>
-        <td><%=h(pd.getDescription())%></td></tr>
+        <tr class="<%=getShadeRowClass(row++)%>">
+            <td><%= h(pd.getName()) %></td>
+            <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
+            <td><%= unsafe(pd.isRequired() ? "yes" : "no") %></td>
+            <td><%=h(pd.getDescription())%></td>
+        </tr>
     <% } %>
     </table>
 </div>
