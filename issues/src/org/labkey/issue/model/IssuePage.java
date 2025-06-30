@@ -400,11 +400,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _tableInfo;
     }
 
-    public HtmlString renderColumn(DomainProperty prop, ViewContext context) throws IOException
-    {
-        return renderColumn(prop, context, true, false);
-    }
-
     public HtmlString renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))

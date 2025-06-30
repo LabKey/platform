@@ -330,7 +330,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
         }
 
-        protected void validateResults(ResultSet rs) throws Exception
+        protected void validateResults(Results rs) throws Exception
         {
         }
     }
@@ -368,7 +368,7 @@ d,seven,twelve,day,month,date,duration,guid
         }
 
         @Override
-        protected void validateResults(ResultSet rs) throws Exception
+        protected void validateResults(Results rs) throws Exception
         {
             assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
@@ -667,8 +667,8 @@ d,seven,twelve,day,month,date,duration,guid
 
             private void verifyType(ColumnInfo column, JdbcType expectedType, @Nullable String expectedFormat)
             {
-                assertEquals("Type discrepancy for " + column.getName(), column.getJdbcType(), expectedType);
-                assertEquals("Format discrepancy for " + column.getName(), column.getFormat(), expectedFormat);
+                assertEquals("Type discrepancy for " + column.getName(), expectedType, column.getJdbcType());
+                assertEquals("Format discrepancy for " + column.getName(), expectedFormat, column.getFormat());
             }
         },
 
@@ -702,6 +702,9 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
+        new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
+        new MethodSqlTest("SELECT CONVERT('-infinity', DOUBLE)", JdbcType.DOUBLE, Double.NEGATIVE_INFINITY),
+        new MethodSqlTest("SELECT CONVERT('nan', DOUBLE)", JdbcType.DOUBLE, Double.NaN),
         new MethodSqlTest("SELECT COUNT(R.twelve) as cnt FROM R", JdbcType.INTEGER),
         // TODO: cos
         // TODO: cot
@@ -835,7 +838,40 @@ d,seven,twelve,day,month,date,duration,guid
         new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1)
+        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1),
+
+        // Column annotations
+        new SqlTest("SELECT 1 AS name @title='New Label'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("New Label", rs.getColumn(1).getLabel());
+                assertFalse(rs.getColumn(1).isHidden());
+                assertNull(rs.getColumn(1).getFormat());
+            }
+        },
+        new SqlTest("SELECT 1 AS name @hidden'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("Name", rs.getColumn(1).getLabel());
+                assertTrue(rs.getColumn(1).isHidden());
+                assertNull(rs.getColumn(1).getFormat());
+            }
+        },
+        new SqlTest("SELECT 1 AS name @format='0.00'")
+        {
+            @Override
+            protected void validateResults(Results rs) throws Exception
+            {
+                assertEquals("Name", rs.getColumn(1).getLabel());
+                assertFalse(rs.getColumn(1).isHidden());
+                assertEquals("0.00", rs.getColumn(1).getFormat());
+            }
+        }
+
     );
 
     List<SqlTest> postgres = List.of(

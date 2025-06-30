@@ -44,7 +44,7 @@ public enum ParameterType
     VARCHAR(JdbcType.VARCHAR)
     ;
 
-    final JdbcType type;
+    final public JdbcType type;
 
     ParameterType(JdbcType type)
     {
