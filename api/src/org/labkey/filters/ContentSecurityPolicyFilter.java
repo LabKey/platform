@@ -293,6 +293,9 @@ public class ContentSecurityPolicyFilter implements Filter
                         .collect(Collectors.joining(" ")))
                 );
 
+            // Special case for object-src: default to 'none' if no admin overrides exist, Issue 53226
+            SUBSTITUTION_MAP.putIfAbsent(Directive.Object.getSubstitutionKey(), "'none'");
+
             // Add an empty substitution for sources that lack registrations. This strips them from the stashed policy,
             // meaning less work on every request.
             Arrays.stream(Directive.values())
@@ -395,7 +398,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     // Initial checks
                     assertTrue(ALLOWED_SOURCES.isEmpty());
                     verifySubstitutionMapSize(0);
-                    // All "allowed sources" substitutions should be replaced with empty strings
+                    // All "allowed sources" substitutions should be replaced with empty string or 'none' (object-src)
                     verifySubstitutionInPolicyExpressions(".SOURCES}", 0);
                     // Should have been substitution in init()
                     verifySubstitutionInPolicyExpressions("${CSP.REPORT.PARAMS}", 0);
@@ -430,7 +433,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
                     unregisterAllowedSources(Directive.Font, "font");
-                    assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
+                    assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists but should be empty
                     assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
                     verifySubstitutionMapSize(1);// Back to the way it was
                     verifySubstitutionInPolicyExpressions("MySource", 1);
@@ -456,6 +459,15 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionMapSize(4);
                     verifySubstitutionInPolicyExpressions("ImageSource", 1);
                     verifySubstitutionInPolicyExpressions("BetterImageStore", 1);
+
+                    unregisterAllowedSources(Directive.Object, "object");
+                    verifySubstitutionInPolicyExpressions("'none'", 1);
+                    registerAllowedSources("object", Directive.Object, "ObjectSource", "BetterObjectStore");
+                    assertEquals(6, ALLOWED_SOURCES.size());
+                    verifySubstitutionMapSize(4); // Adding to object-src doesn't change the non-empty count
+                    verifySubstitutionInPolicyExpressions("'none'", 0);
+                    verifySubstitutionInPolicyExpressions("ObjectSource", 1);
+                    verifySubstitutionInPolicyExpressions("BetterObjectStore", 1);
                 }
                 finally
                 {
@@ -491,7 +503,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
             assertEquals(expectedSubstitutionMapSize, SUBSTITUTION_MAP.size());
             long nonEmptyValues = SUBSTITUTION_MAP.entrySet().stream().filter(e -> !e.getValue().isEmpty()).count();
-            assertEquals(expectedNonEmptyValues, nonEmptyValues);
+            assertEquals(expectedNonEmptyValues + 1, nonEmptyValues); // One extra expected because of OBJECT.SOURCES default value
         }
     }
 }

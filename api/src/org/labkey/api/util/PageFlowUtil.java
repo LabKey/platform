@@ -3156,4 +3156,46 @@ public class PageFlowUtil
         return HtmlString.unsafe(sb.toString());
     }
 
+    /**
+     * Convert String containing HTML into a Document, add nonces to all {@code <script>} tags, and turn the Document
+     * back into a String.
+     */
+    public static String addScriptNonces(String html)
+    {
+        Document doc = JSoupUtil.convertHtmlToDocument(StringUtils.trimToEmpty(html), false, new LinkedList<>());
+        String ret = "";
+        if (doc != null)
+        {
+            addScriptNonces(doc);
+            try
+            {
+                ret = convertNodeToHtml(doc);
+            }
+            catch (TransformerException | IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return ret;
+    }
+
+    /*
+     * Add nonce attribute to <script> tags in the Document.
+     * We don't require the <%=scriptNonce%> syntax (as with module HTML view), because we already parsed the page.
+     * ModuleHtmlView does not parse the page and does a raw regexp substitution.
+     */
+    public static int addScriptNonces(Document doc)
+    {
+        String nonce = HttpView.currentPageConfig().getScriptNonce().toString();
+        NodeList nl = doc.getElementsByTagName("script");
+
+        for (int i = 0, length = nl.getLength(); i < length; i++)
+        {
+            Element script = (Element)nl.item(i);
+            script.setAttribute("nonce", nonce);
+        }
+
+        return nl.getLength();
+    }
 }
