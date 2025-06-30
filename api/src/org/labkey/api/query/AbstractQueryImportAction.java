@@ -604,7 +604,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
-                            SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
+                            if (_target != null)
+                                SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
                             JSONObject response = new JSONObject();
                             response.put("success", true);
                             response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
