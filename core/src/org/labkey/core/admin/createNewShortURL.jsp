@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.view.ShortURLRecord" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors/>
@@ -47,7 +48,7 @@
         </tr>
         <tr>
             <td></td>
-            <td><%= button("Submit").submit(true) %></td>
+            <td><%= button("Submit").submit(true).enabled(getUser().hasRootPermission(ApplicationAdminPermission.class)) %></td>
         </tr>
     </table>
 </labkey:form>

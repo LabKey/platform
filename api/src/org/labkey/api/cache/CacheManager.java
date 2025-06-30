@@ -60,7 +60,7 @@ public class CacheManager
     public static final int DEFAULT_CACHE_SIZE = 5000;
 
     // Set useCache = false to completely disable all caching... and slow your server to a near halt. Possibly useful for
-    // reproducing CacheLoader re-entrancy problems, but not much else.
+    // reproducing CacheLoader reentrancy problems, but not much else.
     private static final boolean useCache = true;
     private static final CacheProvider PROVIDER = useCache ? EhCacheProvider.getInstance() : new NoopCacheProvider();
 
@@ -176,7 +176,7 @@ public class CacheManager
 
     private static final Set<Class<?>> CLASSES = new HashSet<>();
 
-    // Validate a cached value. For now, just log warnings for mutable collections.
+    // Validate a cached value. Log errors for mutable collections/arrays and for values holding Container or User objects.
     public static <V> void validate(String debugName, @Nullable V value)
     {
         if (value instanceof Wrapper<?>)
@@ -186,14 +186,11 @@ public class CacheManager
 
         if (null != description)
         {
-            LOG.warn("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
+            LOG.error("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
         }
 
-        // Log questionable members, but don't do the work if we're not going to log it
-        if (LOG.isDebugEnabled())
-        {
-            analyzeValue(value, debugName, null, 1);
-        }
+        // Flag values that hold a Container or User object
+        analyzeValue(value, debugName, null, 1);
     }
 
     private static final int MAX_DEPTH = 4;
@@ -236,9 +233,7 @@ public class CacheManager
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-//                        String message = cacheName + ": " + clazz.getName() + " field " + newFieldPath + " (" + field.getType().getName() + ")";
-//                        throw new IllegalStateException(message);
-                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
+                        LOG.error("Cached value holds an unsafe object - {}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                     }
                     else
                     {

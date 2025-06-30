@@ -24,9 +24,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -37,8 +39,11 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static java.util.Collections.emptyList;
@@ -56,11 +61,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         public CustomPropertyRenderer get(Object key)
         {
             CustomPropertyRenderer result = super.get(key);
-            if (result == null)
-            {
-                return DEFAULT_RENDERER;
-            }
-            return result;
+            return Objects.requireNonNullElse(result, DEFAULT_RENDERER);
         }
     };
 
@@ -147,24 +148,37 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
 
             if (null != queryTable)
             {
-                SimpleFilter filter = new SimpleFilter("lsid", parentLSID);
-                Map<String,Object> tableProps = new TableSelector(queryTable, filter, null).getMap();
-                for (DomainProperty dp : d.getProperties())
+                Set<String> propertyUris = new HashSet<>();
+
+                for (DomainProperty property : d.getProperties())
                 {
-                    Object value = tableProps.get(dp.getName());
-                    if (null != value)
-                        map.put(dp.getName(), new ObjectProperty(parentLSID, c, dp.getPropertyURI(), value));
+                    propertyUris.add(property.getPropertyURI());
                 }
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), parentLSID);
+                Map<String,Object> tableProps = new TableSelector(queryTable, filter, null).getMap();
                 // include calculated fields from the domain / query as well
                 List<ColumnInfo> cols = queryTable.getColumns().stream()
                         .filter(ColumnInfo::isShownInDetailsView)
-                        .filter(ColumnInfo::isValueExpressionColumn)
+                        .filter(col -> propertyUris.contains(col.getPropertyURI()) || col.isValueExpressionColumn())
                         .toList();
                 for (ColumnInfo column : cols)
                 {
                     Object value = column.getValue(tableProps);
-                    if (null != value)
-                        map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, column.getLabel()));
+                    PropertyType type = column.getPropertyType();
+                    // Calculated fields don't store an explicit property type
+                    if (type == null)
+                    {
+                        if (value == null)
+                        {
+                            type = PropertyType.STRING;
+                        }
+                        else
+                        {
+                            type = PropertyType.getFromClass(value.getClass());
+                        }
+                    }
+                    map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, type, column.getLabel()));
                 }
             }
         }

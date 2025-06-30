@@ -16,7 +16,9 @@
 package org.labkey.api.security.permissions;
 
 /**
- * Describes the ability to manage operational site administration settings.
+ * Describes the ability to manage operational site administration settings, such as arbitrary paths on the server's
+ * underlying file system. Use {@see org.labkey.api.security.permissions.ApplicationAdminPermission} for gating
+ * access to server-wide settings that don't have the potential to access these underlying server resources.
  */
 public class AdminOperationsPermission extends AdminPermission
 {
