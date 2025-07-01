@@ -177,7 +177,7 @@ public class DomainImpl implements Domain
         return _dd.getContainer();
     }
 
-    @Override
+    @Override @Nullable
     public DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
