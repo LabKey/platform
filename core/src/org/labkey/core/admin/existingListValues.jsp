@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.SortHelpers" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
