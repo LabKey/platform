@@ -263,7 +263,7 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
-    public static void unregisterAllowedSources(Directive directive, String key)
+    public static void unregisterAllowedSources(String key, Directive directive)
     {
         synchronized (SUBSTITUTION_LOCK)
         {
@@ -405,7 +405,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions("${", 0);
 
                     // Now unregister and register sources for each Directive, testing expectations along the way
-                    unregisterAllowedSources(Directive.Connection, "foo");
+                    unregisterAllowedSources("foo", Directive.Connection);
                     assertTrue(ALLOWED_SOURCES.isEmpty());
                     verifySubstitutionMapSize(0);
                     registerAllowedSources("foo", Directive.Connection, "MySource");
@@ -417,7 +417,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionMapSize(1);
                     verifySubstitutionInPolicyExpressions("MySource", 1); // Duplicate source should be filtered out
 
-                    unregisterAllowedSources(Directive.Font, "font");
+                    unregisterAllowedSources("font", Directive.Font);
                     registerAllowedSources("font", Directive.Font, "MySource");
                     assertEquals(2, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(2);
@@ -427,40 +427,40 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 1);
-                    unregisterAllowedSources(Directive.Font, "font2");
+                    unregisterAllowedSources("font2", Directive.Font);
                     assertEquals(2, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
-                    unregisterAllowedSources(Directive.Font, "font");
+                    unregisterAllowedSources("font", Directive.Font);
                     assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists but should be empty
                     assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
                     verifySubstitutionMapSize(1);// Back to the way it was
                     verifySubstitutionInPolicyExpressions("MySource", 1);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
 
-                    unregisterAllowedSources(Directive.Frame, "frame");
+                    unregisterAllowedSources("frame", Directive.Frame);
                     registerAllowedSources("frame", Directive.Frame, "FrameSource", "FrameStore");
                     assertEquals(3, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("FrameSource", 1);
                     verifySubstitutionInPolicyExpressions("FrameStore", 1);
 
-                    unregisterAllowedSources(Directive.Style, "style");
+                    unregisterAllowedSources("style", Directive.Style);
                     registerAllowedSources("style", Directive.Style, "StyleSource", "MoreStylishStore");
                     assertEquals(4, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(3);
                     verifySubstitutionInPolicyExpressions("StyleSource", 1);
                     verifySubstitutionInPolicyExpressions("MoreStylishStore", 1);
 
-                    unregisterAllowedSources(Directive.Image, "image");
+                    unregisterAllowedSources("image", Directive.Image);
                     registerAllowedSources("image", Directive.Image, "ImageSource", "BetterImageStore");
                     assertEquals(5, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(4);
                     verifySubstitutionInPolicyExpressions("ImageSource", 1);
                     verifySubstitutionInPolicyExpressions("BetterImageStore", 1);
 
-                    unregisterAllowedSources(Directive.Object, "object");
+                    unregisterAllowedSources("object", Directive.Object);
                     verifySubstitutionInPolicyExpressions("'none'", 1);
                     registerAllowedSources("object", Directive.Object, "ObjectSource", "BetterObjectStore");
                     assertEquals(6, ALLOWED_SOURCES.size());
