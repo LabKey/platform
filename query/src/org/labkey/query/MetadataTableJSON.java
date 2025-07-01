@@ -227,7 +227,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             if (rawColumnInfo == null)
             {
                 isNewColumn = true;
-                rawColumnInfo = new BaseColumnInfo((FieldKey)null, (TableInfo)null);
+                rawColumnInfo = new BaseColumnInfo(FieldKey.fromParts("DummyRawColumn"), (TableInfo)null);
                 // Establish the type of the column
                 if (metadataColumnJSON.getWrappedColumnName() != null)
                 {

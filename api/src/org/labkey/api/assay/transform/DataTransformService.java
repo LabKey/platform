@@ -188,7 +188,7 @@ public class DataTransformService
 
                         context.setTransformResult(result);
                     }
-                    catch (ValidationException e)
+                    catch (ValidationException | RuntimeException e)
                     {
                         throw e;
                     }

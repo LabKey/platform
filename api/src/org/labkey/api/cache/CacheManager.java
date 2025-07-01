@@ -17,6 +17,7 @@ package org.labkey.api.cache;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
@@ -59,7 +60,7 @@ public class CacheManager
     public static final int DEFAULT_CACHE_SIZE = 5000;
 
     // Set useCache = false to completely disable all caching... and slow your server to a near halt. Possibly useful for
-    // reproducing CacheLoader re-entrancy problems, but not much else.
+    // reproducing CacheLoader reentrancy problems, but not much else.
     private static final boolean useCache = true;
     private static final CacheProvider PROVIDER = useCache ? EhCacheProvider.getInstance() : new NoopCacheProvider();
 
@@ -175,7 +176,7 @@ public class CacheManager
 
     private static final Set<Class<?>> CLASSES = new HashSet<>();
 
-    // Validate a cached value. For now, just log warnings for mutable collections.
+    // Validate a cached value. Log errors for mutable collections/arrays and for values holding Container or User objects.
     public static <V> void validate(String debugName, @Nullable V value)
     {
         if (value instanceof Wrapper<?>)
@@ -185,19 +186,16 @@ public class CacheManager
 
         if (null != description)
         {
-            LOG.warn("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
+            LOG.error("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
         }
 
-        // Log questionable members, but don't do the work if we're not going to log it
-        if (LOG.isDebugEnabled())
-        {
-            analyzeValue(value, debugName, null, 1);
-        }
+        // Flag values that hold a Container or User object
+        analyzeValue(value, debugName, null, 1);
     }
 
     private static final int MAX_DEPTH = 4;
 
-    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fields, int depth)
+    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fieldPath, int depth)
     {
         if (value != null && depth < MAX_DEPTH)
         {
@@ -208,34 +206,34 @@ public class CacheManager
                 m.entrySet().stream()
                     .findFirst()
                     .ifPresent(entry -> {
-                        analyzeValue(entry.getKey(), cacheName, fields, depth + 1);
-                        analyzeValue(entry.getValue(), cacheName, fields, depth + 1);
+                        analyzeValue(entry.getKey(), cacheName, safeAppend(fieldPath, "Map", "_key"), depth + 1);
+                        analyzeValue(entry.getValue(), cacheName, safeAppend(fieldPath, "Map", "_value"), depth + 1);
                     });
             }
             else if (value instanceof Collection<?> coll)
             {
                 coll.stream()
                     .findFirst()
-                    .ifPresent(element -> analyzeValue(element, cacheName, fields, depth + 1));
+                    .ifPresent(element -> analyzeValue(element, cacheName, safeAppend(fieldPath, coll.getClass().getSimpleName(), "get(0)"), depth + 1));
             }
             else if (clazz.isArray() && Array.getLength(value) > 0)
             {
-                analyzeValue(Array.get(value, 0), cacheName, fields, depth + 1);
+                analyzeValue(Array.get(value, 0), cacheName, safeAppend(fieldPath, "Array", "[0]"), depth + 1);
             }
             else if (value instanceof Reference<?> ref)
             {
-                analyzeValue(ref, cacheName, fields, depth + 1);
+                analyzeValue(ref, cacheName, fieldPath, depth + 1);
             }
             else if (CLASSES.add(clazz))
             {
                 for (Field field : getAllInstanceFields(clazz))
                 {
-                    String fieldPath = (fields != null ? fields + "." : "") + field.getName();
+                    String newFieldPath = safeAppend(fieldPath, clazz.getSimpleName(), field.getName());
                     Class<?> type = field.getType();
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                        LOG.error("Cached value holds an unsafe object - {}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                     }
                     else
                     {
@@ -243,20 +241,25 @@ public class CacheManager
                         {
                             field.setAccessible(true);
                             Object val = field.get(value);
-                            analyzeValue(val, cacheName, fieldPath, depth + 1);
+                            analyzeValue(val, cacheName, newFieldPath, depth + 1);
                         }
                         catch (InaccessibleObjectException e)
                         {
-                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
                         }
                         catch (IllegalAccessException e)
                         {
-                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), fieldPath, field.getType().getName(), e);
+                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), newFieldPath, field.getType().getName(), e);
                         }
                     }
                 }
             }
         }
+    }
+
+    private static String safeAppend(@Nullable String fieldPath, @NotNull String currentClass, @NotNull String fieldName)
+    {
+        return (fieldPath == null ? currentClass : fieldPath) + "." + fieldName;
     }
 
     // Recurse up the class hierarchy

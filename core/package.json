@@ -53,12 +53,12 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.48.1",
+    "@labkey/components": "6.52.3",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
     "@labkey/build": "8.5.0",
-    "@labkey/eslint-config-react": "0.0.15",
+    "@labkey/eslint-config": "1.0.0",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.6",

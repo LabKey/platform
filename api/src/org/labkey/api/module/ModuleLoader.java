@@ -1721,7 +1721,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             try
             {
                 ModuleContext ctx = getModuleContext(m);
-                m.runDeferredUpgradeRunnables();
+                m.runDeferredUpgradeMethods(ctx);
                 ctx.setModuleState(ModuleState.Started);
             }
             catch (Throwable x)

@@ -1168,7 +1168,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     Logger categoryLogger = getLoggerForCategory(category);
                     if (categoryLogger.isDebugEnabled())
                     {
-                        String containerId = i._res.getContainerId();
+                        GUID containerId = i._res.getContainerId();
                         Container c = ContainerManager.getForId(containerId);
                         String containerPath = c != null ? c.getPath() : "UNKNOWN PATH: Container not found!";
                         categoryLogger.debug(category + " " + i._res.getDocumentId() + " " + containerPath + " " + containerId);

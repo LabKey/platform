@@ -628,6 +628,7 @@ public class UserController extends SpringActionController
             return activate;
         }
 
+        @SuppressWarnings("unused")
         public void setActivate(boolean activate)
         {
             this.activate = activate;
@@ -638,6 +639,7 @@ public class UserController extends SpringActionController
             return delete;
         }
 
+        @SuppressWarnings("unused")
         public void setDelete(boolean delete)
         {
             this.delete = delete;

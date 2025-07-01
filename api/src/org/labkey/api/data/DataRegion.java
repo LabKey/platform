@@ -2079,9 +2079,9 @@ public class DataRegion extends DisplayElement
                 TableInfo tinfoMain = getTable();
                 var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
                 // NOTE MissingValueDisplayColumn does not work without Results, it relies on using .get(FieldKey) that it enables
+                ctx.setResults(results); // set unconditionally to ensure resultSet gets closed
                 if (results.next())
                 {
-                    ctx.setResults(results);
                     ctx.setRow(results.getRowMap());
                 }
             }

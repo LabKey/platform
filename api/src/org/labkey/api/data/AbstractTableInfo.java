@@ -127,6 +127,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
+    public enum MultiValuedFkType
+    {
+        junction,
+        value,
+    }
 
     private final List<QueryParseException> _warnings = new ArrayList<>();
     protected Iterable<FieldKey> _defaultVisibleColumns;
@@ -1201,10 +1206,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (fk.isSetFkMultiValued())
         {
             String type = fk.getFkMultiValued();
-            if ("junction".equals(type))
+            if (MultiValuedFkType.junction.name().equals(type))
                 ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
             else
-                throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                LOG.warn(String.format("Error in FK configuration for schema : \"%s\". The multi value FK type : \"%s\" is not supported.", fromSchema.getSchemaName(), type));
         }
 
         return ret;

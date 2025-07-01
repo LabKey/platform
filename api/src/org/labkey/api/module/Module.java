@@ -21,7 +21,6 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -31,6 +30,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -244,12 +244,13 @@ public interface Module
      * Modules can provide JUnit tests that must be run inside the server
      * VM. These tests will be executed as part of the DRT. These are not true unit tests, and may rely on external
      * resources such as a database connection or services provided by other modules.
+     *
      * @return the integration tests that this module provides
      */
     @JsonIgnore
-    default @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    default @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        return getIntegrationTests().stream().map(c -> (Factory<Class<?>>)() -> c).collect(Collectors.toList());
+        return getIntegrationTests().stream().map(c -> (Supplier<Class<?>>)() -> c).collect(Collectors.toList());
     }
 
     /**
@@ -371,15 +372,15 @@ public interface Module
     List<FileLike> getStaticFileDirectories();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
-    // if the module no longer exists?  This setting gets saved to the Modules table.
+    // if the module no longer exists? This setting gets saved to the Modules table.
     boolean isAutoUninstall();
 
     /**
      * Methods used by the module loader to add and execute upgrade tasks that need to be invoked after
      * a module is initialized.
      */
-    void addDeferredUpgradeRunnable(String description, Runnable runnable);
-    void runDeferredUpgradeRunnables();
+    void addDeferredUpgradeMethod(ModuleContext moduleContext, UpgradeMethod upgradeMethod);
+    void runDeferredUpgradeMethods(ModuleContext moduleContext);
 
     @JsonIgnore
     Map<String, ModuleProperty> getModuleProperties();

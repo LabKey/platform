@@ -71,7 +71,6 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -1633,18 +1632,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
-        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
         String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
         return new Pair<>(lsid, dbSeqStr);
-    }
-
-    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
-    {
-        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
-        if (!container.isProject() && container.getProject() != null)
-            projectContainer = container.getProject();
-
-        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -4532,6 +4522,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
+            // There are other tables/rows we could lock, but this is a start
+            // CONSIDER similar behavior for Domain.delete()
+            _lockDomainsAndProvisionedTables(assayService, expProtocols);
+
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -4631,6 +4626,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (assayService != null)
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
+    }
+
+    private static void _lockDomainsAndProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    {
+        if (null == assayService)
+            return;
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        for (var expProtocol : expProtocols)
+        {
+            AssayProvider provider = assayService.getProvider(expProtocol);
+            if (provider != null)
+            {
+                for (var domain : provider.getDomains(expProtocol))
+                {
+                    domain.lockForDelete(expSchema);
+                }
+            }
+        }
     }
 
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
@@ -8083,9 +8096,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
         }
 
-        // Issue 51321: check reserved data class name: First, All
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid DataClass name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Data Class");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
@@ -9530,7 +9543,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(dataObjects.size());
@@ -9781,7 +9794,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(assayRuns.size());

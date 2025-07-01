@@ -159,16 +159,21 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
         Map<String, AtomicLong> counts = moduleMetrics.computeIfAbsent(featureArea, k ->
         {
-            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            // Queue an async, immediate save for the properties object. Doing it async helps avoid deadlocks
+            // or blocking based on any transaction the current thread might have open
+            JobRunner.getDefault().execute(() ->
             {
-                // This is the first time we've seen a module/area combination so save the new listing immediately,
-                // which is important so that we know to reload it after the server restarts
-                WritablePropertyMap updatedListing = PropertyManager.getWritableProperties(getRootScoping(), true);
-                String existingAreas = updatedListing.get(moduleName);
-                String updatedAreas = existingAreas == null ? featureArea : existingAreas + "," + featureArea;
-                updatedListing.put(moduleName, updatedAreas);
-                updatedListing.save();
-            }
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    // This is the first time we've seen a module/area combination so save the new listing immediately,
+                    // which is important so that we know to reload it after the server restarts
+                    WritablePropertyMap updatedListing = PropertyManager.getWritableProperties(getRootScoping(), true);
+                    String existingAreas = updatedListing.get(moduleName);
+                    String updatedAreas = existingAreas == null ? featureArea : existingAreas + "," + featureArea;
+                    updatedListing.put(moduleName, updatedAreas);
+                    updatedListing.save();
+                }
+            });
 
             return new ConcurrentHashMap<>();
         });

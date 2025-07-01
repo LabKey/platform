@@ -2020,7 +2020,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     // this is a marker interface to hint that this value may be replaced by {ts now()}
     public static class NowTimestamp extends java.sql.Timestamp
     {
-        NowTimestamp(long ms)
+        public NowTimestamp(long ms)
         {
             super(ms);
         }

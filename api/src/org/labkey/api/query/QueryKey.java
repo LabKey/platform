@@ -154,7 +154,7 @@ import java.util.Objects;
         return StringUtils.replaceEach(str, REPLACEMENT, ILLEGAL);
     }
 
-    public static final String[] ILLEGAL = {"$", "/", "&", "}", "~", ",", "."};
+    private static final String[] ILLEGAL = {"$", "/", "&", "}", "~", ",", "."};
     private static final String[] REPLACEMENT = {"$D", "$S", "$A", "$B", "$T", "$C", "$P"};
 
     /**

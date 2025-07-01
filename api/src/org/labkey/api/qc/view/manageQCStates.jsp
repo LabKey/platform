@@ -134,7 +134,7 @@
     %>
 
     <%= button("Save").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
-    <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
+    <%= button("Cancel").href(cancelUrl) %>
 </labkey:form>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function addRow() {

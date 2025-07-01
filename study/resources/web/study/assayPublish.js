@@ -22,7 +22,7 @@ function assayPublish_onLinkToStudy(el, fieldNames)
             var array = formData[e.name];
             if (!array)
                 array = formData[e.name] = [];
-            array.push(e.value.replace("\t"," "));
+            array.push(e.value.replace(/\t/g, " "));
         }
     }
 

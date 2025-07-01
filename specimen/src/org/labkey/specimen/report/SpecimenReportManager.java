@@ -17,6 +17,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
@@ -50,7 +51,7 @@ public class SpecimenReportManager
                                                                    SpecimenTypeLevel level)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tinfo = schema.getTable(SpecimenQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+        TableInfo tinfo = schema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME);
 
         Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<>();
 

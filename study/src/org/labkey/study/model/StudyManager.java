@@ -1707,8 +1707,9 @@ public class StudyManager
 
     public void updateParticipant(User user, Participant participant)
     {
-        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
-        _participantCache.remove(participant.getContainer());
+        Container c = participant.getContainer();
+        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{c.getId(), participant.getParticipantId()});
+        _participantCache.remove(c);
     }
 
     public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired)
@@ -4388,7 +4389,7 @@ public class StudyManager
                     // SimpleDocument
                     SimpleDocumentResource r = new SimpleDocumentResource(
                         p, docid,
-                        c.getId(),
+                        c.getEntityId(),
                         "text/plain",
                         displayTitle,
                         execute, props

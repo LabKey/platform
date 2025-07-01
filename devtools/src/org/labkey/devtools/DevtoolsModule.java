@@ -16,7 +16,6 @@
 
 package org.labkey.devtools;
 
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.Domain;
@@ -34,7 +33,7 @@ import org.labkey.devtools.authentication.TestSsoProvider;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.function.Supplier;
 
 public class DevtoolsModule extends CodeOnlyModule
 {
@@ -78,7 +77,7 @@ public class DevtoolsModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
         return Collections.singletonList(new JspTestCase("/org/labkey/devtools/test/JspTestCaseTest.jsp"));
     }
