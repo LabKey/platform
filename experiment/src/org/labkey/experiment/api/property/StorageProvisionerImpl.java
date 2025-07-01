@@ -1808,7 +1808,7 @@ renaming a property AND toggling mvindicator on in the same change.
             {
                 d = new DomainImpl(c, uri, "test", true)
                 {
-                    @Override
+                    @Override @Nullable
                     public DomainKind<?> getDomainKind()
                     {
                         return k;
