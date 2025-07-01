@@ -20,7 +20,7 @@ dependencies{
    BuildUtils.addExternalDependency(
            project,
            new ExternalDependency(
-                   "com.opencsv:opencsv:${opencsvVersion}",
+                   "net.sf.opencsv:opencsv:${opencsvVersion}",
                    'Open CSV',
                    'Open CSV',
                    'http://opencsv.sf.net',
