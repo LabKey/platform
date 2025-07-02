@@ -151,8 +151,6 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
-import static org.labkey.experiment.ExpDataIterators.AliquotResolutionDataIterator.ALIQUOT_FROM_IS_ALIQUOT;
-import static org.labkey.experiment.ExpDataIterators.AliquotResolutionDataIterator.ALIQUOT_FROM_RESOLVED_NAME;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -1102,7 +1100,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             remap = CaseInsensitiveHashMap.of();
 
         // AliquotRollupDataIterator needs "samplestate", "storedamount", "rootmaterialrowId", "units" for MERGE option
-        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid", "samplestate", "storedamount", "rootmaterialrowId", "units");
+        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name());
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))
@@ -1533,9 +1531,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId());
             dataIterator = dib.getDataIterator(context);
 
-            // AliquotedFrom resolution
-            dataIterator = LoggingDataIterator.wrap(new ExpDataIterators.AliquotResolutionDataIterator(dataIterator, context, container, user, sampleType));
-
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
@@ -1681,6 +1676,25 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<String, Object> map = new CaseInsensitiveHashMap<>(((MapDataIterator)getInput()).getMap());
 
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
             try
             {
                 Object currNameObj = map.get("Name");
@@ -1710,19 +1724,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                if ((boolean) map.getOrDefault(ALIQUOT_FROM_IS_ALIQUOT, false))
-                {
+                if (isAliquot)
                     addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
-                }
+                else if (_sampleType.hasNameExpression())
+                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                else if (_sampleType.hasNameAsIdCol())
+                    addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
                 else
-                {
-                    if (_sampleType.hasNameExpression())
-                        addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
-                    else if (_sampleType.hasNameAsIdCol())
-                        addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
-                    else
-                        addRowError("All id columns are required for sample on row " + e.getRowNumber());
-                }
+                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
             }
         }
 
