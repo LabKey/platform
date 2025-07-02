@@ -71,7 +71,6 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -1633,18 +1632,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
-        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
         String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
         return new Pair<>(lsid, dbSeqStr);
-    }
-
-    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
-    {
-        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
-        if (!container.isProject() && container.getProject() != null)
-            projectContainer = container.getProject();
-
-        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
