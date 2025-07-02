@@ -1989,17 +1989,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
         {
-            boolean isAliquot = (boolean) map.getOrDefault(ALIQUOT_FROM_IS_ALIQUOT, false);
-            if (isAliquot)
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            if (aliquotedFromObj != null)
             {
-                // Issue 53153: When a name has been resolved for the aliquot,
-                // then use that instead of the supplied value for AliquotedFrom.
-                Object name = map.get(ALIQUOT_FROM_RESOLVED_NAME);
-                if (name instanceof String aliquotParentName)
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotParentName);
-                else if (name instanceof List<?> nameList)
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, nameList.get(0));
+                if (aliquotedFromObj instanceof String)
+                {
+                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
             }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
 
             String generatedName = null;
             if (isAliquot && aliquotNameGenerator != null)
