@@ -32,7 +32,25 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
@@ -77,16 +95,13 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -2273,11 +2288,5 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
-    }
-
-    @Override
-    public UserSchema getUserSchema(QuerySchema schema, Set<Role> contextualRoles)
-    {
-        return new SamplesSchema(schema, contextualRoles);
     }
 }

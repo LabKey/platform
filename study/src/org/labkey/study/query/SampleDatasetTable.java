@@ -10,22 +10,18 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class SampleDatasetTable extends LinkedDatasetTable
 {
@@ -116,9 +112,7 @@ public class SampleDatasetTable extends LinkedDatasetTable
                 return null;
             _sampleType = sampleType;
 
-            UserSchema userSchema = SampleTypeService.get().getUserSchema(_userSchema, Set.of(RoleManager.getRole(ReaderRole.class)));
-                    //QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
-
+            UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
             // Hide 'linked' column for Sample Type Datasets
             if (userSchema instanceof SamplesSchema samplesSchema)
             {

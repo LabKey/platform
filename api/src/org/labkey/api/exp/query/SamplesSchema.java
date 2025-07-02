@@ -127,13 +127,6 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
     }
 
-    public SamplesSchema(QuerySchema schema, Set<Role> contextualRoles)
-    {
-        this(schema.getUser(), schema.getContainer());
-        setDefaultSchema(schema.getDefaultSchema());
-        this.contextualRoles = contextualRoles;
-    }
-
     @Override
     public @NotNull Set<Role> getContextualRoles()
     {

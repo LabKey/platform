@@ -78,12 +78,15 @@ import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -93,6 +96,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
+import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
@@ -1483,6 +1487,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         return StringUtils.join(parts, " and ");
+    }
+
+    @Override
+    public UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
+    {
+        return new PlateSchema(querySchema, contextualRoles);
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

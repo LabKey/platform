@@ -20,6 +20,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
@@ -27,7 +28,28 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MaterializedQueryHelper;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -120,7 +142,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -780,8 +802,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
-        UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
         SQLFragment sql;
+        UserSchema plateUserSchema;
+        // Issue 53194 : this would be the case for linked to study samples
+        if (_userSchema instanceof UserSchema.HasContextualRoles samplesSchema && !samplesSchema.getContextualRoles().isEmpty())
+            plateUserSchema = AssayPlateMetadataService.get().getPlateSchema(_userSchema, samplesSchema.getContextualRoles());
+        else
+            plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), "plate");
+
         if (plateUserSchema != null && plateUserSchema.getTable("Well") != null)
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
