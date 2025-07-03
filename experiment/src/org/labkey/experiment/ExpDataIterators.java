@@ -771,39 +771,38 @@ public class ExpDataIterators
             if (getErrors().hasErrors())
                 return true;
 
-            if (_lsidCol != null && _flagCol != null)
+            if (_flagCol == null)
+                return true;
+
+            ExpObject expObject = null;
+            if (_nameCol != null && _context.getInsertOption().mergeRows)
+            {
+                Object nameValue = get(_nameCol);
+                if (nameValue instanceof String name)
+                    expObject = getExpObjectByName(name);
+            }
+
+            if (expObject == null && _lsidCol != null)
             {
                 Object lsidValue = get(_lsidCol);
-                Object flagValue = get(_flagCol);
-
                 if (lsidValue instanceof String lsid)
-                {
-                    try
-                    {
-                        ExpObject expObject = null;
-                        if (_context.getInsertOption().mergeRows && _nameCol != null)
-                        {
-                            Object nameValue = get(_nameCol);
-                            if (nameValue instanceof String name)
-                                expObject = getExpObjectByName(name);
-                        }
-
-                        if (expObject == null)
-                            expObject = getExpObjectByLsid(lsid);
-
-                        if (expObject != null)
-                        {
-                            String flag = Objects.toString(flagValue, null);
-                            expObject.setComment(_user, flag, false);
-                        }
-                    }
-                    catch (ValidationException e)
-                    {
-                        throw new BatchValidationException(e);
-                    }
-                }
-
+                    expObject = getExpObjectByLsid(lsid);
             }
+
+            if (expObject != null)
+            {
+                try
+                {
+                    Object flagValue = get(_flagCol);
+                    String flag = Objects.toString(flagValue, null);
+                    expObject.setComment(_user, flag, false);
+                }
+                catch (ValidationException e)
+                {
+                    throw new BatchValidationException(e);
+                }
+            }
+
             return true;
         }
     }
