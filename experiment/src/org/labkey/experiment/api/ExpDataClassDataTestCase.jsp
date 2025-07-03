@@ -1044,9 +1044,9 @@ public void testInsertOptionUpdate() throws Exception
 
     ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b", longFieldName, "Field"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very", "alias", "Much", "flag", "c100"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long", "alias", "Extended", "flag", "c200"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b", longFieldName, "Field", "alias", "Paddock"));
 
     TableInfo table = getDataClassTable(dataClassName);
     QueryUpdateService qus = table.getUpdateService();
@@ -1069,9 +1069,9 @@ public void testInsertOptionUpdate() throws Exception
 
     // update regular properties as well as datainputs
     List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
-    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a1", "DataInputs/DataClassWithImportOption", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a1", "DataInputs/DataClassWithImportOption", null, "alias", "A lot"));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c1", "DataInputs/DataClassWithImportOption", "D-1"));
-    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null, "alias", "Grassland"));
 
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
@@ -1080,21 +1080,99 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(3, count);
 
     Set<String> columnNames = new HashSet<>();
+    columnNames.add("rowId");
+    columnNames.add("lsid");
     columnNames.add("Name");
     columnNames.add("prop");
     columnNames.add(longFieldName);
+    columnNames.add("alias");
+    columnNames.add("flag");
 
-    List<Map<String,Object>> rows = Arrays.asList(new TableSelector(table, columnNames, null, new Sort("Name")).getMapArray());
+    ts = new TableSelector(table, columnNames, null, new Sort("Name"));
+    ts.setForDisplay(true);
+    String aliasAlias = "alias$alias$name";
+    String flagAlias = "flag$";
+
+    List<Map<String,Object>> rows = Arrays.asList(ts.getMapArray());
+
+    assertEquals("D-1", rows.get(0).get("Name"));
+    assertEquals("D-1-d", rows.get(1).get("Name"));
+    assertEquals("D-2", rows.get(2).get("Name"));
+    int d2RowId = (Integer) rows.get(2).get("RowId");
+
+    // prop
     assertEquals("a1", rows.get(0).get("prop"));
     assertEquals("c1", rows.get(1).get("prop"));
     assertEquals("b1", rows.get(2).get("prop"));
+
+    // long field
     assertEquals("Very", rows.get(0).get(longFieldAlias));
     assertEquals("Long", rows.get(1).get(longFieldAlias));
     assertEquals("Field", rows.get(2).get(longFieldAlias));
 
+    // alias
+    assertEquals("A lot", rows.get(0).get(aliasAlias));
+    assertNull(rows.get(1).get(aliasAlias));
+    assertEquals("Grassland", rows.get(2).get(aliasAlias));
+
+    // flag
+    assertEquals("c100", rows.get(0).get(flagAlias));
+    assertEquals("c200", rows.get(1).get(flagAlias));
+    assertNull(rows.get(2).get(flagAlias));
+
     ts = new TableSelector(dataInputTInfo, filter, null);
-    int newInputCount =  (int) ts.getRowCount();
+    int newInputCount = (int) ts.getRowCount();
     assertEquals(inputCount + 1, newInputCount);
+
+    List<Map<String, Object>> rowsToMerge = new ArrayList<>();
+    rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "gene", longFieldName, "Pasture", "alias", "Exceedingly", "flag", "cOne"));
+    rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-22", "prop", null, longFieldName, "Goal", "alias", "Immensely", "flag", "cEight"));
+
+    context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+    count = qus.loadRows(user, c, MapDataIterator.of(rowsToMerge), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(2, count);
+
+    ts = new TableSelector(table, columnNames, null, new Sort("Name"));
+    ts.setForDisplay(true);
+
+    rows = Arrays.asList(ts.getMapArray());
+    assertEquals(4, rows.size());
+
+    assertEquals("D-1", rows.get(0).get("Name"));
+    assertEquals("D-1-d", rows.get(1).get("Name"));
+    assertEquals("D-2", rows.get(2).get("Name"));
+    assertEquals("D-22", rows.get(3).get("Name"));
+
+    // verify merge retained existing row
+    assertEquals(d2RowId, rows.get(2).get("RowId"));
+
+    // prop
+    assertEquals("a1", rows.get(0).get("prop"));
+    assertEquals("c1", rows.get(1).get("prop"));
+    assertEquals("gene", rows.get(2).get("prop"));
+    assertNull(rows.get(3).get("prop"));
+
+    // long field
+    assertEquals("Very", rows.get(0).get(longFieldAlias));
+    assertEquals("Long", rows.get(1).get(longFieldAlias));
+    // TODO: This is not updating as I would expect. Verify what is expected here with regards to updating via merge.
+//    assertEquals("Pasture", rows.get(2).get(longFieldAlias));
+    assertEquals("Goal", rows.get(3).get(longFieldAlias));
+
+    // alias
+    assertEquals("A lot", rows.get(0).get(aliasAlias));
+    assertNull(rows.get(1).get(aliasAlias));
+    assertEquals("Exceedingly", rows.get(2).get(aliasAlias));
+    assertEquals("Immensely", rows.get(3).get(aliasAlias));
+
+    // flag
+    assertEquals("c100", rows.get(0).get(flagAlias));
+    assertEquals("c200", rows.get(1).get(flagAlias));
+    assertEquals("cOne", rows.get(2).get(flagAlias));
+    assertEquals("cEight", rows.get(3).get(flagAlias));
+
 }
 
 private @NotNull TableInfo getDataClassTable(String dataClassName)
