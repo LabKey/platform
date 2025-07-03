@@ -1375,7 +1375,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (data == null)
                     data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.setComment(user, flag);
+                if (data != null)
+                    data.setComment(user, flag);
             }
 
             // update aliases
