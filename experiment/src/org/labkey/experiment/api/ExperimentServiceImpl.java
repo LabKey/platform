@@ -9161,6 +9161,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
+    @Override
+    public boolean checkDuplicateName(@NotNull String newName, @NotNull TableInfo tableInfo)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?) AND name <> ?")
+                .add(newName)
+                .add(newName);
+        return new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists();
+    }
+
     private Map<String, Object> getImportTemplatesMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
