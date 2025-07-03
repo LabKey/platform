@@ -54,5 +54,5 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
         if (clz.isAssignableFrom(this.getClass()))
             return (T)this;
         return null;
-    };
+    }
 }

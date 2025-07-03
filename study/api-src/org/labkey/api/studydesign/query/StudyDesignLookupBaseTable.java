@@ -86,7 +86,7 @@ public class StudyDesignLookupBaseTable extends StudyDesignBaseTable
         return null;
     }
 
-    private class StudyDesignLookupsQueryUpdateService extends DefaultQueryUpdateService
+    private static class StudyDesignLookupsQueryUpdateService extends DefaultQueryUpdateService
     {
         public StudyDesignLookupsQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {
@@ -134,6 +134,7 @@ public class StudyDesignLookupBaseTable extends StudyDesignBaseTable
         }
     }
 
+    @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         // Only admins are allowed to insert into these tables at the project level

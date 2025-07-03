@@ -15,143 +15,106 @@
  */
 package org.labkey.api.study.reports;
 
-import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Stats;
+import org.labkey.api.view.Stats.StatDefinition;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: migra
- * Date: Mar 2, 2006
- * Time: 4:32:20 PM
- */
-public class CrosstabView extends WebPartView
+import static org.labkey.api.util.DOM.Attribute.colspan;
+import static org.labkey.api.util.DOM.Attribute.rowspan;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.B;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+
+public class CrosstabView extends WebPartView<Object>
 {
-    ActionURL _exportAction;
-    Crosstab _crosstab;
+    private final ActionURL _exportAction;
+    private final Crosstab _crosstab;
 
     @Override
-    protected void renderView(Object model, PrintWriter pw)
+    protected void renderView(Object model, HtmlWriter out)
     {
-        StringBuilder errStr = new StringBuilder();
         if (null == _crosstab.getStatField())
-            errStr.append("Stat field is not defined.<br>");
-
-        if (errStr.length() > 0)
         {
-            pw.write("<b>Crosstab Error<b><br>");
-            pw.write(errStr.toString());
-            return;
+            DOM.createHtmlFragment(
+                B("Crosstab Error"),
+                HtmlString.BR,
+                "Stat field is not defined.",
+                HtmlString.BR
+            ).appendTo(out);
         }
-
-        if (_exportAction != null)
-        {
-            pw.write("<div style=\"margin-bottom:20px;\">");
-            pw.write(PageFlowUtil.button("Export to Excel (.xls)").href(_exportAction).toString());
-            pw.write("</div>");
-        }
-
-        List<Object> colHeaders = _crosstab.getColHeaders();
-        Set<Stats.StatDefinition> statSet = _crosstab.getStatSet();
-
-        pw.write("<table id=\"report\" class=\"table-xtab-report\"><tr>");
-        if (null != _crosstab.getColField())
-        {
-            pw.write("<th>&nbsp;</th>");
-            if (statSet.size() > 1)
-                pw.write("<th>&nbsp;</th>");
-
-            pw.printf("<th colspan=\"%d\">%s</th>", colHeaders.size(), str(_crosstab.getFieldLabel(_crosstab.getColField())));
-            pw.write("<th>&nbsp;</th></tr>");
-        }
-        pw.printf("<th>%s</th>", str(_crosstab.getFieldLabel(_crosstab.getRowField())));
-        if (statSet.size() > 1)
-            pw.write("<td class=\"xtab-col-header\">&nbsp;</td>");
-
-        if (null != _crosstab.getColField())
-            for (Object colVal : colHeaders)
-                pw.printf("<td class=\"xtab-col-header\">%s</td>", str(colVal));
-
-        pw.printf("<td class=\"xtab-col-header\">");
-        Stats.StatDefinition stat = null;
-        if (statSet.size() == 1)
-            stat = statSet.toArray(new Stats.StatDefinition[1])[0];
-
-        if (null == _crosstab.getColField() && null != stat)
-            pw.write(stat.getName());
         else
-            pw.write("Total");
-
-        pw.write("</td></tr>");
-
-        if (null != _crosstab.getRowField())
         {
-            for (Object rowVal : _crosstab.getRowHeaders())
+            if (_exportAction != null)
             {
-                pw.printf("<tr><td class=\"xtab-row-header\" rowspan=\"%d\">%s</td>", statSet.size(), rowVal == null ? "" : str(rowVal));
-
-                int statRow = 0;
-                for (Stats.StatDefinition rowStat : statSet)
-                {
-                    if (statSet.size() > 1)
-                    {
-                        if (statRow > 0)
-                            pw.write("<tr>");
-                        pw.printf("<td class=\"xtab-stat-title\">%s</td>", rowStat.getName());
-                    }
-
-                    for (Object colVal : colHeaders)
-                    {
-                        pw.printf("<td>%s</td>", _crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat));
-                    }
-
-                    pw.printf("<td class=\"xtab-row-total\">%s</td>", _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
-
-                    statRow++;
-                    if (statSet.size() > 1 && statRow < statSet.size())
-                        pw.write("</tr>");
-                }
-                pw.write("</tr>");
-
+                DIV(
+                    at(style, "margin-bottom:20px;"),
+                    PageFlowUtil.button("Export to Excel (.xls)").href(_exportAction)
+                ).appendTo(out);
             }
+
+            // Precalculate vars that are used below
+            List<Object> colHeaders = _crosstab.getColHeaders();
+            Set<StatDefinition> statSet = _crosstab.getStatSet();
+            boolean multipleStats = statSet.size() > 1;
+            StatDefinition firstStat = statSet.iterator().next();
+            StatDefinition stat = null;
+            if (statSet.size() == 1)
+                stat = statSet.toArray(new StatDefinition[1])[0];
+            Stats totalStats = _crosstab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
+
+            TABLE(
+                cl("table-xtab-report").id("report"),
+
+                // Top header
+                null != _crosstab.getColField() ? TR(
+                    TH(HtmlString.NBSP),
+                    multipleStats ? TH(HtmlString.NBSP) : null,
+                    TH(at(colspan, colHeaders.size()), _crosstab.getFieldLabel(_crosstab.getColField())),
+                    TH(HtmlString.NBSP)
+                ) : null,
+
+                // Column headers
+                TR(
+                    TH(_crosstab.getFieldLabel(_crosstab.getRowField())),
+                    multipleStats ? TD(cl("xtab-col-header"), HtmlString.NBSP) : null,
+                    null != _crosstab.getColField() ? colHeaders.stream().map(colVal -> TD(cl("xtab-col-header"), HtmlString.of(colVal))) : null,
+                    TD(cl("xtab-col-header"), null == _crosstab.getColField() && null != stat ? stat.getName() : "Total")
+                ),
+
+                // Value rows (one per stat per value row)
+                null != _crosstab.getRowField() ?
+                    _crosstab.getRowHeaders().stream()
+                        .flatMap(rowVal -> statSet.stream().map(rowStat -> TR(
+                            rowStat == firstStat ? TD(cl("xtab-row-header").at(rowspan, statSet.size()), HtmlString.of(rowVal)) : null,
+                            multipleStats ? TD(cl("xtab-stat-title"), rowStat.getName()) : null,
+                            colHeaders.stream().map(colVal -> TD(_crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat))),
+                            TD(cl("xtab-row-total"), _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat))
+                        ))) : null,
+
+                // Column totals (one per stat)
+                statSet.stream()
+                    .map(rowStat -> TR(
+                        rowStat == firstStat ? TD(cl("xtab-row-header").at(rowspan, statSet.size()), "Total") : null,
+                        multipleStats ? TD(cl("xtab-stat-title"), rowStat.getName()) : null,
+                        null != _crosstab.getColField() ? colHeaders.stream().map(colVal -> TD(cl("xtab-col-total"), _crosstab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat))) : null,
+                        TD(cl("xtab-col-total"), totalStats.getFormattedStat(rowStat))
+                    ))
+            ).appendTo(out);
         }
-
-        //Now totals for the cols
-        pw.printf("<tr><td class=\"xtab-row-header\" rowspan=\"%d\">Total</td>", statSet.size());
-
-        int statRow = 0;
-        for (Stats.StatDefinition rowStat : statSet)
-        {
-            if (statSet.size() > 1)
-            {
-                if (statRow > 0)
-                    pw.write("<tr>");
-
-                pw.printf("<td class=\"xtab-stat-title\">%s</td>", rowStat.getName());
-            }
-
-            if (null != _crosstab.getColField())
-            {
-                for (Object colVal : colHeaders)
-                    pw.printf("<td class=\"xtab-col-total\">%s</td>", _crosstab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
-            }
-
-            pw.write("<td class=\"xtab-col-total\">");
-            Stats stats = _crosstab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
-            pw.write(stats.getFormattedStat(rowStat));
-            pw.write("</td>");
-
-            statRow++;
-            if (statSet.size() > 1 && statRow < statSet.size())
-                pw.write("</tr>");
-        }
-
-        pw.write("</tr></table>");
     }
 
     public CrosstabView(Crosstab crosstab, ActionURL exportAction)
@@ -159,10 +122,5 @@ public class CrosstabView extends WebPartView
         super(crosstab.getDescription());
         _crosstab = crosstab;
         _exportAction = exportAction;
-    }
-
-    private String str(Object val)
-    {
-        return PageFlowUtil.filter(ConvertUtils.convert(val));
     }
 }

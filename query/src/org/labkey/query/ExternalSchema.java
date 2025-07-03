@@ -180,7 +180,7 @@ public class ExternalSchema extends SimpleUserSchema
                 StringBuilder sb = new StringBuilder();
                 sb.append("Ignoring invalid schema metadata xml for '").append(def.getUserSchemaName()).append("'");
                 String containerPath = def.getContainerPath();
-                if (containerPath != null && !"".equals(containerPath))
+                if (containerPath != null && !containerPath.isEmpty())
                     sb.append(" in container '").append(containerPath).append("'");
                 LogManager.getLogger(ExternalSchema.class).warn(sb, e);
                 return null;

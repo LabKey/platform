@@ -31,6 +31,7 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
  * Date: Feb 6, 2007
  * Time: 3:58:52 PM
  */
+@SuppressWarnings("Convert2Diamond")
 public class TemplateGrid extends Grid
 {
     public static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',

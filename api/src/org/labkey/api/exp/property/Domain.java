@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -45,7 +46,7 @@ public interface Domain extends IPropertyType
 
     Object get_Ts();
     Container getContainer();
-    DomainKind<?> getDomainKind();
+    @Nullable DomainKind<?> getDomainKind();
     String getName();
     String getTitle();
     String getDescription();
@@ -76,12 +77,15 @@ public interface Domain extends IPropertyType
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
+    boolean isMutable();
+
     /*
      * This returns a lock which will acquire an UPDATE lock on the domain row in the database.
-     * This can be called at the beginning of a transaction to help reduce the chance of a dead-lock.
+     * This can be called at the beginning of a transaction to help reduce the chance of a deadlock.
      * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
      */
     Lock getDatabaseLock();
+    void lockForDelete(DbSchema expSchema);
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     default void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException

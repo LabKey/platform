@@ -189,7 +189,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         private static final List<Integer> INTEGERS = Arrays.asList(1, 2, 3, 4);
         private static final List<String> STRINGS = Arrays.asList("a", "b", "c", "d");
 
-        private DbScope _scope = CoreSchema.getInstance().getSchema().getScope();
+        private final DbScope _scope = CoreSchema.getInstance().getSchema().getScope();
 
         @Before
         public void init()

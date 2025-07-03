@@ -684,8 +684,8 @@ public class CohortTest extends BaseWebDriverTest
         CURRENT("Current cohort", "ParticipantId/Cohort/Label"),
         DATA_COLLECTION("Cohort as of data collection", "ParticipantVisit/Cohort/Label");
 
-        private String _type;
-        private String _fieldKey;
+        private final String _type;
+        private final String _fieldKey;
 
         AdvancedCohortType(String type, String fieldKey)
         {

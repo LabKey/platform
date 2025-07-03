@@ -25,7 +25,7 @@ import java.util.Set;
 // These should all go away once the migration is complete
 public interface SpecimenMigrationService
 {
-    static SpecimenMigrationService get()
+    static @Nullable SpecimenMigrationService get()
     {
         return ServiceRegistry.get().getService(SpecimenMigrationService.class);
     }

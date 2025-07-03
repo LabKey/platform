@@ -50,7 +50,7 @@ public class MapLoader extends DataLoader
     public MapLoader(List<Map<String, Object>> rows)
     {
         convertToArrays(rows);
-        _skipLines = rows.size() > 0 ? 1 : 0;
+        _skipLines = !rows.isEmpty() ? 1 : 0;
         setScrollable(true);
     }
 
@@ -63,7 +63,7 @@ public class MapLoader extends DataLoader
         List<Object[]> lineFields = new ArrayList<>(rows.size());
 
         Set<String> colNames;
-        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
         {
             colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
         }
@@ -82,10 +82,10 @@ public class MapLoader extends DataLoader
             }
         }
 
-        headers = colNames.toArray(new String[colNames.size()]);
+        headers = colNames.toArray(new String[0]);
         lineFields.add(headers);
 
-        if (rows.size() > 0)
+        if (!rows.isEmpty())
         {
             for (Map<String, Object> row : rows)
             {
@@ -98,7 +98,7 @@ public class MapLoader extends DataLoader
                     Object value = row.get(header);
                     values.add(value);
                 }
-                lineFields.add(values.toArray(new Object[values.size()]));
+                lineFields.add(values.toArray(new Object[0]));
             }
         }
 
@@ -233,8 +233,8 @@ public class MapLoader extends DataLoader
             assertEquals(null, data.get(2).get("other"));
 
             // 11374: make sure we don't load inactive columns
-            assertEquals(data.get(0).size(), 4);
-            assertEquals(data.get(1).size(), 4);
+            assertEquals(4, data.get(0).size());
+            assertEquals(4, data.get(1).size());
             assertNull(data.get(0).get("noload"));
             assertNull(data.get(0).get("noload"));
         }

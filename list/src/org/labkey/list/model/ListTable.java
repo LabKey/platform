@@ -51,7 +51,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -391,8 +390,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
         if (null != _list)
-            return _list.getDomain();
+            return _list.getDomain(forUpdate);
         return null;
     }
 

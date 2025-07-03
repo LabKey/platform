@@ -480,6 +480,7 @@
 
             var participantCombo = Ext4.create('Ext.form.field.ComboBox',{
                 name : 'participantCombo',
+                cls : 'participant-combo',
                 store: this.participantStore,
                 valueField : <%=q(subjectNounColName)%>,
                 displayField : <%=q(subjectNounColName)%>,

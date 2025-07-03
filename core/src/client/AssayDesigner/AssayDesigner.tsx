@@ -56,7 +56,7 @@ export class App extends React.Component<any, State> {
 
         // hack, if the returnUrl has stripped off the rowId because of encoding/decoding issues (see TODO in AbstractAssayProvider.getManageMenuNavTree()) add it back on
         let returnUrl = ActionURL.getReturnUrl();
-        if (rowId !== undefined && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
+        if (rowId !== undefined && returnUrl && returnUrl.endsWith('rowId')) {
             returnUrl = returnUrl + '=' + rowId;
         }
 

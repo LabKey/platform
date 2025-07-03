@@ -42,17 +42,16 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
             if (null == value)
                 break checkRequired;
 
-            if (value instanceof String && ((String)value).length() == 0)
+            if (value instanceof String && ((String) value).isEmpty())
             {
                 if (allowES)
                     return null;
                 else break checkRequired;
             }
 
-            if (!(value instanceof MvFieldWrapper))
+            if (!(value instanceof MvFieldWrapper mv))
                 return null;
 
-            MvFieldWrapper mv = (MvFieldWrapper)value;
             if (null != mv.getValue())
                 return null;
 

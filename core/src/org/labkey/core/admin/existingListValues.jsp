@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.SortHelpers" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -68,7 +67,6 @@
     <%
         AllowListForm bean = (AllowListForm) HttpView.currentModel();
         List<String> exitingValues = bean.getExistingValuesList();
-        exitingValues.sort(SortHelpers.getNaturalOrderStringComparator());
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
@@ -85,12 +83,8 @@
                 String inputNameExisting = "existingValue" + num;
         %>
         <tr>
-
             <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
-
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
-
-            </td>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %></td>
         </tr>
         <%
             num++;

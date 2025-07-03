@@ -141,17 +141,19 @@ abstract public class DomainKind<T> implements Handler<String>
      * @param user User
      * @return Return object that holds DomainKind specific properties.
      */
-    abstract public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user);
+    abstract public @Nullable T getDomainKindProperties(GWTDomain<?> domain, Container container, User user);
 
     /**
      * Create a Domain appropriate for this DomainKind.
-     * @param domain The domain design.
-     * @param options Any domain kind specific properties/options.
+     *
+     * @param domain    The domain design.
+     * @param options   Any domain kind specific properties/options.
      * @param container Container
-     * @param user User
+     * @param user      User
+     * @param forUpdate Whether the returned domain should be mutable or not
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.
@@ -160,8 +162,6 @@ abstract public class DomainKind<T> implements Handler<String>
      * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
-     * @param includeWarnings
-     * @param auditUserComment
      * @return A list of errors collected during the update.
      */
     abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
@@ -169,8 +169,6 @@ abstract public class DomainKind<T> implements Handler<String>
     /**
      * Delete a Domain and its associated data.
      * @param domain The domain to delete
-     * @param user
-     * @param auditUserComment
      */
     abstract public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment);
 
@@ -178,7 +176,6 @@ abstract public class DomainKind<T> implements Handler<String>
      * Get base properties defined for that domainkind. The domain parameter is only when there may be a condition
      * with the particular domain that could affect the base properties (see DatasetDomainKind).  Other domainkinds
      * may pass through null (see AssayDomainKind).
-     * @param domain
      */
     abstract public Set<PropertyStorageSpec> getBaseProperties(@Nullable Domain domain);
 
@@ -186,8 +183,6 @@ abstract public class DomainKind<T> implements Handler<String>
      * Any additional properties which will get special handling in the Properties Editor.
      * First use case is Lists get their property-backed primary key field added to protect it from imports and
      * exclude it from exports
-     * @param domain
-     * @return
      */
     public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)
     {
@@ -383,7 +378,7 @@ abstract public class DomainKind<T> implements Handler<String>
      * @param domain the existing domain object for the create/save action
      * @param updatedDomainDesign the updated domain design being sent for the create/save action
      */
-    public void validateOptions(Container container, User user, T options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    public void validateOptions(Container container, User user, T options, String name, Domain domain, GWTDomain<?> updatedDomainDesign)
     {
         boolean isUpdate = domain != null;
 
@@ -394,7 +389,7 @@ abstract public class DomainKind<T> implements Handler<String>
             throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 
-    public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain<?> domainDesign, Container container)
     {
         return null;
     }

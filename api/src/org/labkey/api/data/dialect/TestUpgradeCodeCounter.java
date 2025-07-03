@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2010-2017 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.gwt.client.ui.domain;
 
-import com.google.gwt.user.client.rpc.SerializableException;
+package org.labkey.api.data.dialect;
 
-/**
- * User: jgarms
- * Date: Nov 4, 2008
- */
-public class GWTImportException extends SerializableException
+/** Counter used by Java-based module upgrade method testing */
+public class TestUpgradeCodeCounter
 {
-    public GWTImportException()
+    private static int _counter = 0;
+
+    private TestUpgradeCodeCounter()
     {
-        super();
     }
 
-    public GWTImportException(String message)
+    public static void resetCounter()
     {
-        super(message);
+        _counter = 0;
+    }
+
+    public static void incrementCounter()
+    {
+        _counter++;
+    }
+
+    public static int getCount()
+    {
+        return _counter;
     }
 }

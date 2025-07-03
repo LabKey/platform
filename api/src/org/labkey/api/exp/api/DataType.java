@@ -59,9 +59,7 @@ public class DataType
     public boolean equals(Object o)
     {
         if (this == o) return true;
-        if (!(o instanceof DataType)) return false;
-
-        DataType dataType = (DataType) o;
+        if (!(o instanceof DataType dataType)) return false;
 
         return !(_namespacePrefix != null ? !_namespacePrefix.equals(dataType._namespacePrefix) : dataType._namespacePrefix != null);
     }

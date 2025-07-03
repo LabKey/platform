@@ -50,10 +50,11 @@ public class HeartBeat
 
     private static final Logger _log = LogManager.getLogger(HeartBeat.class);
     public static volatile int counter = 0;     // covers more than 60yrs uptime
-    public static volatile long currentTimeMillis = System.currentTimeMillis();
+    public static volatile long currentTimeMillis;
 
     static
     {
+        System.currentTimeMillis();
         long ms = System.currentTimeMillis();
         currentTimeMillis = ms - (ms % 1000);
         new HeartBeatThread().start();

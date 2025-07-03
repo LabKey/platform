@@ -29,7 +29,7 @@ public class JdbcMetaDataTest extends Assert
     {
         TableInfo testTable = _testSchema.getTable(viewName);
         assertNotNull("Failed to find view " + viewName, testTable);
-        assertEquals(testTable.getTableType(), DatabaseTableType.VIEW);
+        assertEquals(DatabaseTableType.VIEW, testTable.getTableType());
         assertEquals(expected.getColumns().size(), testTable.getColumns().size());
         assertEquals(new TableSelector(expected).getRowCount(), new TableSelector(testTable).getMapArray().length);
     }

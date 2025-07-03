@@ -34,6 +34,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -805,9 +806,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @NotNull
     public Domain getDomain()
     {
-        if (_domain == null)
+        return getDomain(false);
+    }
+
+    @Override
+    @NotNull
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (_domain == null || (forUpdate && !_domain.isMutable()))
         {
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
             if (_domain == null)
             {
                 _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
@@ -957,7 +965,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public DbSequence getSampleLsidDbSeq(int batchSize, Container container)
     {
-        return ExperimentServiceImpl.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
+        return LsidManager.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
     }
 
     @Override
@@ -1006,7 +1014,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                container.getId(), "text/plain",
+                container.getEntityId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

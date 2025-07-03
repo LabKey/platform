@@ -112,7 +112,7 @@ public class QJoin implements QJoinOrTable
         }
         _right.appendSql(sql, select);
 
-        if (select.getParseErrors().size() > 0)
+        if (!select.getParseErrors().isEmpty())
             return;
 
         if (null != _on)

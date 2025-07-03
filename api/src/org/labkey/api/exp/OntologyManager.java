@@ -2441,25 +2441,55 @@ public class OntologyManager
         }
     }
 
-
     public static DomainDescriptor getDomainDescriptor(int id)
     {
+        return getDomainDescriptor(id, false);
+    }
+
+    public static DomainDescriptor getDomainDescriptor(int id, boolean forUpdate)
+    {
+        if (forUpdate)
+            return new DomainDescriptorLoader().load(id, null);
+
         return DOMAIN_DESC_BY_ID_CACHE.get(id);
     }
 
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
+        return getDomainDescriptor(domainURI, c, false);
+    }
+
+    @Nullable
+    public static DomainDescriptor getDomainDescriptor(String domainURI, Container c, boolean forUpdate)
+    {
         if (c == null)
             return null;
 
+        if (forUpdate)
+            return getDomainDescriptorForUpdate(domainURI, c);
+
         // cache lookup by project. if not found at project level, check to see if global
-        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
+        Pair<String, GUID> key = getCacheKey(domainURI, c);
+        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
         if (null != dd)
             return dd;
 
         // Try in the /Shared container too
-        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, _sharedContainer));
+        key = getCacheKey(domainURI, _sharedContainer);
+        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
+    }
+
+    @Nullable
+    private static DomainDescriptor getDomainDescriptorForUpdate(String domainURI, Container c)
+    {
+        if (c == null)
+            return null;
+
+        DomainDescriptor dd = fetchDomainDescriptorFromDB(domainURI, c);
+        if (dd == null)
+            dd = fetchDomainDescriptorFromDB(domainURI, _sharedContainer);
+        return dd;
     }
 
     /**
@@ -2684,7 +2714,7 @@ public class OntologyManager
 
     public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
-        if (null == pds || 0 == pds.size())
+        if (null == pds || pds.isEmpty())
             return;
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
@@ -2706,7 +2736,7 @@ public class OntologyManager
 
     public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
-        if (null == pds || 0 == pds.size())
+        if (null == pds || pds.isEmpty())
             return;
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
@@ -2760,7 +2790,6 @@ public class OntologyManager
      * @param ownerObjectLsid The "owner" object or "parent" object, which isn't necessarily same as the object.  For example, samples use the ExpSampleType as the owner object.
      * @param insertNullValues When true, a null value will be inserted if the value is null, otherwise any existing property value will be deleted if the value is null.
      * @return The inserted ObjectProperty or null
-     * @throws ValidationException
      */
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable String ownerObjectLsid, boolean insertNullValues) throws ValidationException
     {
@@ -2851,7 +2880,7 @@ public class OntologyManager
         List<FieldKey> fields = List.of(objectId, objectId_objectURI, objectId_container);
         var colMap = QueryService.get().getColumns(getTinfoObjectProperty(), fields);
 
-        int usageCount = 0;
+        int usageCount;
         List<Identifiable> objects = new ArrayList<>(maxUsageCount);
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL);

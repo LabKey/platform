@@ -124,7 +124,7 @@ public enum Operator
                     SqlDialect d = builder.getDialect();
                     if (null == d)
                         throw new NullPointerException();
-                    SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
+                    SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[0]));
                     builder.append(f);
                 }
             },
@@ -260,7 +260,7 @@ public enum Operator
     private final Associativity _associativity;
 
 
-    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc, boolean forceParens)
+    Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc, boolean forceParens)
     {
         _strOp = strOp;
         _precedence = precedence;
@@ -270,12 +270,12 @@ public enum Operator
         _associativity = assoc;
     }
 
-    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc)
+    Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc)
     {
         this(strOp, precedence, tokenType, resultType, assoc, false);
     }
 
-    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
+    Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
     {
         this(strOp, precedence, tokenType, resultType, Associativity.left, false);
     }

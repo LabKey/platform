@@ -383,7 +383,7 @@ public class TableXmlUtils
             {
                 if (dbTab.startsWith("_"))
                     continue;
-                idt = mDbTableOrdinals.get(dbTab);
+                mDbTableOrdinals.get(dbTab);
                 SiteValidationResult result;
                 if (errorOnXmlMiss)
                     result = rlOut.addError("ERROR: ");

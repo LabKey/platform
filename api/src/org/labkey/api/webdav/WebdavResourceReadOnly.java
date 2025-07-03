@@ -21,6 +21,7 @@ import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -34,9 +35,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by matthew on 10/23/15.
- */
 public class WebdavResourceReadOnly implements WebdavResource
 {
     final private WebdavResource _delegate;
@@ -318,7 +316,7 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public String getContainerId()
+    public GUID getContainerId()
     {
         return getDelegate().getContainerId();
     }

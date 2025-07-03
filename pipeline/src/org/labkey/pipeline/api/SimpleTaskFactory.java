@@ -195,9 +195,8 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 
         for (XmlObject xobj : xinputs.selectPath("./*"))
         {
-            if (xobj instanceof SimpleInputType)
+            if (xobj instanceof SimpleInputType xinput)
             {
-                SimpleInputType xinput = (SimpleInputType)xobj;
                 String name = xinput.getName();
                 if (RESERVED_TOKENS.contains(name))
                     throw new IllegalArgumentException("Input parameter '" + name + "' is a reserved name");
@@ -228,24 +227,21 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
                 {
                     // TODO
                 }
-                else if (xinput instanceof TextInputType)
+                else if (xinput instanceof TextInputType xtext)
                 {
-                    TextInputType xtext = (TextInputType)xinput;
                     if (xtext.isSetDefault())
                         arg.setDefault(xtext.getDefault());
                 }
-                else if (xinput instanceof IntInputType)
+                else if (xinput instanceof IntInputType xint)
                 {
-                    IntInputType xint = (IntInputType)xinput;
                     if (xint.isSetDefault())
                         arg.setDefault(String.valueOf(xint.getDefault()));
 
                     // TODO: Validate the type of the input
                     //arg.setParamValidator();
                 }
-                else if (xinput instanceof DoubleInputType)
+                else if (xinput instanceof DoubleInputType xdouble)
                 {
-                    DoubleInputType xdouble = (DoubleInputType)xinput;
                     if (xdouble.isSetDefault())
                         arg.setDefault(String.valueOf(xdouble.getDefault()));
 
@@ -318,7 +314,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
     private static FileType createFileType(List<String> suffixes, boolean dir, List<String> contentTypes)
     {
         String defaultSuffix = null;
-        if (suffixes.size() > 0)
+        if (!suffixes.isEmpty())
             defaultSuffix = suffixes.get(0);
 
         return new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentTypes);
@@ -399,7 +395,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 
         // Index is 1-based
         int index = 1;
-        if (num.length() > 0)
+        if (!num.isEmpty())
         {
             try
             {
@@ -421,7 +417,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         // Paths must be ordered so we can refer to them by index
         assert paths instanceof LinkedHashMap;
         Set<String> pathsKeySet = paths.keySet();
-        String[] pathsKeys = pathsKeySet.toArray(new String[pathsKeySet.size()]);
+        String[] pathsKeys = pathsKeySet.toArray(new String[0]);
 
         String pathKey = null;
 //        if (index == -1)

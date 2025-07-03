@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
-    private static Logger _systemLog = LogManager.getLogger(WorkDirectoryRemote.class);
+    private static final Logger _systemLog = LogManager.getLogger(WorkDirectoryRemote.class);
 
     private static final int FILE_LOCKS_DEFAULT = 5;
 
@@ -250,7 +250,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         public void setTempDirectoryEnv(String tempDirectoryVar)
         {
             String tempDirectory = System.getenv(tempDirectoryVar);
-            if (tempDirectory == null || tempDirectory.length() == 0)
+            if (tempDirectory == null || tempDirectory.isEmpty())
                 throw new IllegalArgumentException("The environment variable " + tempDirectoryVar + " does not exist:\n" + System.getenv());
             setTempDirectory(tempDirectory);
         }
@@ -306,7 +306,6 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         /**
          * If true, instead of deleting an existing working directory on job startup, an existing directory will be reused.
          * This is mostly used to allow job resume, and should only be used
-         * @param allowReuseExistingTempDirectory
          */
         public void setAllowReuseExistingTempDirectory(boolean allowReuseExistingTempDirectory)
         {
@@ -321,7 +320,6 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         /**
          * If true, the working directory for each job will be named using the job' name alone (as opposed to a random temp file based on jobName)
          * This is intended to support job resume, and should be used with sharedTempDirectory=true to avoid conflicts.
-         * @param deterministicWorkingDirName
          */
         public void setDeterministicWorkingDirName(boolean deterministicWorkingDirName)
         {
@@ -354,7 +352,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         String line = new String(bOut.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
         int totalLocks = FILE_LOCKS_DEFAULT;
         int currentIndex = 0;
-        if (line.length() > 0)
+        if (!line.isEmpty())
         {
             String[] parts = line.split(" ");
             try
@@ -519,8 +517,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
     private static class MasterLockInfo
     {
-        private int _totalLocks;
-        private int _currentLock;
+        private final int _totalLocks;
+        private final int _currentLock;
 
         private MasterLockInfo(int totalLocks, int currentLock)
         {
@@ -546,7 +544,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private FileChannel _channel;
         private final int _lockNumber;
         private FileLock _lock;
-        private Throwable _creationStack;
+        private final Throwable _creationStack;
         private Lock _memoryLock;
 
         public FileLockCopyingResource(FileChannel channel, int lockNumber, File f) throws IOException

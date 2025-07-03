@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -84,6 +85,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,11 +142,11 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
-    private boolean _skipAuditLogging = false;
+    private final boolean _skipAuditLogging = false;
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
-        super(table, table.getDatasetDefinition().getStorageTableInfo(), createMVMapping(table.getDatasetDefinition().getDomain()));
+        super(table, table.getDatasetDefinition().getStorageTableInfo(false), createMVMapping(table.getDatasetDefinition().getDomain()));
         _dataset = table.getDatasetDefinition();
     }
 
@@ -564,6 +566,16 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
+    protected void convertTypes(User user, Container c, Map<String, Object> row, TableInfo t, @Nullable Path fileLinkDirPath) throws ValidationException
+    {
+        // Issue 53320 : ensure a valid file link path
+        if (fileLinkDirPath == null)
+            fileLinkDirPath = AssayFileWriter.getUploadDirectoryPath(c, "datasetdata").toNioPathForWrite();
+
+        super.convertTypes(user, c, row, t, fileLinkDirPath);
+    }
+
+    @Override
     protected Map<String, Object> _update(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
         try (DbScope.Transaction transaction = StudyService.get().getDatasetSchema().getScope().ensureTransaction())
@@ -801,7 +813,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
             dsd.refreshDomain();
             {
-            var domain = dsd.getDomain();
+            var domain = dsd.getDomain(true);
             DomainProperty p;
 
             p = domain.addProperty();
@@ -851,7 +863,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             var result = up.insertRows(_user, _container,
                     List.of(Map.of(
-                            "subjectid", "S1",
+                            "subjectid", " S1 \t",
                             "SequenceNum", "1.2345",
                             "Field1", "f",
                             "SELECT", "s",
@@ -883,7 +895,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             // update subjectid column
             result = up.updateRows(_user, _container,
-                    List.of(Map.of("subjectid", "S2")),
+                    List.of(Map.of("subjectid", "\tS2 ")),
                     List.of(Map.of("lsid", lsid)),
                     errors, null, null);
             if (errors.hasErrors())
@@ -937,7 +949,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             assertNotNull(map.get("lsid"));
             // unchanged
             assertTrue(((String)map.get("lsid")).endsWith(":1001.S2.1.2345"));
-            lsid = (String)map.get("lsid");
+            map.get("lsid");
         }
 
         @Before

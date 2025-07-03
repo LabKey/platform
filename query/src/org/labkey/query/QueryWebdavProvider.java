@@ -67,12 +67,11 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	{
 		if (!QUERY_NAME.equalsIgnoreCase(name))
 			return null;
-		if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+		if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
 			return null;
 		if (parent.getPath().equals("/"))
 			return null;
-		WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
-		return new QueryResource(folder);
+        return new QueryResource(folder);
 	}
 
 

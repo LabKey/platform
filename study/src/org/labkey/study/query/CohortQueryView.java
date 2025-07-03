@@ -36,17 +36,9 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jgarms
- * Date: Jul 25, 2008
- * Time: 10:44:34 AM
- */
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
-    boolean canEditDelete = false;
+    boolean canEditDelete;
 
     public CohortQueryView(User user, StudyImpl study, ViewContext viewContext)
     {
@@ -122,7 +114,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Integer rowId = (Integer)rowIdColumn.getValue(ctx);
             Container folder = ContainerManager.getForId((String) folderColumn.getValue(ctx));
@@ -137,11 +129,11 @@ public class CohortQueryView extends ExtensibleObjectQueryView
                         ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
                         actionURL.addParameter("rowId", rowId.toString());
 
-                        oldWriter.write(LinkBuilder.labkeyLink("delete", actionURL).usePost().toString());
+                        out.write(LinkBuilder.labkeyLink("delete", actionURL).usePost());
                     }
                     else
                     {
-                        oldWriter.write("in use");
+                        out.write("in use");
                     }
                 }
             }

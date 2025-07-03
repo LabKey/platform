@@ -395,7 +395,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // results/data domain for TSV-style assays
                 try
                 {
-                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA) ;
+                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA, false) ;
                 }
                 catch (IllegalStateException ignored)
                 {
@@ -439,9 +439,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (domain != null && domain.getStorageTableName() != null)
             {
                 SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
-                deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
-                deleteSQL.append(".");
-                deleteSQL.append(domain.getStorageTableName());
+                deleteSQL.appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(),domain.getStorageTableName());
                 deleteSQL.append(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
 
                 try

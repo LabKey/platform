@@ -127,7 +127,7 @@ public class ServiceRegistry
     public <T> void registerService(@NotNull Class<T> type, @NotNull T instance, boolean registerSpringSingletons)
     {
         //warn about double-registration
-        assert !registerSpringSingletons || null == _servicesByClass.get(type) : "A service instance for type " + type.toString() + " is already registered!";
+        assert !registerSpringSingletons || null == _servicesByClass.get(type) : "A service instance for type " + type + " is already registered!";
 
         _ServiceDef s = new _ServiceDef(type, instance);
         _servicesByClass.put(s.cls, s);

@@ -44,14 +44,14 @@ import java.util.Map;
 public class ROutputView extends HttpView
 {
     private String _label;
-    private String _name;
+    private final String _name;
     private boolean _collapse;
-    private boolean _showHeader = true;
-    private boolean _isRemote = false;
-    private List<File> _files = new ArrayList<>();
+    private boolean _showHeader;
+    private boolean _isRemote;
+    private List<File> _files;
     private Map<String, String> _properties;
     protected static Logger LOG = LogManager.getLogger(ROutputView.class);
-    private static boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
+    private static final boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
 
     public ROutputView(ParamReplacement param)
     {

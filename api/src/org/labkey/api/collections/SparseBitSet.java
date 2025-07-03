@@ -1546,9 +1546,9 @@ public class SparseBitSet implements Cloneable, Serializable
         if (i == Integer.MAX_VALUE)
             s += "(i=" + i + ")";
         if (j < 0)
-            s += (s.length() == 0 ? "" : ", ") + "(j=" + j + ") < 0";
+            s += (s.isEmpty() ? "" : ", ") + "(j=" + j + ") < 0";
         if (i > j)
-            s += (s.length() == 0 ? "" : ", ") + "(i=" + i + ") > (j=" + j + ")";
+            s += (s.isEmpty() ? "" : ", ") + "(i=" + i + ") > (j=" + j + ")";
         throw new IndexOutOfBoundsException(s);
     }
 
@@ -1639,7 +1639,6 @@ public class SparseBitSet implements Cloneable, Serializable
      *              operation
      * @param       op the AbstractStrategy class defining the operation to be
      *              executed
-     * @exception   IndexOutOfBoundsException
      * @since       1.6
      * @see         AbstractStrategy
      */
@@ -1754,7 +1753,6 @@ public class SparseBitSet implements Cloneable, Serializable
                         /*  Do not need level3 block, so remove it, and move on. */
                         if (haveA2)
                             a2[u2] = null;
-                        u3 = 0;
                     }
                     else
                     {
@@ -2006,7 +2004,7 @@ public class SparseBitSet implements Cloneable, Serializable
      *
      * @see         #statistics(String[])
      */
-    public static enum Statistics
+    public enum Statistics
     {
         /**
          *  The size of the bit set, as give by the <i>size</i>() method.
@@ -2469,7 +2467,7 @@ public class SparseBitSet implements Cloneable, Serializable
      *      0| 0 -
      *      1| - - <pre>
      */
-    protected class EqualsStrategy extends AbstractStrategy
+    protected static class EqualsStrategy extends AbstractStrategy
     {
         boolean result; // Used to hold result of the comparison
 
@@ -2573,7 +2571,7 @@ public class SparseBitSet implements Cloneable, Serializable
      *         0| 0 0
      *         1| 1 1 <pre>
      */
-    protected class IntersectsStrategy extends AbstractStrategy
+    protected static class IntersectsStrategy extends AbstractStrategy
     {
         /**
          *  The boolean result of the intersects scan Strategy is kept here.

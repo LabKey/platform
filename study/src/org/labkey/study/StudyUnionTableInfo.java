@@ -72,7 +72,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
     final Set<String> unionColumns = new HashSet<>(Arrays.asList(COLUMN_NAMES));
     SQLFragment unionSql;
     final private User _user;
-    boolean _crossContainer = false;
+    boolean _crossContainer;
     Collection<DatasetDefinition> _defs;
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user, boolean crossContainer)
@@ -105,7 +105,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 
         for (DatasetDefinition def : defs)
         {
-            TableInfo ti = def.getStorageTableInfo();
+            TableInfo ti = def.getStorageTableInfo(false);
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
@@ -268,7 +268,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         SQLFragment sqlf = new SQLFragment();
         for (DatasetDefinition def : _defs)
         {
-            TableInfo ti = def.getStorageTableInfo();
+            TableInfo ti = def.getStorageTableInfo(false);
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;

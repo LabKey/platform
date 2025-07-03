@@ -119,9 +119,10 @@ public interface ColumnInfo extends ColumnRenderProperties
         }
     }
 
-    @Override
+    @Override @NotNull
     String getName();
 
+    @NotNull
     FieldKey getFieldKey();
 
     // use only for debugging, will change after call to getAlias()
@@ -169,8 +170,6 @@ public interface ColumnInfo extends ColumnRenderProperties
      *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
-     * @param tableAliasName
-     * @return
      */
     SQLFragment getValueSql(String tableAliasName);
 
@@ -217,11 +216,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isShouldLog();
 
-    String getLegalName();
-
     String getPropertyName();
-
-    String getJdbcRsName();
 
     /**
      * Version column can be used for optimistic concurrency.
@@ -399,7 +394,7 @@ public interface ColumnInfo extends ColumnRenderProperties
         return BaseColumnInfo.legalNameFromName(name);
     }
 
-    static String getFriendlyTypeName(Class javaClass)
+    static String getFriendlyTypeName(Class<?> javaClass)
     {
         return ColumnRenderProperties.getFriendlyTypeName(javaClass);
     }

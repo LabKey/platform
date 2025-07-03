@@ -85,7 +85,7 @@ else
     <% } %>
     </ul>
 
-    <% if (bean.getDeleteableExtras().size() > 0) { %>
+    <% if (!bean.getDeleteableExtras().isEmpty()) { %>
         <%= h(bean.getDeleteableExtras().size() > 1 ? Integer.toString(bean.getDeleteableExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> will also be deleted:
 
         <ul>
@@ -164,7 +164,7 @@ else
         </ul>
     <% } %>
 
-    <% if (bean.getRunsWithoutPermission().size() > 0) { %>
+    <% if (!bean.getRunsWithoutPermission().isEmpty()) { %>
         <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(numObjects > 1 ? "s" : "") %> are also referenced by the following
             run<%= h(bean.getRunsWithoutPermission().size() > 1 ? "s" : "") %>, which you do not have permission to delete:</span>
 

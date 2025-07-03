@@ -17,7 +17,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
@@ -110,7 +109,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     protected Map<Integer, Long> _sampleTypeCounts = new HashMap<>();
     protected Map<Integer, Long> _dataClassCounts = new HashMap<>();
 
-    public record NamingPatternData(String prefix, Long startGenId) {};
+    public record NamingPatternData(String prefix, Long startGenId) {}
 
     // Map from type name to a pair of name prefix and suffix (genId) start value
     // TODO perhaps not needed anymore since we can select somewhat randomly from existing samples?
@@ -142,6 +141,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         _config = config;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
@@ -152,6 +152,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         _container = container;
     }
 
+    @Override
     public User getUser()
     {
         return _user;

@@ -381,11 +381,11 @@ public class QCStateSet
 
         // Account for the [none] QC State
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        if (study != null && study.isBlankQCStatePublic() && !publicQCUrlFilterValue.equals(""))
+        if (study != null && study.isBlankQCStatePublic() && !publicQCUrlFilterValue.isEmpty())
         {
             publicQCUrlFilterValue += ";";
         }
-        else if (study != null && !study.isBlankQCStatePublic() && !privateQCUrlFilterValue.equals(""))
+        else if (study != null && !study.isBlankQCStatePublic() && !privateQCUrlFilterValue.isEmpty())
         {
             privateQCUrlFilterValue += ";";
         }

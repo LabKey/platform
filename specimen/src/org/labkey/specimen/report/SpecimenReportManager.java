@@ -17,6 +17,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
@@ -50,7 +51,7 @@ public class SpecimenReportManager
                                                                    SpecimenTypeLevel level)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tinfo = schema.getTable(SpecimenQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+        TableInfo tinfo = schema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME);
 
         Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<>();
 
@@ -87,7 +88,7 @@ public class SpecimenReportManager
         Collection<ColumnInfo> cols = new ArrayList<>(colMap.values());
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
-            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
+            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns);
         // generate our select SQL:
         SQLFragment viewSql = new SQLFragment();
         viewSql.appendComment("<getSpecimenDetailQueryHelper>", tinfo.getSqlDialect());
@@ -148,10 +149,10 @@ public class SpecimenReportManager
             if (rs.getObject("Visit") != null)
                 summary.setVisit(rs.getInt("Visit"));
             summary.setTotalVolume(rs.getDouble("TotalVolume"));
-            Double vialCount = rs.getDouble("VialCount");
-            summary.setVialCount(vialCount.longValue());
-            Double participantCount = rs.getDouble("ParticipantCount");
-            summary.setParticipantCount(participantCount.longValue());
+            long vialCount = rs.getLong("VialCount");
+            summary.setVialCount(vialCount);
+            long participantCount = rs.getLong("ParticipantCount");
+            summary.setParticipantCount(participantCount);
 
             for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : viewSqlHelper.getAliasToTypePropertyMap().entrySet())
             {
@@ -168,7 +169,7 @@ public class SpecimenReportManager
             ret.add(summary);
         });
 
-        SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
+        SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[0]);
 
         if (includeParticipantGroups)
             setSummaryParticipantGroups(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
@@ -291,8 +292,8 @@ public class SpecimenReportManager
             summary.setSiteLabel(rs.getString("SiteLabel"));
             summary.setVisit(rs.getInt("Visit"));
             summary.setTotalVolume(rs.getDouble("TotalVolume"));
-            Double vialCount = rs.getDouble("VialCount");
-            summary.setVialCount(vialCount.longValue());
+            long vialCount = rs.getLong("VialCount");
+            summary.setVialCount(vialCount);
 
             for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : sqlHelper.getAliasToTypePropertyMap().entrySet())
             {
@@ -310,7 +311,7 @@ public class SpecimenReportManager
             ret.add(summary);
         });
 
-        RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
+        RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[0]);
 
         if (includeParticipantGroups)
             setSummaryParticipantGroups(sql, params, null, summaries, subjectCol, "Visit");
@@ -330,35 +331,32 @@ public class SpecimenReportManager
         }
         SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, null);
         String subjectCol = StudyService.get().getSubjectColumnName(container);
-        SQLFragment cohortJoinClause = null;
-        switch (cohortType)
+        SQLFragment cohortJoinClause = switch (cohortType)
         {
-            case DATA_COLLECTION:
-                cohortJoinClause = new SQLFragment(
-                        "LEFT OUTER JOIN study.ParticipantVisit ON\n " +
-                                "\tSpecimenQuery.SequenceNum = study.ParticipantVisit.SequenceNum AND\n" +
-                                "\tSpecimenQuery." + subjectCol + " = study.ParticipantVisit.ParticipantId AND\n" +
-                                "\tSpecimenQuery.Container = study.ParticipantVisit.Container\n" +
-                                "LEFT OUTER JOIN study.Cohort ON \n" +
-                                "\tstudy.ParticipantVisit.CohortId = study.Cohort.RowId AND\n" +
-                                "\tstudy.ParticipantVisit.Container = study.Cohort.Container\n"
-                );
-                break;
-            case PTID_CURRENT:
-                cohortJoinClause = new SQLFragment(
-                        "LEFT OUTER JOIN study.Cohort ON \n" +
-                                "\tstudy.Participant.CurrentCohortId = study.Cohort.RowId AND\n" +
-                                "\tstudy.Participant.Container = study.Cohort.Container\n"
-                );
-                break;
-            case PTID_INITIAL:
-                cohortJoinClause = new SQLFragment(
-                        "LEFT OUTER JOIN study.Cohort ON \n" +
-                                "\tstudy.Participant.InitialCohortId = study.Cohort.RowId AND\n" +
-                                "\tstudy.Participant.Container = study.Cohort.Container\n"
-                );
-                break;
-        }
+            case DATA_COLLECTION -> new SQLFragment(
+                    "LEFT OUTER JOIN study.ParticipantVisit ON\n " +
+                            "\tSpecimenQuery.SequenceNum = study.ParticipantVisit.SequenceNum AND\n" +
+                            "\tSpecimenQuery." + subjectCol + " = study.ParticipantVisit.ParticipantId AND\n" +
+                            "\tSpecimenQuery.Container = study.ParticipantVisit.Container\n" +
+                            "LEFT OUTER JOIN study.Cohort ON \n" +
+                            "\tstudy.ParticipantVisit.CohortId = study.Cohort.RowId AND\n" +
+                            "\tstudy.ParticipantVisit.Container = study.Cohort.Container\n"
+            );
+            case PTID_CURRENT -> new SQLFragment(
+                    """
+                            LEFT OUTER JOIN study.Cohort ON\s
+                            \tstudy.Participant.CurrentCohortId = study.Cohort.RowId AND
+                            \tstudy.Participant.Container = study.Cohort.Container
+                            """
+            );
+            case PTID_INITIAL -> new SQLFragment(
+                    """
+                            LEFT OUTER JOIN study.Cohort ON\s
+                            \tstudy.Participant.InitialCohortId = study.Cohort.RowId AND
+                            \tstudy.Participant.Container = study.Cohort.Container
+                            """
+            );
+        };
 
         SQLFragment ptidSpecimenSQL = new SQLFragment();
         SqlDialect d = SpecimenSchema.get().getSqlDialect();

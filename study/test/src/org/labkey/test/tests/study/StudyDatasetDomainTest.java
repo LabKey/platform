@@ -66,7 +66,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetDomainTest init = (StudyDatasetDomainTest)getCurrentTest();
+        StudyDatasetDomainTest init = getCurrentTest();
         init.doCreateSteps();
     }
 

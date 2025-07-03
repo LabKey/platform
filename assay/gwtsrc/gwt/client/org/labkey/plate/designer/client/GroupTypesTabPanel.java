@@ -39,8 +39,8 @@ import java.util.List;
  */
 public class GroupTypesTabPanel extends TabPanel
 {
-    private TemplateView _view;
-    private List<String> _types;
+    private final TemplateView _view;
+    private final List<String> _types;
     private int _gridTab = -1;
 
     public GroupTypesTabPanel(TemplateView view)

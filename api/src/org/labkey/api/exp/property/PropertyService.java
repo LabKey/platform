@@ -56,7 +56,14 @@ public interface PropertyService
     Domain getDomain(Container container, String domainURI);
 
     @Nullable
+    Domain getDomain(Container container, String domainURI, boolean forUpdate);
+
+    /** Get a domain that is not intended for update */
+    @Nullable
     Domain getDomain(int domainId);
+
+    @Nullable
+    Domain getDomain(int domainId, boolean forUpdate);
 
     List<DomainKind<?>> getDomainKinds();
 
@@ -100,11 +107,11 @@ public interface PropertyService
 
     Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, DomainDescriptorType xDomain);
 
-    DomainKind getDomainKind(String typeURI);
+    DomainKind<?> getDomainKind(String typeURI);
 
-    DomainKind getDomainKindByName(String name);
+    DomainKind<?> getDomainKindByName(String name);
 
-    void registerDomainKind(DomainKind type);
+    void registerDomainKind(DomainKind<?> type);
 
     /** register a property validator type */
     void registerValidatorKind(ValidatorKind kind);

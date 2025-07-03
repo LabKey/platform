@@ -177,7 +177,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             targetStudy = form.getTargetStudy();
             reRunId = form.getReRunId();
             reImportOption = form.getReImportOption();
-            runFilePath = form.getRunFilePath();
+            runFilePath = PageFlowUtil.decode(form.getRunFilePath()); // GitHub Issue 794
             moduleName = form.getModule();
             JSONArray dataRows = form.getDataRows();
             if (dataRows != null)

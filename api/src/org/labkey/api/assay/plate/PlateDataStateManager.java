@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class PlateDataStateManager implements DataStateHandler
 {
     public static final String HANDLER_NAME = "PlateDataStateHandler";
-    private static PlateDataStateManager _instance = new PlateDataStateManager();
+    private static final PlateDataStateManager _instance = new PlateDataStateManager();
 
     /**
      * Maps to DataStates for plate related operations. Initially, there is only a single data state

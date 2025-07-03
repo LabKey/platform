@@ -628,7 +628,7 @@ public class OlapController extends SpringActionController
                 Throwable t = x;
                 while (null != t.getCause() && t != t.getCause())
                     t = t.getCause();
-                errors.reject(SpringActionController.ERROR_MSG,StringUtils.defaultString(t.getMessage(),t.toString()));
+                errors.reject(SpringActionController.ERROR_MSG,Objects.toString(t.getMessage(),t.toString()));
                 return null;
             }
             catch (Error err)
@@ -870,7 +870,7 @@ public class OlapController extends SpringActionController
                 }
                 finally
                 {
-                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + _olapSchemaDescriptor.getQueryTag(),
+                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q + "\n" + _olapSchemaDescriptor.getQueryTag(),
                             null, (0 == start || 0 == end) ? 0 : (end - start), null, true, QueryLogging.noValidationNeededQueryLogging());
                     _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
                 }
@@ -1158,7 +1158,6 @@ public class OlapController extends SpringActionController
             }
             catch (SQLException x)
             {
-                ;
             }
         }
         if (null != _server)
@@ -1200,9 +1199,8 @@ public class OlapController extends SpringActionController
 
     private Collection<String> getContainerCollection(ContainerFilter cf)
     {
-        if (cf instanceof DataspaceContainerFilter)
+        if (cf instanceof DataspaceContainerFilter dscf)
         {
-            DataspaceContainerFilter dscf = (DataspaceContainerFilter)cf;
             Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
             List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
             return Collections.unmodifiableCollection(ret);

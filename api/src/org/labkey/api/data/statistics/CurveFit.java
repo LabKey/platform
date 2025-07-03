@@ -44,25 +44,21 @@ public interface CurveFit<P extends CurveFit.Parameters>
 
     /**
      * Sets the data that this curve fit will be applied to.
-     * @param data
      */
     void setData(DoublePoint[] data);
 
     /**
      * Returns the data associated with this curve fit.
-     * @return
      */
     DoublePoint[] getData();
 
     /**
      * Returns the parameters necessary to represent the fitted curve
-     * @return
      */
     P getParameters() throws FitFailedException;
 
     /**
      * Initialize parameters using an external source
-     * @param parameters
      */
     void setParameters(P parameters);
     void setParameters(JSONObject json);
@@ -77,7 +73,6 @@ public interface CurveFit<P extends CurveFit.Parameters>
     /**
      * Sets whether all calculations and points generated are performed using a log base 10 X axis scale. By default
      * this is set to true.
-     * @param logXScale
      */
     void setLogXScale(boolean logXScale);
 
@@ -96,7 +91,6 @@ public interface CurveFit<P extends CurveFit.Parameters>
 
     /**
      * Calculates the fit error : r squared (or coefficient of determination) of the fitted curve
-     * @return
      */
     double getFitError() throws FitFailedException;
 

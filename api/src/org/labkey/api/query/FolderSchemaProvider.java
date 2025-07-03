@@ -25,10 +25,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

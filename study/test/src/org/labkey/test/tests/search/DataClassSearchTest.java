@@ -73,7 +73,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     private static final String DATA_CLASS_ICE_CREAM = "cookies and cream";
     private static Integer dataClassDomainId;
     private static String dataClassDomainUri;
-    private static int[] dataClassRowIds = new int[3];
+    private static final int[] dataClassRowIds = new int[3];
     private static Connection connection;
 
     @Override
@@ -97,7 +97,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     @BeforeClass
     public static void initProject()
     {
-        DataClassSearchTest init = (DataClassSearchTest)getCurrentTest();
+        DataClassSearchTest init = getCurrentTest();
 
         init.doInit();
     }

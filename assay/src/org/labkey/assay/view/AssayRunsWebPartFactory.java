@@ -89,7 +89,7 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
         if (deserializedPropertyMap.containsKey("assayName"))
         {
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(ctx.getContainer()); 
-            if (protocols.size() > 0)
+            if (!protocols.isEmpty())
             {
                 for (ExpProtocol protocol : protocols)
                 {

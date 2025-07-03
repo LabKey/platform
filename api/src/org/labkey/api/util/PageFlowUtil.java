@@ -765,7 +765,7 @@ public class PageFlowUtil
     public static String encodeURI(String s)
     {
         StringBuilder sb = new StringBuilder();
-        int len=s.length(),start=0,end=0;
+        int len=s.length(),start=0,end;
         while (start < s.length())
         {
             for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
@@ -977,7 +977,6 @@ public class PageFlowUtil
      *
      * @param detectContentType If set to true, then the content type is detected, else it is inferred from the extension
      * of the file name.
-     * @throws IOException
      */
     public static void streamFile(HttpServletResponse response, File file, boolean asAttachment, boolean detectContentType) throws IOException
     {
@@ -1065,14 +1064,14 @@ public class PageFlowUtil
     }
 
 
-    public static void streamFileBytes(@NotNull HttpServletResponse response, @NotNull String filename, @NotNull byte[] bytes, boolean asAttachment) throws IOException
+    public static void streamFileBytes(@NotNull HttpServletResponse response, @NotNull String filename, byte @NotNull [] bytes, boolean asAttachment) throws IOException
     {
         prepareResponseForFile(response, Collections.emptyMap(), filename, asAttachment);
         response.getOutputStream().write(bytes);
     }
 
 
-    public static void streamLogFile(HttpServletResponse response, long startingOffset, File logFile) throws Exception
+    public static void streamLogFile(HttpServletResponse response, long startingOffset, File logFile) throws IOException
     {
         if (logFile.exists())
         {
@@ -2271,9 +2270,8 @@ public class PageFlowUtil
 
         boolean pageAdminMode = false;
         // Be tolerant of not having a ViewContext, or having one but being detached from an HttpServletRequest
-        if (context instanceof ViewContext)
+        if (context instanceof ViewContext viewContext)
         {
-            ViewContext viewContext = (ViewContext)context;
             pageAdminMode = isPageAdminMode(viewContext);
             HttpServletRequest request = viewContext.getRequest();
             if (request != null)
@@ -2643,27 +2641,27 @@ public class PageFlowUtil
         @Test
         public void testPhone()
         {
-            assertEquals(formatPhoneNo("5551212"), "555-1212");
-            assertEquals(formatPhoneNo("2065551212"), "(206) 555-1212");
-            assertEquals(formatPhoneNo("12065551212"), "(206) 555-1212");
-            assertEquals(formatPhoneNo("206.555.1212"), "(206) 555-1212");
-            assertEquals(formatPhoneNo("1-206) 555.1212  "), "(206) 555-1212");
-            assertEquals(formatPhoneNo("1-206) 555.1212  "), "(206) 555-1212");
-            assertEquals(formatPhoneNo("1(206) 555.1212  "), "(206) 555-1212");
-            assertEquals(formatPhoneNo("1 (206)555.1212"), "(206) 555-1212");
-            assertEquals(formatPhoneNo("(206)-555.1212  "), "(206) 555-1212");
-            assertEquals(formatPhoneNo("work (206)555.1212"), "work (206) 555-1212");
-            assertEquals(formatPhoneNo("206.555.1212 x0001"), "(206) 555-1212 x0001");
+            assertEquals("555-1212", formatPhoneNo("5551212"));
+            assertEquals("(206) 555-1212", formatPhoneNo("2065551212"));
+            assertEquals("(206) 555-1212", formatPhoneNo("12065551212"));
+            assertEquals("(206) 555-1212", formatPhoneNo("206.555.1212"));
+            assertEquals("(206) 555-1212", formatPhoneNo("1-206) 555.1212  "));
+            assertEquals("(206) 555-1212", formatPhoneNo("1-206) 555.1212  "));
+            assertEquals("(206) 555-1212", formatPhoneNo("1(206) 555.1212  "));
+            assertEquals("(206) 555-1212", formatPhoneNo("1 (206)555.1212"));
+            assertEquals("(206) 555-1212", formatPhoneNo("(206)-555.1212  "));
+            assertEquals("work (206) 555-1212", formatPhoneNo("work (206)555.1212"));
+            assertEquals("(206) 555-1212 x0001", formatPhoneNo("206.555.1212 x0001"));
         }
 
         @Test
         public void testFilter()
         {
-            assertEquals(filter("this is a test"), "this is a test");
-            assertEquals(filter("<this is a test"), "&lt;this is a test");
-            assertEquals(filter("this is a test<"), "this is a test&lt;");
-            assertEquals(filter("'t'&his is a test\""), "&#039;t&#039;&amp;his is a test&quot;");
-            assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
+            assertEquals("this is a test", filter("this is a test"));
+            assertEquals("&lt;this is a test", filter("<this is a test"));
+            assertEquals("this is a test&lt;", filter("this is a test<"));
+            assertEquals("&#039;t&#039;&amp;his is a test&quot;", filter("'t'&his is a test\""));
+            assertEquals("&lt;&gt;&quot;&amp;", filter("<>\"&"));
         }
 
         @Test

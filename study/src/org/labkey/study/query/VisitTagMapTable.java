@@ -93,7 +93,7 @@ public class VisitTagMapTable extends BaseStudyTable
         return checkReadOrIsAdminPermission(user, perm);
     }
 
-    private static Map<String, String> _columnMappings = new HashMap<>();
+    private static final Map<String, String> _columnMappings = new HashMap<>();
     static
     {
         _columnMappings.put("VisitId", "Visit");

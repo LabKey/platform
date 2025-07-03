@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;

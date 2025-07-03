@@ -214,7 +214,7 @@ public class PipelineCommandTestCase extends Assert
         params.put("test, value to switch with multi args", "testing2 100 -999");
         params.put("test, inline value with default", "f");
 
-        List<String> args = commandList.toArgs(cmd, params, new HashSet<TaskToCommandArgs>());
+        List<String> args = commandList.toArgs(cmd, params, new HashSet<>());
         assertEquals("Unexpected length for args", 10, args.size());
         assertEquals("Unexpected arg for RequiredSwitch", "-a", args.get(0));
         assertEquals("Unexpected arg for RequiredSwitch", "100", args.get(1));
@@ -237,7 +237,7 @@ public class PipelineCommandTestCase extends Assert
         params.put("test, value to switch with multi args", "");
         params.put("test, inline value with default", null);
 
-        List<String> args2 = commandList.toArgs(cmd2, params2, new HashSet<TaskToCommandArgs>());
+        List<String> args2 = commandList.toArgs(cmd2, params2, new HashSet<>());
         assertEquals("Unexpected length for args2", 3, args2.size());
         assertEquals("Unexpected arg for RequiredSwitch", "-a", args2.get(0));
         assertEquals("Unexpected arg for RequiredSwitch", "100", args2.get(1));

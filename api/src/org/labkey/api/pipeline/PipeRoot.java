@@ -29,7 +29,6 @@ import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -95,7 +94,6 @@ public interface PipeRoot extends SecurableResource
      *
      * Cloud: Uses a temp directory
      * Default: Uses folder within the file root
-     * @return
      */
     @NotNull
     File getImportDirectory();

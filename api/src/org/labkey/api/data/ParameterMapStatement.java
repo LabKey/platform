@@ -155,9 +155,8 @@ public class ParameterMapStatement implements AutoCloseable
         for (int i = 0; i < paramList.size(); i++)
         {
             Object o = paramList.get(i);
-            if (o instanceof Parameter)
+            if (o instanceof Parameter p)
             {
-                Parameter p = (Parameter)o;
                 if (!paramMap.containsKey(p))
                     paramMap.put(p, new IntegerArray());
                 paramMap.get(p).add(i+1);
@@ -204,7 +203,7 @@ public class ParameterMapStatement implements AutoCloseable
     {
         _dialect = _scope.getSqlDialect();
         _map = new CaseInsensitiveHashMap<>(parameters.size() * 2);
-        _parameters = parameters.toArray(new Parameter[parameters.size()]);
+        _parameters = parameters.toArray(new Parameter[0]);
         _stmt = stmt;
 
         for (int i=0 ; i<_parameters.length ; i++)

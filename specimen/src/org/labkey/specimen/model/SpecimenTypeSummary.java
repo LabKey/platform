@@ -263,7 +263,7 @@ public class SpecimenTypeSummary
         if (counts.size() == 1)
         {
             String label = counts.values().iterator().next().getLabel();
-            if (label == null || label.length() == 0 || "None".equalsIgnoreCase(label))
+            if (label == null || label.isEmpty() || "None".equalsIgnoreCase(label))
                 return Collections.emptyList();
         }
         return new ArrayList<>(counts.values());

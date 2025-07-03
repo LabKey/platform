@@ -119,8 +119,8 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
-                        ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
-                        ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
+                        ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+                        ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
 
                         content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING));
                         content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING));
@@ -178,12 +178,6 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
     }
 
     @Override
-    protected DataRegion.ButtonBarPosition getButtonBarPosition()
-    {
-        return DataRegion.ButtonBarPosition.TOP;
-    }
-
-    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = super.createDataRegion();
@@ -197,8 +191,8 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
         if (_showOptionLinks || (_extraLinks != null && _extraLinks.length > 0))
         {
             RequestOptionDisplayColumn optionCol =
-                    new RequestOptionDisplayColumn(getViewContext(), _showOptionLinks, getTable().getColumn("CreatedBy"),
-                            getTable().getColumn("Status"), _extraLinks);
+                new RequestOptionDisplayColumn(getViewContext(), _showOptionLinks, getTable().getColumn("CreatedBy"),
+                    getTable().getColumn("Status"), _extraLinks);
             rgn.addDisplayColumn(0, optionCol);
         }
         rgn.setSortable(_allowSortAndFilter);
@@ -221,6 +215,4 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
     {
         getSettings().setAllowCustomizeView(showCustomizeLink);
     }
-
-
 }

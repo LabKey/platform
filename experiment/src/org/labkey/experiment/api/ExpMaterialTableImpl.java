@@ -782,7 +782,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
         SQLFragment sql;
-        if (plateUserSchema != null)
+        if (plateUserSchema != null && plateUserSchema.getTable("Well") != null)
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
@@ -866,8 +866,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Domain getDomain()
     {
-        return _ss == null ? null : _ss.getDomain();
+        return getDomain(false);
     }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _ss == null ? null : _ss.getDomain(forUpdate);
+    }
+
 
     public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {
@@ -1453,7 +1460,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    private class IdColumnRenderer extends DataColumn
+    private static class IdColumnRenderer extends DataColumn
     {
         public IdColumnRenderer(ColumnInfo col)
         {

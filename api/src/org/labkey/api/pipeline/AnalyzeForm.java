@@ -21,7 +21,6 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**

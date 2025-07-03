@@ -904,7 +904,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(Object form, BindException errors) throws Exception
         {
-            return success(PlateManager.get().ensurePlateMetadataDomain(getContainer(), getUser()).getTypeId());
+            return success(PlateManager.get().ensurePlateMetadataDomain(getContainer(), getUser(), false).getTypeId());
         }
     }
 

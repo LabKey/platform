@@ -37,37 +37,37 @@ import java.util.Map;
  */
 
 public interface MacroParameter {
-  public void setParams(String stringParams);
+  void setParams(String stringParams);
 
-  public String getContent();
+  String getContent();
 
-  public void setContent(String content);
+  void setContent(String content);
 
-  public int getLength();
+  int getLength();
 
-  public String get(String index, int idx);
+  String get(String index, int idx);
 
-  public String get(String index);
+  String get(String index);
 
-  public String get(int index);
+  String get(int index);
 
-  public Map getParams();
+  Map getParams();
 
-  public void setStart(int start);
+  void setStart(int start);
 
-  public void setEnd(int end);
+  void setEnd(int end);
 
-  public int getStart();
+  int getStart();
 
-  public int getEnd();
+  int getEnd();
 
-  public void setContentStart(int start);
+  void setContentStart(int start);
 
-  public void setContentEnd(int end);
+  void setContentEnd(int end);
 
-  public int getContentStart();
+  int getContentStart();
 
-  public int getContentEnd();
+  int getContentEnd();
 
-  public RenderContext getContext();
+  RenderContext getContext();
 }

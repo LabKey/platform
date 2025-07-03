@@ -28,7 +28,6 @@ import org.labkey.api.pipeline.cmd.ValueInLine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;

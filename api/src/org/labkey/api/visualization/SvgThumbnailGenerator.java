@@ -27,5 +27,5 @@ import org.labkey.api.thumbnail.ThumbnailProvider;
 // VisualizationController to generate thumbnails for time and box/scatter charts
 public interface SvgThumbnailGenerator extends ThumbnailProvider
 {
-    public void setSvg(String svg);
+    void setSvg(String svg);
 }

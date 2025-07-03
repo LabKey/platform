@@ -30,10 +30,10 @@ public class NumberValidator extends AbstractColumnValidator
     {
         if (!(value instanceof Number))
             return null;
-        Double d = ((Number)value).doubleValue();
-        if (d.isInfinite())
+        double d = ((Number)value).doubleValue();
+        if (Double.isInfinite(d))
             return "Infinity is not a valid value for column '" + _columnName + "'";
-        if (d.isNaN())
+        if (Double.isNaN(d))
             return "NaN is not a valid value for column '" + _columnName + "'";
         return null;
     }

@@ -158,8 +158,8 @@ public class ListModule extends SpringModule
                 Map<String, Object> metric = new HashMap<>();
                 DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
                 metric.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
-                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist.toString() + "'").getObject(Long.class));
-                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist.toString() + "'").getObject(Long.class));
+                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class));
+                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class));
                 return metric;
             });
         }

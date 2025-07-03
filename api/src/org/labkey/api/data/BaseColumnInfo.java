@@ -57,8 +57,6 @@ import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
-import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -86,8 +84,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private static final Logger LOG = LogHelper.getLogger(ColumnInfo.class, "BaseColumnInfo logger");
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
+    @NotNull
     private FieldKey _fieldKey;
-    private String _name;
     // _propertyName is computed from getName();
     private String _propertyName = null;
     private DatabaseIdentifier _alias;
@@ -104,7 +102,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _isReadOnly = false;
     private boolean _isUserEditable = true;
     private boolean _isUnselectable = false;
-    private TableInfo _parentTable = null;
+    private TableInfo _parentTable;
     protected DatabaseIdentifier _metaDataName = null;
     protected DatabaseIdentifier _selectName = null;
     protected ColumnInfo _displayField;
@@ -133,9 +131,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private ColumnLogging _columnLogging;
 
     // Always call this constructor
-    public BaseColumnInfo(FieldKey key, TableInfo parentTable)
+    public BaseColumnInfo(@NotNull FieldKey key, TableInfo parentTable)
     {
-        _fieldKey = key;
+        _fieldKey = Objects.requireNonNull(key);
         _parentTable = parentTable;
 
         // I'd kind of prefer using null here.  But this is currently used to column matching in the column logging code using ColumnLogging.equals()
@@ -144,9 +142,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _columnLogging = ColumnLogging.defaultLogging(this);
     }
 
-    public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
+    public BaseColumnInfo(@NotNull String name, TableInfo parentTable, JdbcType type)
     {
-        this(FieldKey.fromParts(name), parentTable, type);
+        this(FieldKey.fromParts(Objects.requireNonNull(name)), parentTable, type);
     }
 
     public BaseColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
@@ -173,32 +171,23 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public BaseColumnInfo(FieldKey key, JdbcType t)
     {
         this(key, (TableInfo)null);
-        _name = null;
         _jdbcType = t;
     }
 
     @Deprecated // Pass in a type!
     public BaseColumnInfo(String name)
     {
-        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
-//        assert -1 == name.indexOf('/');
+        this(name, null, null);
     }
 
     public BaseColumnInfo(String name, JdbcType t)
     {
-        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
-        if (null == name)
-            return;
-//        assert -1 == name.indexOf('/');
-        _jdbcType = t;
+        this(name, null, t);
     }
 
     public BaseColumnInfo(String name, JdbcType t, int scale, boolean nullable)
     {
-        this(null != name ? new FieldKey(null, name) : null, t);
-        if (null == name)
-            return;
-//        assert -1 == name.indexOf('/');
+        this(name, null, t);
         setScale(scale);
         setNullable(nullable);
     }
@@ -256,7 +245,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
 
     /** use setFieldKey() avoid ambiguity when columns have "/" */
-    public void setName(String name)
+    public void setName(@NotNull String name)
     {
         checkLocked();
         // Disallow changing the name completely -- fixing up the casing is allowed;
@@ -264,36 +253,30 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         FieldKey newFieldKey = new FieldKey(null, name);
         assert !_lockName || 0 == _fieldKey.compareTo(newFieldKey);
         _fieldKey = newFieldKey;
-        _name = null;
         _propertyName = null;
     }
 
 
-    @Override
+    @Override @NotNull
     public String getName()
     {
-        if (_name == null && _fieldKey != null)
-        {
-            if (_fieldKey.getParent() == null)
-                _name = _fieldKey.getName();
-            else
-                _name = _fieldKey.toString();
-        }
-        return _name;
+        if (_fieldKey.getParent() == null)
+            return _fieldKey.getName();
+        else
+            return _fieldKey.toString();
     }
 
 
     @Override
-    public void setFieldKey(FieldKey key)
+    public void setFieldKey(@NotNull FieldKey key)
     {
         checkLocked();
-        _fieldKey = key;
-        _name = null;
+        _fieldKey = Objects.requireNonNull(key);
         _propertyName = null;
     }
 
 
-    @Override
+    @Override @NotNull
     public FieldKey getFieldKey()
     {
         return _fieldKey;
@@ -729,7 +712,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public String getLabel()
     {
-        if (null == _label && getFieldKey() != null)
+        if (null == _label)
             return labelFromName(getFieldKey().getName());
         return _label;
     }
@@ -905,12 +888,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
-    public String getLegalName()
-    {
-        return legalNameFromName(getName());
-    }
-
-    @Override
     public String getPropertyName()
     {
         // this is surprisingly expensive, cache it!
@@ -919,12 +896,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _propertyName;
     }
 
-    /**
-     * See {@link #jdbcRsNameFromName(String) }
-     *
-     */
-    @Override
-    public String getJdbcRsName() { return jdbcRsNameFromName(getName()); }
 
     /**
      * Version column can be used for optimistic concurrency.
@@ -1196,10 +1167,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             {
                 String type = xfk.getFkMultiValued();
 
-                if ("junction".equals(type))
+                if (AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
                     _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
                 else
-                    throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                    LOG.warn(String.format("Error in FK configuration for table : \"%s\". The multi value FK type : \"%s\" is not supported.", getParentTable().getName(), type));
             }
         }
 
@@ -1369,9 +1340,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     return new SimpleDisplayColumn()
                     {
                         @Override
-                        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+                        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                         {
-                            oldWriter.write(PageFlowUtil.filter("Error: " + message));
+                            out.write("Error: " + message);
                         }
                     };
                 };
@@ -1400,7 +1371,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return name;
 
         StringBuilder buf = new StringBuilder(name.length() + 10);
@@ -1436,7 +1407,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return null;
 
         StringBuilder buf = new StringBuilder(name.length());
@@ -1460,39 +1431,23 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return buf.toString();
     }
 
+
     public static String propNameFromName(String name)
     {
         if (name == null)
             return null;
 
-        if (name.length() == 0)
+        if (name.isEmpty())
             return null;
 
         return Introspector.decapitalize(legalNameFromName(name));
     }
 
-    /**
-     *  The jdbc resultset metadata replaces special characters in source column names.
-     *  This is a problem when matching source and target columns, as we have the jdbc name for the source.
-     *  I haven't found an exhaustive list of the characters and their replacements, but spaces, hyphens, parens,
-     *  and forward slashes have been seen in a client db schema and have an issue.
-     */
-    public static String jdbcRsNameFromName(String name)
-    {
-        if (StringUtils.isBlank(name))
-            return null;
-
-        return name.replaceAll("\\s", "_")
-                .replace("-", "_minus_")
-                .replace("/", "_fs_")
-                .replace("(", "_lp_")
-                .replace(")", "_rp_");
-    }
 
     // TODO why is there here? and not something like RequestHelper or PageFlowUtil
     public static boolean booleanFromString(String str)
     {
-        if (null == str || str.trim().length() == 0)
+        if (null == str || str.trim().isEmpty())
             return false;
         if (str.equals("0") || str.equalsIgnoreCase("false"))
             return false;
@@ -1810,7 +1765,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     }
                     else
                     {
-                        assert importedKeys.size() > 0;
+                        assert !importedKeys.isEmpty();
                         ImportedKey key = importedKeys.get(fkName);
                         key.pkColumnNames.add(pkColumnName);
                         key.fkColumnNames.add(colName);

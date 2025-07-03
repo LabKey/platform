@@ -65,8 +65,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -669,11 +667,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object value = getDisplayColumn().getValue(ctx);
             if (value instanceof String s)
-                oldWriter.write(s);
+                out.write(s);
         }
     }
 

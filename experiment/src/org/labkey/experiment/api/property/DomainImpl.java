@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -71,11 +73,14 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -107,6 +112,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
+    private final boolean _isMutable;
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
@@ -114,7 +120,13 @@ public class DomainImpl implements Domain
 
     public DomainImpl(DomainDescriptor dd)
     {
+        this(dd, false);
+    }
+
+    public DomainImpl(DomainDescriptor dd, boolean isMutable)
+    {
         _dd = dd;
+        _isMutable = isMutable;
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
 
         List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
@@ -137,14 +149,15 @@ public class DomainImpl implements Domain
         }
     }
 
-    public DomainImpl(Container container, String uri, String name)
+    public DomainImpl(Container container, String uri, String name, boolean isMutable)
     {
-        this(container, uri, name, null);
+        this(container, uri, name, null, isMutable);
     }
 
-    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo)
+    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo, boolean isMutable)
     {
         _new = true;
+        _isMutable = isMutable;
         _dd = new DomainDescriptor.Builder(uri, container)
                 .setName(name)
                 .setTemplateInfoObject(templateInfo)
@@ -164,7 +177,7 @@ public class DomainImpl implements Domain
         return _dd.getContainer();
     }
 
-    @Override
+    @Override @Nullable
     public DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
@@ -207,6 +220,11 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
+    public boolean isMutable()
+    {
+        return _isMutable;
+    }
 
     @Override
     @Nullable   // null if not provisioned
@@ -356,13 +374,14 @@ public class DomainImpl implements Domain
     {
         delete(user, null);
     }
+
     @Override
     public void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
-        Lock domainLock = getLock(_dd);
-        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
+        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction())
         {
+            lockForDelete(exp.getSchema());
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
@@ -388,6 +407,23 @@ public class DomainImpl implements Domain
     public Lock getDatabaseLock()
     {
         return getLock(_dd);
+    }
+
+    @Override
+    public void lockForDelete(DbSchema expSchema)
+    {
+        // NOTE code relies on the lock returned from Domain.getLock() does not require unlock().
+        var lock = getDatabaseLock();
+        assert lock instanceof DbScope.ServerLock;
+        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
+        lock.lock();
+
+        // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
+        if (null != getStorageTableName() && expSchema.getSqlDialect().isPostgreSQL())
+        {
+            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
+            new SqlExecutor(expSchema).execute(lockSQL);
+        }
     }
 
     static Lock getLock(DomainDescriptor dd)
@@ -548,6 +584,9 @@ public class DomainImpl implements Domain
                      @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
                      @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
+        if (!_isMutable)
+            throw new ChangePropertyDescriptorException("Cannot save a domain that is immutable");
+
         ExperimentService exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
@@ -931,7 +970,7 @@ public class DomainImpl implements Domain
         for (String field : added)
         {
             GWTPropertyDescriptor descriptor = newFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSON = null;
+            MetadataColumnJSON metadataColumnJSON;
             if (descriptor instanceof MetadataColumnJSON)
                 metadataColumnJSON = (MetadataColumnJSON) descriptor;
             else
@@ -945,7 +984,7 @@ public class DomainImpl implements Domain
         for (String field : deleted)
         {
             GWTPropertyDescriptor descriptor = oldFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSON = null;
+            MetadataColumnJSON metadataColumnJSON;
             if (descriptor instanceof MetadataColumnJSON)
                 metadataColumnJSON = (MetadataColumnJSON) descriptor;
             else
@@ -959,14 +998,14 @@ public class DomainImpl implements Domain
         for (String field : retained)
         {
             GWTPropertyDescriptor oldDescriptor = oldFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSONOld = null;
+            MetadataColumnJSON metadataColumnJSONOld;
             if (oldDescriptor instanceof MetadataColumnJSON)
                 metadataColumnJSONOld = (MetadataColumnJSON) oldDescriptor;
             else
                 metadataColumnJSONOld = new MetadataColumnJSON(oldDescriptor);
 
             GWTPropertyDescriptor newDescriptor = newFieldsMap.get(field);
-            MetadataColumnJSON metadataColumnJSONNew = null;
+            MetadataColumnJSON metadataColumnJSONNew;
             if (newDescriptor instanceof MetadataColumnJSON)
                 metadataColumnJSONNew = (MetadataColumnJSON) newDescriptor;
             else
@@ -1516,5 +1555,27 @@ public class DomainImpl implements Domain
     public DomainTemplate getTemplate()
     {
         return DomainTemplate.findTemplate(getTemplateInfo(), getDomainKind().getKindName());
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void saveAfterGetReadOnlyDomain()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String uri = "StorageProvisionImpl/" + GUID.makeGUID();
+            DomainImpl d = new DomainImpl(c, uri, "test", false);
+            User user = TestContext.get().getUser();
+            try
+            {
+                d.save(user);
+                fail("Save of read-only domain should fail.");
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                // expected exception
+            }
+        }
     }
 }

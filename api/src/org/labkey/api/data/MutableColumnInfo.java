@@ -16,7 +16,7 @@ import java.util.Set;
 
 public interface MutableColumnInfo extends MutableColumnRenderProperties, ColumnInfo
 {
-    void setFieldKey(FieldKey key);
+    void setFieldKey(@NotNull FieldKey key);
 
     void setAlias(DatabaseIdentifier alias);
 
@@ -97,7 +97,7 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
     void setLocked(boolean b);
 
-    // return a ColumnInfo that does not suppport MutableColumnInfo or a MutableColumnInfo that is locked
+    // return a ColumnInfo that does not support MutableColumnInfo or a MutableColumnInfo that is locked
     default ColumnInfo lock()
     {
         setLocked(true);

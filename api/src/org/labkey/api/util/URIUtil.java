@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Objects;
 
 import static org.labkey.api.util.FileUtil.FILE_SCHEME;
 
@@ -37,8 +38,8 @@ public class URIUtil
 {
     static public boolean isDescendant(@NotNull URI base, @NotNull URI descendant)
     {
-        var baseSchema = StringUtils.defaultString(base.getScheme(), FILE_SCHEME);
-        var descendantSchema = StringUtils.defaultString(descendant.getScheme(), FILE_SCHEME);
+        var baseSchema = Objects.toString(base.getScheme(), FILE_SCHEME);
+        var descendantSchema = Objects.toString(descendant.getScheme(), FILE_SCHEME);
 
         if (!descendantSchema.equalsIgnoreCase(baseSchema))
             return false;

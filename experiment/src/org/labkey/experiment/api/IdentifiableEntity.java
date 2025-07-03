@@ -182,9 +182,9 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 
     public static class Difference
     {
-        private String _description;
-        private Object _thisValue;
-        private Object _otherValue;
+        private final String _description;
+        private final Object _thisValue;
+        private final Object _otherValue;
 
         public Difference(String description, Object thisValue, Object otherValue)
         {

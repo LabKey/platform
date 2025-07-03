@@ -502,7 +502,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         try
         {
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-            String reportXml = "";
+            String reportXml;
             // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(FolderExportContext)
             FolderExportContext ex = new FolderExportContext(user, c, null, null, null);
             ReportDescriptorDocument reportDoc = report.getDescriptor().getDescriptorDocument(ex);

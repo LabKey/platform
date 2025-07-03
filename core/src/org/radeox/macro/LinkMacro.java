@@ -27,7 +27,6 @@
  */
 package org.radeox.macro;
 
-import org.labkey.api.util.PageFlowUtil;
 import org.radeox.api.engine.ImageRenderEngine;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.context.RenderContext;

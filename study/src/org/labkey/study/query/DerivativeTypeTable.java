@@ -17,7 +17,6 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.specimen.SpecimenSchema;

@@ -382,9 +382,8 @@ public class VisualizationSQLGenerator implements HasViewContext
             IVisualizationSourceQuery possibleJoinTarget = query.getJoinTarget();
             if (possibleJoinTarget != null)
             {
-                if (!(possibleJoinTarget instanceof VisualizationSourceQuery))
+                if (!(possibleJoinTarget instanceof VisualizationSourceQuery joinTarget))
                     throw new IllegalStateException("Expected VisualizationSourceQuery instance, found " + possibleJoinTarget.getClass().getName());
-                VisualizationSourceQuery joinTarget = (VisualizationSourceQuery) possibleJoinTarget;
                 if (!joinTarget.getSchemaName().equalsIgnoreCase(query.getSchemaName()))
                 {
                     throw new IllegalArgumentException("Cross-schema joins are not yet supported.  Attempt to join " +
@@ -736,7 +735,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 }
             }
 
-            if (sql.length() == 0)
+            if (sql.isEmpty())
             {
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
             }
@@ -879,7 +878,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                                 {
                                     // issue 21852: replace the interval key with the calculation
                                     VisualizationIntervalColumn intervalCol = _intervals.get(key.toString());
-                                    clauseStr = clauseStr.replace("\"" + key.toString() + "\"", "(" + intervalCol.getSQL() + ")");
+                                    clauseStr = clauseStr.replace("\"" + key + "\"", "(" + intervalCol.getSQL() + ")");
                                 }
 
                                 sql.append(outerSep).append(sep).append(" (").append(clauseStr).append(") ");
@@ -1260,7 +1259,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 // this is a surprise! we're implicitly grouping by participant,visit as well as gender
                 assertTrue(48 == r.getSize());        // Female, female, Male, male, null
-                assertEquals(8, r.getMetaData().getColumnCount());  ;  // gender, count(*), avg(), stddev(), stderr()
+                assertEquals(8, r.getMetaData().getColumnCount());  // gender, count(*), avg(), stddev(), stderr()
             }
 
             // Assay Flow
@@ -1327,7 +1326,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
                 assertEquals(3, r.getSize());
-                assertEquals(5, r.getMetaData().getColumnCount());  ;  // gender, count(*), avg(), stddev(), stderr()
+                assertEquals(5, r.getMetaData().getColumnCount());  // gender, count(*), avg(), stddev(), stderr()
             }
         }
 

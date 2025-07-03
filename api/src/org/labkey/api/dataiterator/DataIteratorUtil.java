@@ -186,8 +186,6 @@ public class DataIteratorUtil
         /**
          * Update rowMap content based on passed in col.
          * For example, the original rowMap may contain encoded field name. This util substitute the key in rowMap to reflect the actual col name
-         * @param col
-         * @param rowMap
          * @return If rowMap has been updated
          */
         public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
@@ -219,15 +217,9 @@ public class DataIteratorUtil
         {
             // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
             // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
-            String tsvQueryColumnName = FieldKey.fromString(col.getName()).toDisplayString();
+            // Issue 52777: Use the column's FieldKey - otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
+            String tsvQueryColumnName = col.getFieldKey().toDisplayString();
             targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
-        }
-
-        // should this be under the useImportAliases flag???
-        for (ColumnInfo col : cols)
-        {
-            // Jdbc resultset names have substitutions for special characters. If this is such a column, need the substituted name to match on
-            targetAliasesMap.put(col.getJdbcRsName(), new Pair<>(col, MatchType.jdbcname));
         }
 
         for (ColumnInfo col : cols)
@@ -238,7 +230,8 @@ public class DataIteratorUtil
                     targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
 
                 // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
-                String translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
+                // Issue 52777: Use the column's FieldKey - otherwise we convert $$Date to $$ate using fromString() and toDisplayString()
+                String translatedFieldKey = col.getFieldKey().toDisplayString();
                 targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
             }
         }

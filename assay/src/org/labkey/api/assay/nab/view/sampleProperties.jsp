@@ -75,7 +75,7 @@
 
 %>
             <%
-                if (sampleData.size() > 0)
+                if (!sampleData.isEmpty())
                 {
             %>
                 <table class="labkey-data-region-legacy labkey-show-borders">

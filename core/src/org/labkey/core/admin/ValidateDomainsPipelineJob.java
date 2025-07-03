@@ -48,7 +48,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
         }
         catch (IOException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

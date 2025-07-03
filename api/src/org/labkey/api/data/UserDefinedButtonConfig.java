@@ -201,7 +201,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
 
     private void processURLs(RenderContext ctx, NavTree tree)
     {
-        if (tree.getHref() != null && tree.getHref().length() > 0)
+        if (tree.getHref() != null && !tree.getHref().isEmpty())
             tree.setHref(processURL(ctx, tree.getHref()));
         for (NavTree child : tree.getChildren())
             processURLs(ctx, child);
@@ -212,11 +212,10 @@ public class UserDefinedButtonConfig implements ButtonConfig
         if (originalOnClick == null)
             return null;
 
-        StringBuilder onClickWrapper = new StringBuilder();
-        onClickWrapper.append("var dataRegionName = ").append(PageFlowUtil.jsString(ctx.getCurrentRegion().getName())).append("; ");
-        onClickWrapper.append("var dataRegion = LABKEY.DataRegions[dataRegionName]; ");
-        onClickWrapper.append(originalOnClick);
-        return onClickWrapper.toString();
+        String onClickWrapper = "var dataRegionName = " + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "; " +
+                "var dataRegion = LABKEY.DataRegions[dataRegionName]; " +
+                originalOnClick;
+        return onClickWrapper;
     }
 
     @Override

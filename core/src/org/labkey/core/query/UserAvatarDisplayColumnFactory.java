@@ -118,7 +118,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
                 {
                     if (value != null)
                     {
-                        Integer userId = Integer.parseInt(value.toString());
+                        int userId = Integer.parseInt(value.toString());
                         user = UserManager.getUser(userId);
                     }
                 }

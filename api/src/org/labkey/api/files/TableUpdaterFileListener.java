@@ -15,6 +15,7 @@
  */
 package org.labkey.api.files;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -195,6 +196,14 @@ public class TableUpdaterFileListener implements FileListener
         return _table.getSchema().getName() + "." + _table.getName() + "." + _pathColumn.getName();
     }
 
+    public String getSourceSelect(SqlDialect sqlDialect)
+    {
+        String schema  = sqlDialect.getStringHandler().quoteStringLiteral(_table.getSchema().getName());
+        String table = sqlDialect.getStringHandler().quoteStringLiteral(_table.getName());
+        String column = sqlDialect.getStringHandler().quoteStringLiteral(_pathColumn.getName());
+        return schema + "." + table + "." + column;
+    }
+
     @Override
     public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
     {
@@ -344,12 +353,11 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public SQLFragment listFilesQuery()
     {
-        return listFilesQuery(false);
+        return listFilesQuery(false, null);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
     {
-        SqlDialect dialect = _table.getSqlDialect();
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
 
@@ -393,10 +401,15 @@ public class TableUpdaterFileListener implements FileListener
             selectFrag.append("  NULL AS SourceKey,\n");
 
         //selectFrag.append("  ? AS SourceName\n").add(getName());
-        selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
+        selectFrag.append("  ").appendValue(getSourceSelect(_table.getSchema().getSqlDialect())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
-        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" IS NOT NULL\n");
+        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier());
+
+        if (StringUtils.isEmpty(filePath))
+            selectFrag.append(" IS NOT NULL\n");
+        else
+            selectFrag.append(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).append("\n");
 
         return selectFrag;
     }

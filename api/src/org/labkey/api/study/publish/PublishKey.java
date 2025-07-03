@@ -27,11 +27,11 @@ import java.util.Date;
  */
 public class PublishKey
 {
-    private Container _targetStudy;
-    private String _participantId;
+    private final Container _targetStudy;
+    private final String _participantId;
     private float _visitId;
     private Date _date;
-    private int _dataId;
+    private final int _dataId;
 
     public PublishKey(Container targetStudy, String participantId, float visitId, int dataId)
     {

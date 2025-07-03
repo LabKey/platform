@@ -348,22 +348,22 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 return xDomain;
             }
 
-            if (errors.size() > 0)
+            if (!errors.isEmpty())
             {
                 StringBuilder sb = new StringBuilder();
-                while (errors.size() > 0)
+                while (!errors.isEmpty())
                 {
                     XmlError error = errors.remove(0);
                     sb.append(error.toString());
-                    if (errors.size() > 0)
+                    if (!errors.isEmpty())
                         sb.append("\n");
                 }
-                throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + sb.toString());
+                throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + sb);
             }
         }
         catch (IOException | XmlException e)
         {
-            throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
+            throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e, e);
         }
 
         return null;
@@ -682,10 +682,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 List<AnalysisScript> moduleScriptFiles = new ArrayList<>(scripts.size());
                 for (Resource r : scripts)
                 {
-                    if (r instanceof FileResource)
+                    if (r instanceof FileResource fileResource)
                     {
                         String ext = r.getPath().extension();
-                        FileResource fileResource = (FileResource) r;
                         if (manager.getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline) != null)
                         {
                             // only allow insert execution for module scripts
@@ -761,14 +760,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         if (!className.contains("."))
         {
-            StringBuilder sbClass = new StringBuilder();
-            sbClass.append("org.labkey.");
-            sbClass.append(getDeclaringModule().getName());
-            sbClass.append(".assay.");
-            sbClass.append(basePath.getName());
-            sbClass.append(".");
-            sbClass.append(className);
-            className = sbClass.toString();
+            String sbClass = "org.labkey." +
+                    getDeclaringModule().getName() +
+                    ".assay." +
+                    basePath.getName() +
+                    "." +
+                    className;
+            className = sbClass;
         }
 
         try
@@ -823,9 +821,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     static class ScriptMetadata
     {
-        private String _fileName;
-        private String _name;
-        private String _description;
+        private final String _fileName;
+        private final String _name;
+        private final String _description;
 
         ScriptMetadata(String fileName, String name, String description)
         {

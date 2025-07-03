@@ -63,7 +63,6 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
@@ -755,8 +754,6 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     /**
      * Public for upgrade code
      *
-     * @throws ExperimentException
-     * @throws SQLException
      */
     public void populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
                                  Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException
@@ -784,8 +781,6 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      * @param commitData true to persist dilution and well level data
      * @param dilutionRows if commitData is false, then dilution data will be returned in this collection
      * @param wellRows if commitData is false, then well data will be returned in this collection
-     * @throws ExperimentException
-     * @throws SQLException
      */
     private void _populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
                                    Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen, boolean populatePlatesFromFile, boolean commitData,

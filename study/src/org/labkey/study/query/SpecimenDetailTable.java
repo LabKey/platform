@@ -94,7 +94,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addSpecimenCommentColumns(_userSchema, true);
 
-        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        boolean enableSpecimenRequest = sms != null && sms.isEnableRequests(getContainer());
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 
@@ -374,11 +375,11 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                                                             List<DomainProperty> optionalVialProperties)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", true);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", true, false);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
 
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true, false);
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 

@@ -1116,12 +1116,12 @@ public class ContainerManager
         return selector.getObject(Container.class);
     }
 
-    public static Container getForId(@NotNull GUID id)
+    public static @Nullable Container getForId(@NotNull GUID guid)
     {
-        return getForId(id.toString());
+        return guid != null ? getForId(guid.toString()) : null;
     }
 
-    public static Container getForId(String id)
+    public static @Nullable Container getForId(String id)
     {
         Container d = getFromCacheId(id);
         if (null != d)
@@ -2958,11 +2958,11 @@ public class ContainerManager
             LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
             Container newFolder = createContainer(_testRoot, "folderTypeTest", TestContext.get().getUser());
             FolderType ft = newFolder.getFolderType();
-            assertEquals(ft, FolderType.NONE);
+            assertEquals(FolderType.NONE, ft);
 
             Container newFolderFromCache = getForId(newFolder.getId());
             assertNotNull(newFolderFromCache);
-            assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
+            assertEquals(FolderType.NONE, newFolderFromCache.getFolderType());
             LOG.info("testOneFolderType(" + folderType.getName() + "): setting folder type");
             newFolder.setFolderType(folderType, TestContext.get().getUser());
 

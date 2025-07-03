@@ -124,7 +124,7 @@ public enum PropertyType
     }
 
 
-    private static Map<String,PropertyType> synonyms = new HashMap<String,PropertyType>();
+    private static final Map<String,PropertyType> synonyms = new HashMap<>();
     private static void _put(PropertyType t)
     {
         synonyms.put(t.toString().toLowerCase(), t);

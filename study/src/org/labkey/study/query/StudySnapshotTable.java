@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
@@ -40,8 +41,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.StudySchema;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -97,12 +96,19 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         settingsColumn.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo){
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
             {
-                Object value = getValue(ctx);
-                Object jsonValue = JsonUtil.DEFAULT_MAPPER.readValue(String.valueOf(value), Object.class);
-
-                oldWriter.write(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
+                try
+                {
+                    Object value = getValue(ctx);
+                    Object jsonValue = JsonUtil.DEFAULT_MAPPER.readValue(String.valueOf(value), Object.class);
+                    HtmlString encoded = HtmlString.unsafe(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
+                    out.write(encoded);
+                }
+                catch (JsonProcessingException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         });
 

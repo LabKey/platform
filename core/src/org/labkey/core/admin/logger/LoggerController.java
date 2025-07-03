@@ -223,7 +223,7 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ListAction extends ReadOnlyApiAction<ListFilter>
+    public static class ListAction extends ReadOnlyApiAction<ListFilter>
     {
         @Override
         public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors)
@@ -269,7 +269,7 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ResetAction extends MutatingApiAction<Object>
+    public static class ResetAction extends MutatingApiAction<Object>
     {
         @Override
         public SimpleResponse execute(Object o, BindException errors) throws URISyntaxException
@@ -280,7 +280,7 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UpdateAction extends MutatingApiAction<LoggerLevel>
+    public static class UpdateAction extends MutatingApiAction<LoggerLevel>
     {
         @Override
         public SimpleResponse<LoggerLevel> execute(LoggerLevel loggerLevel, BindException errors)
@@ -302,7 +302,7 @@ public class LoggerController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ManageAction extends FormViewAction<Object>
+    public static class ManageAction extends FormViewAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -346,15 +346,15 @@ public class LoggerController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new ListAction(),
-                controller.new ResetAction(),
-                controller.new UpdateAction()
+                    new ListAction(),
+                    new ResetAction(),
+                    new UpdateAction()
             );
 
             // @AdminConsoleAction
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new ManageAction()
+                    new ManageAction()
             );
         }
     }

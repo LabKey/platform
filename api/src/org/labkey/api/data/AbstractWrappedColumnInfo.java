@@ -34,7 +34,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
         this.delegate = delegate_;
     }
 
-    @Override
+    @Override @NotNull
     public String getName()
     {
         FieldKey fieldKey = getFieldKey();
@@ -55,7 +55,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
         return null;
     }
 
-    @Override
+    @Override @NotNull
     public FieldKey getFieldKey()
     {
         return delegate.getFieldKey();
@@ -124,8 +124,10 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     @Override
     public String getLabel()
     {
-        if (null == getLabelValue() && getFieldKey() != null)
+        if (null == getLabelValue())
+        {
             return ColumnInfo.labelFromName(getFieldKey().getName());
+        }
         return getLabelValue();
     }
 
@@ -214,21 +216,9 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getLegalName()
-    {
-        return delegate.getLegalName();
-    }
-
-    @Override
     public String getPropertyName()
     {
         return delegate.getPropertyName();
-    }
-
-    @Override
-    public String getJdbcRsName()
-    {
-        return delegate.getJdbcRsName();
     }
 
     @Override

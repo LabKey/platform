@@ -59,7 +59,7 @@ public class ScriptTriggerFactory implements TriggerFactory
         }
         catch (ScriptException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

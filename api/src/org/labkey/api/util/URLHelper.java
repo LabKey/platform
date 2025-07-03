@@ -28,7 +28,6 @@ import org.json.JSONObject;
 import org.json.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;

@@ -58,9 +58,9 @@ import java.util.Set;
  */
 public class SimpleTableDomainKind extends BaseAbstractDomainKind
 {
-    private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
-    private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
-    private static String XAR_SUBSTITUTION_GUID = "GUID";
+    private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
+    private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
+    private static final String XAR_SUBSTITUTION_GUID = "GUID";
 
     public SimpleTableDomainKind()
     {
@@ -262,7 +262,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo, boolean forUpdate)
     {
         String schemaName = (String)arguments.get("schemaName");
         String tableName = (String)arguments.get("tableName");

@@ -53,6 +53,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NavTree;
@@ -146,11 +147,11 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
     @Override
-    public String getContainerId()
+    public GUID getContainerId()
     {
         if (null != _containerId)
             return _containerId;
-        return null==_folder ? null : _folder.getContainerId();
+        return null == _folder ? null : _folder.getContainerId();
     }
 
     @Override

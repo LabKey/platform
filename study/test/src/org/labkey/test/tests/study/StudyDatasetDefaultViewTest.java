@@ -23,7 +23,7 @@ public class StudyDatasetDefaultViewTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetDefaultViewTest init = (StudyDatasetDefaultViewTest) getCurrentTest();
+        StudyDatasetDefaultViewTest init = getCurrentTest();
         init.doCreateSteps();
     }
 

@@ -604,6 +604,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
+                            if (_target != null)
+                                SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
                             JSONObject response = new JSONObject();
                             response.put("success", true);
                             response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
@@ -635,7 +637,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
 
             if (ve.hasErrors())
+            {
+                addImportValidationErrorMetric(_insertOption, _target, (form instanceof QueryForm qf) ? qf.getQueryName() : null);
                 throw ve;
+            }
 
             JSONObject response = createSuccessResponse(rowCount);
             if (auditEvent != null)
@@ -879,9 +884,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (auditEvent != null)
                     auditEvent.addComment(auditAction, count);
 
-                String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
-                metricPrefix = metricPrefix.replace("exp.", "");
-                incrementRowCountMetric(count, context.getInsertOption(), metricPrefix);
+                incrementRowCountMetric(count, context.getInsertOption(), getMetricPrefix(target));
                 transaction.commit();
 
                 return count;
@@ -901,6 +904,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
 
         return 0;
+    }
+
+    public static void addImportValidationErrorMetric(QueryUpdateService.InsertOption insertOption, @Nullable TableInfo target, @Nullable String queryName)
+    {
+        String featureArea =  insertOption.toString().toLowerCase() + "FailWithValidationError";
+        String targetType = null;
+        if (target != null)
+            targetType = getMetricPrefix(target);
+        else if (queryName != null)
+            targetType = queryName.equalsIgnoreCase("materials") ? "samples" : queryName;
+        if (targetType != null)
+            SimpleMetricsService.get().increment("query", featureArea, targetType);
+    }
+
+    private static String getMetricPrefix(@NotNull TableInfo target)
+    {
+        String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
+        return metricPrefix.replace("exp.", "");
     }
 
     public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)

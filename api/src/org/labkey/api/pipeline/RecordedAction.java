@@ -43,8 +43,8 @@ public class RecordedAction
 {
     public static final ParameterType COMMAND_LINE_PARAM = new ParameterType("Command line", "terms.labkey.org#CommandLine", PropertyType.STRING);
 
-    private Set<DataFile> _inputs = new LinkedHashSet<>();
-    private Set<DataFile> _outputs = new LinkedHashSet<>();
+    private final Set<DataFile> _inputs = new LinkedHashSet<>();
+    private final Set<DataFile> _outputs = new LinkedHashSet<>();
 
     @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
     @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)

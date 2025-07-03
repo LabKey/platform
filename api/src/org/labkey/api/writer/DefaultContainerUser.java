@@ -24,8 +24,8 @@ import org.labkey.api.security.User;
  */
 public class DefaultContainerUser implements ContainerUser
 {
-    private User _user;
-    private Container _container;
+    private final User _user;
+    private final Container _container;
 
     public DefaultContainerUser(Container container, User user)
     {

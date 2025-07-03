@@ -18,8 +18,8 @@ package org.labkey.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -211,7 +211,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    enum SetupField { path, email }
+    protected enum SetupField { path, email }
 
     private static URI validatePath(String path, BindException errors)
     {
@@ -1777,16 +1777,6 @@ public class PipelineController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    public static class PipelineConfigurationAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new PipelineGWTServiceImpl(getViewContext());
-        }
-    }
-
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -1805,8 +1795,7 @@ public class PipelineController extends SpringActionController
                 controller.new GetPipelineActionConfigAction(),
                 controller.new GetPipelineFilePropertiesAction(),
                 controller.new DownloadAction(),
-                    new GetPipelineContainerAction(),
-                    new PipelineConfigurationAction()
+                    new GetPipelineContainerAction()
             );
 
             // @RequiresPermission(DeletePermission.class)

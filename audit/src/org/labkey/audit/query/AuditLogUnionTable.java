@@ -58,7 +58,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
     private static class AuditUnionTable extends VirtualTable
     {
-        private SQLFragment _query;
+        private final SQLFragment _query;
 
         public AuditUnionTable(@NotNull UserSchema schema, ContainerFilter cf)
         {

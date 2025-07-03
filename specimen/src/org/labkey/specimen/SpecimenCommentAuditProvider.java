@@ -36,8 +36,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,10 +43,6 @@ import java.util.Set;
 import static org.labkey.specimen.SpecimenCommentAuditDomainKind.COLUMN_NAME_VIAL_ID;
 import static org.labkey.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
 
-/**
- * User: klum
- * Date: 7/18/13
- */
 public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     private static final List<FieldKey> defaultVisibleColumns = List.of(
@@ -126,7 +120,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                 }
 
                                 @Override
-                                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+                                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                                 {
                                     Object containerId = containerColumn.getValue(ctx);
                                     String globalUniqueId = (String) getValue(ctx);
@@ -136,12 +130,12 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                     Container container = ContainerManager.getForId(containerId.toString());
                                     if (container == null)
                                     {
-                                        oldWriter.write(globalUniqueId);
+                                        out.write(globalUniqueId);
                                         return;
                                     }
 
                                     ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
-                                    oldWriter.write(LinkBuilder.simpleLink(globalUniqueId, url).toString());
+                                    out.write(LinkBuilder.simpleLink(globalUniqueId, url));
                                 }
                             };
                         }

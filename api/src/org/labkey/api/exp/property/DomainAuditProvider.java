@@ -32,28 +32,21 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/21/13
- */
 public class DomainAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EVENT_TYPE = "DomainAuditEvent";
@@ -63,8 +56,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
-
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
@@ -259,7 +252,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             String uri = (String)getBoundColumn().getValue(ctx);
             String cId = ctx.get(getContainerFieldKey(), String.class);
@@ -274,15 +267,19 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     {
                         DomainKind<?> kind = PropertyService.get().getDomainKind(domain.getTypeURI());
                         if (kind != null)
-                            oldWriter.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
+                            out.write(LinkBuilder.simpleLink(domain.getName(), kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser()))));
                         else
-                            oldWriter.write(PageFlowUtil.filter(domain.getName()));
+                            out.write(domain.getName());
                         return;
                     }
                 }
             }
 
-            oldWriter.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;"));
+            Object value = ctx.get(getDefaultNameFieldKey());
+            if (value != null)
+                out.write(value.toString());
+            else
+                out.write(HtmlString.NBSP);
         }
 
         @Override

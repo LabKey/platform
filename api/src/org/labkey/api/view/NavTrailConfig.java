@@ -16,9 +16,6 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.module.Module;
-
 import java.util.ArrayList;
 
 /**

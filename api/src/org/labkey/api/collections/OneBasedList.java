@@ -31,12 +31,12 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
 {
     public OneBasedList()
     {
-        super(new ArrayList<E>());
+        super(new ArrayList<>());
     }
 
     public OneBasedList(int initialCapacity)
     {
-        super(new ArrayList<E>(initialCapacity));
+        super(new ArrayList<>(initialCapacity));
     }
 
     public OneBasedList(List<E> list)

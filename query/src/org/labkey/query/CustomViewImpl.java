@@ -402,7 +402,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 }
             }
 
-            if (fas.getContainerFilterNames() != null && fas.getContainerFilterNames().size() > 0)
+            if (fas.getContainerFilterNames() != null && !fas.getContainerFilterNames().isEmpty())
             {
                 String containerFilter = fas.getContainerFilterNames().get(0);
                 ContainerFilterType.Enum containerFilterType = ContainerFilterType.Enum.forString(containerFilter);

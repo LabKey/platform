@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
  */
 
 public abstract class Preserved extends BaseMacro {
-  private Map special = new HashMap();
+  private final Map special = new HashMap();
   private String specialString = "";
 
   /**

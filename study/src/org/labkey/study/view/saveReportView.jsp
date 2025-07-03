@@ -59,7 +59,7 @@
     {
         for (ObjectError e : bean.getErrors().getAllErrors())
         {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
         }
     }
 %>
@@ -70,69 +70,48 @@
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=h(StringUtils.trimToEmpty(bean.getQueryName()))%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=h(StringUtils.trimToEmpty(bean.getViewName()))%>">
     <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
+
+    <input type=hidden name=reportType value="<%=h(report.getDescriptor().getReportType())%>">
+    <input type=hidden name=params value="<%=h(bean.getParams())%>">
+
     <table>
     <tr>
 <%
     if (confirm)
     {
 %>
+        <td></td>
         <td>There is already a report called: <i><%=h(report.getDescriptor().getReportName())%></i>.<br/>Overwrite the existing report?
         <input type=hidden name=confirmed value=1>
         <input type=hidden name=label value="<%=h(bean.getLabel())%>">
+        </td>
 <%
     } else {
 %>
-        <td><b>Save Report</b></td>
-        <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
+        <td><label for="reportName">Name:</label></td>
+        <td><input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
         <%=generateReturnUrlFormField(getActionURL())%>
 <%
     }
 %>
-        <input type=hidden name=reportType value="<%=h(report.getDescriptor().getReportType())%>">
-        <input type=hidden name=params value="<%=h(bean.getParams())%>"></td>
-
-<%--
-        <td>Add as Custom View For:
-            <select id="datasetSelection" name="showWithDataset">
-<%
-        for (Dataset def : defs)
-        {
-            if (def.canRead(getUser())) %>
-                <option<%=selected(def.getDatasetId() == showWithDataset)%> value="<%=def.getDatasetId()%>"><%=h(def.getLabel())%></option>
-<%
-        }
-%>
-            </select>
-        </td>
---%>
-        <td>&nbsp;</td>
-        <td><%= button(confirm ? "Overwrite" : "Save").submit(true) %>
-<%
-    if (confirm)
-    {
-%>
-        &nbsp;<%= button("Cancel").href(bean.getReturnActionURL()) %>
-<%
-    } 
-%>
-    </td>
     </tr>
-<%
-    if (context.hasPermission(AdminPermission.class)) {
-%>
-        <tr>
-            <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this report available to all users.</td>
-            <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
-        </tr>
-<%
-    } else {
-%>
+    <tr>
+        <td><label for="description">Description</label>:</td>
+        <td><textarea id="description" name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
+    </tr>
+    <% if (context.hasPermission(AdminPermission.class)) { %>
         <tr>
             <td></td>
-            <td colspan=2>description:&nbsp;<textarea name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
+            <td><input type="checkbox" value="true" id="shareReport" name="shareReport"<%=checked(bean.getShareReport())%>> <label for="shareReport">Make this report available to all users.</label></td>
         </tr>
-<%
-    }
-%>
-    </table>
-</labkey:form><hr/>
+    <% } %>
+    <tr>
+        <td>&nbsp;</td>
+        <td><%= button(confirm ? "Overwrite" : "Save").submit(true) %>
+        <% if (confirm) { %>
+            &nbsp;<%= button("Cancel").href(bean.getReturnActionURL()) %>
+        <% } %>
+        </td>
+    </tr>
+</table>
+</labkey:form>

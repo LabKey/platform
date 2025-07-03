@@ -44,6 +44,8 @@ public interface AuditTypeProvider
 
     Domain getDomain();
 
+    Domain getDomain(boolean forUpdate);
+
     TableInfo createTableInfo(UserSchema schema, ContainerFilter cf);
 
     <K extends AuditTypeEvent> Class<K> getEventClass();

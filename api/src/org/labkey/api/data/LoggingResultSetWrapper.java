@@ -15,18 +15,15 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Created by davebradlee on 9/15/14.

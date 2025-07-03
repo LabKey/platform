@@ -24,8 +24,8 @@ import org.labkey.api.util.ContainerTree;
  */
 public class MoveRunsBean
 {
-    private ContainerTree _containerTree;
-    private String _dataRegionSelectionKey;
+    private final ContainerTree _containerTree;
+    private final String _dataRegionSelectionKey;
 
     public MoveRunsBean(ContainerTree containerTree, String dataRegionSelectionKey)
     {

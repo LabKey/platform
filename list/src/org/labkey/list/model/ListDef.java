@@ -148,6 +148,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _entireListIndexSetting;
     }
 
+    @Override
     public @Nullable String getEntireListTitleTemplate()
     {
         return _entireListTitleTemplate;
@@ -176,6 +177,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _eachItemIndex;
     }
 
+    @Override
     public @Nullable String getEachItemTitleTemplate()
     {
         return _eachItemTitleTemplate;
@@ -380,6 +382,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
             _lastIndexed = lastIndexed;
         }
         public void setCategory(Category category) { _category = category; }
+        @SuppressWarnings("unused") // Invoked by reflection, e.g., ObjectFactory that retrieves ListDefs via TableSelector
         public void setDiscussionSetting(int value)
         {
             _discussionSetting = DiscussionSetting.getForValue(value);
@@ -404,6 +407,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         {
             _entireListIndex = entireListIndex;
         }
+        @SuppressWarnings("unused") // Invoked by reflection, e.g., ObjectFactory that retrieves ListDefs via TableSelector
         public void setEntireListIndexSetting(int settingInt)
         {
             _entireListIndexSetting = IndexSetting.getForValue(settingInt);
@@ -416,6 +420,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         {
             _entireListTitleTemplate = template;
         }
+        @SuppressWarnings("unused") // Invoked by reflection, e.g., ObjectFactory that retrieves ListDefs via TableSelector
         public void setEntireListBodySetting(int settingInt)
         {
             _entireListBodySetting = BodySetting.getForValue(settingInt);
@@ -436,6 +441,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         {
             _eachItemTitleTemplate = template;
         }
+        @SuppressWarnings("unused") // Invoked by reflection, e.g., ObjectFactory that retrieves ListDefs via TableSelector
         public void setEachItemBodySetting(int settingInt)
         {
             _eachItemBodySetting = BodySetting.getForValue(settingInt);

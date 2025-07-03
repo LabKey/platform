@@ -106,7 +106,7 @@ public class ListDefinitionImpl implements ListDefinition
         builder.setKeyType(keyType.toString());
         builder.setCategory(category);
         _def = builder;
-        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType, category);
+        Lsid lsid = ListDomainKind.generateDomainURI(container, keyType, category);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name, templateInfo);
     }
 
@@ -138,13 +138,19 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public Domain getDomain()
     {
-        if (_domain == null)
+        return getDomain(false);
+    }
+
+    @Override
+    @Nullable
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (_domain == null || (forUpdate && !_domain.isMutable())) // assure we have a mutable domain if needed, but don't ditch a mutable one because it may not have been saved yet
         {
-            _domain = PropertyService.get().getDomain(_def.getDomainId());
+            _domain = PropertyService.get().getDomain(_def.getDomainId(), forUpdate);
         }
         return _domain;
     }
-
     @Override
     public String getName()
     {
@@ -391,7 +397,7 @@ public class ListDefinitionImpl implements ListDefinition
             if (ensureKey)
                 ensureKey();
 
-            Domain domain = getDomain();
+            Domain domain = getDomain(true);
 
             if (_new)
             {

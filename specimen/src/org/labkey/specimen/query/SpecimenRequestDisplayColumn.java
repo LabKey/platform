@@ -20,13 +20,22 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyUtils;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.PageFlowUtil.HelpPopupBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
 
 public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
 {
@@ -47,65 +56,66 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         String hash = (String) ctx.getRow().get("SpecimenHash");
         String globalUniqueId = (String) ctx.getRow().get("GlobalUniqueId");
-        int count = -1;
+        int c = -1;
         if (ctx.getRow().get("AvailableCount") != null)
         {
-            count = ((Number)ctx.getRow().get("AvailableCount")).intValue();
+            c = ((Number)ctx.getRow().get("AvailableCount")).intValue();
         }
         else
         {
-            Integer c = _specimenQueryView.getSampleCounts(ctx).get(hash);
-            if (c != null)
-                count = c.intValue();
+            Integer sampleCount = _specimenQueryView.getSampleCounts(ctx).get(hash);
+            if (sampleCount != null)
+                c = sampleCount.intValue();
         }
 
+        int count = c;
         boolean vialView = _specimenQueryView.isShowingVials();
         boolean available = (!vialView && count > 0) || (vialView && StudyUtils.isFieldTrue(ctx, "Available"));
         boolean showCart = _showCartLinks && available;
-        String script = null;
-        oldWriter.write("<center>");
-        if (showCart)
-        {
-            script = globalUniqueId == null ? "requestByHash('" + hash + "'); return false;"
-                        : "requestByGlobalUniqueId('" + globalUniqueId + "'); return false;";
-            oldWriter.write("<span id=\"" + (globalUniqueId != null ? globalUniqueId : hash) + "\">");
-        }
 
-        if (_showOneVialIndicator && count == 1)
-        {
-            oldWriter.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.png\">",
-                    "One Vial Available", "Only one vial of this primary specimen is available.", script));
-        }
-        else if (_showZeroVialIndicator && count == 0)
-        {
-            oldWriter.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/zero.png\">",
-                    "Zero Vials Available", "No vials of this primary specimen are currently available for request.", null));
-        }
-        else
-        {
-            oldWriter.write(getVialCountHtml(ctx, "<div style='color:gray'>" + String.valueOf(count)  + "</div>",
-                    count + " Vials Available", count + " vials of this primary specimen are currently available for new requests.", script));
-        }
+        SPAN(
+            at(style,"text-align: center").at(showCart, id, (globalUniqueId != null ? globalUniqueId : hash)),
+            (Renderable) ret -> {
+                String script = null;
 
-        if (showCart)
-            oldWriter.write("</a></span>");
-        oldWriter.write("</center>");
+                if (showCart)
+                {
+                    script = (globalUniqueId == null ? "requestByHash('" + hash + "'); return false;"
+                            : "requestByGlobalUniqueId('" + globalUniqueId + "'); return false;");
+                }
+
+                if (_showOneVialIndicator && count == 1)
+                {
+                    out.write(getVialCountHtml(ctx, IMG(at(src, ctx.getViewContext().getContextPath() + "/_images/one.png")),
+                        "One Vial Available", HtmlString.of("Only one vial of this primary specimen is available."), script));
+                }
+                else if (_showZeroVialIndicator && count == 0)
+                {
+                    out.write(getVialCountHtml(ctx, IMG(at(src, ctx.getViewContext().getContextPath() + "/_images/zero.png")),
+                        "Zero Vials Available", HtmlString.of("No vials of this primary specimen are currently available for request."), null));
+                }
+                else
+                {
+                    out.write(getVialCountHtml(ctx, DIV(at(style, "color:gray"), count),
+                        count + " Vials Available", HtmlString.of(count + " vials of this primary specimen are currently available for new requests."), script));
+                }
+                return ret;
+            }
+        ).appendTo(out);
     }
 
-    private String getVialCountHtml(RenderContext ctx, String cellHtml, String popupTitle, String popupBody, String requestScript)
+    private HelpPopupBuilder getVialCountHtml(RenderContext ctx, Renderable cellHtml, String popupTitle, Renderable popupBody, String requestScript)
     {
-        StringBuilder builder = new StringBuilder();
         if (requestScript != null)
         {
-            cellHtml += "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/cart.png\">";
-            popupBody += "<br><br>Click the shopping cart icon to request this specimen.";
+            cellHtml = DOM.createHtmlFragment(cellHtml, IMG(at(src, ctx.getViewContext().getContextPath() + "/_images/cart.png")));
+            popupBody = DOM.createHtmlFragment(popupBody, HtmlString.BR, HtmlString.BR, "Click the shopping cart icon to request this specimen.");
         }
-        builder.append(PageFlowUtil.popupHelp(HtmlString.unsafe(popupBody), popupTitle).link(HtmlString.unsafe(cellHtml)).script(requestScript));
-        return builder.toString();
+        return PageFlowUtil.popupHelp(popupBody, popupTitle).link(cellHtml).script(requestScript);
     }
 
     @Override

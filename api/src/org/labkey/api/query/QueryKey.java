@@ -115,7 +115,7 @@ import java.util.Objects;
 
     static protected <T extends QueryKey<T>> T fromParts(Factory<T> factory, List<String> parts)
     {
-        if (parts.size() == 0)
+        if (parts.isEmpty())
             return null;
 
         if (parts.stream().anyMatch(Objects::isNull))
@@ -154,7 +154,7 @@ import java.util.Objects;
         return StringUtils.replaceEach(str, REPLACEMENT, ILLEGAL);
     }
 
-    public static final String[] ILLEGAL = {"$", "/", "&", "}", "~", ",", "."};
+    private static final String[] ILLEGAL = {"$", "/", "&", "}", "~", ",", "."};
     private static final String[] REPLACEMENT = {"$D", "$S", "$A", "$B", "$T", "$C", "$P"};
 
     /**

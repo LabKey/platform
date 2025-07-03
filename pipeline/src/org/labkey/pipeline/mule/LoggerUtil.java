@@ -22,7 +22,6 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.properties.PropertiesConfiguration;
 import org.apache.logging.log4j.core.config.properties.PropertiesConfigurationFactory;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;

@@ -55,7 +55,7 @@ public class ReportWriter extends BaseFolderWriter
             reports.removeIf(reportObj -> !reportsToExport.contains(reportObj.getDescriptor().getEntityId()));
         }
 
-        if (reports.size() > 0)
+        if (!reports.isEmpty())
         {
             ExportDirType reportsXml = ctx.getXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);

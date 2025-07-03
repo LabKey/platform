@@ -50,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.CohortFilter;
@@ -607,7 +608,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
 
     protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Vial> vials, ViewType viewType)
     {
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             StringBuilder whereClause = new StringBuilder();
             if (viewType.isVialView())
@@ -657,7 +658,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 params.add(pd.getParticipantId());
                 sep = " OR ";
             }
-            filter = filter.addWhereClause(whereClause.toString(), params.toArray(new Object[params.size()]));
+            filter = filter.addWhereClause(whereClause.toString(), params.toArray(new Object[0]));
         }
         return filter;
     }
@@ -672,7 +673,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
                 + "where r.DestinationSiteId=").appendValue(locationId).append(" AND status.SpecimensLocked=").append(tableInfoVial.getSqlDialect().getBooleanTRUE()).append(")");
 
-        assert(0 == sql.getParams().size());
+        assert(sql.getParams().isEmpty());
 
         filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("SpecimenHash"));
 
@@ -720,7 +721,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     public static SQLFragment getBaseRequestedEnrollmentSql(Container container, User user, boolean isCompleteRequestsOnly)
     {
         UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenDetail = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
         String tableInfoAlias = "Specimen";

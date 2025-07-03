@@ -76,9 +76,8 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
 
     public boolean equals(Object o)
     {
-        if (! (o instanceof Map.Entry))
+        if (! (o instanceof Map.Entry that))
             return false;
-        Map.Entry that = (Map.Entry) o;
         return (this.getKey() == null ? that.getKey() == null : this.getKey().equals(that.getKey()))
                 && (this.getValue() == null ? that.getValue() == null : this.getValue().equals(that.getValue()));
     }

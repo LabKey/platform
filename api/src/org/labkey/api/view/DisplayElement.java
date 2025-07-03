@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.permissions.Permission;
@@ -37,18 +38,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An element that can be displayed within a page. Handles showing/hiding based on the permissions of the current user,
+ * An element that can be displayed within a page. Handles showing/hiding based on the permissions of the current user
  * so that the same element can be reused and rendered appropriately for different users.
  */
-public abstract class DisplayElement implements View, Cloneable
+public abstract class DisplayElement implements View
 {
     /** The permission that the current user must have in order for this element to be rendered (shown as opposed to hidden) */
     private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
+    private Set<Role> _contextualRoles = null;
+
     protected StringExpression _caption = null;
     /** Whether the object is considered immutable */
     protected boolean _locked = false;
-    private Set<Role> _contextualRoles = null;
 
     public DisplayElement()
     {
@@ -138,7 +140,7 @@ public abstract class DisplayElement implements View, Cloneable
      * convert org.springframework.web.servlet.View.render(Map) to DisplayElement.render(ModelBean)
      */
     @Override
-    public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
+    public final void render(Map map, @NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception
     {
         assert map instanceof RenderContext;
         render((RenderContext)map, request, response);
@@ -166,26 +168,13 @@ public abstract class DisplayElement implements View, Cloneable
         render(ctx, out);
     }
 
-    // WARNING: Every subclass must implement one of the render() methods... otherwise hello stack overflow
-
     @Deprecated
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public final void render(RenderContext ctx, Writer out) throws IOException
     {
         render(ctx, HtmlWriter.of(out));
     }
 
-    // Make abstract once all subclasses implement this variant
-    public void render(RenderContext ctx, HtmlWriter out)
-    {
-        try
-        {
-            render(ctx, out.unwrap());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
+    public abstract void render(RenderContext ctx, HtmlWriter out);
 
     public void lock()
     {

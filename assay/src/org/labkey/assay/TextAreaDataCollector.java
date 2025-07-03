@@ -75,7 +75,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
         {
             throw new IllegalArgumentException("Data not found in request");
         }
-        if (data.equals(""))
+        if (data.isEmpty())
         {
             throw new ExperimentException("Data file contained zero data rows");
         }

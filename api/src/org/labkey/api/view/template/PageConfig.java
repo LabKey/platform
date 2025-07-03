@@ -154,7 +154,7 @@ public class PageConfig
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
     private boolean _includePermissions = false;
-    private boolean _includeInheritableFormats = false;
+    private final boolean _includeInheritableFormats = false;
 
     public PageConfig(HttpServletRequest request)
     {

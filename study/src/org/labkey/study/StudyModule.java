@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -67,6 +66,9 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -191,6 +193,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
@@ -405,6 +408,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow query based dataset snapshots",
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
+
+        if (SpecimenService.get() == null)
+        {
+            AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(SpecimenManager.VIEW_SPECIMEN_TABLES_FLAG,
+                "Show read-only specimen tables in the study schema",
+                "Provides a read-only view of specimen data when the specimen module is not present.",
+                false, false, OptionalFeatureService.FeatureType.Optional
+            ));
+        }
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
@@ -709,9 +721,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/study/model/DatasetImportTestCase.jsp"));
         return list;
     }

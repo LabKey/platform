@@ -21,7 +21,6 @@ import org.labkey.api.view.ViewServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 /*
 * User: adam

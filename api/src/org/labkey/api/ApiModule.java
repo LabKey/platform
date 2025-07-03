@@ -20,7 +20,6 @@ import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
@@ -201,6 +200,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static java.util.EnumSet.allOf;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
@@ -455,9 +455,9 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         list.add(new JspTestCase("/org/labkey/vfs/vfsTestCase.jsp"));

@@ -99,7 +99,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
             {
                 JSONArray schemas = entry.getValue();
 
-                if (schemas.length() > 0)
+                if (!schemas.isEmpty())
                 {
                     DbScope scope = DbScope.getDbScope(entry.getKey());
 

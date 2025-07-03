@@ -143,29 +143,29 @@ public class SchemaKey extends QueryKey<SchemaKey>
      *   B
      *   A/B
      */
-    public static final Comparator<SchemaKey> CASE_INSENSITIVE_ORDER = new Comparator<SchemaKey>()
+    public static final Comparator<SchemaKey> CASE_INSENSITIVE_ORDER = new Comparator<>()
     {
         @Override
         public int compare(SchemaKey a, SchemaKey b)
         {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
+            if (a == b) return 0;
+            if (null == a) return -1;
+            if (null == b) return 1;
             int c = compare(a.getParent(), b.getParent());
-            return c!=0 ? c : String.CASE_INSENSITIVE_ORDER.compare(a.getName(),b.getName());
+            return c != 0 ? c : String.CASE_INSENSITIVE_ORDER.compare(a.getName(), b.getName());
         }
     };
 
-    public static final Comparator<SchemaKey> CASE_SENSITIVE_ORDER = new Comparator<SchemaKey>()
+    public static final Comparator<SchemaKey> CASE_SENSITIVE_ORDER = new Comparator<>()
     {
         @Override
         public int compare(SchemaKey a, SchemaKey b)
         {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
+            if (a == b) return 0;
+            if (null == a) return -1;
+            if (null == b) return 1;
             int c = compare(a.getParent(), b.getParent());
-            return c!=0 ? c : a.getName().compareTo(b.getName());
+            return c != 0 ? c : a.getName().compareTo(b.getName());
         }
     };
 
@@ -219,7 +219,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
             assertTrue(SchemaKey.fromParts("z").compareTo(fromParts("a","b")) < 0);
             assertTrue(SchemaKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
 
-            assertEquals(SchemaKey.fromParts("assay", "Viral Loads", "Viral Loads").toString(), "assay.Viral Loads.Viral Loads");
+            assertEquals("assay.Viral Loads.Viral Loads", SchemaKey.fromParts("assay", "Viral Loads", "Viral Loads").toString());
         }
 
         @Test

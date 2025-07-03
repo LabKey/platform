@@ -33,7 +33,7 @@ import com.google.gwt.user.client.ui.Widget;
  */
 public abstract class TextBoxDialogBox extends DialogBox
 {
-    private TextBox _textBox;
+    private final TextBox _textBox;
 
     public TextBoxDialogBox(String title, String label)
     {

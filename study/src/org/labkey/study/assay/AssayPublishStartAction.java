@@ -29,7 +29,6 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.publish.AbstractPublishStartAction;
 import org.labkey.api.study.publish.PublishStartForm;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -87,6 +86,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         }
 
 
+        @Override
         public String getContainerFilterName()
         {
             return _containerFilterName;

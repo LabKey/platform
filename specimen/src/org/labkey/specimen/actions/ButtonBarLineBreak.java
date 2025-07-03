@@ -17,20 +17,15 @@
 package org.labkey.specimen.actions;
 
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Nov 7, 2006
- */
 public class ButtonBarLineBreak extends DisplayElement
 {
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
-        out.write("<br>");
+        out.write(HtmlString.BR);
     }
 }

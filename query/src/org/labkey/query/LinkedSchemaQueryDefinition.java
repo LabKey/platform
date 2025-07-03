@@ -132,7 +132,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 
         // Fourth, apply linked schema metadata (either from template or from the linked schema instance)
         TableType metadata = linkedSchema.getXbTable(getName());
-        if (metadata != null || (linkedSchema._namedFilters != null && linkedSchema._namedFilters.size() > 0))
+        if (metadata != null || (linkedSchema._namedFilters != null && !linkedSchema._namedFilters.isEmpty()))
             super.applyQueryMetadata(schema, errors, metadata, linkedSchema._namedFilters, ret);
 
         // Fifth, lookup any XML metadata that has been stored in the database (in linked schema container)

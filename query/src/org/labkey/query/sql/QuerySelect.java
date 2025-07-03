@@ -61,6 +61,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -114,7 +115,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
-        super(query, schema, StringUtils.defaultString(alias, "select_" + query.incrementAliasCounter()));
+        super(query, schema, Objects.toString(alias, "select_" + query.incrementAliasCounter()));
         _inFromClause = false;
 
         // subqueryTable is only for expr.createColumnInfo()
@@ -162,7 +163,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     {
         this(from._query, from.getSchema(), null);
 
-        String alias = StringUtils.defaultString(from.getAlias(), "T");
+        String alias = Objects.toString(from.getAlias(), "T");
         from.setAlias(alias);
 
         _orderBy = order;
@@ -1072,7 +1073,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (null != resolveParameter(key))
                 return;
             RelationColumn column = declareField(key, expr);
-            assert null!=column || expr instanceof QIfDefined || getParseErrors().size() > 0;
+            assert null!=column || expr instanceof QIfDefined || !getParseErrors().isEmpty();
             return;
         }
 
@@ -1458,11 +1459,11 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             return;
         _resolved = true;
 
-        if (getParseErrors().size() != 0)
+        if (!getParseErrors().isEmpty())
             return;
 
         declareFields();
-        if (getParseErrors().size() != 0)
+        if (!getParseErrors().isEmpty())
             return;
 
         CaseInsensitiveHashMap<SelectColumn> aliasSet = new CaseInsensitiveHashMap<>();
@@ -1472,7 +1473,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             aliasSet.put(col.getAlias(), col);
             col.getResolvedField();
         }
-        if (getParseErrors().size() != 0)
+        if (!getParseErrors().isEmpty())
             return;
 
         for (QJoinOrTable qt : _parsedJoins)
@@ -1572,7 +1573,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     private SQLFragment _getSql(boolean asFromSql)
     {
         resolveFields();
-        if (getParseErrors().size() != 0)
+        if (!getParseErrors().isEmpty())
             return null;
 
         optimize();
@@ -1581,7 +1582,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             assert _parsedJoins.size()==1;
             assert _parsedTables.size()==1;
-            assert _onExpressions.size()==0;
+            assert _onExpressions.isEmpty();
             assert _distinct == null;
             assert _groupBy == null;
             assert _having == null;
@@ -1659,7 +1660,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             count++;
         }
         sql.popPrefix();
-        if (getParseErrors().size() != 0)
+        if (!getParseErrors().isEmpty())
             return null;
 
         sql.append(fromSql);
@@ -2379,6 +2380,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             {
                 Object c = _annotations.get("concept");
                 to.setPrincipalConceptCode(null==c ? null : StringUtils.trimToNull(c.toString()));
+            }
+
+            if (_annotations.containsKey("format"))
+            {
+                var format = _annotations.get("format");
+                to.setFormat(null==format ? null : StringUtils.trimToNull(format.toString()));
             }
 
             boolean hidden = _annotations.containsKey("hidden");

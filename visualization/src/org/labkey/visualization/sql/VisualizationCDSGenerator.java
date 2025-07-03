@@ -63,12 +63,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -207,7 +207,7 @@ public class VisualizationCDSGenerator
             else
                 datasetTablesSet.add(p);
         }
-        Path[] datasetTables = datasetTablesSet.toArray(new Path[datasetTablesSet.size()]);
+        Path[] datasetTables = datasetTablesSet.toArray(new Path[0]);
 
         //
         // VALIDATION
@@ -351,7 +351,7 @@ public class VisualizationCDSGenerator
             if (_log.isDebugEnabled())
             {
                 String sql = generator.getSQL();
-                _log.debug("---------------------------------------\n" + datasetPath.toString() + "\n\n" + sql);
+                _log.debug("---------------------------------------\n" + datasetPath + "\n\n" + sql);
             }
         }
 
@@ -377,7 +377,7 @@ public class VisualizationCDSGenerator
             List<VisualizationSourceColumn> list = generator.getColumns();
             for (VisualizationSourceColumn vcol : list)
             {
-                String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
+                String alias = Objects.toString(vcol.getClientAlias(), vcol.getAlias());
                 if (isEmpty(alias))
                     continue;
 
@@ -416,7 +416,7 @@ public class VisualizationCDSGenerator
             List<VisualizationSourceColumn> list = generator.getColumns();
             for (VisualizationSourceColumn sourceColumn : list)
             {
-                String alias = StringUtils.defaultString(sourceColumn.getClientAlias(), sourceColumn.getAlias());
+                String alias = Objects.toString(sourceColumn.getClientAlias(), sourceColumn.getAlias());
                 if (isEmpty(alias))
                     continue;
                 String schemaName = sourceColumn.getSchemaName();
@@ -439,13 +439,13 @@ public class VisualizationCDSGenerator
             fullSQL.append("SELECT ");
 
             // container column
-            fullSQL.append(defaultString(containerColumnAlias, "CAST(NULL AS " + dialect.getGuidType() + ")")).append(" AS \"").append(selectAliasPrefix).append(containerColumnName).append("\"").append(", ");
+            fullSQL.append(Objects.toString(containerColumnAlias, "CAST(NULL AS " + dialect.getGuidType() + ")")).append(" AS \"").append(selectAliasPrefix).append(containerColumnName).append("\"").append(", ");
 
             // subject column
-            fullSQL.append(defaultString(participantColumnAlias, "NULL")).append(" AS \"").append(selectAliasPrefix).append(subjectColumnName).append("\"").append(", ");
+            fullSQL.append(Objects.toString(participantColumnAlias, "NULL")).append(" AS \"").append(selectAliasPrefix).append(subjectColumnName).append("\"").append(", ");
 
             // sequenceNum column
-            fullSQL.append(defaultString(sequenceColumnAlias, "CAST(NULL AS NUMERIC(15,4))")).append(" AS \"").append(selectAliasPrefix).append(sequenceNumColumnName).append("\"").append(", ");
+            fullSQL.append(Objects.toString(sequenceColumnAlias, "CAST(NULL AS NUMERIC(15,4))")).append(" AS \"").append(selectAliasPrefix).append(sequenceNumColumnName).append("\"").append(", ");
 
             // dataset (or axis) name column
             // CONSIDER: This should be aliased rather than the string quoted name. Example:
@@ -469,7 +469,7 @@ public class VisualizationCDSGenerator
 
         if (_log.isDebugEnabled())
         {
-            _log.debug("----------------------\nunion sql\n\n" + fullSQL.toString() + "\n\n");
+            _log.debug("----------------------\nunion sql\n\n" + fullSQL + "\n\n");
             var select = QueryService.get().getSelectBuilder(schema.getSchema("study"), fullSQL.toString());
             try (ResultSet rs = select.select())
             {
@@ -612,8 +612,8 @@ public class VisualizationCDSGenerator
 
             List<Map<String,String>> metadata = getColumnAliases(q);
             Map<String,Map<String,String>> metaMap = new TreeMap<>();
-            metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
-            metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"),map.get("columnName")), map));
+            metadata.stream().forEach(map -> metaMap.put(Objects.toString(map.get("alias"), map.get("columnName")), map));
+            metadata.stream().forEach(map -> metaMap.put(Objects.toString(map.get("alias"),map.get("columnName")), map));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
@@ -653,7 +653,7 @@ public class VisualizationCDSGenerator
 
                 List<Map<String, String>> metadata = getColumnAliases(q);
                 Map<String, Map<String, String>> metaMap = new TreeMap<>();
-                metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
+                metadata.stream().forEach(map -> metaMap.put(Objects.toString(map.get("alias"), map.get("columnName")), map));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
@@ -664,7 +664,6 @@ public class VisualizationCDSGenerator
 
                 try (ResultsImpl r = (ResultsImpl) getResults(q))
                 {
-                    ;
                     assertEquals(384, r.getSize()); /* 2*192 */
                     assertTrue(streamStrings(r, r.findColumn(new FieldKey(null, "http://cpas.labkey.com/Study#Dataset")))
                             .allMatch(s -> s.equals("x") || s.equals("y")));
@@ -691,7 +690,7 @@ public class VisualizationCDSGenerator
 
                 List<Map<String, String>> metadata = getColumnAliases(q);
                 Map<String, Map<String, String>> metaMap = new TreeMap<>();
-                metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
+                metadata.stream().forEach(map -> metaMap.put(Objects.toString(map.get("alias"), map.get("columnName")), map));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));

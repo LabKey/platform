@@ -27,11 +27,11 @@ import java.io.Serializable;
  */
 public class StatusChangeRequest implements Serializable, StatusRequest
 {
-    private String _status;
-    private String _statusInfo;
-    private String _jobId;
-    private TaskId _activeTaskId;
-    private String _hostName;
+    private final String _status;
+    private final String _statusInfo;
+    private final String _jobId;
+    private final TaskId _activeTaskId;
+    private final String _hostName;
 
     public StatusChangeRequest(PipelineJob job, String status, String statusInfo, String hostName)
     {

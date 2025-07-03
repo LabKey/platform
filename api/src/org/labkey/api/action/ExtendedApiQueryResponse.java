@@ -172,9 +172,8 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         ColMap colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue, urlTarget);
 
         //missing values
-        if (dc instanceof MVDisplayColumn)
+        if (dc instanceof MVDisplayColumn mvColumn)
         {
-            MVDisplayColumn mvColumn = (MVDisplayColumn) dc;
             colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
             colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
         }

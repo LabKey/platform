@@ -61,6 +61,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
@@ -773,7 +774,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             getRowId(),
             new Path(docId),
             docId,
-            container.getId(),
+            container.getEntityId(),
             "text/plain",
             body.toString(),
             view,
@@ -797,7 +798,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     {
         final int _rowId;
 
-        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties, User createdBy, Date created, User modifiedBy, Date modified)
+        public ExpDataResource(int rowId, Path path, String documentId, GUID containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties, User createdBy, Date created, User modifiedBy, Date modified)
         {
             super(path, documentId, containerId, contentType, body, executeUrl, createdBy, created, modifiedBy, modified, properties);
             _rowId = rowId;

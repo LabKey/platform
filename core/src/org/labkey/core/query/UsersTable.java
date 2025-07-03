@@ -106,7 +106,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS = Set.of(
         FieldKey.fromParts("EntityId"),
         FieldKey.fromParts("UserId"),
-        FieldKey.fromParts("DisplayName")
+        FieldKey.fromParts("DisplayName"),
+        FieldKey.fromParts("Active") // Issue 53280
     );
 
     private final static Logger LOG = LogManager.getLogger(UsersTable.class);
@@ -322,13 +323,19 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
         if (getObjectUriColumn() == null)
             return null;
 
         if (_domain == null)
         {
             String domainURI = getDomainURI();
-            _domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+            _domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI, forUpdate);
         }
 
         return _domain;
@@ -402,7 +409,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (!getMustCheckPermissions())
             return true;
         if (perm == ReadPermission.class && user instanceof User)
-            return _userSchema.getContainer().hasOneOf((User)user, Set.of(ReadPermission.class, SeeUserDetailsPermission.class));
+            return _userSchema.getContainer().hasOneOf(user, Set.of(ReadPermission.class, SeeUserDetailsPermission.class));
         else
             return super.hasPermission(user, perm);
     }

@@ -21,7 +21,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -29,8 +28,6 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.StudyImpl;
-
-import java.io.Writer;
 
 /**
  * User: jgarms
@@ -70,7 +67,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         return view;
     }
 
-    private class EditColumn extends SimpleDisplayColumn
+    private static class EditColumn extends SimpleDisplayColumn
     {
         private final Container container;
 
@@ -81,10 +78,10 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
-            LinkBuilder.labkeyLink("edit", actionURL).appendTo(oldWriter);
+            out.write(LinkBuilder.labkeyLink("edit", actionURL));
         }
     }
 }

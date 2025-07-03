@@ -71,7 +71,7 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
         col.setHidden(true);
         col.setDisplayColumnFactory(new DisplayColumnFactory()
         {
-            private StudyQuerySchema _schema = schema;
+            private final StudyQuerySchema _schema = schema;
 
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)

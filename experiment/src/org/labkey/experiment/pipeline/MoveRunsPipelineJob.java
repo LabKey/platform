@@ -40,7 +40,7 @@ import java.nio.file.Path;
 public class MoveRunsPipelineJob extends PipelineJob
 {
     private final int[] _runIds;
-    private Container _sourceContainer;
+    private final Container _sourceContainer;
 
     @JsonCreator
     protected MoveRunsPipelineJob(@JsonProperty("_runIds") int[] runIds, @JsonProperty("_sourceContainer") Container sourceContainer)

@@ -18,26 +18,33 @@ package org.labkey.api.data;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.InputStream;
 
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
+
 /**
  * URLDisplayColumn allows for a grid cell to render a thumbnail image and/or a popup tooltip image, both via
- * url paths to image files. There are also optional properties that can set the heigh/width of the image in the display
+ * url paths to image files. There are also optional properties that can set the height/width of the image in the display
  * along with the onClick behavior and target.
  */
 public class URLDisplayColumn extends AbstractFileDisplayColumn
 {
     public static class Factory implements DisplayColumnFactory
     {
-        private MultiValuedMap _properties;             // metadata XML column properties
+        private MultiValuedMap<String, String> _properties;             // metadata XML column properties
 
         // factory for metadata XML loading
-        public Factory(MultiValuedMap properties)
+        public Factory(MultiValuedMap<String, String> properties)
         {
             if (properties != null)
                 _properties = properties;
@@ -66,14 +73,14 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
 
     private static final String UNSCALED = "auto";
 
-    private MultiValuedMap<String, String> _properties;
+    private final MultiValuedMap<String, String> _properties;
     private String _thumbnailHeight;
     private boolean _useThumbnailImageUrlOnClick = true;
     private boolean _renderPopupImage = true;
     private String _popupHeight;
     private String _urlTarget;
 
-    public URLDisplayColumn(ColumnInfo col, MultiValuedMap properties)
+    public URLDisplayColumn(ColumnInfo col, MultiValuedMap<String, String> properties)
     {
         super(col);
         _properties = properties;
@@ -166,27 +173,18 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         }
 
         @Override
-        public String createThumbnailImage()
+        public Renderable createThumbnailImage()
         {
             if (_url != null || _fileIconUrl != null)
             {
-                StringBuilder sb = new StringBuilder();
                 boolean renderSize = (!UNSCALED.equals(_thumbnailHeight)) && (!UNSCALED.equals(_thumbnailWidth));
 
                 String thumbnailUrl = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
-                sb.append("<img style=\"display:block; ");
 
-                if (renderSize)
-                {
-                    sb.append(_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px").append(";").
-                            append(_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto").append(";");
-                }
-                sb.append(" vertical-align:middle\"").
-                        append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
-                        append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
-                        append("/>");
-
-                return sb.toString();
+                return IMG(at(
+                    style, "display:block; vertical-align:middle;" + (renderSize ? (_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px" + "; ") + (_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto" + ";") : ""),
+                    src, thumbnailUrl, title, _displayName
+                ));
             }
             else
             {
@@ -204,27 +202,17 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         }
 
         @Override
-        public String createPopupImage()
+        public Renderable createPopupImage()
         {
             if (_url != null || _fileIconUrl != null)
             {
-                StringBuilder sb = new StringBuilder();
                 boolean renderSize = (!UNSCALED.equals(_popupHeight)) && (!UNSCALED.equals(_popupWidth));
 
                 String popupUrl = _popupIconUrl != null ? ensureAbsoluteUrl(_ctx, _popupIconUrl) : (_url != null ? ensureAbsoluteUrl(_ctx, _url) : null);
-                if (popupUrl != null)
-                {
-                    sb.append("<img ");
-                    if (renderSize)
-                    {
-                        sb.append("style=\"").
-                                append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append(";").
-                                append(_popupHeight != null ? " height:" + _popupHeight : " height:auto").append("\"");
-                    }
-                    sb.append(" src=\"").append(PageFlowUtil.filter(popupUrl)).
-                            append("\" />");
-                }
-                return sb.toString();
+                return popupUrl != null ? IMG(
+                    at(renderSize, style, (_popupWidth != null ? "width:" + _popupWidth : "max-width:300px") + "; " + (_popupHeight != null ? " height:" + _popupHeight : " height:auto") + "; ")
+                    .at(src, popupUrl)
+                ) : HtmlString.EMPTY_STRING;
             }
             else
             {

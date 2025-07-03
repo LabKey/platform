@@ -1143,7 +1143,7 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ReorderAllScriptsAction extends SimpleViewAction
+    public static class ReorderAllScriptsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1434,7 +1434,7 @@ public class SqlScriptController extends SpringActionController
                 controller.new ConsolidateSchemaAction(),
                 controller.new ConsolidateScriptsAction(),
                 controller.new OrphanedScriptsAction(),
-                controller.new ReorderAllScriptsAction(),
+                    new ReorderAllScriptsAction(),
                 controller.new ReorderScriptAction(),
                 controller.new SaveReorderedScriptAction(),
                 controller.new ScriptAction(),

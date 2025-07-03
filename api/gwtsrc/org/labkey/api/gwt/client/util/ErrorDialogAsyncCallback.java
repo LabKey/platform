@@ -23,6 +23,7 @@ import com.google.gwt.user.client.rpc.StatusCodeException;
  * User: jeckels
  * Date: May 28, 2010
  */
+@SuppressWarnings("PatternVariableCanBeUsed")
 public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Type>
 {
     private final String _description;
@@ -99,7 +100,7 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
         }
         if (message == null)
         {
-            message = caught.getMessage() == null || caught.getMessage().trim().equals("") ? caught.toString() : caught.getMessage();
+            message = caught.getMessage() == null || caught.getMessage().trim().isEmpty() ? caught.toString() : caught.getMessage();
         }
         if (_description != null)
         {

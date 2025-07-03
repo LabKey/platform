@@ -48,7 +48,7 @@ public class CacheableWriter implements DocumentWriter
     private String _contentType;
     private ContentDisposition _disposition;
     private int _size;
-    private ByteArrayOutputStream _bOut = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream _bOut = new ByteArrayOutputStream();
     private byte[] _bytes;
 
     public CacheableWriter()

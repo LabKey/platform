@@ -282,14 +282,14 @@ public class RReport extends ExternalScriptEngineReport
     {
         // if inputParameters were explicitly passed in then override any url parameters we may have
         if (inputParameters != null)
-            return (inputParameters.size() > 0);
+            return (!inputParameters.isEmpty());
 
         //
         // todo:  remove this fallback code when we refactor report execution.  Input parameters should be passed
         // in so that they are not taken off the URL.  Note that if inputParameters is not null but size 0 do not fallback
         //
         if (urlParameters != null)
-           return (urlParameters.size() > 0);
+           return (!urlParameters.isEmpty());
 
         return false;
     }
@@ -487,7 +487,6 @@ public class RReport extends ExternalScriptEngineReport
      *
      * @param script the script containing prolog
      * @param extractProlog True to extract prolog out of script, false to extract source out of script
-     * @return
      */
     public String stripScriptProlog(String script, boolean extractProlog)
     {
@@ -524,7 +523,6 @@ public class RReport extends ExternalScriptEngineReport
 
     /**
      *
-     * @param script
      * @return [cutstart, cutend, yamlstart, yamlend]
      */
     public int[] getPrologAnchors(String script)
@@ -556,7 +554,7 @@ public class RReport extends ExternalScriptEngineReport
         for (int i=lines.length-1 ; i>=0 ; i--)
         {
             String line = lines[i].trim();
-            cutEndCharInd = scriptCopy.lastIndexOf(line);;
+            cutEndCharInd = scriptCopy.lastIndexOf(line);
             scriptCopy = scriptCopy.substring(0, cutEndCharInd);
 
             if (line.startsWith("#") && line.trim().endsWith(">8"))
@@ -631,7 +629,7 @@ public class RReport extends ExternalScriptEngineReport
           for each included script, the source script is processed for input/output replacements
           and the result copied into this scripts working directory so it can be loaded via the source command
          */
-        for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
+        for (String includedReport : getDescriptor().getIncludedReports())
         {
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(includedReport, context.getUser(), context.getContainer());
 

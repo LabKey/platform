@@ -183,7 +183,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    enum Modification {ADD, REMOVE};
+    enum Modification {ADD, REMOVE}
 
     private abstract static class ModifyCategoryParticipants extends MutatingApiAction<ParticipantCategorySpecification>
     {
@@ -219,7 +219,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class AddParticipantsToCategory extends ModifyCategoryParticipants
+    public static class AddParticipantsToCategory extends ModifyCategoryParticipants
     {
         @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
@@ -229,7 +229,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class RemoveParticipantsFromCategory extends ModifyCategoryParticipants
+    public static class RemoveParticipantsFromCategory extends ModifyCategoryParticipants
     {
         @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
@@ -635,7 +635,7 @@ public class ParticipantGroupController extends BaseStudyController
                 if (category.getGroups().length > 0)
                 {
                     Collection<String> unassigned = getParticipantIdsNotInGroupCategory(category);
-                    if (form.isIncludeUnassigned() && (unassigned.size() > 0))
+                    if (form.isIncludeUnassigned() && (!unassigned.isEmpty()))
                         groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup, category).toJSON(getViewContext()));
                 }
             }
@@ -643,8 +643,6 @@ public class ParticipantGroupController extends BaseStudyController
 
         /**
          * Determines if the specified set of participants represents all available participants for this folder
-         * @param selectedParticipants
-         * @return
          */
         private boolean hasUnassignedParticipants(Set<String> selectedParticipants)
         {
@@ -661,11 +659,11 @@ public class ParticipantGroupController extends BaseStudyController
 
     static class JSONGroup
     {
-        private int _groupId;
-        private String _label;
+        private final int _groupId;
+        private final String _label;
         private boolean _enrolled = true;
-        private GroupType _type;
-        private int _categoryId;
+        private final GroupType _type;
+        private final int _categoryId;
         private String _filters;
         private String _description;
         private Set<String> _participantIds = new HashSet<>();
@@ -919,7 +917,7 @@ public class ParticipantGroupController extends BaseStudyController
                     key = group.type.name() + "|" + group.categoryId;
 
                 if (!categoryToSubjectMap.containsKey(key))
-                    categoryToSubjectMap.put(key, new HashSet<String>());
+                    categoryToSubjectMap.put(key, new HashSet<>());
 
                 Set<String> participants = categoryToSubjectMap.get(key);
 
@@ -1119,9 +1117,6 @@ public class ParticipantGroupController extends BaseStudyController
          * Code to check whether an implicitly created category needs to be deleted so we don't accumulate orpaned list type
          * categories.
          *
-         * @param prevCategoryId
-         * @param current
-         * @throws ValidationException
          */
         private void deleteImplicitCategory(Integer prevCategoryId, ParticipantCategoryImpl current) throws ValidationException
         {

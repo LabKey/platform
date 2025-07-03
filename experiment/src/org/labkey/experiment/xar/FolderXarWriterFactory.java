@@ -56,7 +56,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
     public static final String XAR_DIRECTORY = "xar";
     private static final String XAR_FILE_NAME = "experiments_and_runs.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
-    private static List<Writer> CHILD_WRITERS = Arrays.asList(new ExperimentRunsWriter());
+    private static final List<Writer> CHILD_WRITERS = Arrays.asList(new ExperimentRunsWriter());
 
     @Override
     public FolderWriter create()

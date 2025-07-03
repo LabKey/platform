@@ -32,7 +32,7 @@ public interface Saveable<ObjectType>
      */
     String getCurrentURL();
 
-    public interface SaveListener<ObjectType>
+    interface SaveListener<ObjectType>
     {
         void saveSuccessful(ObjectType result, String designerUrl);
     }

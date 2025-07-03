@@ -36,9 +36,8 @@
             {
                 for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
                 {
-                    if (taskPipeline instanceof FileAnalysisTaskPipeline)
+                    if (taskPipeline instanceof FileAnalysisTaskPipeline fatp)
                     {
-                        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
                         if (fatp.isAllowForTriggerConfiguration())
                         {
             %>

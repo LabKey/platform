@@ -684,7 +684,7 @@ public class ListManager implements SearchService.DocumentProvider
                 SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path(documentId),
                     documentId,
-                    list.getContainer().getId(),
+                    list.getContainer().getEntityId(),
                     "text/plain",
                     body,
                     itemURL,
@@ -870,7 +870,7 @@ public class ListManager implements SearchService.DocumentProvider
                 SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path(documentId),
                     documentId,
-                    list.getContainer().getId(),
+                    list.getContainer().getEntityId(),
                     "text/plain",
                     body.toString(),
                     url,
@@ -1354,7 +1354,7 @@ public class ListManager implements SearchService.DocumentProvider
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
             assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
             ListItem li = lists.get(LIST_NAME).getListItem(1, u, c);
-            assertEquals("Item not found in own container", li.getProperty(dp), PARENT_LIST_ITEM);
+            assertEquals("Item not found in own container", PARENT_LIST_ITEM, li.getProperty(dp));
         }
 
         @Test
@@ -1384,8 +1384,8 @@ public class ListManager implements SearchService.DocumentProvider
 
             assertNull("Parent item visible in workbook", wbList1.getListItem(PARENT_LI_KEY, u, wb1));
             assertNull("Sibling workbook item visible in another workbook", wbList1.getListItem(WB2_LI_KEY, u, wb1));
-            assertEquals("Parent container can not see child workbook item", wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp), WORKBOOK1_LIST_ITEM);
-            assertEquals("Workbook can not see its own list item", wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp), WORKBOOK1_LIST_ITEM);
+            assertEquals("Parent container can not see child workbook item", WORKBOOK1_LIST_ITEM, wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp));
+            assertEquals("Workbook can not see its own list item", WORKBOOK1_LIST_ITEM, wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp));
         }
     }
 }

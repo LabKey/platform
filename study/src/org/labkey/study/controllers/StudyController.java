@@ -294,7 +294,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -1254,7 +1253,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
             }
 
-            Participant participant = null;
+            Participant participant;
             try
             {
                 participant = findParticipant(study, form.getParticipantId());
@@ -1499,7 +1498,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
+    public static class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
     {
         @Override
         public Object execute(DeleteParticipantForm deleteParticipantForm, BindException errors) throws Exception
@@ -2899,10 +2898,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    LinkBuilder.labkeyLink("Download Data File", url).appendTo(oldWriter);
+                    out.write(LinkBuilder.labkeyLink("Download Data File", url));
                 }
             };
             dr.addDisplayColumn(dc);
@@ -4075,7 +4074,7 @@ public class StudyController extends BaseStudyController
     {
         // Issue 26030: we don't distinguish null vs empty string for url parameters.
         // Empty string will be converted to null for beans so "" shouldn't be used as the url param for Default Grid View.
-        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASET_KEY, id).addParameter("defaultView", viewName != null ? (viewName.equals("") ? "defaultGrid": viewName) : null);
+        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASET_KEY, id).addParameter("defaultView", viewName != null ? (viewName.isEmpty() ? "defaultGrid": viewName) : null);
     }
 
     public static class ViewPreferencesForm extends DatasetController.DatasetIdForm
@@ -4368,7 +4367,7 @@ public class StudyController extends BaseStudyController
         private Map<Integer, Integer> getVisitIdToOrderIndex(String orderedIds)
         {
             Map<Integer, Integer> order = null;
-            if (orderedIds != null && orderedIds.length() > 0)
+            if (orderedIds != null && !orderedIds.isEmpty())
             {
                 order = new HashMap<>();
                 String[] idArray = orderedIds.split(",");
@@ -4748,7 +4747,7 @@ public class StudyController extends BaseStudyController
         {
             String order = form.getOrder();
 
-            if (order != null && order.length() > 0 && !form.isResetOrder())
+            if (order != null && !order.isEmpty() && !form.isResetOrder())
             {
                 String[] ids = order.split(",");
                 List<Integer> orderedIds = new ArrayList<>(ids.length);
@@ -4807,7 +4806,7 @@ public class StudyController extends BaseStudyController
                 transaction.commit();
             }
 
-            StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.emptySet());
             return true;
         }
 
@@ -5200,14 +5199,14 @@ public class StudyController extends BaseStudyController
                 // def may not be provisioned yet, create before we start adding properties
                 if (def.isQueryDataset())
                 {
-                    def.provisionQueryDataset();
+                    def.provisionQueryDataset(true);
                 }
                 else
                 {
-                    def.provisionTable();
+                    def.provisionTable(true);
                 }
 
-                Domain d = def.getDomain();
+                Domain d = def.getDomain(true);
 
                 for (ColumnInfo col : columnsToProvision)
                 {
@@ -6199,7 +6198,6 @@ public class StudyController extends BaseStudyController
 
         /**
          * Don't blow up when posting bad value
-         * @param datasetIdStr
          */
         public void setDatasetIdStr(String datasetIdStr)
         {
@@ -6477,7 +6475,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(DemoModeForm form, boolean reshow, BindException errors)
         {
-            return new JspView("/org/labkey/study/view/demoMode.jsp");
+            return new JspView<>("/org/labkey/study/view/demoMode.jsp");
         }
 
         @Override
@@ -6689,7 +6687,7 @@ public class StudyController extends BaseStudyController
                     Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), getUser().getUserId());
             }
 
-            return new JspView("/org/labkey/study/view/manageParticipantCategories.jsp");
+            return new JspView<>("/org/labkey/study/view/manageParticipantCategories.jsp");
         }
 
         @Override
@@ -7122,7 +7120,7 @@ public class StudyController extends BaseStudyController
                                 .setStudy(_study)
                                 .setDemographicData(false)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
@@ -7133,7 +7131,7 @@ public class StudyController extends BaseStudyController
                                 .setDemographicData(false)
                                 .setType(Dataset.TYPE_PLACEHOLDER)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
                         response.put("datasetId", def.getDatasetId());
                         break;
 

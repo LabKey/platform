@@ -346,6 +346,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
        if (jsonResponse)
        {
+           if (!htmlWrappedJson)
+           {
+               // Issue 53120: Set content-type, status when responding with JSON content
+               response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
+               response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           }
+
            Writer w = response.getWriter();
            JSONObject json = new JSONObject();
            json.put("success", false);

@@ -52,7 +52,6 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TransactionFilter;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -665,9 +664,9 @@ public abstract class SqlDialect
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
 
-    public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    public final void runSql(String script, DbSchema schema, String sql, ModuleContext moduleContext, @Nullable Connection conn)
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn, getBooleanLiteral(true));
+        SqlScriptExecutor parser = new SqlScriptExecutor(script, sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, moduleContext, conn);
         parser.execute();
     }
 
@@ -837,7 +836,7 @@ public abstract class SqlDialect
             return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
-    private Map<String,Boolean> _validatedIds = new HashMap<>();
+    private final Map<String,Boolean> _validatedIds = new HashMap<>();
 
     private boolean validateIdentifier(DatabaseIdentifier id)
     {
@@ -1988,35 +1987,20 @@ public abstract class SqlDialect
 
     /**
      * Queries the database in a dialect-specific way to determine the procedure's parameter names, datatypes, and directions.
-     * @param scope
-     * @param procSchema
-     * @param procName
      * @return A map of parameter name / ParameterInfo pairs
-     * @throws SQLException
      */
     public abstract Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
 
     /**
      * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
      *
-     * @param procSchema
-     * @param procName
-     * @param paramCount   The total number of parameters to include in the invocation string
-     * @param hasReturn    true if the procedure has a return code/status, false if not
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
-     * @param procScope
-     * @return
      */
     public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
      * the output parameters.
-     * @param scope
-     * @param stmt
-     * @param parameters
-     * @param registerOutputAssignment true if the assigned result (see buildProcedureCall) of the proc also needs to be registered as an output parameter
-     * @throws SQLException
      */
     public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException;
 

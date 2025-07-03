@@ -96,15 +96,15 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
      * variables have to be there on all compliant ECMAScript
      * scopes. We put these standard objects in this top level.
      */
-    private ScriptableObject topLevel;
+    private final ScriptableObject topLevel;
 
     /* map used to store indexed properties in engine scope
      * refer to comment on 'indexedProps' in ExternalScriptable.java.
      */
-    private Map indexedProps;
+    private final Map indexedProps;
 
     private ScriptEngineFactory factory;
-    private InterfaceImplementor implementor;
+    private final InterfaceImplementor implementor;
 
     /*
     // in Phobos we want to support all javascript features
@@ -170,7 +170,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
     protected ScriptableObject createTopLevel()
     {
         Context cx = enterContext();
-        ScriptableObject top = null;
+        ScriptableObject top;
         try {
             /*
              * RRC - modified this code to register JSAdapter and some functions
@@ -294,11 +294,10 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
             Scriptable localScope = (thiz != null)? (Scriptable) thiz :
                     getRuntimeScope(context);
             Object obj = ScriptableObject.getProperty(localScope, name);
-            if (! (obj instanceof Function)) {
+            if (! (obj instanceof Function func)) {
                 throw new NoSuchMethodException("no such method: " + name);
             }
 
-            Function func = (Function) obj;
             Scriptable scope = func.getParentScope();
             if (scope == null) {
                 scope = getRuntimeScope(context);
@@ -398,7 +397,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
 
     @Override
     public CompiledScript compile(java.io.Reader script) throws ScriptException {
-        CompiledScript ret = null;
+        CompiledScript ret;
         Context cx = enterContext();
 
         try {

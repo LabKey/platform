@@ -483,9 +483,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 name = macroParameter.get(0);
             if (name != null)
             {
-                StringBuilder buf = new StringBuilder();
-                buf.append("<a name=\"").append(PageFlowUtil.filter(name)).append("\"></a>");
-                writer.write(buf.toString());
+                writer.write("<a name=\"" + PageFlowUtil.filter(name) + "\"></a>");
                 @SuppressWarnings("unchecked")
                 Set<String> anchors = (Set<String>)macroParameter.getContext().get(ANCHORS_KEY);
                 anchors.add("#" + name);
@@ -611,8 +609,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private void _appendLink(StringBuffer sb, String name, String view, String hash, String className)
     {
-        boolean isAnchorOnly = name.length() == 0 && null != hash;
-        boolean isAttachment = name.length() > 0 && attachmentExists(name);
+        boolean isAnchorOnly = name.isEmpty() && null != hash;
+        boolean isAttachment = !name.isEmpty() && attachmentExists(name);
         String href =
                 isAnchorOnly ? "" :
                 isAttachment ? _attachmentPrefix + PageFlowUtil.encode(name) :
@@ -622,7 +620,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
         // if view is null or empty, try to lookup the
         // target page's title, or at least set it equal to the last part of name
-        if (null == view || view.length() == 0)
+        if (null == view || view.isEmpty())
         {
             if (isAnchorOnly)
                 view = hash;
@@ -763,9 +761,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             RenderContext renderContext = context.getRenderContext();
             RenderEngine engine = renderContext.getRenderEngine();
 
-            if (engine instanceof WikiRenderEngine)
+            if (engine instanceof WikiRenderEngine wikiEngine)
             {
-                WikiRenderEngine wikiEngine = (WikiRenderEngine) engine;
                 Writer writer = new StringBufferWriter(buffer);
 
                 String name = result.group(1);
@@ -786,7 +783,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                     if (name.startsWith("http:") || name.startsWith("https:") || name.startsWith("ftp:"))
                     {
                         // just treat like UrlFilter
-                        if (alias.length() == 0)
+                        if (alias.isEmpty())
                             alias = name;
                         String tag = urlFormatter.format(new Object[]{"", name, alias});
                         buffer.append(tag);
@@ -873,7 +870,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                         }
                         else if (wikiEngine.showCreate())
                         {
-                            wikiEngine.appendCreateLink(buffer, name, alias.length() > 0 ? alias : getWikiView(name));
+                            wikiEngine.appendCreateLink(buffer, name, !alias.isEmpty() ? alias : getWikiView(name));
 
                             // links with "create" are not cacheable because
                             // a missing wiki could be created

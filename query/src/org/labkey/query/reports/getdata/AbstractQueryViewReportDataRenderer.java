@@ -41,7 +41,7 @@ public abstract class AbstractQueryViewReportDataRenderer implements ReportDataR
     private int _offset;
     private boolean _includeDetailsColumn;
     private Integer _maxRows = null;
-    private Sort _sort = new Sort();
+    private final Sort _sort = new Sort();
     private List<FieldKey> _columns;
     @NotNull private String _dataRegionName = "dataregion";
 

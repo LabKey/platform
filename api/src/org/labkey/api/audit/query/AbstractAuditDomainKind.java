@@ -62,11 +62,11 @@ import java.util.Set;
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
 
-    private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
-    private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
+    private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
+    private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 
-    private static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
-    private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
+    private static final String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
+    private static final String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
     private static final Set<PropertyStorageSpec> _baseFields;
     private static final Set<String> _reservedNames = new HashSet<>();
@@ -235,13 +235,13 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public JSONObject getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public JSONObject getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         throw new UnsupportedOperationException();
     }

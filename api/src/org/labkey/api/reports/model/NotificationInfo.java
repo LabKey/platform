@@ -41,7 +41,7 @@ public class NotificationInfo
     private final boolean _shared;
     private final Date _startDate;
     private final Date _endDate;
-    private Type _type;
+    private final Type _type;
 
     public NotificationInfo(ReportDB reportDB, Date startDate, Date endDate)
     {

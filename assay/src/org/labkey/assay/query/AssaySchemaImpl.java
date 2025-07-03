@@ -65,8 +65,8 @@ public class AssaySchemaImpl extends AssaySchema
     private Collection<AssayProvider> _allProviders;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
-    private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
-    private Map<AssayProvider, AssayProviderSchema> _providerSchemas = new HashMap<>();
+    private final Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
+    private final Map<AssayProvider, AssayProviderSchema> _providerSchemas = new HashMap<>();
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -275,10 +275,10 @@ public class AssaySchemaImpl extends AssaySchema
 
     public static class TestCase extends Assert
     {
-        private Mockery _context;
-        private ExpProtocol _protocol1;
-        private AssayProvider _provider1;
-        private AssaySchemaImpl _schemaImpl;
+        private final Mockery _context;
+        private final ExpProtocol _protocol1;
+        private final AssayProvider _provider1;
+        private final AssaySchemaImpl _schemaImpl;
 
         public TestCase()
         {

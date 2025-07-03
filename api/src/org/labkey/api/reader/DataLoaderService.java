@@ -66,5 +66,5 @@ public interface DataLoaderService
     default DataLoader createLoader(FileLike file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         return createLoader(file.toNioPathForRead().toFile(), contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
-    };
+    }
 }

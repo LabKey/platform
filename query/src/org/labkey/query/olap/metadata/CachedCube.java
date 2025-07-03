@@ -295,7 +295,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         final Type levelType;
         JdbcType jdbcType = JdbcType.VARCHAR;
         final _NamedList<_Member,Member> members = new _UniqueNamedList<>();
-        final ArrayListMap.FindMap<String> memberPropertiesFindMap= new ArrayListMap.FindMap<>(new HashMap<String,Integer>());
+        final ArrayListMap.FindMap<String> memberPropertiesFindMap= new ArrayListMap.FindMap<>(new HashMap<>());
         final _NamedList<_Property,Property> memberProperties = new _NamedList<>();
 
         // temporary pointer, used in olap4j loading
@@ -393,7 +393,6 @@ public class CachedCube extends MetadataElementBase implements Cube
          * indexes by getUniqueName()
          *
          * @return Member
-         * @throws org.olap4j.OlapException
          */
         @Override
         public NamedList<Member> getMembers()
@@ -450,7 +449,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             this.level = level;
             this.all = false;
             this.memberType = Type.REGULAR;
-            childMembers = isLeaf ? null : new ArrayList<Member>();
+            childMembers = isLeaf ? null : new ArrayList<>();
             _properties = null;
             _parent = parent;
             if (null != parent)
@@ -467,7 +466,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             this.memberType = m.getMemberType();
             this.orig = m;
             // don't allocate array for lowest level
-            this.childMembers = isLeaf ? null : new ArrayList<Member>();
+            this.childMembers = isLeaf ? null : new ArrayList<>();
 
             if (null != parentLevel)
             {
@@ -734,7 +733,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         {
             super(cc, p, null);
             datatype = p.getDatatype();
-            type = Collections.unmodifiableSet(new HashSet<TypeFlag>(p.getType()));
+            type = Collections.unmodifiableSet(new HashSet<>(p.getType()));
             contentType = p.getContentType();
             visible = p.isVisible();
         }
@@ -772,7 +771,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
         NamedList<MDE> recast()
         {
-            return (NamedList<MDE>)(NamedList)this;
+            return (NamedList<MDE>) this;
         }
 
         public boolean seal()

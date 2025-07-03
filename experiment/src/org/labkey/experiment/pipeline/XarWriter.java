@@ -24,5 +24,5 @@ import org.labkey.api.pipeline.PipelineJobException;
 */
 public interface XarWriter
 {
-    public void writeToDisk(ExpRun run) throws PipelineJobException;
+    void writeToDisk(ExpRun run) throws PipelineJobException;
 }

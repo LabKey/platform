@@ -73,7 +73,7 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
         return new SimpleDocumentResource(
             new Path(documentId),
             documentId,
-            expRun.getContainer().getId(),
+            expRun.getContainer().getEntityId(),
             "text/plain",
             body.toString(),
             url,

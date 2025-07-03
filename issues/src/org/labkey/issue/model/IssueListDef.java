@@ -40,6 +40,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
@@ -55,7 +56,7 @@ public class IssueListDef extends Entity
     private String _name;
     private String _label;
     private String _kind;
-    private Container _domainContainer;
+    private GUID _domainContainerId;
 
     public int getRowId()
     {
@@ -111,7 +112,7 @@ public class IssueListDef extends Entity
     @Nullable
     public Container getDomainContainer(User user)
     {
-        if (_domainContainer == null)
+        if (_domainContainerId == null)
         {
             String id = getContainerId();
             if (id != null)
@@ -125,22 +126,27 @@ public class IssueListDef extends Entity
                     // create the domain in the current container
                     if (domain != null)
                     {
-                        _domainContainer = domain.getContainer();
+                        _domainContainerId = domain.getContainer().getEntityId();
                     }
                     else
                     {
-                        _domainContainer = container;
+                        _domainContainerId = container.getEntityId();
                     }
                 }
             }
         }
-        return _domainContainer;
+        return ContainerManager.getForId(_domainContainerId);
     }
 
     public Domain getDomain(User user)
     {
+       return getDomain(user, false);
+    }
+
+    public Domain getDomain(User user, boolean forUpdate)
+    {
         String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
-        return PropertyService.get().getDomain(getDomainContainer(user), uri);
+        return PropertyService.get().getDomain(getDomainContainer(user), uri, forUpdate);
     }
 
     public AbstractIssuesListDefDomainKind getDomainKind()

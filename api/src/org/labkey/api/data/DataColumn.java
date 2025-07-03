@@ -37,26 +37,24 @@ import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.InputBuilder;
-import org.labkey.api.util.OptionBuilder;
-import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.util.TextAreaBuilder;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TypeAheadSelectDisplayColumn;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -380,7 +378,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object o = getValue(ctx);
 
@@ -424,15 +422,17 @@ public class DataColumn extends DisplayColumn
                     link.style(css);
                 }
 
-                link.build().appendTo(oldWriter);
+                out.write(link);
             }
             else
             {
-                formattedValue.appendTo(oldWriter);
+                out.write(formattedValue);
             }
         }
         else
-            oldWriter.write("&nbsp;");
+        {
+            out.write(HtmlString.NBSP);
+        }
     }
 
     protected String renderURLorValueURL(RenderContext ctx)
@@ -600,12 +600,22 @@ public class DataColumn extends DisplayColumn
 
     protected boolean isSelectInputSelected(String entryName, Object value, String valueStr)
     {
-        if (value instanceof Collection)
+        if (entryName == null)
+            return false;
+
+        if (value instanceof Collection<?> collection)
         {
-            // CONSIDER: stringify values in collection?
-            return ((Collection)value).contains(entryName);
+            // Issue 53254: Multi-value lookups should reselect values in form
+            for (var item : collection)
+            {
+                if (item != null && entryName.equals(item.toString()))
+                    return true;
+            }
+
+            return false;
         }
-        return null != entryName && entryName.equals(valueStr);
+
+        return entryName.equals(valueStr);
     }
 
     protected String getSelectInputDisplayValue(NamedObject entry)

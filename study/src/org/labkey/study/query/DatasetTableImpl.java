@@ -67,7 +67,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -81,6 +80,7 @@ import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -368,7 +368,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            TableInfo table = _userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME, null, true, true);
+                            TableInfo table = _userSchema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME, null, true, true);
                             if (table instanceof SpecimenDetailTable)       // Could be a UnionTable, which should already have right containers
                                 ((SpecimenDetailTable)table).addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
                             return table;
@@ -528,7 +528,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         // Get indices from underlying storage table
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo()));
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
 
         // Index enforced in code not on actual database for demographic datasets only
@@ -663,7 +663,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public Domain getDomain()
     {
-        return _dsd.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dsd.getDomain(forUpdate);
     }
 
     @Override
@@ -758,7 +764,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     var ciContainer = tiParticipant.getColumn("Container");
                     SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
-                    if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                    if (getDataset().getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
                         sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
                     }
@@ -903,7 +909,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return foundTitle;
     }
 
-    private class QCStateDisplayColumn extends DataColumn
+    private static class QCStateDisplayColumn extends DataColumn
     {
         private Map<Integer, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
@@ -1194,6 +1200,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         canModifyParticipantPredicate = edit;
     }
 
+    @Override
     public boolean canUpdateRowForParticipant(String subjectid)
     {
         if (null == updatePredicate)

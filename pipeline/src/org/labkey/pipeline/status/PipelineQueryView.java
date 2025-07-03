@@ -149,7 +149,8 @@ public class PipelineQueryView extends QueryView
             }
         }
 
-        if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
+        if (_buttonOption == PipelineService.PipelineButtonOption.Standard ||
+            _buttonOption == PipelineService.PipelineButtonOption.Assay)
         {
             ActionURL retryURL = new ActionURL(StatusController.RetryStatusAction.class, getContainer());
             retryURL.addReturnUrl(_returnUrl);
@@ -167,7 +168,10 @@ public class PipelineQueryView extends QueryView
             cancelButton.setActionType(ActionButton.Action.POST);
             cancelButton.setDisplayPermission(DeletePermission.class);
             bar.add(cancelButton);
+        }
 
+        if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
+        {
             ActionURL completeURL = new ActionURL(StatusController.CompleteStatusAction.class, getContainer());
             completeURL.addReturnUrl(_returnUrl);
             ActionButton completeStatus = new ActionButton(completeURL, "Complete");

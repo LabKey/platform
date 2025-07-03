@@ -87,7 +87,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
     private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
 
-    private Container _container;
+    private final Container _container;
     private Set<FieldKey> _columns;
     private Domain _domain;
 

@@ -64,7 +64,7 @@ final class RhinoCompiledScript extends CompiledScript
     public Object eval(ScriptContext context) throws ScriptException
     {
 
-        Object result = null;
+        Object result;
         Context cx = RhinoScriptEngine.enterContext();
         try {
 

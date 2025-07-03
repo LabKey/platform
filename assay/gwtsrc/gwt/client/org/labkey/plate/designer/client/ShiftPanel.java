@@ -31,7 +31,7 @@ import org.labkey.api.gwt.client.ui.ImageButton;
  */
 public class ShiftPanel extends FlexTable
 {
-    private TemplateView _view;
+    private final TemplateView _view;
 
     private class ShiftButton extends ImageButton
     {

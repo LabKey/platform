@@ -119,8 +119,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.security.AuthenticationProvider.FailureReason.complexity;
-import static org.labkey.api.security.AuthenticationProvider.FailureReason.expired;
 
 public class AuthenticationManager
 {
@@ -668,6 +666,14 @@ public class AuthenticationManager
                 throw new IllegalStateException("Shouldn't be adding an error message in success case");
             }
         },
+        BadApiKey
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
+            {
+                errors.reject(ERROR_MSG, "The API key you provided is invalid.");
+            }
+        },
         BadCredentials
         {
             @Override
@@ -1031,24 +1037,22 @@ public class AuthenticationManager
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, "Unknown user" + message);
-                    _log.warn("Unknown user" + message);
+                    _log.warn("Unknown user{}", message);
                 }
 
                 // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
                 ActionURL redirectURL = firstFailure.getRedirectURL();
 
-                // if labkey db authentication determines password has expired or does not meet requirements then return
-                // result with appropriate status. Note that redirectUrl might be null (e.g., API case).
+                // If labkey db authentication determines password has expired or does not meet requirements then return
+                // result with appropriate status. Same with a bad API key. Note that redirectUrl might be null (e.g., API case).
                 FailureReason firstFailureReason = firstFailure.getFailureReason();
-                if (firstFailureReason == expired)
+                AuthenticationStatus status = firstFailureReason.getAssociatedStatus();
+                if (null != status)
                 {
-                    return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.PasswordExpired);
+                    return new PrimaryAuthenticationResult(redirectURL, status);
                 }
-                else if (firstFailureReason == complexity)
-                {
-                    return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.Complexity);
-                }
-                else if (null != redirectURL)
+
+                if (null != redirectURL)
                 {
                     throw new RedirectException(redirectURL);
                 }
@@ -1145,7 +1149,7 @@ public class AuthenticationManager
         long delay = 0;
 
         // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
-        rl = addrLimiter.get(_toKey(request==null?null:request.getRemoteAddr()));
+        rl = addrLimiter.get(_toKey(request == null ? null : request.getRemoteAddr()));
         if (null != rl)
             delay = Math.max(delay,rl.add(0, false));
          rl = pwdLimiter.get(_toKey(pwd));

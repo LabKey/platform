@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.api.ExpExperiment;
 
 import java.io.Serializable;
 

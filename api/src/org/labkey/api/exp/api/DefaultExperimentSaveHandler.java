@@ -147,7 +147,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         // Make sure that all the runs are considered part of the batch
         List<ExpRun> runsToAdd = new ArrayList<>(runs);
         runsToAdd.removeAll(existingRuns);
-        batch.addRuns(context.getUser(), runsToAdd.toArray(new ExpRun[runsToAdd.size()]));
+        batch.addRuns(context.getUser(), runsToAdd.toArray(new ExpRun[0]));
         assert checkRunsInBatch(batch, runsToAdd) : "Runs should be in current batch: " + batch;
 
         // Remove any runs that are no longer part of the batch
@@ -184,7 +184,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
      */
     protected JSONArray serializeRunData(ViewContext context, ExpRun run, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch)
     {
-        if (runJson.has(AssayJSONConverter.DATA_ROWS) && runJson.getJSONArray(AssayJSONConverter.DATA_ROWS).length() > 0)
+        if (runJson.has(AssayJSONConverter.DATA_ROWS) && !runJson.getJSONArray(AssayJSONConverter.DATA_ROWS).isEmpty())
         {
             throw new UnsupportedOperationException("Run data is not supported for runs which are not associated with an Assay.");
         }

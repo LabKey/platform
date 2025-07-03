@@ -35,7 +35,7 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
     public Character getNetworkDriveLetter()
     {
         String letter = NetworkDriveProps.getNetworkDriveLetter();
-        if (letter == null || letter.length() == 0)
+        if (letter == null || letter.isEmpty())
         {
             return null;
         }

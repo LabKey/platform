@@ -53,7 +53,7 @@ public class StudyDefinitionController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    private abstract class EditDefinitionAction extends FormHandlerAction<ReturnUrlForm>
+    private abstract static class EditDefinitionAction extends FormHandlerAction<ReturnUrlForm>
     {
         private Domain _domain = null;
 

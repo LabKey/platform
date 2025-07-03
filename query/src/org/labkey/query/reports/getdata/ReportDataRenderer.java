@@ -33,5 +33,5 @@ import org.springframework.validation.Errors;
         @JsonSubTypes.Type(value=QueryWebPartDataRenderer.class)})
 public interface ReportDataRenderer
 {
-    public ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors);
+    ApiResponse render(QueryReportDataSource source, ViewContext context, Errors errors);
 }

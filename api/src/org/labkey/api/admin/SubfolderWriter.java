@@ -49,7 +49,7 @@ public class SubfolderWriter extends BaseFolderWriter
         List<Container> childrenToExport = new ArrayList<>();
         getChildrenToExport(ctx, allChildren, childrenToExport);
 
-        if (childrenToExport.size() > 0)
+        if (!childrenToExport.isEmpty())
         {
             // Set up the pointer in the folder.xml file and the new dir
             ctx.getXml().addNewSubfolders().setDir(DIRECTORY_NAME);

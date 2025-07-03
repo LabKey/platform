@@ -70,13 +70,6 @@ public interface DiscussionService
     }
 
     /**
-     * @param c
-     * @param user
-     * @param identifier
-     * @param pageURL      persistent URL to link back to original page, additional parameter discussionId will automatically be added
-     * @param title
-     * @param summary
-     * @param allowMultipleDiscussions
      * @return WebPartView with a form to start a new discussion, will post directly to Announcements controller
      */
     WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions);

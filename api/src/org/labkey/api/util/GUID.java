@@ -156,7 +156,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
             }
         }
 
-        if (0 == sbSource.length())
+        if (sbSource.isEmpty())
         {
             try
             {
@@ -172,7 +172,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
             }
         }
 
-        if (0 == sbSource.length())
+        if (sbSource.isEmpty())
             sbSource.append(Long.toHexString(rand.nextLong()));
 
         return sbSource.toString();
@@ -247,7 +247,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
         return makeHash("");
     }
 
-   public static String makeHash(String addl)
+    public static String makeHash(String addl)
     {
         return makeLongHash(addl).substring(0, 32);
     }

@@ -38,8 +38,8 @@ public class HealthCheckRegistry
     public static final String DEFAULT_CATEGORY = "default";
     public static final String TRIAL_INSTANCES_CATEGORY = "trial";
 
-    private Map<String, Map<String, HealthCheck>> _healthCheckCategories = new HashMap<>();
-    private static HealthCheckRegistry _instance = new HealthCheckRegistry();
+    private final Map<String, Map<String, HealthCheck>> _healthCheckCategories = new HashMap<>();
+    private static final HealthCheckRegistry _instance = new HealthCheckRegistry();
 
     public static HealthCheckRegistry get()
     {
@@ -58,7 +58,6 @@ public class HealthCheckRegistry
 
     /**
      * Get the current health check categories
-     * @return
      */
     public Set<String> getCategories()
     {

@@ -138,6 +138,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
+    boolean canMoveFileReference(User user, Container sourceContainer, File sourceFile, int moveCount);
+
     enum QueryOptions
     {
         UseLsidForUpdate,
@@ -830,7 +832,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      *                     subsequent steps will be organized sequentially.
      * @param user         user with insert permissions
      * @return the saved ExpProtocol
-     * @throws ExperimentException
      */
     ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
 
@@ -1075,8 +1076,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param name The legacy name of the object
      * @param dataType: One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
      * @param effectiveDate The effective date that the legacy name was active
-     * @param c
-     * @param cf
      * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
      */
     Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf);
@@ -1124,7 +1123,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
-    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
+    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException;
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
 
@@ -1135,8 +1134,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * From a list of barcodes, find material lsids
      * @param uniqueIds A list of barcodes
-     * @param user
-     * @param container
      * @return map of barcode and lsid
      */
     @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);

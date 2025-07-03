@@ -127,6 +127,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
+    public enum MultiValuedFkType
+    {
+        junction,
+        value,
+    }
 
     private final List<QueryParseException> _warnings = new ArrayList<>();
     protected Iterable<FieldKey> _defaultVisibleColumns;
@@ -568,6 +573,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _hasDefaultTitleColumn = defaultTitleColumn;
     }
 
+    @Override
     public void setAllowCalculatedColumns(boolean allowCalculatedColumns)
     {
         _allowCalculatedColumns = allowCalculatedColumns;
@@ -621,6 +627,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             UserSchema schema = getUserSchema();
             throw new IllegalArgumentException("Could not find column '" + colName + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
+        }
+        return result;
+    }
+
+    /** @return a BaseColumnInfo, will throw if column doesn't exist or exists and is locked */
+    @NotNull
+    public MutableColumnInfo getMutableColumnOrThrow(@NotNull FieldKey fieldKey)
+    {
+        MutableColumnInfo result = getMutableColumn(fieldKey);
+        if (result == null)
+        {
+            UserSchema schema = getUserSchema();
+            throw new IllegalArgumentException("Could not find column '" + fieldKey + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
         }
         return result;
     }
@@ -775,9 +794,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * should hold onto columnInfo references by FieldKey, and not by reference.
 
      * during construction.
-     * @param updated
-     * @param existing
-     * @return
      */
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
@@ -956,9 +972,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             containerContext = container;
 
         // Include the ContainerContext FieldKey if it hasn't already been included.
-        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext fieldKeyContext)
         {
-            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
             Set<FieldKey> s = new HashSet<>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;
@@ -984,9 +999,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             containerContext = container;
 
         // Include the ContainerContext FieldKey if it hasn't already been included.
-        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext fieldKeyContext)
         {
-            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
             Set<FieldKey> s = new HashSet<>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;
@@ -1192,10 +1206,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (fk.isSetFkMultiValued())
         {
             String type = fk.getFkMultiValued();
-            if ("junction".equals(type))
+            if (MultiValuedFkType.junction.name().equals(type))
                 ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
             else
-                throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+                LOG.warn(String.format("Error in FK configuration for schema : \"%s\". The multi value FK type : \"%s\" is not supported.", fromSchema.getSchemaName(), type));
         }
 
         return ret;
@@ -1767,6 +1781,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public Domain getDomain()
     {
         return null;
+    }
+
+    @Nullable
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return getDomain();
     }
 
     @Nullable

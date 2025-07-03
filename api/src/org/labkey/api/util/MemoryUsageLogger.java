@@ -37,8 +37,8 @@ public class MemoryUsageLogger implements Runnable
 
     private static long _lastLog = 0;
 
-    private boolean _showHeader;
-    private int _requestNumber;
+    private final boolean _showHeader;
+    private final int _requestNumber;
 
     public MemoryUsageLogger(boolean showHeader, int requestNumber)
     {

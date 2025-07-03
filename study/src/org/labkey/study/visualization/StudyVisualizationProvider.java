@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -116,7 +117,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             List<ColumnInfo> cols = table.getAlternateKeyColumns();
             for (ColumnInfo col: cols)
             {
-                String uri = StringUtils.defaultString(col.getConceptURI(), col.getPropertyURI());
+                String uri = Objects.toString(col.getConceptURI(), col.getPropertyURI());
                 alternateKeys.add(uri);
             }
 
@@ -413,7 +414,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         if (members != null)
         {
-            if (members.length() > 0)
+            if (!members.isEmpty())
             {
                 sql += " WHERE " + distinctColumn + " IN (";
                 for (int i = 0; i < members.length(); i++)

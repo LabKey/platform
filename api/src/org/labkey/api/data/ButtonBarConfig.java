@@ -307,9 +307,9 @@ public class ButtonBarConfig
     private NavTree loadNavTree(ButtonMenuItem item)
     {
         NavTree tree = new NavTree(item.getText(), item.getTarget());
-        if (item.getOnClick() != null && item.getOnClick().length() > 0)
+        if (item.getOnClick() != null && !item.getOnClick().isEmpty())
             tree.setScript(item.getOnClick());
-        if (item.getIcon() != null && item.getIcon().length() > 0)
+        if (item.getIcon() != null && !item.getIcon().isEmpty())
             tree.setImageSrc(new ResourceURL(item.getIcon()));
         if (item.getItemArray() != null)
         {

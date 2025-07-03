@@ -1,5 +1,6 @@
 package org.labkey.api.writer;
 
+import jakarta.servlet.ServletResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.util.DOM;
@@ -24,6 +25,11 @@ public class HtmlWriter implements Appendable
     public static HtmlWriter of(Writer writer)
     {
         return new HtmlWriter(writer);
+    }
+
+    public static HtmlWriter of(ServletResponse response) throws IOException
+    {
+        return new HtmlWriter(response.getWriter());
     }
 
     public Writer unwrap()
@@ -94,10 +100,23 @@ public class HtmlWriter implements Appendable
         }
     }
 
-    // Outputs an HTML encoded version of the input string
+    // Outputs an HTML-encoded version of the input string
     public void write(String s)
     {
         write(HtmlString.of(s));
+    }
+
+    // Outputs an HTML-encoded version of the input object
+    public void write(Object o)
+    {
+        if (o instanceof DOM.Renderable r)
+        {
+            r.appendTo(this);
+        }
+        else
+        {
+            write(HtmlString.of(o));
+        }
     }
 
     public static class AttributeValue

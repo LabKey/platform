@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.JsonUtil.checkObjectStart;
 import static org.labkey.api.util.JsonUtil.expectArrayEnd;
 import static org.labkey.api.util.JsonUtil.expectArrayStart;
 import static org.labkey.api.util.JsonUtil.expectObjectEnd;
@@ -94,9 +95,6 @@ import static org.labkey.api.util.JsonUtil.skipValue;
  *   }]
  * }
  * </pre>
- *
- * User: kevink
- * Date: 10/1/12
  */
 public class JSONDataLoader extends DataLoader
 {
@@ -192,14 +190,14 @@ public class JSONDataLoader extends DataLoader
         @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new JSONDataLoader(is, hasColumnHeaders, mvIndicatorContainer);
+            return new JSONDataLoader(is, mvIndicatorContainer);
         }
 
         @NotNull
         @Override
         public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new JSONDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            return new JSONDataLoader(file, mvIndicatorContainer);
         }
 
         @NotNull
@@ -210,16 +208,14 @@ public class JSONDataLoader extends DataLoader
         }
     }
 
-    private ObjectMapper _mapper;
     private JsonParser _parser;
     private List<Map<String, Map<ColMapEntry, Object>>> _firstRows;
 
-    public JSONDataLoader(File inputFile, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public JSONDataLoader(File inputFile, Container mvIndicatorContainer) throws IOException
     {
         super(mvIndicatorContainer);
         setSource(inputFile);
         setScrollable(true);
-        //setHasColumnHeaders(hasColumnHeaders);
         setHasColumnHeaders(false);
         setInferTypes(false);
         setScanAheadLineCount(1);
@@ -227,11 +223,10 @@ public class JSONDataLoader extends DataLoader
         init(new FileInputStream(inputFile));
     }
 
-    public JSONDataLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public JSONDataLoader(InputStream is, Container mvIndicatorContainer) throws IOException
     {
         super(mvIndicatorContainer);
         setScrollable(false);
-        //setHasColumnHeaders(hasColumnHeaders);
         setHasColumnHeaders(false);
         setInferTypes(false);
         setScanAheadLineCount(1);
@@ -251,27 +246,26 @@ public class JSONDataLoader extends DataLoader
 
     protected void init(InputStream is) throws IOException
     {
-        _mapper = JsonUtil.createDefaultMapper();
-        _parser = _mapper.getFactory().createParser(is);
-        enterTopLevel();
-    }
+        _parser = JsonUtil.createDefaultMapper().getFactory().createParser(is);
 
-    protected void enterTopLevel() throws IOException
-    {
         if (_parser == null)
             throw new IllegalStateException("Parser not initialized");
 
         if (!_parser.getParsingContext().inRoot())
             throw new IllegalStateException("Parser should be at top-level");
 
-        JsonToken tok = _parser.nextToken();
-        if (tok != JsonToken.START_OBJECT)
-            throw new IllegalStateException("Expected start object");
+        enterTopLevel();
+    }
+
+    protected void enterTopLevel() throws IOException
+    {
+        _parser.nextToken();
+        checkObjectStart(_parser);
     }
 
     /**
      * PRECONDITION: Parser is at START_OBJECT at top-level.
-     * POSTCONDITION: Parser is positioned at START_ARRAY token of 'rows', or throws an exception if 'rows' wasn't found.
+     * POST-CONDITION: Parser is positioned at START_ARRAY token of 'rows', or throws an exception if 'rows' wasn't found.
      *
      * We will skip forward until we find a 'metaData' field and parse the contents.
      * The parser will continue forward until the 'rows' field is found.
@@ -306,7 +300,7 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * PRECONDITION: Parser is on START_OBJECT of metaData
-     * POSTCONDITION: Parser is on END_OBJECT of the metaData value
+     * POST-CONDITION: Parser is on END_OBJECT of the metaData value
      *
      * Parse the metaData fields and construct the ColumnDescriptor array.
      */
@@ -335,11 +329,10 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * PRECONDITION: At start of 'fields' array
-     * POSTCONDITION: At end of 'fields' array.
+     * POST-CONDITION: At end of 'fields' array.
      *
      * Creates the list of ColumnDescriptors for this DataIterator.
      *
-     * @throws IOException
      */
     protected static ColumnDescriptor[] parseFields(JsonParser parser, Container mvIndicatorContainer) throws IOException
     {
@@ -359,7 +352,7 @@ public class JSONDataLoader extends DataLoader
 
         expectArrayEnd(parser);
 
-        return cols.toArray(new ColumnDescriptor[cols.size()]);
+        return cols.toArray(new ColumnDescriptor[0]);
     }
 
     // For testing only
@@ -370,7 +363,7 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * PRECONDITION: At start object for item in 'fields' array.
-     * POSTCONDITION: At end object.
+     * POST-CONDITION: At end object.
      *
      * Reads enough of a single metadata field to create a {@link ColumnDescriptor} for loading purposes.
      * The 'fieldKey' property is a JSON array in 13.2 format and is a string in earlier formats
@@ -427,7 +420,7 @@ public class JSONDataLoader extends DataLoader
                 String value = parser.getValueAsString();
 
                 if (value == null)
-                    throw new JsonParseException("Failed to find jdbc type property", loc);
+                    throw new JsonParseException(parser, "Failed to find jdbc type property", loc);
 
                 JdbcType jdbcType = JdbcType.valueOf(value);
 
@@ -477,7 +470,7 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * PRECONDITION: At start object for item in 'rows' array.
-     * POSTCONDITION: At end object.
+     * POST-CONDITION: At end object.
      *
      * Reads a single row and returns the raw values (not display values) for the row as strings.
      * If not null, the values will be ordered according to the <code>cols</code> ColumnDescriptor array
@@ -519,7 +512,7 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * PRECONDITION: At start object for item in 'rows' array.
-     * POSTCONDITION: At end object.
+     * POST-CONDITION: At end object.
      *
      * Reads a single row and returns a map of columns (ColMap).
      *
@@ -557,7 +550,6 @@ public class JSONDataLoader extends DataLoader
      *  }
      *
      * @return Array of JSON value types 'Number', 'String', 'Boolean' for the row or null if no row is available.
-     * @throws IOException
      */
     protected static Map<String, Map<ColMapEntry, Object>> parseRow(JsonParser parser) throws IOException
     {
@@ -650,23 +642,10 @@ public class JSONDataLoader extends DataLoader
         return row;
     }
 
-    private static TypeReference rowType = new TypeReference<Map<String, Map<ColMapEntry, Object>>>() { };
+    private static final TypeReference rowType = new TypeReference<Map<String, Map<ColMapEntry, Object>>>() { };
 
     protected static Map<String, Map<ColMapEntry, Object>> parseRow91(JsonParser parser, JsonNode dataNode) throws IOException
     {
-//        Map<String, Map<ColMapEntry, Object>> row = new HashMap<>();
-//
-//        Iterator<String> iter = dataNode.fieldNames();
-//        while (iter.hasNext())
-//        {
-//            String fieldName = iter.next();
-//            Map<ColMapEntry, Object> rowField = parseColumn(parser, dataNode.get(fieldName));
-//
-//            row.put(fieldName, rowField);
-//        }
-//
-//        return row;
-
         ObjectCodec codec = parser.getCodec();
         JsonParser subParser = dataNode.traverse(codec);
         Map<String, Map<ColMapEntry, Object>> row = subParser.readValueAs(rowType);
@@ -679,7 +658,6 @@ public class JSONDataLoader extends DataLoader
         Map<ColMapEntry, Object> col = codec.treeToValue(rowFieldNode, ExtendedApiQueryResponse.ColMap.class);
         return col;
     }
-
 
     /**
      * I hate this function.  We must implement it because of how inferColumns() behaves.
@@ -745,7 +723,6 @@ public class JSONDataLoader extends DataLoader
 
     /**
      * NOTE: We don't call super.initializeColumns() which uses inferColumnInfo() from the first N lines.
-     * @throws IOException
      * @param renamedColumns map between column names used in the loader and the original column names
      */
     @Override
@@ -1000,11 +977,11 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
 
             parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"foo\": 3 }");
             col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1012,7 +989,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKeyArray\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1020,7 +997,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKeyArray\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1028,7 +1005,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKey\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "one/two");
+            assertEquals("one/two", col.name);
         }
 
         @Test
@@ -1036,8 +1013,8 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"A\"], \"type\": \"int\" }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "A");
-            assertEquals(col.clazz, Integer.class);
+            assertEquals("A", col.name);
+            assertEquals(Integer.class, col.clazz);
         }
 
         @Test
@@ -1071,23 +1048,23 @@ public class JSONDataLoader extends DataLoader
             ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser, null);
             assertEquals(6, cols.length);
 
-            assertEquals(cols[0].name, "A");
-            assertEquals(cols[0].clazz, Integer.class);
+            assertEquals("A", cols[0].name);
+            assertEquals(Integer.class, cols[0].clazz);
 
-            assertEquals(cols[1].name, "B");
-            assertEquals(cols[1].clazz, String.class);
+            assertEquals("B", cols[1].name);
+            assertEquals(String.class, cols[1].clazz);
 
-            assertEquals(cols[2].name, "C");
-            assertEquals(cols[2].clazz, String.class);
+            assertEquals("C", cols[2].name);
+            assertEquals(String.class, cols[2].clazz);
 
-            assertEquals(cols[3].name, "D");
-            assertEquals(cols[3].clazz, Double.class);
+            assertEquals("D", cols[3].name);
+            assertEquals(Double.class, cols[3].clazz);
 
-            assertEquals(cols[4].name, "E");
-            assertEquals(cols[4].clazz, BigDecimal.class);
+            assertEquals("E", cols[4].name);
+            assertEquals(BigDecimal.class, cols[4].clazz);
 
-            assertEquals(cols[5].name, "F");
-            assertEquals(cols[5].clazz, Long.class);
+            assertEquals("F", cols[5].name);
+            assertEquals(Long.class, cols[5].clazz);
         }
 
         @Test
@@ -1114,23 +1091,23 @@ public class JSONDataLoader extends DataLoader
             ColumnDescriptor[] cols = loader._columns;
             assertEquals(6, cols.length);
 
-            assertEquals(cols[0].name, "A");
-            assertEquals(cols[0].clazz, Integer.class);
+            assertEquals("A", cols[0].name);
+            assertEquals(Integer.class, cols[0].clazz);
 
-            assertEquals(cols[1].name, "B");
-            assertEquals(cols[1].clazz, String.class);
+            assertEquals("B", cols[1].name);
+            assertEquals(String.class, cols[1].clazz);
 
-            assertEquals(cols[2].name, "C");
-            assertEquals(cols[2].clazz, String.class);
+            assertEquals("C", cols[2].name);
+            assertEquals(String.class, cols[2].clazz);
 
-            assertEquals(cols[3].name, "D");
-            assertEquals(cols[3].clazz, Double.class);
+            assertEquals("D", cols[3].name);
+            assertEquals(Double.class, cols[3].clazz);
 
-            assertEquals(cols[4].name, "E");
-            assertEquals(cols[4].clazz, BigDecimal.class);
+            assertEquals("E", cols[4].name);
+            assertEquals(BigDecimal.class, cols[4].clazz);
 
-            assertEquals(cols[5].name, "F");
-            assertEquals(cols[5].clazz, Long.class);
+            assertEquals("F", cols[5].name);
+            assertEquals(Long.class, cols[5].clazz);
         }
 
         @Test

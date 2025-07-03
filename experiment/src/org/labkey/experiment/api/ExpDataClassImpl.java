@@ -230,19 +230,37 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
+    @NotNull
     public Domain getDomain()
     {
-        if (_domain == null)
-        {
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
-        }
-        return _domain;
+        return getDomain(false);
     }
 
     @Override
-    public void setDomain(Domain d)
+    @NotNull
+    public Domain getDomain(boolean forUpdate)
     {
-        _domain = d;
+        if (_domain == null || (forUpdate && !_domain.isMutable()))
+        {
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
+            if (_domain == null)
+            {
+                _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
+                try
+                {
+                    _domain.save(null);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+            if (_domain != null && !forUpdate && _domain.isMutable())
+                _domain = PropertyService.get().getDomain(getContainer(), getLSID(), false);
+            if (_domain == null) // this should really never be true
+                throw new IllegalStateException("Domain does not exist.");
+        }
+        return _domain;
     }
 
     @Nullable
@@ -269,7 +287,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -406,7 +424,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                container.getId(), "text/plain",
+                container.getEntityId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

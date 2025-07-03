@@ -39,9 +39,9 @@ import java.util.Set;
  */
 public class OuterJoinSourceQuery implements IVisualizationSourceQuery
 {
-    private Collection<IVisualizationSourceQuery> _queries;
-    private boolean _hasRowLimit;
-    private VisualizationSQLGenerator _generator;
+    private final Collection<IVisualizationSourceQuery> _queries;
+    private final boolean _hasRowLimit;
+    private final VisualizationSQLGenerator _generator;
 
     public OuterJoinSourceQuery(VisualizationSQLGenerator generator, Collection<IVisualizationSourceQuery> queries, boolean hasRowLimit)
     {
@@ -168,14 +168,14 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public Map<String, Set<VisualizationSourceColumn>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
     {
-        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>()
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<>()
         {
             @Override
             public Set<VisualizationSourceColumn> get(Object o)
             {
                 Set<VisualizationSourceColumn> set = super.get(o);
                 if (null == set)
-                    put((String)o, set = new LinkedHashSet<>());
+                    put((String) o, set = new LinkedHashSet<>());
                 return set;
             }
         };

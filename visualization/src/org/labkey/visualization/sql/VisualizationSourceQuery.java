@@ -58,13 +58,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private TableInfo _tinfo;
     private boolean _requireLeftJoin;
     private VisualizationSourceColumn _pivot;
-    private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<>();
-    private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<>();
+    private final Set<VisualizationSourceColumn> _measures = new LinkedHashSet<>();
+    private final Set<VisualizationSourceColumn> _selects = new LinkedHashSet<>();
     private Set<VisualizationSourceColumn> _allSelects = null;
-    private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<>();
-    private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<>();
+    private final Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<>();
+    private final Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<>();
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
-    private List<SimpleFilter> _filters = new ArrayList<>();
+    private final List<SimpleFilter> _filters = new ArrayList<>();
     private boolean _skipVisitJoin;
 
     public VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget, int uniq)
@@ -221,16 +221,16 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     public class PivotSourceColumn extends VisualizationSourceColumn
     {
         /** The value that's being used to pivot the data into this column */
-        private String _pivotValue;
-        private String _originalName;
+        private final String _pivotValue;
+        private final String _originalName;
 
         PivotSourceColumn(VisualizationAggregateColumn agg, Object pivotValue, String clientAlias)
         {
             super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString() + "_" + agg.getOriginalName(), true, false);
             _originalName = agg.getOriginalName();
-            _alias = pivotValue.toString() + "::" + agg.getAlias();
+            _alias = pivotValue + "::" + agg.getAlias();
             if (null != agg.getLabel())
-                _label = pivotValue.toString() + " - " + agg.getLabel();
+                _label = pivotValue + " - " + agg.getLabel();
             _pivotValue = pivotValue.toString();
             // Remember the alias that the client using to refer to this column
             _clientAlias = clientAlias;
@@ -358,7 +358,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     public void appendColumnNames(StringBuilder sql, Set<? extends VisualizationSourceColumn> columns, boolean aggregate, boolean aliasInsteadOfName, boolean appendAlias)
     {
-        if (columns == null || columns.size() == 0)
+        if (columns == null || columns.isEmpty())
             return;
         assert !(aliasInsteadOfName && appendAlias) : "Can't both use only alias and append alias";
         String leadingSep = "";
@@ -366,9 +366,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         for (VisualizationSourceColumn column : columns)
         {
             sql.append(leadingSep);
-            if (aggregate && column instanceof VisualizationAggregateColumn)
+            if (aggregate && column instanceof VisualizationAggregateColumn agg)
             {
-                VisualizationAggregateColumn agg = (VisualizationAggregateColumn) column;
                 if (agg.getAggregate().getSQLFunctionName(null) != null)
                     sql.append(agg.getAggregate().getSQLFunctionName(null)).append("(");
             }
@@ -437,7 +436,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     private void appendValueList(StringBuilder sql, VisualizationSourceColumn col) throws org.labkey.api.visualization.SQLGenerationException
     {
-        if (col.getValues() != null && col.getValues().size() > 0)
+        if (col.getValues() != null && !col.getValues().isEmpty())
         {
             sql.append(" IN (");
             String sep = "";
@@ -599,13 +598,12 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSQL(VisualizationSourceColumn.Factory factory) throws SQLGenerationException
     {
-        StringBuilder sql = new StringBuilder();
-        sql.append(getSelectClause(factory)).append("\n");
-        sql.append(getFromClause()).append("\n");
-        sql.append(getWhereClause()).append("\n");
-        sql.append(getGroupByClause()).append("\n");
-        sql.append(getPivotClause()).append("\n");
-        return sql.toString();
+        String sql = getSelectClause(factory) + "\n" +
+                getFromClause() + "\n" +
+                getWhereClause() + "\n" +
+                getGroupByClause() + "\n" +
+                getPivotClause() + "\n";
+        return sql;
     }
 
     @Override
@@ -644,7 +642,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     public SimpleFilter[] getFilters()
     {
-        return _filters.toArray(new SimpleFilter[_filters.size()]);
+        return _filters.toArray(new SimpleFilter[0]);
     }
 
     @Override

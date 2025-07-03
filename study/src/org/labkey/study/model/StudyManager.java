@@ -665,7 +665,7 @@ public class StudyManager
             // This method call has the side effect of ensuring that we have a domain. If we don't create it here,
             // we're open to a race condition if another thread tries to do something with the dataset's table
             // and ends up attempting to create the domain as well
-            datasetDefinition.getStorageTableInfo();
+            datasetDefinition.getStorageTableInfo(true);
 
             QueryService.get().updateLastModified();
             transaction.commit();
@@ -752,7 +752,7 @@ public class StudyManager
             if (isProvisioned && isSharedChanged)
             {
                 // let's not change the shared setting if there are existing rows
-                if (new TableSelector(datasetDefinition.getStorageTableInfo()).exists())
+                if (new TableSelector(datasetDefinition.getStorageTableInfo(false)).exists())
                 {
                     throw new IllegalArgumentException("Can't change data sharing setting if there are existing data rows.");
                 }
@@ -760,7 +760,7 @@ public class StudyManager
 
             if (isProvisioned && isKeyChanged)
             {
-                TableInfo storageTableInfo = datasetDefinition.getStorageTableInfo();
+                TableInfo storageTableInfo = datasetDefinition.getStorageTableInfo(false);
 
                 // If so, we need to update the _key column and the LSID
 
@@ -1016,7 +1016,7 @@ public class StudyManager
     public boolean isDataUniquePerParticipant(DatasetDefinition dataset)
     {
         // don't use dataset.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
-        TableInfo t = dataset.getStorageTableInfo();
+        TableInfo t = dataset.getStorageTableInfo(false);
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY ParticipantId) x");
         Integer maxCount = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Integer.class);
@@ -1621,7 +1621,7 @@ public class StudyManager
             {
                 for (DatasetDefinition def : study.getDatasets())
                 {
-                    TableInfo t = def.getStorageTableInfo();
+                    TableInfo t = def.getStorageTableInfo(false);
                     if (null == t)
                         continue;
 
@@ -1707,8 +1707,9 @@ public class StudyManager
 
     public void updateParticipant(User user, Participant participant)
     {
-        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
-        _participantCache.remove(participant.getContainer());
+        Container c = participant.getContainer();
+        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{c.getId(), participant.getParticipantId()});
+        _participantCache.remove(c);
     }
 
     public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired)
@@ -1917,7 +1918,7 @@ public class StudyManager
         try (Transaction transaction = scope.ensureTransaction())
         {
             // TODO fix updating across study data
-            SQLFragment sql = new SQLFragment("UPDATE " ).append(def.getStorageTableInfo());
+            SQLFragment sql = new SQLFragment("UPDATE " ).append(def.getStorageTableInfo(false));
             sql.append(" SET QCState = ");
             // do string concatenation, rather that using a parameter, for the new state id because Postgres null
             // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
@@ -3645,7 +3646,7 @@ public class StudyManager
     private _DatasetDomainChange createDomainChange(String domainURI, String domainName, DatasetDefinitionEntry def, boolean existingDomainsOnly)
     {
         _DatasetDomainChange domainChange = new _DatasetDomainChange();
-        domainChange.domain = PropertyService.get().getDomain(def.datasetDefinition.getDefinitionContainer(), domainURI);
+        domainChange.domain = PropertyService.get().getDomain(def.datasetDefinition.getDefinitionContainer(), domainURI, true);
         if (domainChange.domain == null && existingDomainsOnly)
             return null;
         else if (domainChange.domain == null)
@@ -3742,7 +3743,8 @@ public class StudyManager
                     Domain domain =
                             PropertyService.get().getDomain(
                                     datasetDefinitionEntry.datasetDefinition.getDefinitionContainer(),
-                                    datasetDefinitionEntry.datasetDefinition.getTypeURI());
+                                    datasetDefinitionEntry.datasetDefinition.getTypeURI(),
+                                    true);
                     if (domain != null)
                         domainChangeMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), new _DatasetDomainChange(domain));
                 }
@@ -4119,7 +4121,7 @@ public class StudyManager
         return new DatasetModifiedRunnable(def, fireNotification);
     }
 
-    private class DatasetModifiedRunnable implements Runnable
+    private static class DatasetModifiedRunnable implements Runnable
     {
         private final @NotNull
         DatasetDefinition _def;
@@ -4387,7 +4389,7 @@ public class StudyManager
                     // SimpleDocument
                     SimpleDocumentResource r = new SimpleDocumentResource(
                         p, docid,
-                        c.getId(),
+                        c.getEntityId(),
                         "text/plain",
                         displayTitle,
                         execute, props

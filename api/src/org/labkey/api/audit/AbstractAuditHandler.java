@@ -156,7 +156,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             batch.clear();
                         }
                     }
-                    if (batch.size() > 0)
+                    if (!batch.isEmpty())
                     {
                         auditLog.addEvents(user, batch, useTransactionAuditCache);
                         batch.clear();

@@ -34,7 +34,7 @@
 <%
     JspView<AssayHeaderView> me = HttpView.currentView();
     AssayHeaderView bean = me.getModelBean();
-    if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !"".equals(bean.getProtocol().getProtocolDescription().trim())) { %>
+    if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !bean.getProtocol().getProtocolDescription().trim().isEmpty()) { %>
         <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
 
 <% }

@@ -19,11 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-
-import java.io.PrintWriter;
+import org.labkey.api.writer.HtmlWriter;
 
 /** Renders a fixed set of HTML at the content of the view */
-public class HtmlView extends WebPartView
+public class HtmlView extends WebPartView<Object>
 {
     private String _contentType = null;
     private HtmlString _html;
@@ -111,7 +110,7 @@ public class HtmlView extends WebPartView
     }
 
     @Override
-    public void renderView(Object model, PrintWriter out)
+    public void renderView(Object model, HtmlWriter out)
     {
         assert null == _contentType || getFrame() == FrameType.NONE || getFrame() == FrameType.NOT_HTML;
 
@@ -119,7 +118,7 @@ public class HtmlView extends WebPartView
             getViewContext().getResponse().setContentType(_contentType);
 
         if (_html != null)
-            out.print(_html);
+            out.write(_html);
         else if (_renderable != null)
             _renderable.appendTo(out);
     }

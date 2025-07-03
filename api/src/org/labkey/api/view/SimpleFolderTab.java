@@ -46,12 +46,12 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     private static final Logger LOGGER = LogManager.getLogger(SimpleFolderTab.class);
     private List<Portal.WebPart> _requiredWebParts = new ArrayList<>();
     private List<Portal.WebPart> _preferredWebParts = new ArrayList<>();
-    private List<TabSelector> _selectors = new ArrayList<>();
+    private final List<TabSelector> _selectors = new ArrayList<>();
     private String _url = null;
 
     private TAB_TYPE _tabType = TAB_TYPE.Portal;        // default to Portal type
     private String _folderTypeName;
-    private FolderType _folderType = null;
+    private final FolderType _folderType = null;
 
     @Override
     public TAB_TYPE getTabType()
@@ -142,7 +142,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
                 }
             }
 
-            if (permissions.size() > 0)
+            if (!permissions.isEmpty())
                 _permissions = permissions;
         }
 
@@ -187,7 +187,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         return parts;
     }
 
-    private class TabSelector
+    private static class TabSelector
     {
         String _viewName;
         String _controller;

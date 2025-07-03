@@ -109,7 +109,7 @@
 
                 %><li><%=h(container.getPath().substring(1))%><%
 
-                if (null != messages && messages.size() > 0)
+                if (null != messages && !messages.isEmpty())
                 {
                     %>, containing the following objects:<ul class=star><%
 
@@ -140,7 +140,7 @@
         String containerType = containersToDelete.size() == 1 ? containersToDelete.get(0).getContainerNoun() : "";
         String name = containersToDelete.size() == 1 ? containersToDelete.get(0).getName() : "these " + containersToDelete.size() +" folders";
         boolean showSubfolder = containersToDelete.size() != 1;
-        boolean hasSubFolders = containersToDelete.size() == 1 && containersToDelete.get(0).getChildren().size() != 0;
+        boolean hasSubFolders = containersToDelete.size() == 1 && !containersToDelete.get(0).getChildren().isEmpty();
         boolean usePlural = containersToDelete.size() > 1 || hasSubFolders;;
 
         %>

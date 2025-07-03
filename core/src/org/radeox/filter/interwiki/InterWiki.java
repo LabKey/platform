@@ -43,10 +43,10 @@ import java.util.Map;
  */
 
 public class InterWiki {
-  private static Logger log = LogManager.getLogger(InterWiki.class);
+  private static final Logger log = LogManager.getLogger(InterWiki.class);
 
   private static InterWiki instance;
-  private Map interWiki;
+  private final Map interWiki;
 
   public static synchronized InterWiki getInstance() {
     if (null == instance) {
@@ -80,7 +80,6 @@ public class InterWiki {
       int index = line.indexOf(" ");
       interWiki.put(line.substring(0, index), Encoder.escape(line.substring(index + 1)));
     }
-    ;
   }
 
   public Writer appendTo(Writer writer) throws IOException {
@@ -103,7 +102,7 @@ public class InterWiki {
   }
 
   public String getWikiUrl(String wiki, String name) {
-    return ((String) interWiki.get(wiki)) + name;
+    return interWiki.get(wiki) + name;
   }
 
   public Writer expand(Writer writer, String wiki, String name, String view, String anchor) throws IOException  {

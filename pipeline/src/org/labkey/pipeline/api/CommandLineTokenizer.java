@@ -20,7 +20,6 @@ public final class CommandLineTokenizer
      * Splits on whitespace, preserves single- and double-quoted arguments as well
      * arguments surrounded by ${ and }.  Backslash escapes the next character.
      *
-     * @param str
      * @return List of command line tokens.
      * @throws IllegalArgumentException If the quotes are unbalanced.
      */
@@ -149,7 +148,7 @@ public final class CommandLineTokenizer
                         else
                         {
                             // whitespace ends the token
-                            if (current.length() > 0)
+                            if (!current.isEmpty())
                                 tokens.add(current.toString());
                             current = new StringBuilder();
                             state = State.NORMAL;
@@ -170,7 +169,7 @@ public final class CommandLineTokenizer
         if (escaped)
             current.append('\\');
 
-        if (current.length() > 0)
+        if (!current.isEmpty())
             tokens.add(current.toString());
 
         return tokens;

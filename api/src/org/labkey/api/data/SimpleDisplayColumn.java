@@ -18,14 +18,13 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,7 +43,6 @@ public class SimpleDisplayColumn extends DisplayColumn
 
     public SimpleDisplayColumn(String displayHTML)
     {
-        super();
         setDisplayHtml(displayHTML);
     }
 
@@ -53,14 +51,9 @@ public class SimpleDisplayColumn extends DisplayColumn
         _displayHTML = StringExpressionFactory.create(displayHTML);
     }
 
-    public String getDisplayHTML()
+    public HtmlString getDisplayHTML(RenderContext ctx)
     {
-        return _displayHTML == null ? null : _displayHTML.getSource();
-    }
-
-    public String getDisplayHTML(RenderContext ctx)
-    {
-        return _displayHTML == null ? null : _displayHTML.eval(ctx);
+        return _displayHTML == null ? null : HtmlString.unsafe(_displayHTML.eval(ctx));
     }
 
     @Override
@@ -114,7 +107,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     {
         Object value = getValue(ctx);
         if (value != null)
-            out.write(value.toString());
+            out.write(value);
     }
 
     @Override
@@ -124,41 +117,46 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
+        Object value = getDisplayValue(ctx);
+        final String text;
+        final Renderable renderable;
+
+        if (value instanceof Renderable r)
+        {
+            renderable = r;
+            text = null;
+        }
+        else
+        {
+            renderable = null;
+            if (value == null)
+                text = "";
+            else if (null == _format)
+                text = value.toString();
+            else
+                text = _format.format(value);
+        }
+
         String url = renderURL(ctx);
         if (null != url)
         {
-            oldWriter.write("<a href='");
-            oldWriter.write(PageFlowUtil.filter(url));
-
             String linkTarget = getLinkTarget();
-            if (null != linkTarget)
-            {
-                oldWriter.write("' target='");
-                oldWriter.write(linkTarget);
-                oldWriter.write("' rel='noopener noreferrer'");
-            }
+            LinkBuilder lb = (renderable != null ? new LinkBuilder(renderable) : new LinkBuilder(text))
+                .href(url)
+                .target(linkTarget)
+                .addClass(getLinkCls());
 
-            String linkCls = getLinkCls();
-            if (null != linkCls)
-            {
-                oldWriter.write("' class='");
-                oldWriter.write(linkCls);
-            }
+            if (linkTarget != null)
+                lb.rel("noopener noreferrer");
 
-            oldWriter.write("'>");
+            out.write(lb);
         }
-        Object value = getDisplayValue(ctx);
-        if (value == null)
-            oldWriter.write("");
-        else if (null == _format)
-            oldWriter.write(getDisplayValue(ctx).toString());
         else
-            oldWriter.write(_format.format(getDisplayValue(ctx)));
-
-        if (null != url)
-            oldWriter.write("</a>");
+        {
+            out.write(renderable != null ? renderable : text);
+        }
     }
 
     @Override

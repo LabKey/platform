@@ -52,6 +52,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -70,7 +71,6 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -210,6 +210,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -258,6 +259,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1630,18 +1632,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
-        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
         String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
         return new Pair<>(lsid, dbSeqStr);
-    }
-
-    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
-    {
-        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
-        if (!container.isProject() && container.getProject() != null)
-            projectContainer = container.getProject();
-
-        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -4529,6 +4522,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
+            // There are other tables/rows we could lock, but this is a start
+            // CONSIDER similar behavior for Domain.delete()
+            _lockDomainsAndProvisionedTables(assayService, expProtocols);
+
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -4628,6 +4626,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (assayService != null)
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
+    }
+
+    private static void _lockDomainsAndProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    {
+        if (null == assayService)
+            return;
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        for (var expProtocol : expProtocols)
+        {
+            AssayProvider provider = assayService.getProvider(expProtocol);
+            if (provider != null)
+            {
+                for (var domain : provider.getDomains(expProtocol))
+                {
+                    domain.lockForDelete(expSchema);
+                }
+            }
+        }
     }
 
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
@@ -5670,6 +5686,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getRunsUsingDataIds(ids);
     }
 
+    @Override
     public List<ExpRunImpl> getRunsUsingDataIds(List<Integer> ids)
     {
         SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
@@ -7214,16 +7231,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             List<List<?>> expObjectParams = params.stream().map(
                     runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
             ).collect(toList());
-            StringBuilder expObjectSql = new StringBuilder("INSERT INTO ").append(OntologyManager.getTinfoObject())
-                    .append(" (ObjectUri, Container) VALUES (?, ?)");
-            Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
+            String expObjectSql = "INSERT INTO " + OntologyManager.getTinfoObject() +
+                    " (ObjectUri, Container) VALUES (?, ?)";
+            Table.batchExecute(getExpSchema(), expObjectSql, expObjectParams);
 
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(getTinfoExperimentRun().toString()).
-                    append(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
-                            "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '").
-                    append(c.getId()).append("')");
+            String sql = "INSERT INTO " + getTinfoExperimentRun().toString() +
+                    " (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
+                    "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '" +
+                    c.getId() + "')";
 
-            Table.batchExecute(getExpSchema(), sql.toString(), params);
+            Table.batchExecute(getExpSchema(), sql, params);
 
             List<String> runLsids = params.stream().map(p -> (String) p.get(0)).toList();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.LSID.name()), runLsids, IN);
@@ -8079,9 +8096,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
         }
 
-        // Issue 51321: check reserved data class name: First, All
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid DataClass name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Data Class");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
@@ -9526,7 +9543,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(dataObjects.size());
@@ -9761,7 +9778,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException
     {
         if (assayRuns.isEmpty())
             throw new IllegalArgumentException("No assayRuns provided to move operation.");
@@ -9777,7 +9794,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(assayRuns.size());
@@ -9816,7 +9833,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                        moveFile(renameData);
+                        moveFile(renameData, container, user);
                 }
             }, POSTCOMMIT);
 
@@ -9826,7 +9843,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return assayMoveData.counts();
     }
 
-    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user)
     {
         String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
         File targetFile = renameData.targetFile();
@@ -9846,18 +9863,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return false;
             }
         }
-        if (!sourceFile.renameTo(targetFile))
-        {
-            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' assay run '%s' (field: '%s') failed.",
-                    sourceFile.getAbsolutePath(),
-                    targetFile.getAbsolutePath(),
-                    assayName,
-                    runName,
-                    fieldName));
-            return false;
-        }
 
-        return true;
+
+        String changeDetail = String.format("'%s' assay run '%s' (field: '%s')", assayName, runName, fieldName);
+        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail);
     }
 
     @Override
@@ -10031,6 +10040,68 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         JdbcType type = dp.getPropertyType().getJdbcType();
         return type.isText() || type.isInteger();
+    }
+
+    /**
+     *
+     * Move file (post-commit) after moving sample/assay data
+     */
+    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment)
+    {
+        if (!sourceFile.exists())
+            return false;
+
+        // if not otherwise referenced, move the file. Otherwise, copy the file
+        boolean isMove = getFileReferenceCount(user, sourceFileContainer, sourceFile) == 0; // source record already moved to target folder
+        FileSystemAuditProvider.FileSystemAuditEvent event;
+        if (isMove)
+        {
+            boolean success = sourceFile.renameTo(targetFile);
+            if (!success)
+            {
+                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
+                return false;
+            }
+
+            event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File moved to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+        }
+        else
+        {
+            try
+            {
+                Files.copy(sourceFile.toPath(), targetFile.toPath());
+                event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File copied to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+            }
+            catch (IOException e)
+            {
+                LOG.warn(String.format("Copy of '%s' to '%s' failed for " + actionComment, sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
+                return false;
+            }
+        }
+
+        event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
+        event.setFile(sourceFile.getName());
+        event.setResourcePath(sourceFile.getAbsolutePath());
+
+        AuditLogService.get().addEvent(user, event);
+        return true;
+    }
+
+    public long getFileReferenceCount(User user, Container container, File file)
+    {
+        if (!container.hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You don't have the required permission to perform this action");
+
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+        SQLFragment unionSql = fileListener.listFilesQuery(true, file.getAbsolutePath());
+
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+    }
+
+    @Override
+    public boolean canMoveFileReference(User user, Container container, File file, int moveCount)
+    {
+        return getFileReferenceCount(user, container, file) <= moveCount;
     }
 
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
@@ -10226,7 +10297,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
             assertEquals(sampleIn, materialRunInput.getMaterial());
             assertEquals("Sample Goo", materialRunInput.getRole());
-            assertEquals(materialRunInput.getLSIDNamespacePrefix(), MaterialInput.NAMESPACE);
+            assertEquals(MaterialInput.NAMESPACE, materialRunInput.getLSIDNamespacePrefix());
             assertTrue(materialRunInput.getLSID().contains(":MaterialInput:" + sampleIn.getRowId() + "." + pa.getRowId()));
 
             ExpMaterialRunInputImpl x = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());
@@ -10345,7 +10416,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         static public final int AZ = startId+9;
         static public final int Z21 = startId+10;
 
-        static edge e(int a,int b) {return new edge(a,b);};
+        static edge e(int a,int b) {return new edge(a,b);}
+
         static public final List<edge> edges = List.of(
                 e(Q,QQ),
                 e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),

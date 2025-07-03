@@ -105,7 +105,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             }
 
             case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
+                return createPropertiesColumn(alias);
             default:
                 throw new UnsupportedOperationException("Unknown column " + column);
         }

@@ -67,7 +67,6 @@ public interface ParamReplacement
 
     /**
      * Get and set files associated with the replacement
-     * @param file
      */
     void addFile(File file);
     List<File> getFiles();

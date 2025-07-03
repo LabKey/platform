@@ -7,7 +7,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentListener;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 
 import java.util.List;

@@ -30,7 +30,7 @@ import java.util.HashMap;
  */
 public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFactory<FileAnalysisProtocol>
 {
-    private FileAnalysisTaskPipeline _pipeline;
+    private final FileAnalysisTaskPipeline _pipeline;
 
     public FileAnalysisProtocolFactory(FileAnalysisTaskPipeline pipeline)
     {

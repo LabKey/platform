@@ -223,7 +223,7 @@ public class DatasetViewProvider implements DataViewProvider
                             category = ViewCategoryManager.getInstance().getCategory(context.getContainer(), categoryId);
                         }
 
-                        boolean dirty = false;
+                        boolean dirty;
                         dsDef = dsDef.createMutable();
                         if (category != null)
                         {

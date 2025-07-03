@@ -36,7 +36,7 @@ public class PropertyCreationDialog extends TextBoxDialogBox
     @Override
     protected boolean commit(String propName)
     {
-        if (propName.length() == 0)
+        if (propName.isEmpty())
         {
             Window.alert("You must specify a property name.");
             return false;

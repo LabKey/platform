@@ -104,7 +104,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
      * This is very gross, and it causes a special case here, as we want to re-use any server
      * managed keys, instead of regenerating them.
      *
-     * @param allowImportManagedKeys
      */
     void setAllowImportManagedKeys(boolean allowImportManagedKeys)
     {
@@ -468,11 +467,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
      */
     static class DatasetColumnsIterator extends SimpleTranslator
     {
-        private DatasetDefinition _datasetDefinition;
+        private final DatasetDefinition _datasetDefinition;
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
-        private int _maxPTIDLength;
+        private final int _maxPTIDLength;
     //        boolean requiresKeyLock = false;
 
         // these columns are used to compute derived columns, should occur early in the output list
@@ -605,7 +604,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         class QCStateColumn implements Callable
         {
             boolean _autoCreate = true;
-            int _indexInputQCState = -1;
+            int _indexInputQCState;
             DataState _defaultQCState;
             Map<String, DataState> _qcLabels;
             Set<String> notFound = new CaseInsensitiveHashSet();

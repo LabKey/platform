@@ -508,7 +508,7 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
             assertEquals("3", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("3.0001", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c, BigDecimal.valueOf(-1), "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(-1), "label", null);
             assertEquals("-1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("-1", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 

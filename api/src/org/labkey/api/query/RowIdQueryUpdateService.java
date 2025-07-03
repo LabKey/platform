@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdateService<T, Integer>
 {
-    private String _keyColumn;
+    private final String _keyColumn;
 
     public RowIdQueryUpdateService(TableInfo table)
     {

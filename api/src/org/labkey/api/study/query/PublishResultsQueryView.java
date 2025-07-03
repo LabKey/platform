@@ -32,6 +32,7 @@ import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -66,6 +67,8 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
@@ -75,8 +78,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -96,6 +97,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.at;
 
 public class PublishResultsQueryView extends QueryView
 {
@@ -584,7 +589,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
-        public Pair<Boolean, HtmlString> getMatchStatus(RenderContext ctx) throws IOException
+        public Pair<Boolean, HtmlString> getMatchStatus(RenderContext ctx)
         {
             Container targetStudy = getUserTargetStudy(ctx);
             if (targetStudy == null)
@@ -718,8 +723,7 @@ public class PublishResultsQueryView extends QueryView
             }
             catch (SQLException e)
             {
-                //noinspection ThrowableInstanceNeverThrown
-                throw (IOException)new IOException().initCause(e);
+                throw new RuntimeSQLException(e);
             }
         }
 
@@ -799,8 +803,11 @@ public class PublishResultsQueryView extends QueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
+            // Value might be null and HtmlString handles that
+            HtmlString htmlValue = HtmlString.of(getValue(ctx));
+
             if (_editable)
             {
                 ActionURL completionBase = getCompletionBase(ctx);
@@ -809,64 +816,56 @@ public class PublishResultsQueryView extends QueryView
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
                         // TODO: Use the same code as AutoCompleteTag.java
-                        oldWriter.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-                        oldWriter.write("""
-                                +function() {
-                                    let isReady = false;
-                                    
-                                    window.onCompletionFocus = function(el) {
-                                        if (!isReady) return;
-                                        el.removeAttribute('onfocus');
-                                        Ext4.create('LABKEY.element.AutoCompletionField', {
-                                          renderTo        : el.getAttribute('completionid'),
-                                          completionUrl   : el.getAttribute('completion'),
-                                          sharedStore     : true,
-                                          fieldId         : el.getAttribute('id'),
-                                        });
-                                    };
-                                    
-                                    LABKEY.requiresScript('completion', function() {
-                                        Ext4.onReady(function() {
-                                            isReady = true;
-                                        });
+                        String script = """
+                            +function() {
+                                let isReady = false;
+                            
+                                window.onCompletionFocus = function(el) {
+                                    if (!isReady) return;
+                                    el.removeAttribute('onfocus');
+                                    Ext4.create('LABKEY.element.AutoCompletionField', {
+                                      renderTo        : el.getAttribute('data-completionId'),
+                                      completionUrl   : el.getAttribute('data-completion'),
+                                      sharedStore     : true,
+                                      fieldId         : el.getAttribute('id'),
                                     });
-                                }();
-                                """);
-                        oldWriter.write("</script>");
+                                };
+                            
+                                LABKEY.requiresScript('completion', function() {
+                                    Ext4.onReady(function() {
+                                        isReady = true;
+                                    });
+                                });
+                            }();
+                            """;
+                        SCRIPT(JavaScriptFragment.unsafe(script)).appendTo(out);
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
 
                     String inputId = "input-tag-" + UniqueID.getRequestScopedUID(ctx.getRequest());
                     String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
-                    String value = PageFlowUtil.filter(getValue(ctx));
 
-                    StringBuilder sb = new StringBuilder();
-
-                    // render our own input tag and attach the completions div lazily when the input receives
-                    // focus
+                    // render our own input tag and attach the completions div lazily when the input receives focus
                     HttpView.currentPageConfig().addHandler(inputId, "focus", "onCompletionFocus(this);");
-                    sb.append("<input type=\"text\"");
-                    sb.append(" id=\"").append(PageFlowUtil.filter(inputId)).append("\"");
-                    sb.append(" name=\"" + _formElementName + "\"");
-                    sb.append(" completionid=\"").append(PageFlowUtil.filter(completionId)).append("\"");
-                    sb.append(" value=\"" + value + "\"");
-                    sb.append(" completion=\"").append(PageFlowUtil.filter(completionBase)).append("\">");
+                    InputBuilder.text()
+                        .id(inputId)
+                        .name(_formElementName)
+                        .value(htmlValue)
+                        .addDataAttribute("completionId", completionId)
+                        .addDataAttribute("completion", completionBase.toString())
+                        .appendTo(out);
 
                     // the div we will lazily wire up completions to (needs to be a sibling to the input)
-                    sb.append("<div id=\"").append(PageFlowUtil.filter(completionId)).append("\">");
-
-                    oldWriter.write(sb.toString());
+                    DIV(at(id, completionId)).appendTo(out);
                 }
                 else
                 {
-                    oldWriter.write("<input type=\"text\" name=\"" + _formElementName +
-                            "\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
+                    out.write(InputBuilder.text().name(_formElementName).value(htmlValue));
                 }
             }
             else
             {
-                oldWriter.write("<input type=\"hidden\" name=\"" + _formElementName +
-                        "\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
+                out.write(InputBuilder.hidden().name(_formElementName).value(htmlValue));
             }
         }
     }
@@ -957,7 +956,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object visitObject = _visitColumn.calculateValue(ctx);
             Object dateObject = _dateColumn.calculateValue(ctx);
@@ -974,7 +973,7 @@ public class PublishResultsQueryView extends QueryView
             }
             // We may not have either a row-level or a default target study 
             Study study = targetStudyContainer == null ? null : StudyService.get().getStudy(targetStudyContainer);
-            Visit visit = null;
+            Visit visit;
 
             String participantID = convertObjectToString(participantObject);
             Double visitDouble = convertObjectToDouble(visitObject);
@@ -982,12 +981,12 @@ public class PublishResultsQueryView extends QueryView
 
             visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
 
-            oldWriter.write(visit == null ? "" : visit.getDisplayString());
+            out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
 
     // UNDONE: merge UploadWizardAction.InputDisplayColumn and PublishResultsQueryView.DataInputColumn
-    private class TargetStudyInputColumn extends StudyPickerColumn
+    private static class TargetStudyInputColumn extends StudyPickerColumn
     {
         ResolverHelper _resolverHelper;
 

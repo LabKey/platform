@@ -100,7 +100,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
             if (constraint != null)
                 constraints.add(constraint);
         }
-        return constraints.toArray(new Pair[constraints.size()]);
+        return constraints.toArray(new Pair[0]);
     }
 
     private Pair<String, String> parsePart(String expression)

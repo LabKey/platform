@@ -172,6 +172,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
@@ -350,9 +351,11 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
@@ -566,7 +569,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (IOException e)
         {
-            LOG.warn("Failed to clean up previously uploaded files from " + SpringActionController.getTempUploadDir(), e);
+            LOG.warn("Failed to clean up previously uploaded files from {}", SpringActionController.getTempUploadDir(), e);
         }
     }
 
@@ -908,6 +911,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        List<GUID> guids = Stream.of(ContainerManager.HOME_PROJECT_PATH, ContainerManager.SHARED_CONTAINER_PATH)
+            .map(ContainerManager::getForPath)
+            .filter(Objects::nonNull)
+            .map(Container::getEntityId)
+            .collect(Collectors.toList());
+        ContainerManager.setExcludedProjects(guids, () -> {});
     }
 
 
@@ -1212,6 +1222,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
             roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
             results.put("roleAssignments", roleAssignments);
+
+            Map<String, Integer> allowListCounts = new HashMap<>();
+            for (AllowListType type : AllowListType.values())
+            {
+                allowListCounts.put(type.name(), type.getValues().size());
+            }
+            results.put("allowListCounts", allowListCounts);
+
             return results;
         });
 
@@ -1338,6 +1356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
+        json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
         json.put(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS));
         return json;
     }
@@ -1555,7 +1574,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             startURL.setExtraPath(c.getId());
             WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                     "link:" + c.getId(),
-                    c.getId(),
+                    c.getEntityId(),
                     "text/plain",
                     body,
                     startURL,

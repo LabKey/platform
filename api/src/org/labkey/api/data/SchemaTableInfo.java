@@ -859,6 +859,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     @Nullable
     @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (forUpdate)
+            throw new UnsupportedOperationException("Cannot get domain for update.");
+        return getDomain();
+    }
+
+    @Nullable
+    @Override
     public DomainKind getDomainKind()
     {
         return null;
@@ -1089,7 +1098,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             }
         }
 
-        if (templates.size() == 0)
+        if (templates.isEmpty())
         {
             URLHelper url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.ImportField.name());

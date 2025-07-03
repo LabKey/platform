@@ -60,7 +60,7 @@ public class ExpProvisionedTableTestHelper
         domain.setDescription(domainDescription);
         domain.setFields(List.of(prop1, prop2, prop3));
 
-        return DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
+        return DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null, false);
     }
 
     public Map<String, String> getVocabularyPropertyURIS(Domain domain)

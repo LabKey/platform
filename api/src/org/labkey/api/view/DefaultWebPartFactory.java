@@ -54,7 +54,7 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
         }
         catch (InstantiationException | IllegalAccessException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 }
