@@ -307,6 +307,7 @@ end
 end-exec
 ends
 endtran
+enforced
 engine
 engines
 enum
@@ -697,6 +698,7 @@ numeric
 numeric_truncation
 nvarchar
 object
+objects
 occurrences_regex
 octet_length
 octets
@@ -772,6 +774,7 @@ percent
 percent_rank
 percentile_cont
 percentile_disc
+period
 perm
 permanent
 permission

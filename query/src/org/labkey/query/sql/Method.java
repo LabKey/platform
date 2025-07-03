@@ -514,7 +514,7 @@ public abstract class Method
     final String _name;
     final int _minArgs;
     final int _maxArgs;
-    
+
     Method(JdbcType jdbcType, int min, int max)
     {
         this("#UNDEF#", jdbcType, min, max);
@@ -658,21 +658,9 @@ public abstract class Method
         @Override
         public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
-            JdbcType jdbcType = _jdbcType;
-            if (arguments.length >= 2)
-            {
-                try
-                {
-                    SQLFragment[] frags = getSQLFragments(new ColumnInfo[] {arguments[1]}); // only convert the type arg
-                    String sqlEscapeTypeName = getTypeArgument(frags[0]);
-                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                }
-                catch (IllegalArgumentException x)
-                {
-                    /* */
-                }
-            }
-
+            JdbcType jdbcType = JdbcType.OTHER;
+            for (ColumnInfo argument : arguments)
+                jdbcType = argument.getJdbcType();
             return new ExprColumn(parentTable, alias, null, jdbcType)
             {
                 @Override
@@ -686,30 +674,21 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] fragments)
         {
-            JdbcType jdbcType;
-            SQLFragment length = null;
             if (fragments.length >= 2)
             {
-                String sqlEscapeTypeName = getTypeArgument(fragments[1]);
                 try
                 {
-                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    String typeName = dialect.getSqlTypeName(jdbcType);
-                    if (null == typeName)
-                        throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + dialect.getProductName() + " database");
-                    if (fragments.length > 2)
-                        length = fragments[2];
-                    fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
-
-                    if (jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL)
+                    String dialectTypeName = getTypeArgument(fragments[1]);
+                    JdbcType jdbcType = dialect.getJdbcType(dialect.sqlTypeIntFromSqlTypeName(dialectTypeName),dialectTypeName);
+                    if ((jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL) && isSimpleString(fragments[0]))
                     {
-                        String s = fragments[0].getRawSQL().toLowerCase();
-                        if ("'infinity'".equals(s) || "'+infinity'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
-                        if ("'-infinity'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
-                        if ("'nan'".equals(s))
-                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
+                        String s = toSimpleString(fragments[0]).toLowerCase();
+                        if ("infinity".equals(s) || "+infinity".equals(s))
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                        else if ("-infinity".equals(s))
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                        else if ("nan".equals(s))
+                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
                     }
                 }
                 catch (IllegalArgumentException x)
@@ -726,21 +705,19 @@ public abstract class Method
             {
                 ret.append(" AS ");
                 ret.append(fragments[1]);
-                if (null != length)
-                {
-                    ret.append("(").append(length).append(")");
-                }
             }
-            ret.append(")");                            
+            ret.append(")");
             return ret;
         }
 
         /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
-            String typeName = toSimpleString(typeSqlFragment);
+            String typeName = typeSqlFragment.getRawSQL();
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
+            if (typeName.contains("("))
+                typeName = typeName.substring(0, typeName.indexOf('('));
             return typeName;
         }
 
@@ -756,13 +733,8 @@ public abstract class Method
             if (children.size() < 2)
                 return JdbcType.VARCHAR;
 
-            String sqlEscapeTypeName = ((QString)children.get(1)).getValue();
-            if (sqlEscapeTypeName.startsWith("SQL_"))
-                sqlEscapeTypeName = sqlEscapeTypeName.substring(4);
-
-            JdbcType jdbcType = JdbcType.OTHER;
-            try { jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType; }catch (IllegalArgumentException x) {/* */}
-            return jdbcType;
+            QType type = (QType)children.get(1);
+            return type.getJdbcType();
         }
     }
 
@@ -818,19 +790,19 @@ public abstract class Method
         }
     }
 
-	static class RoundInfo extends JdbcMethodInfoImpl
-	{
-		RoundInfo()
-		{
-			super("round", JdbcType.DOUBLE);
-		}
+    static class RoundInfo extends JdbcMethodInfoImpl
+    {
+        RoundInfo()
+        {
+            super("round", JdbcType.DOUBLE);
+        }
 
-		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
+        // https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
-		@Override
+        @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
-		{
+        {
             boolean supportsRoundDouble = dialect.supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
@@ -841,33 +813,46 @@ public abstract class Method
                     return super.getSQL(dialect, new SQLFragment[] {arguments[0]});
             }
 
-            int i = Integer.MIN_VALUE;
-            try
+            if (supportsRoundDouble)
             {
-                i = Integer.parseInt(arguments[1].getSQL());
-            }
-            catch (NumberFormatException x)
-            {
-                /* fall through */
-            }
-
-            if (supportsRoundDouble || i == Integer.MIN_VALUE)
                 return super.getSQL(dialect, arguments);
-
-            // fall back, only supports simple integer
-            SQLFragment scaled = new SQLFragment();
-            scaled.append("(");
-            scaled.append(arguments[0]);
-            scaled.append(")*").appendValue(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
-            ret.append("/");
-            ret.appendValue(Math.pow(10,i));
-            return ret;
+            }
+            else if (dialect.isPostgreSQL())
+            {
+                // Postgres ROUND() requires NUMERIC argument and will error with DOUBLE
+                // This CAST works because in postgres NUMERIC(unspecified) => up to 131072 digits before the decimal point; up to 16383 digits after the decimal point
+                // This is not SQL standard behavior
+                SQLFragment numeric = new SQLFragment();
+                numeric.append("CAST((").append(arguments[0]).append(") AS NUMERIC)");
+                return super.getSQL(dialect, new SQLFragment[] {numeric, arguments[1]});
+            }
+            else
+            {
+                // NOTE: At the moment there appear to be no Dialects that use this code path (but it still works).
+                // Leave for completeness?
+                int n = Integer.MIN_VALUE;
+                try
+                {
+                    n = Integer.parseInt(arguments[1].getSQL());
+                }
+                catch (NumberFormatException x)
+                {
+                    /* fall through */
+                }
+                // If 2nd argument isn't a constant, just do the default thing.  This may work or it may cause a server parse error.
+                if (n == Integer.MIN_VALUE)
+                    return super.getSQL(dialect, arguments);
+                var scale = Math.pow(10,n);
+                SQLFragment scaled = new SQLFragment().append("(").append(arguments[0]).append(")*").appendValue(scale);
+                SQLFragment ret = super.getSQL(dialect, new SQLFragment[]{scaled});
+                ret.append("/").appendValue(scale);
+                return ret;
+            }
 		}
 	}
 
 
-    class AgeMethodInfo extends AbstractMethodInfo
+    static class AgeMethodInfo extends AbstractMethodInfo
     {
         AgeMethodInfo()
         {
@@ -1086,7 +1071,7 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
-            ret.add((Callable) () -> {
+            ret.add((Callable<String>) () -> {
                 User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     return null;
@@ -1323,7 +1308,7 @@ public abstract class Method
     {
         return resolve(null, name);
     }
-    
+
     public static Method resolve(SqlDialect d, String name)
     {
         Method m = null;
@@ -1353,7 +1338,7 @@ public abstract class Method
         {
             super(JdbcType.BOOLEAN);
         }
-        
+
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {

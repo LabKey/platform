@@ -426,7 +426,9 @@ public class SqlParser
     private static void _prefix(Tree tree, StringBuilder sb)
     {
         if (tree.getChildCount() == 0)
+        {
             sb.append(tree.getText());
+        }
         else
         {
             sb.append("(");
@@ -451,7 +453,9 @@ public class SqlParser
     private static void _prefix(QNode tree, StringBuilder sb)
     {
         if (tree.getFirstChild() == null)
+        {
             sb.append(_text(tree));
+        }
         else
         {
             sb.append("(");
@@ -469,6 +473,8 @@ public class SqlParser
     {
         if (q.getTokenType() == METHOD_CALL)
             return "METHOD_CALL";
+        if (q instanceof QType qtype)
+            return qtype.getSourceText();
         return q.getTokenText();
     }
 
@@ -790,15 +796,20 @@ public class SqlParser
 
         QExpr exprDefault = (QExpr)nodeDefault;
         boolean required = exprDefault == null;
-        ParameterType type = ParameterType.resolve(identType.getIdentifier());
-        if (null == type)
+        // parameter types are a subset of convert types
+        ParameterType parameterType = ParameterType.resolve(identType.getIdentifier());
+        if (null == parameterType)
         {
             _parseErrors.add(new QueryParseException("Parameter type is not supported: " + identType.getIdentifier(), null, identType.getLine(), identType.getColumn()));
             return null;
         }
-        Object value = null==exprDefault ? null : type.convert(((IConstant)exprDefault).getValue());
+        Object value = null==exprDefault ? null : parameterType.convert(((IConstant)exprDefault).getValue());
 
-        return new QParameter(parameter, identName.getIdentifier(), type, required, value);
+        // reuse convert helper (we already validated parameter type above)
+        QType convertType = createType(nodeType);
+        if (null == convertType)
+            return null;
+        return new QParameter(parameter, identName.getIdentifier(), convertType, required, value);
     }
 
     private QNode convertParseTree(CommonTree node)
@@ -907,22 +918,19 @@ public class SqlParser
 
                 if (name.equals("convert") || name.equals("cast"))
                 {
-                    if (!(exprList instanceof QExprList) || (exprList.childList().size() != 2 && exprList.childList().size() != 3))
+                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
                     {
                         _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
                     }
-                    LinkedList<QNode> args = new LinkedList<>();
-                    args.add(exprList.childList().get(0));
-                    args.add(constantToStringNode(exprList.childList().get(1)));
-                    QNode qNodeLength = null;
-                    if (exprList.childList().size() > 2)
+                    var valueExpression = exprList.childList().get(0);
+                    QNode type = createType(exprList.childList().get(1));
+                    if (null == type)
                     {
-                        args.add(exprList.childList().get(2));
-                        qNodeLength = exprList.childList().get(2);
+                        assert !_parseErrors.isEmpty();
+                        return null;
                     }
-                    exprList._replaceChildren(args);
-                    validateConvertConstant(args.get(1), qNodeLength);
+                    exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
                 }
                 else if (name.equals("timestampadd") || name.equals("timestampdiff"))
                 {
@@ -1395,32 +1403,81 @@ public class SqlParser
     }
 
 
-    private boolean validateConvertConstant(QNode n, QNode length)
+    private QType createType(QNode qType)
     {
-        if (!(n instanceof QString))
+        String typeString;
+        if (qType instanceof QString qString)
         {
-            _parseErrors.add(new QueryParseException("constant expected", null, n.getLine(), n.getColumn()));
-            return false;
+            typeString = qString.getValue();
         }
-        String s = ((QString)n).getValue();
-        if (s.startsWith("SQL_"))
-            s = s.substring(4);
+        else if (qType instanceof QIdentifier qIdentifier)
+        {
+            typeString = qIdentifier.getIdentifier();
+        }
+        else
+        {
+            _parseErrors.add(new QueryParseException("Unexpected token", null, qType.getLine(), qType.getColumn()));
+            return null;
+        }
+        if (typeString.startsWith("SQL_"))
+            typeString = typeString.substring(4);
+
+        QNumber qLength = null;
+        QNumber qScale = null;
+        if (!qType.childList().isEmpty())
+        {
+            qLength = (QNumber)qType.childList().get(0);
+            if (qType.childList().size() > 1)
+                qScale = (QNumber)qType.childList().get(1);
+        }
+
         try
         {
-            ConvertType type = ConvertType.valueOf(s);
-            if (length != null)
+
+            ConvertType type = ConvertType.valueOf(typeString.toUpperCase());
+            switch (type)
             {
-                if (type != ConvertType.VARCHAR)
+                case VARCHAR ->
                 {
-                    _parseErrors.add(new QueryParseException("Unexpected length modifier for '" + s + "'", null, length.getLine(), length.getColumn()));
+                    if (null != qScale)
+                    {
+                        _parseErrors.add(new QueryParseException("Unexpected scale modifier for '" + typeString + "'", null, qType.getLine(), qType.getColumn()));
+                        return null;
+                    }
+                }
+                case NUMERIC, DECIMAL ->
+                {
+                    if (null != qLength && null != qScale)
+                    {
+                        int length = qLength._value.intValue();
+                        int scale = qScale._value.intValue();
+                        if (scale > length)
+                        {
+                            _parseErrors.add(new QueryParseException("NUMERIC scale must be between 0 and precision=" + length, null, qScale.getLine(), qScale.getColumn()));
+                            return null;
+                        }
+                    }
+                }
+                default ->
+                {
+                    if (null != qLength)
+                    {
+                        _parseErrors.add(new QueryParseException("Unexpected length modifier for '" + typeString + "'", null, qType.getLine(), qType.getColumn()));
+                        return null;
+                    }
                 }
             }
-            return true;
+
+            return new QType(
+                    type,
+                    null==qLength?null:qLength._value.intValue(),
+                    null==qScale?null:qScale._value.intValue()
+            );
         }
         catch (IllegalArgumentException x)
         {
-            _parseErrors.add(new QueryParseException("Unrecognized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
-            return false;
+            _parseErrors.add(new QueryParseException("Unrecognized constant '" + typeString + "'", null, qType.getLine(), qType.getColumn()));
+            return null;
         }
     }
 
@@ -1970,7 +2027,11 @@ public class SqlParser
             new Pair<>("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
             new Pair<>("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
             new Pair<>("SUM(a+b)","(SUM (+ a b))"),
-            new Pair<>("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
+            new Pair<>("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a VARCHAR))"),
+
+            new Pair<>("CAST(1.23 AS NUMERIC)", "(METHOD_CALL CAST (EXPR_LIST 1.23 DECIMAL))"),
+            new Pair<>("CAST(1.23 AS NUMERIC(10))", "(METHOD_CALL CAST (EXPR_LIST 1.23 DECIMAL(10)))"),
+            new Pair<>("CAST(1.23 AS NUMERIC(10,2))", "(METHOD_CALL CAST (EXPR_LIST 1.23 DECIMAL(10,2)))")
         );
 
 
@@ -2047,7 +2108,7 @@ public class SqlParser
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);
                 String prefix = toPrefixString(e);
-                assertEquals("error parsing sql: " + test.first + "\nexpected  <<" + test.second + ">>\nfound     <<" + prefix + ">>",
+                assertEquals("error parsing expression: " + test.first + "\nexpected  <<" + test.second + ">>\nfound     <<" + prefix + ">>",
                         test.second, prefix);
             }
         }

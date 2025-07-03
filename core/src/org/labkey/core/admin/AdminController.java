@@ -10397,13 +10397,14 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
         {
             JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
-            newView.setTitle("Create New Short URL");
+            boolean isAppAdmin = getUser().hasRootPermission(ApplicationAdminPermission.class);
+            newView.setTitle(isAppAdmin ? "Create New Short URL" : "Short URLs");
             newView.setFrame(WebPartView.FrameType.PORTAL);
 
             QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", CoreQuerySchema.SHORT_URL_TABLE_NAME);
             qSettings.setBaseSort(new Sort("-Created"));
             QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, null);
-            if (!getUser().hasRootPermission(ApplicationAdminPermission.class))
+            if (!isAppAdmin)
             {
                 existingView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
             }
