@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -33,7 +32,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -497,12 +495,12 @@ public class ExpDataIterators
         private final boolean _isSample;
         private final ExpObject _dataType;
 
-        public AliasDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user, TableInfo expTable, ExpObject dataType, boolean isSample)
+        public AliasDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user, TableInfo expAliasTable, ExpObject dataType, boolean isSample)
         {
             _in = in;
             _container = container;
             _user = user;
-            _expAliasTable = expTable;
+            _expAliasTable = expAliasTable;
             _isSample = isSample;
             _dataType = dataType;
         }
@@ -524,7 +522,7 @@ public class ExpDataIterators
         Map<String, Object> _lsidAliasMap = new HashMap<>();
         private final TableInfo _expAliasTable;
 
-        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expTable, ExpObject dataType, boolean isSample)
+        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expAliasTable, ExpObject dataType, boolean isSample)
         {
             super(di, context, container, user, dataType, isSample);
 
@@ -532,7 +530,7 @@ public class ExpDataIterators
             _aliasCol = map.get(ALIASCOLUMNALIAS) == null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
             _lsidCol = map.get("lsid") == null ? null : di.getSupplier(map.get("lsid"));
             _nameCol = map.get("name") == null ? null : di.getSupplier(map.get("name"));
-            _expAliasTable = expTable;
+            _expAliasTable = expAliasTable;
         }
 
         @Override
@@ -540,40 +538,39 @@ public class ExpDataIterators
         {
             boolean hasNext = super.next();
 
+            // skip processing if aliases are not being modified
+            if (_aliasCol == null)
+                return hasNext;
+
             // skip processing if there are errors upstream
             if (getErrors().hasErrors())
                 return hasNext;
 
             if (hasNext)
             {
-                // For each iteration, collect the lsid and alias col values.
-                if (_aliasCol != null)
-                {
-                    if (_context.getInsertOption().mergeRows && _nameCol != null)
-                    {
-                        Object nameValue = _nameCol.get();
-                        if (nameValue instanceof String name)
-                        {
-                            ExpObject obj = getExpObjectByName(name);
-                            if (obj != null)
-                            {
-                                String lsid = obj.getLSID();
-                                if (lsid != null && !lsid.isEmpty())
-                                    _lsidAliasMap.put(lsid, _aliasCol.get());
-                            }
-                        }
-                    }
-                    else if (_lsidCol != null)
-                    {
-                        Object lsidValue = _lsidCol.get();
-                        Object aliasValue = _aliasCol.get();
+                // Collect alias values and map them by LSID
+                String lsid = null;
 
-                        if (aliasValue != null && lsidValue instanceof String lsidString)
-                        {
-                            _lsidAliasMap.put(lsidString, aliasValue);
-                        }
+                if (_nameCol != null && (_context.getInsertOption().mergeRows || _context.getInsertOption().updateOnly))
+                {
+                    Object nameValue = _nameCol.get();
+                    if (nameValue instanceof String name)
+                    {
+                        ExpObject obj = getExpObjectByName(name);
+                        if (obj != null)
+                            lsid = obj.getLSID();
                     }
                 }
+
+                if (lsid == null && _lsidCol != null)
+                {
+                    Object lsidValue = _lsidCol.get();
+                    if (lsidValue instanceof String lsidString)
+                        lsid = lsidString;
+                }
+
+                if (!StringUtils.isEmpty(lsid))
+                    _lsidAliasMap.put(lsid, _aliasCol.get());
 
                 return true;
             }
@@ -775,7 +772,7 @@ public class ExpDataIterators
                 return true;
 
             ExpObject expObject = null;
-            if (_nameCol != null && _context.getInsertOption().mergeRows)
+            if (_nameCol != null && (_context.getInsertOption().mergeRows || _context.getInsertOption().updateOnly))
             {
                 Object nameValue = get(_nameCol);
                 if (nameValue instanceof String name)
@@ -791,10 +788,11 @@ public class ExpDataIterators
 
             if (expObject != null)
             {
+                Object flagValue = get(_flagCol);
+                String flag = Objects.toString(flagValue, null);
+
                 try
                 {
-                    Object flagValue = get(_flagCol);
-                    String flag = Objects.toString(flagValue, null);
                     expObject.setComment(_user, flag, false);
                 }
                 catch (ValidationException e)
