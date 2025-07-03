@@ -118,6 +118,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1699,7 +1700,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
@@ -1760,7 +1761,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order by rowId to reduce deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
