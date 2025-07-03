@@ -9169,6 +9169,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE LOWER(name) = LOWER(?) AND name <> ?")
                 .add(newName)
                 .add(newName);
+        if (tableInfo.getSqlDialect().isSqlServer())
+            dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison
+
         return new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists();
     }
 
