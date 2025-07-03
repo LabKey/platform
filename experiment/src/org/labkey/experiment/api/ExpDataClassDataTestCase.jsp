@@ -301,6 +301,8 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
     row.put("aa", 30);
     row.put("bb", "bye");
+    String expectedComment = "waving in the wind";
+    row.put("flag", expectedComment);
     rows.add(row);
 
     List<Map<String, Object>> ret;
@@ -317,6 +319,7 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     assertNotNull(data);
     assertEquals(sub, data.getContainer());
     assertEquals(2, dataClass.getDatas().size());
+    assertEquals(expectedComment, data.getComment());
 }
 
 private void testInsertDuplicate(ExpDataClassImpl dataClass, TableInfo table) throws Exception
