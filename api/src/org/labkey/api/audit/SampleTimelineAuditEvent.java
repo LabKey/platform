@@ -19,7 +19,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
 
-    public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of("AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume");
+    public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of("AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit");
 
     public enum SampleTimelineEventType
     {
