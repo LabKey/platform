@@ -1155,8 +1155,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     Map<String, Map<String, Object>> getDomainMetrics();
 
-    boolean checkDuplicateName(@NotNull String newName, @NotNull TableInfo tableInfo);
-
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;

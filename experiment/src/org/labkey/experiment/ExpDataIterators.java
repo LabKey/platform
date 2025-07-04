@@ -3221,8 +3221,13 @@ public class ExpDataIterators
             if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
                 return hasNext;
 
-            if (ExperimentService.get().checkDuplicateName(newName, _tableInfo))
-                _context.getErrors().addRowError(new ValidationException(String.format("Name '%s' already exist.", newName)));
+            if (ExperimentServiceImpl.get().isNameAllowed(newName, _tableInfo))
+            {
+                String error = String.format("The name '%s' already exists.", newName);
+                if (_context.getInsertOption().allowUpdate)
+                    error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", newName);
+                _context.getErrors().addRowError(new ValidationException(error));
+            }
 
             return hasNext;
         }

@@ -9161,14 +9161,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
-    @Override
-    public boolean checkDuplicateName(@NotNull String newName, @NotNull TableInfo tableInfo)
+    public boolean isNameAllowed(@NotNull String newName, @NotNull TableInfo tableInfo)
+    {
+        return checkDuplicateName(newName, newName, tableInfo);
+    }
+
+    public boolean checkDuplicateName(@NotNull String oldName, @NotNull String newName, @NotNull TableInfo tableInfo)
     {
         SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
                 .append(tableInfo)
                 .append(" WHERE LOWER(name) = LOWER(?) AND name <> ?")
                 .add(newName)
-                .add(newName);
+                .add(oldName);
         if (tableInfo.getSqlDialect().isSqlServer())
             dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison
 

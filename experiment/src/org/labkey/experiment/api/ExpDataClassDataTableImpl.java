@@ -1325,8 +1325,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
             if (hasNameChange)
             {
-                if (ExperimentServiceImpl.get().checkDuplicateName(newName, _dataClass.getTinfo()))
-                    throw new ValidationException(String.format("Name '%s' already exist.", newName));
+                if (ExperimentServiceImpl.get().checkDuplicateName(oldName, newName, _dataClass.getTinfo()))
+                    throw new ValidationException(String.format("The name '%s' already exists.", newName));
             }
 
             // Replace attachment columns with filename and keep AttachmentFiles
