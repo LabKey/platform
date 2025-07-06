@@ -242,6 +242,8 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     {
         if (_domain == null || (forUpdate && !_domain.isMutable()))
         {
+            assert getContainer() != null : "Container cannot be null when attempting to fetch data class domain.";
+
             _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
             if (_domain == null)
             {
@@ -328,12 +330,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
-    public TableInfo getTinfo()
+    public @NotNull TableInfo getTinfo()
     {
-        Domain d = getDomain();
-        if (null == d)
-            throw new NullPointerException("domain is null");
-        return StorageProvisioner.createTableInfo(d);
+        return StorageProvisioner.createTableInfo(getDomain());
     }
 
     @Override
