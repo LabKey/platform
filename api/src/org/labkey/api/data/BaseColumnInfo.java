@@ -56,7 +56,6 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
-import java.beans.Introspector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -1630,12 +1629,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         public Set<FieldKey> getSuggestedColumns()
         {
             return null;
-        }
-
-        @Override
-        public boolean isShowAsPublicDependency()
-        {
-            return false;
         }
     }
 
