@@ -1387,6 +1387,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return buf.toString();
     }
 
+    /** @return a version of the supplied name that is considered a valid Java identifier */
 
     public static String legalNameFromName(String name)
     {
@@ -1416,19 +1417,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         return buf.toString();
     }
-
-
-    public static String propNameFromName(String name)
-    {
-        if (name == null)
-            return null;
-
-        if (name.isEmpty())
-            return null;
-
-        return Introspector.decapitalize(legalNameFromName(name));
-    }
-
 
     // TODO why is there here? and not something like RequestHelper or PageFlowUtil
     public static boolean booleanFromString(String str)

@@ -60,7 +60,8 @@ public class DisplayColumnGroup
         TD(
             isCopyable() ? (DOM.Renderable) ret -> {
 
-                String id = getGroupFormFieldName(ctx) + "CheckBox";
+                // Use propName because ids can't have spaces
+                String id = ColumnInfo.propNameFromName(getGroupFormFieldName(ctx)) + "CheckBox";
                 InputBuilder.checkbox().name(id).id(id).appendTo(out);
                 StringBuilder onChange = new StringBuilder("b = this.checked;");
 

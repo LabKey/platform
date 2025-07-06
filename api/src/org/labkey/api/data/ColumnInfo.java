@@ -31,6 +31,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
+import java.beans.Introspector;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -382,9 +383,16 @@ public interface ColumnInfo extends ColumnRenderProperties
         return BaseColumnInfo.labelFromName(name);
     }
 
+    /** @return a version of the supplied name that conforms to Java's local variable naming convention */
     static String propNameFromName(String name)
     {
-        return BaseColumnInfo.propNameFromName(name);
+        if (name == null)
+            return null;
+
+        if (name.isEmpty())
+            return null;
+
+        return Introspector.decapitalize(legalNameFromName(name));
     }
 
     static String legalNameFromName(String name)
