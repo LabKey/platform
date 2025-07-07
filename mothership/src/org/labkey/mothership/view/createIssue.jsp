@@ -25,5 +25,5 @@
     <input type="hidden" name="body" value="<%=h(ctx.get("body"))%>"/>
     <input type="hidden" name="title" value="<%=h(ctx.get("title"))%>"/>
     <input type="hidden" name="skipPost" value="true"/>
-    <input type="hidden" name="assignedTo" value=""/>
+    <input type="hidden" name="AssignedTo" value=""/>
 </labkey:form>

@@ -72,7 +72,7 @@ public class MothershipHelper extends LabKeySiteWrapper
     public static final String MOTHERSHIP_CONTROLLER = "mothership";
     public static final String MOTHERSHIP_SCHEMA = "mothership";
     public static final String HOST_NAME = "localhost"; //org.labkey.api.util.MothershipReport.Target.local
-    public static final String TEST_HOST_NAME = "TEST_localhost"; //org.labkey.api.util.MothershipReport.Target.test
+    public static final String TEST_HOST_NAME = "TEST_jeckels.labkey.com"; //org.labkey.api.util.MothershipReport.Target.test
 
     private boolean selfReportingEnabled;
 
