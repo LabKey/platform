@@ -3250,7 +3250,7 @@ public class ExpDataIterators
             if (!isNameValid)
             {
                 String error = String.format("The name '%s' already exists.", newName);
-                if (_context.getInsertOption().allowUpdate)
+                if (_context.getInsertOption().mergeRows)
                     error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", newName);
                 _context.getErrors().addRowError(new ValidationException(error));
             }

@@ -9165,7 +9165,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
                 .append(tableInfo)
-                .append(" WHERE LOWER(name) = LOWER(?) AND name <> ?")
+                .append(" WHERE LOWER(name) = LOWER(?)")
                 .add(newOrExistingName);
         if (allowExisting) // // exclude existing name for merge
         {
