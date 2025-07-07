@@ -106,7 +106,7 @@ public class ListDefinitionImpl implements ListDefinition
         builder.setKeyType(keyType.toString());
         builder.setCategory(category);
         _def = builder;
-        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType, category);
+        Lsid lsid = ListDomainKind.generateDomainURI(container, keyType, category);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name, templateInfo);
     }
 
