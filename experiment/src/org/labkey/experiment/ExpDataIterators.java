@@ -2373,7 +2373,7 @@ public class ExpDataIterators
             DataIteratorBuilder step2d = step2c;
             if (canUpdateNames && !dontUpdate.contains("name"))
             {
-                step2d = LoggingDataIterator.wrap(new ExpDataIterators.DuplicateNameCheckIteratorBuilder(step2c, _propertiesTable));
+                step2d = LoggingDataIterator.wrap(new ExpDataIterators.DuplicateNameCheckIteratorBuilder(step2c, isUpdateUsingLsid, _propertiesTable));
             }
 
             // Insert into exp.data then the provisioned table
@@ -3165,10 +3165,12 @@ public class ExpDataIterators
     {
         private final DataIteratorBuilder _in;
         private final TableInfo _tableInfo;
+        private final boolean _isUpdateUsingLsid;
 
-        public DuplicateNameCheckIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo tableInfo)
+        public DuplicateNameCheckIteratorBuilder(@NotNull DataIteratorBuilder in, boolean isUpdateUsingLsid, TableInfo tableInfo)
         {
             _in = in;
+            _isUpdateUsingLsid = isUpdateUsingLsid;
             _tableInfo = tableInfo;
         }
 
@@ -3176,7 +3178,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(pre, context, _tableInfo));
+            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(pre, context, _isUpdateUsingLsid, _tableInfo));
         }
     }
 
@@ -3185,15 +3187,19 @@ public class ExpDataIterators
         final static String NAME_FIELD = "name";
         private final DataIteratorContext _context;
         private final Integer _nameCol;
+        private final Integer _lsidCol;
         private final TableInfo _tableInfo;
+        private final boolean _isUpdateUsingLsid;
 
-        protected DuplicateNameCheckDataIterator(DataIterator di, DataIteratorContext context, TableInfo tableInfo)
+        protected DuplicateNameCheckDataIterator(DataIterator di, DataIteratorContext context, boolean isUpdateUsingLsid, TableInfo tableInfo)
         {
             super(di);
             _context = context;
             _tableInfo = tableInfo;
+            _isUpdateUsingLsid = isUpdateUsingLsid;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _nameCol = map.get(NAME_FIELD);
+            _lsidCol = map.get("lsid");
         }
 
         @Override
@@ -3221,7 +3227,27 @@ public class ExpDataIterators
             if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
                 return hasNext;
 
-            if (ExperimentServiceImpl.get().isNameAllowed(newName, _tableInfo))
+            boolean isNameValid = true;
+            if (!_context.getInsertOption().allowUpdate) // insert new
+            {
+                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo, false);
+            }
+            else if (_isUpdateUsingLsid && _lsidCol != null) // update using rowId is not yet supported for DIB
+            {
+                Object lsidObj = get(_lsidCol);
+                if (lsidObj != null)
+                {
+                    String lsid = String.valueOf(lsidObj);
+                    if (!StringUtils.isEmpty(lsid) && !ExperimentServiceImpl.get().canRename(lsid, newName, _tableInfo))
+                        isNameValid = false;
+                }
+            }
+            else if (_context.getInsertOption().mergeRows) // merge
+            {
+                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo,true);
+            }
+
+            if (!isNameValid)
             {
                 String error = String.format("The name '%s' already exists.", newName);
                 if (_context.getInsertOption().allowUpdate)

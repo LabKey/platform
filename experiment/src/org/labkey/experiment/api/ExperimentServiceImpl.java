@@ -9161,22 +9161,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
-    public boolean isNameAllowed(@NotNull String newName, @NotNull TableInfo tableInfo)
-    {
-        return checkDuplicateName(newName, newName, tableInfo);
-    }
-
-    public boolean checkDuplicateName(@NotNull String oldName, @NotNull String newName, @NotNull TableInfo tableInfo)
+    public boolean isValidNewOrExistingName(String newOrExistingName, @NotNull TableInfo tableInfo, boolean allowExisting)
     {
         SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
                 .append(tableInfo)
                 .append(" WHERE LOWER(name) = LOWER(?) AND name <> ?")
+                .add(newOrExistingName);
+        if (allowExisting) // // exclude existing name for merge
+        {
+            dataRowSQL.append(" AND name <> ?").add(newOrExistingName);
+            if (tableInfo.getSqlDialect().isSqlServer())
+                dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison for <> operator to exclude existing name
+        }
+
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+    }
+
+    public boolean canRename(@NotNull String lsid, @NotNull String newName, @NotNull TableInfo tableInfo)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?) AND lsid <> ?")
                 .add(newName)
-                .add(oldName);
+                .add(lsid);
         if (tableInfo.getSqlDialect().isSqlServer())
             dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison
 
-        return new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists();
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
     }
 
     private Map<String, Object> getImportTemplatesMetrics()

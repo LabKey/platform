@@ -712,11 +712,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
             throw new ValidationException("User-specified sample name not allowed");
 
-        if (hasNameChange)
-        {
-            if (ExperimentServiceImpl.get().checkDuplicateName(oldName, newName, _sampleType.getTinfo()))
-                throw new ValidationException(String.format("The name '%s' already exists.", newName));
-        }
+        if (hasNameChange && ExperimentServiceImpl.get().canRename(lsid, newName, _sampleType.getTinfo()))
+            throw new ValidationException(String.format("The name '%s' already exists.", newName));
 
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);

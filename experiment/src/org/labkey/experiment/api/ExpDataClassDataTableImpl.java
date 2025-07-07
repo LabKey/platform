@@ -1323,11 +1323,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             String newName = (String) row.get(Name.name());
             String oldName = (String) oldRow.get(Name.name());
             boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
-            if (hasNameChange)
-            {
-                if (ExperimentServiceImpl.get().checkDuplicateName(oldName, newName, _dataClass.getTinfo()))
-                    throw new ValidationException(String.format("The name '%s' already exists.", newName));
-            }
+            if (hasNameChange && ExperimentServiceImpl.get().canRename(lsid, newName, _dataClass.getTinfo()))
+                throw new ValidationException(String.format("The name '%s' already exists.", newName));
 
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
