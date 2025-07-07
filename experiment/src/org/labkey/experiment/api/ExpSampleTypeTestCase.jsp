@@ -1022,8 +1022,11 @@ public void testDetailedAuditLog() throws Exception
     Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
-    assertEquals("0", newRecordMap.get("AliquotCount"));
-    assertEquals("0.0", newRecordMap.get("AliquotVolume"));
+    assertNull(newRecordMap.get("AliquotCount"));
+    assertNull(newRecordMap.get("AliquotVolume"));
+    assertNull(newRecordMap.get("AvailableAliquotVolume"));
+    assertNull(newRecordMap.get("AvailableAliquotCount"));
+    assertNull(newRecordMap.get("AliquotUnit"));
 
     // UPDATE
     rows.clear(); errors.clear();
