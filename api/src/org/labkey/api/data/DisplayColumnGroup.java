@@ -60,8 +60,7 @@ public class DisplayColumnGroup
         TD(
             isCopyable() ? (DOM.Renderable) ret -> {
 
-                // Use propName because ids can't have spaces
-                String id = ColumnInfo.propNameFromName(getGroupFormFieldName(ctx)) + "CheckBox";
+                String id = getGroupFormFieldName(ctx) + "CheckBox";
                 InputBuilder.checkbox().name(id).id(id).appendTo(out);
                 StringBuilder onChange = new StringBuilder("b = this.checked;");
 
@@ -90,9 +89,10 @@ public class DisplayColumnGroup
         ).appendTo(out);
     }
 
-    private String getGroupFormFieldName(RenderContext ctx)
+    /** Use propName because DOM ids and function names can't have spaces */
+     private String getGroupFormFieldName(RenderContext ctx)
     {
-        return getColumns().get(0).getFormFieldName(ctx);
+        return ColumnInfo.propNameFromName(getColumns().get(0).getFormFieldName(ctx));
     }
     
     public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException

@@ -41,9 +41,9 @@ public class CreateIssueDisplayColumn extends DataColumn
         _saveButton.render(ctx, out);
         out.write("\t");
         PageFlowUtil.button("Create Issue")
-            .onClick("document.forms.CreateIssue.elements['assignedTo'].value = document.forms[" +
+            .onClick("document.forms.CreateIssue.elements['AssignedTo'].value = document.forms[" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getFormId()) +
-                "].elements['assignedTo'].value; document.forms.CreateIssue.submit();")
+                "].elements['AssignedTo'].value; document.forms.CreateIssue.submit();")
             .appendTo(out);
     }
 }
