@@ -80,7 +80,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         clickAndWait(Locator.linkWithText(assayName));
         waitForElement(Locator.lkButton("Import Data"));
         clickAndWait(Locator.lkButton("Import Data"));
-        waitForElement(Locator.tagWithName("select", "targetStudy"));
+        waitForElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR);
         clickAndWait(Locator.lkButton("Next"));
 
         setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, runName);

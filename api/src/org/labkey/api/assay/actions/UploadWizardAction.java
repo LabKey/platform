@@ -677,7 +677,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         if (!newRunForm.getBatchProperties().isEmpty())
         {
-            JspView<AssayRunUploadForm> batchPropsView = new JspView<>("/org/labkey/assay/view/newUploadBatchProperties.jsp", newRunForm);
+            JspView<AssayRunUploadForm<?>> batchPropsView = new JspView<>("/org/labkey/assay/view/newUploadBatchProperties.jsp", newRunForm);
             batchPropsView.setTitle("Batch Properties");
             vbox.addView(batchPropsView);
         }

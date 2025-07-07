@@ -274,7 +274,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         runTable.clickHeaderButtonAndWait("Link to Study");
 
         log("Link to study: Choose target");
-        selectOptionByText(Locator.id("targetStudy"), "/" + targetStudy + " (" + targetStudy + " Study)");
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, "/" + targetStudy + " (" + targetStudy + " Study)");
         if (categoryName != null)
             setFormElement(Locator.name("autoLinkCategory"), categoryName);
         clickButton("Next");

@@ -721,7 +721,7 @@ public class IssuesController extends SpringActionController
         /**
          * Parse out the issues forms from the JSON data
          */
-        public List<IssuesForm> getIssueForms()
+        public List<IssuesForm> getIssueForms(User user, Container container)
         {
             if (_issueForms == null)
             {
@@ -732,6 +732,8 @@ public class IssuesController extends SpringActionController
                     for (JSONObject rec : JsonUtil.toJSONObjectList(issues))
                     {
                         IssuesForm form = new IssuesForm();
+                        form.setUser(user);
+                        form.setContainer(container);
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {
@@ -780,7 +782,7 @@ public class IssuesController extends SpringActionController
         @Override
         public void validateForm(IssuesApiForm form, Errors errors)
         {
-            if (form.getIssueForms().isEmpty())
+            if (form.getIssueForms(getUser(), getContainer()).isEmpty())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "At least one issue record is required");
                 return;
@@ -789,7 +791,7 @@ public class IssuesController extends SpringActionController
             // Fetch the default
             IssueListDef defaultIssueListDef = IssueManager.getDefaultIssueListDef(getContainer());
 
-            for (IssuesForm issuesForm : form.getIssueForms())
+            for (IssuesForm issuesForm : form.getIssueForms(getUser(), getContainer()))
             {
                 Issue.action action = getAction(issuesForm);
                 IssueListDef formIssueListDef = IssueServiceImpl.getIssueListDef(getContainer(), issuesForm.getBean());
@@ -824,7 +826,7 @@ public class IssuesController extends SpringActionController
 
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                for (IssuesForm issuesForm : form.getIssueForms())
+                for (IssuesForm issuesForm : form.getIssueForms(getUser(), getContainer()))
                 {
                     Issue.action action = getAction(issuesForm);
 

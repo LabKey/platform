@@ -169,7 +169,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         assertElementNotPresent(Locator.xpath("//option").withText(getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3)));
 
         //select Study2 as the target study (note that PI is not an Editor in this study so we can test for override case)
-        selectOptionByText(Locator.name("targetStudy"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
 
         clickButton("Next");
 

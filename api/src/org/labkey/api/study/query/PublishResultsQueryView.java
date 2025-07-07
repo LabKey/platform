@@ -173,7 +173,7 @@ public class PublishResultsQueryView extends QueryView
         DataRegion dataRegion = view.getDataRegion();
 
         if (_targetStudyContainer != null)
-            dataRegion.addHiddenFormField("targetStudy", _targetStudyContainer.getId());
+            dataRegion.addHiddenFormField(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME, _targetStudyContainer.getId());
 
         dataRegion.addHiddenFormField("attemptPublish", "true");
         if (_filter != null)
@@ -992,7 +992,7 @@ public class PublishResultsQueryView extends QueryView
 
         public TargetStudyInputColumn(ResolverHelper resolverHelper, ColumnInfo targetStudyCol)
         {
-            super(targetStudyCol, "targetStudy");
+            super(targetStudyCol);
             _resolverHelper = resolverHelper;
         }
 

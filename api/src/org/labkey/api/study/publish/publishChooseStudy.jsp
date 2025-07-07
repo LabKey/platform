@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.assay.AbstractAssayProvider" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -60,8 +61,8 @@
     List<Pair<String, String>> parameters = postURL.getParameters();
     postURL.deleteParameters();
 
-    SelectBuilder options = new SelectBuilder().name("targetStudy").label("Choose target study")
-            .id("targetStudy")
+    SelectBuilder options = new SelectBuilder().name(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME).label("Choose target study")
+            .id(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)
             .layout(Input.Layout.HORIZONTAL)
             .formGroup(true);
 
