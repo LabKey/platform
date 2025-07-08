@@ -1073,6 +1073,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c1", "DataInputs/DataClassWithImportOption", "D-1"));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null, "alias", "Grassland"));
 
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
@@ -1128,6 +1129,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "gene", longFieldName, "Pasture", "alias", "Exceedingly", "flag", "cOne"));
     rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-22", "prop", null, longFieldName, "Goal", "alias", "Immensely", "flag", "cEight"));
 
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToMerge), context, null);
 
@@ -1157,8 +1159,7 @@ public void testInsertOptionUpdate() throws Exception
     // long field
     assertEquals("Very", rows.get(0).get(longFieldAlias));
     assertEquals("Long", rows.get(1).get(longFieldAlias));
-    // TODO: This is not updating as I would expect. Verify what is expected here with regards to updating via merge.
-//    assertEquals("Pasture", rows.get(2).get(longFieldAlias));
+    assertEquals("Pasture", rows.get(2).get(longFieldAlias));
     assertEquals("Goal", rows.get(3).get(longFieldAlias));
 
     // alias
@@ -1172,7 +1173,6 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals("c200", rows.get(1).get(flagAlias));
     assertEquals("cOne", rows.get(2).get(flagAlias));
     assertEquals("cEight", rows.get(3).get(flagAlias));
-
 }
 
 private @NotNull TableInfo getDataClassTable(String dataClassName)
@@ -1226,7 +1226,9 @@ public void testUpdateAuditForLongField() throws Exception
 
     List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "A-1", fieldName, "Updated"));
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
+    context.getConfigParameters().put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertFalse("Unexpected errors from update", context.getErrors().hasErrors());
     assertEquals("Number of rows updated not as expected", 1, count);
@@ -1241,7 +1243,5 @@ public void testUpdateAuditForLongField() throws Exception
         String oldRecordMap = ((DetailedAuditTypeEvent) events.get(0)).getOldRecordMap();
         assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName.toLowerCase()) + "=Initial"));
     }
-
 }
-
 %>
