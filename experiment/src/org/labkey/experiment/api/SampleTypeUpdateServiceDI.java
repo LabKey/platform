@@ -1261,7 +1261,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         if (verifyExisting && !allKeys.isEmpty())
-            throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
+            throw new InvalidKeyException("Sample not found: " + allKeys.iterator().next() + ".");
 
         // if contains domain fields, check for aliquot specific fields
         if (!queryTableInfo.getName().equalsIgnoreCase("material"))

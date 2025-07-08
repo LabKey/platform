@@ -3065,7 +3065,7 @@ public class ExpDataIterators
                 }
                 if (!notFoundIds.isEmpty())
                 {
-                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
+                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Sample" + (notFoundIds.size() > 1 ? "s" : "") : "Data") + " not found: " + StringUtils.join(notFoundIds, ", ") + "."));
                     return;
                 }
 

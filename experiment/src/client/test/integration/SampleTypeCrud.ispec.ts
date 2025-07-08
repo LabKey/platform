@@ -317,7 +317,7 @@ describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
         const BLANK_KEY_UPDATE_ERROR = 'Name value not provided on row ';
         const BLANK_KEY_MERGE_ERROR_NO_EXPRESSION = 'SampleID or Name is required for sample on row';
-        const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist: bogus.';
+        const BOGUS_KEY_UPDATE_ERROR = 'Sample not found: bogus.';
         const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Sample does not belong to ";
 
         const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
@@ -950,4 +950,136 @@ describe('Aliquot crud', () => {
     });
 
 });
+
+describe('Duplicate IDs', () => {
+    it("Issue 52657: We shouldn't allow creating sample names that differ only in case.", async () => {
+        const sampleTypeName = 'Type Case Sensitive';
+        let field = { name: 'case', rangeURI: 'http://www.w3.org/2001/XMLSchema#string'};
+        const domainPayload = {
+            kind: 'SampleSet',
+            domainDesign: { name: sampleTypeName, fields: [{ name: 'Name' }, field]},
+            options: {
+                name: sampleTypeName,
+                nameExpression: 'S-${case}'
+            }
+        };
+        await server.post('property', 'createDomain', domainPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+        const NAME_EXIST_MSG = "The name '%%' already exists.";
+        const sample1 = 'S-case-sAmple1';
+        const sample2 = 'S-case-sAmple2';
+
+        let insertRows = [{
+            name: sample1,
+        },{
+            name: sample2,
+        }];
+        const sampleRows = await ExperimentCRUDUtils.insertSamples(server, insertRows, sampleTypeName, topFolderOptions, editorUserOptions);
+        const sample1RowId = caseInsensitive(sampleRows[0], 'rowId');
+        const sample1Lsid = caseInsensitive(sampleRows[0], 'lsid');
+        const sample2RowId = caseInsensitive(sampleRows[1], 'rowId');
+        const sample2Lsid = caseInsensitive(sampleRows[1], 'lsid');
+
+        let expectedError = NAME_EXIST_MSG.replace('%%', 'S-case-sample1');
+        // import
+        let errorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nS-case-sample1\tbad\ns-case-sample2\tbad", sampleTypeName, "IMPORT", topFolderOptions, editorUserOptions);
+        expect(errorResp.text).toContain(expectedError);
+
+        // merge
+        let mergeError = 'The name \'S-case-sample1\' could not be resolved. Please check the casing of the provided name.';
+        errorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nS-case-sample1\tbad\ns-case-sample2\tbad", sampleTypeName, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text).toContain(mergeError);
+
+        // insert
+        await server.post('query', 'insertRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                name: 'S-case-sample1',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(expectedError);
+        });
+
+        // insert using naming expression to create case-insensitive name
+        await server.post('query', 'insertRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                case: 'case-sample1',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(expectedError);
+        });
+
+        // renaming sample to another sample's case-insensitive name, using rowId
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                name: 'S-case-sample2',
+                rowId: sample1RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'S-case-sample2'));
+        });
+
+        // renaming sample to another sample's case-insensitive name, using lsid. Currently can only be done using api
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                name: 'S-case-sample2',
+                lsid: sample1Lsid
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'S-case-sample2'));
+        });
+
+        // swap names (fail)
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                name: 'S-case-sample2',
+                lsid: sample1Lsid
+            }, {
+                name: 'S-case-sample1',
+                lsid: sample2Lsid
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'S-case-sample2'));
+        });
+
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: sampleTypeName,
+            rows: [{
+                name: 'S-case-sample2',
+                rowId: sample1RowId
+            }, {
+                name: 'S-case-sample1',
+                rowId: sample2RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'S-case-sample2'));
+        });
+
+        // renaming current sample to case-insensitive name, using rowId
+        let results = await ExperimentCRUDUtils.updateSamples(server, [{name: 'S-CASE-sample1', rowId: sample1RowId}], sampleTypeName, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(results[0], 'Name')).toBe('S-CASE-sample1');
+
+        // renaming current sample to case-insensitive name, using lsid
+        results = await ExperimentCRUDUtils.updateSamples(server, [{name: 's-case-SAMPLE1', lsid: sample1Lsid}], sampleTypeName, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(results[0], 'Name')).toBe('s-case-SAMPLE1');
+
+    });
+
+})
 
