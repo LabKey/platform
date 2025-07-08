@@ -1219,13 +1219,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-            Domain d = dataClass.getDomain();
-            if (d == null)
-                return; // Domain may be null if the DataClass has been deleted
-
-            TableInfo table = dataClass.getTinfo();
-            if (table == null)
-                return;
+            if (dataClass.getContainer() == null)
+                return; // Issue 53253: container may be deleted
 
             indexDataClass(dataClass, task);
             indexDataClassData(dataClass, task);
@@ -1830,13 +1825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<? extends ExpData> getExpDatas(ExpDataClass dataClass)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1848,7 +1837,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
-
 
     public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
     {
@@ -1862,13 +1850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, String name)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1886,13 +1868,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, int rowId)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -10255,6 +10231,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
@@ -10418,6 +10395,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class LineageQueryTestCase extends Assert
     {
         TempTableTracker tt;
@@ -10616,6 +10594,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class ParseInputOutputAliasTestCase extends Assert
     {
         @Test
