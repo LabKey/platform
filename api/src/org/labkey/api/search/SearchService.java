@@ -120,6 +120,7 @@ public interface SearchService extends SearchMXBean
      */
     boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException;
 
+    /** From lowest to highest priority */
     enum PRIORITY
     {
         commit,
