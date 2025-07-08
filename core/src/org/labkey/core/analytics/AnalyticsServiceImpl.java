@@ -118,13 +118,13 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public void resetCSP()
     {
-        ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY);
-        ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Image, ANALYTICS_CSP_KEY);
+        ContentSecurityPolicyFilter.unregisterAllowedSources(ANALYTICS_CSP_KEY, Directive.Connection);
+        ContentSecurityPolicyFilter.unregisterAllowedSources(ANALYTICS_CSP_KEY, Directive.Image);
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
-            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Image, ANALYTICS_CSP_KEY, "https://www.googletagmanager.com");
+            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Connection, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
+            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Image, "https://www.googletagmanager.com");
         }
     }
 
