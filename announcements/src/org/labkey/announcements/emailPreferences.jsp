@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.EmailPreferencesAction" %>
 <%@ page import="org.labkey.api.announcements.EmailOption" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
@@ -24,14 +23,14 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function toggleOptions()
     {
-        var checkBoxElem = document.getElementById("resetFolderDefault");
+        const checkBoxElem = document.getElementById("resetFolderDefault");
 
-        var isReset = checkBoxElem.checked;
         if (checkBoxElem != null)
         {
-            var inputs = document.getElementsByTagName('input');
-            for(var i = 0; i < inputs.length; i++) {
-                if(inputs[i].type.toLowerCase() === 'radio') {
+            const isReset = checkBoxElem.checked;
+            const inputs = document.getElementsByTagName('input');
+            for (let i = 0; i < inputs.length; i++) {
+                if (inputs[i].type.toLowerCase() === 'radio') {
                     inputs[i].disabled = isReset;
                 }
             }
@@ -54,8 +53,8 @@
     <input type="radio" value="<%=EmailOption.MESSAGES_DAILY_DIGEST.getValue()%>" name="notificationType"<%=checked(notificationType == EmailOption.MESSAGES_DAILY_DIGEST.getValue())%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
-   <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault"><b> Reset</b> - Reset to folder default setting<br>
-    <% addHandler("resetFolderDefault", "click", "toggleOption();"); %>
+    <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault"><b> Reset</b> - Reset to folder default setting<br>
+    <% addHandler("resetFolderDefault", "click", "toggleOptions();"); %>
 
     <br><%=generateReturnUrlFormField(returnUrl)%>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
