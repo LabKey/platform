@@ -1134,7 +1134,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 nodeEl;
 
             for (var i = 0; i < columns.length; i++) {
-                checked[encodeURIComponent(columns[i].get('id'))] = true; // Issue 53197
+                checked[encodeURI(columns[i].get('id'))] = true; // Issue 53197
             }
 
             this.getColumnTree().getRootNode().cascadeBy(function(node) {
@@ -1196,7 +1196,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     },
 
     onRemoveColumn : function(id) {
-        var node = this.getColumnTree().getStore().getNodeById(id);
+        var _id = encodeURI(id); // Issue 53197
+        var node = this.getColumnTree().getStore().getNodeById(_id);
         if (node) {
             node.set('checked', false);
         }
