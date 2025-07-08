@@ -715,7 +715,7 @@ describe('Aliquot crud', () => {
             importText = "Description\tAliquotedFrom\n";
             importText += aliquotDesc + "\t" + absentRootSample + "\n";
             let resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "IMPORT", topFolderOptions, editorUserOptions);
-            expect(resp.text.indexOf("Aliquot parent 'Absent_Root' not found.") > -1).toBeTruthy();
+            expect(resp.text).toContain("Aliquot parent 'Absent_Root' not found.");
             const invalidRootSample = "Not_This_Root";
             await ExperimentCRUDUtils.insertSamples(server, [{name: invalidRootSample}], SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, topFolderOptions, editorUserOptions)
 
@@ -723,11 +723,11 @@ describe('Aliquot crud', () => {
             importText += aliquot01 + "\t" + aliquotDesc + "\t" + invalidRootSample + "\n";
             // Validate that if the AliquotedFrom field has an invalid value the import fails.
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "IMPORT", topFolderOptions, editorUserOptions);
-            expect(resp.text.indexOf("duplicate key") > -1).toBeTruthy();
+            expect(resp.text).toContain("already exists");
 
             // Validate that the AliquotedFrom field of an aliquot cannot be updated.
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "MERGE", topFolderOptions, editorUserOptions);
-            expect(resp.text.indexOf("Aliquot parents cannot be updated for sample testInvalidImportCasesParent1-1.") > -1).toBeTruthy();
+            expect(resp.text).toContain("Aliquot parents cannot be updated for sample testInvalidImportCasesParent1-1.");
 
             // AliquotedFrom is ignored for UPDATE option
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "UPDATE", topFolderOptions, editorUserOptions);
@@ -746,7 +746,7 @@ describe('Aliquot crud', () => {
             importText = "Name\tAliquotedFrom\n";
             importText += invalidRootSample + "\t" + parentSampleName + "\n";
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "MERGE", topFolderOptions, editorUserOptions);
-            expect(resp.text.indexOf("Unable to change sample to aliquot Not_This_Root.") > -1).toBeTruthy();
+            expect(resp.text).toContain("Unable to change sample to aliquot Not_This_Root.");
         });
 
         /**
