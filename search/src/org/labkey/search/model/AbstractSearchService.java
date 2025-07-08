@@ -604,7 +604,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
     {
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        // The indexer uses multiple threads for different types of work. Queue an item and a Runnable to be sure
+        // both get drained
         SearchService.IndexTask task = createTask("WaitForIndexer", new SearchService.TaskListener()
         {
             @Override public void success()
@@ -615,6 +618,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         });
         task.addNoop(priority);
         task.setReady();
+
+        task.addRunnable(latch::countDown, priority);
 
         boolean success = latch.await(timeout, unit);
         refreshNow();
