@@ -1590,7 +1590,7 @@ public class Portal implements ModuleChangeListener
     }
 
     // The maintained view map is now case-insensitive, so this is identical to the above method
-    @Deprecated // Call getPortalPart() instead
+    @Deprecated // Call getPortalPart() instead - TODO: DELETE, unused
     public static WebPartFactory getPortalPartCaseInsensitive(String name)
     {
         return getPortalPart(name);

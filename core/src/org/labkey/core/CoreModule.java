@@ -143,8 +143,6 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
@@ -153,9 +151,9 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
-import org.labkey.api.settings.OptionalFeatureService.OptionalFeatureServiceImpl;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -216,6 +214,7 @@ import org.labkey.core.admin.DisplayFormatAnalyzer;
 import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
+import org.labkey.core.admin.OptionalFeatureServiceImpl;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
@@ -521,28 +520,28 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             });
         }
 
-        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
-                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
-        AdminConsole.addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
-                "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
-                "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-                "search to find the other select values.", false);
-        AdminConsole.addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-                "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
-        AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-                "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
-        AdminConsole.addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
-                "Short-circuit robots",
-                "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
-                false);
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
-                "Restore Object-Level Discussions",
-                "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
-                false, false, FeatureType.Deprecated));
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
-                "Resolve Missing Lookup Values to Null",
-                "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
-                false, false, OptionalFeatureService.FeatureType.Deprecated));
+        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+            "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
+            "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
+            "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
+            "search to find the other select values.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
+            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
+            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
+            "Short-circuit robots",
+            "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
+            false);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
+            "Restore Object-Level Discussions",
+            "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
+            false, false, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
+            "Resolve Missing Lookup Values to Null",
+            "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
+            false, false, OptionalFeatureService.FeatureType.Deprecated));
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1114,27 +1113,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
             false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
             "Block malicious clients",
             "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
             false);
-        AdminConsole.addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
             "Disable enforce Content Security Policy",
             "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
             "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
             false);
-        AdminConsole.addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
             "Data Region Async Total Rows",
             "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
             false);
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
         OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
@@ -1165,7 +1164,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("javaRuntime", javaInfo);
             results.put("distributionFilename", AppProps.getInstance().getDistributionFilename());
             results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
-            results.put("optionalFeatures", AdminConsole.getOptionalFeatureFlags().stream()
+            results.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                 .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
                 ))

@@ -138,13 +138,12 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
@@ -232,11 +231,11 @@ public class ApiModule extends CodeOnlyModule
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
             "Stage file uploads and downloads to temporary local file",
             "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage",
             false, false, FeatureType.Optional));
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(MothershipReport.FEATURE_FLAG_EXTENDED_METRICS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(MothershipReport.FEATURE_FLAG_EXTENDED_METRICS,
             "Send extended metrics information to LabKey",
             "Send additional usage information to https://www.labkey.org along with standard usage metrics. This " +
             "information includes a list of unique, active users registered on the server. Providing this information " +

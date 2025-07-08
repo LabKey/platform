@@ -125,7 +125,8 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    private TableInfo _queryTable;
+    private final TableInfo _queryTable;
+
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
@@ -159,7 +160,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
@@ -261,8 +262,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     * if QUS want to use something other than PKs to select existing rows for merge it can override this method
-     * Used only for generating  ExistingRecordDataIterator at the moment
+     * If QUS wants to use something other than PKs to select existing rows for merge, it can override this method.
+     * Used only for generating ExistingRecordDataIterator at the moment.
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
     {
@@ -295,7 +296,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * Implementation to use insertRows() while we migrate to using DIB for all code paths
      * <p>
-     * DataIterator should/must use same error collection as passed in
+     * DataIterator should/must use the same error collection as passed in
      */
     @Deprecated
     protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)

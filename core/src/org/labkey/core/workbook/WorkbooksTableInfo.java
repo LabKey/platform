@@ -72,11 +72,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-/**
- * User: labkey
- * Date: Jan 6, 2010
- * Time: 2:18:59 PM
- */
 public class WorkbooksTableInfo extends ContainerTable implements UpdateableTableInfo
 {
     public WorkbooksTableInfo(CoreQuerySchema coreSchema, ContainerFilter cf)
@@ -177,12 +172,6 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             {
                 return null;
             }
-        }
-
-        @Override
-        public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
-        {
-            return getQueryTable().hasPermission(user, acl);
         }
 
         @Override
