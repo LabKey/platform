@@ -1,8 +1,12 @@
-package org.labkey.api.settings;
+package org.labkey.core.admin;
 
 import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.MapBasedStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.StartupListener;
 

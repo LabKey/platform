@@ -215,6 +215,7 @@ import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.OptionalFeatureServiceImpl;
+import org.labkey.core.admin.OptionalFeatureStartupListener;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
@@ -1065,6 +1066,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
+        // Handle optional feature startup properties as late as possible; we want all optional features to be registered first
+        ContextListener.addStartupListener(new OptionalFeatureStartupListener());
+
         LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
         // populate script engine definitions values read from startup properties
         if (svc instanceof ScriptEngineManagerImpl)
@@ -1571,15 +1575,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
             ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             startURL.setExtraPath(c.getId());
-            WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
-                    "link:" + c.getId(),
-                    c.getEntityId(),
-                    "text/plain",
-                    body,
-                    startURL,
-                    UserManager.getUser(c.getCreatedBy()), c.getCreated(),
-                    null, null,
-                    properties);
+            WebdavResource doc = new SimpleDocumentResource(
+                c.getParsedPath(),
+                "link:" + c.getId(),
+                c.getEntityId(),
+                "text/plain",
+                body,
+                startURL,
+                UserManager.getUser(c.getCreatedBy()), c.getCreated(),
+                null, null,
+                properties
+            );
             (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
         };
         // running this asynchronously seems to expose race conditions in domain checking/creation
@@ -1691,11 +1697,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
             catch(Exception e)
             {
-                LOG.error(String.format("Exception setting %1$s during server startup.", prop.getName()), e);
+                LOG.error("Exception setting {} during server startup.", prop.getName(), e);
             }
         }
 
-        LOG.error(String.format("Unable to find %1$s resource during server startup: %2$s", prop.getName(), prop.getValue()));
+        LOG.error("Unable to find {} resource during server startup: {}", prop.getName(), prop.getValue());
         return false;
     }
 

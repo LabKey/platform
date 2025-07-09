@@ -146,7 +146,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
-import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
@@ -262,9 +261,7 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
-        // Handle optional feature and system maintenance startup properties as late as possible; we want all optional
-        // features and system maintenance tasks to be registered first
-        ContextListener.addStartupListener(new OptionalFeatureStartupListener());
+        // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
