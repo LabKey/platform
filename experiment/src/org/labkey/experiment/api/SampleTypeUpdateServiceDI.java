@@ -1623,7 +1623,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Set<String> _existingNames = null;
         String generatedName = null;
 
-        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container container, User user, MapDataIterator source, DataIteratorContext context, int batchSize)
+        _GenerateNamesDataIterator(
+            @NotNull ExpSampleTypeImpl sampleType,
+            Container container,
+            User user,
+            MapDataIterator source,
+            DataIteratorContext context,
+            int batchSize
+        )
         {
             super(source, context);
             _allowUserSpecifiedNames = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container);
