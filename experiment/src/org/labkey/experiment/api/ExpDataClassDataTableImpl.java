@@ -955,7 +955,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }, DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
         }
         catch (IOException e)
         {
@@ -1375,7 +1375,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (data == null)
                     data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.setComment(user, flag);
+                if (data != null)
+                    data.setComment(user, flag);
             }
 
             // update aliases

@@ -17,8 +17,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Before" %>
-
-
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.audit.AuditLogService" %>
 <%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
@@ -51,7 +49,6 @@
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
 <%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
-
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
@@ -59,7 +56,6 @@
 <%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
-
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
@@ -93,14 +89,9 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
-
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
-/**
- * User: kevink
- * Date: 11/24/16
- */
 private static final String PROJECT_NAME = "_testSampleType";
 private final ExpProvisionedTableTestHelper helper = new ExpProvisionedTableTestHelper();
 
@@ -1205,6 +1196,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-1", "intVal", null));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200));
 
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
@@ -1238,6 +1230,8 @@ public void testInsertOptionUpdate() throws Exception
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";

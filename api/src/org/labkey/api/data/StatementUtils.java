@@ -304,7 +304,9 @@ public class StatementUtils
     private final static String pgRowVarPrefix = "$1.";
     private String makeVariableName(String name)
     {
-        return (_dialect.isSqlServer() ? "@p"  + (parameters.size()+1) : pgRowVarPrefix) + AliasManager.makeLegalName(name, _dialect);
+        String shortName = StringUtils.substring(name,0,32); // name is just for readability, make it short
+        String uniquePrefix = (_dialect.isSqlServer() ? "@" : pgRowVarPrefix) + ("p" + (parameters.size()+1) + "_");
+        return uniquePrefix + AliasManager.makeLegalName(shortName, _dialect, true, uniquePrefix.length());
     }
 
     private String makePgRowTypeName(String variableName)

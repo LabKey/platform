@@ -2099,13 +2099,13 @@ public class NameGenerator
     {
         private final int _rowNumber;
 
-        NameGenerationException(String message, int rowNumber)
+        public NameGenerationException(String message, int rowNumber)
         {
             super(message);
             _rowNumber = rowNumber;
         }
 
-        NameGenerationException(int rowNumber, Throwable t)
+        public NameGenerationException(int rowNumber, Throwable t)
         {
             super(t);
             _rowNumber = rowNumber;
