@@ -455,6 +455,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
                 if (dp != null && pd != null)
                 {
+                    // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+                    if (pd.isLookup())
+                    {
+                        var fk = QueryForeignKey.from(this.getUserSchema(), QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()))
+                                .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                                .to(pd.getLookup().getQueryName(), null, null);
+                        wrapped.setFk(fk);
+                    }
                     defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
                     wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
 

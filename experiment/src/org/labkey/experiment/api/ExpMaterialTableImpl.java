@@ -971,9 +971,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 continue;
             }
 
+            var wrapped = wrapColumnFromJoinedTable(dbColumn.getName(), dbColumn);
+            if (dbColumn.isLookup())
+            {
+                var fk = QueryForeignKey.from(this.getUserSchema(), QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()))
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(dbColumn.getFk().getLookupTableName(), dbColumn.getFk().getLookupColumnName(), null);
+                wrapped.setFk(fk);
+            }
+
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
+            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), wrapped);
             if (propColumn.getName().equalsIgnoreCase("genid"))
             {
                 propColumn.setHidden(true);
@@ -1020,6 +1029,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if (!mvColumns.contains(propColumn.getFieldKey()))
                 addColumn(propColumn);
+
         }
 
         setDefaultVisibleColumns(visibleColumns);

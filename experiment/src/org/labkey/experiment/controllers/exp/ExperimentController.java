@@ -4528,8 +4528,18 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            query.setContainerFilter(QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
+            if (getContainer().isProductFoldersEnabled())
+            {
+                ContainerFilter cf;
+                // Note that this is slightly different from our treatment of lookups:
+                //    - when in a project, we allow import or update to all subfolders,
+                //    - when in a folder, we only allow references to data up the folder tree
+                if (getContainer().isProject())
+                    cf = new ContainerFilter.AllInProjectPlusShared(getContainer(), getUser());
+                else
+                    cf = new ContainerFilter.CurrentPlusProjectAndShared(getContainer(), getUser());
+                query.setContainerFilter(cf);
+            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
 

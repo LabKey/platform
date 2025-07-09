@@ -2587,8 +2587,6 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
-                        // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-                        qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(splitContainer, _user));
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2843,8 +2841,6 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             DataClassUserSchema schema = new DataClassUserSchema(container, _user);
             QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo dataTable = qDef.getTable(schema, qpe, true);
             if (dataTable == null)
             {
@@ -2874,8 +2870,6 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {
