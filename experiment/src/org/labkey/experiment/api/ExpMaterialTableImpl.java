@@ -804,7 +804,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment sql;
         UserSchema plateUserSchema;
-        // Issue 53194 : this would be the case for linked to study samples
+        // Issue 53194 : this would be the case for linked to study samples. The contextual role is set up from the study dataset
+        // for the source sample, we want to allow the plate schema to inherit any contextual roles to allow querying
+        // against tables in that schema.
         if (_userSchema instanceof UserSchema.HasContextualRoles samplesSchema && !samplesSchema.getContextualRoles().isEmpty())
             plateUserSchema = AssayPlateMetadataService.get().getPlateSchema(_userSchema, samplesSchema.getContextualRoles());
         else
