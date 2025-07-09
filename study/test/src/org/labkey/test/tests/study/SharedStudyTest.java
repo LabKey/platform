@@ -34,6 +34,7 @@ import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.params.FieldKey;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -168,7 +169,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt("/" + getProjectName() + "/" + STUDY1 + "/query-executeQuery.view?schemaName=study&query.queryName=PVString_Two");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addColumn(new String[]{"PandaVisit", "Visit", "Folder"});
+        _customizeViewsHelper.addColumn(FieldKey.fromParts("PandaVisit", "Visit", "Folder"));
         _customizeViewsHelper.saveCustomView("withfolder");
 
         log("Verify visit folder is project");

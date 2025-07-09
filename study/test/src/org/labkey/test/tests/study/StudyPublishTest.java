@@ -1065,7 +1065,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         clickAndWait(Locator.linkWithText(dataset));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addFilter("MouseId", "Mouse Id", "Equals One Of", ptidFilter);
+        _customizeViewsHelper.addFilter("MouseId", "Equals One Of", ptidFilter);
         _customizeViewsHelper.saveCustomView(name, shared);
     }
 

@@ -63,7 +63,7 @@ public class AllowedExternalResourceHosts
 
             // Unregister all supported directives then register the directives that have at least one allowed host
             Arrays.stream(Directive.values()).forEach(dir -> {
-                ContentSecurityPolicyFilter.unregisterAllowedSources(dir, ALLOWED_EXTERNAL_RESOURCES);
+                ContentSecurityPolicyFilter.unregisterAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir);
                 List<String> list = map.get(dir);
                 if (list != null)
                     ContentSecurityPolicyFilter.registerAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir, list.toArray(new String[0]));

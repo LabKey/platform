@@ -440,9 +440,9 @@ public class AssayTest extends AbstractAssayTest
                 ALIASED_DATA);
 
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
-        _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
-        _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
+        _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId");
+        _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType");
+        _customizeViewsHelper.addColumn("SpecimenID/AssayMatch");
         _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
         _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
         _customizeViewsHelper.removeColumn("testAssayDataProp4");
@@ -542,7 +542,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Verifying that the data was published");
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn("QCState", "QC State");
+        _customizeViewsHelper.addColumn("QCState");
         _customizeViewsHelper.applyCustomView();
         assertTextPresent(
                 "Pending Review",
