@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
@@ -25,13 +26,16 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.List;
 import java.util.Set;
 
-public class PlateSchema extends SimpleUserSchema
+public class PlateSchema extends SimpleUserSchema implements UserSchema.HasContextualRoles
 {
     public static final String SCHEMA_NAME = "plate";
     private static final String DESCRIPTION = "Contains data about defined plates";
@@ -48,10 +52,19 @@ public class PlateSchema extends SimpleUserSchema
         AmountUnitsTable.NAME
     ));
 
+    Set<Role> contextualRoles = Set.of();
+
     public PlateSchema(User user, Container container)
     {
         super(SCHEMA_NAME, DESCRIPTION, user, container, AssayDbSchema.getInstance().getSchema(),
                 null, AVAILABLE_TABLES, null);
+    }
+
+    public PlateSchema(QuerySchema schema, Set<Role> contextualRoles)
+    {
+        this(schema.getUser(), schema.getContainer());
+        setDefaultSchema(schema.getDefaultSchema());
+        this.contextualRoles = contextualRoles;
     }
 
     @Override
@@ -83,6 +96,18 @@ public class PlateSchema extends SimpleUserSchema
             return new AmountUnitsTable(this);
 
         return null;
+    }
+
+    @Override
+    public @NotNull Set<Role> getContextualRoles()
+    {
+        return contextualRoles;
+    }
+
+    @Override
+    public boolean canReadSchema()
+    {
+        return super.canReadSchema() || getContainer().hasPermission(getUser(), ReadPermission.class, contextualRoles) ;
     }
 
     public static TableInfo getPlateSetTable(Container container, User user, @Nullable ContainerFilter cf)

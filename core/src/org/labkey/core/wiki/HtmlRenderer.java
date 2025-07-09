@@ -23,7 +23,6 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
@@ -97,7 +96,7 @@ public class HtmlRenderer implements WikiRenderer
         Document doc = JSoupUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml().toString()) + "</body></html>", false, errors);
         if (!errors.isEmpty() || doc == null)
         {
-            StringBuilder innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML.  Please correct this content.</b></div><br>The error message was: ");
+            StringBuilder innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML. Please correct this content.</b></div><br>The error message was: ");
             if (!errors.isEmpty())
             {
                 for (String error : errors)
@@ -169,18 +168,10 @@ public class HtmlRenderer implements WikiRenderer
             }
         }
 
-        /* Add nonce attribute to <script> tags in the page.
-         * We don't require the <%=scriptNonce%> syntax (as with module html view), because we're already parsing the page.
-         * ModuleHtmlView does not parse the page and does a raw regexp substitution.
-         */
-        nl = doc.getElementsByTagName("script");
-        for (int i = 0, length = nl.getLength(); i < length; i++)
-        {
-            Element script = (Element)nl.item(i);
-            script.setAttribute("nonce", HttpView.currentPageConfig().getScriptNonce().toString());
+        // Add nonces to all script elements. Mark the page as volatile if any script elements are present. This is a
+        // little heavy-handed.  We could add a "post-render" step instead.
+        if (PageFlowUtil.addScriptNonces(doc) > 0)
             volatilePage = true;
-            /* NOTE marking the page as volatile is a little heavy-handed.  We could add a "post-render" step, or detect that there is not CSP */
-        }
 
         // back to html
         StringBuilder innerHtml;

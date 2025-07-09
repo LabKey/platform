@@ -94,7 +94,7 @@ public class HtmlOutput extends AbstractParamReplacement
         protected String renderInternalAsString(File file) throws Exception
         {
             if (exists(file))
-                return PageFlowUtil.getFileContentsAsString(file);
+                return PageFlowUtil.addScriptNonces(PageFlowUtil.getFileContentsAsString(file));
 
             return null;
         }
