@@ -233,7 +233,7 @@ describe('Import with update / merge', () => {
    it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
        const BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION = 'Missing value for required property: Name';
        const BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION = 'Name value not provided on row ';
-       const BOGUS_KEY_UPDATE_ERROR = 'Data not found for ';
+       const BOGUS_KEY_UPDATE_ERROR = 'Data not found: ';
        const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Data doesn't belong to folder ";
 
        const dataType = "NoExpressionNameRequired52922";
