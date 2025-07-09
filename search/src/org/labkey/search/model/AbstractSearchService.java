@@ -606,23 +606,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         final CountDownLatch latch = new CountDownLatch(1);
 
-        SearchService.IndexTask task = createTask("WaitForIndexerRunnable");
-        task.addRunnable(priority, () ->
-                {
-                    // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
-                    // queue the Item
-                    SearchService.IndexTask itemTask = createTask("WaitForIndexer", new SearchService.TaskListener()
-                    {
-                        @Override public void success()
-                        {
-                            latch.countDown();
-                        }
-                        @Override public void indexError(Resource r, Throwable t) { }
-                    });
-                    itemTask.addNoop(priority);
-                    itemTask.setReady();
-                });
-
+        SearchService.IndexTask task = createTask("WaitForIndexerRunnable", new SearchService.TaskListener()
+        {
+            @Override public void success()
+            {
+                latch.countDown();
+            }
+            @Override public void indexError(Resource r, Throwable t)
+            {
+                latch.countDown();
+            }
+        });
+        // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
+        // queue the Item
+        task.addRunnable(priority, () -> task.addNoop(priority));
+        task.setReady();
         boolean success = latch.await(timeout, unit);
         refreshNow();
         return success;
