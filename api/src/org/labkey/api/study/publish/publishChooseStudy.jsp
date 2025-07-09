@@ -118,8 +118,8 @@
 
         var exceedsMaxRow = <%=exceedsMaxRows%>;
         toggleStudies = function(){
-            var studySelect = $("select[id='targetStudy']");
-            var studySelectLabel = $("label[for='targetStudy']");
+            var studySelect = $("select[id='TargetStudy']");
+            var studySelectLabel = $("label[for='TargetStudy']");
             var chooseStudy = $("input[id='chooseStudy']");
 
             if (chooseStudy.prop('checked')){

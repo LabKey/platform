@@ -225,12 +225,12 @@ public class TargetStudyTest extends AbstractAssayTest
         final String study1OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")";
         final String study2OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + " (" + _study2Label + ")";
         final String study3OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + " (" + _study3Label + ")";
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(0, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(1, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(2, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals("[None]", getSelectedOptionText(table.findCell(3, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study2OptionText, getSelectedOptionText(table.findCell(4, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(0, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(1, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(2, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals("[None]", getSelectedOptionText(table.findCell(3, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study2OptionText, getSelectedOptionText(table.findCell(4, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
 
         log("** Check ptid/visit matches for rows 0-2 and 4, no match for rows 3 and 5");
         assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("i")), "class", "fa fa-check");

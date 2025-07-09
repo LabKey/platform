@@ -231,10 +231,9 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 
     private void createAssays()
     {
-
         File assayFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT + ".xar.xml");
         File assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT +".tsv");
-        createAssayAndPopulate(null, ASSAY_NAME_PARENT, assayFile, Map.of("name", ASSAY_RUN_PARENT), assayRunFile);
+        createAssayAndPopulate(null, ASSAY_NAME_PARENT, assayFile, Map.of("Name", ASSAY_RUN_PARENT), assayRunFile);
 
         // Re-import the assay.
         assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT +"_Reimport.tsv");

@@ -524,17 +524,17 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("WARNING: You do not have permissions to link to one or more of the selected run's associated studies.");
 
         //ensure that Study2 and Study 3 are not available in the target study drop down
-        assertElementNotPresent(Locator.xpath("//select[@name='targetStudy']/option[.='" +
+        assertElementNotPresent(Locator.xpath("//select[@name='TargetStudy']/option[.='" +
                 getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2) + "']"));
-        assertElementNotPresent(Locator.xpath("//select[@name='targetStudy']/option[.='" +
+        assertElementNotPresent(Locator.xpath("//select[@name='TargetStudy']/option[.='" +
                 getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3) + "']"));
 
         //Study1 is the only one left, so it should be there and already be selected
-        assertElementPresent(Locator.xpath("//select[@name='targetStudy']/option[.='" +
+        assertElementPresent(Locator.xpath("//select[@name='TargetStudy']/option[.='" +
                 getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY1) + "']"));
 
         // Make sure the selected study is Study1
-        selectOptionByText(Locator.xpath("//select[@name='targetStudy']"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY1));
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY1));
 
         clickButton("Next");
         assertTextPresent("Link to " + TEST_ASSAY_FLDR_STUDY1 + " Study: Verify Results");
@@ -646,7 +646,7 @@ public class AssayTest extends AbstractAssayTest
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
         // Make sure the selected study is Study3
-        selectOptionByText(Locator.xpath("//select[@name='targetStudy']"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3));
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3));
 
         clickButton("Next");
         assertTextPresent("Link to " + TEST_ASSAY_FLDR_STUDY3 + " Study: Verify Results");
@@ -747,7 +747,7 @@ public class AssayTest extends AbstractAssayTest
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
         // Make sure the selected study is Study2
-        selectOptionByText(Locator.xpath("//select[@name='targetStudy']"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
 
         clickButton("Next");
         assertTextPresent("Link to " + TEST_ASSAY_FLDR_STUDY2 + " Study: Verify Results");
