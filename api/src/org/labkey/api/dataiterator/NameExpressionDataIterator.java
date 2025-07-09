@@ -63,7 +63,6 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         _container = container;
         _getNonConflictCountFn = getNonConflictCountFn;
         _counterSeqPrefix = counterSeqPrefix;
-
     }
 
     public NameExpressionDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
@@ -80,7 +79,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
     MapDataIterator getInput()
     {
-        return (MapDataIterator)_delegate;
+        return (MapDataIterator) _delegate;
     }
 
     private BatchValidationException getErrors()

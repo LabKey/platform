@@ -19,13 +19,17 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataLoaderSettings;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.vfs.FileLike;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface AssayPlateMetadataService
 {
@@ -178,4 +182,13 @@ public interface AssayPlateMetadataService
         TableInfo resultsTable,
         List<Integer> runIds
     ) throws ValidationException;
+
+    /**
+     * Should only be used to get a local instance of a plate schema where a contextual role might be involved. Schemas created this way are not cached,
+     * and all other usages should retrieve schemas from the QueryService.
+     * <p>
+     * This method would be better placed in the PlateService interface, but it would have required moving that (and other) classes into API.
+     */
+    @NotNull
+    UserSchema getPlateSchema(QuerySchema schema, Set<Role> contextualRoles);
 }

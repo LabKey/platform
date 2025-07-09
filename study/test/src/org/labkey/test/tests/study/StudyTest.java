@@ -777,7 +777,7 @@ public class StudyTest extends StudyBaseTest
                 clickAndWait(Locator.linkWithText("verifyAssay"));
                 BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
                 _customizeViewsHelper.openCustomizeViewPanel();
-                _customizeViewsHelper.addColumn("QCState", "QC State");
+                _customizeViewsHelper.addColumn("QCState");
                 _customizeViewsHelper.addSort("SampleId", SortDirection.ASC);
                 _customizeViewsHelper.applyCustomView();
                 DataRegionTable table = new DataRegionTable("Dataset", this);
@@ -810,7 +810,7 @@ public class StudyTest extends StudyBaseTest
             new DatasetPropertiesPage(getDriver())
                 .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.addColumn("Bad Name", "Bad Name");
+            _customizeViewsHelper.addColumn("Bad Name");
             _customizeViewsHelper.applyCustomView();
             BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));

@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.view.BadRequestException;
@@ -134,7 +135,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     }
 
     @Override
-    public void validate(Object target, Errors errors)
+    public void validate(@NotNull Object target, @NotNull Errors errors)
     {
     }
 }
