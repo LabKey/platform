@@ -222,7 +222,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             new OptionalFeatureFlag(
                 ADVANCED_IMPORT_FLAG,
                 "Restore 'Advanced Import Options' during Folder import",
-                "This option will be removed in LabKey Server v25.7.",
+                "This option will be removed in LabKey Server v25.11.",
                 false, false, OptionalFeatureService.FeatureType.Deprecated
             )
         );
