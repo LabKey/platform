@@ -1691,7 +1691,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         @Override
         protected void processNextInput()
         {
-            Map<String, Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
+            Map<String, Object> map = new CaseInsensitiveHashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
             Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);

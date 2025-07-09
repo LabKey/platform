@@ -17,7 +17,18 @@ sourceSets {
 
 
 dependencies{
-   implementation "com.opencsv:opencsv:${opencsvVersion}"
+   BuildUtils.addExternalDependency(
+           project,
+           new ExternalDependency(
+                   "net.sf.opencsv:opencsv:${opencsvVersion}",
+                   'Open CSV',
+                   'Open CSV',
+                   'http://opencsv.sf.net',
+                   ExternalDependency.APACHE_2_LICENSE_NAME,
+                   ExternalDependency.APACHE_2_LICENSE_URL,
+                   'A simple library for reading and writing CSV in Java'
+           )
+   )
    BuildUtils.addExternalDependency(
            project,
            new ExternalDependency(

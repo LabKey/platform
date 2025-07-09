@@ -38,6 +38,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
@@ -56,7 +57,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
-public class SamplesSchema extends AbstractExpSchema
+public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasContextualRoles
 {
     public static final String SCHEMA_NAME = "samples";
     public static final String STUDY_LINKED_SCHEMA_NAME = "~~STUDY.LINKED.SAMPLE~~";
@@ -107,7 +108,7 @@ public class SamplesSchema extends AbstractExpSchema
         setDefaultSchema(schema.getDefaultSchema());
     }
 
-    public SamplesSchema(QuerySchema schema, boolean studyLinkedSamples)
+    private SamplesSchema(QuerySchema schema, boolean studyLinkedSamples)
     {
         this(schema.getUser(), schema.getContainer());
         setDefaultSchema(schema.getDefaultSchema());
@@ -124,6 +125,12 @@ public class SamplesSchema extends AbstractExpSchema
     public SamplesSchema(User user, Container container)
     {
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
+    }
+
+    @Override
+    public @NotNull Set<Role> getContextualRoles()
+    {
+        return contextualRoles;
     }
 
     @Override
