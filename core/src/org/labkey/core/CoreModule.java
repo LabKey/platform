@@ -537,7 +537,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             false);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
             "Restore Object-Level Discussions",
-            "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
+            "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.11.",
             false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
             "Resolve Missing Lookup Values to Null",
