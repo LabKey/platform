@@ -67,7 +67,7 @@ public class AliasManager
         return makeLegalName(str, dialect, truncate, 0);
     }
 
-    private static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
+    public static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
     {
         return dialect.makeLegalName(str, truncate, reserveCount);
     }
