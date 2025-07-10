@@ -228,7 +228,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData, boolean createAuditEvent) throws ExperimentException, IOException
     {
         Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
@@ -246,10 +246,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                     boolean isAfterFirstFile = false;
                     for (MultipartFile multipartFile : multipartFiles)
                     {
-                        FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent();
-
                         String fileName = getFileName(multipartFile);
-                        event.setProvidedFileName(fileName);
                         if (!fileName.isEmpty() && !originalFileNames.add(fileName))
                         {
                             throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
@@ -258,10 +255,15 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                         {
                             FileLike dir = getFileTargetDir(context);
                             FileLike file = FileUtil.findUniqueFileName(fileName, dir);
-                            event.setFile(file.getName());
-                            event.setDirectory(dir.getName());
                             multipartFile.transferTo(toFileForWrite(file));
-                            AuditLogService.get().addEvent(context.getUser(), event);
+                            if (createAuditEvent)
+                            {
+                                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), "File provided for assay import");
+                                event.setProvidedFileName(fileName);
+                                event.setFile(file.getName());
+                                event.setDirectory(dir.getParent().toURI().getPath());
+                                AuditLogService.get().addEvent(context.getUser(), event);
+                            }
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
                             {
                                 files.put(multipartFile.getName(), file);

@@ -109,7 +109,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             fileInputIndex++;
         }
 
-        Map<String, FileLike> files = savePostedFiles(context, fileInputs, false, false);
+        Map<String, FileLike> files = savePostedFiles(context, fileInputs, false, false, false);
 
         // Figure out if we have any data files to work with -
         boolean foundFiles = files.containsKey(_fileInputName);

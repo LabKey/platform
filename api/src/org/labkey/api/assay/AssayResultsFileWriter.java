@@ -147,7 +147,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             }
         }
 
-        Map<String, FileLike> files = super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true, true);
+        Map<String, FileLike> files = super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true, true, false);
 
         // if no files were written to the targetDir, delete the empty directory
         if (files.isEmpty())
