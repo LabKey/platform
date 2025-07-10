@@ -96,7 +96,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
-            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
             PrintWriter out = dir.getPrintWriter(baseName + ".tsv");
             tsvWriter.write(out);
         }
