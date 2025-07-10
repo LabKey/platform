@@ -408,7 +408,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         Map<DomainProperty, Object> values = new HashMap<>();
         for (DomainProperty property : domain.getProperties())
         {
-            String propName = ColumnInfo.propNameFromName(property.getName());
+            String propName = property.getName();
             String value = encodePropertyValues(domainIdForm, propName);
             PropertyType type = property.getPropertyDescriptor().getPropertyType();
             if (value != null && !value.isEmpty())
