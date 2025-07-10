@@ -9137,6 +9137,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
+    public boolean isValidNewOrExistingName(String newOrExistingName, @NotNull TableInfo tableInfo, boolean allowExisting)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?)")
+                .add(newOrExistingName);
+        if (allowExisting) // // allow existing name for merge
+        {
+            dataRowSQL.append(" AND name <> ?").add(newOrExistingName);
+            if (tableInfo.getSqlDialect().isSqlServer())
+                dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison for <> operator to exclude existing name
+        }
+
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+    }
+
+    public boolean canRename(@NotNull String lsid, @NotNull String newName, @NotNull TableInfo tableInfo)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?) AND lsid <> ?")
+                .add(newName)
+                .add(lsid);
+        if (tableInfo.getSqlDialect().isSqlServer())
+            dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison
+
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+    }
+
     private Map<String, Object> getImportTemplatesMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
