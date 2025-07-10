@@ -57,12 +57,12 @@ public class NameGeneratorState implements AutoCloseable
 {
     private final @NotNull NameGenerator _nameGenerator;
     private final boolean _incrementSampleCounts;
-    private final User _user;
+    protected final User _user;
     private final Map<String, Object> _batchExpressionContext;
     private Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction;
     private final Map<String, Integer> _newNames = new CaseInsensitiveHashMap<>();
 
-    private int _rowNumber = 0;
+    protected int _rowNumber = 0;
     private final Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
     private final Map<String, ArrayList<Object>> _ancestorCache;
     private final Map<String, ArrayList<Object>> _ancestorSearchCache;
@@ -70,11 +70,11 @@ public class NameGeneratorState implements AutoCloseable
 
     private final NameGenerator.ProjectSampleCounters _sampleCounters;
     private boolean _counterSequencesCleaned = false;
-    private final Container _container;
+    protected final Container _container;
 
-    private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-    private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache;
+    protected final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+    protected final Map<Integer, ExpData> dataCache = new HashMap<>();
+    protected final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     public NameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, NameGenerator.SampleNameExpressionSummary expressionSummary)
@@ -292,8 +292,8 @@ public class NameGeneratorState implements AutoCloseable
 
         StringExpressionFactory.FieldKeyStringExpression expression = activeNameGenerator.getParsedNameExpression();
         String name;
-        if (expression instanceof NameGenerator.NameGenerationExpression)
-            name = ((NameGenerator.NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
+        if (expression instanceof NameGenerator.NameGenerationExpression nge)
+            name = nge.eval(ctx, _prefixCounterSequences);
         else
             name = expression.eval(ctx);
         if (name == null || name.isEmpty())
@@ -417,14 +417,14 @@ public class NameGeneratorState implements AutoCloseable
                 String parentType = ancestorOptions.parentType();
                 if (!StringUtils.isEmpty(parentType))
                 {
-                    if (parentObject instanceof ExpMaterial)
+                    if (parentObject instanceof ExpMaterial expMaterial)
                     {
-                        if (!((ExpMaterial) parentObject).getSampleType().getName().equalsIgnoreCase(parentType))
+                        if (!expMaterial.getSampleType().getName().equalsIgnoreCase(parentType))
                             continue;
                     }
-                    else if (parentObject instanceof ExpData)
+                    else if (parentObject instanceof ExpData expData)
                     {
-                        if (!((ExpData) parentObject).getDataClass(_user).getName().equalsIgnoreCase(parentType))
+                        if (!expData.getDataClass(_user).getName().equalsIgnoreCase(parentType))
                             continue;
                     }
                 }
@@ -490,7 +490,6 @@ public class NameGeneratorState implements AutoCloseable
                 }
             }
         }
-
     }
 
     private void addParentLookupContext(String parentTypeName/* already decoded */,
