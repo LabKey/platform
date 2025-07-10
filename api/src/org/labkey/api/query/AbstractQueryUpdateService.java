@@ -214,7 +214,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (!container.getId().equals(dataContainer))
                         throw new InvalidKeyException("Data doesn't belong to folder '" + container.getName() + "': " + key.getValue().values());
                 }
-                // sql server will return case-insensitive match
+                // sql server will return case-insensitive match, check for exact match using equals
                 if (verifyExisting)
                     hasValidExisting = !keyValues.containsKey("Name") || keyValues.get("Name").equals(row.get("Name"));
             }

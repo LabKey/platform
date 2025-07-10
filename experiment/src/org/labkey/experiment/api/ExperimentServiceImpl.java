@@ -9143,7 +9143,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(tableInfo)
                 .append(" WHERE LOWER(name) = LOWER(?)")
                 .add(newOrExistingName);
-        if (allowExisting) // // exclude existing name for merge
+        if (allowExisting) // // allow existing name for merge
         {
             dataRowSQL.append(" AND name <> ?").add(newOrExistingName);
             if (tableInfo.getSqlDialect().isSqlServer())
