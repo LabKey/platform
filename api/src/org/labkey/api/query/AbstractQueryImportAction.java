@@ -28,7 +28,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
@@ -554,7 +553,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         FileLike dataFileDir = root.getRootFileLike().resolveChild("QueryImportFiles");
                         if (dataFileDir.isFile())
                         {
-                            dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootFileLike());
+                            dataFileDir = FileUtil.findUniqueFileName("QueryImportFiles", root.getRootFileLike());
                             if (!FileUtil.mkdir(dataFileDir))
                                 throw new RuntimeException("Error attempting to create directory " + dataFileDir.toNioPathForRead()
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
@@ -566,7 +565,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
 
-                        dataFile = AssayFileWriter.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
+                        dataFile = FileUtil.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
 
                     }
                     multipartfile.transferTo(dataFile.toNioPathForWrite());

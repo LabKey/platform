@@ -23,6 +23,8 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.PlateUploadForm;
 import org.labkey.api.assay.nab.NabUrls;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
@@ -38,6 +40,7 @@ import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.LinkBuilder;
@@ -164,11 +167,16 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         try
         {
             FileLike uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
-            _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).toNioPathForWrite().toFile();
+            _metadataFile = FileUtil.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).toNioPathForWrite().toFile();
             try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
                 InputStream is = metadata.getInputStream())
             {
                 IOUtils.copy(is, fos);
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(_container, "Adding sample metadata file " + metadata.getOriginalFilename() + ".");
+                event.setProvidedFileName(metadata.getOriginalFilename());
+                event.setFile(_metadataFile.getName());
+                event.setDirectory(_metadataFile.getParent());
+                AuditLogService.get().addEvent(null, event);
             }
         }
         catch (IOException e)

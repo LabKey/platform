@@ -201,6 +201,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             fields.add(createPropertyDescriptor(COLUMN_NAME_MESSAGE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_QCSTATE, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
 
             _fields = Collections.unmodifiableSet(fields);
         }

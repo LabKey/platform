@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.assay.sample.MaterialInputRoleComparator;
@@ -449,7 +448,6 @@ public class ApiModule extends CodeOnlyModule
             Table.IsSelectTestCase.class,
             ValidEmail.TestCase.class,
             URIUtil.TestCase.class,
-            AssayFileWriter.TestCase.class,
             AssayResultsFileWriter.TestCase.class
         );
     }

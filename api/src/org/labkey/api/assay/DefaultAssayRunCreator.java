@@ -30,6 +30,7 @@ import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -67,8 +68,10 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -298,6 +301,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
+            if (transaction.getAuditId() == null)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
+            }
             boolean saveBatchProps = forceSaveBatchProps;
 
             // Add any material/data inputs related to the specimen IDs, etc in the incoming data.

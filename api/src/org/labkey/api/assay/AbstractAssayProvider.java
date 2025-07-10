@@ -31,6 +31,7 @@ import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -136,7 +137,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1798,7 +1798,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public record AssayMoveData(Map<String, Integer> counts, Map<Integer, List<AssayFileMoveData>> fileMovesByRunId) {}
 
     @Override
-    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException
+    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         if (runs.isEmpty())
             return;
@@ -1991,6 +1991,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     throw new ExperimentException("Assay batch " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
                 fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                event.setProvidedFileName(sourceFile.getName());
+                event.setFile(ref.updatedFile.getName());
+                event.setDirectory(ref.updatedFile.getParent());
+                AuditLogService.get().addEvent(user, event);
             }
 
         }
@@ -2072,6 +2077,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw new ExperimentException("Assay run " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
             fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            event.setProvidedFileName(sourceFile.getName());
+            event.setFile(ref.updatedFile.getName());
+            event.setDirectory(ref.updatedFile.getParent());
+            AuditLogService.get().addEvent(user, event);
         }
 
     }
@@ -2116,6 +2126,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), null, sourceFile, updatedFile));
                     fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
+                    FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                    event.setProvidedFileName(sourceFile.getName());
+                    event.setFile(updatedFile.getName());
+                    event.setDirectory(updatedFile.getParent());
+                    AuditLogService.get().addEvent(user, event);
                 }
             }
             catch (Exception e)
@@ -2234,6 +2249,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         .append(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
                 new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
 
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                event.setProvidedFileName(sourceFile.getName());
+                event.setFile(updatedFile.getName());
+                event.setDirectory(updatedFile.getParent());
+                AuditLogService.get().addEvent(user, event);
             }
 
         }

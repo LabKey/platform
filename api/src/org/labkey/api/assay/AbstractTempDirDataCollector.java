@@ -169,7 +169,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
     protected FileLike getFilePath(ContextType context, @Nullable ExpRun run, FileLike tempDirFile) throws ExperimentException
     {
         FileLike assayDir = ensureUploadDirectory(context.getContainer());
-        return findUniqueFileName(tempDirFile.getName(), assayDir);
+        return FileUtil.findUniqueFileName(tempDirFile.getName(), assayDir);
     }
 
     // This is the default case to move the primary file from the temp directory to the assayData directory

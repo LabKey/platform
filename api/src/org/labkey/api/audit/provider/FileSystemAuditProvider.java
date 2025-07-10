@@ -18,6 +18,7 @@ package org.labkey.api.audit.provider;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -42,6 +43,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
 
     public static final String COLUMN_NAME_DIRECTORY = "Directory";
     public static final String COLUMN_NAME_FILE = "File";
+    public static final String COLUMN_NAME_PROVIDED_FILE = "ProvidedFileName";
     public static final String COLUMN_NAME_RESOURCE_PATH = "ResourcePath";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -53,6 +55,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DIRECTORY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_FILE));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROVIDED_FILE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -106,16 +109,19 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         private String _directory;      // the directory name
         private String _file;           // the file name
         private String _resourcePath;   // the webdav resource path
+        private String _providedFileName;   // the name of the file as provided by the user, before renaming to make it unique and/or legal
 
         /** Important for reflection-based instantiation */
         public FileSystemAuditEvent()
         {
             super();
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public FileSystemAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public String getDirectory()
@@ -148,6 +154,16 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
             _resourcePath = resourcePath;
         }
 
+        public String getProvidedFileName()
+        {
+            return _providedFileName;
+        }
+
+        public void setProvidedFileName(String providedFileName)
+        {
+            _providedFileName = providedFileName;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -155,6 +171,8 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
             elements.put("directory", getDirectory());
             elements.put("file", getFile());
             elements.put("resourcePath", getResourcePath());
+            elements.put("providedFileName", getProvidedFileName());
+            elements.put("transactionId", getTransactionId());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -174,7 +192,9 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_DIRECTORY, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_FILE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_PROVIDED_FILE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_RESOURCE_PATH, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

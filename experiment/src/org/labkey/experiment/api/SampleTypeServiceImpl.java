@@ -30,6 +30,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.AuditConfigurable;
@@ -2137,6 +2138,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
             fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(ref.sourceContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            event.setProvidedFileName(sourceFile.getName());
+            event.setFile(ref.targetFile.getName());
+            event.setDirectory(ref.targetFile.getParent());
+            AuditLogService.get().addEvent(user, event);
         }
 
         return sampleFileRenames;
