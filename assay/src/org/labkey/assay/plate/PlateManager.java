@@ -3764,7 +3764,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap(sampleIdNameFieldKey.toString(), "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
-                    writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                    writer.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
                     writer.write(plateFileBytes.bytes);
                 }
 
