@@ -93,7 +93,7 @@ public class IpynbOutput extends HtmlOutput
             {
                 String html = view.renderInternalAsString(file);
                 URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
-                if (html != null && baseURI != null)
+                if (html != null)
                     thumb = ImageUtil.webThumbnail(context, html, baseURI);
             }
             catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
