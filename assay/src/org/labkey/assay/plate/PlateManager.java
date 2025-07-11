@@ -609,29 +609,39 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // get the runIds for each protocol, query against its assay results table
         List<SQLFragment> fragments = new ArrayList<>();
+        Set<FieldKey> requiredFields = Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"));
+
+        protocolLoop:
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
             TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
             if (assayDataTable != null)
             {
-                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
-                if (dataIdCol != null)
+                // Issue 53446: A misconfigured assay design could be missing required fields.
+                // This is not expected. Don't let that stop the run counting but do log an error with more context.
+                for (FieldKey requiredFieldKey : requiredFields)
                 {
-                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
-                            .append(assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"))))
-                            .append(" WHERE AD.Plate = ?")
-                            .add(plate.getRowId());
-
-                    SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
-                            .append(ExperimentService.get().getTinfoData(), "D")
-                            .append(" INNER JOIN ")
-                            .append(ExperimentService.get().getTinfoExperimentRun(), "R")
-                            .append(" ON D.RunId = R.RowId\n")
-                            .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
-
-                    fragments.add(sql);
+                    if (assayDataTable.getColumn(requiredFieldKey) == null)
+                    {
+                        LOG.error("Required field \"{}\" not found in plate-based assay results domain for protocol \"{}\" in {}.", requiredFieldKey.getName(), protocol.getName(), protocol.getContainer().getPath());
+                        continue protocolLoop;
+                    }
                 }
+
+                SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
+                        .append(assayDataTable.getFromSQL("AD", requiredFields))
+                        .append(" WHERE AD.Plate = ?")
+                        .add(plate.getRowId());
+
+                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
+                        .append(ExperimentService.get().getTinfoData(), "D")
+                        .append(" INNER JOIN ")
+                        .append(ExperimentService.get().getTinfoExperimentRun(), "R")
+                        .append(" ON D.RunId = R.RowId\n")
+                        .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
+
+                fragments.add(sql);
             }
         }
 
