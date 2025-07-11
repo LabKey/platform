@@ -32,11 +32,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -78,6 +78,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -88,6 +89,7 @@ import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -822,52 +824,192 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         StudyManager _manager = StudyManager.getInstance();
         String longName = "this is a very long name (with punctuation) that raises many questions \"?\" about your database design choices";
 
-        @Test
-        public void updateRowTest() throws Exception
+        private void createDataset() throws Exception
         {
+            if (DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1") != null)
+            {
+                return;
+            }
+
             var dsd = new DatasetDefinition(_junitStudy, 1001, "DS1", "DS1", null, null, null);
             _manager.createDatasetDefinition(_user, dsd);
             dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
             dsd.refreshDomain();
             {
-            var domain = dsd.getDomain();
-            DomainProperty p;
+                var domain = dsd.getDomain();
+                DomainProperty p;
 
-            p = domain.addProperty();
-            p.setName("Field1");
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
+                p = domain.addProperty();
+                p.setName("Field1");
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
 
-            p = domain.addProperty();
-            p.setName("SELECT");
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
+                p = domain.addProperty();
+                p.setName("SELECT");
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
 
-            p = domain.addProperty();
-            p.setName(longName);
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
+                p = domain.addProperty();
+                p.setName(longName);
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.VARCHAR).getTypeUri());
 
-            p = domain.addProperty();
-            p.setName("Value1");
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
-            p.setMvEnabled(true);
+                p = domain.addProperty();
+                p.setName("Value1");
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
+                p.setMvEnabled(true);
 
-            p = domain.addProperty();
-            p.setName("Value2");
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
-            p.setMvEnabled(true);
+                p = domain.addProperty();
+                p.setName("Value2");
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
+                p.setMvEnabled(true);
 
-            p = domain.addProperty();
-            p.setName("Value3");
-            p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
-            p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
-            p.setMvEnabled(true);
+                p = domain.addProperty();
+                p.setName("Value3");
+                p.setPropertyURI(domain.getTypeURI() + "." + Lsid.encodePart(p.getName()));
+                p.setRangeURI(PropertyType.getFromJdbcType(JdbcType.DOUBLE).getTypeUri());
+                p.setMvEnabled(true);
 
-            domain.save(_user);
+                domain.save(_user);
             }
+        }
+
+        private long getDatasetAuditRowCount()
+        {
+            return new TableSelector(QueryService.get().getUserSchema(_user, _container, "auditLog").getTable("DatasetAuditEvent")).getRowCount();
+        }
+
+        private String getLatestAuditMessage()
+        {
+            return new TableSelector(QueryService.get().getUserSchema(_user, _container, "auditLog").getTable("DatasetAuditEvent"), PageFlowUtil.set("Comment"), null, new Sort("-created")).setMaxRows(1).getObject(String.class);
+        }
+
+        @Test
+        public void testAuditing() throws Exception
+        {
+            createDataset();
+            TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
+            t.getUpdateService().truncateRows(_user, _container, null, null);
+
+            final QueryUpdateService qus = t.getUpdateService();
+            BatchValidationException errors = new BatchValidationException();
+
+            long actualAuditRows = getDatasetAuditRowCount();
+            long expectedAuditRows;
+
+            List<Map<String, Object>> insertedRows = qus.insertRows(_user, _container,
+                    List.of(Map.of(
+                            "subjectid", "S1",
+                            "SequenceNum", "1.2345",
+                            longName, "NA"),
+                            Map.of(
+                            "subjectid", "S2",
+                            "SequenceNum", "1.2345",
+                            longName, "WithoutBulkLoad")),
+                    errors, null, null);
+
+            if (errors.hasErrors())
+            {
+                fail(errors.getMessage());
+            }
+
+            expectedAuditRows = actualAuditRows + 2;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+            Assert.assertEquals("Incorrect comment", "A new dataset record was inserted", getLatestAuditMessage());
+
+            qus.insertRows(_user, _container,
+                    List.of(Map.of(
+                                "subjectid", "S3",
+                                "SequenceNum", "1.2345",
+                                longName, "WithoutBulkLoad")),
+                    errors, null, null);
+
+            if (errors.hasErrors())
+            {
+                fail(errors.getMessage());
+            }
+
+            expectedAuditRows = actualAuditRows + 1;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+
+            // Now update:
+            insertedRows.get(0).put(longName, "NewValue");
+            insertedRows.get(1).put(longName, "NewValue");
+            List<Map<String, Object>> oldKeys = Arrays.asList(
+                    Map.of("lsid", insertedRows.get(0).get("lsid")),
+                    Map.of("lsid", insertedRows.get(1).get("lsid"))
+            );
+            qus.updateRows(_user, _container, insertedRows, oldKeys, errors, null, null);
+            if (errors.hasErrors())
+            {
+                fail(errors.getMessage());
+            }
+
+            expectedAuditRows = actualAuditRows + 2;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+            Assert.assertEquals("Incorrect comment", "A dataset record was modified", getLatestAuditMessage());
+
+            qus.deleteRows(_user, _container, oldKeys, null, null);
+            expectedAuditRows = actualAuditRows + 2;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+            Assert.assertEquals("Incorrect comment", "A dataset record was deleted", getLatestAuditMessage());
+
+            // Repeat using bulkLoad=true:
+            qus.setBulkLoad(true);
+
+            insertedRows = qus.insertRows(_user, _container,
+                    List.of(Map.of(
+                                    "subjectid", "S4",
+                                    "SequenceNum", "1.2345",
+                                    longName, "WithBulkLoad"),
+                            Map.of(
+                                    "subjectid", "S5",
+                                    "SequenceNum", "1.2345",
+                                    longName, "WithBulkLoad")),
+                    errors, null, null);
+
+            if (errors.hasErrors())
+            {
+                fail(errors.getMessage());
+            }
+
+            expectedAuditRows = actualAuditRows;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+
+            // Now update:
+            insertedRows.get(0).put(longName, "NewValue");
+            insertedRows.get(1).put(longName, "NewValue");
+            oldKeys = Arrays.asList(
+                    Map.of("lsid", insertedRows.get(0).get("lsid")),
+                    Map.of("lsid", insertedRows.get(1).get("lsid"))
+            );
+            qus.updateRows(_user, _container, insertedRows, oldKeys, errors, null, null);
+            if (errors.hasErrors())
+            {
+                fail(errors.getMessage());
+            }
+
+            expectedAuditRows = actualAuditRows;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+
+            qus.deleteRows(_user, _container, oldKeys, null, null);
+            expectedAuditRows = actualAuditRows;
+            actualAuditRows = getDatasetAuditRowCount();
+            Assert.assertEquals("Incorrect number of audit records", expectedAuditRows, actualAuditRows);
+        }
+
+        @Test
+        public void updateRowTest() throws Exception
+        {
+            createDataset();
 
             TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
             assertNotNull(t);
