@@ -16,6 +16,8 @@
 
 package org.labkey.list.controllers;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -130,8 +132,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -551,14 +551,28 @@ public class ListController extends SpringActionController
         }
     }
 
+    public static class ListDetailsForm extends ListDefinitionForm
+    {
+        private Object _pk;
+
+        public Object getPk()
+        {
+            return _pk;
+        }
+
+        public void setPk(Object pk)
+        {
+            _pk = pk;
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<ListDefinitionForm>
+    public class DetailsAction extends SimpleViewAction<ListDetailsForm>
     {
         private ListDefinition _list;
 
         @Override
-        public ModelAndView getView(ListDefinitionForm form, BindException errors)
+        public ModelAndView getView(ListDetailsForm form, BindException errors)
         {
             _list = form.getList();
             TableInfo table = _list.getTable(getUser(), getContainer());
@@ -566,7 +580,7 @@ public class ListController extends SpringActionController
             if (null == table)
                 throw new NotFoundException("List does not exist");
 
-            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, errors);
+            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, form.getPk(), errors);
             DetailsView details = new DetailsView(tableForm);
 
             ButtonBar bb = new ButtonBar();
@@ -668,20 +682,29 @@ public class ListController extends SpringActionController
     public static class ListQueryUpdateForm extends QueryUpdateForm
     {
         private final ListDefinition _list;
+        private final Object _pk;
 
-        public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, BindException errors)
+        public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, @Nullable Object pk, BindException errors)
         {
             super(table, ctx, errors);
             _list = list;
+            _pk = pk;
         }
 
         @Override
         public Object[] getPkVals()
         {
-            Object[] pks = super.getPkVals();
-            assert 1 == pks.length;
-            pks[0] = _list.getKeyType().convertKey(pks[0]);
-            return pks;
+            if (_pk != null)
+            {
+                return new Object[]{_pk};
+            }
+            else
+            {
+                Object[] pks = super.getPkVals();
+                assert 1 == pks.length;
+                pks[0] = _list.getKeyType().convertKey(pks[0]);
+                return pks;
+            }
         }
 
         public Domain getDomain()
