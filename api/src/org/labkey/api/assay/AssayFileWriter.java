@@ -32,9 +32,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
-
 import org.labkey.vfs.FileLike;
-
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -228,7 +226,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData, boolean createAuditEvent) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
         Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
@@ -256,9 +254,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                             FileLike dir = getFileTargetDir(context);
                             FileLike file = FileUtil.findUniqueFileName(fileName, dir);
                             multipartFile.transferTo(toFileForWrite(file));
-                            if (createAuditEvent)
+                            if (!dir.toURI().getPath().contains(TEMP_DIR_NAME))
                             {
-                                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), "File provided for assay import");
+                                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), allowMultiple ? "File field provided for assay import" : "Primary file provided for assay import");
                                 event.setProvidedFileName(fileName);
                                 event.setFile(file.getName());
                                 event.setDirectory(dir.getParent().toURI().getPath());

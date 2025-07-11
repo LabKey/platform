@@ -1004,11 +1004,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
+        String auditMessageFormat = "Saved file '%s' for field '%s' in folder %s.";
         FileLike file = null;
         try
         {
             FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent();
+            event.setContainer(container);
             if (value instanceof MultipartFile multipartFile)
             {
                 // Once we've found one, write it to disk and replace the row's value with just the File reference to it
@@ -1019,24 +1022,22 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 file = FileUtil.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 checkFileUnderRoot(container, file);
                 multipartFile.transferTo(toFileForWrite(file));
-
-                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(container, "Save file " + multipartFile.getOriginalFilename() + " for field " + name + " in folder " + container.getPath());
+                event.setComment(String.format(auditMessageFormat, multipartFile.getOriginalFilename(), name, container.getPath()));
                 event.setProvidedFileName(multipartFile.getOriginalFilename());
                 event.setFile(file.getName());
                 event.setDirectory(file.getParent().toURI().getPath());
-                AuditLogService.get().addEvent(user, event);
             }
             else if (value instanceof SpringAttachmentFile saf)
             {
                 file = FileUtil.findUniqueFileName(saf.getFilename(), dir);
                 checkFileUnderRoot(container, file);
                 saf.saveTo(file);
-                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(container, "Save file " + saf.getFilename() + " for field " + name + " in folder " + container.getPath());
+                event.setComment(String.format(auditMessageFormat, saf.getFilename(), name, container.getPath()));
                 event.setProvidedFileName(saf.getFilename());
                 event.setFile(file.getName());
                 event.setDirectory(file.getParent().toURI().getPath());
-                AuditLogService.get().addEvent(user, event);
             }
+            AuditLogService.get().addEvent(user, event);
         }
         catch (IOException | ExperimentException e)
         {

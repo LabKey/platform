@@ -340,7 +340,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 {
                     // Initialize member variable so we know that we've already tried to save the posted files in case of error
                     _additionalFiles = new HashMap<>();
-                    Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false, true);
+                    Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
                     for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
 

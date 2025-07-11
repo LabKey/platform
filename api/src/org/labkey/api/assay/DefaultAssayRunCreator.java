@@ -148,33 +148,42 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayProvider provider = context.getProvider();
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
-        context.init();
 
-        // Check if assay protocol is configured to import in the background.
-        // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-        boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
-        if (!importInBackground)
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
-            if ((Object)context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+            if (transaction.getAuditId() == null)
             {
-                throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
-            FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null==primaryFile ? null : primaryFile.toNioPathForRead().toFile());
-            run.setComments(context.getComments());
-            run.setWorkflowTaskId(context.getWorkflowTask());
+            context.init();
+            // Check if assay protocol is configured to import in the background.
+            // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
+            boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
+            if (!importInBackground)
+            {
+                if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+                {
+                    throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                }
+                FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+                run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
+                run.setComments(context.getComments());
+                run.setWorkflowTaskId(context.getWorkflowTask());
 
-            exp = saveExperimentRun(context, exp, run, false);
+                exp = saveExperimentRun(context, exp, run, false);
 
-            // re-fetch the run after it has been fully constructed
-            run = ExperimentService.get().getExpRun(run.getRowId());
+                // re-fetch the run after it has been fully constructed
+                run = ExperimentService.get().getExpRun(run.getRowId());
 
-            context.uploadComplete(run);
-        }
-        else
-        {
-            context.uploadComplete(null);
-            exp = saveExperimentRunAsync(context, exp);
+                context.uploadComplete(run);
+            }
+            else
+            {
+                context.uploadComplete(null);
+                exp = saveExperimentRunAsync(context, exp);
+            }
+            transaction.commit();
         }
 
         return Pair.of(exp, run);

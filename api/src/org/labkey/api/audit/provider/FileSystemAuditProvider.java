@@ -115,6 +115,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         public FileSystemAuditEvent()
         {
             super();
+            setEventType(EVENT_TYPE);
             setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
