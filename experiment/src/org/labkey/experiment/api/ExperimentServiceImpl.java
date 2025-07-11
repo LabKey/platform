@@ -4686,10 +4686,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Map<String, Object> rowMap = new HashMap<>();
             rowMap.put("RowId", dataObject.getRowId());
             if (dataObject.getContainer().hasPermission(user, ReadPermission.class))
-            {
                 rowMap.put("ContainerPath", dataObject.getContainer().getPath());
-                rowMap.put("Name", dataObject.getContainer().getName());
-            }
             if (allowedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else

@@ -2143,10 +2143,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Map<String, Object> allowedRow = new HashMap<>();
             allowedRow.put("RowId", rowId);
             if (plate.getContainer().hasPermission(user, ReadPermission.class))
-            {
-                allowedRow.put("Name", plate.getName());
                 allowedRow.put("ContainerPath", plate.getContainer().getPath());
-            }
             allowedRows.add(allowedRow);
         });
 
