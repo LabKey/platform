@@ -3387,17 +3387,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         TableInfo wellTable = dbSchema.getTableInfoWell();
 
         // Determines the set of primary plate sets that are being touched from the collection of well rowIds
-        SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
-                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
-                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
-
         // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
-        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, W.SampleId FROM ")
-                .append(wellTable, "W")
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("WITH PlateSetFilter AS (")
+                .append("SELECT DISTINCT PS.RowId FROM ").append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
+                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect)
+                .append(" )")
+                .append(" SELECT PS.Name AS PlateSetName, W.SampleId FROM ").append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" INNER JOIN PlateSetFilter PSF ON PSF.RowId = PS.RowId")
+                .append(" WHERE W.SampleId IS NOT NULL")
                 .append(" GROUP BY PS.RowId, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
