@@ -2799,7 +2799,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), isBulkLoad ? AuditBehaviorType.SUMMARY : AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            if (!isBulkLoad)
+            {
+                new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            }
 
             transaction.commit();
         }
