@@ -12,10 +12,10 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "6.54.3-fb-nodejs-22.0"
+    "@labkey/components": "6.56.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.5.1-fb-nodejs-22.1",
+    "@labkey/build": "8.6.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.23",
     "@types/react-dom": "18.3.7"
