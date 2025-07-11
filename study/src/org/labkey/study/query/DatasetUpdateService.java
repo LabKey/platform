@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -80,6 +81,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.SecurityType;
@@ -817,6 +819,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
+        private static final String SUBJECT_COLUMN_NAME = "SubjectID";
+        private static final String DATASET_NAME = "DS1";
         TestContext _context = null;
         User _user = null;
         Container _container = null;
@@ -826,12 +830,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
         private void createDataset() throws Exception
         {
-            if (DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1") != null)
+            if (DefaultSchema.get(_user, _container).getSchema(StudyQuerySchema.SCHEMA_NAME).getTable(DATASET_NAME) != null)
             {
                 return;
             }
 
-            var dsd = new DatasetDefinition(_junitStudy, 1001, "DS1", "DS1", null, null, null);
+            var dsd = new DatasetDefinition(_junitStudy, 1001, DATASET_NAME, DATASET_NAME, null, null, null);
             _manager.createDatasetDefinition(_user, dsd);
             dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
             dsd.refreshDomain();
@@ -878,19 +882,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
         private long getDatasetAuditRowCount()
         {
-            return new TableSelector(QueryService.get().getUserSchema(_user, _container, "auditLog").getTable("DatasetAuditEvent")).getRowCount();
+            return new TableSelector(QueryService.get().getUserSchema(_user, _container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME).getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT)).getRowCount();
         }
 
         private String getLatestAuditMessage()
         {
-            return new TableSelector(QueryService.get().getUserSchema(_user, _container, "auditLog").getTable("DatasetAuditEvent"), PageFlowUtil.set("Comment"), null, new Sort("-created")).setMaxRows(1).getObject(String.class);
+            return new TableSelector(QueryService.get().getUserSchema(_user, _container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME).getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT), PageFlowUtil.set("Comment"), null, new Sort("-created")).setMaxRows(1).getObject(String.class);
         }
 
         @Test
         public void testAuditing() throws Exception
         {
             createDataset();
-            TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
+            TableInfo t = DefaultSchema.get(_user, _container).getSchema(StudyQuerySchema.SCHEMA_NAME).getTable(DATASET_NAME);
             t.getUpdateService().truncateRows(_user, _container, null, null);
 
             final QueryUpdateService qus = t.getUpdateService();
@@ -901,11 +905,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             List<Map<String, Object>> insertedRows = qus.insertRows(_user, _container,
                     List.of(Map.of(
-                            "subjectid", "S1",
+                            SUBJECT_COLUMN_NAME, "S1",
                             "SequenceNum", "1.2345",
                             longName, "NA"),
                             Map.of(
-                            "subjectid", "S2",
+                            SUBJECT_COLUMN_NAME, "S2",
                             "SequenceNum", "1.2345",
                             longName, "WithoutBulkLoad")),
                     errors, null, null);
@@ -922,7 +926,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             qus.insertRows(_user, _container,
                     List.of(Map.of(
-                                "subjectid", "S3",
+                                SUBJECT_COLUMN_NAME, "S3",
                                 "SequenceNum", "1.2345",
                                 longName, "WithoutBulkLoad")),
                     errors, null, null);
@@ -965,11 +969,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             insertedRows = qus.insertRows(_user, _container,
                     List.of(Map.of(
-                                    "subjectid", "S4",
+                                    SUBJECT_COLUMN_NAME, "S4",
                                     "SequenceNum", "1.2345",
                                     longName, "WithBulkLoad"),
                             Map.of(
-                                    "subjectid", "S5",
+                                    SUBJECT_COLUMN_NAME, "S5",
                                     "SequenceNum", "1.2345",
                                     longName, "WithBulkLoad")),
                     errors, null, null);
@@ -1011,7 +1015,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             createDataset();
 
-            TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
+            TableInfo t = DefaultSchema.get(_user, _container).getSchema(StudyQuerySchema.SCHEMA_NAME).getTable(DATASET_NAME);
             assertNotNull(t);
             assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias()));
             assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias()));
@@ -1022,7 +1026,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             var result = up.insertRows(_user, _container,
                     List.of(Map.of(
-                            "subjectid", "S1",
+                            SUBJECT_COLUMN_NAME, "S1",
                             "SequenceNum", "1.2345",
                             "Field1", "f",
                             "SELECT", "s",
@@ -1037,7 +1041,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             assertNotNull(result);
             assertEquals(1, result.size());
             var map = result.get(0);
-            assertEquals("S1", map.get("SubjectId"));
+            assertEquals("S1", map.get(SUBJECT_COLUMN_NAME));
             assertEquals("f", map.get("Field1"));
             assertEquals("s", map.get("SELECT"));
             assertEquals("l", map.get(longName));
@@ -1054,7 +1058,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             // update subjectid column
             result = up.updateRows(_user, _container,
-                    List.of(Map.of("subjectid", "S2")),
+                    List.of(Map.of(SUBJECT_COLUMN_NAME, "S2")),
                     List.of(Map.of("lsid", lsid)),
                     errors, null, null);
             if (errors.hasErrors())
@@ -1062,7 +1066,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             assertNotNull(result);
             assertEquals(1, result.size());
             map = result.get(0);
-            assertEquals("S2", map.get("SubjectId"));
+            assertEquals("S2", map.get(SUBJECT_COLUMN_NAME));
             // All other columns are preserved
             assertEquals("f", map.get("Field1"));
             assertEquals("s", map.get("SELECT"));
@@ -1095,7 +1099,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             assertNotNull(result);
             assertEquals(1, result.size());
             map = result.get(0);
-            assertEquals("S2", map.get("SubjectId"));
+            assertEquals("S2", map.get(SUBJECT_COLUMN_NAME));
             assertEquals("fUpdated", map.get("Field1"));
             assertEquals("sUpdated", map.get("SELECT"));
             assertEquals("lUpdated", map.get(longName));
@@ -1122,7 +1126,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.VISIT);
             s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
-            s.setSubjectColumnName("SubjectID");
+            s.setSubjectColumnName(SUBJECT_COLUMN_NAME);
             s.setSubjectNounPlural("Subjects");
             s.setSubjectNounSingular("Subject");
             s.setSecurityType(SecurityType.BASIC_WRITE);
