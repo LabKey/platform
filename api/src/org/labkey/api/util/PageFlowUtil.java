@@ -221,7 +221,7 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder(2 * len);
         boolean newline = false;
 
-        Matcher urlMatcher = urlPatternStart.matcher(s);
+        CachingSupplier<Matcher> urlMatcher = new CachingSupplier<>(() -> urlPatternStart.matcher(s));
 
         for (int i = 0; i < len; ++i)
         {
@@ -281,10 +281,10 @@ public class PageFlowUtil
                     {
                         if (StringUtilsLabKey.startsWithURL(s.subSequence(i, Math.min(s.length(),i+10))))
                         {
-                            urlMatcher.region(i, s.length());
-                            if (urlMatcher.lookingAt())
+                            urlMatcher.get().region(i, s.length());
+                            if (urlMatcher.get().lookingAt())
                             {
-                                String href = urlMatcher.group(1);
+                                String href = urlMatcher.get().group(1);
                                 if (href.endsWith("."))
                                     href = href.substring(0, href.length() - 1);
                                 // for html/xml careful of " and "> and "/>
