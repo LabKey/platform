@@ -256,6 +256,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         WebdavResource _res;
         Runnable _run;
         PRIORITY _pri;
+        // Used to ensure FIFO ordering in the queue
         final long seqNum = seq.incrementAndGet();
 
         int _preprocessAttempts = 0;
