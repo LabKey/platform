@@ -212,9 +212,6 @@ public interface SearchService extends SearchMXBean
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
 
-        /* This adds do nothing item to the queue, this is only useful for tracking progress of the queue. see TaskListener. */
-        void addNoop(SearchService.PRIORITY pri);
-
         default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
         {
             ListUtils.partition(list, batchSize).forEach(sublist ->
@@ -432,7 +429,7 @@ public interface SearchService extends SearchMXBean
     // helper to call when not found exception is detected
     void notFound(URLHelper url);
 
-    List<IndexTask> getTasks();
+    List<? extends IndexTask> getTasks();
 
     void addPathToCrawl(Path path, @Nullable Date nextCrawl);
 
