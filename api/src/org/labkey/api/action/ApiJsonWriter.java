@@ -295,6 +295,11 @@ public class ApiJsonWriter extends ApiResponseWriter
         jg.writeObjectFieldStart(name);
     }
 
+    public void startObject() throws IOException
+    {
+        jg.writeStartObject();
+    }
+
     public void endObject() throws IOException
     {
         jg.writeEndObject();

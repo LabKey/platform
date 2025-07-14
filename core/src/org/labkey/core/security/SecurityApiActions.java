@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -85,6 +86,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -121,54 +123,53 @@ public class SecurityApiActions
     public static class GetGroupPermsAction extends ReadOnlyApiAction<GetGroupPermsForm>
     {
         @Override
-        public ApiResponse execute(GetGroupPermsForm form, BindException errors)
+        public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws IOException
         {
+            // Issue 53243: stream response from security-getGroupPerms.api
             Container container = getContainer();
+            ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
+            writer.startResponse();
 
-            //if the container is not the root container, get the set of groups
-            //from the container's project and pass that down the recursion stack
-            response.put("container", getContainerPerms(container,
-                    SecurityManager.getGroups(container.getProject(), true),
-                    form.isIncludeSubfolders()));
+            writer.startObject("container");
+            writeContainer(writer, container, SecurityManager.getGroups(container.getProject(), true), form.isIncludeSubfolders());
+            writer.endObject();
 
-            return response;
+            writer.endResponse();
+
+            return null;
         }
 
-        protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean recurse)
+        private void writeContainer(ApiJsonWriter writer, Container container, List<Group> groups, boolean includeSubfolders) throws IOException
         {
-            Map<String, Object> containerPerms = new HashMap<>();
-            containerPerms.put("path", container.getPath());
-            containerPerms.put("id", container.getId());
-            containerPerms.put("name", container.getName());
-            containerPerms.put("isInheritingPerms", container.isInheritedAcl());
-            containerPerms.put("groups", getGroupPerms(container, groups));
+            writer.writeProperty("path", container.getPath());
+            writer.writeProperty("id", container.getId());
+            writer.writeProperty("name", container.getName());
+            writer.writeProperty("isInheritingPerms", container.isInheritedAcl());
 
-            if (recurse && container.hasChildren())
+            if (groups != null && !groups.isEmpty())
+                writer.writeProperty("groups", getGroupPerms(container, groups));
+
+            if (includeSubfolders && container.hasChildren())
             {
-                List<Map<String, Object>> childPerms = new ArrayList<>();
+                writer.startList("children");
+
                 for (Container child : container.getChildren())
                 {
                     if (child.hasPermission(getUser(), ReadPermission.class))
                     {
-                        childPerms.add(getContainerPerms(child,
-                                child.isProject() ? SecurityManager.getGroups(child, true) : groups,
-                                recurse));
+                        writer.startObject();
+                        writeContainer(writer, child, child.isProject() ? SecurityManager.getGroups(child, true) : groups, includeSubfolders);
+                        writer.endObject();
                     }
                 }
 
-                containerPerms.put("children", childPerms);
+                writer.endList();
             }
-
-            return containerPerms;
         }
 
         protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups)
         {
-            if (null == groups)
-                return null;
-
             List<Map<String, Object>> groupsPerms = new ArrayList<>();
 
             for (Group group : groups)
