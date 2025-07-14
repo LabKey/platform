@@ -2786,6 +2786,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
+        deleteDatasetRows(u, lsids, false);
+    }
+
+    public void deleteDatasetRows(User u, Collection<String> lsids, boolean isBulkLoad)
+    {
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
@@ -2794,7 +2799,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            if (!isBulkLoad)
+            {
+                new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            }
 
             transaction.commit();
         }
