@@ -33,6 +33,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -695,7 +696,7 @@ public class IssuesController extends SpringActionController
         return DOM.SPAN(at(DOM.cl("labkey-error")), warningMessage, DOM.P(), button);
     }
 
-    public static class IssuesApiForm extends SimpleApiJsonForm
+    public class IssuesApiForm extends SimpleApiJsonForm
     {
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
@@ -721,7 +722,7 @@ public class IssuesController extends SpringActionController
         /**
          * Parse out the issues forms from the JSON data
          */
-        public List<IssuesForm> getIssueForms(User user, Container container)
+        public List<IssuesForm> getIssueForms()
         {
             if (_issueForms == null)
             {
@@ -732,8 +733,8 @@ public class IssuesController extends SpringActionController
                     for (JSONObject rec : JsonUtil.toJSONObjectList(issues))
                     {
                         IssuesForm form = new IssuesForm();
-                        form.setUser(user);
-                        form.setContainer(container);
+                        form.setUser(getViewContext().getUser());
+                        form.setContainer(getViewContext().getContainer());
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {
@@ -782,7 +783,7 @@ public class IssuesController extends SpringActionController
         @Override
         public void validateForm(IssuesApiForm form, Errors errors)
         {
-            if (form.getIssueForms(getUser(), getContainer()).isEmpty())
+            if (form.getIssueForms().isEmpty())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "At least one issue record is required");
                 return;
@@ -791,7 +792,7 @@ public class IssuesController extends SpringActionController
             // Fetch the default
             IssueListDef defaultIssueListDef = IssueManager.getDefaultIssueListDef(getContainer());
 
-            for (IssuesForm issuesForm : form.getIssueForms(getUser(), getContainer()))
+            for (IssuesForm issuesForm : form.getIssueForms())
             {
                 Issue.action action = getAction(issuesForm);
                 IssueListDef formIssueListDef = IssueServiceImpl.getIssueListDef(getContainer(), issuesForm.getBean());
@@ -826,7 +827,7 @@ public class IssuesController extends SpringActionController
 
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                for (IssuesForm issuesForm : form.getIssueForms(getUser(), getContainer()))
+                for (IssuesForm issuesForm : form.getIssueForms())
                 {
                     Issue.action action = getAction(issuesForm);
 
