@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -533,6 +534,40 @@ public abstract class SqlDialect
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
+    }
+
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix, char escapeChar)
+    {
+        String prefix = wildcardPrefix != null ? wildcardPrefix : "";
+        String suffix = wildcardSuffix != null ? wildcardSuffix : "";
+        String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
+        String escapeToken = " ESCAPE '" + escapeChar + "'";
+        sql.append(" ")
+                .append(getCaseInsensitiveLikeOperator())
+                .append(" ")
+                .appendValue(prefixLike)
+                .append(escapeToken);
+        return sql;
+    }
+
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, wildcardPrefix, wildcardSuffix, '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, "%", "%", '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveStartsWith(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, null, "%", '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveEndsWith(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, "%", null, '!');
     }
 
     public abstract boolean requiresStatementMaxRows();
