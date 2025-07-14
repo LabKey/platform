@@ -701,6 +701,8 @@ public class IssuesController extends SpringActionController
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
 
+        public IssuesApiForm() {}
+
         // used for form binding
         public void setIssues(JSONArray issues)
         {
