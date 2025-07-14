@@ -149,7 +149,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             if (transaction.getAuditId() == null)
             {
@@ -181,6 +181,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
             {
                 context.uploadComplete(null);
+                context.setTransactionAuditId(transaction.getAuditId());
                 exp = saveExperimentRunAsync(context, exp);
             }
             transaction.commit();
@@ -312,8 +313,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             if (transaction.getAuditId() == null)
             {
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
-                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
+                var auditAction = context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT;
+                if (context.getTransactionAuditId() != null)
+                {
+                    var auditEvent = new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, context.getTransactionAuditId());
+                    transaction.setAuditEvent(auditEvent);
+                }
+                else
+                {
+                    var auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction);
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
+                }
             }
             boolean saveBatchProps = forceSaveBatchProps;
 
