@@ -180,6 +180,7 @@ public class SecurityApiActions
         protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups, boolean includeEmptyPerms)
         {
             List<Map<String, Object>> groupsPerms = new ArrayList<>();
+            boolean isAdmin = container.hasPermission(getUser(), AdminPermission.class);
 
             for (Group group : groups)
             {
@@ -199,7 +200,7 @@ public class SecurityApiActions
                 groupPerms.put("roles", roles);
                 groupPerms.put("effectivePermissions", effectivePermissions);
 
-                if (container.hasPermission(getUser(), AdminPermission.class))
+                if (isAdmin)
                 {
                     List<Map<String, Object>> parentGroups = new ArrayList<>();
                     group.getGroups().stream().forEach(parentGroupId -> {
