@@ -189,7 +189,7 @@ public class ListWriter
                     try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().getSelectBuilder(ti).columns(columns).sort(sort).select(null, false), displayColumns))
                     {
                         tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.ImportField);
                         PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
                         tsvWriter.write(out);
                     }
