@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +65,10 @@ public interface ImportAliasable
             {
                 m.put(property.getPropertyURI(), property);
             }
-            // Then propName variant of name
+            // Then propName variant of name, kept for backwards compatibility
             for (T property : reversedProperties)
             {
-                m.put(ColumnInfo.propNameFromName(property.getName()), property);
+                m.put(PageConfig.makeIdFromName(property.getName()), property);
             }
             // Then aliases
             for (T property : reversedProperties)

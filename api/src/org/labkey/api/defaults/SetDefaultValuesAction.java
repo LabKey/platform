@@ -273,7 +273,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (entry.getValue() != null)
                 {
                     String stringValue = entry.getValue().toString();
-                    decodePropertyValues(formDefaults, ColumnInfo.propNameFromName(entry.getKey().getName()), stringValue);
+                    decodePropertyValues(formDefaults, entry.getKey().getName(), stringValue);
                 }
             }
             view.setInitialValues(formDefaults);

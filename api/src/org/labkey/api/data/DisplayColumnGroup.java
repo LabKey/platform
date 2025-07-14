@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
@@ -92,7 +93,7 @@ public class DisplayColumnGroup
     /** Use propName because DOM ids and function names can't have spaces */
     private String getGroupFormFieldName(RenderContext ctx)
     {
-        return ColumnInfo.propNameFromName(getColumns().get(0).getFormFieldName(ctx));
+        return PageConfig.makeIdFromName(getColumns().get(0).getFormFieldName(ctx));
     }
     
     public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException

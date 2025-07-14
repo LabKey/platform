@@ -382,19 +382,7 @@ public interface ColumnInfo extends ColumnRenderProperties
     {
         return BaseColumnInfo.labelFromName(name);
     }
-
-    /** @return a version of the supplied name that conforms to Java's local variable naming convention */
-    static String propNameFromName(String name)
-    {
-        if (name == null)
-            return null;
-
-        if (name.isEmpty())
-            return null;
-
-        return Introspector.decapitalize(legalNameFromName(name));
-    }
-
+    
     static String legalNameFromName(String name)
     {
         return BaseColumnInfo.legalNameFromName(name);

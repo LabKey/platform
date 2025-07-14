@@ -74,6 +74,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FilterGroupType;
@@ -693,7 +694,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             if (null != col)        // #19358
             {
-                String propName = ColumnInfo.propNameFromName(col.getName());
+                // Keep backwards compatible with historic value
+                String propName = PageConfig.makeIdFromName(col.getName());
                 if (null != propName && propName.equalsIgnoreCase(name))
                     return col;
             }
