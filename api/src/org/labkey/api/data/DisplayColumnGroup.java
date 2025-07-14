@@ -90,7 +90,7 @@ public class DisplayColumnGroup
     }
 
     /** Use propName because DOM ids and function names can't have spaces */
-     private String getGroupFormFieldName(RenderContext ctx)
+    private String getGroupFormFieldName(RenderContext ctx)
     {
         return ColumnInfo.propNameFromName(getColumns().get(0).getFormFieldName(ctx));
     }
