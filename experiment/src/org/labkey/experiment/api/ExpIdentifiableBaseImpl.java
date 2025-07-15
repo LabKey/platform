@@ -17,11 +17,13 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -175,13 +177,13 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
             // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
-            String prefixLike = namePrefix.toLowerCase() + "%"; // case insensitive
             SQLFragment sql = new SQLFragment()
                     .append("SELECT Name\n")
                     .append("FROM ").append(tableInfo, "i")
-                    .append(" WHERE i.CpasType = ? AND LOWER(i.NAME) LIKE ?")
-                    .add(dataTypeLsid)
-                    .add(prefixLike);
+                    .append(" WHERE i.CpasType = ? AND i.NAME")
+                    .add(dataTypeLsid);
+
+            tableInfo.getSqlDialect().appendCaseInsensitiveStartsWith(sql, namePrefix);
 
             List<String> names = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
 
