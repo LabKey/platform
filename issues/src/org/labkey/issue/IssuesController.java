@@ -696,12 +696,23 @@ public class IssuesController extends SpringActionController
         return DOM.SPAN(at(DOM.cl("labkey-error")), warningMessage, DOM.P(), button);
     }
 
-    public class IssuesApiForm extends SimpleApiJsonForm
+    public static class IssuesApiForm extends SimpleApiJsonForm implements HasViewContext
     {
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
+        private ViewContext _context;
 
-        public IssuesApiForm() {}
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
+        }
 
         // used for form binding
         public void setIssues(JSONArray issues)
