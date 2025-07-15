@@ -66,6 +66,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -848,6 +849,11 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(getContainer(), "Assay file uploaded.");
+                event.setProvidedFileName(originalName);
+                event.setFile(file.getName());
+                event.setDirectory(file.getParent());
+                AuditLogService.get().addEvent(getUser(), event);
                 JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
