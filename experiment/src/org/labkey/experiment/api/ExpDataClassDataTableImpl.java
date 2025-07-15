@@ -40,6 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FieldKeyRowMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -456,14 +457,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 if (dp != null && pd != null)
                 {
                     // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-                    if (pd.isLookup())
-                    {
-                        var fk = QueryForeignKey.from(this.getUserSchema(), QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()))
-                                .schema(ExpSchema.SCHEMA_NAME, getContainer())
-                                .to(pd.getLookup().getQueryName(), null, null);
-                        wrapped.setFk(fk);
-                    }
-                    defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                    ContainerFilter cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : getContainerFilter();
+                    defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, cf, defaultsSupplier);
                     wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
 
                     if (pd.getPropertyType() == PropertyType.ATTACHMENT)
@@ -1249,14 +1244,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, SQLException
         {
             return getRow(user, container, keys, false);
         }
 
         /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException, SQLException
         {
             aliasColumns(_columnMapping, keys);
 
@@ -1273,15 +1268,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             Map<String,Object> row = _select(container, rowId, lsid, name, classId, allowCrossContainer);
 
-            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
-            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
-            if (null != row)
-            {
-                if (row instanceof ArrayListMap arrayListMap)
-                    arrayListMap.getFindMap().remove("_row");
-                else
-                    row.remove("_row");
-            }
+//            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
+//            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
+//            if (null != row)
+//            {
+//                if (row instanceof ArrayListMap arrayListMap)
+//                    arrayListMap.getFindMap().remove("_row");
+//                else
+//                    row.remove("_row");
+//            }
 
             return row;
         }
@@ -1292,32 +1287,53 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
             // FIXME Issue 52886: This retrieves raw db column names, which doesn't work well for comparing existing and new audit records if the name doesn't match the field key
-            TableInfo d = getDbTable();
-            TableInfo t = _dataClassDataTableSupplier.get();
-
-            SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                    .append(" FROM ").append(d, "d")
-                    .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid WHERE ");
-
+            SimpleFilter filter = new SimpleFilter();
             if (null != rowid)
-                sql.append("d.rowid=?").add(rowid);
+                filter.addCondition(FieldKey.fromParts("rowId"), rowid);
             else if (null != lsid)
-                sql.append("d.lsid=?").add(lsid);
+                filter.addCondition(FieldKey.fromParts("lsid"), lsid);
             else
-                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
-
+                filter.addCondition(FieldKey.fromParts("classid"), classId)
+                        .addCondition(FieldKey.fromParts("name"), name);
             if (!allowCrossContainer)
-                sql.append(" AND d.Container=?").add(container.getEntityId());
+                filter.addCondition(FieldKey.fromParts("Folder"), container.getEntityId());
 
-            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
+            TableInfo queryTable = getQueryTable();
+            TableSelector selector = new TableSelector(queryTable, filter, null);
+
+            try (var results = selector.getResults()) {
+                if (results.next())
+                {
+                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                }
+            }
+            return null;
+//            TableInfo d = getDbTable();
+//            TableInfo t = _dataClassDataTableSupplier.get();
+//
+//            SQLFragment sql = new SQLFragment()
+//                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+//                    .append(" FROM ").append(d, "d")
+//                    .append(" LEFT OUTER JOIN ").append(t, "t")
+//                    .append(" ON d.lsid = t.lsid WHERE ");
+//
+//            if (null != rowid)
+//                sql.append("d.rowid=?").add(rowid);
+//            else if (null != lsid)
+//                sql.append("d.lsid=?").add(lsid);
+//            else
+//                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
+//
+//            if (!allowCrossContainer)
+//                sql.append(" AND d.Container=?").add(container.getEntityId());
+//
+//            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
 
         @Override

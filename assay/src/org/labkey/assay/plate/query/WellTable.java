@@ -39,6 +39,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
@@ -250,7 +251,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                        var cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : getContainerFilter();
+                        defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, cf, defaultsSupplier);
                         wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
                     }
                 }

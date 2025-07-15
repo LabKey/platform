@@ -982,7 +982,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), wrapped);
+            var propColumn = copyColumnFromJoinedTable(null==dp ? dbColumn.getName() : dp.getName(), wrapped);
             if (propColumn.getName().equalsIgnoreCase("genid"))
             {
                 propColumn.setHidden(true);

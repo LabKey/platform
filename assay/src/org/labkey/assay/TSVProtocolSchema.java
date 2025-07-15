@@ -47,6 +47,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -285,7 +286,8 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, defaultsSupplier);
+                        var cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : containerFilter;
+                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, cf, defaultsSupplier);
                         columnInfo.setFieldKey(FieldKey.fromParts(dp.getName()));
                     }
                 }

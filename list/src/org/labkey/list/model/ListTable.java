@@ -239,7 +239,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setFieldKey(new FieldKey(null,pd.getName()));
-                        defaultsSupplier = PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter(), defaultsSupplier);
+                        var propertyCf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : getContainerFilter();
+                        defaultsSupplier = PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), propertyCf, defaultsSupplier);
 
                         if (pd.isMvEnabled())
                         {

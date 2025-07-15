@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class FieldKeyRowMap implements Map<FieldKey, Object>
+public class FieldKeyRowMap implements Map<FieldKey, Object>
 {
     private final Results _results;
 
