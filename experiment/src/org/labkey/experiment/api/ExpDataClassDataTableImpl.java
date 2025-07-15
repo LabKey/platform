@@ -963,7 +963,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }, DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
         }
         catch (IOException e)
         {
@@ -1331,6 +1331,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             String newName = (String) row.get(Name.name());
             String oldName = (String) oldRow.get(Name.name());
             boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+            if (hasNameChange && !ExperimentServiceImpl.get().canRename(lsid, newName, _dataClass.getTinfo()))
+                throw new ValidationException(String.format("The name '%s' already exists.", newName));
 
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
@@ -1383,7 +1385,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (data == null)
                     data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.setComment(user, flag);
+                if (data != null)
+                    data.setComment(user, flag);
             }
 
             // update aliases
