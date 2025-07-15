@@ -451,9 +451,9 @@ public abstract class SearchTest extends StudyBaseTest
         goToModule("Issues");
         File file = TestFileUtils.getSampleData("fileTypes/tsv_sample.tsv");
         issuesHelper.addIssue(ISSUE_TITLE, _userHelper.getDisplayNameForEmail(USER1),
-                Maps.of("type", "UFO",
-                        "area", "Area51",
-                        "priority", "1",
+                Maps.of("Type", "UFO",
+                        "Area", "Area51",
+                        "Priority", "1",
                         "comment", ISSUE_BODY),
                 file);
 
