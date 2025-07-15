@@ -677,7 +677,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         if (!newRunForm.getBatchProperties().isEmpty())
         {
-            JspView<AssayRunUploadForm> batchPropsView = new JspView<>("/org/labkey/assay/view/newUploadBatchProperties.jsp", newRunForm);
+            JspView<AssayRunUploadForm<?>> batchPropsView = new JspView<>("/org/labkey/assay/view/newUploadBatchProperties.jsp", newRunForm);
             batchPropsView.setTitle("Batch Properties");
             vbox.addView(batchPropsView);
         }
@@ -769,9 +769,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static String getInputName(DomainProperty property, String disambiguationId)
     {
         if (disambiguationId != null)
-            return ColumnInfo.propNameFromName(disambiguationId + "_" + property.getName());
+            return disambiguationId + "_" + property.getName();
         else
-            return ColumnInfo.propNameFromName(property.getName());
+            return property.getName();
     }
 
     public static String getInputName(DomainProperty property)
@@ -783,7 +783,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            String name = ColumnInfo.propNameFromName(entry.getKey().getName());
+            String name = entry.getKey().getName();
             String value = entry.getValue();
             insertView.getDataRegion().addHiddenFormField(name, value);
         }
@@ -940,7 +940,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             {
                 validatePostedProperties(getViewContext(), form.getBatchProperties(), errors);
 
-                if (ThawListResolverType.NAME.equals(form.getRequest().getParameter("participantVisitResolver")))
+                if (ThawListResolverType.NAME.equals(form.getRequest().getParameter(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME)))
                     ThawListResolverType.validationHelper(form, errors);
 
             }

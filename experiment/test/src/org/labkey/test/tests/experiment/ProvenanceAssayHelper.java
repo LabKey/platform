@@ -14,6 +14,7 @@ import org.labkey.remoteapi.query.Sort;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
@@ -79,12 +80,12 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         clickAndWait(Locator.linkWithText(assayName));
         waitForElement(Locator.lkButton("Import Data"));
         clickAndWait(Locator.lkButton("Import Data"));
-        waitForElement(Locator.tagWithName("select", "targetStudy"));
+        waitForElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR);
         clickAndWait(Locator.lkButton("Next"));
 
-        setFormElement(Locator.name("name"), runName);
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), runData);
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, runName);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, runData);
         clickAndWait(Locator.lkButton("Save and Finish"));
     }
 

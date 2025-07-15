@@ -105,7 +105,7 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
 
     protected class ElementCache extends LabKeyPage<?>.ElementCache
     {
-        private final Input hostNameInput = Input.Input(Locator.input("serverHostName"), getDriver())
+        private final Input hostNameInput = Input.Input(Locator.input("ServerHostName"), getDriver())
                 .findWhenNeeded(this);
         private final DataRegionTable sessionsGrid = new DataRegionTable.DataRegionFinder(getDriver())
                 .withName("ServerSessions").findWhenNeeded(this);
