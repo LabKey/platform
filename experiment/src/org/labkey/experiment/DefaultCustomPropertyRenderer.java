@@ -32,6 +32,8 @@ import java.io.File;
 import java.util.Date;
 import java.util.List;
 
+import static org.labkey.api.data.AbstractFileDisplayColumn.UNAVAILABLE_FILE_SUFFIX;
+
 /**
  * Responsible for showing custom field values (like assay run properties or sample type columns) in experiment module detail pages.
  * User: jeckels
@@ -57,7 +59,7 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
             }
             if (o == null)
             {
-                o = f.toString();
+                o = f.getName() + UNAVAILABLE_FILE_SUFFIX;
             }
         }
 

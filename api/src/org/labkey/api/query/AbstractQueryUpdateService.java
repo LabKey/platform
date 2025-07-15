@@ -39,6 +39,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ImportAliasable;
@@ -294,6 +295,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
+        // file link data iterator?
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;
     }
@@ -553,7 +555,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         preImportDIBValidation(null, colNames);
-        return MapDataIterator.of(colNames, rows, debugName);
+
+        List<Map<String, Object>> convertedRows = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++)
+        {
+            Map<String, Object> row = rows.get(i);
+            row = coerceTypes(row);
+            convertedRows.add(row);
+        }
+        return MapDataIterator.of(colNames, convertedRows, debugName);
     }
 
 
@@ -712,6 +722,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 try
                 {
                     value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                }
+                catch (ConvertHelper.FileLinkConversionException e)
+                {
+                    throw e;
                 }
                 catch (ConversionException e)
                 {

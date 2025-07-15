@@ -61,6 +61,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SimpleTime;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TimeOnlyDate;
@@ -450,6 +451,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    public static class FileLinkConversionException extends ConversionException implements SkipMothershipLogging
+    {
+        public FileLinkConversionException(String msg)
+        {
+            super(msg);
+        }
+    }
 
     public static class ContainerConverter implements Converter
     {

@@ -1970,7 +1970,7 @@ public class XarReader extends AbstractXarImporter
             }
             else if (propType == PropertyType.FILE_LINK && !StringUtils.isEmpty(value) && value.startsWith(FILE_ROOT_SUBSTITUTION) && _fileRootPath != null)
             {
-                value = getFileRootSubstitutedFilePath(value, _fileRootPath);
+                value = getFileRootSubstitutedFilePath(value, _fileRootPath);//
             }
 
             if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)

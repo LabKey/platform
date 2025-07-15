@@ -31,6 +31,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
@@ -458,7 +459,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Set<String> columnNames = new HashSet<>();
         for (ColumnDescriptor colDesc : colDescs)
         {
-            if (!columnNames.add(colDesc.name) && isThrowOnErrors())
+            String name = colDesc.name;
+            if (!columnNames.add(name) && isThrowOnErrors())
             {
                 // TODO: This should be refactored to not throw this here, but rather, have the callers check themselves. It
                 // is not in the interest of inferring columns that we validate duplicate columns.
@@ -467,6 +469,23 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 // 12908: IOException in DataLoader.inferColumnInfo() is not the correct exception type -- disabled logging for now
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
                 throw e;
+            }
+
+            // use File converter for known file fields even if inferTypes = false. If inferTypes, this is already done.
+            if (!getInferTypes())
+            {
+                Class knownColumnClass = null;
+                if (_columnInfoMap.containsKey(name))
+                {
+                    knownColumnClass = _columnInfoMap.get(name).getJavaClass();
+                }
+                else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
+                {
+                    knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
+                }
+
+                if (File.class.equals(knownColumnClass) && String.class.equals(colDesc.clazz))
+                    colDesc.clazz = knownColumnClass;
             }
         }
 
@@ -866,6 +885,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                             throw new ConversionException(sb.toString(), x);
                         }
+                        else if (x instanceof ConvertHelper.FileLinkConversionException)
+                        {
+                            throw x;
+                        }
                         else if (ERROR_VALUE_USE_ORIGINAL.equals(column.errorValues))
                             values[i] = fld;
                         else
@@ -898,6 +921,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         throw ((ConversionException) e);
                     else
                         throw new RuntimeException(e);
+                }
+                if (e instanceof ConvertHelper.FileLinkConversionException)
+                {
+                    throw e;
                 }
 
                 if (null != _file)

@@ -198,6 +198,7 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -3338,7 +3339,8 @@ public class StudyManager
             }
 
             // let DataIterator do conversions
-            col.clazz = String.class;
+            if (!File.class.equals(col.clazz))
+                col.clazz = String.class;
 
             if (columnMap.containsKey(name))
                 name = columnMap.get(name);

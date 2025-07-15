@@ -246,12 +246,6 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             keys.add(_objectURIFieldKey);
     }
 
-    @Override
-    protected String getFileName(RenderContext ctx, Object value)
-    {
-        return getFileName(ctx, value, false);
-    }
-
     public static boolean filePathExist(String path, Container container, User user)
     {
         String davPath = path;
@@ -292,7 +286,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
+    protected String getFileName(RenderContext ctx, Object value)
     {
         String result = value == null ? null : StringUtils.trimToNull(value.toString());
         if (result != null)
@@ -314,19 +308,23 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
                 f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
             NetworkDrive.ensureDrive(f.getPath());
             List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+            boolean valid = false;
             for (FileContentService.ContentType fileRootType : fileRootTypes)
             {
                 result = relativize(f, FileContentService.get().getFileRoot(_container, fileRootType));
                 if (result != null)
+                {
+                    valid = true;
                     break;
+                }
             }
             if (result == null)
             {
                 result = f.getName();
             }
 
-            if (isDisplay && !f.exists() && !result.endsWith("(unavailable)"))
-                result += " (unavailable)";
+            if ((!valid || !f.exists()) && !result.endsWith(UNAVAILABLE_FILE_SUFFIX))
+                result += UNAVAILABLE_FILE_SUFFIX;
         }
         return result;
     }
@@ -364,48 +362,78 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(
+            RenderContext ctx,
+            HtmlWriter out,
+            String fileValue /*Could be raw path value, or processed filename by `getFileName`*/,
+            boolean link,
+            boolean thumbnail)
     {
         Object value = getValue(ctx);
-        String s = value == null ? null : StringUtils.trimToNull(value.toString());
-        if (s != null)
+        String strValue = value == null ? null : StringUtils.trimToNull(value.toString());
+        if (strValue != null && !fileValue.endsWith(UNAVAILABLE_FILE_SUFFIX))
         {
             File f;
-            if (s.startsWith("file:"))
-                f = new File(URI.create(s));
+            if (strValue.startsWith("file:"))
+                f = new File(URI.create(strValue));
             else
-                f = new File(s);
+                f = new File(strValue);
 
             if (!f.exists())
             {
-                String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value;
-                f = new File(fullPath);
+                // try all file root
+                List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+                for (FileContentService.ContentType fileRootType : fileRootTypes)
+                {
+                    String fullPath = FileContentService.get().getFileRoot(_container, fileRootType).getAbsolutePath()+ File.separator + value;
+                    f = new File(fullPath);
+                    if (f.exists())
+                        break;
+                }
             }
 
             // It's probably a file, so check that first
             if (f.isFile())
             {
-                super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
+                super.renderIconAndFilename(ctx, out, strValue, link, thumbnail);
             }
             else if (f.isDirectory())
             {
-                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), null, link, false);
+                super.renderIconAndFilename(ctx, out, strValue, Attachment.getFileIcon(".folder"), null, link, false);
             }
             else
             {
                 // It's not on the file system anymore, so don't offer a link and tell the user it's unavailable
-                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(filename), null, false, false);
+                super.renderIconAndFilename(ctx, out, strValue, Attachment.getFileIcon(fileValue), null, false, false);
             }
         }
         else
         {
-            super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
+            super.renderIconAndFilename(ctx, out, fileValue, link, thumbnail);
         }
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getFileName(ctx, super.getDisplayValue(ctx), true);
+        return getFileName(ctx, super.getDisplayValue(ctx));
     }
+
+    @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return getDisplayValue(ctx);
+    }
+
+    @Override
+    public boolean isFilterable()
+    {
+        return false;
+    }
+    @Override
+    public boolean isSortable()
+    {
+        return false;
+    }
+
 }

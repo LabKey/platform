@@ -227,6 +227,14 @@ public class ExpDataFileConverter implements Converter
             // If we have a file path, make sure it's supposed to be visible in the current container
             if (f != null)
             {
+                if (!f.isFile())
+                {
+                    if (value instanceof String)
+                        throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value);
+                    else
+                        throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + f.getPath());
+                }
+
                 // Strip out ".." and "."
                 f = FileUtil.resolveFile(f);
 
@@ -255,6 +263,11 @@ public class ExpDataFileConverter implements Converter
                         return f;
                     }
                 }
+
+                if (value instanceof String)
+                    throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value);
+                else
+                    throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + f.getPath());
             }
         }
         return null;

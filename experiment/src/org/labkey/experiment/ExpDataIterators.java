@@ -2063,7 +2063,7 @@ public class ExpDataIterators
                                 Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
                                 assert file instanceof FileLike;
                                 value = ((FileLike)file).toNioPathForRead().toString();
-                                savedFileName[index] = (String)value;
+                                savedFileName[index] = (String)value;//
                             }
                             catch (QueryUpdateServiceException ex)
                             {

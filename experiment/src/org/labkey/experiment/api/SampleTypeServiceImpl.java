@@ -2092,7 +2092,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
                 .getProperties().stream()
-                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();//
         if (fileDomainProps.isEmpty())
             return sampleFileRenames;
 

@@ -462,6 +462,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against itself, so use retry loop
 
+        // convert types
         DbScope scope = getSchema().getDbSchema().getScope();
         List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
                 super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext));

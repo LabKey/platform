@@ -104,6 +104,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
 import static org.apache.poi.util.StringUtil.isNotBlank;
+import static org.labkey.api.data.AbstractFileDisplayColumn.UNAVAILABLE_FILE_SUFFIX;
 
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
@@ -2094,7 +2095,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             else
             {
                 boolean fileExist = FileLinkDisplayColumn.filePathExist(template.second, ctx.getContainer(), ctx.getUser());
-                templates.add(new Pair<>(template.first, template.second + (fileExist ? "" : " (unavailable)")));
+                templates.add(new Pair<>(template.first, template.second + (fileExist ? "" : UNAVAILABLE_FILE_SUFFIX)));
             }
         }
         return templates;

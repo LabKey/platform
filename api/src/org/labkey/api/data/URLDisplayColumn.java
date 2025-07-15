@@ -115,7 +115,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
     {
         Object value = getValue(ctx);
         String url = renderURL(ctx);
@@ -125,11 +125,11 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         if (value != null && (url != null || imageUrl != null || popupImageUrl != null))
         {
             // custom image URLs through the column metadata
-            super.renderIconAndFilename(ctx, out, filename, imageUrl, popupImageUrl, false, thumbnail);
+            super.renderIconAndFilename(ctx, out, fileValue, imageUrl, popupImageUrl, false, thumbnail);
         }
         else
         {
-            super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
+            super.renderIconAndFilename(ctx, out, fileValue, link, thumbnail);
         }
     }
 
