@@ -11380,46 +11380,52 @@ public class AdminController extends SpringActionController
             return new VBox(newView, existingView);
         }
 
+        private static final Object HOST_LOCK = new Object();
+
         @Override
         public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
         {
             List<AllowedHost> allowedHosts = null;
 
-            //handle delete of existing value
-            if (form.isDelete())
+            // Multiple requests could access this in parallel, so synchronize access, Issue 53457
+            synchronized (HOST_LOCK)
             {
-                AllowedHost subToDelete = form.getExistingAllowedHost(errors);
-                if (errors.hasErrors())
-                    return false;
-                allowedHosts = form.getSavedAllowedHosts();
-                var iter = allowedHosts.listIterator();
-                while (iter.hasNext())
+                //handle delete of an existing value
+                if (form.isDelete())
                 {
-                    AllowedHost sub = iter.next();
-                    if (sub.equals(subToDelete))
+                    AllowedHost subToDelete = form.getExistingAllowedHost(errors);
+                    if (errors.hasErrors())
+                        return false;
+                    allowedHosts = form.getSavedAllowedHosts();
+                    var iter = allowedHosts.listIterator();
+                    while (iter.hasNext())
                     {
-                        iter.remove();
-                        break;
+                        AllowedHost sub = iter.next();
+                        if (sub.equals(subToDelete))
+                        {
+                            iter.remove();
+                            break;
+                        }
                     }
                 }
-            }
-            //handle updates - clicking on Save button under Existing will save the updated urls
-            else if (form.isSaveAll())
-            {
-                allowedHosts = form.getExistingAllowedHosts(errors);
+                //handle updates - clicking on Save button under Existing will save the updated hosts
+                else if (form.isSaveAll())
+                {
+                    allowedHosts = form.getExistingAllowedHosts(errors);
+                    if (errors.hasErrors())
+                        return false;
+                }
+                //save new external value
+                else if (form.isSaveNew())
+                {
+                    allowedHosts = form.validateNewAllowedHost(errors);
+                }
+
                 if (errors.hasErrors())
                     return false;
-            }
-            //save new external value
-            else if (form.isSaveNew())
-            {
-                allowedHosts = form.validateNewAllowedHost(errors);
-            }
 
-            if (errors.hasErrors())
-                return false;
-
-            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
+                AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
+            }
 
             return true;
         }
