@@ -2175,13 +2175,14 @@ public abstract class SqlDialect
 
         void testLikeOperator()
         {
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " 'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " 'a!%bc%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "a%bc").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " '%ab!_C' ESCAPE '!'", d.appendCaseInsensitiveEndsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ab_C").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " '%a![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " 'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " '_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString());
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + " '_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString());
+            String stringLiteralPrefix = d.isSqlServer() ? " N" : " ";
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a!%bc%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "a%bc").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%ab!_C' ESCAPE '!'", d.appendCaseInsensitiveEndsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ab_C").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%a![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString());
         }
     }
 }
