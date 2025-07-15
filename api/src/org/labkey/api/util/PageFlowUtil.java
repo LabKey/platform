@@ -3166,14 +3166,21 @@ public class PageFlowUtil
         String ret = "";
         if (doc != null)
         {
-            addScriptNonces(doc);
-            try
+            if (addScriptNonces(doc) > 0)
             {
-                ret = convertNodeToHtml(doc);
+                try
+                {
+                    ret = convertNodeToHtml(doc);
+                }
+                catch (TransformerException | IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
-            catch (TransformerException | IOException e)
+            else
             {
-                throw new RuntimeException(e);
+                // If there are no script tags, just return the passed in HTML
+                ret = html;
             }
         }
 
