@@ -1706,7 +1706,8 @@ public class AssayController extends SpringActionController
             for (ExpRun expRun : allRuns)
             {
                 Container c = expRun.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(expRun.getRowId());
             }
@@ -1729,7 +1730,10 @@ public class AssayController extends SpringActionController
                 List<Map<String, Object>> notAllowedRows = new ArrayList<>();
 
                 allRuns.forEach((dataObject) -> {
-                    Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "ContainerPath", dataObject.getContainer().getPath());
+                    Map<String, Object> rowMap = new HashMap<>();
+                    rowMap.put("RowId", dataObject.getRowId());
+                    if (dataObject.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        rowMap.put("ContainerPath", dataObject.getContainer().getPath());
                     if (allowedIds.contains(dataObject.getRowId()))
                         allowedRows.add(rowMap);
                     else
@@ -1759,6 +1763,8 @@ public class AssayController extends SpringActionController
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
             AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                throw new NotFoundException("No provider found for protocol " + form.getProtocolId());
             AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo tableInfo = schema.getTableOrThrow(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
 
@@ -1774,7 +1780,8 @@ public class AssayController extends SpringActionController
                 if (data == null || data.getRun() == null) continue;
 
                 Container c = data.getRun().getContainer();
-                uniqueContainers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    uniqueContainers.add(c);
                 if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
                     permittedRowIds.add(rowId);
             }

@@ -31,6 +31,7 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -92,7 +93,7 @@ public class IpynbOutput extends HtmlOutput
             {
                 String html = view.renderInternalAsString(file);
                 URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
-                if (html != null && baseURI != null)
+                if (html != null)
                     thumb = ImageUtil.webThumbnail(context, html, baseURI);
             }
             catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
@@ -149,7 +150,8 @@ public class IpynbOutput extends HtmlOutput
         @Override
         protected String renderInternalAsString(File file) throws Exception
         {
-            String result = StringUtils.trimToEmpty(super.renderInternalAsString(file));
+            // Don't call super.renderInternalAsString(file) since we expect JSON
+            String result = file.exists() ? StringUtils.trimToEmpty(PageFlowUtil.getFileContentsAsString(file)) : "";
             try
             {
                 final JSONObject obj = new JSONObject(result);
