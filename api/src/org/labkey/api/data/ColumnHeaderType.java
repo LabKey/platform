@@ -109,7 +109,7 @@ public enum ColumnHeaderType
         }
     },
 
-    // Use the ColumnInfo's FieldKey with FieldKey escaping. Useful for import/export round-tripping, but can lead to ugly names.
+    // Use the ColumnInfo's FieldKey with FieldKey escaping.
     FieldKey("Field Key", "The column name rendered with FieldKey encoding; unambiguous and canonical, useful for exporting and re-importing.") {
         @Override
         public String getText(DisplayColumn dc)
