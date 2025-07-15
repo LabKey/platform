@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 
@@ -219,7 +220,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
 
 
     @Override
-    public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException
+    public SearchService.IndexTask get(long timeout, @NotNull TimeUnit unit) throws InterruptedException
     {
         synchronized (_completeEvent)
         {
