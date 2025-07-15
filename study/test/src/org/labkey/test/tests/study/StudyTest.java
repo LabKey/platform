@@ -818,7 +818,8 @@ public class StudyTest extends StudyBaseTest
             clickButton("Submit");
             assertTextPresent("Updatable Value");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
-            assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
+            Locator loc = Locator.input("quf_Bad Name");
+            assertEquals("Updatable Value", getFormElement(loc));
             setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
             clickButton("Submit");
             assertTextPresent("Updatable Value11");

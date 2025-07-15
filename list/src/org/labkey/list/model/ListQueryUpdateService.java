@@ -370,7 +370,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     // Remove prior attachment -- only includes columns which are modified in this update
                     for (ColumnInfo col : modifiedAttachmentColumns)
                     {
-                        Object value = oldRow.get(col.getPropertyName());
+                        Object value = oldRow.get(col.getName());
                         if (null != value)
                         {
                             AttachmentService.get().deleteAttachment(new ListItemAttachmentParent(entityId, _list.getContainer()), value.toString(), user);

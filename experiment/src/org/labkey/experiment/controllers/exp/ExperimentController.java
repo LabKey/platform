@@ -5751,7 +5751,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (DuplicateMaterialException e)
             {
-                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, e.getMessage()));
+                errors.addError(new ObjectError(e.getColName(), null, null, e.getMessage()));
                 return false;
             }
             catch (ExperimentException e)

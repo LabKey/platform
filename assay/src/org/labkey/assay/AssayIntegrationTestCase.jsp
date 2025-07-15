@@ -620,7 +620,7 @@
         );
 
         // create a run
-        var run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, Map.of("runExpMaterialsLookup", runSample1.getName()));
+        var run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, Map.of("RunExpMaterialsLookup", runSample1.getName()));
 
         // Verify pre-conditions
         assertEquals(4, run.getMaterialInputs().size());
@@ -636,8 +636,8 @@
         // Act
         // Replace "RunExpMaterialsLookup" lookup runSample1 -> runSample2
         var errors = new BatchValidationException();
-        var updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
-        runsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedRunRow), null, errors, null, null);
+        Map<String, Object> updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
+        runsTable.getUpdateService().updateRows(user, c, List.of(updatedRunRow), null, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 

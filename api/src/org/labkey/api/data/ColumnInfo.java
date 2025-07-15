@@ -31,6 +31,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
+import java.beans.Introspector;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -216,8 +217,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isShouldLog();
 
-    String getPropertyName();
-
     /**
      * Version column can be used for optimistic concurrency.
      * for now we assume that this column is never updated
@@ -383,12 +382,7 @@ public interface ColumnInfo extends ColumnRenderProperties
     {
         return BaseColumnInfo.labelFromName(name);
     }
-
-    static String propNameFromName(String name)
-    {
-        return BaseColumnInfo.propNameFromName(name);
-    }
-
+    
     static String legalNameFromName(String name)
     {
         return BaseColumnInfo.legalNameFromName(name);
