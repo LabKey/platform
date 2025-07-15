@@ -136,7 +136,7 @@ public class AllowedExternalResourceHosts
                     }
                     else
                     {
-                        // No need to synchronize since upgrade is single-threaded
+                        // No need to synchronize since startup property handling is single-threaded
                         saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
                     }
                 }
