@@ -34,6 +34,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -73,9 +74,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
@@ -120,7 +121,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public IndexTask createTask(String description)
+    public _IndexTask createTask(String description)
     {
         _IndexTask task = new _IndexTask(description);
         addTask(task);
@@ -128,7 +129,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public IndexTask createTask(String description, TaskListener l)
+    public _IndexTask createTask(String description, TaskListener l)
     {
         _IndexTask task = new _IndexTask(description, l);
         addTask(task);
@@ -156,7 +157,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    class _IndexTask extends AbstractIndexTask
+    public class _IndexTask extends AbstractIndexTask
     {
         _IndexTask(String description)
         {
@@ -197,16 +198,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             queueItem(i);
         }
 
-        public void addNoop(PRIORITY pri, CustomCountLatch latch)
+        public void addNoop(PRIORITY pri)
         {
-            latch.increment();
             final Item i = new Item( this, OPERATION.noop, "noop://noop", null, pri)
             {
                 @Override
                 void complete(boolean success)
                 {
+                    logQueueStatus("addNoop() complete");
                     super.complete(success);
-                    latch.decrement();
                 }
             };
             addItem(i);
@@ -246,7 +246,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     // Consider: remove _op/OPERATION (not used), subclasses for resource vs. runnable (would clarify invariants and make
     // hashCode() & equals() more straightforward), formalize _id (using Runnable.toString() seems weak).
-    class Item implements Comparable<Item>
+    public class Item implements Comparable<Item>
     {
         static final AtomicLong seq = new AtomicLong();
 
@@ -477,7 +477,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return;
         }
 
-        _log.debug("_submitQueue.put(" + i._id + ")");
+        logQueueStatus("_submitQueue.put(" + i._id + ")");
 
         if (null != i._run)
         {
@@ -619,20 +619,40 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
     {
-        final CustomCountLatch latch = new CustomCountLatch(1);
-        SearchService.IndexTask task = createTask("WaitForIndexer");
-        // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
-        // queue an Item on every task
-        task.addRunnable(priority, () -> {
-            _tasks.forEach(t -> t.addNoop(priority, latch));
-            _defaultTask.addNoop(priority, latch);
+        final CountDownLatch latch = new CountDownLatch(1);
+        long start = System.currentTimeMillis();
+        _IndexTask task = createTask("WaitForIndexer", new TaskListener()
+        {
+            @Override
+            public void success()
+            {
+               logQueueStatus("drainQueue's TaskListener.success()");
+               latch.countDown();
+            }
 
-            latch.decrement();  // Decrement one for the runnable itself
+            @Override
+            public void indexError(Resource r, Throwable t)
+            {
+                logQueueStatus("drainQueue's TaskListener.indexError()");
+                latch.countDown();
+            }
+        });
+        // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
+        // queue an Item to ensure all queues are cleared
+        task.addRunnable(priority, () -> {
+            logQueueStatus("drainQueue's Runnable.run()");
+            task.addNoop(priority);
         });
         task.setReady();
         boolean success = latch.await(timeout, unit);
         refreshNow();
+        logQueueStatus("drainQueue() complete after " + (System.currentTimeMillis() - start) + " ms");
         return success;
+    }
+
+    private void logQueueStatus(String message)
+    {
+        _log.debug("{}; _runQueue.size() = {}, _itemQueue.size() = {}", message, _runQueue.size(), _itemQueue.size());
     }
 
     @Override
@@ -1521,43 +1541,5 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public long getFileSizeLimit()
     {
         return SearchPropertyManager.getFileSizeLimitMB() * (1024*1024);
-    }
-
-    public static class CustomCountLatch
-    {
-        private final AtomicInteger count;
-
-        public CustomCountLatch(int initialCount)
-        {
-            this.count = new AtomicInteger(initialCount);
-        }
-
-        public boolean await(long timeout, TimeUnit unit) throws InterruptedException
-        {
-            synchronized (this)
-            {
-                while (count.get() > 0)
-                {
-                    wait(unit.toMillis(timeout));
-                }
-            }
-            return count.get() == 0;
-        }
-
-        public void increment()
-        {
-            count.incrementAndGet();
-        }
-
-        public void decrement()
-        {
-            if (count.decrementAndGet() == 0)
-            {
-                synchronized (this)
-                {
-                    notifyAll();
-                }
-            }
-        }
     }
 }

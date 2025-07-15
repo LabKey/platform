@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 
@@ -25,7 +26,6 @@ import java.io.StringWriter;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -220,7 +220,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
 
 
     @Override
-    public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException
+    public SearchService.IndexTask get(long timeout, @NotNull TimeUnit unit) throws InterruptedException
     {
         synchronized (_completeEvent)
         {
