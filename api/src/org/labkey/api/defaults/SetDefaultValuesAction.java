@@ -273,7 +273,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (entry.getValue() != null)
                 {
                     String stringValue = entry.getValue().toString();
-                    decodePropertyValues(formDefaults, ColumnInfo.propNameFromName(entry.getKey().getName()), stringValue);
+                    decodePropertyValues(formDefaults, entry.getKey().getName(), stringValue);
                 }
             }
             view.setInitialValues(formDefaults);
@@ -408,7 +408,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         Map<DomainProperty, Object> values = new HashMap<>();
         for (DomainProperty property : domain.getProperties())
         {
-            String propName = ColumnInfo.propNameFromName(property.getName());
+            String propName = property.getName();
             String value = encodePropertyValues(domainIdForm, propName);
             PropertyType type = property.getPropertyDescriptor().getPropertyType();
             if (value != null && !value.isEmpty())

@@ -216,12 +216,6 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getPropertyName()
-    {
-        return delegate.getPropertyName();
-    }
-
-    @Override
     public boolean isVersionColumn()
     {
         return delegate.isVersionColumn();

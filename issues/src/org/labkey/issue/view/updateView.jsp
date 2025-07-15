@@ -309,13 +309,13 @@
                         <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             var duplicateInput = document.getElementsByName('duplicate')[0];
                             var duplicateOrig = duplicateInput.value;
-                            var resolutionSelect = document.getElementsByName('resolution')[0];
+                            var resolutionSelect = document.getElementsByName('Resolution')[0];
                             function updateDuplicateInput()
                             {
                                 // The options don't have an explicit value set, so look for the display text instead of
                                 // the value
                                 if (resolutionSelect.selectedIndex >= 0 &&
-                                        resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                                        resolutionSelect.options[resolutionSelect.selectedIndex].text === 'Duplicate')
                                 {
                                     duplicateInput.disabled = false;
                                 }

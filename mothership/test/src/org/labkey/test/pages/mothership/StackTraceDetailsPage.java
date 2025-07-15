@@ -94,9 +94,9 @@ public class StackTraceDetailsPage extends LabKeyPage<StackTraceDetailsPage.Elem
 
     protected class ElementCache extends LabKeyPage.ElementCache
     {
-        Input bugNumberInput = new Input(Locator.name("bugNumber").findWhenNeeded(this), getDriver());
-        Input commentsTextArea = new Input(Locator.name("comments").findWhenNeeded(this), getDriver());
-        OptionSelect assignedToSelect = OptionSelect(Locator.name("assignedTo")).findWhenNeeded(this);
+        Input bugNumberInput = new Input(Locator.name("BugNumber").findWhenNeeded(this), getDriver());
+        Input commentsTextArea = new Input(Locator.name("Comments").findWhenNeeded(this), getDriver());
+        OptionSelect assignedToSelect = OptionSelect(Locator.name("AssignedTo")).findWhenNeeded(this);
         WebElement saveButton = Locator.lkButton("Save").findWhenNeeded(this);
         WebElement createIssueButton = Locator.lkButton("Create Issue").findWhenNeeded(this);
         DataRegionTable exceptionReportsDataRegion = new DataRegionTable("ExceptionReports", getDriver());

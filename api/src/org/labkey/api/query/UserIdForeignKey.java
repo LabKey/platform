@@ -53,11 +53,23 @@ public class UserIdForeignKey extends LookupForeignKey
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoUsersData();
-        FilteredTable ret = new FilteredTable<>(tinfoUsersData, _userSchema);
+        FilteredTable<?> ret = new FilteredTable<>(tinfoUsersData, _userSchema);
         ret.addWrapColumn(tinfoUsersData.getColumn("UserId"));
         ret.addColumn(ret.wrapColumn("DisplayName", tinfoUsersData.getColumn("DisplayName")));
         ret.setTitleColumn("DisplayName");
         ret.setPublic(false);
         return ret;
+    }
+
+    @Override
+    public SchemaKey getLookupSchemaKey()
+    {
+        return SchemaKey.fromParts("core");
+    }
+
+    @Override
+    public String getLookupTableName()
+    {
+        return "Users";
     }
 }

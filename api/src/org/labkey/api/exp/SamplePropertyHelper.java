@@ -130,7 +130,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         }
     }
 
-    public void addSampleColumns(InsertView view, User user, @Nullable AssayRunUploadForm defaultValueContext, boolean errorReshow) throws ExperimentException
+    public void addSampleColumns(InsertView view, User user, @Nullable AssayRunUploadForm<?> defaultValueContext, boolean errorReshow) throws ExperimentException
     {
         DataRegion region = view.getDataRegion();
         List<String> sampleNames = getSampleNames();
@@ -215,10 +215,9 @@ public abstract class SamplePropertyHelper<ObjectType>
             for (DomainProperty sampleProperty : _domainProperties)
             {
                 String name = UploadWizardAction.getInputName(sampleProperty, sampleName);
-                String inputName = ColumnInfo.propNameFromName(name);
                 // handle the hidden input field prefixed with FIELD_MARKER for checkboxes
-                String value = request.getParameter(inputName);
-                if (value == null && request.getParameter(SpringActionController.FIELD_MARKER + inputName) != null)
+                String value = request.getParameter(name);
+                if (value == null && request.getParameter(SpringActionController.FIELD_MARKER + name) != null)
                     value = "0";
                 values.put(sampleProperty, value);
             }

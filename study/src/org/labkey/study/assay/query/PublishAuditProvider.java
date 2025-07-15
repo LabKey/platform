@@ -16,6 +16,7 @@
 package org.labkey.study.assay.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -61,7 +62,7 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
 
     public static final String COLUMN_NAME_PROTOCOL = "Protocol"; // assay id
     public static final String COLUMN_NAME_SAMPLE_TYPE_ID = "SampleTypeID";
-    public static final String COLUMN_NAME_TARGET_STUDY = "TargetStudy";
+    public static final String COLUMN_NAME_TARGET_STUDY = AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME;
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
     // Dataset.PublishSource.Assay or SampleType
     public static final String COLUMN_NAME_SOURCE_TYPE = "SourceType";
