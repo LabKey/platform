@@ -37,6 +37,7 @@ public class AllowedExternalResourceHosts
 
     public record AllowedHost(Directive directive, String host) { }
 
+    // Callers must ensure thread-safe access to this method
     public static void saveAllowedHosts(@Nullable Collection<AllowedHost> allowedHosts, User user)
     {
         if (null != allowedHosts)
@@ -63,12 +64,22 @@ public class AllowedExternalResourceHosts
 
             // Unregister all supported directives then register the directives that have at least one allowed host
             Arrays.stream(Directive.values()).forEach(dir -> {
-                ContentSecurityPolicyFilter.unregisterAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir);
+                unregister(dir);
                 List<String> list = map.get(dir);
                 if (list != null)
-                    ContentSecurityPolicyFilter.registerAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir, list.toArray(new String[0]));
+                    register(dir, list.toArray(new String[0]));
             });
         }
+    }
+
+    private static void register(Directive dir, String... hosts)
+    {
+        ContentSecurityPolicyFilter.registerAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir, hosts);
+    }
+
+    private static void unregister(Directive dir)
+    {
+        ContentSecurityPolicyFilter.unregisterAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir);
     }
 
     // Returns a mutable list (mutating it won't affect any cached values)
@@ -92,7 +103,7 @@ public class AllowedExternalResourceHosts
             return;
         }
 
-        list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources("External Sources", sub.directive(), sub.host()));
+        list.forEach(sub -> register(sub.directive(), sub.host()));
         LOG.debug("Registered [{}] as allowed external sources", list);
     }
 
@@ -125,6 +136,7 @@ public class AllowedExternalResourceHosts
                     }
                     else
                     {
+                        // No need to synchronize since startup property handling is single-threaded
                         saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
                     }
                 }

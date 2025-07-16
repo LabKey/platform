@@ -466,7 +466,7 @@ public class AuthenticationManager
                     AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
                     AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
 
-                    return HttpView.redirect(result.getRedirectURL());
+                    return HttpView.redirect(result.getRedirectURL(), true);
                 }
 
                 primaryResult.getStatus().addUserErrorMessage(errors, primaryResult, null, null);
