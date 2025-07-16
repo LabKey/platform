@@ -703,7 +703,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 String name = col.name.toLowerCase();
                 if (ExperimentService.isInputOutputColumn(col.name) ||
                     name.equalsIgnoreCase("Name") || /* Issue 50710: Treat "Name" column as a string value for sample or data class import */
-                    name.equalsIgnoreCase(ExpMaterial.ALIQUOTED_FROM_INPUT) || /* Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import */
                     (lineageAliasNames != null && lineageAliasNames.contains(name)) )
                 {
                     col.clazz = String.class;
