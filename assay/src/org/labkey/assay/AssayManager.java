@@ -55,6 +55,7 @@ import org.labkey.api.exp.LsidManager.LsidHandlerFinder;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -110,9 +111,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class AssayManager implements AssayService
 {
@@ -138,7 +141,8 @@ public class AssayManager implements AssayService
         }
     };
 
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
+    /** Cache the RowIds for the protocols, which we can quickly resolve to ExpProtocol objects via a separate cache */
+    private static final Cache<Container, List<Integer>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
     private static final List<AssayListener> _listeners = new CopyOnWriteArrayList<>();
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
@@ -287,7 +291,7 @@ public class AssayManager implements AssayService
 
         @Nullable
         @Override
-        public LsidHandler findHandler(String authority, String namespacePrefix)
+        public LsidHandler<?> findHandler(String authority, String namespacePrefix)
         {
             if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority))
             {
@@ -360,7 +364,7 @@ public class AssayManager implements AssayService
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
-        return PROTOCOL_CACHE.get(container, null, (c, argument) ->
+        List<Integer> ids = PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
             // Build up a set of containers so that we can query them all at once
             Set<Container> containers = c.getContainersFor(ContainerType.DataType.protocol);
@@ -381,8 +385,9 @@ public class AssayManager implements AssayService
             }
             // Sort them, just to be nice
             Collections.sort(result);
-            return Collections.unmodifiableList(result);
+            return result.stream().map(ExpObject::getRowId).toList();
         });
+        return ids.stream().map(id -> ExperimentService.get().getExpProtocol(id)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override

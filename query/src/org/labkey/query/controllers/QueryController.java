@@ -4580,8 +4580,9 @@ public class QueryController extends SpringActionController
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
             // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
-            if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
+            if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
                 f = new RowMapFactory<>();
+            CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
 
             for (int idx = 0; idx < rows.length(); ++idx)
             {
@@ -4596,10 +4597,14 @@ public class QueryController extends SpringActionController
                 }
                 if (null != jsonObj)
                 {
-                    // TODO: validate duplicate keys with different cases don't exist in data ('Name' vs 'name') (Issue 52616)
-                    Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
+                    Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
-                    JsonUtil.fillMapShallow(jsonObj, rowMap);
+                    boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
+                    if (conflictingCasing)
+                    {
+                        // Issue 52616
+                        LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
+                    }
                     if (allowRowAttachments())
                         addRowAttachments(table, rowMap, idx, commandIndex);
 
