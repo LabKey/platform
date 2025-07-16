@@ -366,6 +366,7 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.experiment.ExpDataIterators.setContainerFilterForImport;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 public class ExperimentController extends SpringActionController
@@ -4528,18 +4529,7 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            if (getContainer().isProductFoldersEnabled())
-            {
-                ContainerFilter cf;
-                // Note that this is slightly different from our treatment of lookups:
-                //    - when in a project, we allow import or update to all subfolders,
-                //    - when in a folder, we only allow references to data up the folder tree
-                if (getContainer().isProject())
-                    cf = new ContainerFilter.AllInProjectPlusShared(getContainer(), getUser());
-                else
-                    cf = new ContainerFilter.CurrentPlusProjectAndShared(getContainer(), getUser());
-                query.setContainerFilter(cf);
-            }
+            setContainerFilterForImport(query, getContainer(), getUser());
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
 
