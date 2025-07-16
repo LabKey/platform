@@ -375,6 +375,8 @@ public class AssayManager implements AssayService
                     AssayProvider p = getProvider(protocol);
                     if (p != null)
                     {
+                        // We don't want anyone editing our cached object
+                        protocol.lock();
                         result.add(protocol);
                     }
                 }
