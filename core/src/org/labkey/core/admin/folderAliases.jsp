@@ -37,7 +37,7 @@
     </tr>
     <tr>
         <td><label for="aliasesTextArea">Enter one alias per line. Each alias should start with a '/'. Aliases that are
-            paths to real folders in the system will be ignored.</label></td>
+            paths to real folders in the system will be ignored. Aliases are case-insensitive.</label></td>
     </tr>
     <tr>
         <td>
