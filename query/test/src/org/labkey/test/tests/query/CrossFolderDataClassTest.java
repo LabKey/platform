@@ -10,6 +10,7 @@ import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldInfo;
 import org.labkey.test.params.experiment.DataClassDefinition;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.exp.DataClassAPIHelper;
 
 import java.util.Arrays;
@@ -59,11 +60,11 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
     {
         String dataClass = "TopFolderDataClass";
         var fields = Arrays.asList(
-                FieldInfo.random("intColumn", FieldDefinition.ColumnType.Integer).getFieldDefinition(),
-                FieldInfo.random("decimalColumn", FieldDefinition.ColumnType.Decimal).getFieldDefinition(),
-                FieldInfo.random("stringColumn", FieldDefinition.ColumnType.String).getFieldDefinition(),
-                FieldInfo.random("sampleDate", FieldDefinition.ColumnType.DateAndTime).getFieldDefinition(),
-                FieldInfo.random("boolColumn", FieldDefinition.ColumnType.Boolean).getFieldDefinition()
+                FieldInfo.random("intColumn", FieldDefinition.ColumnType.Integer, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("decimalColumn", FieldDefinition.ColumnType.Decimal, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("stringColumn", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("sampleDate", FieldDefinition.ColumnType.DateAndTime, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("boolColumn", FieldDefinition.ColumnType.Boolean, DomainUtils.DomainKind.DataClass).getFieldDefinition()
         );
         // make a dataclass in the top folder, give it some data
         DataClassDefinition testType = new DataClassDefinition(dataClass).setFields(fields);
