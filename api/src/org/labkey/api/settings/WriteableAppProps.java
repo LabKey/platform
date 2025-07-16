@@ -247,4 +247,9 @@ public class WriteableAppProps extends AppPropsImpl
     {
         storeStringValue(ALLOWED_EXTERNAL_RESOURCES, jsonArray);
     }
+
+    public void setFeatureEnabled(String feature, boolean enabled)
+    {
+        storeBooleanValue(OPTIONAL_FEATURE_PREFIX + feature, enabled);
+    }
 }

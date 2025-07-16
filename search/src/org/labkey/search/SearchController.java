@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -58,6 +59,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.HtmlView;
@@ -92,6 +94,8 @@ import java.util.concurrent.TimeUnit;
 public class SearchController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SearchController.class);
+
+    private static final Logger LOG = LogHelper.getLogger(SearchController.class, "Search UI and admin");
 
     public SearchController()
     {
@@ -858,7 +862,10 @@ public class SearchController extends SpringActionController
         public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();
+            long startTime = System.currentTimeMillis();
             boolean success = ss.drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
+
+            LOG.info("Spent {}ms draining the search indexer queue. Success: {}", System.currentTimeMillis() - startTime, success);
 
             // Return an error if we time out
             if (!success)

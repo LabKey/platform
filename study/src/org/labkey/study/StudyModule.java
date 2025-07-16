@@ -66,7 +66,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
@@ -391,27 +391,27 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
-        AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
+        OptionalFeatureService.get().addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
             "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
 
-        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
             "Assay linked to study consistency check",
             "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
             false);
 
-        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
             "Allow merge of study dataset that uses server-managed additional key fields",
             "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
 
-        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
             "Allow query based dataset snapshots",
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
 
         if (SpecimenService.get() == null)
         {
-            AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(SpecimenManager.VIEW_SPECIMEN_TABLES_FLAG,
+            OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SpecimenManager.VIEW_SPECIMEN_TABLES_FLAG,
                 "Show read-only specimen tables in the study schema",
                 "Provides a read-only view of specimen data when the specimen module is not present.",
                 false, false, OptionalFeatureService.FeatureType.Optional
