@@ -2665,7 +2665,7 @@ public class ContainerManager
     {
         // We store the path as lower-case, so we don't need to also LOWER() on the value in core.ContainerAliases, letting the DB use the index
         Container[] ret = new SqlSelector(CORE.getSchema(),
-                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerRowId = c.EntityRowId AND ca.path = LOWER(?)",
+                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerRowId = c.RowId AND ca.path = LOWER(?)",
                 path).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];
