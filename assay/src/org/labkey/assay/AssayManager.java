@@ -55,7 +55,6 @@ import org.labkey.api.exp.LsidManager.LsidHandlerFinder;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -111,11 +110,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class AssayManager implements AssayService
 {
@@ -141,8 +138,8 @@ public class AssayManager implements AssayService
         }
     };
 
-    /** Cache the RowIds for the protocols, which we can quickly resolve to ExpProtocol objects via a separate cache */
-    private static final Cache<Container, List<Integer>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
+    /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
     private static final List<AssayListener> _listeners = new CopyOnWriteArrayList<>();
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
@@ -364,30 +361,30 @@ public class AssayManager implements AssayService
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
-        List<Integer> ids = PROTOCOL_CACHE.get(container, null, (c, argument) ->
+        List<ExpProtocol> allProtocols = new ArrayList<>();
+
+        for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
         {
-            // Build up a set of containers so that we can query them all at once
-            Set<Container> containers = c.getContainersFor(ContainerType.DataType.protocol);
-
-            List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[0]));
-            List<ExpProtocol> result = new ArrayList<>();
-
-            // Filter to just the ones that have an AssayProvider associated with them
-            for (ExpProtocol protocol : protocols)
+            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope, null, (c, argument) ->
             {
-                AssayProvider p = getProvider(protocol);
-                if (p != null)
+                List<ExpProtocol> result = new ArrayList<>();
+
+                // Filter to just the ones that have an AssayProvider associated with them
+                for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
                 {
-                    // We don't want anyone editing our cached object
-                    protocol.lock();
-                    result.add(protocol);
+                    AssayProvider p = getProvider(protocol);
+                    if (p != null)
+                    {
+                        result.add(protocol);
+                    }
                 }
-            }
-            // Sort them, just to be nice
-            Collections.sort(result);
-            return result.stream().map(ExpObject::getRowId).toList();
-        });
-        return ids.stream().map(id -> ExperimentService.get().getExpProtocol(id)).filter(Objects::nonNull).collect(Collectors.toList());
+                return Collections.unmodifiableList(result);
+            });
+            allProtocols.addAll(ids);
+        }
+
+        Collections.sort(allProtocols);
+        return Collections.unmodifiableList(allProtocols);
     }
 
     @Override
