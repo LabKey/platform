@@ -75,7 +75,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    static final String OPTIONAL_FEATURE_PREFIX = OPTIONAL_FEATURE + ".";
     static final String ALLOW_LIST_DELIMITER = "\n";
 
     private static final String SITE_CONFIG_NAME = "SiteConfig";

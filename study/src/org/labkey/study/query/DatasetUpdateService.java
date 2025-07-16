@@ -151,7 +151,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         if (StudySecurityEscalator.isEscalated()) {
             return true;

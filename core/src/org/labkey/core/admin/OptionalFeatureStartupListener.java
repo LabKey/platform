@@ -1,9 +1,12 @@
-package org.labkey.api.settings;
+package org.labkey.core.admin;
 
 import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.settings.MapBasedStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.StartupListener;
 
@@ -35,7 +38,7 @@ public class OptionalFeatureStartupListener implements StartupListener
             super(
                 SCOPE_OPTIONAL_FEATURE,
                 OptionalFeatureFlag.class.getName(),
-                AdminConsole.getOptionalFeatureFlags().stream()
+                OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                     .filter(flag -> flag.getPropertyName() != null)
                     .sorted(Comparator.comparing(OptionalFeatureFlag::getPropertyName, String.CASE_INSENSITIVE_ORDER))
             );
