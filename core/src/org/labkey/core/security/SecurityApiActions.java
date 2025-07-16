@@ -106,17 +106,17 @@ public class SecurityApiActions
 {
     public static class GetGroupPermsForm
     {
-        private boolean _includeEmptyPerms = true;
+        private boolean _includeEmptyPermGroups = true;
         private boolean _includeSubfolders = false;
 
-        public boolean isIncludeEmptyPerms()
+        public boolean isIncludeEmptyPermGroups()
         {
-            return _includeEmptyPerms;
+            return _includeEmptyPermGroups;
         }
 
-        public void setIncludeEmptyPerms(boolean includeEmptyPerms)
+        public void setIncludeEmptyPermGroups(boolean includeEmptyPermGroups)
         {
-            _includeEmptyPerms = includeEmptyPerms;
+            _includeEmptyPermGroups = includeEmptyPermGroups;
         }
 
         public boolean isIncludeSubfolders()
@@ -134,50 +134,50 @@ public class SecurityApiActions
     public static class GetGroupPermsAction extends ReadOnlyApiAction<GetGroupPermsForm>
     {
         @Override
-        public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws IOException
+        public ApiResponse execute(GetGroupPermsForm form, BindException errors)
         {
-            // Issue 53243: stream response from security-getGroupPerms.api
             Container container = getContainer();
-            ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
 
-            writer.startResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
-            writer.startObject("container");
-            writeContainer(writer, container, SecurityManager.getGroups(container.getProject(), true), form.isIncludeSubfolders(), form.isIncludeEmptyPerms());
-            writer.endObject();
+            //if the container is not the root container, get the set of groups
+            //from the container's project and pass that down the recursion stack
+            response.put("container", getContainerPerms(container,
+                    SecurityManager.getGroups(container.getProject(), true),
+                    form.isIncludeSubfolders(), form.isIncludeEmptyPermGroups()));
 
-            writer.endResponse();
-
-            return null;
+            return response;
         }
 
-        private void writeContainer(ApiJsonWriter writer, Container container, List<Group> groups, boolean includeSubfolders, boolean includeEmptyPerms) throws IOException
+        protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean includeSubfolders, boolean includeEmptyPermGroups)
         {
-            writer.writeProperty("path", container.getPath());
-            writer.writeProperty("id", container.getId());
-            writer.writeProperty("name", container.getName());
-            writer.writeProperty("isInheritingPerms", container.isInheritedAcl());
-            writer.writeProperty("groups", getGroupPerms(container, groups, includeEmptyPerms));
+            Map<String, Object> containerPerms = new HashMap<>();
+            containerPerms.put("path", container.getPath());
+            containerPerms.put("id", container.getId());
+            containerPerms.put("name", container.getName());
+            containerPerms.put("isInheritingPerms", container.isInheritedAcl());
+            containerPerms.put("groups", getGroupPerms(container, groups, includeEmptyPermGroups));
 
             if (includeSubfolders && container.hasChildren())
             {
-                writer.startList("children");
-
+                List<Map<String, Object>> childPerms = new ArrayList<>();
                 for (Container child : container.getChildren())
                 {
                     if (child.hasPermission(getUser(), ReadPermission.class))
                     {
-                        writer.startObject();
-                        writeContainer(writer, child, child.isProject() ? SecurityManager.getGroups(child, true) : groups, includeSubfolders, includeEmptyPerms);
-                        writer.endObject();
+                        childPerms.add(getContainerPerms(child,
+                                child.isProject() ? SecurityManager.getGroups(child, true) : groups,
+                                includeSubfolders, includeEmptyPermGroups));
                     }
                 }
 
-                writer.endList();
+                containerPerms.put("children", childPerms);
             }
+
+            return containerPerms;
         }
 
-        protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups, boolean includeEmptyPerms)
+        protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups, boolean includeEmptyPermGroups)
         {
             List<Map<String, Object>> groupsPerms = new ArrayList<>();
             boolean isAdmin = container.hasPermission(getUser(), AdminPermission.class);
@@ -185,7 +185,7 @@ public class SecurityApiActions
             for (Group group : groups)
             {
                 List<String> effectivePermissions = SecurityManager.getPermissionNames(container, group);
-                if (effectivePermissions.isEmpty() && !includeEmptyPerms)
+                if (effectivePermissions.isEmpty() && !includeEmptyPermGroups)
                     continue;
 
                 Map<String, Object> groupPerms = new HashMap<>();
@@ -194,24 +194,26 @@ public class SecurityApiActions
                 groupPerms.put("type", group.getPrincipalType().getTypeChar());
                 groupPerms.put("isSystemGroup", group.isSystemGroup());
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
-                groupsPerms.add(groupPerms);
 
-                List<String> roles = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
-                groupPerms.put("roles", roles);
+                //add effective roles
+                List<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
+                groupPerms.put("roles", effectiveRoleList);
                 groupPerms.put("effectivePermissions", effectivePermissions);
 
                 if (isAdmin)
                 {
-                    List<Map<String, Object>> parentGroups = new ArrayList<>();
+                    List<Map<String, Object>> parentGroupInfos = new ArrayList<>();
                     group.getGroups().stream().forEach(parentGroupId -> {
                         Group parentGroup = SecurityManager.getGroup(parentGroupId);
                         if (parentGroup != null && parentGroup.getUserId() != group.getUserId())
                         {
-                            parentGroups.add(getGroupMap(parentGroup));
+                            parentGroupInfos.add(getGroupMap(parentGroup));
                         }
                     });
-                    groupPerms.put("groups", parentGroups);
+                    groupPerms.put("groups", parentGroupInfos);
                 }
+
+                groupsPerms.add(groupPerms);
             }
 
             return groupsPerms;
