@@ -247,20 +247,23 @@ public class ExpDataFileConverter implements Converter
                         f = new File(root.getRootPath(), f.getPath());
                     }
 
-                    if (root.isUnderRoot(f))
+                    if (root.isUnderRoot(f) && f.isFile())
                     {
                         return f;
                     }
                 }
 
                 // It's possible to have the file root and pipeline root pointed at different paths
-                FileContentService fileContent = FileContentService.get();
-                if (fileContent != null)
+                if (f.isFile())
                 {
-                    File fileRoot = fileContent.getFileRoot(container);
-                    if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                    FileContentService fileContent = FileContentService.get();
+                    if (fileContent != null)
                     {
-                        return f;
+                        File fileRoot = fileContent.getFileRoot(container);
+                        if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                        {
+                            return f;
+                        }
                     }
                 }
 
@@ -354,7 +357,16 @@ public class ExpDataFileConverter implements Converter
                 return result;
             }
         }
+
+        String filePath = value.toString();
+        if (filePath.startsWith("file:"))
+        {
+            URI uri = FileUtil.createUri(filePath);
+            if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
+                return new File(uri);
+        }
+
         // Otherwise, treat it as a plain path
-        return FILE_CONVERTER.convert(File.class, webdav);
+        return FILE_CONVERTER.convert(File.class, filePath);
     }
 }
