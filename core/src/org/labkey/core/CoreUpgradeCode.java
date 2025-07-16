@@ -174,6 +174,7 @@ public class CoreUpgradeCode implements UpgradeCode
             .map(host -> new AllowedHost(Directive.Connection, host))
             .toList();
 
+        // No need to synchronize since upgrade is single-threaded
         AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
     }
 }

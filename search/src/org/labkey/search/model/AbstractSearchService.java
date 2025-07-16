@@ -65,7 +65,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +77,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
@@ -98,12 +98,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     // Runnables go here, and get pulled off in a single-threaded manner (assumption is that Runnables can create work very quickly)
-    final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000);
 
     // Resources go here for preprocessing (this can be multi-threaded)
-    final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<>(1000);
 
-    private final List<IndexTask> _tasks = new CopyOnWriteArrayList<>();
+    private final List<_IndexTask> _tasks = new CopyOnWriteArrayList<>();
     private final _IndexTask _defaultTask = new _IndexTask("default");
 
     private Throwable _configurationError = null;
@@ -113,9 +113,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         add, delete, noop
     }
 
-    static final Comparator<Item> itemCompare = Comparator.comparing(o -> o._pri);
-
-
     public AbstractSearchService()
     {
         addSearchCategory(fileCategory);
@@ -124,7 +121,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public IndexTask createTask(String description)
+    public _IndexTask createTask(String description)
     {
         _IndexTask task = new _IndexTask(description);
         addTask(task);
@@ -132,7 +129,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public IndexTask createTask(String description, TaskListener l)
+    public _IndexTask createTask(String description, TaskListener l)
     {
         _IndexTask task = new _IndexTask(description, l);
         addTask(task);
@@ -140,7 +137,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public IndexTask defaultTask()
+    public _IndexTask defaultTask()
     {
         return _defaultTask;
     }
@@ -160,7 +157,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    class _IndexTask extends AbstractIndexTask
+    public class _IndexTask extends AbstractIndexTask
     {
         _IndexTask(String description)
         {
@@ -201,16 +198,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             queueItem(i);
         }
 
-
-        @Override
         public void addNoop(PRIORITY pri)
         {
-            final Item i = new Item( this, OPERATION.noop, "noop://noop", null, pri);
+            final Item i = new Item( this, OPERATION.noop, "noop://noop", null, pri)
+            {
+                @Override
+                void complete(boolean success)
+                {
+                    logQueueStatus("addNoop() complete");
+                    super.complete(success);
+                }
+            };
             addItem(i);
             final Item r = new Item(this, () -> queueItem(i), pri);
             queueItem(r);
         }
-
 
         @Override
         public void completeItem(Item item, boolean success)
@@ -241,17 +243,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-    
+
     // Consider: remove _op/OPERATION (not used), subclasses for resource vs. runnable (would clarify invariants and make
     // hashCode() & equals() more straightforward), formalize _id (using Runnable.toString() seems weak).
-    class Item
+    public class Item implements Comparable<Item>
     {
+        static final AtomicLong seq = new AtomicLong();
+
         OPERATION _op;
         String _id;
-        IndexTask _task;
+        _IndexTask _task;
         WebdavResource _res;
         Runnable _run;
         PRIORITY _pri;
+        // Used to ensure FIFO ordering in the queue
+        final long seqNum = seq.incrementAndGet();
 
         int _preprocessAttempts = 0;
 
@@ -259,7 +265,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         long _start = 0;    // used by setLastIndexed
         long _complete = 0; // really just for debugging
 
-        Item(IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
+        Item(_IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
         {
             if (null != r)
                 _start = HeartBeat.currentTimeMillis();
@@ -270,7 +276,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _task = task;
         }
 
-        Item(IndexTask task, Runnable r, PRIORITY pri)
+        Item(_IndexTask task, Runnable r, PRIORITY pri)
         {
             _run = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
@@ -297,7 +303,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             if (null != _task)
             {
-                ((_IndexTask)_task).completeItem(this, success);
+                _task.completeItem(this, success);
             }
 
             if (!success)
@@ -336,6 +342,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         public String toString()
         {
             return "Item{" + (null != _res ? _res.toString() : null != _run ? _run.toString() : _op.name()) + '}';
+        }
+
+        @Override
+        public int compareTo(@NotNull AbstractSearchService.Item o)
+        {
+            int res = _pri.compareTo(o._pri) * -1;
+            if (res == 0 && o != this)
+                res = (seqNum < o.seqNum ? -1 : 1);
+            return res;
         }
     }
 
@@ -462,7 +477,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return;
         }
 
-        _log.debug("_submitQueue.put(" + i._id + ")");
+        logQueueStatus("_submitQueue.put(" + i._id + ")");
 
         if (null != i._run)
         {
@@ -518,14 +533,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void addTask(IndexTask task)
+    private void addTask(_IndexTask task)
     {
         _tasks.add(task);
     }
 
 
     @Override
-    public List<IndexTask> getTasks()
+    public List<_IndexTask> getTasks()
     {
         return new LinkedList<>(_tasks);
     }
@@ -605,20 +620,39 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
     {
         final CountDownLatch latch = new CountDownLatch(1);
-        SearchService.IndexTask task = createTask("WaitForIndexer", new SearchService.TaskListener()
+        long start = System.currentTimeMillis();
+        _IndexTask task = createTask("WaitForIndexer", new TaskListener()
         {
-            @Override public void success()
+            @Override
+            public void success()
             {
+               logQueueStatus("drainQueue's TaskListener.success()");
+               latch.countDown();
+            }
+
+            @Override
+            public void indexError(Resource r, Throwable t)
+            {
+                logQueueStatus("drainQueue's TaskListener.indexError()");
                 latch.countDown();
             }
-            @Override public void indexError(Resource r, Throwable t) { }
         });
-        task.addNoop(priority);
+        // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
+        // queue an Item to ensure all queues are cleared
+        task.addRunnable(priority, () -> {
+            logQueueStatus("drainQueue's Runnable.run()");
+            task.addNoop(priority);
+        });
         task.setReady();
-
         boolean success = latch.await(timeout, unit);
         refreshNow();
+        logQueueStatus("drainQueue() complete after " + (System.currentTimeMillis() - start) + " ms");
         return success;
+    }
+
+    private void logQueueStatus(String message)
+    {
+        _log.debug("{}; _runQueue.size() = {}, _itemQueue.size() = {}", message, _runQueue.size(), _itemQueue.size());
     }
 
     @Override
@@ -864,10 +898,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void purgeQueues()
     {
         _defaultTask._subtasks.clear();
-        for (IndexTask t : getTasks())
+        for (AbstractIndexTask t : getTasks())
         {
             t.cancel(true);
-            ((AbstractIndexTask)t)._subtasks.clear();
+            t._subtasks.clear();
         }
         _runQueue.clear();
         _itemQueue.clear();
@@ -1137,7 +1171,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             if (null != out[0])
             {
-                _IndexTask t = (_IndexTask)i._task;
+                _IndexTask t = i._task;
                 if (null != t && null != t._listener)
                     t._listener.indexError(r,out[0]);
             }

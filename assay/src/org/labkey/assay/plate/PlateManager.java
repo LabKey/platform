@@ -2150,7 +2150,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         permittedIds.forEach(rowId -> {
             Plate plate = plates.get(rowId);
-            allowedRows.add(CaseInsensitiveHashMap.of("RowId", rowId, "Name", plate.getName(), "ContainerPath", plate.getContainer().getPath()));
+            Map<String, Object> allowedRow = new HashMap<>();
+            allowedRow.put("RowId", rowId);
+            if (plate.getContainer().hasPermission(user, ReadPermission.class))
+                allowedRow.put("ContainerPath", plate.getContainer().getPath());
+            allowedRows.add(allowedRow);
         });
 
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -2159,7 +2163,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
             rowMap.put("RowId", rowId);
 
-            if (plate != null)
+            if (plate != null && plate.getContainer().hasPermission(user, ReadPermission.class))
             {
                 rowMap.put("Name", plate.getName());
                 rowMap.put("ContainerPath", plate.getContainer().getPath());
@@ -3775,7 +3779,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap(sampleIdNameFieldKey.toString(), "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
-                    writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                    writer.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
                     writer.write(plateFileBytes.bytes);
                 }
 
