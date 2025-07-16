@@ -784,7 +784,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         static public ColumnInfo initColumn(BaseColumnInfo column)
         {
             column.setFk(new IssuesTable.AssignedToForeignKey(column.getParentTable().getUserSchema()));
-            column.setDisplayColumnFactory(colInfo -> new UserIdRenderer(colInfo));
+            column.setDisplayColumnFactory(UserIdRenderer::new);
             return column;
         }
 

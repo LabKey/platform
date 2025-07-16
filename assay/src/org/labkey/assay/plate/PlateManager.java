@@ -609,29 +609,39 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // get the runIds for each protocol, query against its assay results table
         List<SQLFragment> fragments = new ArrayList<>();
+        Set<FieldKey> requiredFields = Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"));
+
+        protocolLoop:
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
             TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
             if (assayDataTable != null)
             {
-                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
-                if (dataIdCol != null)
+                // Issue 53446: A misconfigured assay design could be missing required fields.
+                // This is not expected. Don't let that stop the run counting but do log an error with more context.
+                for (FieldKey requiredFieldKey : requiredFields)
                 {
-                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
-                            .append(assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"))))
-                            .append(" WHERE AD.Plate = ?")
-                            .add(plate.getRowId());
-
-                    SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
-                            .append(ExperimentService.get().getTinfoData(), "D")
-                            .append(" INNER JOIN ")
-                            .append(ExperimentService.get().getTinfoExperimentRun(), "R")
-                            .append(" ON D.RunId = R.RowId\n")
-                            .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
-
-                    fragments.add(sql);
+                    if (assayDataTable.getColumn(requiredFieldKey) == null)
+                    {
+                        LOG.error("Required field \"{}\" not found in plate-based assay results domain for protocol \"{}\" in {}.", requiredFieldKey.getName(), protocol.getName(), protocol.getContainer().getPath());
+                        continue protocolLoop;
+                    }
                 }
+
+                SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
+                        .append(assayDataTable.getFromSQL("AD", requiredFields))
+                        .append(" WHERE AD.Plate = ?")
+                        .add(plate.getRowId());
+
+                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
+                        .append(ExperimentService.get().getTinfoData(), "D")
+                        .append(" INNER JOIN ")
+                        .append(ExperimentService.get().getTinfoExperimentRun(), "R")
+                        .append(" ON D.RunId = R.RowId\n")
+                        .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
+
+                fragments.add(sql);
             }
         }
 
@@ -2140,7 +2150,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         permittedIds.forEach(rowId -> {
             Plate plate = plates.get(rowId);
-            allowedRows.add(CaseInsensitiveHashMap.of("RowId", rowId, "Name", plate.getName(), "ContainerPath", plate.getContainer().getPath()));
+            Map<String, Object> allowedRow = new HashMap<>();
+            allowedRow.put("RowId", rowId);
+            if (plate.getContainer().hasPermission(user, ReadPermission.class))
+                allowedRow.put("ContainerPath", plate.getContainer().getPath());
+            allowedRows.add(allowedRow);
         });
 
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -2149,7 +2163,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
             rowMap.put("RowId", rowId);
 
-            if (plate != null)
+            if (plate != null && plate.getContainer().hasPermission(user, ReadPermission.class))
             {
                 rowMap.put("Name", plate.getName());
                 rowMap.put("ContainerPath", plate.getContainer().getPath());
@@ -3387,17 +3401,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         TableInfo wellTable = dbSchema.getTableInfoWell();
 
         // Determines the set of primary plate sets that are being touched from the collection of well rowIds
-        SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
-                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
-                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
-
         // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
-        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, W.SampleId FROM ")
-                .append(wellTable, "W")
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("WITH PlateSetFilter AS (")
+                .append("SELECT DISTINCT PS.RowId FROM ").append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
+                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect)
+                .append(" )")
+                .append(" SELECT PS.Name AS PlateSetName, W.SampleId FROM ").append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" INNER JOIN PlateSetFilter PSF ON PSF.RowId = PS.RowId")
+                .append(" WHERE W.SampleId IS NOT NULL")
                 .append(" GROUP BY PS.RowId, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
@@ -3764,7 +3779,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap(sampleIdNameFieldKey.toString(), "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
-                    writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                    writer.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
                     writer.write(plateFileBytes.bytes);
                 }
 

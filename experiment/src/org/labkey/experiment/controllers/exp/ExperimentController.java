@@ -3770,7 +3770,7 @@ public class ExperimentController extends SpringActionController
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allData);
 
             Collection<Container> containers = new HashSet<>();
             Collection<Integer> notPermittedIds = new ArrayList<>();
@@ -3778,7 +3778,8 @@ public class ExperimentController extends SpringActionController
             for (ExpDataImpl expData : allData)
             {
                 Container c = expData.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(expData.getRowId());
             }
@@ -3843,7 +3844,7 @@ public class ExperimentController extends SpringActionController
             if (SampleStatusService.get().supportsSampleStatus())
                 notAllowedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allMaterials);
 
             Collection<Container> containers = new HashSet<>();
             Collection<Integer> notPermittedIds = new ArrayList<>();
@@ -3851,7 +3852,8 @@ public class ExperimentController extends SpringActionController
             for (ExpMaterial material : allMaterials)
             {
                 Container c = material.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(material.getRowId());
             }
@@ -5741,7 +5743,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (DuplicateMaterialException e)
             {
-                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, e.getMessage()));
+                errors.addError(new ObjectError(e.getColName(), null, null, e.getMessage()));
                 return false;
             }
             catch (ExperimentException e)

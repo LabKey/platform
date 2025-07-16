@@ -1189,7 +1189,7 @@ public class Table
         {
             if (cols.containsKey(column.getFieldKey()))
                 continue;
-            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getId())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
+            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getId())) || requiredColumns.contains(new FieldKey(null,column.getName())))
                 cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
                 cols.put(column.getFieldKey(), column);

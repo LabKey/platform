@@ -18,6 +18,7 @@ package org.labkey.api.assay.pipeline;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
@@ -206,7 +207,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         {
             if(entry.getValue() == null)
                 valueText = "[Blank]";
-            else if(entry.getKey().getName().equals("TargetStudy"))
+            else if(entry.getKey().getName().equals(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME))
                 valueText = ContainerManager.getForId(getTargetStudy()).getName();
             else
                 valueText = entry.getValue();

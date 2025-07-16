@@ -65,6 +65,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
@@ -408,7 +409,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     continue;
                 }
 
-                alias = ColumnInfo.propNameFromName(name).toLowerCase();
+                // Stay consistent with previous script-friendly identifier now used primarily for DOM ids
+                alias = PageConfig.makeIdFromName(name).toLowerCase();
 
                 if (!aliases.add(alias))
                 {
@@ -433,7 +435,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     private String oldLegalName(FieldKey fkey, @NotNull SqlDialect dialect)
     {
         String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), dialect, false);
-        return ColumnInfo.propNameFromName(r).toLowerCase();
+        // Stay consistent with previous script-friendly identifier
+        return ColumnInfo.legalNameFromName(r).toLowerCase();
     }
 
     /**
