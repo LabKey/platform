@@ -78,27 +78,17 @@ api/gwtsrc/org/labkey/api/gwt/client/model/GWTIndex.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/PropertyValidatorType.java -text
-api/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineConfig.java -text
-api/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineTask.java -text
-api/gwtsrc/org/labkey/api/gwt/client/pipeline/PipelineGWTService.java -text
-api/gwtsrc/org/labkey/api/gwt/client/pipeline/PipelineGWTServiceAsync.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/DirtyCallback.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/domain/CancellationException.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportStatus.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/FontButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/TextBoxDialogBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WidgetUpdatable.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WindowUtil.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/BooleanProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/ColorGenerator.java -text
-api/gwtsrc/org/labkey/api/gwt/client/util/DateProperty.java -text
-api/gwtsrc/org/labkey/api/gwt/client/util/DoubleProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/ErrorDialogAsyncCallback.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/IntegerProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/IPropertyWrapper.java -text
@@ -197,7 +187,6 @@ api/src/org/labkey/api/admin/AdminConsoleService.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/BaseFolderWriter.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
-api/src/org/labkey/api/admin/DiagnosticsLink.java -text
 api/src/org/labkey/api/admin/FolderArchiveDataTypes.java -text
 api/src/org/labkey/api/admin/FolderExportContext.java -text
 api/src/org/labkey/api/admin/FolderExportPermission.java -text
@@ -466,7 +455,6 @@ api/src/org/labkey/api/data/dialect/StandardJdbcMetaDataLocator.java -text
 api/src/org/labkey/api/data/dialect/StandardTableResolver.java -text
 api/src/org/labkey/api/data/dialect/StatementWrapper.java -text
 api/src/org/labkey/api/data/dialect/TableResolver.java -text
-api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text
 api/src/org/labkey/api/data/DimensionColumnInfo.java -text
 api/src/org/labkey/api/data/DisplayColumnDecorator.java -text
 api/src/org/labkey/api/data/DisplayColumnFactory.java -text
@@ -1137,7 +1125,6 @@ api/src/org/labkey/api/security/ActionNames.java -text
 api/src/org/labkey/api/security/AdminConsoleAction.java -text
 api/src/org/labkey/api/security/ApiKeyManager.java -text
 api/src/org/labkey/api/security/AuthenticatedRequest.java -text
-api/src/org/labkey/api/security/AuthenticatedResponse.java -text
 api/src/org/labkey/api/security/AuthenticationLogoAttachmentParent.java -text
 api/src/org/labkey/api/security/AuthenticationLogoType.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
@@ -2352,7 +2339,6 @@ pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineDirectoryImpl.java -text
-pipeline/src/org/labkey/pipeline/PipelineGWTServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
@@ -2906,7 +2892,6 @@ study/test/src/org/labkey/test/tests/study/StudyDemoModeTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyLotsOfParticipantsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyManualTest.java -text
-study/test/src/org/labkey/test/tests/study/StudyMergeParticipantsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyProtocolDesignerTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyPublishTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyReloadColumnInferenceTest.java -text

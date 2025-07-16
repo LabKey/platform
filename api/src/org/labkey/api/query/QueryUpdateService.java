@@ -319,6 +319,6 @@ public interface QueryUpdateService extends HasPermission
      */
     boolean isBulkLoad();
 
-    /** Setup the data iterator for any special behavior needed for the target table */
+    /** Set up the data iterator for any special behavior needed for the target table */
     default void configureDataIteratorContext(DataIteratorContext context) {}
 }
