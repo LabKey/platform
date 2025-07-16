@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.settings.AdminConsole.OptionalFeatureFlag" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureFlag" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService.FeatureType" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.core.admin.AdminController.OptionalFeaturesForm" %>
@@ -48,7 +48,7 @@
 <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.EMPTY_STRING, HtmlString.unsafe("<br>"))%>
 <div class="list-group">
 <%
-    for (OptionalFeatureFlag flag : AdminConsole.getOptionalFeatureFlags(type))
+    for (OptionalFeatureFlag flag : OptionalFeatureService.get().getOptionalFeatureFlags(type))
     {
         if (!showHidden && flag.isHidden())
             continue;

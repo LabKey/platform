@@ -41,7 +41,8 @@ public interface AppProps
 
     String SCOPE_SITE_SETTINGS = "SiteSettings";
 
-    String OPTIONAL_FEATURE = "experimentalFeature"; // Used for all optional features; "experimental" for historical reasons.
+    // Used for all optional features; "experimental" for historical reasons.
+    String OPTIONAL_FEATURE_PREFIX = "experimentalFeature.";
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
