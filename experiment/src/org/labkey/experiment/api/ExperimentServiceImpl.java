@@ -318,12 +318,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
     private final Cache<Integer, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
-        (key, argument) ->
-                (ExpProtocolImpl) getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key)).lock());
+        (key, argument) -> {
+            var result = getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key));
+            if (result != null)
+            {
+                result.lock();
+            }
+            return result;
+        });
 
     private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
-        (key, argument) ->
-                (ExpProtocolImpl) getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key)).lock());
+        (key, argument) -> {
+            var result = getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key));
+            if (result != null)
+            {
+                result.lock();
+            }
+            return result;
+        });
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
