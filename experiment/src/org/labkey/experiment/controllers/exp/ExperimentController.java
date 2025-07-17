@@ -4414,6 +4414,9 @@ public class ExperimentController extends SpringActionController
         @Override
         protected @Nullable Set<String> getLineageImportAliases() throws IOException
         {
+            Set<String> aliases = new CaseInsensitiveHashSet();
+            // Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import
+            aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
             boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
             // Issue 51894: We need to stop conversion to numbers for alias fields for all type
             // If there are aliases defined for one type that are number fields in another type, this will prevent
@@ -4422,18 +4425,15 @@ public class ExperimentController extends SpringActionController
             if (crossTypeImport)
             {
                 List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
-                Set<String> aliases = new CaseInsensitiveHashSet();
                 for (ExpSampleTypeImpl sampleType : sampleTypes)
-                {
                     aliases.addAll(sampleType.getImportAliases().keySet());
-                }
-                return aliases;
             }
             else
             {
                 ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
-                return new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
+                aliases.addAll(sampleType.getImportAliases().keySet());
             }
+            return aliases;
         }
 
         @Override
