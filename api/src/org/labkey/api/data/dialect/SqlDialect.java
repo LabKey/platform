@@ -149,7 +149,8 @@ public abstract class SqlDialect
         return description;
     }
 
-    public String nameIndex(String tableName, String[] indexedColumns){
+    public String nameIndex(String tableName, PropertyStorageSpec.Index index)
+    {
         throw new UnsupportedOperationException("Update " + this.getClass().getSimpleName() + " to add this functionality");
     }
 

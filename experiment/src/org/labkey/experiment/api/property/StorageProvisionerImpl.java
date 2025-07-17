@@ -899,8 +899,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         for (PropertyStorageSpec.Index index : requiredIndices)
         {
+            if (sqlDialect.isSqlServer() && index.isCaseInsensitive) // skip case insensitive index for sql server
+                continue;
+
             // TODO: Bad!! Shouldn't be making up an index name here! Ideally, we use the AbstractAuditTypeProvider.updateIndices() approach instead.
-            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
+            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index), index);
         }
         return requiredIndicesMap;
     }

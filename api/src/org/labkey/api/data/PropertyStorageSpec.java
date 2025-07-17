@@ -431,6 +431,7 @@ public class PropertyStorageSpec
     {
         final public String[] columnNames;
         final public boolean isUnique;
+        final public boolean isCaseInsensitive; // use for postgres only
         final public boolean isClustered;
 
         public Index(boolean unique, String... columnNames)
@@ -438,6 +439,7 @@ public class PropertyStorageSpec
             this.columnNames = columnNames;
             this.isUnique = unique;
             this.isClustered = false;
+            this.isCaseInsensitive = false;
         }
 
         /** If the set of names refers to propertydescriptors, then the PropertyDescriptors must be provided */
@@ -451,7 +453,7 @@ public class PropertyStorageSpec
                     throw new IllegalStateException("Property " + propertyName + " has no storage column name");
                 return null == pd ? propertyName : pd.getStorageColumnName();
             }).toArray(String[]::new);
-            return new Index(isUnique, isClustered, translatedNames);
+            return new Index(isUnique, isClustered, isCaseInsensitive, translatedNames);
         }
 
         public Index(boolean unique, Collection<String> columnNames)
@@ -459,6 +461,7 @@ public class PropertyStorageSpec
             this.columnNames = columnNames.toArray(new String[0]);
             this.isUnique = unique;
             this.isClustered = false;
+            this.isCaseInsensitive = false;
         }
 
         public Index(boolean unique, boolean clustered, String... columnNames)
@@ -466,6 +469,15 @@ public class PropertyStorageSpec
             this.columnNames = columnNames;
             this.isUnique = unique;
             this.isClustered = clustered;
+            this.isCaseInsensitive = false;
+        }
+
+        public Index(boolean unique, boolean clustered, boolean caseInsensitive, String... columnNames)
+        {
+            this.columnNames = columnNames;
+            this.isUnique = unique;
+            this.isClustered = clustered;
+            this.isCaseInsensitive = caseInsensitive;
         }
 
         /**
@@ -474,7 +486,7 @@ public class PropertyStorageSpec
          */
         public static boolean isSameIndex(Index propertyIndex, Index tableIndex)
         {
-            if (propertyIndex.isUnique != tableIndex.isUnique || propertyIndex.columnNames.length != tableIndex.columnNames.length)
+            if (propertyIndex.isCaseInsensitive != tableIndex.isCaseInsensitive || propertyIndex.isUnique != tableIndex.isUnique || propertyIndex.columnNames.length != tableIndex.columnNames.length)
                 return false;
             Set<String> piColumns = new CaseInsensitiveHashSet(Arrays.asList(propertyIndex.columnNames));
             Set<String> tiColumns = new CaseInsensitiveHashSet(Arrays.asList(tableIndex.columnNames));

@@ -114,8 +114,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Data", "LSID", null, false)
         )));
 
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
-                new PropertyStorageSpec.Index(true, "name", "classid"))));
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name", "classid"),
+                new PropertyStorageSpec.Index(true, false, true, "name"))));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name")));
     }

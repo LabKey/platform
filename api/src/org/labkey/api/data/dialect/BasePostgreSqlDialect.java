@@ -1182,8 +1182,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
             PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
-            String newName = nameIndex(change.getTableName(), newIndex.columnNames);
+            String oldName = nameIndex(change.getTableName(), oldIndex);
+            String newName = nameIndex(change.getTableName(), newIndex);
             if (!oldName.equals(newName))
             {
                 statements.add(String.format("ALTER INDEX %s.%s RENAME TO %s",
@@ -1336,22 +1336,23 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             statements.add(String.format("CREATE %sINDEX %s ON %s (%s);",
                 index.isUnique ? "UNIQUE " : "",
-                nameIndex(change.getTableName(), index.columnNames),
+                nameIndex(change.getTableName(), index),
                 makeTableIdentifier(change),
-                makePropertyIdentifiers(index.columnNames)));
+                makePropertyIdentifiers(index)));
 
             if (index.isClustered)
             {
                 statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
-                        change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
+                        change.getTableName(), nameIndex(change.getTableName(), index)));
             }
         }
     }
 
     @Override
-    public String nameIndex(String tableName, String[] indexedColumns)
+    public String nameIndex(String tableName, PropertyStorageSpec.Index index)
     {
-        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
+        String suffix = index.isCaseInsensitive ? "_lower" : "";
+        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(index.columnNames, "_") + suffix, this);
     }
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
@@ -1435,14 +1436,15 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
     }
 
-    // Create comma-separated list of property identifiers
-    private String makePropertyIdentifiers(String[] names)
+    // Create comma-separated list of property identifiers for index
+    private String makePropertyIdentifiers(PropertyStorageSpec.Index index)
     {
         String sep = "";
         StringBuilder sb = new StringBuilder();
-        for (String name : names)
+        boolean isCaseInsensitive = index.isCaseInsensitive;
+        for (String name : index.columnNames)
         {
-            sb.append(sep).append(makePropertyIdentifier(name));
+            sb.append(sep).append(isCaseInsensitive ? "lower(" : "").append(makePropertyIdentifier(name)).append(isCaseInsensitive ? ")" : "");
             sep = ", ";
         }
         return sb.toString();
