@@ -329,12 +329,7 @@ public class Lsid
         catch (URISyntaxException e)
         {
             int hashIndex = uri.indexOf("#");
-            String partToCheck = hashIndex > -1 ? uri.substring(hashIndex + 1) : uri;
-
-            // Issue 53482: Only call Lsid.encodePart if we find '%' not followed by exactly two hex digits
-            Pattern pattern = Pattern.compile("%(?![0-9A-Fa-f]{2})");
-            boolean hasUnencodedPercent = pattern.matcher(partToCheck).find();
-            if (hasUnencodedPercent)
+            if (hashIndex > -1 && uri.substring(hashIndex).contains("%"))
                 return uri.substring(0, hashIndex + 1) + Lsid.encodePart(uri.substring(hashIndex + 1));
         }
         return uri;
