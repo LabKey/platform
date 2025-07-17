@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -67,13 +68,21 @@ public interface AuditHandler
             String key = entry.getKey();
             // getDatasetRows() (at least) should return key==column.getName(), expect getColumn(name) to work
             ColumnInfo col = null==table ? null : table.getColumn(key);
-            String nameFromAlias = null != col
-                    ? col.getName()
-                    : columns.stream()
-                        .filter(column -> column.getAlias().getId().equalsIgnoreCase(key))
-                        .map((ColumnInfo::getName))
-                        .findFirst()
-                        .orElse(key);
+            // Issue 52886: Skip multivalued foreign key values since they are always stored as the junction table id
+            // but the new row value will be the data referenced via the junction table entries and thus a difference will be recorded.
+            // The differences here should be audited in the junction table instead.
+            if (col != null && col.getFk() instanceof MultiValuedForeignKey)
+                continue;
+
+            String nameFromAlias = key;
+            if (null != col)
+                nameFromAlias = col.getName();
+            else
+            {
+                ColumnInfo aliasColumn = columns.stream().filter(c -> c.getAlias().getId().equalsIgnoreCase(key) && !(c.getFk() instanceof MultiValuedForeignKey)).findFirst().orElse(null);
+                if (aliasColumn != null)
+                    nameFromAlias = aliasColumn.getName();
+            }
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false;
