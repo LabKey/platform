@@ -540,7 +540,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         ActionURL url = new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getUserSchema().getContainer())
                 .addParameter("lsid", "${LSID}")
-                .addParameter("name", "${" + col.getName() + "}");
+                .addParameter("name", "${" + PageFlowUtil.encode(col.getName()) + "}");
         if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
         {
             url.addParameter("inline", "false");
@@ -625,7 +625,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     columnInfo.setURL(StringExpressionFactory.createURL(
                             new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getContainer())
                                     .addParameter("lsid", "${LSID}")
-                                    .addParameter("name", "${" + columnInfo.getFieldKey() + "}")));
+                                    .addParameter("name", "${" + PageFlowUtil.encode(columnInfo.getName()) + "}")));
 
                 }
 

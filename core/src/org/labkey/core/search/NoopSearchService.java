@@ -58,11 +58,6 @@ public class NoopSearchService implements SearchService
         }
 
         @Override
-        public void addNoop(PRIORITY pri)
-        {
-        }
-
-        @Override
         public void setReady()
         {
         }
@@ -169,7 +164,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
+    public WebPartView<?> getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;
     }
@@ -235,7 +230,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+    public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
     {
         return null;
     }
