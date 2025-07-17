@@ -503,7 +503,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class ValidateDomainFieldsAction extends MutatingApiAction<DomainApiForm>
+    public static class ValidateDomainAndFieldNamesAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -524,21 +524,42 @@ public class PropertyController extends SpringActionController
             String typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-1000.1001:1002"; // note using a fake lsid here, since not all domain kinds override generateDomainURI
             Domain domain = PropertyService.get().createDomain(getContainer(), typeURI, "test");
 
+            boolean checkFieldNames = !domainDesign.getFields().isEmpty();
+            boolean checkDomainName = domainDesign.getName() != null;
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            ValidationException results = DomainUtil.validateProperties(null, domainDesign, kind, null, getUser());
-            if (!results.hasErrors())
+            ValidationException results = new ValidationException();
+            if (checkFieldNames)
             {
-                for (GWTPropertyDescriptor field : domainDesign.getFields())
+                results = DomainUtil.validateProperties(null, domainDesign, kind, null, getUser());
+                if (!results.hasErrors())
                 {
-                    try
+                    for (GWTPropertyDescriptor field : domainDesign.getFields())
                     {
-                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
-                        OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
+                        try
+                        {
+                            DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
+                            OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
+                        }
+                        catch (ChangePropertyDescriptorException e)
+                        {
+                            results.addFieldError(field.getName(), e.getMessage());
+                        }
                     }
-                    catch (ChangePropertyDescriptorException e)
-                    {
-                        results.addFieldError(field.getName(), e.getMessage());
-                    }
+                }
+            }
+            if (checkDomainName)
+            {
+                try
+                {
+                    kind.validateDomainName(getContainer(), getUser(), null, domainDesign.getName());
+                    String nameError = DomainUtil.validateDomainName(domainDesign.getName(), kindName, kind.supportsNamingPattern());
+                    if (nameError != null)
+                        results.addGlobalError(nameError);
+                }
+                catch (Exception e)
+                {
+                    results.addGlobalError(e.getMessage());
                 }
             }
 
