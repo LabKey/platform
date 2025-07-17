@@ -369,6 +369,13 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        // will skipExisting here, that check will be made again during createDataClass / updateDataClass
+        ExperimentService.get().validateDataClassName(container, user, name, true);
+    }
+
+    @Override
     public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
