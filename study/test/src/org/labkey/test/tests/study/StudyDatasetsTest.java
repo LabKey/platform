@@ -33,9 +33,11 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldInfo;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
@@ -219,7 +221,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     {
         goToManageStudy();
         String datasetName = "Issue 53431";
-        FieldInfo fieldInfo = FieldInfo.random("test,./field");
+        FieldInfo fieldInfo = FieldInfo.random("test,./field", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.StudyDatasetVisit);
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(datasetName);
