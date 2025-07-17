@@ -34,6 +34,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.repeat;
@@ -328,10 +329,13 @@ public class Lsid
         catch (URISyntaxException e)
         {
             int hashIndex = uri.indexOf("#");
-            if (hashIndex > -1 && uri.substring(hashIndex).contains("%"))
-            {
+            String partToCheck = hashIndex > -1 ? uri.substring(hashIndex + 1) : uri;
+
+            // Issue 53482: Only call Lsid.encodePart if we find '%' not followed by exactly two hex digits
+            Pattern pattern = Pattern.compile("%(?![0-9A-Fa-f]{2})");
+            boolean hasUnencodedPercent = pattern.matcher(partToCheck).find();
+            if (hasUnencodedPercent)
                 return uri.substring(0, hashIndex + 1) + Lsid.encodePart(uri.substring(hashIndex + 1));
-            }
         }
         return uri;
     }
