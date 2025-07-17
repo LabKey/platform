@@ -330,7 +330,9 @@ public class Lsid
         {
             int hashIndex = uri.indexOf("#");
             if (hashIndex > -1 && uri.substring(hashIndex).contains("%"))
+            {
                 return uri.substring(0, hashIndex + 1) + Lsid.encodePart(uri.substring(hashIndex + 1));
+            }
         }
         return uri;
     }
