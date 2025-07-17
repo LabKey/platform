@@ -17,6 +17,7 @@ package org.labkey.core.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
@@ -147,7 +148,7 @@ public class SecurityApiActions
             return response;
         }
 
-        protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean includeSubfolders, boolean includeEmptyPermGroups)
+        protected Map<String, Object> getContainerPerms(Container container, @NotNull List<Group> groups, boolean includeSubfolders, boolean includeEmptyPermGroups)
         {
             Map<String, Object> containerPerms = new HashMap<>();
             containerPerms.put("path", container.getPath());
@@ -175,7 +176,7 @@ public class SecurityApiActions
             return containerPerms;
         }
 
-        protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups, boolean includeEmptyPermGroups)
+        protected List<Map<String, Object>> getGroupPerms(Container container, @NotNull List<Group> groups, boolean includeEmptyPermGroups)
         {
             List<Map<String, Object>> groupsPerms = new ArrayList<>();
             boolean isAdmin = container.hasPermission(getUser(), AdminPermission.class);
