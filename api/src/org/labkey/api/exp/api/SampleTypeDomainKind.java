@@ -152,8 +152,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
             new PropertyStorageSpec.Index(true, "rowId"),
             new PropertyStorageSpec.Index(true, "lsid"),
-            new PropertyStorageSpec.Index(true, "name"),
-            new PropertyStorageSpec.Index(true, false, true, "name")
+            new PropertyStorageSpec.Index(true, "name")
         )));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name", "SampleState")));
