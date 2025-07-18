@@ -41,10 +41,12 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
+import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DuplicateNameCheckDataIterator;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -3071,84 +3073,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(pre, context, _isUpdateUsingLsid, _tableInfo));
-        }
-    }
-
-    public static class DuplicateNameCheckDataIterator extends WrapperDataIterator
-    {
-        final static String NAME_FIELD = "name";
-        private final DataIteratorContext _context;
-        private final Integer _nameCol;
-        private final Integer _lsidCol;
-        private final TableInfo _tableInfo;
-        private final boolean _isUpdateUsingLsid;
-
-        protected DuplicateNameCheckDataIterator(DataIterator di, DataIteratorContext context, boolean isUpdateUsingLsid, TableInfo tableInfo)
-        {
-            super(di);
-            _context = context;
-            _tableInfo = tableInfo;
-            _isUpdateUsingLsid = isUpdateUsingLsid;
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _nameCol = map.get(NAME_FIELD);
-            _lsidCol = map.get("lsid");
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-            if (!hasNext)
-                return false;
-
-            if (_context.getErrors().hasErrors())
-                return hasNext;
-
-            if (_nameCol == null)
-                return hasNext;
-
-            Object nameObj = get(_nameCol);
-            if (nameObj == null)
-                return hasNext;
-
-            String newName = String.valueOf(nameObj);
-            if (StringUtils.isEmpty(newName))
-                return hasNext;
-
-            Map<String, Object> existingValues = getExistingRecord();
-            if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
-                return hasNext;
-
-            boolean isNameValid = true;
-            if (!_context.getInsertOption().allowUpdate) // insert new
-            {
-                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo, false);
-            }
-            else if (_isUpdateUsingLsid && _lsidCol != null) // update using rowId is not yet supported for DIB
-            {
-                Object lsidObj = get(_lsidCol);
-                if (lsidObj != null)
-                {
-                    String lsid = String.valueOf(lsidObj);
-                    if (!StringUtils.isEmpty(lsid) && !ExperimentServiceImpl.get().canRename(lsid, newName, _tableInfo))
-                        isNameValid = false;
-                }
-            }
-            else if (_context.getInsertOption().mergeRows) // merge
-            {
-                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo,true);
-            }
-
-            if (!isNameValid)
-            {
-                String error = String.format("The name '%s' already exists.", newName);
-                if (_context.getInsertOption().mergeRows)
-                    error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", newName);
-                _context.getErrors().addRowError(new ValidationException(error));
-            }
-
-            return hasNext;
+            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(new CachingDataIterator(pre), context, _isUpdateUsingLsid, _tableInfo));
         }
     }
 

@@ -368,7 +368,7 @@ public class SchemaColumnMetaData
                     {
                         colInfo = getColumn(colName.substring("lower(".length(), colName.length() - 1));
                         if (colInfo == null && colName.endsWith(")::text)"))
-                            colInfo = getColumn(colName.substring("lower(".length(), colName.length() - ")::text)".length()));
+                            colInfo = getColumn(colName.substring("lower((".length(), colName.length() - ")::text)".length()));
                     }
 
                     // Column will be null for indices over expressions, eg.: "lower(name)"
