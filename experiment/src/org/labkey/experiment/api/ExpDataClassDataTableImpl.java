@@ -1273,23 +1273,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
+        protected Map<String, Object> _select(Container container, Integer rowId, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
         {
-            if (null == rowid && null == lsid && (null == name || null == classId))
+            if (null == rowId && null == lsid && (null == name || null == classId))
                 return null;
 
             // Issue 52886: Use queryTable here, not raw database table, so the rows are from the user schema with names
             // as expected to match row inserts and other querySchema data
             SimpleFilter filter = new SimpleFilter();
-            if (null != rowid)
-                filter.addCondition(FieldKey.fromParts("rowId"), rowid);
+            if (null != rowId)
+                filter.addCondition(Column.RowId.fieldKey(), rowId);
             else if (null != lsid)
-                filter.addCondition(FieldKey.fromParts("lsid"), lsid);
+                filter.addCondition(Column.LSID.fieldKey(), lsid);
             else
-                filter.addCondition(FieldKey.fromParts("classid"), classId)
-                        .addCondition(FieldKey.fromParts("name"), name);
+                filter.addCondition(Column.ClassId.fieldKey(), classId)
+                        .addCondition(Column.Name.fieldKey(), name);
             if (!allowCrossContainer)
-                filter.addCondition(FieldKey.fromParts("Folder"), container.getEntityId());
+                filter.addCondition(Column.Folder.fieldKey(), container.getEntityId());
 
             TableInfo queryTable = getQueryTable();
             TableSelector selector = new TableSelector(queryTable, filter, null);
