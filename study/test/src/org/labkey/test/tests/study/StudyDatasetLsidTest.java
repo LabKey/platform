@@ -9,7 +9,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.InsertRowsCommand;
-import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.RowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
@@ -202,7 +202,7 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
                 .create(conn, containerPath);
 
         log("Validate inserting into the MV indicator dataset");
-        SaveRowsResponse response = expectSuccess(conn, MV_INDICATOR_DATASET, containerPath,
+        RowsResponse response = expectSuccess(conn, MV_INDICATOR_DATASET, containerPath,
                 List.of(
                         Map.of("Ptid", "111", "Visit", 1, "IntField", "N", "StringField", "Q"),
                         Map.of("Ptid", "222", "Visit", 2, "IntField", 1, "StringField", "StringValue"),
@@ -224,7 +224,7 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         cmd.setRows(updated);
         try
         {
-            SaveRowsResponse resp = cmd.execute(conn, containerPath);
+            RowsResponse resp = cmd.execute(conn, containerPath);
             List<Map<String, Object>> updatedRows = resp.getRows();
             validateValuesPresent(updatedRows.get(0), Map.of("IntFieldMvIndicator", "Z", "StringFieldMvIndicator", "Q"));
             validateValuesPresent(updatedRows.get(1), Map.of("IntField", 1, "StringFieldMvIndicator", "Q"));
@@ -365,19 +365,19 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         validateUpdateOfGeneratedColumns(conn, containerPath, TIME_PORTION_OF_DATE);
     }
 
-    private SaveRowsResponse expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private RowsResponse expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
         return validateInsertRows(conn, datasetName, containerPath, rows, false);
     }
 
-    private SaveRowsResponse expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private RowsResponse expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
         return validateInsertRows(conn, datasetName, containerPath, rows, true);
     }
 
-    private SaveRowsResponse validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
+    private RowsResponse validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
     {
-        SaveRowsResponse resp = null;
+        RowsResponse resp = null;
         InsertRowsCommand cmd = new InsertRowsCommand("Study", datasetName);
         cmd.setRows(rows);
         try
