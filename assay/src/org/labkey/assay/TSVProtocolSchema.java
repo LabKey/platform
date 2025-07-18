@@ -286,8 +286,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        var cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : containerFilter;
-                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, cf, defaultsSupplier);
+                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, defaultsSupplier);
                         columnInfo.setFieldKey(FieldKey.fromParts(dp.getName()));
                     }
                 }
