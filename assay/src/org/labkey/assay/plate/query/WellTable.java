@@ -251,8 +251,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        var cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : getContainerFilter();
-                        defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, cf, defaultsSupplier);
+                       defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
                         wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
                     }
                 }

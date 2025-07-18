@@ -806,7 +806,7 @@ public class ExpDataIterators
     }
 
     /**
-     * Chooses a container filter that is approprate for import, merge or update actions in the face of product folders.
+     * Issue 52504 (sort of): Chooses a container filter that is appropriate for import, merge or update actions in the face of product folders.
      * Note that this is slightly different from our treatment of lookups:
      *   - when in a project, we allow import or update to all subfolders,
      *   - when in a folder, we only allow references to data up the folder tree
@@ -2510,6 +2510,7 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
+                        setContainerFilterForImport(qDef, splitContainer, _user);
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2795,15 +2796,6 @@ public class ExpDataIterators
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
             setContainerFilterForImport(qDef, container, _user);
-            ContainerFilter cf;
-            // Note that this is slightly different from our treatment of lookups:
-            //    - when in a project, we allow import or update to all subfolders,
-            //    - when in a folder, we only allow references to data up the folder tree
-            if (container.isProject())
-                cf = new ContainerFilter.AllInProjectPlusShared(container, _user);
-            else
-                cf = new ContainerFilter.CurrentPlusProjectAndShared(container, _user);
-            qDef.setContainerFilter(cf);
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {

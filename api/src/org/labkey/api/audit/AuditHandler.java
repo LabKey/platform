@@ -65,23 +65,26 @@ public interface AuditHandler
         // and we won't convert sample type and data class names into lower case.
         for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
+            boolean isMultiValued = false;
             String key = entry.getKey();
             // getDatasetRows() (at least) should return key==column.getName(), expect getColumn(name) to work
             ColumnInfo col = null==table ? null : table.getColumn(key);
-            // Issue 52886: Skip multivalued foreign key values since they are always stored as the junction table id
-            // but the new row value will be the data referenced via the junction table entries and thus a difference will be recorded.
-            // The differences here should be audited in the junction table instead.
             if (col != null && col.getFk() instanceof MultiValuedForeignKey)
-                continue;
+                isMultiValued = true;
 
             String nameFromAlias = key;
             if (null != col)
                 nameFromAlias = col.getName();
             else
             {
-                ColumnInfo aliasColumn = columns.stream().filter(c -> c.getAlias().getId().equalsIgnoreCase(key) && !(c.getFk() instanceof MultiValuedForeignKey)).findFirst().orElse(null);
+                ColumnInfo aliasColumn = columns.stream().filter(c -> c.getAlias().getId().equalsIgnoreCase(key)).findFirst().orElse(null);
+
                 if (aliasColumn != null)
+                {
+                    if (aliasColumn.getFk() != null && aliasColumn.getFk() instanceof MultiValuedForeignKey)
+                        isMultiValued = true;
                     nameFromAlias = aliasColumn.getName();
+                }
             }
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
@@ -140,8 +143,22 @@ public interface AuditHandler
                 }
                 else if (!Objects.equals(oldValue, newValue) || isExtraAuditField)
                 {
-                    originalRow.put(nameFromAlias, oldValue);
-                    modifiedRow.put(nameFromAlias, newValue);
+                    // If multivalued columns change, the value in this table will remain the key to the junction table
+                    // but at this point newValue will look like the newly chosen values not that key. So we skip
+                    // this in the diff unless the value changes from non-null to null or vice versa.
+                    if (isMultiValued)
+                    {
+                        if ((oldValue == null && newValue != null) || (newValue == null && oldValue != null))
+                        {
+                            originalRow.put(nameFromAlias, oldValue);
+                            modifiedRow.put(nameFromAlias, newValue);
+                        }
+                    }
+                    else
+                    {
+                        originalRow.put(nameFromAlias, oldValue);
+                        modifiedRow.put(nameFromAlias, newValue);
+                    }
                 }
             }
             else if (isExtraAuditField)

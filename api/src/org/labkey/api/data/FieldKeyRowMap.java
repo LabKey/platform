@@ -131,8 +131,6 @@ public class FieldKeyRowMap implements Map<FieldKey, Object>
     {
         Map<String, Object> map = new CaseInsensitiveHashMap<>();
         rowMap.forEach((key, value) -> {
-//            if (key.getParent() != null)
-//                throw new IllegalArgumentException("Multi-part field key '" + key + "' cannot be used as key in string map since it may not be unique.");
             if (map.containsKey(key.getName()))
                 throw new IllegalArgumentException("Duplicate key '" + key + "' found in fieldKey map.");
             map.put(key.getName(), value);

@@ -456,9 +456,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
                 if (dp != null && pd != null)
                 {
-                    // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-                    ContainerFilter cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()) : getContainerFilter();
-                    defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, cf, defaultsSupplier);
+                    defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
                     wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
 
                     if (pd.getPropertyType() == PropertyType.ATTACHMENT)
@@ -1266,19 +1264,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            Map<String,Object> row = _select(container, rowId, lsid, name, classId, allowCrossContainer);
-
-//            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
-//            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
-//            if (null != row)
-//            {
-//                if (row instanceof ArrayListMap arrayListMap)
-//                    arrayListMap.getFindMap().remove("_row");
-//                else
-//                    row.remove("_row");
-//            }
-
-            return row;
+            return _select(container, rowId, lsid, name, classId, allowCrossContainer);
         }
 
         @Override
@@ -1292,7 +1278,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
-            // FIXME Issue 52886: This retrieves raw db column names, which doesn't work well for comparing existing and new audit records if the name doesn't match the field key
+            // Issue 52886: Use queryTable here, not raw database table, so the rows are from the user schema with names
+            // as expected to match row inserts and other querySchema data
             SimpleFilter filter = new SimpleFilter();
             if (null != rowid)
                 filter.addCondition(FieldKey.fromParts("rowId"), rowid);
@@ -1314,26 +1301,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
             return null;
-//            TableInfo d = getDbTable();
-//            TableInfo t = _dataClassDataTableSupplier.get();
-//
-//            SQLFragment sql = new SQLFragment()
-//                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-//                    .append(" FROM ").append(d, "d")
-//                    .append(" LEFT OUTER JOIN ").append(t, "t")
-//                    .append(" ON d.lsid = t.lsid WHERE ");
-//
-//            if (null != rowid)
-//                sql.append("d.rowid=?").add(rowid);
-//            else if (null != lsid)
-//                sql.append("d.lsid=?").add(lsid);
-//            else
-//                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
-//
-//            if (!allowCrossContainer)
-//                sql.append(" AND d.Container=?").add(container.getEntityId());
-//
-//            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
 
         @Override

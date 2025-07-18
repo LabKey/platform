@@ -972,13 +972,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             var wrapped = wrapColumnFromJoinedTable(dbColumn.getName(), dbColumn);
-            if (dbColumn.isLookup())
-            {
-                var fk = QueryForeignKey.from(this.getUserSchema(), QueryService.get().getContainerFilterForLookups(getContainer(), _userSchema.getUser()))
-                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
-                        .to(dbColumn.getFk().getLookupTableName(), dbColumn.getFk().getLookupColumnName(), null);
-                wrapped.setFk(fk);
-            }
 
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
