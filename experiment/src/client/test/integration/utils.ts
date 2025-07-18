@@ -370,8 +370,8 @@ const LEGAL_CHARSET = [' ', '+', '-', '_', '.', ':', '', '&', '(', ')', '/'];
 const alphaNumeric = ['a', 'A', '1', '0'];
 export async function checkDomainName(server: IntegrationTestServer, domainType: string, supportNameExpression: boolean, folderOptions: RequestOptions, userOptions: RequestOptions) {
     const badNames = {
-        '': domainType === 'SampleSet' ? 'You must supply a name for the sample type.' : `${domainType} name must not be blank.`,
-        ' ': domainType === 'SampleSet' ? 'You must supply a name for the sample type.' : `${domainType} name must not be blank.`,
+        '': domainType === 'SampleSet' ? 'Sample Type name is required.' : `${domainType} name must not be blank.`,
+        ' ': domainType === 'SampleSet' ? 'Sample Type name is required.' : `${domainType} name must not be blank.`,
         'with\0nullCharacter': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must contain only valid unicode characters.`,
         'with\tnewLines': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain 'tab', 'new line', or 'return' characters.`,
         '.startWithDot': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must start with a letter or a number.`,
@@ -408,7 +408,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     let dataTypeRowId = 0;
     if (domainType !== 'SampleSet')
         dataTypeRowId = await getDataClassRowIdByName(server, domainName, folderOptions);
-    const requireMsg = `${domainType} name must not be blank.`
+    const requireMsg = domainType == 'SampleSet' ? 'Sample Type name is required.' : `${domainType} name must not be blank.`;
     badNames[''] = requireMsg;
     badNames[' '] = requireMsg;
     for (let i = 0; i < badNameKeys.length; i++){
