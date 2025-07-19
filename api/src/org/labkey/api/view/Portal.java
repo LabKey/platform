@@ -1584,16 +1584,10 @@ public class Portal implements ModuleChangeListener
         return multiMap;
     }
 
+    // The maintained view map is case-insensitive
     public static WebPartFactory getPortalPart(String name)
     {
         return getViewMap().get(name);
-    }
-
-    // The maintained view map is now case-insensitive, so this is identical to the above method
-    @Deprecated // Call getPortalPart() instead - TODO: DELETE, unused
-    public static WebPartFactory getPortalPartCaseInsensitive(String name)
-    {
-        return getPortalPart(name);
     }
 
     private static synchronized Map<String, WebPartFactory> getViewMap()

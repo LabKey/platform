@@ -244,12 +244,6 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
-    @Deprecated // Keep around to ease the transition to the new method signature
-    public static void registerAllowedSources(Directive directive, String key, String... allowedSources)
-    {
-        registerAllowedSources(key, directive, allowedSources);
-    }
-
     public static void registerAllowedSources(String key, Directive directive, String... allowedSources)
     {
         synchronized (SUBSTITUTION_LOCK)
