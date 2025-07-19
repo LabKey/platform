@@ -3754,7 +3754,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Filter on isQueryColumn, so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream()
                 .filter(DisplayColumn::isQueryColumn)
-                .filter(col -> !col.getName().equals("sampleID"))
+                .filter(col -> !col.getName().equalsIgnoreCase(WellTable.Column.SampleID.name()))
                 .toList();
     }
 
