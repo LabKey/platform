@@ -40,6 +40,7 @@ public class DuplicateNameCheckDataIterator extends WrapperDataIterator
         if (rowNumber <= lastPrefetchRowNumber)
             return;
 
+        String duplicateName = null;
         int rowsToFetch = 50;
         Set<String> names = new HashSet<>();
         Map<String, String> nameLsidMap = new LinkedHashMap<>();
@@ -62,7 +63,10 @@ public class DuplicateNameCheckDataIterator extends WrapperDataIterator
             if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
                 continue;
 
-            names.add(newName);
+            if (names.contains(newName) && duplicateName == null)
+                duplicateName = newName; // reject exact case match
+            else
+                names.add(newName);
 
             if (_isUpdateUsingLsid && _lsidCol != null)
             {
@@ -77,9 +81,8 @@ public class DuplicateNameCheckDataIterator extends WrapperDataIterator
         }
         while (--rowsToFetch > 0 && _delegate.next());
 
-        if (!names.isEmpty())
+        if (!names.isEmpty() && duplicateName == null)
         {
-            String duplicateName = null;
             if (!_context.getInsertOption().allowUpdate) // insert new
             {
                 duplicateName = ExperimentService.get().getDuplicateNewOrExistingNames(names, _tableInfo, false);
@@ -111,16 +114,16 @@ public class DuplicateNameCheckDataIterator extends WrapperDataIterator
             {
                 duplicateName = ExperimentService.get().getDuplicateNewOrExistingNames(names, _tableInfo, true);
             }
-
-            if (duplicateName != null)
-            {
-                String error = String.format("The name '%s' already exists.", duplicateName);
-                if (_context.getInsertOption().mergeRows)
-                    error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", duplicateName);
-                _context.getErrors().addRowError(new ValidationException(error));
-            }
-
         }
+
+        if (duplicateName != null)
+        {
+            String error = String.format("The name '%s' already exists.", duplicateName);
+            if (_context.getInsertOption().mergeRows)
+                error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", duplicateName);
+            _context.getErrors().addRowError(new ValidationException(error));
+        }
+
 
         // backup to where we started so caller can iterate through them one at a time
         _unwrapped.reset(); // unwrapped _delegate
