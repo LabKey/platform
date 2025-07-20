@@ -34,19 +34,19 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
-import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.dataiterator.DuplicateNameCheckDataIterator;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -3073,7 +3073,140 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(new CachingDataIterator(pre), context, _isUpdateUsingLsid, _tableInfo));
+            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(pre, context, _isUpdateUsingLsid, _tableInfo));
+        }
+    }
+
+    public static class DuplicateNameCheckDataIterator extends WrapperDataIterator
+    {
+        final static String NAME_FIELD = "name";
+        final static Integer INIT_CACHE_LIMIT = 100_000;
+        private final DataIteratorContext _context;
+        private final Integer _nameCol;
+        private final Integer _lsidCol;
+        private final TableInfo _tableInfo;
+        private final boolean _isUpdateUsingLsid;
+        private boolean _useNameCache = false;
+        private final Set<String> newOrExistingName = new HashSet<>(); // use lower case
+        private final Set<String> newOrExistingNameLc = new HashSet<>(); // keep case
+
+        protected DuplicateNameCheckDataIterator(DataIterator di, DataIteratorContext context, boolean isUpdateUsingLsid, TableInfo tableInfo)
+        {
+            super(di);
+            _context = context;
+            _tableInfo = tableInfo;
+            _isUpdateUsingLsid = isUpdateUsingLsid;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _nameCol = map.get(NAME_FIELD);
+            _lsidCol = map.get("lsid");
+            init();
+        }
+
+        private void init()
+        {
+            // do total count, if <= INIT_CACHE_LIMIT initial size, use cache
+            SQLFragment countSql = new SQLFragment("SELECT COUNT(*) FROM ").append(_tableInfo);
+            Long existingRows = new SqlSelector(ExperimentService.get().getSchema(), countSql).getObject(Long.class);
+            if (existingRows <= INIT_CACHE_LIMIT)
+            {
+                _useNameCache = true;
+                SQLFragment nameSql = new SQLFragment("SELECT DISTINCT(name) FROM ").append(_tableInfo);
+                String[] allExistingNames = new SqlSelector(ExperimentService.get().getSchema(), nameSql).getArray(String.class);
+                for (String existingName : allExistingNames)
+                {
+                    newOrExistingNameLc.add(existingName.toLowerCase());
+                    if (_context.getInsertOption().mergeRows)
+                        newOrExistingName.add(existingName);
+                }
+            }
+        }
+
+        private boolean addNewName(String newName)
+        {
+            if (!_useNameCache)
+                return false;
+
+            String newNameLc = newName.toLowerCase();
+            if (!_context.getInsertOption().allowUpdate) // insert doesn't allow case different match
+            {
+                if (newOrExistingNameLc.contains(newNameLc))
+                    addNameError(newName);
+                newOrExistingNameLc.add(newNameLc);
+                return true;
+            }
+            else if (_context.getInsertOption().mergeRows)
+            {
+                if (newOrExistingName.contains(newName)) // OK to contain exact match, this is an update
+                    return true;
+                if (!newName.equals(newNameLc) && newOrExistingNameLc.contains(newNameLc)) // not ok to contain case different match
+                    addNameError(newName);
+                newOrExistingNameLc.add(newNameLc);
+                return true;
+            }
+
+            return false; // for update action, always use sql
+        }
+
+        private void addNameError(String newName)
+        {
+            String error = String.format("The name '%s' already exists.", newName);
+            if (_context.getInsertOption().mergeRows)
+                error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", newName);
+            _context.getErrors().addRowError(new ValidationException(error));
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            if (!hasNext)
+                return false;
+
+            if (_context.getErrors().hasErrors())
+                return hasNext;
+
+            if (_nameCol == null)
+                return hasNext;
+
+            Object nameObj = get(_nameCol);
+            if (nameObj == null)
+                return hasNext;
+
+            String newName = String.valueOf(nameObj);
+            if (StringUtils.isEmpty(newName))
+                return hasNext;
+
+            if (addNewName(newName)) // if name can be validated by cache, skip sql query
+                return hasNext;
+
+            Map<String, Object> existingValues = getExistingRecord();
+            if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
+                return hasNext;
+
+            boolean isNameValid = true;
+            if (!_context.getInsertOption().allowUpdate) // insert new
+            {
+                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo, false);
+            }
+            else if (_isUpdateUsingLsid && _lsidCol != null) // update using rowId is not yet supported for DIB
+            {
+                Object lsidObj = get(_lsidCol);
+                if (lsidObj != null)
+                {
+                    String lsid = String.valueOf(lsidObj);
+                    if (!StringUtils.isEmpty(lsid) && !ExperimentServiceImpl.get().canRename(lsid, newName, _tableInfo))
+                        isNameValid = false;
+                }
+            }
+            else if (_context.getInsertOption().mergeRows) // merge
+            {
+                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo,true);
+            }
+
+            if (!isNameValid)
+                addNameError(newName);
+
+            return hasNext;
         }
     }
 

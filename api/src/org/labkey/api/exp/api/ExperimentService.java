@@ -140,10 +140,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean canMoveFileReference(User user, Container sourceContainer, File sourceFile, int moveCount);
 
-    String getDuplicateNewOrExistingNames(Set<String> newOrExistingNames, @NotNull TableInfo tableInfo, boolean allowExisting);
-
-    boolean canRename(String lsid, String newName, TableInfo tableInfo);
-
     enum QueryOptions
     {
         UseLsidForUpdate,

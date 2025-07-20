@@ -9142,7 +9142,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
-    public boolean isDuplicateNewOrExistingName(String newOrExistingName, @NotNull TableInfo tableInfo, boolean allowExisting)
+    public boolean isValidNewOrExistingName(String newOrExistingName, @NotNull TableInfo tableInfo, boolean allowExisting)
     {
         SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
                 .append(tableInfo)
@@ -9155,52 +9155,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison for <> operator to exclude existing name
         }
 
-        return (new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
     }
 
-    @Override
-    public String getDuplicateNewOrExistingNames(Set<String> newOrExistingNames, @NotNull TableInfo tableInfo, boolean allowExisting)
-    {
-        if (newOrExistingNames == null || newOrExistingNames.isEmpty())
-            return null;
-
-        Map<String, String> lowerToOriginalMap = new CaseInsensitiveHashMap<>();
-        for (String newOrExistingName : newOrExistingNames)
-        {
-            String newOrExistingNameLc = newOrExistingName.toLowerCase();
-            if (lowerToOriginalMap.containsKey(newOrExistingNameLc))
-                return newOrExistingName;
-            lowerToOriginalMap.put(newOrExistingNameLc, newOrExistingName);
-        }
-
-        SqlDialect dialect = tableInfo.getSqlDialect();
-        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
-                .append(tableInfo)
-                .append(" WHERE LOWER(name) ");
-        dialect.appendInClauseSql(dataRowSQL, lowerToOriginalMap.keySet());
-        if (allowExisting) // allow existing name for merge
-        {
-            dataRowSQL.append(" AND name ");
-            if (dialect.isSqlServer())
-                dataRowSQL.append("COLLATE Latin1_General_BIN "); // force case-sensitive comparison for <> operator to exclude existing name
-            dataRowSQL
-                    .append("NOT IN(")
-                    .append(StringUtils.repeat("?", ", ", newOrExistingNames.size()))
-                    .append(")")
-                    .addAll(newOrExistingNames);
-        }
-
-        if (new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists())
-        {
-            String duplicateName = new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).getArray(String.class)[0];
-            return lowerToOriginalMap.get(duplicateName); // get original case that matches input
-        }
-
-        return null;
-    }
-
-
-    @Override
     public boolean canRename(@NotNull String lsid, @NotNull String newName, @NotNull TableInfo tableInfo)
     {
         SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
