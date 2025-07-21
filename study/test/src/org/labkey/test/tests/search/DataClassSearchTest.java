@@ -26,7 +26,7 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.remoteapi.query.DeleteRowsCommand;
 import org.labkey.remoteapi.query.InsertRowsCommand;
-import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.RowsResponse;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
@@ -217,7 +217,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         row2.put("foodColor", "white");
         row2.put("sequence", "ichi\nni\nsan");
         insertRowsCommand.setRows(new ArrayList<>(Arrays.asList(row1, row2)));
-        SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
+        RowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
 
         List<Map<String, Object>> responseRows = insertResponse.getRows();
         dataClassRowIds[0] = (int)responseRows.get(0).get("rowid");
@@ -272,7 +272,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         row1.put("name", DATA_CLASS_3_NAME);
         row1.put("iceCreamFlavor", "raspberry");
         insertRowsCommand.addRow(row1);
-        SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
+        RowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
         List<Map<String, Object>> responseRows = insertResponse.getRows();
         dataClassRowIds[2] = (int)responseRows.get(0).get("rowid");
 
