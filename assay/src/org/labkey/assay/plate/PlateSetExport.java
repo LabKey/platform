@@ -67,7 +67,7 @@ public class PlateSetExport
             )
         );
 
-        if (!prefix.equals(PlateSetExport.DESTINATION))
+        if (!PlateSetExport.DESTINATION.equals(prefix))
             baseColumns.add(rs.getString(FKMap.get(SAMPLE_ID_COL)));
 
         for (FieldKey col : includedMetaDataCols)
@@ -103,7 +103,8 @@ public class PlateSetExport
     // Create sampleIdToRow of the following form:
     // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
     // Where the data rows contain the key's sample
-    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport) {
+    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport)
+    {
         Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
         {

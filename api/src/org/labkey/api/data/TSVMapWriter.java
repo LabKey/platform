@@ -31,10 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: kevink
- * Date: 9/11/11
- */
 public class TSVMapWriter extends TSVWriter
 {
     private final Collection<String> _columns;
