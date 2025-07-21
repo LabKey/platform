@@ -77,9 +77,9 @@ public class PlateSetExport
     }
 
     // Returns array of ColumnDescriptors used as column layout once fed to an ArrayExcelWriter
-    public static ColumnDescriptor[] getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
+    public static List<ColumnDescriptor> getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
     {
-        List<ColumnDescriptor> baseColumns = new ArrayList<>(
+        List<ColumnDescriptor> columnDescriptors = new ArrayList<>(
             Arrays.asList(
                 new ColumnDescriptor(prefix + "Plate ID"),
                 new ColumnDescriptor(prefix + "Barcode"),
@@ -89,15 +89,15 @@ public class PlateSetExport
         );
 
         if (!PlateSetExport.DESTINATION.equals(prefix))
-            baseColumns.add(new ColumnDescriptor("Sample ID"));
+            columnDescriptors.add(new ColumnDescriptor("Sample ID"));
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
                 .map(fk -> new ColumnDescriptor(fk.getParts().size() > 1 ? fk.getParent().getCaption() : fk.getCaption()))
                 .toList();
 
-        baseColumns.addAll(metadataColumns);
-        return baseColumns.toArray(new ColumnDescriptor[0]);
+        columnDescriptors.addAll(metadataColumns);
+        return columnDescriptors;
     }
 
     // Create sampleIdToRow of the following form:

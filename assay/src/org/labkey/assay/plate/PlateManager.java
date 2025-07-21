@@ -3654,10 +3654,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return counter;
     }
 
-    public void getPlateSetExportFile(String fileName, ColumnDescriptor[] cols, List<Object[]> rows, PlateController.FileType fileType, HttpServletResponse response) throws IOException
+    public void getPlateSetExportFile(String fileName, List<ColumnDescriptor> cols, List<Object[]> rows, PlateController.FileType fileType, HttpServletResponse response) throws IOException
     {
-        boolean isCSV = fileType.equals(PlateController.FileType.CSV);
-        boolean isTSV = fileType.equals(PlateController.FileType.TSV);
+        boolean isCSV = PlateController.FileType.CSV.equals(fileType);
+        boolean isTSV = PlateController.FileType.TSV.equals(fileType);
         if (isCSV || isTSV)
         {
             try (TSVArrayWriter writer = new TSVArrayWriter(fileName, cols, rows))

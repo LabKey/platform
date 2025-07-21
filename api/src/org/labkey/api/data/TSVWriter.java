@@ -96,7 +96,6 @@ public abstract class TSVWriter extends TextWriter
     {
     }
 
-
     public String getFilenamePrefix()
     {
         return _filenamePrefix;
@@ -210,7 +209,6 @@ public abstract class TSVWriter extends TextWriter
             _escapedCharsString = "\r\n" + _rowSeparator + _chDelimiter + _chQuote;
         }
 
-
         int len = value.length();
         if (len == 0)
             return _preserveEmptyString;
@@ -278,7 +276,6 @@ public abstract class TSVWriter extends TextWriter
     {
         return _headerRowVisible;
     }
-
 
     public void setHeaderRowVisible(boolean headerRowVisible)
     {
