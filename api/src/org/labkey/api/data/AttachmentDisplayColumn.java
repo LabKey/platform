@@ -77,6 +77,16 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
         return AttachmentService.get().getInputStream(parent, filename);
     }
 
+    @Override
+    public boolean isFilterable()
+    {
+        return false;
+    }
+    @Override
+    public boolean isSortable()
+    {
+        return false;
+    }
 
     /**
      * Created by xingyang on 12/8/15.
