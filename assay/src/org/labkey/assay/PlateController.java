@@ -1309,18 +1309,17 @@ public class PlateController extends SpringActionController
                 List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSetSource, getContainer(), getUser(), cf);
                 List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSetDestination, getContainer(), getUser(), cf);
 
-                ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
-                ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
-                ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
+                List<ColumnDescriptor> sourceColumns = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
+                List<ColumnDescriptor> destinationColumns = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
+                List<ColumnDescriptor> exportColumns = new ArrayList<>(sourceColumns);
+                exportColumns.addAll(destinationColumns);
 
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
                 String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
 
-                PlateManager.get().getPlateSetExportFile(fullFileName, xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
+                PlateManager.get().getPlateSetExportFile(fullFileName, exportColumns, plateDataRows, form.getFileType(), getViewContext().getResponse());
                 SimpleMetricsService.get().increment(AssayModule.NAME, "plateSet", "exportWorklist");
-
-                return null; // Returning anything here will cause error as excel writer will close the response stream
             }
             catch (Exception e)
             {
@@ -1387,12 +1386,10 @@ public class PlateController extends SpringActionController
                     cf = form.getContainerFilter().create(getViewContext());
 
                 List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plateSet, getContainer(), getUser(), cf);
-                ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
+                List<ColumnDescriptor> exportColumns = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                PlateManager.get().getPlateSetExportFile(plateSet.getName() + "-instructions", xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
-
-                return null; // Returning anything here will cause error as excel writer will close the response stream
+                PlateManager.get().getPlateSetExportFile(plateSet.getName() + "-instructions", exportColumns, plateDataRows, form.getFileType(), getViewContext().getResponse());
             }
             catch (Exception e)
             {
