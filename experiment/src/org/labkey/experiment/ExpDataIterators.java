@@ -3099,12 +3099,12 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _nameCol = map.get(NAME_FIELD);
             _lsidCol = map.get("lsid");
-            init();
+            initCache();
         }
 
-        private void init()
+        private void initCache()
         {
-            // do total count, if <= INIT_CACHE_LIMIT initial size, use cache
+            // if existing total row <= INIT_CACHE_LIMIT initial size, use cache
             SQLFragment countSql = new SQLFragment("SELECT COUNT(*) FROM ").append(_tableInfo);
             Long existingRows = new SqlSelector(ExperimentService.get().getSchema(), countSql).getObject(Long.class);
             if (existingRows <= INIT_CACHE_LIMIT)
@@ -3121,7 +3121,7 @@ public class ExpDataIterators
             }
         }
 
-        private boolean addNewName(String newName)
+        private boolean validateNameUsingCache(String newName)
         {
             if (!_useNameCache)
                 return false;
@@ -3176,7 +3176,7 @@ public class ExpDataIterators
             if (StringUtils.isEmpty(newName))
                 return hasNext;
 
-            if (addNewName(newName)) // if name can be validated by cache, skip sql query
+            if (validateNameUsingCache(newName))
                 return hasNext;
 
             Map<String, Object> existingValues = getExistingRecord();
