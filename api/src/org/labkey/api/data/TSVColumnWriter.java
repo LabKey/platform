@@ -26,9 +26,6 @@ import java.util.Map;
  * Extracted DisplayColumn handling out of TSVGridWriter so rendering DisplayColumns
  * may be used without a ResultSet.  You will still need to set up a RenderContext
  * for DisplayColumn to render values.
- *
- * User: kevink
- * Date: 9/9/11
  */
 public abstract class TSVColumnWriter extends TSVWriter
 {
@@ -72,11 +69,11 @@ public abstract class TSVColumnWriter extends TSVWriter
                 String header = _columnHeaderType.getText(dc);
                 if (renameColumn.containsKey(colName))
                     header = renameColumn.get(colName);
-                else if (dc instanceof DataColumn)
+                else if (dc instanceof DataColumn dataColumn)
                 {
-                    if (((DataColumn) dc).getBoundColumn() != null)
+                    if (dataColumn.getBoundColumn() != null)
                     {
-                        String fieldKey = ((DataColumn) dc).getBoundColumn().getFieldKey().toString();
+                        String fieldKey = dataColumn.getBoundColumn().getFieldKey().toString();
                         if (renameColumn.containsKey(fieldKey))
                             header = renameColumn.get(fieldKey);
 
@@ -88,7 +85,6 @@ public abstract class TSVColumnWriter extends TSVWriter
 
         return headers;
     }
-
 
     /** Get the unquoted column values. */
     protected Iterable<String> getValues(RenderContext ctx, Iterable<DisplayColumn> displayColumns)

@@ -279,7 +279,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
-                    tsvWriter.setAdditionalQuotedChars("#"); //Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));

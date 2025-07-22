@@ -10,6 +10,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.data.ColumnInfo;
@@ -22,7 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
-import org.labkey.assay.plate.query.WellTable;
+import org.labkey.assay.plate.query.WellTable.Column;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -34,7 +35,7 @@ import java.util.Set;
 public class PlateMapExcelWriter extends ExcelWriter
 {
     private static final Logger logger = LogHelper.getLogger(PlateMapExcelWriter.class, "Plate map export");
-    private static final Set<String> excludedFields = Set.of("sampleid", "type", "wellgroup");
+    private static final Set<String> excludedFields = CaseInsensitiveHashSet.of(Column.SampleID.name(), Column.Type.name(), Column.WellGroup.name());
 
     private final Plate _plate;
     private final QueryView _queryView;
@@ -66,8 +67,8 @@ public class PlateMapExcelWriter extends ExcelWriter
             while (results.next())
             {
                 RowMap<Object> well = factory.getRowMap(results);
-                Integer row = (Integer) well.get(WellTable.Column.Row.name());
-                Integer col = (Integer) well.get(WellTable.Column.Col.name());
+                Integer row = (Integer) well.get(Column.Row.name());
+                Integer col = (Integer) well.get(Column.Col.name());
 
                 Map<Integer, RowMap<Object>> rowMap = _wellData.computeIfAbsent(row, k -> new HashMap<>());
 
@@ -190,7 +191,7 @@ public class PlateMapExcelWriter extends ExcelWriter
     // Removes fields explicitly excluded for Map export
     protected List<DisplayColumn> getDisplayColumns()
     {
-        return _displayColumns.stream().filter(col -> !excludedFields.contains(col.getName().toLowerCase())).toList();
+        return _displayColumns.stream().filter(col -> !excludedFields.contains(col.getName())).toList();
     }
 
     protected List<PlateCustomField> getCustomFields()
@@ -212,7 +213,10 @@ public class PlateMapExcelWriter extends ExcelWriter
             List<DisplayColumn> displayColumns;
 
             if (sheetNumber == 0) // Summary view, render all values in each cell
-                displayColumns = displayCols.stream().filter(dc -> !dc.getName().equals("row") && !dc.getName().equals("col")).toList();
+            {
+                Set<FieldKey> excludeFromSummary = Set.of(Column.Col.fieldKey(), Column.Row.fieldKey());
+                displayColumns = displayCols.stream().filter(dc -> !excludeFromSummary.contains(dc.getColumnInfo().getFieldKey())).toList();
+            }
             else if (sheetNumber == 1) // Sample ID view
                 displayColumns = List.of(displayCols.get(0));
             else // CustomField view
