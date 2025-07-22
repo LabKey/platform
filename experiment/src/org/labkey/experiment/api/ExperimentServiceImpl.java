@@ -8060,7 +8060,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
+    @Override
+    public void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting)
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
