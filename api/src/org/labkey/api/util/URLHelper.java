@@ -915,7 +915,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         return false;
     }
 
-    // Issue 35896 - Disallow external redirects to URLs not on the allow list
+    // Issue 35896 - Disallow external redirects to URLs not on the allowlist
     public boolean isAllowableHost()
     {
         String host = StringUtils.trimToNull(this.getHost());
