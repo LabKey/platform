@@ -532,19 +532,16 @@ public class PropertyController extends SpringActionController
             if (checkFieldNames)
             {
                 results = DomainUtil.validateProperties(null, domainDesign, kind, null, getUser());
-                if (!results.hasErrors())
+                for (GWTPropertyDescriptor field : domainDesign.getFields())
                 {
-                    for (GWTPropertyDescriptor field : domainDesign.getFields())
+                    try
                     {
-                        try
-                        {
-                            DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
-                            OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
-                        }
-                        catch (ChangePropertyDescriptorException e)
-                        {
-                            results.addFieldError(field.getName(), e.getMessage());
-                        }
+                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
+                        OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
+                    }
+                    catch (ChangePropertyDescriptorException e)
+                    {
+                        results.addFieldError(field.getName(), e.getMessage());
                     }
                 }
             }
