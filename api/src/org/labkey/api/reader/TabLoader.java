@@ -56,7 +56,6 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
 /**
  * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>. The iterator must be closed
  * (typically via try-with-resources or a finally block) to close the underlying input source. The iterator can be wrapped
@@ -91,7 +90,10 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        public FileType getFileType() { return TSV_FILE_TYPE; }
+        public FileType getFileType()
+        {
+            return TSV_FILE_TYPE;
+        }
     }
 
     public static class CsvFactory extends AbstractDataLoaderFactory
@@ -114,7 +116,10 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        public FileType getFileType() { return CSV_FILE_TYPE; }
+        public FileType getFileType()
+        {
+            return CSV_FILE_TYPE;
+        }
     }
 
     public static class CsvFactoryNoConversions extends CsvFactory
@@ -141,9 +146,6 @@ public class TabLoader extends DataLoader
             TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
             return configParsing(loader);
         }
-
-        @NotNull @Override
-        public FileType getFileType() { return CSV_FILE_TYPE; }
     }
 
     public static class MysqlFactory extends AbstractDataLoaderFactory
@@ -172,7 +174,10 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        public FileType getFileType() { return CSV_FILE_TYPE; }
+        public FileType getFileType()
+        {
+            return CSV_FILE_TYPE;
+        }
     }
 
     protected static char COMMENT_CHAR = '#';
