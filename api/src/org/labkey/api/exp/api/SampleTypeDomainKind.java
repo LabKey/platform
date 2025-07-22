@@ -445,38 +445,22 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        SampleTypeService.get().validateSampleTypeName(container, user, name, domain != null);
+    }
+
+    @Override
     public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain<?> updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
 
-        // verify and NameExpression values
-        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
-
-        boolean isUpdate = domain != null;
-        if (!isUpdate)
-        {
-            if (name == null)
-            {
-                throw new IllegalArgumentException("You must supply a name for the sample type.");
-            }
-            else
-            {
-                ExpSampleType st = SampleTypeService.get().getSampleType(container, user, name);
-                if (st != null)
-                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
-            }
-        }
-
-        // verify the length of the Name
-        int nameMax = materialSourceTI.getColumn("Name").getScale();
-        if (name != null && name.length() >= nameMax)
-            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+        validateDomainName(container, user, domain, name);
 
         if (options == null)
-        {
             return;
-        }
 
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
         int nameExpMax = materialSourceTI.getColumn("NameExpression").getScale();
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");

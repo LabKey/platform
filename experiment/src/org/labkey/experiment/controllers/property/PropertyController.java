@@ -502,6 +502,72 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class ValidateDomainAndFieldNamesAction extends MutatingApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            GWTDomain<GWTPropertyDescriptor> domainDesign = form.getDomainDesign();
+            String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
+            DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
+            if (kind == null)
+                throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
+            String typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-1000.1001:1002"; // note using a fake lsid here, since not all domain kinds override generateDomainURI
+            Domain domain = PropertyService.get().createDomain(getContainer(), typeURI, "test");
+
+            boolean checkFieldNames = !domainDesign.getFields().isEmpty();
+            boolean checkDomainName = domainDesign.getName() != null;
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            ValidationException results = new ValidationException();
+            if (checkFieldNames)
+            {
+                results = DomainUtil.validateProperties(null, domainDesign, kind, null, getUser());
+                for (GWTPropertyDescriptor field : domainDesign.getFields())
+                {
+                    try
+                    {
+                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
+                        OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
+                    }
+                    catch (ChangePropertyDescriptorException e)
+                    {
+                        results.addFieldError(field.getName(), e.getMessage());
+                    }
+                }
+            }
+            if (checkDomainName)
+            {
+                try
+                {
+                    kind.validateDomainName(getContainer(), getUser(), null, domainDesign.getName());
+                    String nameError = DomainUtil.validateDomainName(domainDesign.getName(), kindName, kind.supportsNamingPattern());
+                    if (nameError != null)
+                        results.addGlobalError(nameError);
+                }
+                catch (Exception e)
+                {
+                    results.addGlobalError(e.getMessage());
+                }
+            }
+
+            resp.put("success", !results.hasErrors());
+            if (results.hasErrors())
+                resp.put("errors", results.getErrors());
+            return resp;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public static class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
