@@ -20,11 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.AbstractFileDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -309,13 +310,34 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             NetworkDrive.ensureDrive(f.getPath());
             List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
             boolean valid = false;
-            for (FileContentService.ContentType fileRootType : fileRootTypes)
+            List<Container> containers = new ArrayList<>();
+            containers.add(_container);
+            // Not ideal, but needed in case data is queried from cross folder context
+            if (ctx.get("folder") != null || ctx.get("container") != null)
             {
-                result = relativize(f, FileContentService.get().getFileRoot(_container, fileRootType));
-                if (result != null)
+                Object folderObj = ctx.get("folder");
+                if (folderObj == null)
+                    folderObj = ctx.get("container");
+                if (folderObj instanceof String containerId)
                 {
-                    valid = true;
+                    Container dataContainer = ContainerManager.getForId(containerId);
+                    if (dataContainer != null && !dataContainer.equals(_container))
+                        containers.add(dataContainer);
+                }
+            }
+            for (Container container : containers)
+            {
+                if (valid)
                     break;
+
+                for (FileContentService.ContentType fileRootType : fileRootTypes)
+                {
+                    result = relativize(f, FileContentService.get().getFileRoot(container, fileRootType));
+                    if (result != null)
+                    {
+                        valid = true;
+                        break;
+                    }
                 }
             }
             if (result == null)

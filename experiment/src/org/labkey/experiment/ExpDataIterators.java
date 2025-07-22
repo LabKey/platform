@@ -2458,6 +2458,7 @@ public class ExpDataIterators
                 configureLoader(loader, dataTable, null, true, aliasNames);
                 if (loader instanceof TabLoader tabLoader)
                     tabLoader.setIncludeComments(true); // don't skip lines that starts with "#" (if the original file is Excel)
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, dataContainer);
                 return updateService.loadRows(_user, dataContainer, loader, _context, null);
             }
             catch (SQLException | IOException e)

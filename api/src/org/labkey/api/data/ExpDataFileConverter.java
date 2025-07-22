@@ -48,6 +48,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 
@@ -259,10 +260,12 @@ public class ExpDataFileConverter implements Converter
                     FileContentService fileContent = FileContentService.get();
                     if (fileContent != null)
                     {
-                        File fileRoot = fileContent.getFileRoot(container);
-                        if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                        List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+                        for (FileContentService.ContentType fileRootType : fileRootTypes)
                         {
-                            return f;
+                            File fileRoot = FileContentService.get().getFileRoot(container, fileRootType);
+                            if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                                return f;
                         }
                     }
                 }
