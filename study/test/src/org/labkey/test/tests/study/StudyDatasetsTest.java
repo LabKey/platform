@@ -33,13 +33,16 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldInfo;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
+import org.labkey.test.util.data.TestDataUtils;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -219,14 +222,20 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     {
         goToManageStudy();
         String datasetName = "Issue 53431";
-        FieldInfo fieldInfo = FieldInfo.random("test,./field");
+        FieldInfo fieldInfo = FieldInfo.random("test,./field", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.StudyDatasetVisit);
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(datasetName);
         DomainFormPanel panel = definitionPage.getFieldsPanel();
         panel.manuallyDefineFields(fieldInfo.getFieldDefinition());
         definitionPage.clickSave();
-        importDatasetData(datasetName, "mouseId\tsequenceNum\t\"" + fieldInfo.getName() + "\"\n", "a1\t1\ttest123", "All data");
+        importDatasetData(datasetName, "", TestDataUtils.tsvStringFromRowMaps(
+                List.of(Map.of(
+                        "mouseId", "a1",
+                        "sequenceNum", "1",
+                        fieldInfo.getName(), "test123"
+                )), List.of("mouseId", "sequenceNum", fieldInfo.getName()), true
+        ), "All data");
 
         File exportedFolder = exportFolderAsZip(null, false, false, false, false);
         deleteStudy();

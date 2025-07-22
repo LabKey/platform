@@ -285,6 +285,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @Nullable String auditUserComment
     );
 
+    void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting);
+
     /**
      * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
      * a user must be provided to check for read permission of the containers in scope.
