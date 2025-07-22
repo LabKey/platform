@@ -70,7 +70,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -224,16 +224,17 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
-        AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
-                "This feature will turn on generating a generic [details] URL link in most grids.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
-                "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
-                "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update", "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
-                "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
-                "Only list folder-specific data within product folders.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
+            "This feature will turn on generating a generic [details] URL link in most grids.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
+            "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
+            "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update",
+            "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
+            "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
+            "Only list folder-specific data within product folders.", false);
     }
 
 

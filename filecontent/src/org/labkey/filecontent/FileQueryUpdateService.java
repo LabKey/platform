@@ -280,7 +280,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return _container.hasPermission(user, acl);
     }

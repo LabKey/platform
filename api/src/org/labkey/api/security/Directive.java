@@ -5,7 +5,7 @@ import org.labkey.api.util.SafeToRenderEnum;
 
 /**
  * All CSP directives that support substitutions. These constant names are persisted to the database, so be careful with
- * any changes. If adding a Directive, make sure to add the corresponding substitutions to application.properties.
+ * any changes. If adding a Directive, make sure to add the corresponding substitutions in LabKeyServer baseCsp.
  */
 public enum Directive implements StartupProperty, SafeToRenderEnum
 {
@@ -13,6 +13,7 @@ public enum Directive implements StartupProperty, SafeToRenderEnum
     Font("font-src", "Sources for fonts"),
     Frame("frame-src", "Sources for iframes"),
     Image("image-src", "Sources for images"),
+    Object("object-src", "Sources for objects"), // Issue 53226
     Style("style-src", "Sources for stylesheets");
 
     private final String _cspDirective;

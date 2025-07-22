@@ -1219,13 +1219,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-            Domain d = dataClass.getDomain();
-            if (d == null)
-                return; // Domain may be null if the DataClass has been deleted
-
-            TableInfo table = dataClass.getTinfo();
-            if (table == null)
-                return;
+            if (dataClass.getContainer() == null)
+                return; // Issue 53253: container may be deleted
 
             indexDataClass(dataClass, task);
             indexDataClassData(dataClass, task);
@@ -1830,13 +1825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<? extends ExpData> getExpDatas(ExpDataClass dataClass)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1848,7 +1837,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
-
 
     public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
     {
@@ -1862,13 +1850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, String name)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1886,13 +1868,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, int rowId)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -4676,14 +4652,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
     {
         List<Integer> allowedIds = new ArrayList<>(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
-            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName(), "ContainerPath", dataObject.getContainer().getPath());
+            Map<String, Object> rowMap = new HashMap<>();
+            rowMap.put("RowId", dataObject.getRowId());
+            if (dataObject.getContainer().hasPermission(user, ReadPermission.class))
+                rowMap.put("ContainerPath", dataObject.getContainer().getPath());
             if (allowedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else
@@ -4709,6 +4688,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpSampleType sampleType = allMaterials.get(0).getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+            if (tableInfo == null)
+                return associatedDatasets;
 
             // collect up columns of name 'dataset<N>'
             Set<String> linkedColumnNames = new LinkedHashSet<>();
@@ -8079,7 +8060,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
+    @Override
+    public void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting)
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
@@ -9161,6 +9143,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
+    public boolean isValidNewOrExistingName(String newOrExistingName, @NotNull TableInfo tableInfo, boolean allowExisting)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?)")
+                .add(newOrExistingName);
+        if (allowExisting) // // allow existing name for merge
+        {
+            dataRowSQL.append(" AND name <> ?").add(newOrExistingName);
+            if (tableInfo.getSqlDialect().isSqlServer())
+                dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison for <> operator to exclude existing name
+        }
+
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+    }
+
+    public boolean canRename(@NotNull String lsid, @NotNull String newName, @NotNull TableInfo tableInfo)
+    {
+        SQLFragment dataRowSQL = new SQLFragment("SELECT name FROM ")
+                .append(tableInfo)
+                .append(" WHERE LOWER(name) = LOWER(?) AND lsid <> ?")
+                .add(newName)
+                .add(lsid);
+        if (tableInfo.getSqlDialect().isSqlServer())
+            dataRowSQL.append(" COLLATE Latin1_General_BIN"); // force case sensitive comparison
+
+        return !(new SqlSelector(ExperimentService.get().getSchema(), dataRowSQL).exists());
+    }
+
     private Map<String, Object> getImportTemplatesMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
@@ -10226,6 +10237,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
@@ -10389,6 +10401,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class LineageQueryTestCase extends Assert
     {
         TempTableTracker tt;
@@ -10587,6 +10600,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class ParseInputOutputAliasTestCase extends Assert
     {
         @Test

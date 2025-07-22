@@ -33,9 +33,8 @@ import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -381,7 +380,7 @@ public class CoreWarningProvider implements WarningProvider
 
     private void getDeprecatedFeatureWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        Collection<OptionalFeatureFlag> flags = AdminConsole.getOptionalFeatureFlags(OptionalFeatureService.FeatureType.Deprecated);
+        Collection<OptionalFeatureFlag> flags = OptionalFeatureService.get().getOptionalFeatureFlags(OptionalFeatureService.FeatureType.Deprecated);
         List<String> deprecated = flags.stream()
             .filter(flag -> showAllWarnings || flag.isEnabled())
             .map(flag -> "\"" + flag.getTitle() + "\"")

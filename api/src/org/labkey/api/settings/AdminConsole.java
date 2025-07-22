@@ -15,27 +15,19 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.settings.OptionalFeatureService.FeatureType;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Manages registration for links to be shown in the Admin Console, as well as experimental features that can
@@ -63,9 +55,7 @@ public class AdminConsole
         }
     }
 
-    private static final Logger LOG = LogHelper.getLogger(AdminConsole.class, "Warnings about optional feature flag names");
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
-    private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
 
     static
     {
@@ -140,118 +130,6 @@ public class AdminConsole
         public int compareTo(@NotNull AdminLink o)
         {
             return getText().compareToIgnoreCase(o.getText());
-        }
-    }
-
-    /**
-     * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
-     *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
-     */
-    public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
-    {
-        addOptionalFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental));
-    }
-
-    public static void addOptionalFeatureFlag(OptionalFeatureFlag optionalFeatureFlag)
-    {
-        _optionalFlags.add(optionalFeatureFlag);
-    }
-
-    // Return all optional features, regardless of type
-    public static Collection<OptionalFeatureFlag> getOptionalFeatureFlags()
-    {
-        return Collections.unmodifiableSet(_optionalFlags);
-    }
-
-    // Return all optional features having the specified type
-    public static Collection<OptionalFeatureFlag> getOptionalFeatureFlags(FeatureType type)
-    {
-        return _optionalFlags.stream()
-            .filter(flag -> flag.getType() == type)
-            .toList();
-    }
-
-    public static class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, StartupProperty
-    {
-        private final String _flag;
-        private final String _title;
-        private final String _description;
-        private final boolean _requiresRestart;
-        private final boolean _hidden;
-        private final FeatureType _type;
-
-        /**
-         * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
-         *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
-         */
-        public OptionalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden, FeatureType type)
-        {
-            _flag = flag;
-            _title = title;
-            _description = description;
-            _requiresRestart = requiresRestart;
-            _hidden = hidden;
-            _type = type;
-        }
-
-        public String getFlag()
-        {
-            return _flag;
-        }
-
-        public String getTitle()
-        {
-            return _title;
-        }
-
-        @Override
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public boolean isRequiresRestart()
-        {
-            return _requiresRestart;
-        }
-
-        @Override
-        public int compareTo(@NotNull AdminConsole.OptionalFeatureFlag o)
-        {
-            return getTitle().compareToIgnoreCase(o.getTitle());
-        }
-
-        public boolean isEnabled()
-        {
-            return AppProps.getInstance().isOptionalFeatureEnabled(getFlag());
-        }
-
-        public boolean isHidden()
-        {
-            return _hidden;
-        }
-
-        public FeatureType getType()
-        {
-            return _type;
-        }
-
-        // StartupProperty implementation
-
-        /**
-         *  Returns {@code null} if {@code getFlag()} does not conform to the property name rules.
-         */
-        @Nullable
-        @Override
-        public String getPropertyName()
-        {
-            String name = getFlag();
-            if (!StringUtilsLabKey.isValidJavaIdentifier(name))
-            {
-                LOG.debug("Feature flag name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
-                name = null;
-            }
-            return name;
         }
     }
 }

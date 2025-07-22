@@ -22,7 +22,7 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.ContainerFilter;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.InsertRowsCommand;
-import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.RowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
@@ -151,7 +151,7 @@ public class StudyTest extends StudyBaseTest
 
         try
         {
-            SaveRowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
+            RowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check return values for inserted values and user defined and built-in columns in response
             assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().get(0).get("MouseId"));
@@ -192,7 +192,7 @@ public class StudyTest extends StudyBaseTest
 
         try
         {
-            SaveRowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
+            RowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
             assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().get(0).get("MouseId"));
@@ -777,7 +777,7 @@ public class StudyTest extends StudyBaseTest
                 clickAndWait(Locator.linkWithText("verifyAssay"));
                 BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
                 _customizeViewsHelper.openCustomizeViewPanel();
-                _customizeViewsHelper.addColumn("QCState", "QC State");
+                _customizeViewsHelper.addColumn("QCState");
                 _customizeViewsHelper.addSort("SampleId", SortDirection.ASC);
                 _customizeViewsHelper.applyCustomView();
                 DataRegionTable table = new DataRegionTable("Dataset", this);
@@ -810,7 +810,7 @@ public class StudyTest extends StudyBaseTest
             new DatasetPropertiesPage(getDriver())
                 .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.addColumn("Bad Name", "Bad Name");
+            _customizeViewsHelper.addColumn("Bad Name");
             _customizeViewsHelper.applyCustomView();
             BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
@@ -818,7 +818,8 @@ public class StudyTest extends StudyBaseTest
             clickButton("Submit");
             assertTextPresent("Updatable Value");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
-            assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
+            Locator loc = Locator.input("quf_Bad Name");
+            assertEquals("Updatable Value", getFormElement(loc));
             setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
             clickButton("Submit");
             assertTextPresent("Updatable Value11");

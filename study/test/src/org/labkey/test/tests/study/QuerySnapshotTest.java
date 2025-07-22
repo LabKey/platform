@@ -194,7 +194,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
         _customizeViewsHelper.openCustomizeViewPanel();
 
-        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMraco", "DEM-1: Demographics Screening 4f.Other specify");
+        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMraco");
         _customizeViewsHelper.saveCustomView("APX Joined View");
 
         createQuerySnapshot(APX_SNAPSHOT, true, false);

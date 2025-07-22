@@ -3770,7 +3770,7 @@ public class ExperimentController extends SpringActionController
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allData);
 
             Collection<Container> containers = new HashSet<>();
             Collection<Integer> notPermittedIds = new ArrayList<>();
@@ -3778,7 +3778,8 @@ public class ExperimentController extends SpringActionController
             for (ExpDataImpl expData : allData)
             {
                 Container c = expData.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(expData.getRowId());
             }
@@ -3843,7 +3844,7 @@ public class ExperimentController extends SpringActionController
             if (SampleStatusService.get().supportsSampleStatus())
                 notAllowedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allMaterials);
 
             Collection<Container> containers = new HashSet<>();
             Collection<Integer> notPermittedIds = new ArrayList<>();
@@ -3851,7 +3852,8 @@ public class ExperimentController extends SpringActionController
             for (ExpMaterial material : allMaterials)
             {
                 Container c = material.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(material.getRowId());
             }
@@ -4411,6 +4413,9 @@ public class ExperimentController extends SpringActionController
         @Override
         protected @Nullable Set<String> getLineageImportAliases() throws IOException
         {
+            Set<String> aliases = new CaseInsensitiveHashSet();
+            // Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import
+            aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
             boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
             // Issue 51894: We need to stop conversion to numbers for alias fields for all type
             // If there are aliases defined for one type that are number fields in another type, this will prevent
@@ -4419,18 +4424,15 @@ public class ExperimentController extends SpringActionController
             if (crossTypeImport)
             {
                 List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
-                Set<String> aliases = new CaseInsensitiveHashSet();
                 for (ExpSampleTypeImpl sampleType : sampleTypes)
-                {
                     aliases.addAll(sampleType.getImportAliases().keySet());
-                }
-                return aliases;
             }
             else
             {
                 ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
-                return new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
+                aliases.addAll(sampleType.getImportAliases().keySet());
             }
+            return aliases;
         }
 
         @Override
@@ -5741,7 +5743,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (DuplicateMaterialException e)
             {
-                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, e.getMessage()));
+                errors.addError(new ObjectError(e.getColName(), null, null, e.getMessage()));
                 return false;
             }
             catch (ExperimentException e)

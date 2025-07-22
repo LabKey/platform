@@ -315,8 +315,8 @@ public class StudyPublishManager implements StudyPublishService
         for (Map<String, Object> dataMap : dataMaps)
         {
             Container targetStudy = targetContainer;
-            if (dataMap.containsKey("TargetStudy"))
-                targetStudy = (Container) dataMap.get("TargetStudy");
+            if (dataMap.containsKey(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME))
+                targetStudy = (Container) dataMap.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
             assert targetStudy != null;
 
             List<Map<String, Object>> maps = partitionedDataMaps.computeIfAbsent(targetStudy, k -> new ArrayList<>(dataMap.size()));

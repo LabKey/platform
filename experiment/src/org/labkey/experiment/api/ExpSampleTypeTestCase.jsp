@@ -17,8 +17,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Before" %>
-
-
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.audit.AuditLogService" %>
 <%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
@@ -51,7 +49,6 @@
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
 <%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
-
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
@@ -59,7 +56,6 @@
 <%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
-
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
@@ -93,14 +89,9 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
-
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
-/**
- * User: kevink
- * Date: 11/24/16
- */
 private static final String PROJECT_NAME = "_testSampleType";
 private final ExpProvisionedTableTestHelper helper = new ExpProvisionedTableTestHelper();
 
@@ -280,17 +271,10 @@ public void idColsUnset_nameExpressionNull_hasNameProperty() throws Exception
     ExpMaterial sample = st.getSample(c, "bob");
     assertNull(sample);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "bob", "age", 10));
 
-    BatchValidationException errors = new BatchValidationException();
-    svc.insertRows(user, c, rows, errors, null, null);
-    if (errors.hasErrors())
-        throw errors;
+    insertSampleRows("Samples", rows);
 
     assertExpectedName(st, "bob");
 }
@@ -334,18 +318,11 @@ public void idColsSet_nameExpressionNull_noNameProperty() throws Exception
     ExpMaterial sample2 = st.getSample(c, expectedName2);
     assertNull(sample2);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "bob", "prop", "blue", "age", 10));
     rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 11));
 
-    BatchValidationException errors = new BatchValidationException();
-    svc.insertRows(user, c, rows, errors, null, null);
-    if (errors.hasErrors())
-        throw errors;
+    insertSampleRows("Samples", rows);
 
     assertExpectedName(st, expectedName1);
     assertExpectedName(st, expectedName2);
@@ -393,14 +370,11 @@ public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     ExpMaterial sample1 = st.getSample(c, expectedName1);
     assertNull(sample1);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "bob", "prop", "blue", "age", 10));
 
     BatchValidationException errors = new BatchValidationException();
+    QueryUpdateService svc = getSampleTypeUpdateService("Samples");
     svc.insertRows(user, c, rows, errors, null, null);
     if (errors.hasErrors())
         throw errors;
@@ -451,10 +425,11 @@ public void testNameExpression() throws Exception
     props.add(new GWTPropertyDescriptor("prop", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
+    final String sampleTypeName = "Samples";
     final String nameExpression = "S-${prop}.${age}.${genId:number('000')}";
 
     final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
+            sampleTypeName, null, props, Collections.emptyList(),
             -1, -1, -1, -1, nameExpression, null);
 
     final String expectedName1 = "bob";
@@ -464,19 +439,12 @@ public void testNameExpression() throws Exception
     assertNull(st.getSample(c, expectedName2));
     assertNull(st.getSample(c, expectedName3));
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "bob", "prop", "blue", "age", 10));
     rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 11));
     rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 11));
 
-    BatchValidationException errors = new BatchValidationException();
-    List<Map<String, Object>> ret = svc.insertRows(user, c, rows, errors, null, null);
-    if (errors.hasErrors())
-        throw errors;
+    List<Map<String, Object>> ret = insertSampleRows(sampleTypeName, rows);
 
     assertEquals(3, ret.size());
 
@@ -491,6 +459,30 @@ public void testNameExpression() throws Exception
     assertEquals(3, ret.get(2).get("genId"));
     assertEquals(expectedName3, ret.get(2).get("name"));
     assertExpectedName(st, expectedName3);
+
+    // Issue 53400: Verify the aliquot naming pattern is case-insensitive
+    st.setAliquotNameExpression("${aliquotedFrom}-ALI-${genId:number('0000')}");
+    st.save(user);
+
+    List<Map<String, Object>> aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1, "AliquotCount", 10));
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
+    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
+    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
+
+    List<Map<String, Object>> aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+
+    assertExpectedName(st, expectedName1 + "-ALI-0004");
+    assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
+
+    assertExpectedName(st, expectedName2 + "-ALI-0005");
+    assertEquals(expectedName2, aliquots.get(1).get("aliquotedFrom"));
+
+    assertExpectedName(st, expectedName1 + "-ALI-0006");
+    assertEquals(expectedName1, aliquots.get(2).get("aliquotedfrom"));
+
+    assertExpectedName(st, expectedName3 + "-ALI-0007");
+    assertEquals(expectedName3, aliquots.get(3).get("ALIQUOTEDFROM"));
 }
 
 @Test
@@ -514,22 +506,7 @@ public void testAliases() throws Exception
     row.put("alias", "a,b,c");
     rows.add(row);
 
-
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-
-    List<Map<String, Object>> insertedRows = null;
-    try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
-    {
-        BatchValidationException errors = new BatchValidationException();
-        QueryUpdateService qus = table.getUpdateService();
-
-        qus.insertRows(user, c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
-        tx.commit();
-    }
+    insertSampleRows("Samples", rows);
 
     ExpMaterial m = st.getSample(c, "boo");
     Collection<String> aliases = m.getAliases();
@@ -863,7 +840,6 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertEquals(1, lineage.getRuns().size());
     assertTrue("Expected lineage to include derivation run", lineage.getRuns().contains(derivationRun));
 
-
     // verify lineage using the derivation run as a seed
     lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
     assertTrue("Expected derivationRun to be the seed", lineage.getSeeds().contains(derivationRun));
@@ -871,7 +847,6 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertTrue("Expected 'B' to be input into derivationRun", lineage.getMaterials().contains(B));
     assertTrue("Expected 'C' to be input into derivationRun", lineage.getMaterials().contains(C));
     assertTrue("Expected no additional runs in lineage results", lineage.getRuns().isEmpty());
-
 
     // update 'D' to derive from 'B' and 'E'
     rows = new ArrayList<>();
@@ -906,7 +881,6 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertFalse(oldDerivationRun.getMaterialInputs().containsKey(E));
     assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
     assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
-
 }
 
 @Test
@@ -975,7 +949,6 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
             OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
 }
 
-
 @Test
 public void testDetailedAuditLog() throws Exception
 {
@@ -1022,8 +995,11 @@ public void testDetailedAuditLog() throws Exception
     Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
-    assertEquals("0", newRecordMap.get("AliquotCount"));
-    assertEquals("0.0", newRecordMap.get("AliquotVolume"));
+    assertNull(newRecordMap.get("AliquotCount"));
+    assertNull(newRecordMap.get("AliquotVolume"));
+    assertNull(newRecordMap.get("AvailableAliquotVolume"));
+    assertNull(newRecordMap.get("AvailableAliquotCount"));
+    assertNull(newRecordMap.get("AliquotUnit"));
 
     // UPDATE
     rows.clear(); errors.clear();
@@ -1145,18 +1121,6 @@ public void testExpMaterialPermissions() throws Exception
     assertEquals("Failed to delete material via QUS", 1, rows.size());
 }
 
-private @NotNull TableInfo getSampleTypeTable(String sampleType)
-{
-    UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, SamplesSchema.SCHEMA_SAMPLES);
-    return schema.getTableOrThrow(sampleType);
-}
-
-private List<Map<String,Object>> getSampleRows(String sampleType)
-{
-    TableInfo table = getSampleTypeTable(sampleType);
-    return Arrays.asList(new TableSelector(table, null, new Sort("Name")).getMapArray());
-}
-
 @Test
 public void testInsertOptionUpdate() throws Exception
 {
@@ -1232,6 +1196,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-1", "intVal", null));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200));
 
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
@@ -1265,10 +1230,12 @@ public void testInsertOptionUpdate() throws Exception
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
-    assertTrue(msg.contains("Sample does not exist: S-1-absent."));
+    assertTrue(msg.contains("Sample not found: S-1-absent."));
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
@@ -1279,7 +1246,7 @@ public void testInsertOptionUpdate() throws Exception
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
-    assertTrue(msg.contains("Sample does not exist: S-1-absent."));
+    assertTrue(msg.contains("Sample not found: S-1-absent."));
 
     // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored
     rowsToUpdate = new ArrayList<>();
@@ -1296,5 +1263,35 @@ public void testInsertOptionUpdate() throws Exception
     assertNull(rows.get(0).get("AliquotedFromLSID"));
     assertEquals(aliquotedFromLSID, rows.get(1).get("AliquotedFromLSID"));
     assertNull(rows.get(2).get("AliquotedFromLSID"));
+}
+
+private @NotNull TableInfo getSampleTypeTable(String sampleType)
+{
+    UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, SamplesSchema.SCHEMA_SAMPLES);
+    return schema.getTableOrThrow(sampleType);
+}
+
+private @NotNull QueryUpdateService getSampleTypeUpdateService(String sampleType)
+{
+    var table = getSampleTypeTable(sampleType);
+    var updateService = table.getUpdateService();
+    assertNotNull("Update service cannot be null", updateService);
+    return updateService;
+}
+
+private List<Map<String,Object>> getSampleRows(String sampleType)
+{
+    TableInfo table = getSampleTypeTable(sampleType);
+    return Arrays.asList(new TableSelector(table, null, new Sort("Name")).getMapArray());
+}
+
+private List<Map<String, Object>> insertSampleRows(String sampleType, List<Map<String, Object>> rows) throws Exception
+{
+    BatchValidationException errors = new BatchValidationException();
+    QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
+    List<Map<String, Object>> ret = svc.insertRows(TestContext.get().getUser(), c, rows, errors, null, null);
+    if (errors.hasErrors())
+        throw errors;
+    return ret;
 }
 %>

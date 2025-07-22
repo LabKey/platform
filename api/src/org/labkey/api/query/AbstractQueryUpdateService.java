@@ -125,7 +125,8 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    private TableInfo _queryTable;
+    private final TableInfo _queryTable;
+
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
@@ -159,7 +160,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
@@ -200,7 +201,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
-            Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
+            Map<String, Object> keyValues = key.getValue();
+            Map<String, Object> row = getRow(user, container, keyValues, verifyNoCrossFolderData);
+            boolean hasValidExisting = false;
             if (row != null)
             {
                 result.put(key.getKey(), row);
@@ -212,9 +215,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (!container.getId().equals(dataContainer))
                         throw new InvalidKeyException("Data doesn't belong to folder '" + container.getName() + "': " + key.getValue().values());
                 }
+                // sql server will return case-insensitive match, check for exact match using equals
+                if (verifyExisting)
+                    hasValidExisting = !keyValues.containsKey("Name") || keyValues.get("Name").equals(row.get("Name"));
             }
-            else if (verifyExisting)
-                throw new InvalidKeyException("Data not found for " + key.getValue().values());
+
+            if (verifyExisting && !hasValidExisting)
+                throw new InvalidKeyException("Data not found: " + (keyValues.get("Name") != null ? keyValues.get("Name") : keyValues.values()) + ".");
+
         }
         return result;
     }
@@ -261,8 +269,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     * if QUS want to use something other than PKs to select existing rows for merge it can override this method
-     * Used only for generating  ExistingRecordDataIterator at the moment
+     * If QUS wants to use something other than PKs to select existing rows for merge, it can override this method.
+     * Used only for generating ExistingRecordDataIterator at the moment.
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
     {
@@ -295,7 +303,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * Implementation to use insertRows() while we migrate to using DIB for all code paths
      * <p>
-     * DataIterator should/must use same error collection as passed in
+     * DataIterator should/must use the same error collection as passed in
      */
     @Deprecated
     protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)

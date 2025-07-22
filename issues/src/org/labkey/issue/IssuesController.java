@@ -33,6 +33,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -695,10 +696,23 @@ public class IssuesController extends SpringActionController
         return DOM.SPAN(at(DOM.cl("labkey-error")), warningMessage, DOM.P(), button);
     }
 
-    public static class IssuesApiForm extends SimpleApiJsonForm
+    public static class IssuesApiForm extends SimpleApiJsonForm implements HasViewContext
     {
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
+        private ViewContext _context;
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
+        }
 
         // used for form binding
         public void setIssues(JSONArray issues)
@@ -732,6 +746,8 @@ public class IssuesController extends SpringActionController
                     for (JSONObject rec : JsonUtil.toJSONObjectList(issues))
                     {
                         IssuesForm form = new IssuesForm();
+                        form.setUser(getViewContext().getUser());
+                        form.setContainer(getViewContext().getContainer());
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {

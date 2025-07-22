@@ -223,7 +223,7 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder(2 * len);
         boolean newline = false;
 
-        Matcher urlMatcher = urlPatternStart.matcher(s);
+        CachingSupplier<Matcher> urlMatcher = new CachingSupplier<>(() -> urlPatternStart.matcher(s));
 
         for (int i = 0; i < len; ++i)
         {
@@ -283,10 +283,10 @@ public class PageFlowUtil
                     {
                         if (StringUtilsLabKey.startsWithURL(s.subSequence(i, Math.min(s.length(),i+10))))
                         {
-                            urlMatcher.region(i, s.length());
-                            if (urlMatcher.lookingAt())
+                            urlMatcher.get().region(i, s.length());
+                            if (urlMatcher.get().lookingAt())
                             {
-                                String href = urlMatcher.group(1);
+                                String href = urlMatcher.get().group(1);
                                 if (href.endsWith("."))
                                     href = href.substring(0, href.length() - 1);
                                 // for html/xml careful of " and "> and "/>
@@ -3156,4 +3156,58 @@ public class PageFlowUtil
         return HtmlString.unsafe(sb.toString());
     }
 
+    /**
+     * Convert String containing HTML into a Document, add nonces to all {@code <script>} tags, and turn the Document
+     * back into a String.
+     */
+    public static String addScriptNonces(String html)
+    {
+        Document doc = JSoupUtil.convertHtmlToDocument(StringUtils.trimToEmpty(html), false, new LinkedList<>());
+        String ret = "";
+        if (doc != null)
+        {
+            if (addScriptNonces(doc) > 0)
+            {
+                try
+                {
+                    ret = convertNodeToHtml(doc);
+                }
+                catch (TransformerException | IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+            else
+            {
+                // If there are no script tags, just return the passed in HTML
+                ret = html;
+            }
+        }
+
+        return ret;
+    }
+
+    /*
+     * Add nonce attribute to <script> tags in the Document.
+     * We don't require the <%=scriptNonce%> syntax (as with module HTML view), because we already parsed the page.
+     * ModuleHtmlView does not parse the page and does a raw regexp substitution.
+     */
+    public static int addScriptNonces(Document doc)
+    {
+        NodeList nl = doc.getElementsByTagName("script");
+
+        if (nl.getLength() > 0)
+        {
+            // If rendering outside a request (e.g., search crawler), substitute blank
+            String nonce = HttpView.hasCurrentView() ? HttpView.currentPageConfig().getScriptNonce().toString() : "";
+
+            for (int i = 0, length = nl.getLength(); i < length; i++)
+            {
+                Element script = (Element) nl.item(i);
+                script.setAttribute("nonce", nonce);
+            }
+        }
+
+        return nl.getLength();
+    }
 }

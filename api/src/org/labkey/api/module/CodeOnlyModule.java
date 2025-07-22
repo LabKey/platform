@@ -25,13 +25,9 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Bit of a misnomer, but I couldn't think of a better name. These modules provide code and resources, but don't manage
- * any schemas, don't run SQL scripts, and don't need to do anything at upgrade time. This simplifies the implementation
- * of such modules.
- *
- * Perhaps this should implement Module instead of extending DefaultModule.
- *
- * Created by adam on 6/29/2016.
+ * This is a bit of a misnomer, but I couldn't think of a better name. These modules provide code and resources, but
+ * don't manage any schemas, don't run SQL scripts, and don't need to do anything at upgrade time. This simplifies the
+ * implementation of such modules. Perhaps this should implement Module instead of extending DefaultModule.
  */
 public abstract class CodeOnlyModule extends DefaultModule
 {

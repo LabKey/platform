@@ -48,6 +48,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
@@ -374,6 +375,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     {
         if (!_allowInsertDelete && (InsertPermission.class.equals(perm) || DeletePermission.class.equals(perm)))
             return false;
+
+        if (perm.equals(ReadPermission.class))
+            return _userSchema.getContainer().hasPermission(user, perm, _userSchema.getContextualRoles());
+
         return super.hasPermission(user, perm);
     }
 

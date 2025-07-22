@@ -210,7 +210,8 @@ public class StudyExportTest extends StudyManualTest
 
         // verify visit modifications
         manageVisitPage.goToEditVisit(MODIFIED_VISIT);
-        assertFormElementEquals(Locator.name("datasetStatus"), "OPTIONAL");
+        Locator loc = Locator.name("datasetStatus");
+        assertEquals("OPTIONAL", getFormElement(loc));
         assertOptionEquals(Locator.name("cohortId"), GROUP_2);
     }
 

@@ -15,8 +15,8 @@
  */
 package org.labkey.core.thumbnail;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -37,11 +37,6 @@ import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * User: adam
- * Date: 10/8/11
- * Time: 9:22 AM
- */
 public class ThumbnailServiceImpl implements ThumbnailService
 {
     private static final Logger LOG = LogManager.getLogger(ThumbnailServiceImpl.class);

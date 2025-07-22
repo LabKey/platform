@@ -32,7 +32,25 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
@@ -118,6 +136,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -974,7 +993,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
-    private void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
+    @Override
+    public void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
     {
         if (name == null || StringUtils.isBlank(name))
             throw new ApiUsageException("Sample Type name is required.");
@@ -1699,7 +1719,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
@@ -1760,7 +1780,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order by rowId to reduce deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
