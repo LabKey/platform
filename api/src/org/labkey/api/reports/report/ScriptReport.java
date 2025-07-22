@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -66,6 +67,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.vfs.FileLike;
@@ -220,7 +222,8 @@ public abstract class ScriptReport extends AbstractReport
             ArrayList<String> ret = new ArrayList<>(count);
             for (int col = 1; col <= count; col++)
             {
-                String alias = r.getColumn(col).getPropertyName();
+                // Stay consistent with previous script-friendly identifier now used primarily for DOM ids
+                String alias = PageConfig.makeIdFromName(r.getColumn(col).getName());
                 if (!aliases.add(alias))
                 {
                     int i;

@@ -179,7 +179,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
-            tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
             PrintWriter out = vf.getPrintWriter(fileName);
             tsvWriter.write(out);
         }

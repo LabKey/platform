@@ -1,4 +1,4 @@
-import { ExperimentCRUDUtils, hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { ExperimentCRUDUtils, hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -394,6 +394,7 @@ describe('Aliquot crud', () => {
         const aliquotQueryCols = 'name, rowid, lsid, description, str, int, isAliquot, AliquotedFromLsid/name, rootmaterialrowid, Myparentcol, Myaliquotcol, Myindependentcol';
 
         async function verifyImportingWithNameValue(parentSampleName: string, sampleType: string) {
+            console.log('Selected parentSampleName: ' + parentSampleName);
             const parentInsertRow = {
                 name: parentSampleName,
                 description: 'testImportingWithNameValue parent'
@@ -559,14 +560,19 @@ describe('Aliquot crud', () => {
          *         <li>An aliquot with the name formatted as an aliquot (SAI_1-101).</li>
          *         <li>And have an aliquot w/o a name set.</li>
          *         <li>Validate that the names are as expected.</li>
+         *         <li>Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import</li>
          *     </ul>
          *     Because importing is batched the imported aliquot without an explicit name set it should have the next
          *     index (default behavior).
          * </p>
          */
-        it('testImportingWithNameValue - with naming patten', async () => {
+
+        const parentSampleName = ['S-1', '123', '0001', '0002', 'With Space', '+ -_.&)(:'];
+
+
+        it('(Fuzz Test) testImportingWithNameValue - with naming patten ', async () => {
             // also include scenarios from testImportWithUpdate
-            await verifyImportingWithNameValue('withNameValueParent', SAMPLE_ALIQUOT_IMPORT_TYPE_NAME);
+            await verifyImportingWithNameValue(selectRandomN(parentSampleName, 1)[0], SAMPLE_ALIQUOT_IMPORT_TYPE_NAME);
         });
 
         /**
@@ -583,8 +589,8 @@ describe('Aliquot crud', () => {
          *     </ul>
          * </p>
          */
-        it('testImportingWithNameValue - without naming patten', async () => {
-            await verifyImportingWithNameValue('withNameValueParentNoPattern', SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME);
+        it('(Fuzz Test) testImportingWithNameValue - without naming patten', async () => {
+            await verifyImportingWithNameValue(selectRandomN(parentSampleName, 1)[0], SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME);
         });
 
         async function verifyMultipleRootsAndAliquots(parentSampleName1: string, parentSampleName2: string, sampleType: string) {

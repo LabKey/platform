@@ -72,7 +72,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         clickButton("Import Data");
         clickButton("Next");
         AssayImportPage importPage = new AssayImportPage(getDriver());
-        importPage.setNamedInputText("name", firstRun);
+        importPage.setNamedInputText("Name", firstRun);
         importPage.setNamedTextAreaValue("TextAreaDataCollector.textArea", firstRunData);
         importPage.clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();
@@ -91,7 +91,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         clickButton("Re-import run");
         clickButton("Next");
         AssayImportPage importPage2 = new AssayImportPage(getDriver());
-        importPage2.setNamedInputText("name", secondRun);
+        importPage2.setNamedInputText("Name", secondRun);
         importPage2.setNamedTextAreaValue("TextAreaDataCollector.textArea", secondRunData);
         importPage2.clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();

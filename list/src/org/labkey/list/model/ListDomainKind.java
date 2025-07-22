@@ -358,17 +358,23 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        if (StringUtils.isEmpty(name))
+            throw new ApiUsageException("List name is required.");
+        if (name.length() > MAX_NAME_LENGTH)
+            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
+        if (ListService.get().getList(container, name, domain == null) != null)
+            throw new ApiUsageException("The name '" + name + "' is already in use.");
+    }
+
+    @Override
     public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         String name = StringUtils.trimToEmpty(domain.getName());
-        String keyName = listProperties.getKeyName();
+        validateDomainName(container, user, null, name);
 
-        if (StringUtils.isEmpty(name))
-            throw new ApiUsageException("List name is required");
-        if (name.length() > MAX_NAME_LENGTH)
-            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name, true) != null)
-            throw new ApiUsageException("The name '" + name + "' is already in use.");
+        String keyName = listProperties.getKeyName();
         if (StringUtils.isEmpty(keyName))
             throw new ApiUsageException("List keyName is required");
 
@@ -497,14 +503,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             boolean hasNameChange = !original.getName().equals(updatedName);
             if (hasNameChange)
             {
-                if (updatedName.length() > MAX_NAME_LENGTH)
-                {
-                    return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
-                }
-                else if (ListService.get().getList(container, updatedName, false) != null)
-                {
-                    return exception.addGlobalError("The name '" + updatedName + "' is already in use.");
-                }
+                validateDomainName(container, user, domain, updatedName);
                 changeDetails.append("The name of the list domain '" + original.getName() + "' was changed to '" + updatedName + "'.");
             }
 

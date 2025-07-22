@@ -5,7 +5,6 @@ import org.labkey.api.util.FileUtil;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 // This class supports generating files with duplicate column names. Consider using TSVMapWriter if
 // multiple identical column names is not an implementation concern.
@@ -15,17 +14,17 @@ public class TSVArrayWriter extends TSVWriter
     private final List<List<String>> _rows;
     private final String _fileName;
 
-    public TSVArrayWriter(String fileName, ColumnDescriptor[] columns, List<Object[]> rows)
+    public TSVArrayWriter(String fileName, List<ColumnDescriptor> columns, List<Object[]> rows)
     {
         _fileName = fileName;
-        _columns = Arrays.stream(columns)
+        _columns = columns.stream()
                 .map(ColumnDescriptor::getColumnName)
-                .collect(Collectors.toList());
+                .toList();
         _rows = rows.stream()
                 .map(array -> Arrays.stream(array)
                         .map(obj -> (obj == null) ? "" : String.valueOf(obj))
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
+                        .toList())
+                .toList();
     }
 
     @Override

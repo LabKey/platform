@@ -187,13 +187,13 @@ public class MothershipHelper extends LabKeySiteWrapper
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
         if (bugNumber != null)
-            params.put("bugNumber", bugNumber);
+            params.put("BugNumber", bugNumber);
         if (comments != null)
-            params.put("comments", comments);
+            params.put("Comments", comments);
         if (assignedToEmail != null)
         {
             String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(this).getUserId(assignedToEmail).toString();
-            params.put("assignedTo", assignedToId);
+            params.put("AssignedTo", assignedToId);
         }
         command.setParameters(params);
         try

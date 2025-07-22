@@ -310,7 +310,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private static final String PRIMARY_PREV_UPLOAD_PATH = "PreviouslyUploadedFilePaths";
 
     @Override
-    public void addSampleColumns(InsertView view, User user, final AssayRunUploadForm defaultValueContext, final boolean errorReshow)
+    public void addSampleColumns(InsertView view, User user, final AssayRunUploadForm<?> defaultValueContext, final boolean errorReshow)
     {
         final File reshowFile;
         if (errorReshow)

@@ -4652,14 +4652,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
     {
         List<Integer> allowedIds = new ArrayList<>(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
-            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName(), "ContainerPath", dataObject.getContainer().getPath());
+            Map<String, Object> rowMap = new HashMap<>();
+            rowMap.put("RowId", dataObject.getRowId());
+            if (dataObject.getContainer().hasPermission(user, ReadPermission.class))
+                rowMap.put("ContainerPath", dataObject.getContainer().getPath());
             if (allowedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else
@@ -4685,6 +4688,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpSampleType sampleType = allMaterials.get(0).getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+            if (tableInfo == null)
+                return associatedDatasets;
 
             // collect up columns of name 'dataset<N>'
             Set<String> linkedColumnNames = new LinkedHashSet<>();
@@ -8055,7 +8060,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
+    @Override
+    public void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting)
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
