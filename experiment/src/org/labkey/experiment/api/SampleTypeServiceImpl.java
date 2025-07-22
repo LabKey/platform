@@ -631,7 +631,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+            addSampleTypeDeletedAuditEvent(user, c, source, auditUserComment);
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
@@ -663,18 +663,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, @Nullable String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, @Nullable String auditUserComment)
     {
-        addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
+        addSampleTypeAuditEvent(user, c, sampleType, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
-
-        if (txAuditId != null)
-            event.setTransactionId(txAuditId);
 
         if (sampleType != null)
         {
@@ -1214,9 +1211,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
-        var tx = getExpSchema().getScope().getCurrentTransaction();
-        if (tx != null)
-            event.setTransactionId(tx.getAuditId());
 
         var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
@@ -1276,8 +1270,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, comment);
-        if (getExpSchema().getScope().getCurrentTransaction() != null)
-            event.setTransactionId(getExpSchema().getScope().getCurrentTransaction().getAuditId());
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
         event.setSampleId(sample.getRowId());
@@ -1904,9 +1896,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 // create summary audit entries for the source and target containers
                 String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
-                addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, sourceContainer, sampleType,
                         "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved from project");
-                addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, targetContainer, sampleType,
                         "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved to project");
 
                 // move the events associated with the samples that have moved

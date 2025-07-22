@@ -167,6 +167,10 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                 {
                     col.setLabel("User Comment");
                 }
+                else if (COLUMN_NAME_TRANSACTION_ID.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Transaction ID");
+                }
             }
         };
     }
