@@ -805,6 +805,29 @@ public class ExpDataIterators
         }
     }
 
+    /**
+     * Issue 52504 (sort of): Chooses a container filter that is appropriate for import, merge or update actions in the face of product folders.
+     * Note that this is slightly different from our treatment of lookups:
+     *   - when in a project, we allow import or update to all subfolders,
+     *   - when in a folder, we only allow references to data up the folder tree
+     * @param qDef The QueryDefinition in use for the import action
+     * @param container The container that is the target of the import or update
+     * @param user The user doing the action
+     */
+    public static void setContainerFilterForImport(QueryDefinition qDef, Container container, User user)
+    {
+        if (container.isProductFoldersEnabled())
+        {
+            ContainerFilter cf;
+
+            if (container.isProject())
+                cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            else
+                cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+            qDef.setContainerFilter(cf);
+        }
+    }
+
     /* setup mini dataiterator pipeline to process lineage */
     public static void derive(User user, Container container, DataIterator di, boolean isSample, ExpObject dataType, boolean skipAliquot) throws BatchValidationException
     {
@@ -2481,8 +2504,7 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
-                        // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-                        qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(splitContainer, _user));
+                        setContainerFilterForImport(qDef, splitContainer, _user);
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2737,8 +2759,7 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             DataClassUserSchema schema = new DataClassUserSchema(container, _user);
             QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
+            setContainerFilterForImport(qDef, container, _user);
             TableInfo dataTable = qDef.getTable(schema, qpe, true);
             if (dataTable == null)
             {
@@ -2768,8 +2789,7 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
+            setContainerFilterForImport(qDef, container, _user);
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {

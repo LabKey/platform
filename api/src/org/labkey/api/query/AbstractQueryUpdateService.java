@@ -202,7 +202,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
             Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
-            if (row != null)
+            if (row != null && !row.isEmpty())
             {
                 result.put(key.getKey(), row);
                 if (verifyNoCrossFolderData)

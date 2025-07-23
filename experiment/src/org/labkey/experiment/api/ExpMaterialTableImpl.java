@@ -971,9 +971,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 continue;
             }
 
+            var wrapped = wrapColumnFromJoinedTable(dbColumn.getName(), dbColumn);
+
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
+            var propColumn = copyColumnFromJoinedTable(null==dp ? dbColumn.getName() : dp.getName(), wrapped);
             if (propColumn.getName().equalsIgnoreCase("genid"))
             {
                 propColumn.setHidden(true);
@@ -1020,6 +1022,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if (!mvColumns.contains(propColumn.getFieldKey()))
                 addColumn(propColumn);
+
         }
 
         setDefaultVisibleColumns(visibleColumns);
