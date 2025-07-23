@@ -94,6 +94,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     protected String _jobDescription;
     protected String _jobNotificationProvider;
     protected String _pipelineJobGUID;
+    // Used to assure that the audit logs for the asynchronous assay upload are linked to the ones for
+    // the file upload, if any, which happen before the async job starts.
     private Long _transactionAuditId;
 
     private boolean _autoFillDefaultResultColumns;
