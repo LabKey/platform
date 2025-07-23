@@ -81,7 +81,9 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileBrowserConfigImporter;
@@ -371,8 +373,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
-
-    static Runnable _afterUpdateRunnable = null;
 
     static
     {
@@ -842,7 +842,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
-        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+        if (ModuleLoader.getInstance().shouldInsertData())
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
         // Allow dialect to make adjustments to the just upgraded core database (e.g., install aggregate functions, etc.)
         CoreSchema.getInstance().getSqlDialect().afterCoreUpgrade(moduleContext);
@@ -858,66 +859,76 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // core.Containers metadata and a few common containers. This may prevent some deadlocks during upgrade, #33550.
         CacheManager.addListener(() -> {
             ContainerManager.getRoot();
-            ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
+            if (ModuleLoader.getInstance().shouldInsertData())
+            {
+                ContainerManager.getHomeContainer();
+             }
         });
-
-        if (_afterUpdateRunnable != null)
-            _afterUpdateRunnable.run();
     }
 
     private void bootstrap()
     {
-        // Create the initial groups
-        GroupManager.bootstrapGroup(Group.groupUsers, "Users");
-        GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-
-        // Other containers inherit permissions from root; admins get all permissions, users & guests none
-        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-        Role readerRole = RoleManager.getRole(ReaderRole.class);
-
-        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole);
-        Container rootContainer = ContainerManager.getRoot();
-
-        // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
-        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
-
-        // Users & guests can read from /home
-        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole);
-        home.setFolderType(collaborationType, null);
-
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
-
-        // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null).setFolderType(collaborationType, null);
-
-        try
+        if (ModuleLoader.getInstance().shouldInsertData())
         {
-            // Need to insert standard MV indicators for the root -- okay to call getRoot() since we just created it.
-            String rootContainerId = rootContainer.getId();
-            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
+            // Create the initial groups
+            GroupManager.bootstrapGroup(Group.groupUsers, "Users");
+            GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
 
-            for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+            // Other containers inherit permissions from root; admins get all permissions, users & guests none
+            Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+            Role readerRole = RoleManager.getRole(ReaderRole.class);
+
+            ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole);
+            Container rootContainer = ContainerManager.getRoot();
+
+            // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
+            FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
+
+            // Users & guests can read from /home
+            Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole);
+            home.setFolderType(collaborationType, null);
+
+            ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
+
+            // Only users can read from /Shared
+            ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null).setFolderType(collaborationType, null);
+
+            try
             {
-                Map<String, Object> params = new HashMap<>();
-                params.put("Container", rootContainerId);
-                params.put("MvIndicator", qcEntry.getKey());
-                params.put("Label", qcEntry.getValue());
+                // Need to insert standard MV indicators for the root -- okay to call getRoot() since we just created it.
+                String rootContainerId = rootContainer.getId();
+                TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
 
-                Table.insert(null, mvTable, params);
+                for (Map.Entry<String, String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+                {
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("Container", rootContainerId);
+                    params.put("MvIndicator", qcEntry.getKey());
+                    params.put("Label", qcEntry.getValue());
+
+                    Table.insert(null, mvTable, params);
+                }
             }
-        }
-        catch (Throwable t)
-        {
-            ExceptionUtil.logExceptionToMothership(null, t);
-        }
+            catch (Throwable t)
+            {
+                ExceptionUtil.logExceptionToMothership(null, t);
+            }
 
-        List<GUID> guids = Stream.of(ContainerManager.HOME_PROJECT_PATH, ContainerManager.SHARED_CONTAINER_PATH)
-            .map(ContainerManager::getForPath)
-            .filter(Objects::nonNull)
-            .map(Container::getEntityId)
-            .collect(Collectors.toList());
-        ContainerManager.setExcludedProjects(guids, () -> {});
+            List<GUID> guids = Stream.of(ContainerManager.HOME_PROJECT_PATH, ContainerManager.SHARED_CONTAINER_PATH)
+                .map(ContainerManager::getForPath)
+                .filter(Objects::nonNull)
+                .map(Container::getEntityId)
+                .collect(Collectors.toList());
+            ContainerManager.setExcludedProjects(guids, () -> {});
+        }
+        else
+        {
+            // It's very difficult to bootstrap without the root or shared containers in place; create them now and
+            // we'll delete them later
+            Container root = ContainerManager.ensureContainer("/", User.getAdminServiceUser());
+            Table.insert(null, CoreSchema.getInstance().getTableInfoContainers(), Map.of("Parent", root.getId(), "Name", "Shared"));
+        }
     }
 
 
@@ -954,11 +965,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AnalyticsServiceImpl.get().resetCSP();
 
-        if (moduleContext.isNewInstall())
+        if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())
         {
-            // In order to initialize the portal layout correctly, we need to add the web parts after the folder
-            // types have been registered. Thus, needs to be here in startupAfterSpringConfig() instead of grouped
-            // in bootstrap().
+            // To initialize the portal layout correctly, we need to add the web parts after the folder types have been
+            // registered. Thus, it needs to be here in startupAfterSpringConfig() instead of grouped in bootstrap().
             Container homeContainer = ContainerManager.getHomeContainer();
             int count = Portal.getParts(homeContainer, homeContainer.getFolderType().getDefaultPageId(homeContainer)).size();
             addWebPart(PROJECTS_WEB_PART_NAME, homeContainer, HttpView.BODY, count);
@@ -1148,7 +1158,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != PropertyService.get())
         {
             PropertyService.get().registerDomainKind(new UsersDomainKind());
-            UsersDomainKind.ensureDomain(moduleContext);
+            if (ModuleLoader.getInstance().shouldInsertData())
+                UsersDomainKind.ensureDomain(moduleContext);
         }
 
         // Register the standard, wiki-based terms-of-use provider

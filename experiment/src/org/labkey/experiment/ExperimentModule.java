@@ -71,6 +71,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
@@ -557,7 +558,8 @@ public class ExperimentModule extends SpringModule
                 // but it should be before the CoreContainerListener
                 ContainerManager.ContainerListener.Order.Last);
 
-        SystemProperty.registerProperties();
+        if (ModuleLoader.getInstance().shouldInsertData())
+            SystemProperty.registerProperties();
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)

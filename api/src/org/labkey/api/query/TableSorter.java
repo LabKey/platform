@@ -57,7 +57,7 @@ public final class TableSorter
         for (String tableName : tableNames)
             tables.put(tableName, schema.getTable(tableName));
 
-        return sort(schemaName, tables);
+        return sort(schemaName, tables, false);
     }
 
     /**
@@ -67,16 +67,26 @@ public final class TableSorter
      */
     public static List<TableInfo> sort(DbSchema schema)
     {
+        return sort(schema, false);
+    }
+
+    /**
+     * Get a topologically sorted list of TableInfos within this schema.
+     *
+     * @throws IllegalStateException if a loop is detected and tolerateLoops is false.
+     */
+    public static List<TableInfo> sort(DbSchema schema, boolean tolerateLoops)
+    {
         String schemaName = schema.getName();
         Set<String> tableNames = new HashSet<>(schema.getTableNames());
         Map<String, TableInfo> tables = new CaseInsensitiveHashMap<>();
         for (String tableName : tableNames)
             tables.put(tableName, schema.getTable(tableName));
 
-        return sort(schemaName, tables);
+        return sort(schemaName, tables, tolerateLoops);
     }
 
-    private static List<TableInfo> sort(String schemaName, Map<String, TableInfo> tables)
+    private static List<TableInfo> sort(String schemaName, Map<String, TableInfo> tables, boolean tolerateLoops)
     {
         if (tables.isEmpty())
             return Collections.emptyList();
@@ -145,14 +155,14 @@ public final class TableSorter
         Set<TableInfo> visited = new HashSet<>(tables.size());
         List<TableInfo> sorted = new ArrayList<>(tables.size());
         for (String tableName : startTables)
-            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<>(), sorted);
+            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<>(), sorted, tolerateLoops);
 
         return sorted;
     }
 
-    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
+    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted, boolean tolerateLoops)
     {
-        if (hasLoop(visitingPath, table))
+        if (!tolerateLoops && hasLoop(visitingPath, table))
         {
             String msg = "Loop detected in schema '" + schemaName + "':\n" + formatPath(visitingPath);
             if (anyHaveContainerColumn(visitingPath))
@@ -208,7 +218,7 @@ public final class TableSorter
             if (lookupTable != null)
             {
                 visitingPath.addLast(Tuple3.of(table, column, lookupTable));
-                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted);
+                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted, tolerateLoops);
                 visitingPath.removeLast();
             }
         }

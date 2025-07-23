@@ -376,7 +376,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             }
         }
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
-        if (serverGUID.equals(SERVER_SESSION_GUID))
+        if (serverGUID.equals(SERVER_SESSION_GUID) && ModuleLoader.getInstance().shouldInsertData())
         {
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {

@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -123,20 +124,23 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
     private void bootstrap(ModuleContext moduleContext)
     {
-        Container supportContainer = ContainerManager.getDefaultSupportContainer();
-        Container homeContainer = ContainerManager.getHomeContainer();
-        Container sharedContainer = ContainerManager.getSharedContainer();
-        String defaultPageName = "default";
+        if (ModuleLoader.getInstance().shouldInsertData())
+        {
+            Container supportContainer = ContainerManager.getDefaultSupportContainer();
+            Container homeContainer = ContainerManager.getHomeContainer();
+            Container sharedContainer = ContainerManager.getSharedContainer();
+            String defaultPageName = "default";
 
-        loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt");
-        loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt");
-        loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt");
+            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt");
+            loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt");
+            loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt");
 
-        addWebPart(supportContainer, defaultPageName);
-        addWebPart(sharedContainer, defaultPageName);
+            addWebPart(supportContainer, defaultPageName);
+            addWebPart(sharedContainer, defaultPageName);
 
-        // Add a wiki webpart with the default content.
-        addWebPart(homeContainer, defaultPageName);
+            // Add a wiki webpart with the default content.
+            addWebPart(homeContainer, defaultPageName);
+        }
     }
 
     private void addWebPart(@Nullable Container c, String wikiName)
@@ -159,7 +163,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         {
             int count = WikiSelectManager.getPageCount(c);
             if (count > 0)
-                list.add("" + count + " Wiki Page" + (count > 1 ? "s" : ""));
+                list.add(count + " Wiki Page" + (count > 1 ? "s" : ""));
         }
         catch (Exception x)
         {

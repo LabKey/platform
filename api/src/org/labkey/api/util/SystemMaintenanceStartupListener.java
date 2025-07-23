@@ -55,7 +55,9 @@ public class SystemMaintenanceStartupListener implements StartupListener
                 .collect(
                     Collectors.partitioningBy(prop -> Boolean.valueOf(prop.getValue()), Collectors.mapping(StartupPropertyEntry::getName, Collectors.toSet()))
                 );
-            SystemMaintenance.ensureTaskProperties(map.get(true), map.get(false));
+
+            if (!properties.isEmpty())
+                SystemMaintenance.ensureTaskProperties(map.get(true), map.get(false));
         }
     }
 }
