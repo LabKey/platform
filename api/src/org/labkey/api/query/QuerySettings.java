@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
@@ -51,8 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class QuerySettings
 {
@@ -98,7 +97,6 @@ public class QuerySettings
 
     private final Map<String, Object> _queryParameters = new CaseInsensitiveHashMap<>();
 
-
     protected QuerySettings(String dataRegionName)
     {
         _dataRegionName = dataRegionName;
@@ -118,7 +116,6 @@ public class QuerySettings
         assert MemTracker.getInstance().put(this);
     }
 
-
     /**
      * Init the QuerySettings using all the request parameters, from context.getPropertyValues().
      * @see UserSchema#getSettings(org.labkey.api.view.ViewContext, String, String)
@@ -131,7 +128,6 @@ public class QuerySettings
 
         assert MemTracker.getInstance().put(this);
     }
-
 
     /**
      * @param params    all parameters from URL or POST, including dataregion.filter parameters
@@ -146,7 +142,6 @@ public class QuerySettings
         assert MemTracker.getInstance().put(this);
     }
 
-
     protected PropertyValues getPropertyValues(ViewContext context)
     {
         PropertyValues pvs = context.getBindPropertyValues();
@@ -158,7 +153,6 @@ public class QuerySettings
         return pvs;
     }
 
-
     /**
      * @param url parameters for filter/sort
      */
@@ -166,7 +160,6 @@ public class QuerySettings
     {
         setSortFilter(url.getPropertyValues());
     }
-
 
     public void setSortFilter(PropertyValues pvs)
     {
@@ -185,7 +178,7 @@ public class QuerySettings
         }
     }
 
-    protected String _getParameter(String param)
+    protected @Nullable String _getParameter(String param)
     {
         PropertyValue pv = _filterSort.getPropertyValue(param);
         if (pv == null)
@@ -198,7 +191,7 @@ public class QuerySettings
             Object[] a = (Object[])v;
             v = a.length == 0 ? null : a[0];
         }
-        return v == null ? null : String.valueOf(v);
+        return v == null ? null : StringUtils.trimToNull(String.valueOf(v));
     }
 
     public void init(ViewContext context)
@@ -206,10 +199,9 @@ public class QuerySettings
         init(getPropertyValues(context));    
     }
 
-
     /**
      * Initialize QuerySettings from the PropertyValues, binds all fields that are supported on the URL
-     *. such as viewName.  Use setSortFilter() to provide sort filter parameters w/o affecting the other
+     * such as viewName.  Use setSortFilter() to provide sort filter parameters w/o affecting the other
      * properties.
      */
     public void init(PropertyValues pvs)
@@ -220,8 +212,7 @@ public class QuerySettings
         setAnalyticsProviders(pvs);
 
         // Let URL parameter control which query we show, even if we don't show the Query drop-down menu to let the user choose
-        String param = param(QueryParam.queryName);
-        String queryName = StringUtils.trimToNull(_getParameter(param));
+        String queryName = _getParameter(param(QueryParam.queryName));
         if (queryName != null)
         {
             setQueryName(queryName);
@@ -229,24 +220,27 @@ public class QuerySettings
 
         if (getAllowChooseView())
         {
-            String viewName = StringUtils.trimToNull(_getParameter(param(QueryParam.viewName)));
+            String viewName = _getParameter(param(QueryParam.viewName));
             if (viewName != null)
             {
                 setViewName(viewName);
             }
+
             String ignoreFilter = _getParameter(param(QueryParam.ignoreFilter));
-            try
+            if (ignoreFilter != null)
             {
-                if (isNotBlank(ignoreFilter))
-                    _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
-            }
-            catch (ConversionException e)
-            {
-                throwParameterParseException(QueryParam.ignoreFilter);
+                try
+                {
+                    _ignoreViewFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
+                }
+                catch (ConversionException e)
+                {
+                    throwParameterParseException(QueryParam.ignoreFilter);
+                }
             }
 
             String reportId = _getParameter(param(QueryParam.reportId));
-            if (isNotBlank(reportId))
+            if (reportId != null)
             {
                 var identifier = ReportService.get().getReportIdentifier(reportId, null, null);
                 if (null == identifier)
@@ -259,7 +253,7 @@ public class QuerySettings
         if (_showRows == ShowRows.PAGINATED)
         {
             String offsetParam = _getParameter(param(QueryParam.offset));
-            if (isNotBlank(offsetParam))
+            if (offsetParam != null)
             {
                 try
                 {
@@ -274,7 +268,7 @@ public class QuerySettings
             }
 
             String maxRowsParam = _getParameter(param(QueryParam.maxRows));
-            if (isNotBlank(maxRowsParam))
+            if (maxRowsParam != null)
             {
                 try
                 {
@@ -295,7 +289,7 @@ public class QuerySettings
         }
 
         String containerFilterNameParam = _getParameter(param(QueryParam.containerFilterName));
-        if (isNotBlank(containerFilterNameParam))
+        if (containerFilterNameParam != null)
         {
             // fail fast
             if (null == ContainerFilter.getType(containerFilterNameParam))
@@ -319,7 +313,7 @@ public class QuerySettings
             }
         }
 
-        String columns = StringUtils.trimToNull(_getParameter(param(QueryParam.columns)));
+        String columns = _getParameter(param(QueryParam.columns));
         if (null != columns)
         {
             String[] colArray = columns.split(",");
@@ -333,7 +327,7 @@ public class QuerySettings
             }
         }
 
-        String extraColumns = StringUtils.trimToNull(_getParameter(param(QueryParam.extraColumns)));
+        String extraColumns = _getParameter(param(QueryParam.extraColumns));
         if (null != extraColumns)
         {
             String[] colArray = extraColumns.split(",");
@@ -347,13 +341,13 @@ public class QuerySettings
             }
         }
 
-        String selectionKey = StringUtils.trimToNull(_getParameter(param(QueryParam.selectionKey)));
+        String selectionKey = _getParameter(param(QueryParam.selectionKey));
         if (null != selectionKey)
             setSelectionKey(selectionKey);
 
         _parseQueryParameters(_filterSort);
 
-        String allowHeaderLock = StringUtils.trimToNull(_getParameter(param(QueryParam.allowHeaderLock)));
+        String allowHeaderLock = _getParameter(param(QueryParam.allowHeaderLock));
         if (null != allowHeaderLock)
         {
             try
