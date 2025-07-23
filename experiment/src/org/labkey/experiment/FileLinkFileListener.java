@@ -181,7 +181,7 @@ public class FileLinkFileListener implements FileListener
     private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
-        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
+        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name, pd.StorageColumnName FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         sql.append(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
@@ -204,10 +204,15 @@ public class FileLinkFileListener implements FileListener
                 if (tableInfo != null)
                 {
                     String containerId = row.get("Container").toString();
-                    ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
-                    if (pathCol != null && containerId != null)
+                    if (containerId != null)
                     {
-                        block.exec(schema, tableInfo, pathCol, containerId, domain.getTypeURI());
+                        ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
+                        // Issue 53502: also try to get tableInfo column by StorageColumnName if not found by Name
+                        if (pathCol == null)
+                            pathCol = tableInfo.getColumn(row.get("StorageColumnName").toString());
+
+                        if (pathCol != null)
+                            block.exec(schema, tableInfo, pathCol, containerId, domain.getTypeURI());
                     }
                 }
             }
