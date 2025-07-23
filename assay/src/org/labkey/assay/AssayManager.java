@@ -380,7 +380,7 @@ public class AssayManager implements AssayService
                         result.add(protocol);
                     }
                 }
-                return Collections.unmodifiableList(result);
+                return result.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(result);
             });
             allProtocols.addAll(ids);
         }

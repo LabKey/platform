@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class ExternalSchemaDefCache
 {
-    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/linked schema definitions", (c, argument) -> new ExternalSchemaCollections(c));
+    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/linked schema definitions", (c, argument) -> getCollectionsToCache(c));
 
     @Nullable
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)
@@ -71,37 +71,49 @@ public class ExternalSchemaDefCache
         EXTERNAL_SCHEMA_DEF_CACHE.remove(null);  // Clear out the full list
     }
 
+    private static final ExternalSchemaCollections EMPTY_COLLECTION = new ExternalSchemaCollections(Collections.emptyMap(), Collections.emptyMap());
+
+    /** @param c the container to use, or null for data for ALL containers */
+    private static ExternalSchemaCollections getCollectionsToCache(@Nullable Container c)
+    {
+        Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName = new HashMap<>();
+        Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId = new HashMap<>();
+
+        SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
+
+        new TableSelector(QueryManager.get().getTableInfoExternalSchema(), filter, null).forEach(rs -> {
+            String schemaTypeName = rs.getString("SchemaType");
+            SchemaType type = SchemaType.valueOf(schemaTypeName);
+            AbstractExternalSchemaDef def = type.handle(rs);
+            byRowId.computeIfAbsent(type.getSchemaDefClass(), x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
+            byRowId.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
+
+            // Don't bother in the null case (site-wide list)... we only need one map and by-name is likely not unique
+            if (null != c)
+            {
+                byName.computeIfAbsent(type.getSchemaDefClass(), x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
+                byName.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
+            }
+        });
+
+        // Issue 53472 - when there are tens of thousands of containers, it takes a lot of memory
+        // to cache with unique empty collections. Use a shared empty collection
+        if (byName.isEmpty() && byRowId.isEmpty())
+        {
+            return EMPTY_COLLECTION;
+        }
+        return new ExternalSchemaCollections(Collections.unmodifiableMap(byName), Collections.unmodifiableMap(byRowId));
+    }
+
     private static class ExternalSchemaCollections
     {
         private final Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> _byName;
         private final Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> _byRowId;
 
-        private ExternalSchemaCollections(@Nullable Container c)
+        private ExternalSchemaCollections(Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName, Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId)
         {
-            Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName = new HashMap<>();
-            Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId = new HashMap<>();
-
-            SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
-
-            new TableSelector(QueryManager.get().getTableInfoExternalSchema(), filter, null).forEach(rs -> {
-                String schemaTypeName = rs.getString("SchemaType");
-                SchemaType type = SchemaType.valueOf(schemaTypeName);
-                AbstractExternalSchemaDef def = type.handle(rs);
-                byRowId.computeIfAbsent(type.getSchemaDefClass(), x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
-                byRowId.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
-
-                // Don't bother in the null case (site-wide list)... we only need one map and by-name is likely not unique
-                if (null != c)
-                {
-                    byName.computeIfAbsent(type.getSchemaDefClass(), x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
-                    byName.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
-                }
-            });
-
-            // Issue 53472 - when there are tens of thousands of containers, it takes a lot of memory
-            // to cache with unique empty collections. Use emptyMap() when we didn't find anything.
-            _byName = byName.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(byName);
-            _byRowId = byRowId.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(byRowId);
+            _byName = byName;
+            _byRowId = byRowId;
         }
 
         @Nullable
