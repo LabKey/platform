@@ -144,7 +144,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -203,10 +202,6 @@ import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: Karl Lum
- * Date: Apr 19, 2007
- */
 public class ReportsController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ReportsController.class);
@@ -1027,7 +1022,7 @@ public class ReportsController extends SpringActionController
                 return new HtmlView(SPAN(cl("labkey-error"), e.getMessage(), ". Unable to create report."));
             }
 
-            if (!isPrint() && !(reportView instanceof HttpRedirectView) && DiscussionService.get() != null)
+            if (!isPrint() && DiscussionService.get() != null)
             {
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();

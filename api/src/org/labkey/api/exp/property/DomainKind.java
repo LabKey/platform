@@ -369,6 +369,12 @@ abstract public class DomainKind<T> implements Handler<String>
     }
 
     /**
+     * Overridable validity check for domain name. Base implementation does nothing.
+     */
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {}
+
+    /**
      * Overridable validity check. Base only executes canCreateDefinition check.
      * NOTE: Due to historical limitations throws runtime exceptions instead of validation errors
      * @param container being executed upon

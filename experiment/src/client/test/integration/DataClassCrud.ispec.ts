@@ -234,7 +234,7 @@ describe('Import with update / merge', () => {
        const BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION = 'Missing value for required property: Name';
        const BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION = 'Name value not provided on row ';
        const BOGUS_KEY_UPDATE_ERROR = 'Data not found: ';
-       const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Data doesn't belong to folder ";
+       const DUPLICATE_KEY_ERROR = 'duplicate key value';
 
        const dataType = "NoExpressionNameRequired52922";
        const createPayload = {
@@ -306,9 +306,9 @@ describe('Import with update / merge', () => {
 
        // cross folder update not supported when folder type is "Collaboration"
        let crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
-       expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+       expect(crossFolderErrorResp.text.indexOf(DUPLICATE_KEY_ERROR) > -1).toBeTruthy();
        crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
-       expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+       expect(crossFolderErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
 
        // bogus name
        bogusKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nbogus\tisBogus", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);

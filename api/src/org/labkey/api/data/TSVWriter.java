@@ -40,6 +40,7 @@ public abstract class TSVWriter extends TextWriter
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
     public static final String BACKSLASH_CHAR_STRING = "\\";
+    private static final char COMMENT_CHAR = '#';
 
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
@@ -95,7 +96,6 @@ public abstract class TSVWriter extends TextWriter
     public TSVWriter()
     {
     }
-
 
     public String getFilenamePrefix()
     {
@@ -210,13 +210,14 @@ public abstract class TSVWriter extends TextWriter
             _escapedCharsString = "\r\n" + _rowSeparator + _chDelimiter + _chQuote;
         }
 
-
         int len = value.length();
         if (len == 0)
             return _preserveEmptyString;
         char firstCh = value.charAt(0);
         char lastCh = value.charAt(len-1);
         if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))
+            return true;
+        if (firstCh == COMMENT_CHAR) // Issue 50719, Issue 53302
             return true;
         if (StringUtils.containsAny(value, _additionalQuotedChars))
             return true;
@@ -236,7 +237,7 @@ public abstract class TSVWriter extends TextWriter
                 return delim.contentType;
         }
 
-        return "text/tab-separated-values";
+        return DELIM.TAB.contentType;
     }
 
     /**
@@ -278,7 +279,6 @@ public abstract class TSVWriter extends TextWriter
     {
         return _headerRowVisible;
     }
-
 
     public void setHeaderRowVisible(boolean headerRowVisible)
     {

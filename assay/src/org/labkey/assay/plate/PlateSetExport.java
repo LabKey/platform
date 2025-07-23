@@ -67,7 +67,7 @@ public class PlateSetExport
             )
         );
 
-        if (!prefix.equals(PlateSetExport.DESTINATION))
+        if (!PlateSetExport.DESTINATION.equals(prefix))
             baseColumns.add(rs.getString(FKMap.get(SAMPLE_ID_COL)));
 
         for (FieldKey col : includedMetaDataCols)
@@ -77,9 +77,9 @@ public class PlateSetExport
     }
 
     // Returns array of ColumnDescriptors used as column layout once fed to an ArrayExcelWriter
-    public static ColumnDescriptor[] getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
+    public static List<ColumnDescriptor> getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
     {
-        List<ColumnDescriptor> baseColumns = new ArrayList<>(
+        List<ColumnDescriptor> columnDescriptors = new ArrayList<>(
             Arrays.asList(
                 new ColumnDescriptor(prefix + "Plate ID"),
                 new ColumnDescriptor(prefix + "Barcode"),
@@ -89,21 +89,22 @@ public class PlateSetExport
         );
 
         if (!PlateSetExport.DESTINATION.equals(prefix))
-            baseColumns.add(new ColumnDescriptor("Sample ID"));
+            columnDescriptors.add(new ColumnDescriptor("Sample ID"));
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
                 .map(fk -> new ColumnDescriptor(fk.getParts().size() > 1 ? fk.getParent().getCaption() : fk.getCaption()))
                 .toList();
 
-        baseColumns.addAll(metadataColumns);
-        return baseColumns.toArray(new ColumnDescriptor[0]);
+        columnDescriptors.addAll(metadataColumns);
+        return columnDescriptors;
     }
 
     // Create sampleIdToRow of the following form:
     // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
     // Where the data rows contain the key's sample
-    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport) {
+    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport)
+    {
         Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
         {

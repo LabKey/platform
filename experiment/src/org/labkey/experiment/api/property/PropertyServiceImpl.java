@@ -473,12 +473,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         prop.setRangeURI(xProp.getRangeURI());
 
         String propertyURI = xProp.getPropertyURI();
-        // Deal with legacy property URIs that don't have % in the name part properly encoded
-        propertyURI = Lsid.fixupPropertyURI(propertyURI);
         if (context != null  && propertyURI != null && propertyURI.contains("${"))
         {
             propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, context);
         }
+        // Deal with legacy property URIs that don't have % in the name part properly encoded
+        // Issue 53482: move call to Lsid.fixupPropertyURI after we resolve substitutions
+        propertyURI = Lsid.fixupPropertyURI(propertyURI);
         prop.setPropertyURI(propertyURI);
         if (xProp.isSetRequired())
         {

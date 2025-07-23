@@ -219,6 +219,8 @@ public interface SampleTypeService
      */
     Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate);
 
+    void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck);
+
     void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     // used by DomainKind.invalidate()

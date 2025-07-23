@@ -17,19 +17,19 @@ public class ArrayExcelWriter extends ExcelWriter
      * @param data The data rows, in which index position of a value corresponds to the desired respective column index
      * @param cols The columns, in which ordering determines the left-to-right column ordering in the generated Excel
      */
-    public ArrayExcelWriter(List<Object[]> data, ColumnDescriptor[] cols)
+    public ArrayExcelWriter(List<Object[]> data, List<ColumnDescriptor> cols)
     {
         super(ExcelDocumentType.xlsx);
         this.data = data;
-        List<DisplayColumn> xlcols = new ArrayList<>();
+        List<DisplayColumn> displayColumns = new ArrayList<>();
 
-        for (int i = 0; i < cols.length; i++)
+        for (int i = 0; i < cols.size(); i++)
         {
-            ColumnDescriptor col = cols[i];
-            xlcols.add(new ArrayDisplayColumn(col.name, col.clazz, i));
+            ColumnDescriptor col = cols.get(i);
+            displayColumns.add(new ArrayDisplayColumn(col.name, col.clazz, i));
         }
 
-        setDisplayColumns(xlcols);
+        setDisplayColumns(displayColumns);
     }
 
     @Override

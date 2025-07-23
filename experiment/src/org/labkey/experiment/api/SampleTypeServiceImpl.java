@@ -993,7 +993,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
-    private void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
+    @Override
+    public void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
     {
         if (name == null || StringUtils.isBlank(name))
             throw new ApiUsageException("Sample Type name is required.");
