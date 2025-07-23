@@ -39,7 +39,6 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_ROW_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_TRANSACTION_TYPE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_START_TIME));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
@@ -82,8 +81,6 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                     col.setLabel("Start Time");
                 else if (COLUMN_NAME_TRANSACTION_TYPE.equalsIgnoreCase(col.getName()))
                     col.setLabel("Transaction Type");
-                else if (COLUMN_NAME_CREATED.equalsIgnoreCase(col.getName()))
-                    col.setLabel("End Time");
             }
         };
     }
