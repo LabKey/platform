@@ -201,9 +201,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
-            Map<String, Object> keyValues = key.getValue();
-            Map<String, Object> row = getRow(user, container, keyValues, verifyNoCrossFolderData);
-            boolean hasValidExisting = false;
+            Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
             if (row != null)
             {
                 result.put(key.getKey(), row);
@@ -215,14 +213,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (!container.getId().equals(dataContainer))
                         throw new InvalidKeyException("Data doesn't belong to folder '" + container.getName() + "': " + key.getValue().values());
                 }
-                // sql server will return case-insensitive match, check for exact match using equals
-                if (verifyExisting)
-                    hasValidExisting = !keyValues.containsKey("Name") || keyValues.get("Name").equals(row.get("Name"));
             }
-
-            if (verifyExisting && !hasValidExisting)
-                throw new InvalidKeyException("Data not found: " + (keyValues.get("Name") != null ? keyValues.get("Name") : keyValues.values()) + ".");
-
+            else if (verifyExisting)
+                throw new InvalidKeyException("Data not found for " + key.getValue().values());
         }
         return result;
     }
