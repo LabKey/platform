@@ -25,14 +25,12 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Created by adam on 11/14/2015.
@@ -83,50 +81,52 @@ public class ExternalSchemaDefCache
             Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName = new HashMap<>();
             Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId = new HashMap<>();
 
-            // Initialize maps for all the schema types as well as AbstractExternalSchemaDef
-            Stream.concat(Arrays.stream(SchemaType.values()).map(SchemaType::getSchemaDefClass), Stream.of(AbstractExternalSchemaDef.class))
-                .forEach(clazz->{
-                    byName.put(clazz, new CaseInsensitiveHashMap<>());
-                    byRowId.put(clazz, new HashMap<>());
-                });
-
             SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
 
             new TableSelector(QueryManager.get().getTableInfoExternalSchema(), filter, null).forEach(rs -> {
                 String schemaTypeName = rs.getString("SchemaType");
                 SchemaType type = SchemaType.valueOf(schemaTypeName);
                 AbstractExternalSchemaDef def = type.handle(rs);
-                byRowId.get(type.getSchemaDefClass()).put(def.getExternalSchemaId(), def);
-                byRowId.get(AbstractExternalSchemaDef.class).put(def.getExternalSchemaId(), def);
+                byRowId.computeIfAbsent(type.getSchemaDefClass(), x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
+                byRowId.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
 
                 // Don't bother in the null case (site-wide list)... we only need one map and by-name is likely not unique
                 if (null != c)
                 {
-                    byName.get(type.getSchemaDefClass()).put(def.getUserSchemaName(), def);
-                    byName.get(AbstractExternalSchemaDef.class).put(def.getUserSchemaName(), def);
+                    byName.computeIfAbsent(type.getSchemaDefClass(), x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
+                    byName.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
                 }
             });
 
-            _byName = Collections.unmodifiableMap(byName);
-            _byRowId = Collections.unmodifiableMap(byRowId);
+            // Issue 53472 - when there are tens of thousands of containers, it takes a lot of memory
+            // to cache with unique empty collections. Use emptyMap() when we didn't find anything.
+            _byName = byName.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(byName);
+            _byRowId = byRowId.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(byRowId);
         }
 
         @Nullable
         private <T extends AbstractExternalSchemaDef> T getSchemaDef(String userSchemaName, Class<T> clazz)
         {
-            return (T) _byName.get(clazz).get(userSchemaName);
+            Map<String, AbstractExternalSchemaDef> map = _byName.get(clazz);
+            return map == null ? null : (T) map.get(userSchemaName);
         }
 
         @Nullable
         private <T extends AbstractExternalSchemaDef> T getSchemaDef(int rowId, Class<T> clazz)
         {
-            return (T) _byRowId.get(clazz).get(rowId);
+            Map<Integer, AbstractExternalSchemaDef> map = _byRowId.get(clazz);
+            return map == null ? null : (T) map.get(rowId);
         }
 
         @NotNull
         private <T extends AbstractExternalSchemaDef> List<T> getSchemaDefs(Class<T> clazz)
         {
-            Collection<T> collection = (Collection<T>) _byRowId.get(clazz).values();
+            Map<Integer, AbstractExternalSchemaDef> map = _byRowId.get(clazz);
+            if (map == null)
+            {
+                return Collections.emptyList();
+            }
+            Collection<T> collection = (Collection<T>) map.values();
             return new LinkedList<>(collection);
         }
     }
