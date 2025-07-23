@@ -294,26 +294,26 @@ public class SearchController extends SpringActionController
             {
                 HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>"));
                 builder.append(ExceptionUtil.renderException(t));
-                WebPartView configErrorView = new HtmlView(builder);
+                WebPartView<?> configErrorView = new HtmlView(builder);
                 configErrorView.setTitle("Search Configuration Error");
                 configErrorView.setFrame(WebPartView.FrameType.PORTAL);
                 vbox.addView(configErrorView);
             }
 
             // Spring errors get displayed in the "Index Configuration" pane
-            WebPartView indexerView = new JspView<>("/org/labkey/search/view/indexerAdmin.jsp", form, errors);
+            WebPartView<?> indexerView = new JspView<>("/org/labkey/search/view/indexerAdmin.jsp", form, errors);
             indexerView.setTitle("Index Configuration");
             vbox.addView(indexerView);
 
             // Won't be able to gather statistics if the search index is misconfigured
             if (null == t)
             {
-                WebPartView indexerStatsView = new JspView<>("/org/labkey/search/view/indexerStats.jsp", form);
+                WebPartView<?> indexerStatsView = new JspView<>("/org/labkey/search/view/indexerStats.jsp", form);
                 indexerStatsView.setTitle("Index Statistics");
                 vbox.addView(indexerStatsView);
             }
 
-            WebPartView searchStatsView = new JspView<>("/org/labkey/search/view/searchStats.jsp", form);
+            WebPartView<?> searchStatsView = new JspView<>("/org/labkey/search/view/searchStats.jsp", form);
             searchStatsView.setTitle("Search Statistics");
             vbox.addView(searchStatsView);
 
@@ -445,7 +445,7 @@ public class SearchController extends SpringActionController
         @Override
         public URLHelper getRedirectURL(Object o) throws Exception
         {
-            SearchService ss = SearchService.get();
+            SearchService ss = AbstractSearchService.get();
             ss.waitForIdle();
             return new ActionURL(AdminAction.class, getContainer());
         }
@@ -865,14 +865,13 @@ public class SearchController extends SpringActionController
             long startTime = System.currentTimeMillis();
             boolean success = ss.drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
 
-            LOG.info("Spent {}ms draining the search indexer queue. Success: {}", System.currentTimeMillis() - startTime, success);
+            LOG.info("Spent {}ms draining the search indexer queue at priority {}. Success: {}", System.currentTimeMillis() - startTime, form.getPriority(), success);
 
             // Return an error if we time out
             if (!success)
                 response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class CommentAction extends FormHandlerAction<SearchForm>
@@ -1090,7 +1089,7 @@ public class SearchController extends SpringActionController
 
         public SearchResultTemplate getSearchResultTemplate()
         {
-            SearchService ss = SearchService.get();
+            SearchService ss = AbstractSearchService.get();
             return ss.getSearchResultTemplate(getTemplate());
         }
 

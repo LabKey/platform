@@ -254,7 +254,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             indexSampleTypeMaterials(sampleType, task);
         };
 
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+        task.addRunnable(sampleType.getContainer(), SearchService.PRIORITY.bulk, r);
     }
 
     private void indexSampleType(ExpSampleType sampleType, SearchService.IndexTask task)

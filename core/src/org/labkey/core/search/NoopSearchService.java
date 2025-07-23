@@ -43,14 +43,10 @@ public class NoopSearchService implements SearchService
     IndexTask _dummyTask = new IndexTask()
     {
         @Override
-        public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
+        public void addRunnable(Container container, @NotNull PRIORITY pri, @NotNull Runnable r)
         {
         }
 
-        @Override
-        public void addResource(@NotNull String identifier, PRIORITY pri)
-        {
-        }
 
         @Override
         public void addResource(@NotNull WebdavResource r, PRIORITY pri)
@@ -193,7 +189,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit)
+    public void purgeForContainer(Container container)
+    {
+    }
+
+    @Override
+    public boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit)
     {
         return true;
     }

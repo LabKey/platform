@@ -716,13 +716,13 @@ public class WikiManager implements WikiService
         final IndexTask fTask = task;
 
         // Use a Runnable to postpone construction of the MockViewContext; if we're bootstrapping then base server URL won't be ready.
-        fTask.addRunnable(() -> {
+        fTask.addRunnable(c, SearchService.PRIORITY.item, () -> {
             // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webparts
             try (StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
             {
                 indexWikiContainerFast(fTask, c, modifiedSince, wikiName);
             }
-        }, SearchService.PRIORITY.item);
+        });
     }
 
 

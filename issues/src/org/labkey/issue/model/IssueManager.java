@@ -934,7 +934,7 @@ public class IssueManager
 
         // Index issues in batches of 100
         new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
-                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group));
+                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(c, SearchService.PRIORITY.group, new IndexGroup(task, batch)));
     }
 
     private static class IndexGroup implements Runnable

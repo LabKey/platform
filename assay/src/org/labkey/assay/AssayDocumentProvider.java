@@ -22,7 +22,7 @@ public class AssayDocumentProvider implements DocumentProvider
     public void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable runEnumerate = () -> AssayService.get().indexAssays(task, c);
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+        task.addRunnable(c, SearchService.PRIORITY.group, runEnumerate);
     }
 
     public static SearchService.ResourceResolver getSearchResolver()

@@ -529,7 +529,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                            searchService.defaultTask().addRunnable(_sampleType.getContainer(), SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
                                     expMaterial.index(searchService.defaultTask(), null, tableInfo);

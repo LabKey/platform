@@ -4408,7 +4408,7 @@ public class StudyManager
                 });
             };
 
-            task.addRunnable(runnable, SearchService.PRIORITY.bulk);
+            task.addRunnable(c, SearchService.PRIORITY.bulk, runnable);
         });
     }
 
@@ -4467,7 +4467,7 @@ public class StudyManager
             }
         }
         
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.crawl);
+        task.addRunnable(c, SearchService.PRIORITY.crawl, runEnumerate);
     }
 
 

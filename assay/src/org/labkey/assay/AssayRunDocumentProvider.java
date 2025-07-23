@@ -29,7 +29,7 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable runEnumerate = () -> AssayManager.get().indexAssayRuns(task, c, modifiedSince);
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+        task.addRunnable(c, SearchService.PRIORITY.group, runEnumerate);
     }
 
     private static SearchService.SearchCategory getSearchCategory()

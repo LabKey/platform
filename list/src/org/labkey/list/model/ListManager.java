@@ -513,7 +513,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
         };
 
-        task.addRunnable(r, SearchService.PRIORITY.group);
+        task.addRunnable(c, SearchService.PRIORITY.group, r);
     }
 
     public void indexList(final ListDefinition def)
@@ -546,7 +546,16 @@ public class ListManager implements SearchService.DocumentProvider
                 }
             };
 
-            task.addRunnable(r, SearchService.PRIORITY.item);
+            Container c = def.lookupContainer();
+            if (!ContainerManager.exists(c))
+            {
+                LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+            }
+            else
+            {
+                task.addRunnable(c, SearchService.PRIORITY.item, r);
+            }
+
         }
     }
 
@@ -582,7 +591,7 @@ public class ListManager implements SearchService.DocumentProvider
                 if (list.getEachItemIndex())
                 {
                     Runnable r = () -> ss.deleteResource(getDocumentId(list, entityId));
-                    task.addRunnable(r, SearchService.PRIORITY.delete);
+                    task.addRunnable(list.getContainer(), SearchService.PRIORITY.delete, r);
                 }
 
                 // Reindex the entire list document iff data is being indexed

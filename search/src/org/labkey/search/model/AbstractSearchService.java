@@ -38,6 +38,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
@@ -72,6 +73,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -171,22 +173,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
         @Override
-        public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
+        public void addRunnable(Container container, @NotNull PRIORITY pri, @NotNull Runnable r)
         {
-            Item i = new Item(this, r, pri);
+            Item i = new Item(this, r, pri, container);
             this.addItem(i);
             queueItem(i);
         }
-
-
-        @Override
-        public void addResource(@NotNull String identifier, PRIORITY pri)
-        {
-            Item i = new Item(this, OPERATION.add, identifier, null, pri);
-            this.addItem(i);
-            queueItem(i);
-        }
-
 
         @Override
         public void addResource(@NotNull WebdavResource r, PRIORITY pri)
@@ -210,7 +202,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
             };
             addItem(i);
-            final Item r = new Item(this, () -> queueItem(i), pri);
+            final Item r = new Item(this, () -> queueItem(i), pri, null);
             queueItem(r);
         }
 
@@ -257,7 +249,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Runnable _run;
         PRIORITY _pri;
         // Used to ensure FIFO ordering in the queue
-        final long seqNum = seq.incrementAndGet();
+        final long _seqNum = seq.incrementAndGet();
+        final GUID _containerId;
 
         int _preprocessAttempts = 0;
 
@@ -274,14 +267,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _res = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
             _task = task;
+            _containerId = r == null ? null : r.getContainerId();
         }
 
-        Item(_IndexTask task, Runnable r, PRIORITY pri)
+        Item(_IndexTask task, Runnable r, PRIORITY pri, Container container)
         {
             _run = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
             _task = task;
             _id = String.valueOf(r);
+            _containerId = container == null ? null : container.getEntityId();
         }
 
         OPERATION getOperation()
@@ -349,13 +344,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             int res = _pri.compareTo(o._pri) * -1;
             if (res == 0 && o != this)
-                res = (seqNum < o.seqNum ? -1 : 1);
+                res = (_seqNum < o._seqNum ? -1 : 1);
             return res;
         }
     }
 
 
-    final Item _commitItem = new Item(null, () -> {}, PRIORITY.commit);
+    final Item _commitItem = new Item(null, () -> {}, PRIORITY.commit, null);
 
 
     @Override
@@ -419,7 +414,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _countIndexedSinceCommit++;
             }
         };
-        queueItem(new Item(defaultTask(), r, PRIORITY.background));
+        // Don't pass in a container because we don't want to eject this from the queue
+        queueItem(new Item(defaultTask(), r, PRIORITY.background, null));
     }
 
     @Override
@@ -463,7 +459,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             //Recrawl files as the container name may be used in paths & Urls. Issue #39696
             DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
         };
-        queueItem(new Item(defaultTask(), r, PRIORITY.delete));
+        // Don't pass a container because we don't want to skip this when a container is deleted
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete, null));
     }
 
     private void queueItem(Item i)
@@ -616,11 +613,24 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return URLHelper.queryEqual(a,b);
     }
 
+    public static @NotNull SearchService get()
+    {
+        return Objects.requireNonNull(ServiceRegistry.get().getService(SearchService.class));
+    }
+
     @Override
-    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
+    public void purgeForContainer(Container container)
+    {
+        _runQueue.removeIf(i -> container.getEntityId().equals(i._containerId));
+        _itemQueue.removeIf(i -> container.getEntityId().equals(i._containerId));
+    }
+
+    @Override
+    public boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException
     {
         final CountDownLatch latch = new CountDownLatch(1);
         long start = System.currentTimeMillis();
+
         _IndexTask task = createTask("WaitForIndexer", new TaskListener()
         {
             @Override
@@ -639,7 +649,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         });
         // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
         // queue an Item to ensure all queues are cleared
-        task.addRunnable(priority, () -> {
+        task.addRunnable(null, priority, () -> {
             logQueueStatus("drainQueue's Runnable.run()");
             task.addNoop(priority);
         });
@@ -1331,7 +1341,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 p.enumerateDocuments(task, c, since);
             }
         };
-        task.addRunnable(r, PRIORITY.bulk); // breaks rule of always adding w/higher priority than parent task
+        task.addRunnable(c, PRIORITY.bulk, r); // breaks rule of always adding w/higher priority than parent task
         if (null == in)
             task.setReady();
         return task;
@@ -1358,7 +1368,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 indexContainer(task, i, null);
             }
         };
-        task.addRunnable(r, PRIORITY.bulk);
+        task.addRunnable(c, PRIORITY.bulk, r);
         if (null == in)
             task.setReady();
         return task;

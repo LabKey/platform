@@ -491,7 +491,7 @@ public abstract class VisitManager
             {
                 final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
                 Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
-                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+                ss.defaultTask().addRunnable(c, SearchService.PRIORITY.group, r);
             }
             else
             {
@@ -502,7 +502,7 @@ public abstract class VisitManager
                     List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
                     StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
                 };
-                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+                ss.defaultTask().addRunnable(c, SearchService.PRIORITY.group, r);
             }
         }
     }

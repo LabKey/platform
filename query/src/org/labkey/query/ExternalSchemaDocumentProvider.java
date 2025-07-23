@@ -157,6 +157,6 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
             }
         };
 
-        task.addRunnable(r, SearchService.PRIORITY.group);
+        task.addRunnable(c, SearchService.PRIORITY.group, r);
     }
 }

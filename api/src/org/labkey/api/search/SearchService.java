@@ -114,11 +114,13 @@ public interface SearchService extends SearchMXBean
      */
     void reindexContainerFiles(Container c);
 
+    void purgeForContainer(Container container);
+
     /**
      * Puts work in the indexer queue at the specified priority and waits up to the timeout for it to complete
      * @return true if the task in the queue completed before the timeout
      */
-    boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException;
+    boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException;
 
     /** From lowest to highest priority */
     enum PRIORITY
@@ -201,29 +203,9 @@ public interface SearchService extends SearchMXBean
          */
         void setReady();
 
-        default void addRunnable(@NotNull SearchService.PRIORITY pri, @NotNull Runnable r)
-        {
-            addRunnable(r, pri);
-        }
-
-        void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
-
-        void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
+        void addRunnable(Container container, @NotNull SearchService.PRIORITY pri, @NotNull Runnable r);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
-
-        default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
-        {
-            ListUtils.partition(list, batchSize).forEach(sublist ->
-            {
-                addRunnable(() ->
-                    sublist.stream()
-                        .map(mapper)
-                        .filter(Objects::nonNull)
-                        .forEach(doc -> addResource(doc, PRIORITY.item))
-                    , PRIORITY.group);
-            });
-        }
     }
 
 

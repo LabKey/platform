@@ -29,7 +29,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable runEnumerate = () -> AssayManager.get().indexAssayBatches(task, c, modifiedSince);
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+        task.addRunnable(c, SearchService.PRIORITY.group, runEnumerate);
     }
 
     private static SearchService.SearchCategory getSearchCategory()

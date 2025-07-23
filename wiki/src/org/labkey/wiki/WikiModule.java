@@ -208,7 +208,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public void enumerateDocuments(final SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable r = () -> getWikiManager().indexWikis(task, c, modifiedSince, null);
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+        task.addRunnable(c, SearchService.PRIORITY.bulk, r);
     }
 
 

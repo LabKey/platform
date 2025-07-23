@@ -981,23 +981,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        task.addRunnable(() -> {
+        task.addRunnable(c, SearchService.PRIORITY.bulk, () -> {
             for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
             {
                 sampleType.index(task, SearchService.PRIORITY.bulk);
             }
-        }, SearchService.PRIORITY.bulk);
+        });
 
-        task.addRunnable(() -> indexMaterials(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
+        task.addRunnable(c, SearchService.PRIORITY.bulk, () -> indexMaterials(task, c, modifiedSince, 0));
 
-        task.addRunnable(() -> {
+        task.addRunnable(c, SearchService.PRIORITY.bulk, () -> {
             for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
             {
                 dataClass.index(task, SearchService.PRIORITY.bulk);
             }
-        }, SearchService.PRIORITY.bulk);
+        });
 
-        task.addRunnable(() -> indexData(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
+        task.addRunnable(c, SearchService.PRIORITY.bulk, () -> indexData(task, c, modifiedSince, 0));
     }
 
     @Override
@@ -1049,7 +1049,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (materials.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexMaterials(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
+            task.addRunnable(container, SearchService.PRIORITY.bulk, () -> indexMaterials(task, container, modifiedSince, maxRowIdProcessed.getValue()));
         }
     }
 
@@ -1086,7 +1086,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (data.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexData(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
+            task.addRunnable(container, SearchService.PRIORITY.bulk, () -> indexData(task, container, modifiedSince, maxRowIdProcessed.getValue()));
         }
     }
 
@@ -1231,7 +1231,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             indexDataClassData(dataClass, task);
         };
 
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+        task.addRunnable(dataClass.getContainer(), SearchService.PRIORITY.bulk, r);
     }
 
     private void indexDataClassData(ExpDataClassImpl dataClass, SearchService.IndexTask task)
@@ -1252,9 +1252,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->
             new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
-                    task.addRunnable(() -> batch.forEach(data ->
-                        new ExpDataImpl(data).index(task)),
-                    SearchService.PRIORITY.bulk)
+                    task.addRunnable(dataClass.getContainer(), SearchService.PRIORITY.bulk, () -> batch.forEach(data ->
+                        new ExpDataImpl(data).index(task))
+                    )
         ));
     }
 
@@ -5041,7 +5041,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (null != ss)
             {
                 transaction.addCommitTask(
-                    () -> ss.defaultTask().addRunnable(() -> ss.deleteResources(docids), SearchService.PRIORITY.bulk),
+                    // Use null as container because we want deletes to run even if the container is deleted
+                    () -> ss.defaultTask().addRunnable(null, SearchService.PRIORITY.bulk, () -> ss.deleteResources(docids)),
                     POSTCOMMIT);
             }
 
@@ -6586,7 +6587,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             SearchService.IndexTask task = ss.defaultTask();
             Runnable runEnumerate = () -> assayService.indexAssay(task, protocol.getContainer(), new ExpProtocolImpl(protocol));
-            task.addRunnable(runEnumerate, SearchService.PRIORITY.item);
+            task.addRunnable(protocol.getContainer(), SearchService.PRIORITY.item, runEnumerate);
         }
     }
 
