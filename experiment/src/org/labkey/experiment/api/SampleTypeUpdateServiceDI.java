@@ -714,9 +714,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
             throw new ValidationException("User-specified sample name not allowed");
 
-        if (hasNameChange && !ExperimentServiceImpl.get().canRename(lsid, newName, _sampleType.getTinfo()))
-            throw new ValidationException(String.format("The name '%s' already exists.", newName));
-
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
@@ -1261,7 +1258,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         if (verifyExisting && !allKeys.isEmpty())
-            throw new InvalidKeyException("Sample not found: " + allKeys.iterator().next() + ".");
+            throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
         // if contains domain fields, check for aliquot specific fields
         if (!queryTableInfo.getName().equalsIgnoreCase("material"))

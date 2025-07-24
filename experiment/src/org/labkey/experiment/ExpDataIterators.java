@@ -805,6 +805,29 @@ public class ExpDataIterators
         }
     }
 
+    /**
+     * Issue 52504 (sort of): Chooses a container filter that is appropriate for import, merge or update actions in the face of product folders.
+     * Note that this is slightly different from our treatment of lookups:
+     *   - when in a project, we allow import or update to all subfolders,
+     *   - when in a folder, we only allow references to data up the folder tree
+     * @param qDef The QueryDefinition in use for the import action
+     * @param container The container that is the target of the import or update
+     * @param user The user doing the action
+     */
+    public static void setContainerFilterForImport(QueryDefinition qDef, Container container, User user)
+    {
+        if (container.isProductFoldersEnabled())
+        {
+            ContainerFilter cf;
+
+            if (container.isProject())
+                cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            else
+                cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+            qDef.setContainerFilter(cf);
+        }
+    }
+
     /* setup mini dataiterator pipeline to process lineage */
     public static void derive(User user, Container container, DataIterator di, boolean isSample, ExpObject dataType, boolean skipAliquot) throws BatchValidationException
     {
@@ -2264,15 +2287,9 @@ public class ExpDataIterators
                 step2c = LoggingDataIterator.wrap(new ExpDataIterators.SampleStatusCheckIteratorBuilder(step2b, _container));
             }
 
-            DataIteratorBuilder step2d = step2c;
-            if (canUpdateNames && !dontUpdate.contains("name"))
-            {
-                step2d = LoggingDataIterator.wrap(new ExpDataIterators.DuplicateNameCheckIteratorBuilder(step2c, isUpdateUsingLsid, _propertiesTable));
-            }
-
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2d, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2c, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
@@ -2487,8 +2504,7 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
-                        // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-                        qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(splitContainer, _user));
+                        setContainerFilterForImport(qDef, splitContainer, _user);
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2743,8 +2759,7 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             DataClassUserSchema schema = new DataClassUserSchema(container, _user);
             QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
+            setContainerFilterForImport(qDef, container, _user);
             TableInfo dataTable = qDef.getTable(schema, qpe, true);
             if (dataTable == null)
             {
@@ -2774,8 +2789,7 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
+            setContainerFilterForImport(qDef, container, _user);
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {
@@ -2959,7 +2973,7 @@ public class ExpDataIterators
                 }
                 if (!notFoundIds.isEmpty())
                 {
-                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Sample" + (notFoundIds.size() > 1 ? "s" : "") : "Data") + " not found: " + StringUtils.join(notFoundIds, ", ") + "."));
+                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
                     return;
                 }
 
@@ -3052,104 +3066,6 @@ public class ExpDataIterators
             Integer currentCount = currentCounts.getOrDefault(key, 0);
             currentCounts.put(key, currentCount + increments.get(key));
         });
-    }
-
-    public static class DuplicateNameCheckIteratorBuilder implements DataIteratorBuilder
-    {
-        private final DataIteratorBuilder _in;
-        private final TableInfo _tableInfo;
-        private final boolean _isUpdateUsingLsid;
-
-        public DuplicateNameCheckIteratorBuilder(@NotNull DataIteratorBuilder in, boolean isUpdateUsingLsid, TableInfo tableInfo)
-        {
-            _in = in;
-            _isUpdateUsingLsid = isUpdateUsingLsid;
-            _tableInfo = tableInfo;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DuplicateNameCheckDataIterator(pre, context, _isUpdateUsingLsid, _tableInfo));
-        }
-    }
-
-    public static class DuplicateNameCheckDataIterator extends WrapperDataIterator
-    {
-        final static String NAME_FIELD = "name";
-        private final DataIteratorContext _context;
-        private final Integer _nameCol;
-        private final Integer _lsidCol;
-        private final TableInfo _tableInfo;
-        private final boolean _isUpdateUsingLsid;
-
-        protected DuplicateNameCheckDataIterator(DataIterator di, DataIteratorContext context, boolean isUpdateUsingLsid, TableInfo tableInfo)
-        {
-            super(di);
-            _context = context;
-            _tableInfo = tableInfo;
-            _isUpdateUsingLsid = isUpdateUsingLsid;
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _nameCol = map.get(NAME_FIELD);
-            _lsidCol = map.get("lsid");
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-            if (!hasNext)
-                return false;
-
-            if (_context.getErrors().hasErrors())
-                return hasNext;
-
-            if (_nameCol == null)
-                return hasNext;
-
-            Object nameObj = get(_nameCol);
-            if (nameObj == null)
-                return hasNext;
-
-            String newName = String.valueOf(nameObj);
-            if (StringUtils.isEmpty(newName))
-                return hasNext;
-
-            Map<String, Object> existingValues = getExistingRecord();
-            if (existingValues != null  && !existingValues.isEmpty() && existingValues.get(NAME_FIELD).equals(newName))
-                return hasNext;
-
-            boolean isNameValid = true;
-            if (!_context.getInsertOption().allowUpdate) // insert new
-            {
-                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo, false);
-            }
-            else if (_isUpdateUsingLsid && _lsidCol != null) // update using rowId is not yet supported for DIB
-            {
-                Object lsidObj = get(_lsidCol);
-                if (lsidObj != null)
-                {
-                    String lsid = String.valueOf(lsidObj);
-                    if (!StringUtils.isEmpty(lsid) && !ExperimentServiceImpl.get().canRename(lsid, newName, _tableInfo))
-                        isNameValid = false;
-                }
-            }
-            else if (_context.getInsertOption().mergeRows) // merge
-            {
-                isNameValid = ExperimentServiceImpl.get().isValidNewOrExistingName(newName, _tableInfo,true);
-            }
-
-            if (!isNameValid)
-            {
-                String error = String.format("The name '%s' already exists.", newName);
-                if (_context.getInsertOption().mergeRows)
-                    error = String.format("The name '%s' could not be resolved. Please check the casing of the provided name.", newName);
-                _context.getErrors().addRowError(new ValidationException(error));
-            }
-
-            return hasNext;
-        }
     }
 
     public static class SampleStatusCheckIteratorBuilder implements DataIteratorBuilder
