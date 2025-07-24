@@ -149,6 +149,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -1017,9 +1018,15 @@ public class ReportsController extends SpringActionController
             {
                 reportView = _report.getRunReportView(getViewContext());
             }
+            catch (RedirectException re)
+            {
+                // Link reports throw RedirectException... pass it on
+                throw re;
+            }
             catch (RuntimeException e)
             {
-                return new HtmlView(SPAN(cl("labkey-error"), e.getMessage(), ". Unable to create report."));
+                String message = e.getMessage();
+                return new HtmlView(SPAN(cl("labkey-error"), Objects.requireNonNullElse(message, e.getClass().getSimpleName()), ". Unable to create report."));
             }
 
             if (!isPrint() && DiscussionService.get() != null)
