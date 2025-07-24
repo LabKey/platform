@@ -192,10 +192,12 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private UpgradeState _upgradeState;
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
-    // emptySchemas flag is used to bootstrap all the database schemas without populating them with any data rows. This
-    // will be useful in the future when migrating SQL Server deployments to PostgreSQL. Note that a bootstrapped
-    // "emptySchemas" database will not be left in a usable state (until we actually implement the migration step).
-    private final boolean _emptySchemas = Boolean.valueOf(System.getProperty("emptySchemas"));
+
+    // This argument is used to specify a Microsoft SQL Server database that is the source of migration to PostgreSQL
+    private final String _migrationDataSource = System.getProperty("migrationDataSource");
+    // This argument is used to bootstrap all the database schemas without populating them with any data rows. It can
+    // be used by itself to test the empty schema handling without attempting a full migration.
+    private final boolean _emptySchemas = Boolean.valueOf(System.getProperty("emptySchemas")) || _migrationDataSource != null;
 
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
@@ -1997,6 +1999,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return !(_emptySchemas && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
     }
 
+    public @Nullable String getMigrationDataSource()
+    {
+        return _migrationDataSource != null && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL() ? _migrationDataSource : null;
+    }
+
     // If associated properties are set, migrate data from the external SQL Server data source into the just-created
     // empty PostgreSQL schemas.
     private void handleDatabaseMigration()
@@ -2005,11 +2012,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             clearSchemas();
             verifyEmptySchemas();
-            migrateDatabase();
         }
+
+        if (getMigrationDataSource() != null)
+            migrateDatabase();
     }
 
-    // As part of SQL Server -> PostgreSQL migration, clear the few tables that are needed for bootstrap
+    // As part of SQL Server -> PostgreSQL migration, clear containers needed for bootstrap
     private void clearSchemas()
     {
         TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
@@ -2067,11 +2076,12 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
+    private record Sequence(String schemaName, String tableName, String columnName, int lastValue) {}
+
     private void migrateDatabase()
     {
         DbScope targetScope = DbScope.getLabKeyScope();
-
-        String migrationDataSource = "ssDataSource"; // TODO: add a system property for this
+        String migrationDataSource = getMigrationDataSource();
         DbScope sourceScope = DbScope.getDbScope(migrationDataSource);
         if (null == sourceScope)
             throw new ConfigurationException("Migration data source not found: " + migrationDataSource);
@@ -2085,7 +2095,28 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             throw new IllegalStateException(StringUtilsLabKey.pluralize(sequencesNonOneIncrement.size(), "sequence has", "sequences have") + " an increment other than 1: " + sequencesNonOneIncrement);
         }
 
-        // Get target schemas in module order, which accommodates foreign key relationships
+        // Select the SQL Server sequences with non-null last value. We'll use the results to set PostgreSQL sequences after copying data.
+        String sequenceQuery = """
+            SELECT
+                OBJECT_SCHEMA_NAME(tables.object_id, db_id()) AS SchemaName,
+                tables.name AS TableName,
+                identity_columns.name AS ColumnName,
+                identity_columns.seed_value,
+                identity_columns.increment_value,
+                identity_columns.last_value
+            FROM
+                sys.tables tables
+            JOIN
+                sys.identity_columns identity_columns ON tables.object_id = identity_columns.object_id
+            WHERE last_value IS NOT NULL""";
+        Map<String, Map<String, Sequence>> sequences = new HashMap<>();
+        new SqlSelector(sourceScope, sequenceQuery).forEach(rs -> {
+            Sequence sequence = new Sequence(rs.getString("SchemaName"), rs.getString("TableName"), rs.getString("ColumnName"), rs.getInt("last_value"));
+            Map<String, Sequence> schemaMap = sequences.computeIfAbsent(sequence.schemaName(), s -> new HashMap<>());
+            schemaMap.put(sequence.tableName(), sequence);
+        });
+
+        // Get target schemas in module order, which helps with foreign key relationships
         List<DbSchema> schemas = getModules().stream()
             .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
             .map(name -> targetScope.getSchema(name, DbSchemaType.Module))
@@ -2118,6 +2149,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     _log.warn("Differences: {} and {}", sourceTableNames, targetTableNames);
                 }
 
+                Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
                 Set<String> tablesToIgnore = targetSchema.getName().equals("core") ? Sets.newCaseInsensitiveHashSet("modules", "sqlscripts", "upgradesteps") : Set.of();
                 for (TableInfo targetTable : TableSorter.sort(targetSchema, true))
                 {
@@ -2181,24 +2213,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                                 }
                             });
 
-                            // TODO: Better approach is probably to query "SELECT * FROM sys.identity_columns WHERE Last_value IS NOT NULL" and set corresponding source sequences to last_value (+1?)
-                            Long current = new SqlSelector(sourceSchema, "SELECT IDENT_CURRENT(?)", sourceTable.getSelectName()).getObject(Long.class);
-                            if (null != current)
+                            Sequence sequence = schemaSequenceMap.get(targetTable.getName());
+                            if (sequence != null)
                             {
-                                _log.info("{}: {}", sourceTable.getSelectName(), current);
-                                List<String> autoIncColumnNames = targetTable.getPkColumns().stream()
-                                    .filter(ColumnInfo::isAutoIncrement)
-                                    .map(col -> col.getSelectIdentifier().getId())
-                                    .toList();
-                                if (autoIncColumnNames.size() == 1)
-                                {
-                                    String sequenceName = new SqlSelector(targetSchema, "SELECT pg_get_serial_sequence(?, ?)", targetSchema.getName() + "." + targetTable.getName(), autoIncColumnNames.get(0)).getObject(String.class);
-                                    new SqlExecutor(targetScope).execute(new SQLFragment("ALTER SEQUENCE " + sequenceName + " RESTART WITH " + current + 1));
-                                }
-                                else
-                                {
-                                    _log.warn("Unexpected number of auto-increment columns for {}: {}", targetTable.getSelectName(), autoIncColumnNames);
-                                }
+                                ColumnInfo targetColumn = targetTable.getColumn(sequence.columnName());
+                                _log.info("{} autoinc: {}", targetColumn.getName(), targetColumn.isAutoIncrement());
+                                String sequenceName = new SqlSelector(targetSchema, "SELECT pg_get_serial_sequence(?, ?)", targetSchema.getName() + "." + targetTable.getName(), targetColumn.getSelectIdentifier().getId())
+                                    .getObject(String.class);
+                                new SqlExecutor(targetScope).execute("SELECT setval(?, ?)", sequenceName, sequence.lastValue());
                             }
                         }
                         catch (Exception e)
@@ -2210,7 +2232,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             }
         }
 
-        // We can't handle provisioned tables yet, so (for now) delete all audit table remnants, allowing the new DB to create these tables on restart
+        // We can't handle provisioned tables yet, so (for now) delete all copied audit table remnants, allowing the new DB to create these tables on restart
         SqlExecutor executor = new SqlExecutor(targetScope);
         executor.execute("DELETE FROM exp.PropertyDomain WHERE DomainId IN (SELECT DomainID FROM exp.DomainDescriptor WHERE storageschemaname = 'audit')");
         executor.execute("DELETE FROM exp.DomainDescriptor WHERE storageschemaname = 'audit'");
