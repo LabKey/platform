@@ -712,7 +712,7 @@ describe('Move Samples', () => {
             const sampleData = await _getSampleData(sampleRowId1, subfolder1Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
 
             expect(sampleData.length).toBe(1);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith("sampletype/fileA.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId1], undefined, userComment,
                 [{
@@ -745,8 +745,8 @@ describe('Move Samples', () => {
             expect(updateCounts.sampleFiles).toBe(2);
             const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")).toBe(true);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith("sampletype/fileB.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith("sampletype/fileC.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
                 oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileB.txt"),
@@ -783,8 +783,8 @@ describe('Move Samples', () => {
             expect(updateCounts.sampleFiles).toBe(2);
             const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")).toBe(true);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith("sampletype/fileD-1.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith("sampletype/fileE.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
                 oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileD.txt"),
@@ -815,7 +815,7 @@ describe('Move Samples', () => {
             expect(updateCounts.sampleFiles).toBe(1);
             const sampleData = await _getSampleData(sampleRowId1, subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
             expect(sampleData.length).toBe(1);
-            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith("sampletype/fileF.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1], undefined, undefined, [{
                 oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileF.txt"),
