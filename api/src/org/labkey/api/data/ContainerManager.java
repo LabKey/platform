@@ -1125,7 +1125,7 @@ public class ContainerManager
         //if the input string is not a GUID, just return null,
         //so that we don't get a SQLException when the database
         //tries to convert it to a unique identifier.
-        if (null != id && !GUID.isGUID(id))
+        if (!GUID.isGUID(id))
             return null;
 
         GUID guid = new GUID(id);
