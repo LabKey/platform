@@ -36,10 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * User: kevink
- * Date: 4/30/13
- */
 public final class TableSorter
 {
     private static final Logger LOG = LogManager.getLogger(TableSorter.class);

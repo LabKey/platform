@@ -129,6 +129,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -2151,8 +2152,18 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
                 Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
                 Set<String> tablesToIgnore = targetSchema.getName().equals("core") ? Sets.newCaseInsensitiveHashSet("modules", "sqlscripts", "upgradesteps") : Set.of();
-                for (TableInfo targetTable : TableSorter.sort(targetSchema, true))
+                List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
+                Set<TableInfo> allTables = targetSchema.getTableNames().stream()
+                    .map(targetSchema::getTable)
+                    .collect(Collectors.toCollection(HashSet::new));
+                allTables.removeAll(sortedTables);
+                if (!allTables.isEmpty())
+                    _log.info("These tables were removed by TableSorter: {}", allTables);
+                for (TableInfo targetTable : sortedTables)
                 {
+                    // Skip the views and virtual tables (e.g., test.Containers2)
+                    if (targetTable.getTableType() != DatabaseTableType.TABLE)
+                        continue;
                     String targetTableName = targetTable.getName();
                     if (tablesToIgnore.contains(targetTableName))
                         continue;
@@ -2162,10 +2173,15 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     {
                         _log.warn("Source schema has no table named '{}'", targetTableName);
                     }
-                    else if (sourceTable.getTableType() == DatabaseTableType.TABLE) // Skip the views
+                    else if (sourceTable.getTableType() != DatabaseTableType.TABLE) // Skip the views
+                    {
+                        _log.warn("{} is not a table!", sourceTable);
+                    }
+                    else
                     {
                         Set<String> columnNames = sourceTable.getColumnNameSet().stream()
                             .filter(name -> !"_ts".equals(name)) // TODO: remove only if column has a default set?
+                            .filter(name -> !"csPath".equals(name)) // search.CrawlCollections.csPath is SQL Server-only
                             .collect(Collectors.toSet());
 
                         TableSelector sourceSelector = new TableSelector(sourceTable, columnNames).setJdbcCaching(false);
@@ -2173,7 +2189,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                         {
                             Collection<ColumnInfo> sourceColumns = sourceSelector.getSelectedColumns();
                             // Map the source columns to the target columns so we get the right order and casing for INSERT, etc.
-                            Collection<ColumnInfo> targetColumns = sourceColumns.stream().map(sourceCol -> targetTable.getColumn(sourceCol.getName())).toList();
+                            Collection<ColumnInfo> targetColumns = sourceColumns.stream()
+                                .map(sourceCol -> targetTable.getColumn(sourceCol.getName()))
+                                .peek(targetColumn -> {
+                                    if (null == targetColumn)
+                                        _log.info("null target column in: {}", sourceTable);
+                                })
+                                .filter(Objects::nonNull)
+                                .toList();
                             String q = StringUtils.join(Collections.nCopies(sourceColumns.size(), "?"), ", ");
                             SQLFragment sql = new SQLFragment("INSERT INTO ")
                                 .append(targetTable.getSelectName())
@@ -2209,7 +2232,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                                 }
                                 catch (SQLException e)
                                 {
-                                    throw new RuntimeException(e);
+                                    throw new RuntimeException("Exception while migrating data from " + sourceTable, e);
                                 }
                             });
 
@@ -2217,7 +2240,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                             if (sequence != null)
                             {
                                 ColumnInfo targetColumn = targetTable.getColumn(sequence.columnName());
-                                _log.info("{} autoinc: {}", targetColumn.getName(), targetColumn.isAutoIncrement());
                                 String sequenceName = new SqlSelector(targetSchema, "SELECT pg_get_serial_sequence(?, ?)", targetSchema.getName() + "." + targetTable.getName(), targetColumn.getSelectIdentifier().getId())
                                     .getObject(String.class);
                                 new SqlExecutor(targetScope).execute("SELECT setval(?, ?)", sequenceName, sequence.lastValue());
