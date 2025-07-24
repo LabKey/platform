@@ -200,7 +200,6 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
 import static org.labkey.api.util.DOM.DIV;
-import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
 public class ReportsController extends SpringActionController
@@ -1025,8 +1024,8 @@ public class ReportsController extends SpringActionController
             }
             catch (RuntimeException e)
             {
-                String message = e.getMessage();
-                return new HtmlView(SPAN(cl("labkey-error"), Objects.requireNonNullElse(message, e.getClass().getSimpleName()), ". Unable to create report."));
+                String message = Objects.requireNonNullElse(e.getMessage(), e.getClass().getSimpleName()) + ". Unable to create report.";
+                return HtmlView.err(message);
             }
 
             if (!isPrint() && DiscussionService.get() != null)
