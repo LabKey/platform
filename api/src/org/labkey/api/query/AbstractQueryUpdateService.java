@@ -1018,8 +1018,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
-            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent();
-            event.setContainer(container);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(container, null);
             if (value instanceof MultipartFile multipartFile)
             {
                 // Once we've found one, write it to disk and replace the row's value with just the File reference to it
