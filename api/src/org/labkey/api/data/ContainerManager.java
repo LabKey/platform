@@ -160,10 +160,9 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    // Use double the max count as the size since we cache by both EntityId and Path
-    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 2, CacheManager.DAY, "Containers");
-    private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
-    private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child Container objects of Containers");
+    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
+    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
+    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -1074,7 +1073,7 @@ public class ContainerManager
             return Collections.emptyMap();
         }
 
-        List<String> childIds = CACHE_CHILDREN.get(parent.getId());
+        List<GUID> childIds = CACHE_CHILDREN.get(parent.getEntityId());
         if (null == childIds)
         {
             try (DbScope.Transaction t = ensureTransaction())
@@ -1086,11 +1085,11 @@ public class ContainerManager
                 childIds = new ArrayList<>(children.size());
                 for (Container c : children)
                 {
-                    childIds.add(c.getId());
+                    childIds.add(c.getEntityId());
                     _addToCache(c);
                 }
                 childIds = Collections.unmodifiableList(childIds);
-                CACHE_CHILDREN.put(parent.getId(), childIds);
+                CACHE_CHILDREN.put(parent.getEntityId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
             }
@@ -1101,7 +1100,7 @@ public class ContainerManager
 
         // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily alphabetical
         Map<String, Container> ret = new LinkedHashMap<>();
-        for (String id : childIds)
+        for (GUID id : childIds)
         {
             Container c = getForId(id);
             if (null != c)
@@ -1121,17 +1120,19 @@ public class ContainerManager
         return guid != null ? getForId(guid.toString()) : null;
     }
 
-    public static @Nullable Container getForId(String id)
+    public static @Nullable Container getForId(@Nullable String id)
     {
-        Container d = getFromCacheId(id);
-        if (null != d)
-            return d;
-
         //if the input string is not a GUID, just return null,
         //so that we don't get a SQLException when the database
         //tries to convert it to a unique identifier.
         if (null != id && !GUID.isGUID(id))
             return null;
+
+        GUID guid = new GUID(id);
+
+        Container d = CACHE_ENTITY_ID.get(guid);
+        if (null != d)
+            return d;
 
         try (DbScope.Transaction t = ensureTransaction())
         {
@@ -2048,61 +2049,31 @@ public class ContainerManager
         }
     }
 
-    private static Set<Container> _getAllChildrenFromCache(Container c)
-    {
-        return CACHE_ALL_CHILDREN.get(c.getId());
-    }
-
-    private static void _addAllChildrenToCache(Container c, Set<Container> children)
-    {
-        CACHE_ALL_CHILDREN.put(c.getId(), children);
-    }
-
-    public static Container getFromCacheId(String id)
-    {
-        return CACHE.get(id);
-    }
-
     private static Container _getFromCachePath(Path path)
     {
-        return CACHE.get(toString(path));
-    }
-
-    // UNDONE: use Path directly instead of toString()
-    private static String toString(Container c)
-    {
-        return toString(c.getParsedPath());
-    }
-
-    private static String toString(Path p)
-    {
-        return StringUtils.strip(p.toString(), "/").toLowerCase();
+        return CACHE_PATH.get(path);
     }
 
     private static Container _addToCache(Container c)
     {
         assert DATABASE_QUERY_LOCK.isHeldByCurrentThread() : "Any cache modifications must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        CACHE.put(toString(c), c);
-        CACHE.put(c.getId(), c);
+        CACHE_ENTITY_ID.put(c.getEntityId(), c);
+        CACHE_PATH.put(c.getParsedPath(), c);
         return c;
     }
 
     private static void _clearChildrenFromCache(Container c)
     {
-        CACHE_CHILDREN.remove(c.getId());
+        CACHE_CHILDREN.remove(c.getEntityId());
         navTreeManageUncache(c);
     }
 
     /** @param hierarchyChange whether the shape of the container tree has changed */
     private static void _removeFromCache(Container c, boolean hierarchyChange)
     {
-        CACHE.remove(toString(c));
-        CACHE.remove(c.getId());
-
-        // Blow away the children caches, which can be outdated even if the hierarchy hasn't changed
-        // For example, changing the folder type or enabled modules in a parent can impact child workbooks
-        CACHE_ALL_CHILDREN.clear();
+        CACHE_ENTITY_ID.remove(c.getEntityId());
+        CACHE_PATH.remove(c.getParsedPath());
 
         if (hierarchyChange)
         {
@@ -2116,9 +2087,9 @@ public class ContainerManager
 
     public static void clearCache()
     {
-        CACHE.clear();
+        CACHE_PATH.clear();
+        CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
-        CACHE_ALL_CHILDREN.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2162,19 +2133,13 @@ public class ContainerManager
     }
 
 
-    /** including root node */
+    /** Recursive, including root node */
     public static Set<Container> getAllChildren(Container root)
     {
-        Set<Container> children = _getAllChildrenFromCache(root);
-        if (children != null)
-            return children;
-
-        children = getAllChildrenDepthFirst(root);
+        Set<Container> children = getAllChildrenDepthFirst(root);
         children.add(root);
 
-        children = Collections.unmodifiableSet(children); // don't let callers modify the cached copy
-        _addAllChildrenToCache(root, children);
-        return children;
+        return Collections.unmodifiableSet(children);
     }
 
     /**
