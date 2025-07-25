@@ -15,7 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -25,6 +24,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.Tuple3;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 
 public final class TableSorter
 {
-    private static final Logger LOG = LogManager.getLogger(TableSorter.class);
+    private static final Logger LOG = LogHelper.getLogger(TableSorter.class, "Warnings about foreign key traversal");
 
     /**
      * Get a topologically sorted list of TableInfos within this schema.
@@ -105,6 +105,7 @@ public final class TableSorter
                 if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                     continue;
 
+                String lookupSchemaName = fk.getLookupSchemaName();
                 // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
                 TableInfo t = null;
                 try
@@ -115,12 +116,12 @@ public final class TableSorter
                 {
                     // ignore and try to continue
                     String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
-                            fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
+                            lookupSchemaName, fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
                     LOG.warn(msg, qpe);
                 }
 
                 // Skip lookups to other schemas
-                if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+                if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                     continue;
 
                 // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
@@ -129,7 +130,7 @@ public final class TableSorter
                     lookupTableName = t.getName();
 
                 // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+                if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
                     continue;
 
                 // Remove the lookup table from the set of tables with no incoming FK
@@ -185,6 +186,7 @@ public final class TableSorter
             if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                 continue;
 
+            String lookupSchemaName = fk.getLookupSchemaName();
             // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
             TableInfo t = null;
             try
@@ -197,7 +199,7 @@ public final class TableSorter
             }
 
             // Skip lookups to other schemas
-            if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+            if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                 continue;
 
             // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
@@ -206,7 +208,7 @@ public final class TableSorter
                 lookupTableName = t.getName();
 
             // Skip self-referencing FKs
-            if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+            if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
                 continue;
 
             // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)

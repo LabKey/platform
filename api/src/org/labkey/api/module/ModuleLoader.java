@@ -2013,10 +2013,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             clearSchemas();
             verifyEmptySchemas();
-        }
 
-        if (getMigrationDataSource() != null)
-            migrateDatabase();
+            if (getMigrationDataSource() != null)
+                migrateDatabase(getMigrationDataSource());
+        }
     }
 
     // As part of SQL Server -> PostgreSQL migration, clear containers needed for bootstrap
@@ -2079,10 +2079,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private record Sequence(String schemaName, String tableName, String columnName, int lastValue) {}
 
-    private void migrateDatabase()
+    private void migrateDatabase(String migrationDataSource)
     {
         DbScope targetScope = DbScope.getLabKeyScope();
-        String migrationDataSource = getMigrationDataSource();
         DbScope sourceScope = DbScope.getDbScope(migrationDataSource);
         if (null == sourceScope)
             throw new ConfigurationException("Migration data source not found: " + migrationDataSource);
@@ -2151,22 +2150,34 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 }
 
                 Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
+
                 Set<String> tablesToIgnore = targetSchema.getName().equals("core") ? Sets.newCaseInsensitiveHashSet("modules", "sqlscripts", "upgradesteps") : Set.of();
+
                 List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
                 Set<TableInfo> allTables = targetSchema.getTableNames().stream()
                     .map(targetSchema::getTable)
                     .collect(Collectors.toCollection(HashSet::new));
                 allTables.removeAll(sortedTables);
+
                 if (!allTables.isEmpty())
-                    _log.info("These tables were removed by TableSorter: {}", allTables);
-                for (TableInfo targetTable : sortedTables)
                 {
-                    // Skip the views and virtual tables (e.g., test.Containers2)
-                    if (targetTable.getTableType() != DatabaseTableType.TABLE)
-                        continue;
+                    _log.info("These tables were removed by TableSorter: {}", allTables);
+                    if (targetSchema.getName().equals("comm"))
+                    {
+                        sortedTables.add(targetSchema.getTable("Pages"));
+                        sortedTables.add(targetSchema.getTable("PageVersions"));
+                    }
+                }
+
+                List<TableInfo> tablesToCopy = sortedTables.stream()
+                    // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
+                    .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
+                    .filter(table -> !tablesToIgnore.contains(table.getName()))
+                    .toList();
+
+                for (TableInfo targetTable : tablesToCopy)
+                {
                     String targetTableName = targetTable.getName();
-                    if (tablesToIgnore.contains(targetTableName))
-                        continue;
                     SchemaTableInfo sourceTable = sourceSchema.getTable(targetTableName);
 
                     if (sourceTable == null)
