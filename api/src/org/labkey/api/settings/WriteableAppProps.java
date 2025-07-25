@@ -245,7 +245,7 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setAllowedExternalResourceHosts(String jsonArray)
     {
-        storeStringValue(ALLOWED_EXTERNAL_RESOURCES, jsonArray);
+        storeStringValue(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, jsonArray);
     }
 
     public void setFeatureEnabled(String feature, boolean enabled)
