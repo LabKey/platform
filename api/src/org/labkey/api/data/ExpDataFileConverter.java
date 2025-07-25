@@ -42,6 +42,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
@@ -207,8 +208,7 @@ public class ExpDataFileConverter implements Converter
         return AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
     }
 
-    @Override
-    public Object convert(Class type, Object value)
+    private Object _convert(Class type, Object value)
     {
         if (value == null)
         {
@@ -219,11 +219,13 @@ public class ExpDataFileConverter implements Converter
         User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
         Object fileRootPathObj = QueryService.get().getEnvironment(QueryService.Environment.FILEROOTPATH);
         String fileRootPath = fileRootPathObj == null ? null : (String) fileRootPathObj;
+        Object assayResultFileRootObj = QueryService.get().getEnvironment(QueryService.Environment.ASSAYFILESPATH);
+        FileLike assayResultFileRoot = assayResultFileRootObj == null ? null : (FileLike) assayResultFileRootObj;
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
         if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
         {
-            File f = convertToFile(value, container, user, fileRootPath);
+            File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
 
             // If we have a file path, make sure it's supposed to be visible in the current container
             if (f != null)
@@ -242,30 +244,45 @@ public class ExpDataFileConverter implements Converter
                 PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
                 if (root != null)
                 {
+                    File fileUnderRoot = f;
                     if (!f.isAbsolute())
                     {
                         // Interpret relative paths based on the file root
-                        f = new File(root.getRootPath(), f.getPath());
+                        fileUnderRoot = new File(root.getRootPath(), f.getPath());
                     }
 
-                    if (root.isUnderRoot(f) && f.isFile())
+                    if (root.isUnderRoot(fileUnderRoot) && fileUnderRoot.isFile())
                     {
-                        return f;
+                        return fileUnderRoot;
                     }
                 }
 
+                FileContentService fileContent = FileContentService.get();
+
                 // It's possible to have the file root and pipeline root pointed at different paths
-                if (f.isFile())
+                if (fileContent != null)
                 {
-                    FileContentService fileContent = FileContentService.get();
-                    if (fileContent != null)
+                    List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+                    for (FileContentService.ContentType fileRootType : fileRootTypes)
                     {
-                        List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
-                        for (FileContentService.ContentType fileRootType : fileRootTypes)
+                        File fileRoot = fileContent.getFileRoot(container, fileRootType);
+                        if (fileRoot != null)
                         {
-                            File fileRoot = FileContentService.get().getFileRoot(container, fileRootType);
-                            if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                            if (f.isFile() && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
                                 return f;
+
+                            if (!f.isAbsolute())
+                            {
+                                try
+                                {
+                                    File fileWithRoot = FileUtil.appendPath(fileRoot, Path.parse(f.getPath()));
+                                    if (fileWithRoot.isFile() && URIUtil.isDescendant(fileRoot.toURI(), fileWithRoot.toURI()))
+                                        return fileWithRoot;
+                                }
+                                catch (IllegalArgumentException ignore)
+                                {
+                                }
+                            }
                         }
                     }
                 }
@@ -279,7 +296,24 @@ public class ExpDataFileConverter implements Converter
         return null;
     }
 
-    private File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath)
+    @Override
+    public Object convert(Class type, Object value)
+    {
+        try
+        {
+            return _convert(type, value);
+        }
+        catch (ConvertHelper.FileLinkConversionException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value.toString());
+        }
+    }
+
+    private File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
     {
         if (value instanceof File f)
         {
@@ -320,6 +354,20 @@ public class ExpDataFileConverter implements Converter
         String webdav = value.toString();
         if (null != StringUtils.trimToNull(webdav))
         {
+            if (assayResultFileRoot != null)
+            {
+                try
+                {
+                    FileLike assayResultFile = assayResultFileRoot.resolveChild(webdav);
+                    if (assayResultFile.isFile())
+                        return FileUtil.toFileForRead(assayResultFile);
+                }
+                catch (Exception ignore)
+                {
+                }
+
+            }
+
             webdav = getFileRootSubstitutedFilePath(webdav, fileRootPath);
             Path path = Path.decode(FileUtil.encodeForURL(webdav, true /*Issue 51207*/).replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);

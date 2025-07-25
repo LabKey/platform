@@ -69,6 +69,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -83,10 +84,12 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -381,6 +384,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
+            Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
+            if (null != assayResultsRunDir && !FileUtil.hasCloudScheme(assayResultsRunDir))
+            {
+                FileLike assayResultFileRoot = FileSystemLike.wrapFile(assayResultsRunDir);
+                if (assayResultFileRoot != null)
+                    QueryService.get().setEnvironment(QueryService.Environment.ASSAYFILESPATH, assayResultFileRoot);
+            }
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             Integer reRunId = context.getReRunId();
