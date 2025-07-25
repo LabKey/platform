@@ -837,7 +837,7 @@ public class SearchController extends SpringActionController
 
     public static class PriorityForm
     {
-        SearchService.PRIORITY priority = SearchService.PRIORITY.item;
+        SearchService.PRIORITY priority = SearchService.PRIORITY.modifiedHigh;
 
         public SearchService.PRIORITY getPriority()
         {
@@ -846,7 +846,7 @@ public class SearchController extends SpringActionController
 
         public void setPriority(SearchService.PRIORITY priority)
         {
-            this.priority = Objects.requireNonNullElse(priority, SearchService.PRIORITY.item);
+            this.priority = Objects.requireNonNullElse(priority, SearchService.PRIORITY.modifiedLow);
         }
     }
 

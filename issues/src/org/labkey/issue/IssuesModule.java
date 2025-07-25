@@ -217,8 +217,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        Runnable r = () -> IssueManager.indexIssues(task, c, modifiedSince);
-        task.addRunnable(c, SearchService.PRIORITY.bulk, r);
+        Runnable r = () -> IssueManager.indexIssues(task, c, modifiedSince, SearchService.PRIORITY.crawlHigh);
+        task.addRunnable(c, SearchService.PRIORITY.crawlLow, r);
     }
 
     @Override

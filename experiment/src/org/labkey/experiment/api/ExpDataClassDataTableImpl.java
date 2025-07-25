@@ -934,20 +934,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
                     // Issue 51263: order by RowId to reduce deadlock
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.group, () ->
+                            searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
-                                            expData.index(searchService.defaultTask(), null, this);
+                                            expData.index(SearchService.PRIORITY.modifiedHigh, searchService.defaultTask(), this);
                                         return (Void) null;
                                     }))
                     );
 
                     List<String> lsids = searchIndexDataKeys.lsids();
                     ListUtils.partition(lsids, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.group, () ->
+                            searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
-                                            expData.index(searchService.defaultTask(), null, this);
+                                            expData.index(SearchService.PRIORITY.modifiedHigh, searchService.defaultTask(), this);
                                         return (Void) null;
                                     }))
                     );
@@ -1431,10 +1431,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                         // Issue 51263: order by RowId to reduce deadlock
                         ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                                searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.group, () ->
+                                searchService.defaultTask().addRunnable(_dataClass.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
                                 {
                                     for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
-                                        expData.index(null, null, _expDataClassDataTableImpl);
+                                        expData.index(SearchService.PRIORITY.modifiedHigh, null, _expDataClassDataTableImpl);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT);

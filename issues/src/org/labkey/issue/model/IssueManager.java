@@ -919,7 +919,7 @@ public class IssueManager
     }
 
 
-    public static void indexIssues(IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexIssues(IndexTask task, @NotNull Container c, Date modifiedSince, SearchService.PRIORITY priority)
     {
         SearchService ss = SearchService.get();
         if (null == ss)
@@ -934,31 +934,33 @@ public class IssueManager
 
         // Index issues in batches of 100
         new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
-                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(c, SearchService.PRIORITY.group, new IndexGroup(task, batch)));
+                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(c, priority, new IndexGroup(task, batch, priority)));
     }
 
     private static class IndexGroup implements Runnable
     {
         private final List<Integer> _ids;
         private final IndexTask _task;
+        private final SearchService.PRIORITY _priority;
 
-        IndexGroup(IndexTask task, List<Integer> ids)
+        IndexGroup(IndexTask task, List<Integer> ids, SearchService.PRIORITY priority)
         {
             _ids = ids;
             _task = task;
+            _priority = priority;
         }
 
         @Override
         public void run()
         {
             User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-            indexIssues(null, user, _task, _ids);
+            indexIssues(null, user, _task, _ids, _priority);
         }
     }
 
 
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(@Nullable Container container, User user, IndexTask task, Collection<Integer> ids)
+    public static void indexIssues(@Nullable Container container, User user, IndexTask task, Collection<Integer> ids, SearchService.PRIORITY priority)
     {
         if (ids.isEmpty())
             return;
@@ -975,7 +977,7 @@ public class IssueManager
             {
                 IssueObject issue = IssueManager.getIssue(container, user, id);
                 if (issue != null)
-                    queueIssue(task, id, issue.getProperties(), issue.getCommentObjects());
+                    queueIssue(task, id, issue.getProperties(), issue.getCommentObjects(), priority);
             }
             catch (UnauthorizedException e)
             {
@@ -999,11 +1001,11 @@ public class IssueManager
         // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
 
         // try requery instead
-        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()));
+        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()), SearchService.PRIORITY.modifiedHigh);
     }
 
 
-    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<IssueObject.CommentObject> comments)
+    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<IssueObject.CommentObject> comments, SearchService.PRIORITY priority)
     {
         if (null == task || null == m)
             return;
@@ -1011,7 +1013,7 @@ public class IssueManager
         m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
         m.put("comment", null);
         m.put("_row", null);
-        task.addResource(new IssueResource(id, m, comments), SearchService.PRIORITY.item);
+        task.addResource(new IssueResource(id, m, comments), priority);
     }
 
 

@@ -4295,7 +4295,7 @@ public class StudyManager
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
                 "text/plain", body.toString(),
                 view, props);
-        task.addResource(r, SearchService.PRIORITY.item);
+        task.addResource(r, SearchService.PRIORITY.modifiedHigh);
     }
 
     public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
@@ -4404,11 +4404,11 @@ public class StudyManager
                             new SqlExecutor(ss.getSchema()).execute(update);
                         }
                     };
-                    task.addResource(r, SearchService.PRIORITY.item);
+                    task.addResource(r, SearchService.PRIORITY.modifiedHigh);
                 });
             };
 
-            task.addRunnable(c, SearchService.PRIORITY.bulk, runnable);
+            task.addRunnable(c, SearchService.PRIORITY.modifiedLow, runnable);
         });
     }
 
@@ -4467,7 +4467,7 @@ public class StudyManager
             }
         }
         
-        task.addRunnable(c, SearchService.PRIORITY.crawl, runEnumerate);
+        task.addRunnable(c, SearchService.PRIORITY.crawlLow, runEnumerate);
     }
 
 
@@ -4494,7 +4494,7 @@ public class StudyManager
                 parent, att.getName(), SearchService.fileCategory
             );
             r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-            task.addResource(r, SearchService.PRIORITY.item);
+            task.addResource(r, SearchService.PRIORITY.modifiedHigh);
         }
     }
 

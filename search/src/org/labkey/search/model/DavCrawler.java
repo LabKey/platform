@@ -417,7 +417,7 @@ public class DavCrawler implements ShutdownListener
                         _fileIORateLimiter.add(f.length(), isCrawlerThread);
                     }
 
-                    _task.addResource(child, SearchService.PRIORITY.background);
+                    _task.addResource(child, SearchService.PRIORITY.crawlLow);
                     addRecent(child);
                 }
                 else if (!child.shouldIndex())

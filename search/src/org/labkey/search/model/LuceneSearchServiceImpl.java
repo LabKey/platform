@@ -2226,7 +2226,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     _latch.countDown();
                 }
             };
-            _ss.defaultTask().addResource(resource1, PRIORITY.item);
+            _ss.defaultTask().addResource(resource1, PRIORITY.modifiedHigh);
         }
 
         private List<SearchHit> search(String query) throws IOException

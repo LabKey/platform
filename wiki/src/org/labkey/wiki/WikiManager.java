@@ -687,7 +687,7 @@ public class WikiManager implements WikiService
         }
         Container c = ContainerService.get().getForId(page.getContainerId());
         if (null != c)
-            indexWikis(null, c, null, page.getName());
+            indexWikis(null, c, null, page.getName(), SearchService.PRIORITY.modifiedHigh);
     }
 
 
@@ -703,8 +703,8 @@ public class WikiManager implements WikiService
         new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name);
     }
 
-    
-    public void indexWikis(@Nullable IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
+
+    public void indexWikis(@Nullable IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName, SearchService.PRIORITY priority)
     {
         final SearchService ss = getSearchService();
         if (null == ss)
@@ -716,7 +716,7 @@ public class WikiManager implements WikiService
         final IndexTask fTask = task;
 
         // Use a Runnable to postpone construction of the MockViewContext; if we're bootstrapping then base server URL won't be ready.
-        fTask.addRunnable(c, SearchService.PRIORITY.item, () -> {
+        fTask.addRunnable(c, priority, () -> {
             // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webparts
             try (StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
             {
@@ -791,7 +791,7 @@ public class WikiManager implements WikiService
                 try
                 {
                     WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, wikiName, entityId, body, rendererType, props);
-                    task.addResource(r, SearchService.PRIORITY.item);
+                    task.addResource(r, SearchService.PRIORITY.modifiedHigh);
                 }
                 catch (Throwable t)
                 {
@@ -851,7 +851,7 @@ public class WikiManager implements WikiService
                 NavTree t = new NavTree("wiki page", wikiUrl);
                 String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                task.addResource(attachmentRes, SearchService.PRIORITY.modifiedHigh);
             }
         }
     }

@@ -20,6 +20,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -181,7 +182,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
         @Override
-        public void addResource(@NotNull WebdavResource r, PRIORITY pri)
+        public void addResource(@NotNull WebdavResource r, @NotNull PRIORITY pri)
         {
             if (!r.shouldIndex())
                 return;
@@ -258,22 +259,22 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         long _start = 0;    // used by setLastIndexed
         long _complete = 0; // really just for debugging
 
-        Item(_IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
+        Item(_IndexTask task, OPERATION op, String id, WebdavResource r, @NotNull PRIORITY pri)
         {
             if (null != r)
                 _start = HeartBeat.currentTimeMillis();
             _op = op;
             _id = id;
             _res = r;
-            _pri = null == pri ? PRIORITY.bulk : pri;
+            _pri = pri;
             _task = task;
             _containerId = r == null ? null : r.getContainerId();
         }
 
-        Item(_IndexTask task, Runnable r, PRIORITY pri, Container container)
+        Item(_IndexTask task, Runnable r, @NotNull PRIORITY pri, Container container)
         {
             _run = r;
-            _pri = null == pri ? PRIORITY.bulk : pri;
+            _pri = pri;
             _task = task;
             _id = String.valueOf(r);
             _containerId = container == null ? null : container.getEntityId();
@@ -414,8 +415,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _countIndexedSinceCommit++;
             }
         };
-        // Don't pass in a container because we don't want to eject this from the queue
-        queueItem(new Item(defaultTask(), r, PRIORITY.background, null));
+        // Don't try to pass in a container because we don't want to eject this from the queue as part of the container
+        // deletion process
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete, null));
     }
 
     @Override
@@ -829,7 +831,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (null != name)
         {
             for (SearchResultTemplate template : _templates)
-                if (StringUtils.equalsIgnoreCase(name, template.getName()))
+                if (Strings.CI.equals(name, template.getName()))
                     return template;
         }
 
@@ -1341,7 +1343,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 p.enumerateDocuments(task, c, since);
             }
         };
-        task.addRunnable(c, PRIORITY.bulk, r); // breaks rule of always adding w/higher priority than parent task
+        task.addRunnable(c, PRIORITY.crawlLow, r);
         if (null == in)
             task.setReady();
         return task;
@@ -1368,7 +1370,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 indexContainer(task, i, null);
             }
         };
-        task.addRunnable(c, PRIORITY.bulk, r);
+        task.addRunnable(c, PRIORITY.crawlLow, r);
         if (null == in)
             task.setReady();
         return task;

@@ -1,5 +1,6 @@
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -11,22 +12,17 @@ public interface ExpSearchable
 {
     @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table);
 
-    default void index()
+    default void index(@NotNull SearchService.PRIORITY priority)
     {
-        index(null);
+        index(priority, null);
     }
 
-    default void index(@Nullable SearchService.IndexTask task)
+    default void index(@NotNull SearchService.PRIORITY priority, @Nullable SearchService.IndexTask task)
     {
-        index(task, null);
+        index(priority, task, null);
     }
 
-    default void index(@Nullable SearchService.IndexTask task, @Nullable SearchService.PRIORITY priority)
-    {
-        index(task, priority, null);
-    }
-
-    default void index(@Nullable SearchService.IndexTask task, @Nullable SearchService.PRIORITY priority, @Nullable TableInfo table)
+    default void index(@NotNull SearchService.PRIORITY priority, @Nullable SearchService.IndexTask task, @Nullable TableInfo table)
     {
         if (task == null)
         {
@@ -40,6 +36,6 @@ public interface ExpSearchable
         var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
         var doc = expScope.executeWithRetryReadOnly((tx) -> createIndexDocument(table));
         if (doc != null)
-            task.addResource(doc, priority == null ? SearchService.PRIORITY.item : priority);
+            task.addResource(doc, priority);
     }
 }

@@ -49,7 +49,7 @@ public class NoopSearchService implements SearchService
 
 
         @Override
-        public void addResource(@NotNull WebdavResource r, PRIORITY pri)
+        public void addResource(@NotNull WebdavResource r, @NotNull PRIORITY pri)
         {
         }
 
@@ -68,12 +68,6 @@ public class NoopSearchService implements SearchService
         public boolean isCancelled()
         {
             return false;
-        }
-
-        @Override
-        public int getDocumentCountEstimate()
-        {
-            return 0;
         }
 
         @Override
@@ -109,11 +103,6 @@ public class NoopSearchService implements SearchService
         public Reader getLog()
         {
             return null;
-        }
-
-        @Override
-        public void addToEstimate(int i)
-        {
         }
 
         @Override

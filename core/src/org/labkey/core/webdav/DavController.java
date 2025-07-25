@@ -6504,7 +6504,7 @@ public class DavController extends SpringActionController
         
         SearchService ss = SearchService.get();
         if (null != ss)
-            ss.defaultTask().addResource(r, SearchService.PRIORITY.item);
+            ss.defaultTask().addResource(r, SearchService.PRIORITY.modifiedHigh);
     }
 
 

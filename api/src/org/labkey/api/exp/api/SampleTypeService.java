@@ -33,6 +33,7 @@ import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -222,7 +223,7 @@ public interface SampleTypeService
     void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     // used by DomainKind.invalidate()
-    void indexSampleType(ExpSampleType sampleType);
+    void indexSampleType(ExpSampleType sampleType, SearchService.PRIORITY priority);
 
     @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly);
 

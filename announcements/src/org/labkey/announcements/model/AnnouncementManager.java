@@ -853,12 +853,12 @@ public class AnnouncementManager
 
     public static void indexMessages(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
-        indexMessages(task, c.getId(), modifiedSince, null);
+        indexMessages(task, c.getId(), modifiedSince, null, SearchService.PRIORITY.modifiedLow);
     }
 
 
     // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
-    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, @Nullable String threadId)
+    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, @Nullable String threadId, SearchService.PRIORITY priority)
     {
         assert null != containerId;
         if (null == containerId || (null != modifiedSince && null != threadId))
@@ -927,7 +927,7 @@ public class AnnouncementManager
                         }
                     };
 
-                    task.addResource(sdr, SearchService.PRIORITY.item);
+                    task.addResource(sdr, priority);
                 }
             });
         }
@@ -996,7 +996,7 @@ public class AnnouncementManager
                         ann.getAttachmentParent(),
                         documentName, searchCategory);
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                task.addResource(attachmentRes, SearchService.PRIORITY.modifiedHigh);
             }
         }
     }
@@ -1037,7 +1037,7 @@ public class AnnouncementManager
         {
             SearchService.IndexTask task = svc.defaultTask();
             // indexMessages is overkill, but I don't want to duplicate the code
-            indexMessages(task, container, null, parent);
+            indexMessages(task, container, null, parent, SearchService.PRIORITY.modifiedLow);
         }
     }
 

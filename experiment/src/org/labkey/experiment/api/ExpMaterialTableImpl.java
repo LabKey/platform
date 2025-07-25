@@ -1608,18 +1608,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
                         // Issue 51263: order by RowId to reduce deadlock
                         ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(_ss.getContainer(), SearchService.PRIORITY.group, () ->
+                            searchService.defaultTask().addRunnable(_ss.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), null, this);
+                                    expMaterial.index(SearchService.PRIORITY.modifiedHigh, searchService.defaultTask(), this);
                             })
                         );
 
                         ListUtils.partition(lsids, 100).forEach(sublist ->
-                                searchService.defaultTask().addRunnable(_ss.getContainer(), SearchService.PRIORITY.group, () ->
+                                searchService.defaultTask().addRunnable(_ss.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
                                 {
                                     for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask(), null, this);
+                                        expMaterial.index(SearchService.PRIORITY.modifiedHigh, searchService.defaultTask(), this);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)

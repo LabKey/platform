@@ -15,7 +15,6 @@
  */
 package org.labkey.api.search;
 
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -63,11 +62,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public interface SearchService extends SearchMXBean
 {
@@ -122,19 +119,33 @@ public interface SearchService extends SearchMXBean
      */
     boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException;
 
-    /** From lowest to highest priority */
+    /**
+     * From lowest to highest priority
+     */
     enum PRIORITY
     {
+        /** Lowest priority. Used for internal bookkeeping to commit the search index to disk and other upkeep */
         commit,
-        
-        idle,       // only used to detect when there is no other work to do
-        crawl,      // lowest work priority
-        background, // crawler item
+        /** Only used by the no-op task to detect when there is no other work in the queue */
+        idle,
 
-        bulk,       // all wikis
-        group,      // one container
-        item,       // one page/attachment
-        delete
+        /** Lowest priority used for real indexing work. Intended for Runnables placed in the queue as part of a call to DocumentProvider.enumerateDocuments() */
+        crawlLow,
+        /** Intended for individual resources found during a crawl, such as a wiki or sample */
+        crawlHigh,
+
+        /** Intended for parent items that were touched by a server action. For example, a sample type that may in turn trigger indexing of its child samples */
+        modifiedLow,
+        /** Intended for individual items that were touched by a server action */
+        modifiedHigh,
+
+        /** Highest priority. Used for removing documents from the index, which is generally faster than adding */
+        delete;
+
+        public PRIORITY getOneHigher()
+        {
+            return ordinal() == values().length - 1 ? delete : values()[ordinal() - 1];
+        }
     }
 
 
@@ -181,8 +192,6 @@ public interface SearchService extends SearchMXBean
     {
         String getDescription();
 
-        int getDocumentCountEstimate();
-
         int getIndexedCount();
 
         int getFailedCount();
@@ -195,17 +204,24 @@ public interface SearchService extends SearchMXBean
 
         Reader getLog();
 
-        void addToEstimate(int i);// indicates that caller is done adding Resources to this task
-
         /**
          * indicates that we're done adding the initial set of resources/runnables to this task
          * the task be considered done after calling setReady() and there is no more work to do.
          */
         void setReady();
 
-        void addRunnable(Container container, @NotNull SearchService.PRIORITY pri, @NotNull Runnable r);
+        /**
+         * Runnables are used to queue up search work that will often involve adding many individual resources.
+         * This lets us avoid holding lots of to-be-index resources in memory all at once.
+         * @param container optionally, the container associated with the indexer work. Used to purge work from the queue when a container is about to be deleted */
+        void addRunnable(@Nullable Container container, @NotNull SearchService.PRIORITY pri, @NotNull Runnable r);
 
-        void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+        /**
+         * Resources are individual documents that should be added to the index
+         * @param r
+         * @param pri
+         */
+        void addResource(@NotNull WebdavResource r, @NotNull SearchService.PRIORITY pri);
     }
 
 

@@ -32,7 +32,7 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable runEnumerate = () -> PlateManager.get().indexPlates(task, c, modifiedSince);
-        task.addRunnable(c, SearchService.PRIORITY.group, runEnumerate);
+        task.addRunnable(c, SearchService.PRIORITY.crawlLow, runEnumerate);
     }
 
     private static SearchService.SearchCategory getSearchCategory()

@@ -46,6 +46,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DataClassReadPermission;
@@ -313,7 +314,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             ExperimentServiceImpl.get().clearDataClassCache(c);
             dc = ExperimentServiceImpl.get().getDataClass(c, rowId); // retrieve the new data class with updated domain
-            ExperimentServiceImpl.get().indexDataClass(dc);
+            ExperimentServiceImpl.get().indexDataClass(dc, SearchService.PRIORITY.modifiedHigh);
 
             return ret;
         }
