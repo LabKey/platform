@@ -81,9 +81,7 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileBrowserConfigImporter;
@@ -91,6 +89,8 @@ import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.module.DatabaseMigration;
+import org.labkey.api.module.DatabaseMigration.DefaultMigrationHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1267,9 +1267,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+
+        DatabaseMigration.registerHandler(CoreSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        {
+            @Override
+            public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+            {
+                List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
+                tablesToCopy.remove(targetSchema.getTable("Modules"));
+                tablesToCopy.remove(targetSchema.getTable("SqlScripts"));
+                tablesToCopy.remove(targetSchema.getTable("UpgradeSteps"));
+
+                return tablesToCopy;
+            }
+        });
     }
 
-    // Issue 7527: Auto-detect missing sql views and attempt to recreate
+    // Issue 7527: Auto-detect missing SQL views and attempt to recreate
     private void checkForMissingDbViews()
     {
         ModuleLoader.getInstance().getModules().stream()

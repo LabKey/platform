@@ -25,8 +25,12 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.CodeOnlyModule;
+import org.labkey.api.module.DatabaseMigration;
+import org.labkey.api.module.DatabaseMigration.DefaultMigrationHandler;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -120,6 +124,30 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
+        DatabaseMigration.registerHandler(CommSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        {
+            @Override
+            public void beforeSchema(DbSchema targetSchema)
+            {
+                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+            }
+
+            @Override
+            public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+            {
+                List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
+                tablesToCopy.add(targetSchema.getTable("Pages"));
+                tablesToCopy.add(targetSchema.getTable("PageVersions"));
+
+                return tablesToCopy;
+            }
+
+            @Override
+            public void afterSchema(DbSchema targetSchema)
+            {
+                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+            }
+        });
     }
 
     private void bootstrap(ModuleContext moduleContext)

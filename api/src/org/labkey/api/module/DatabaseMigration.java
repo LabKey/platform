@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
@@ -164,10 +165,6 @@ public class DatabaseMigration
 
         for (DbSchema targetSchema : schemas)
         {
-            if (targetSchema.getName().equals("comm"))
-            {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
-            }
             DbSchema sourceSchema = sourceScope.getSchema(targetSchema.getName(), DbSchemaType.Bare);
             if (!sourceSchema.existsInDatabase())
             {
@@ -175,6 +172,9 @@ public class DatabaseMigration
             }
             else
             {
+                MigrationHandler handler = getHandler(targetSchema);
+                handler.beforeSchema(targetSchema);
+
                 List<SchemaTableInfo> sourceTables = getTables(sourceSchema);
                 List<SchemaTableInfo> targetTables = getTables(targetSchema);
 
@@ -195,31 +195,7 @@ public class DatabaseMigration
 
                 Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
 
-                Set<String> tablesToIgnore = targetSchema.getName().equals("core") ? Sets.newCaseInsensitiveHashSet("modules", "sqlscripts", "upgradesteps") : Set.of();
-
-                List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
-                Set<TableInfo> allTables = targetSchema.getTableNames().stream()
-                    .map(targetSchema::getTable)
-                    .collect(Collectors.toCollection(HashSet::new));
-                allTables.removeAll(sortedTables);
-
-                if (!allTables.isEmpty())
-                {
-                    LOG.info("These tables were removed by TableSorter: {}", allTables);
-                    if (targetSchema.getName().equals("comm"))
-                    {
-                        sortedTables.add(targetSchema.getTable("Pages"));
-                        sortedTables.add(targetSchema.getTable("PageVersions"));
-                    }
-                }
-
-                List<TableInfo> tablesToCopy = sortedTables.stream()
-                    // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
-                    .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
-                    .filter(table -> !tablesToIgnore.contains(table.getName()))
-                    .toList();
-
-                for (TableInfo targetTable : tablesToCopy)
+                for (TableInfo targetTable : handler.getTablesToCopy(targetSchema))
                 {
                     String targetTableName = targetTable.getName();
                     SchemaTableInfo sourceTable = sourceSchema.getTable(targetTableName);
@@ -307,6 +283,8 @@ public class DatabaseMigration
                         }
                     }
                 }
+
+                handler.afterSchema(targetSchema);
             }
         }
 
@@ -325,5 +303,62 @@ public class DatabaseMigration
             .map(schema::getTable)
             .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
             .toList());
+    }
+
+    public interface MigrationHandler
+    {
+        void beforeSchema(DbSchema targetSchema);
+
+        List<TableInfo> getTablesToCopy(DbSchema targetSchema);
+
+        void afterSchema(DbSchema targetSchema);
+    }
+
+    public static class DefaultMigrationHandler implements MigrationHandler
+    {
+        @Override
+        public void beforeSchema(DbSchema targetSchema)
+        {
+        }
+
+        @Override
+        public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+        {
+            List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
+
+            Set<TableInfo> allTables = targetSchema.getTableNames().stream()
+                .map(targetSchema::getTable)
+                .collect(Collectors.toCollection(HashSet::new));
+            allTables.removeAll(sortedTables);
+
+            if (!allTables.isEmpty())
+            {
+                LOG.info("These tables were removed by TableSorter: {}", allTables);
+            }
+
+            return sortedTables.stream()
+                // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
+                .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
+                .collect(Collectors.toCollection(ArrayList::new)); // Ensure mutable
+        }
+
+        @Override
+        public void afterSchema(DbSchema targetSchema)
+        {
+        }
+    }
+
+    private static final Map<String, MigrationHandler> MIGRATION_HANDLERS = new CopyOnWriteCaseInsensitiveHashMap<>();
+    private static final MigrationHandler DEFAULT_MIGRATION_HANDLER = new DefaultMigrationHandler();
+
+    public static void registerHandler(DbSchema schema, MigrationHandler handler)
+    {
+        MIGRATION_HANDLERS.put(schema.getName(), handler);
+    }
+
+    private static MigrationHandler getHandler(DbSchema schema)
+    {
+        MigrationHandler handler = MIGRATION_HANDLERS.get(schema.getName());
+        return handler != null ? handler : DEFAULT_MIGRATION_HANDLER;
     }
 }
