@@ -1134,23 +1134,29 @@ public class StudyController extends BaseStudyController
             _bean = form;
             ActionURL previousParticipantURL = null;
             ActionURL nextParticipantURL = null;
+            Participant participant;
+            StringBuilder errorMsg = new StringBuilder();
 
             if (form.getParticipantId() == null)
             {
-                throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
+                errorMsg.append("No ").append(study.getSubjectNounSingular()).append(" specified");
+            }
+            else
+            {
+                try
+                {
+                    participant = findParticipant(study, form.getParticipantId());
+                    if (null == participant)
+                        errorMsg.append("Could not find ").append(study.getSubjectNounSingular()).append(" ").append(form.getParticipantId());
+                }
+                catch (StudyManager.ParticipantNotUniqueException x)
+                {
+                    errorMsg.append(x.getMessage());
+                }
             }
 
-            Participant participant;
-            try
-            {
-                participant = findParticipant(study, form.getParticipantId());
-                if (null == participant)
-                    throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
-            }
-            catch (StudyManager.ParticipantNotUniqueException x)
-            {
-                return HtmlView.of(x.getMessage());
-            }
+            if (!errorMsg.isEmpty())
+                return HtmlView.err(errorMsg.toString());
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 

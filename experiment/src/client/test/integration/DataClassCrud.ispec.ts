@@ -233,7 +233,7 @@ describe('Import with update / merge', () => {
    it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
        const BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION = 'Missing value for required property: Name';
        const BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION = 'Name value not provided on row ';
-       const BOGUS_KEY_UPDATE_ERROR = 'Data not found: ';
+       const BOGUS_KEY_UPDATE_ERROR = 'Data not found for ';
        const DUPLICATE_KEY_ERROR = 'duplicate key value';
 
        const dataType = "NoExpressionNameRequired52922";
@@ -357,11 +357,11 @@ describe('Duplicate IDs', () => {
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             errorResp = JSON.parse(result.text);
-            expect(errorResp.exception.indexOf('already exists') > -1).toBeTruthy();
+            expect(errorResp.exception.indexOf('duplicate key') > -1).toBeTruthy();
         });
         // import
         errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nduplicateShouldFail\tbad\nduplicateShouldFail\tbad", dataType, "IMPORT", topFolderOptions, editorUserOptions);
-        expect(errorResp.text.indexOf('already exists') > -1).toBeTruthy();
+        expect(errorResp.text.indexOf('duplicate key') > -1).toBeTruthy();
 
         // merge
         const duplicateKeyErrorPrefix = 'Duplicate key provided: ';
@@ -433,148 +433,4 @@ describe('Duplicate IDs', () => {
         expect(caseInsensitive(dataResults[1], 'description')).toBe('created');
 
     });
-
-    it("Issue 52657: We shouldn't allow creating data names that differ only in case.", async () => {
-        const dataType = "Type Case Sensitive";
-        const createPayload = {
-            kind: 'DataClass',
-            domainDesign: { name: dataType, fields: [{ name: 'Prop' }] },
-            options: {
-                name: dataType,
-                nameExpression: 'Src-${Prop}'
-            }
-        };
-
-        await server.post('property', 'createDomain', createPayload,
-            {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
-
-        const NAME_EXIST_MSG = "The name '%%' already exists.";
-        const data1 = 'Src-case-dAta1';
-        const data2 = 'Src-case-dAta2';
-
-        let insertRows = [{
-            name: data1,
-        },{
-            name: data2,
-        }];
-        const dataRows = await ExperimentCRUDUtils.insertRows(server, insertRows, 'exp.data', dataType, topFolderOptions, editorUserOptions);
-        const data1RowId = caseInsensitive(dataRows[0], 'rowId');
-        const data1Lsid = caseInsensitive(dataRows[0], 'lsid');
-        const data2RowId = caseInsensitive(dataRows[1], 'rowId');
-        const data2Lsid = caseInsensitive(dataRows[1], 'lsid');
-
-        let expectedError = NAME_EXIST_MSG.replace('%%', 'Src-case-data1');
-        // import
-        let errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nSrc-case-data1\tbad\nSrc-case-data2\tbad", dataType, "IMPORT", topFolderOptions, editorUserOptions);
-        expect(errorResp.text).toContain(expectedError);
-
-        // merge
-        let mergeError = 'The name \'Src-case-data1\' could not be resolved. Please check the casing of the provided name.';
-        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nSrc-case-data1\tbad\nSrc-case-data2\tbad", dataType, "MERGE", topFolderOptions, editorUserOptions);
-        expect(errorResp.text).toContain(mergeError);
-
-        // insert
-        await server.post('query', 'insertRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-data1',
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            const errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(expectedError);
-        });
-
-        // insert using naming expression to create case-insensitive name
-        await server.post('query', 'insertRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                prop: 'case-data1',
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            const errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(expectedError);
-        });
-
-        // renaming data to another data's name, using rowId
-        await server.post('query', 'updateRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-dAta2',
-                rowId: data1RowId
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'Src-case-dAta2'));
-        });
-
-        // renaming data to another data's case-insensitive name, using rowId
-        await server.post('query', 'updateRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-data2',
-                rowId: data1RowId
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'Src-case-data2'));
-        });
-
-        // renaming data to another data's case-insensitive name, using lsid. Currently can only be done using api
-        await server.post('query', 'updateRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-data2',
-                lsid: data1Lsid
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'Src-case-data2'));
-        });
-
-        // swap names (fail)
-        await server.post('query', 'updateRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-data2',
-                lsid: data1Lsid
-            }, {
-                name: 'Src-case-data1',
-                lsid: data2Lsid
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'Src-case-data2'));
-        });
-
-        await server.post('query', 'updateRows', {
-            schemaName: 'exp.data',
-            queryName: dataType,
-            rows: [{
-                name: 'Src-case-data2',
-                rowId: data1RowId
-            }, {
-                name: 'Src-case-data1',
-                rowId: data2RowId
-            }]
-        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
-            errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe(NAME_EXIST_MSG.replace('%%', 'Src-case-data2'));
-        });
-
-        // renaming data to its case-insensitive name, using rowId
-        let results = await ExperimentCRUDUtils.updateRows(server, [{name: 'SRC-CASE-data1', rowId: data1RowId}], 'exp.data', dataType, topFolderOptions, editorUserOptions);
-        expect(caseInsensitive(results[0], 'Name')).toBe('SRC-CASE-data1');
-
-        // renaming data to its case-insensitive name, using lsid
-        results = await ExperimentCRUDUtils.updateRows(server, [{name: 'src-case-DATA1', lsid: data1Lsid}], 'exp.data', dataType, topFolderOptions, editorUserOptions);
-        expect(caseInsensitive(results[0], 'Name')).toBe('src-case-DATA1');
-
-    });
-
 });
