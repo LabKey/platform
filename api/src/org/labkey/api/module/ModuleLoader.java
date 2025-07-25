@@ -36,7 +36,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
@@ -45,11 +44,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaNameCache;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -63,7 +60,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleUpgrader.Execution;
-import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
@@ -118,9 +114,6 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,7 +122,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -144,7 +136,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -1889,7 +1880,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
+    // Final step in the upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     private void afterUpgrade(File lockFile)
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
@@ -1902,7 +1893,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         lockFile.delete();
 
         verifyRequiredModules();
-        handleDatabaseMigration();
+        DatabaseMigration.migrate(shouldInsertData(), getMigrationDataSource());
     }
 
     // If the "requiredModules" parameter is present in application.properties then fail startup if any specified module is missing.
@@ -2003,283 +1994,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public @Nullable String getMigrationDataSource()
     {
         return _migrationDataSource != null && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL() ? _migrationDataSource : null;
-    }
-
-    // If associated properties are set, migrate data from the external SQL Server data source into the just-created
-    // empty PostgreSQL schemas.
-    private void handleDatabaseMigration()
-    {
-        if (!shouldInsertData())
-        {
-            clearSchemas();
-            verifyEmptySchemas();
-
-            if (getMigrationDataSource() != null)
-                migrateDatabase(getMigrationDataSource());
-        }
-    }
-
-    // As part of SQL Server -> PostgreSQL migration, clear containers needed for bootstrap
-    private void clearSchemas()
-    {
-        TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-        Table.delete(containers); // Now that we've bootstrapped, delete root and shared containers
-        DbScope targetScope = DbScope.getLabKeyScope();
-        new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
-    }
-
-    // Verify that no data rows were inserted and no sequences were incremented
-    private void verifyEmptySchemas()
-    {
-        DbScope scope = DbScope.getLabKeyScope();
-
-        Map<Boolean, List<DbSchema>> schemaMap = scope.getSchemaNames().stream()
-            .map(name -> scope.getSchema(name, DbSchemaType.Unknown))
-            .collect(Collectors.partitioningBy(schema -> schema.isModuleSchema() && schema.getModule().getSupportedDatabasesSet().contains(SupportedDatabase.mssql)));
-
-        List<DbSchema> targetSchemas = schemaMap.get(true);
-        List<String> tableWarnings = targetSchemas.stream()
-            .flatMap(schema -> schema.getTableNames().stream()
-                .map(schema::getTable)
-                .filter(table -> table.getTableType() != DatabaseTableType.NOT_IN_DB)
-            )
-            .map(table -> {
-                long rowCount = new TableSelector(table).getRowCount();
-                if (rowCount > 0)
-                    return table.getSelectName() + " has " + StringUtilsLabKey.pluralize(rowCount, "row");
-                else
-                    return null;
-            })
-            .filter(Objects::nonNull)
-            .toList();
-
-        if (!tableWarnings.isEmpty())
-        {
-            _log.warn("{} rows", StringUtilsLabKey.pluralize(tableWarnings.size(), "table has", "tables have"));
-            tableWarnings.forEach(_log::warn);
-        }
-
-        List<String> schemasToIgnore = schemaMap.get(false).stream()
-            .map(DbSchema::getName)
-            .toList();
-        String qs = StringUtils.join(Collections.nCopies(schemasToIgnore.size(), "?"), ", ");
-        List<String> sequenceWarnings = new SqlSelector(scope, new SQLFragment(
-            "SELECT schemaname || '.' || sequencename FROM pg_sequences WHERE last_value IS NOT NULL AND schemaname NOT IN (" + qs + ")",
-            schemasToIgnore
-        ))
-            .stream(String.class)
-            .toList();
-
-        if (!sequenceWarnings.isEmpty())
-        {
-            _log.warn("{} a value:", StringUtilsLabKey.pluralize(sequenceWarnings.size(), "sequence has", "sequences have"));
-            sequenceWarnings.forEach(_log::warn);
-        }
-    }
-
-    private record Sequence(String schemaName, String tableName, String columnName, int lastValue) {}
-
-    private void migrateDatabase(String migrationDataSource)
-    {
-        DbScope targetScope = DbScope.getLabKeyScope();
-        DbScope sourceScope = DbScope.getDbScope(migrationDataSource);
-        if (null == sourceScope)
-            throw new ConfigurationException("Migration data source not found: " + migrationDataSource);
-        if (!sourceScope.getSqlDialect().isSqlServer())
-            throw new ConfigurationException("Migration data source is not SQL Server: " + migrationDataSource);
-
-        // Verify that all sequences in the target schema have an increment of 1, since that's an assumption below
-        Collection<String> sequencesNonOneIncrement = new SqlSelector(targetScope, new SQLFragment("SELECT schemaname || '.' || sequencename || ': ' || increment_by FROM pg_sequences WHERE increment_by != 1")).getCollection(String.class);
-        if (!sequencesNonOneIncrement.isEmpty())
-        {
-            throw new IllegalStateException(StringUtilsLabKey.pluralize(sequencesNonOneIncrement.size(), "sequence has", "sequences have") + " an increment other than 1: " + sequencesNonOneIncrement);
-        }
-
-        // Select the SQL Server sequences with non-null last value. We'll use the results to set PostgreSQL sequences after copying data.
-        String sequenceQuery = """
-            SELECT
-                OBJECT_SCHEMA_NAME(tables.object_id, db_id()) AS SchemaName,
-                tables.name AS TableName,
-                identity_columns.name AS ColumnName,
-                identity_columns.seed_value,
-                identity_columns.increment_value,
-                identity_columns.last_value
-            FROM
-                sys.tables tables
-            JOIN
-                sys.identity_columns identity_columns ON tables.object_id = identity_columns.object_id
-            WHERE last_value IS NOT NULL""";
-        Map<String, Map<String, Sequence>> sequences = new HashMap<>();
-        new SqlSelector(sourceScope, sequenceQuery).forEach(rs -> {
-            Sequence sequence = new Sequence(rs.getString("SchemaName"), rs.getString("TableName"), rs.getString("ColumnName"), rs.getInt("last_value"));
-            Map<String, Sequence> schemaMap = sequences.computeIfAbsent(sequence.schemaName(), s -> new HashMap<>());
-            schemaMap.put(sequence.tableName(), sequence);
-        });
-
-        // Get target schemas in module order, which helps with foreign key relationships
-        List<DbSchema> schemas = getModules().stream()
-            .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
-            .map(name -> targetScope.getSchema(name, DbSchemaType.Module))
-            .toList();
-
-        for (DbSchema targetSchema : schemas)
-        {
-            DbSchema sourceSchema = sourceScope.getSchema(targetSchema.getName(), DbSchemaType.Bare);
-            if (!sourceSchema.existsInDatabase())
-            {
-                _log.warn("{} has no schema named '{}'", migrationDataSource, targetSchema.getName());
-            }
-            else
-            {
-                List<SchemaTableInfo> sourceTables = getTables(sourceSchema);
-                List<SchemaTableInfo> targetTables = getTables(targetSchema);
-
-                if (sourceTables.size() == targetTables.size())
-                {
-                    _log.debug("{} schemas have the same number of tables ({})", sourceSchema.getName(), targetTables.size());
-                }
-                else
-                {
-                    _log.warn("{} schemas have different table counts, {} vs. {}", sourceSchema.getName(), sourceTables.size(), targetTables.size());
-                    Set<String> sourceTableNames = sourceTables.stream().map(SchemaTableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
-                    Set<String> targetTableNames = targetTables.stream().map(SchemaTableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
-                    Set<String> sourceTableNamesCopy = new CaseInsensitiveHashSet(sourceTableNames);
-                    sourceTableNames.removeAll(targetTableNames);
-                    targetTableNames.removeAll(sourceTableNamesCopy);
-                    _log.warn("Differences: {} and {}", sourceTableNames, targetTableNames);
-                }
-
-                Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
-
-                Set<String> tablesToIgnore = targetSchema.getName().equals("core") ? Sets.newCaseInsensitiveHashSet("modules", "sqlscripts", "upgradesteps") : Set.of();
-
-                List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
-                Set<TableInfo> allTables = targetSchema.getTableNames().stream()
-                    .map(targetSchema::getTable)
-                    .collect(Collectors.toCollection(HashSet::new));
-                allTables.removeAll(sortedTables);
-
-                if (!allTables.isEmpty())
-                {
-                    _log.info("These tables were removed by TableSorter: {}", allTables);
-                    if (targetSchema.getName().equals("comm"))
-                    {
-                        sortedTables.add(targetSchema.getTable("Pages"));
-                        sortedTables.add(targetSchema.getTable("PageVersions"));
-                    }
-                }
-
-                List<TableInfo> tablesToCopy = sortedTables.stream()
-                    // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
-                    .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
-                    .filter(table -> !tablesToIgnore.contains(table.getName()))
-                    .toList();
-
-                for (TableInfo targetTable : tablesToCopy)
-                {
-                    String targetTableName = targetTable.getName();
-                    SchemaTableInfo sourceTable = sourceSchema.getTable(targetTableName);
-
-                    if (sourceTable == null)
-                    {
-                        _log.warn("Source schema has no table named '{}'", targetTableName);
-                    }
-                    else if (sourceTable.getTableType() != DatabaseTableType.TABLE) // Skip the views
-                    {
-                        _log.warn("{} is not a table!", sourceTable);
-                    }
-                    else
-                    {
-                        Set<String> columnNames = sourceTable.getColumnNameSet().stream()
-                            .filter(name -> !"_ts".equals(name)) // TODO: remove only if column has a default set?
-                            .filter(name -> !"csPath".equals(name)) // search.CrawlCollections.csPath is SQL Server-only
-                            .collect(Collectors.toSet());
-
-                        TableSelector sourceSelector = new TableSelector(sourceTable, columnNames).setJdbcCaching(false);
-                        try (Stream<Map<String, Object>> mapStream = sourceSelector.uncachedMapStream(); Connection conn = targetScope.getConnection())
-                        {
-                            Collection<ColumnInfo> sourceColumns = sourceSelector.getSelectedColumns();
-                            // Map the source columns to the target columns so we get the right order and casing for INSERT, etc.
-                            Collection<ColumnInfo> targetColumns = sourceColumns.stream()
-                                .map(sourceCol -> targetTable.getColumn(sourceCol.getName()))
-                                .peek(targetColumn -> {
-                                    if (null == targetColumn)
-                                        _log.info("null target column in: {}", sourceTable);
-                                })
-                                .filter(Objects::nonNull)
-                                .toList();
-                            String q = StringUtils.join(Collections.nCopies(sourceColumns.size(), "?"), ", ");
-                            SQLFragment sql = new SQLFragment("INSERT INTO ")
-                                .append(targetTable.getSelectName())
-                                .append("(");
-
-                            String sep = "";
-                            for (ColumnInfo targetColumn : targetColumns)
-                            {
-                                sql.append(sep)
-                                    .append(targetColumn.getSelectIdentifier().getSql());
-                                sep = ", ";
-                            }
-
-                            sql.append(") VALUES (")
-                                .append(q)
-                                .append(")");
-
-                            PreparedStatement statement = conn.prepareStatement(sql.getRawSQL());
-
-                            mapStream.forEach(map -> {
-                                try
-                                {
-                                    int i = 1;
-                                    for (ColumnInfo col : sourceColumns)
-                                    {
-                                        String name = col.getName();
-                                        Object value = col.getValue(map);
-                                        if (name.equalsIgnoreCase("Deleted") && targetTable.getColumn(name).getJdbcType() == JdbcType.INTEGER)
-                                            value = (boolean)value ? 1 : 0;
-                                        statement.setObject(i++, value);
-                                    }
-                                    statement.execute();
-                                }
-                                catch (SQLException e)
-                                {
-                                    throw new RuntimeException("Exception while migrating data from " + sourceTable, e);
-                                }
-                            });
-
-                            Sequence sequence = schemaSequenceMap.get(targetTable.getName());
-                            if (sequence != null)
-                            {
-                                ColumnInfo targetColumn = targetTable.getColumn(sequence.columnName());
-                                String sequenceName = new SqlSelector(targetSchema, "SELECT pg_get_serial_sequence(?, ?)", targetSchema.getName() + "." + targetTable.getName(), targetColumn.getSelectIdentifier().getId())
-                                    .getObject(String.class);
-                                new SqlExecutor(targetScope).execute("SELECT setval(?, ?)", sequenceName, sequence.lastValue());
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            _log.error("Exception: ", e);
-                        }
-                    }
-                }
-            }
-        }
-
-        // We can't handle provisioned tables yet, so (for now) delete all copied audit table remnants, allowing the new DB to create these tables on restart
-        SqlExecutor executor = new SqlExecutor(targetScope);
-        executor.execute("DELETE FROM exp.PropertyDomain WHERE DomainId IN (SELECT DomainID FROM exp.DomainDescriptor WHERE storageschemaname = 'audit')");
-        executor.execute("DELETE FROM exp.DomainDescriptor WHERE storageschemaname = 'audit'");
-        executor.execute("DELETE FROM exp.PropertyDescriptor WHERE PropertyId NOT IN (SELECT PropertyId FROM exp.PropertyDomain)");
-
-        System.exit(0);
-    }
-
-    private List<SchemaTableInfo> getTables(DbSchema schema)
-    {
-        return new ArrayList<>(schema.getTableNames().stream()
-            .map(schema::getTable)
-            .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
-            .toList());
     }
 
     public void destroy()
