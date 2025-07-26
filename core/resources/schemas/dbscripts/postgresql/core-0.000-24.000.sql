@@ -472,7 +472,7 @@ CREATE TABLE core.EmailOptions
     CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 );
 
-@SkipOnEmptySchemasBegin
+-- @SkipOnEmptySchemasBegin
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
@@ -492,7 +492,7 @@ INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (702, 'A
 -- labbook email notification options
 INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (801, 'No Email', 'labbook');
 INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (802, 'All emails', 'labbook');
-@SkipOnEmptySchemasEnd
+-- @SkipOnEmptySchemasEnd
 
 CREATE TABLE core.EmailPrefs
 (

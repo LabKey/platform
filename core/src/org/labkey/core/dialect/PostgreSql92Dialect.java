@@ -20,11 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
@@ -206,12 +205,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         return str;
     }
 
-    private static final Pattern SKIP_INSERTS_PATTERN = Pattern.compile("^\\s*@SkipOnEmptySchemasBegin$(.+?)^\\s*@SkipOnEmptySchemasEnd\\s*$", Pattern.MULTILINE + Pattern.DOTALL);
-    private static final Pattern STRIP_ANNOTATIONS_PATTERN = Pattern.compile("^\\s*@SkipOnEmptySchemasBegin$|^\\s*@SkipOnEmptySchemasEnd\\s*$", Pattern.MULTILINE + Pattern.DOTALL);
-
-    @Override // Temporary override to help with SQL Server migration
+    @Override
+    // No need to split up PostgreSQL scripts; execute all statements in a single block (unless we have a special stored proc call).
     protected Pattern getSQLScriptSplitPattern()
     {
-        return ModuleLoader.getInstance().shouldInsertData() ? STRIP_ANNOTATIONS_PATTERN : SKIP_INSERTS_PATTERN;
+        return null;
     }
 }
