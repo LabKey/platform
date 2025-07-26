@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -34,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,6 +122,8 @@ public class DatabaseMigration
 
     private static void migrateDatabase(String migrationDataSource)
     {
+        LOG.info("Starting database migration");
+
         DbScope targetScope = DbScope.getLabKeyScope();
         DbScope sourceScope = DbScope.getDbScope(migrationDataSource);
         if (null == sourceScope)
@@ -178,11 +180,7 @@ public class DatabaseMigration
                 List<SchemaTableInfo> sourceTables = getTables(sourceSchema);
                 List<SchemaTableInfo> targetTables = getTables(targetSchema);
 
-                if (sourceTables.size() == targetTables.size())
-                {
-                    LOG.debug("{} schemas have the same number of tables ({})", sourceSchema.getName(), targetTables.size());
-                }
-                else
+                if (sourceTables.size() != targetTables.size())
                 {
                     LOG.warn("{} schemas have different table counts, {} vs. {}", sourceSchema.getName(), sourceTables.size(), targetTables.size());
                     Set<String> sourceTableNames = sourceTables.stream().map(SchemaTableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
@@ -190,7 +188,7 @@ public class DatabaseMigration
                     Set<String> sourceTableNamesCopy = new CaseInsensitiveHashSet(sourceTableNames);
                     sourceTableNames.removeAll(targetTableNames);
                     targetTableNames.removeAll(sourceTableNamesCopy);
-                    LOG.warn("Differences: {} and {}", sourceTableNames, targetTableNames);
+                    LOG.warn("Table differences: {} and {}", sourceTableNames, targetTableNames);
                 }
 
                 Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
@@ -204,30 +202,23 @@ public class DatabaseMigration
                     {
                         LOG.warn("Source schema has no table named '{}'", targetTableName);
                     }
-                    else if (sourceTable.getTableType() != DatabaseTableType.TABLE) // Skip the views
-                    {
-                        LOG.warn("{} is not a table!", sourceTable);
-                    }
                     else
                     {
-                        // TODO: Pull column names from target table instead??
-                        Set<String> columnNames = sourceTable.getColumnNameSet().stream()
-                            .filter(name -> !"_ts".equals(name)) // TODO: remove only if column has a default set?
-                            .filter(name -> !"csPath".equals(name)) // search.CrawlCollections.csPath is SQL Server-only
+                        // Inspect target table to determine column names to select from source table
+                        Set<String> selectColumnNames = targetTable.getColumns().stream()
+                            .filter(column -> column.getWrappedColumnName() == null) // Ignore wrapped columns
+                            .map(ColumnInfo::getName)
+                            .filter(name -> !name.equals("_ts"))
                             .collect(Collectors.toSet());
 
-                        TableSelector sourceSelector = new TableSelector(sourceTable, columnNames).setJdbcCaching(false);
+                        TableSelector sourceSelector = new TableSelector(sourceTable, selectColumnNames).setJdbcCaching(false);
+
                         try (Stream<Map<String, Object>> mapStream = sourceSelector.uncachedMapStream(); Connection conn = targetScope.getConnection())
                         {
                             Collection<ColumnInfo> sourceColumns = sourceSelector.getSelectedColumns();
-                            // Map the source columns to the target columns so we get the right order and casing for INSERT, etc.
+                            // Map the selected source columns to the target columns so we get the right order and casing for INSERT, etc.
                             Collection<ColumnInfo> targetColumns = sourceColumns.stream()
                                 .map(sourceCol -> targetTable.getColumn(sourceCol.getName()))
-                                .peek(targetColumn -> {
-                                    if (null == targetColumn)
-                                        LOG.info("null target column in: {}", sourceTable);
-                                })
-                                .filter(Objects::nonNull)
                                 .toList();
                             String q = StringUtils.join(Collections.nCopies(sourceColumns.size(), "?"), ", ");
                             SQLFragment sql = new SQLFragment("INSERT INTO ")
@@ -273,7 +264,7 @@ public class DatabaseMigration
                             {
                                 ColumnInfo targetColumn = targetTable.getColumn(sequence.columnName());
                                 String sequenceName = new SqlSelector(targetSchema, "SELECT pg_get_serial_sequence(?, ?)", targetSchema.getName() + "." + targetTable.getName(), targetColumn.getSelectIdentifier().getId())
-                                        .getObject(String.class);
+                                    .getObject(String.class);
                                 new SqlExecutor(targetScope).execute("SELECT setval(?, ?)", sequenceName, sequence.lastValue());
                             }
                         }
@@ -293,6 +284,8 @@ public class DatabaseMigration
         executor.execute("DELETE FROM exp.PropertyDomain WHERE DomainId IN (SELECT DomainID FROM exp.DomainDescriptor WHERE storageschemaname = 'audit')");
         executor.execute("DELETE FROM exp.DomainDescriptor WHERE storageschemaname = 'audit'");
         executor.execute("DELETE FROM exp.PropertyDescriptor WHERE PropertyId NOT IN (SELECT PropertyId FROM exp.PropertyDomain)");
+
+        LOG.info("Database migration is complete");
 
         System.exit(0);
     }
@@ -324,7 +317,7 @@ public class DatabaseMigration
         @Override
         public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
         {
-            List<TableInfo> sortedTables = TableSorter.sort(targetSchema, true);
+            Set<TableInfo> sortedTables = new LinkedHashSet<>(TableSorter.sort(targetSchema, true));
 
             Set<TableInfo> allTables = targetSchema.getTableNames().stream()
                 .map(targetSchema::getTable)
