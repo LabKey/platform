@@ -12,7 +12,6 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
@@ -243,14 +242,10 @@ public class DatabaseMigration
                                 try
                                 {
                                     int i = 1;
+
                                     for (ColumnInfo col : sourceColumns)
-                                    {
-                                        String name = col.getName();
-                                        Object value = col.getValue(map);
-                                        if (name.equalsIgnoreCase("Deleted") && targetTable.getColumn(name).getJdbcType() == JdbcType.INTEGER)
-                                            value = (boolean)value ? 1 : 0;
-                                        statement.setObject(i++, value);
-                                    }
+                                        statement.setObject(i++, col.getValue(map));
+
                                     statement.execute();
                                 }
                                 catch (SQLException e)
