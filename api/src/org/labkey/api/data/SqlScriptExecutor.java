@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -95,14 +96,16 @@ public class SqlScriptExecutor
         }
         else
         {
-            // Strip all statements (typically inserts) between the above START and END annotations
+            // Strip all statements (typically inserts) between the empty-schema START and END annotations, inclusive
             MutableBoolean skipping = new MutableBoolean(false);
+            MutableInt lineCount = new MutableInt(0);
             sql = _sql.lines()
                 .filter(line -> {
+                    lineCount.increment();
                     if (line.contains(START_ANNOTATION))
                     {
                         if (skipping.booleanValue())
-                            throw new IllegalStateException("Unexpected " + START_ANNOTATION);
+                            throw new IllegalStateException("Unexpected " + START_ANNOTATION + " at line " + lineCount.intValue());
 
                         skipping.setValue(true);
                     }
@@ -112,7 +115,7 @@ public class SqlScriptExecutor
                     if (line.contains(END_ANNOTATION))
                     {
                         if (!skipping.booleanValue())
-                            throw new IllegalStateException("Unexpected " + END_ANNOTATION);
+                            throw new IllegalStateException("Unexpected " + END_ANNOTATION + " at line " + lineCount.intValue());
 
                         skipping.setValue(false);
                     }
