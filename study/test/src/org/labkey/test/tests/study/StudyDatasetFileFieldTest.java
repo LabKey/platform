@@ -14,9 +14,13 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.pages.DatasetInsertPage;
+import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.FileBrowserHelper;
+import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,6 +109,8 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         File downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
         checker().verifyTrue("Incorrect file name ", FileUtils.contentEquals(downloadedFile, inputFile));
 
+        FileBrowserHelper.FileDetailInfo fileInfoOriginalFile = _fileBrowserHelper.getFileDetailInfo(getProjectName(), "sample.txt");
+
         goToFolderManagement().goToExportTab();
         new Checkbox(Locator.tagWithText("label", "Files").precedingSibling("input").findElement(getDriver())).check();
         File exportedFolderFile = doAndWaitForDownload(()->findButton("Export").click());
@@ -158,6 +164,76 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         setFormElement(Locator.name("quf_intField"), "2");
         setFormElement(Locator.name("quf_fileField"), updateFile.toString());
         clickButton("Submit");
+
+        FileBrowserHelper.FileDetailInfo fileInfoImportedFile = _fileBrowserHelper.getFileDetailInfo(IMPORT_PROJECT, "sample.txt");
+
+        // error case: import, update, merge with invalid file path
+        ViewDatasetDataPage datasetDataPage = new ViewDatasetDataPage(getDriver());
+        ImportDataPage importDataPage = datasetDataPage.importBulkData();
+        importDataPage.setCopyPasteMerge(false, false);
+        importFilePathError("badNew", "101", fileInfoOriginalFile.absoluteFilePath());
+        importFilePathError("badNew", "101", fileInfoOriginalFile.dataFileUrl());
+        importFilePathError("badNew", "101", fileInfoOriginalFile.webDavUrl());
+        importFilePathError("badNew", "101", "bad.txt");
+        importFilePathError("badNew", "101", fileInfoOriginalFile.absoluteFilePath().replace("sample.txt", ""));
+        importFilePathError("badNew", "101", ".");
+        importFilePathError("badNew", "101", "../..");
+        importDataPage.setCopyPasteMerge(true, true);
+        importFilePathError("badNew", "101", fileInfoOriginalFile.absoluteFilePath());
+        importFilePathError("1", "2", fileInfoOriginalFile.dataFileUrl());
+        importFilePathError("badNew", "101", fileInfoOriginalFile.webDavUrl());
+        importFilePathError("1", "2", "bad.txt");
+        importFilePathError("badNew", "101", fileInfoOriginalFile.absoluteFilePath().replace("sample.txt", ""));
+        importFilePathError("1", "2", ".");
+        importFilePathError("badNew", "101", "../..");
+        importDataPage.setCopyPasteMerge(false, true);
+        importFilePathError("1", "2", fileInfoOriginalFile.absoluteFilePath());
+        importFilePathError("1", "2", fileInfoOriginalFile.dataFileUrl());
+        importFilePathError("1", "2", fileInfoOriginalFile.webDavUrl());
+        importFilePathError("1", "2", "bad.txt");
+        importFilePathError("1", "2", fileInfoOriginalFile.absoluteFilePath().replace("sample.txt", ""));
+        importFilePathError("1", "2", ".");
+        importFilePathError("1", "2", "../..");
+        // happy case, import/update/merge with valid file path
+        importDataPage.setCopyPasteMerge(false, false);
+        String header = "ParticipantId\tSequenceNum\tfileField\n";
+        String data =  "2\t3\t" + fileInfoImportedFile.absoluteFilePath() + "\n" +
+                "3\t4\t" + fileInfoImportedFile.dataFileUrl() + "\n" +
+                "4\t5\t" + fileInfoImportedFile.webDavUrl() + "\n" +
+                "5\t6\t" + fileInfoImportedFile.webDavUrlRelative() + "\n";
+        setFormElement(Locator.name("text"), header + data);
+        new ImportDataPage(getDriver()).submit();
+        datasetDataPage = new ViewDatasetDataPage(getDriver());
+        importDataPage = datasetDataPage.importBulkData();
+        importDataPage.setCopyPasteMerge(false, true);
+        data =  "2\t3\t" + fileInfoImportedFile.dataFileUrl() + "\n" +
+                "3\t4\t" + fileInfoImportedFile.webDavUrl() + "\n" +
+                "4\t5\t" + fileInfoImportedFile.webDavUrlRelative() + "\n" +
+                "5\t6\t" + fileInfoImportedFile.absoluteFilePath() + "\n";
+        setFormElement(Locator.name("text"), header + data);
+        new ImportDataPage(getDriver()).submit();
+        datasetDataPage = new ViewDatasetDataPage(getDriver());
+        importDataPage = datasetDataPage.importBulkData();
+        importDataPage.setCopyPasteMerge(true, true);
+        data += "6\t7\t" + fileInfoImportedFile.webDavUrlRelative() + "\n";
+        setFormElement(Locator.name("text"), header + data);
+        new ImportDataPage(getDriver()).submit();
+    }
+
+    private void importFilePathError(String participantId, String sequenceNum, String filePath)
+    {
+        String header = "ParticipantId\tSequenceNum\tfileField\n";
+        String data =  participantId + "\t" + sequenceNum + "\t" + filePath + "\n";
+        setFormElement(Locator.name("text"), header + data);
+        new ImportDataPage(getDriver()).submitExpectingError();
+        try
+        {
+            waitForElementToBeVisible(Locator.xpath("//div[contains(@class, 'labkey-error')][contains(text(),'Invalid file path: " + filePath + "')]"));
+        }
+        catch(NoSuchElementException nse)
+        {
+            checker().fatal().error("Invalid file path error not present.");
+        }
     }
 
     protected void createDataset(String name)
