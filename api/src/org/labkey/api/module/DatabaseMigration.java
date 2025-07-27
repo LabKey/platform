@@ -56,6 +56,8 @@ public class DatabaseMigration
 
             if (migrationDataSource != null)
                 migrateDatabase(migrationDataSource);
+
+            System.exit(0);
         }
     }
 
@@ -281,8 +283,6 @@ public class DatabaseMigration
         executor.execute("DELETE FROM exp.PropertyDescriptor WHERE PropertyId NOT IN (SELECT PropertyId FROM exp.PropertyDomain)");
 
         LOG.info("Database migration is complete");
-
-        System.exit(0);
     }
 
     private static List<SchemaTableInfo> getTables(DbSchema schema)
