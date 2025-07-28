@@ -254,7 +254,6 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        // rows convert?
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !Boolean.TRUE.equals(context.getConfigParameterBoolean(Config.SkipResyncStudy)))
         {
