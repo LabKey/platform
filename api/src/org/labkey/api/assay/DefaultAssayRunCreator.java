@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -465,7 +466,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
             else if (e instanceof ConvertHelper.FileLinkConversionException)
-                throw new ExperimentException(e.getMessage());
+                throw new ApiUsageException(e.getMessage(), e);
             else
                 throw new ExperimentException(e);
         }
@@ -1083,13 +1084,18 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         try
         {
+            ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
             for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
                 DomainProperty pd = entry.getKey();
                 String value = entry.getValue();
 
                 // resolve any file links for batch or run properties
-                File resolvedFile = AssayUploadFileResolver.resolve(value, container, entry.getKey());
+                File resolvedFile;
+                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()) && value instanceof String)
+                    resolvedFile = (File) expDataFileConverter.convert(File.class, value);
+                else
+                    resolvedFile = AssayUploadFileResolver.resolve(value, container, pd);
                 if (resolvedFile != null)
                 {
                     value = resolvedFile.getAbsolutePath();

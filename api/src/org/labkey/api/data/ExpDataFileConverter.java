@@ -417,7 +417,7 @@ public class ExpDataFileConverter implements Converter
                 return new File(uri);
         }
 
-        // Otherwise, treat it as a plain path
-        return FILE_CONVERTER.convert(File.class, filePath);
+        // Otherwise, treat it as a plain path (processed by getFileRootSubstitutedFilePath)
+        return FILE_CONVERTER.convert(File.class, webdav);
     }
 }

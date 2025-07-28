@@ -44,6 +44,7 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.BatchValidationException;
@@ -474,18 +475,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             // use File converter for known file fields even if inferTypes = false. If inferTypes, this is already done.
             if (!getInferTypes())
             {
-                Class knownColumnClass = null;
+                ColumnInfo knownColumn = null;
+                Class knownColumnClass;
                 if (_columnInfoMap.containsKey(name))
-                {
-                    knownColumnClass = _columnInfoMap.get(name).getJavaClass();
-                }
+                    knownColumn = _columnInfoMap.get(name);
                 else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
+                    knownColumn = _columnInfoMap.get(renamedColumns.get(name));
+
+                if (knownColumn != null  && String.class.equals(colDesc.clazz))
                 {
-                    knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
+                    knownColumnClass = knownColumn.getJavaClass();
+                    if (File.class.equals(knownColumnClass) && !knownColumn.getPropertyType().equals(PropertyType.ATTACHMENT)) // skip attachment conversion
+                        colDesc.clazz = File.class;
                 }
 
-                if (File.class.equals(knownColumnClass) && String.class.equals(colDesc.clazz))
-                    colDesc.clazz = knownColumnClass;
             }
         }
 

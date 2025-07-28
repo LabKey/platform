@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
@@ -797,6 +798,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
 
+        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
+
         return DataIteratorUtil.mapTransformer(rawData, inputCols ->
         {
             List<String> result = new ArrayList<>(inputCols);
@@ -932,7 +935,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             // File column values are stored as the absolute resolved path
                             try
                             {
-                                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                                File resolvedFile;
+                                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()) && o instanceof String)
+                                    resolvedFile = (File) expDataFileConverter.convert(File.class, o);
+                                else
+                                    resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
                                 if (resolvedFile != null)
                                 {
                                     o = resolvedFile;

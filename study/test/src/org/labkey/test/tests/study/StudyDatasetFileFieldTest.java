@@ -18,8 +18,10 @@ import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.FileBrowserHelper;
+import org.labkey.test.util.PasswordUtil;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
@@ -81,6 +83,9 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     @Test
     public void testFileField() throws IOException
     {
+        new ApiPermissionsHelper(this)
+                .setSiteRoleUserPermissions(PasswordUtil.getUsername(), "See Absolute File Paths");
+
         String datasetName = "Dataset-1";
         File inputFile = TestFileUtils.getSampleData("fileTypes/sample.txt"); //random file
         goToProjectHome();
