@@ -1024,9 +1024,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 multipartFile.transferTo(toFileForWrite(file));
                 event.setComment(String.format(auditMessageFormat, multipartFile.getOriginalFilename(), name, container.getPath()));
                 event.setProvidedFileName(multipartFile.getOriginalFilename());
-                event.setFile(file.getName());
-                event.setFieldName(name);
-                event.setDirectory(file.getParent().toURI().getPath());
             }
             else if (value instanceof SpringAttachmentFile saf)
             {
@@ -1035,10 +1032,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 saf.saveTo(file);
                 event.setComment(String.format(auditMessageFormat, saf.getFilename(), name, container.getPath()));
                 event.setProvidedFileName(saf.getFilename());
-                event.setFile(file.getName());
-                event.setFieldName(name);
-                event.setDirectory(file.getParent().toURI().getPath());
             }
+            event.setFile(file.getName());
+            event.setFieldName(name);
+            event.setDirectory(file.getParent().toURI().getPath());
             AuditLogService.get().addEvent(user, event);
         }
         catch (IOException | ExperimentException e)
