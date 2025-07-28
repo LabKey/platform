@@ -10061,7 +10061,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
 
-        event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
+        event.setDirectory(targetFile.getParentFile().getAbsolutePath());
         event.setFile(targetFile.getName());
         event.setProvidedFileName(sourceFile.getName());
         event.setResourcePath(sourceFile.getAbsolutePath());
