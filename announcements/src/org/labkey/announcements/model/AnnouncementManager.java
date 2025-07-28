@@ -853,7 +853,7 @@ public class AnnouncementManager
 
     public static void indexMessages(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
-        indexMessages(task, c.getId(), modifiedSince, null, SearchService.PRIORITY.modifiedLow);
+        indexMessages(task, c.getId(), modifiedSince, null, SearchService.PRIORITY.modified);
     }
 
 
@@ -996,7 +996,7 @@ public class AnnouncementManager
                         ann.getAttachmentParent(),
                         documentName, searchCategory);
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.modifiedHigh);
+                task.addResource(attachmentRes, SearchService.PRIORITY.modified);
             }
         }
     }
@@ -1037,7 +1037,7 @@ public class AnnouncementManager
         {
             SearchService.IndexTask task = svc.defaultTask();
             // indexMessages is overkill, but I don't want to duplicate the code
-            indexMessages(task, container, null, parent, SearchService.PRIORITY.modifiedLow);
+            indexMessages(task, container, null, parent, SearchService.PRIORITY.modified);
         }
     }
 

@@ -981,23 +981,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, () -> {
+        task.addRunnable(c, SearchService.PRIORITY.crawl, () -> {
             for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
             {
-                sampleType.index(SearchService.PRIORITY.crawlHigh, task);
+                sampleType.index(SearchService.PRIORITY.crawl, task);
             }
         });
 
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, () -> indexMaterials(task, c, modifiedSince, 0, SearchService.PRIORITY.crawlHigh));
+        task.addRunnable(c, SearchService.PRIORITY.crawl, () -> indexMaterials(task, c, modifiedSince, 0, SearchService.PRIORITY.crawl));
 
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, () -> {
+        task.addRunnable(c, SearchService.PRIORITY.crawl, () -> {
             for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
             {
-                dataClass.index(SearchService.PRIORITY.crawlHigh, task);
+                dataClass.index(SearchService.PRIORITY.crawl, task);
             }
         });
 
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, () -> indexData(task, c, modifiedSince, 0, SearchService.PRIORITY.crawlHigh));
+        task.addRunnable(c, SearchService.PRIORITY.crawl, () -> indexData(task, c, modifiedSince, 0, SearchService.PRIORITY.crawl));
     }
 
     @Override
@@ -1042,7 +1042,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            expMaterial.index(SearchService.PRIORITY.crawlHigh, task);
+            expMaterial.index(SearchService.PRIORITY.crawl, task);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
@@ -1253,7 +1253,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         scope.executeWithRetryReadOnly(tx ->
                 new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
                         task.addRunnable(dataClass.getContainer(), priority, () -> batch.forEach(data ->
-                                new ExpDataImpl(data).index(priority.getOneHigher(), task))
+                                new ExpDataImpl(data).index(priority, task))
                         )
                 ));
     }
@@ -4371,7 +4371,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
                     transaction.addCommitTask(() ->
                         replacedRuns.forEach(replacedRun ->
-                                AssayService.get().indexAssayRun(replacedRun.getRowId(), SearchService.PRIORITY.modifiedHigh)
+                                AssayService.get().indexAssayRun(replacedRun.getRowId(), SearchService.PRIORITY.modified)
                         ),
                         DbScope.CommitTaskOption.POSTCOMMIT
                     );
@@ -6586,8 +6586,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (assayService != null && ss != null)
         {
             SearchService.IndexTask task = ss.defaultTask();
-            Runnable runEnumerate = () -> assayService.indexAssay(task, protocol.getContainer(), new ExpProtocolImpl(protocol), SearchService.PRIORITY.modifiedLow);
-            task.addRunnable(protocol.getContainer(), SearchService.PRIORITY.modifiedHigh, runEnumerate);
+            Runnable runEnumerate = () -> assayService.indexAssay(task, protocol.getContainer(), new ExpProtocolImpl(protocol), SearchService.PRIORITY.modified);
+            task.addRunnable(protocol.getContainer(), SearchService.PRIORITY.modified, runEnumerate);
         }
     }
 
@@ -7971,7 +7971,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(DataTypeForExclusion.DataClass, impl.getRowId(), c, u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            tx.addCommitTask(() -> indexDataClass(getDataClass(c, bean.getName()), SearchService.PRIORITY.modifiedLow), POSTCOMMIT);
+            tx.addCommitTask(() -> indexDataClass(getDataClass(c, bean.getName()), SearchService.PRIORITY.modified), POSTCOMMIT);
             tx.commit();
         }
         catch (MetadataUnavailableException e)
@@ -8072,7 +8072,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.PRIORITY.modifiedLow), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.PRIORITY.modified), POSTCOMMIT);
                 transaction.commit();
             }
         }
@@ -9621,7 +9621,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // update search index for moved data class object via indexDataClass() helper. It filters for data objects
                 // to index based on the modified date
                 for (ExpDataClass dataClass : dataClassesMap.keySet())
-                    indexDataClass((ExpDataClassImpl) dataClass, SearchService.PRIORITY.modifiedLow);
+                    indexDataClass((ExpDataClassImpl) dataClass, SearchService.PRIORITY.modified);
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }

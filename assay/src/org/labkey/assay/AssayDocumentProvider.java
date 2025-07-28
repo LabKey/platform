@@ -21,8 +21,8 @@ public class AssayDocumentProvider implements DocumentProvider
     @Override
     public void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> AssayService.get().indexAssays(task, c, SearchService.PRIORITY.crawlHigh);
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, runEnumerate);
+        Runnable runEnumerate = () -> AssayService.get().indexAssays(task, c, SearchService.PRIORITY.crawl);
+        task.addRunnable(c, SearchService.PRIORITY.crawl, runEnumerate);
     }
 
     public static SearchService.ResourceResolver getSearchResolver()

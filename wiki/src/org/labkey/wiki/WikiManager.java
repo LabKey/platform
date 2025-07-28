@@ -687,7 +687,7 @@ public class WikiManager implements WikiService
         }
         Container c = ContainerService.get().getForId(page.getContainerId());
         if (null != c)
-            indexWikis(null, c, null, page.getName(), SearchService.PRIORITY.modifiedHigh);
+            indexWikis(null, c, null, page.getName(), SearchService.PRIORITY.modified);
     }
 
 
@@ -791,7 +791,7 @@ public class WikiManager implements WikiService
                 try
                 {
                     WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, wikiName, entityId, body, rendererType, props);
-                    task.addResource(r, SearchService.PRIORITY.modifiedHigh);
+                    task.addResource(r, SearchService.PRIORITY.modified);
                 }
                 catch (Throwable t)
                 {
@@ -851,7 +851,7 @@ public class WikiManager implements WikiService
                 NavTree t = new NavTree("wiki page", wikiUrl);
                 String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.modifiedHigh);
+                task.addResource(attachmentRes, SearchService.PRIORITY.modified);
             }
         }
     }

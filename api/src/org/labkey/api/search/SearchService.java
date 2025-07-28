@@ -129,23 +129,12 @@ public interface SearchService extends SearchMXBean
         /** Only used by the no-op task to detect when there is no other work in the queue */
         idle,
 
-        /** Lowest priority used for real indexing work. Intended for Runnables placed in the queue as part of a call to DocumentProvider.enumerateDocuments() */
-        crawlLow,
-        /** Intended for individual resources found during a crawl, such as a wiki or sample */
-        crawlHigh,
-
-        /** Intended for parent items that were touched by a server action. For example, a sample type that may in turn trigger indexing of its child samples */
-        modifiedLow,
-        /** Intended for individual items that were touched by a server action */
-        modifiedHigh,
-
+        /** Lower priority indexing work. Intended for work placed in the queue as part of a call to DocumentProvider.enumerateDocuments() */
+        crawl,
+        /** Intended for content that needed indexing or reindexing because it was modified or created */
+        modified,
         /** Highest priority. Used for removing documents from the index, which is generally faster than adding */
         delete;
-
-        public PRIORITY getOneHigher()
-        {
-            return ordinal() == values().length - 1 ? delete : values()[ordinal() - 1];
-        }
     }
 
 
@@ -467,10 +456,12 @@ public interface SearchService extends SearchMXBean
     interface DocumentProvider
     {
         /**
-         * enumerate documents for full text search
+         * Enumerate documents for full-text search. Unless it's known there will be a small number of documents
+         * added to the queue, add Runnable to the IndexTask that adds the Resources from the container to the queue.
+         * If there are potentially many documents for a container, add resources in batches of 1,000 or so to avoid
+         * a huge memory footprint.
          *
-         * modifiedSince == null -> full reindex
-         * else incremental (either modified > modifiedSince, or modified > lastIndexed)
+         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
         void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince);
 

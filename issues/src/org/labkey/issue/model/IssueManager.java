@@ -1001,7 +1001,7 @@ public class IssueManager
         // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
 
         // try requery instead
-        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()), SearchService.PRIORITY.modifiedHigh);
+        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()), SearchService.PRIORITY.modified);
     }
 
 

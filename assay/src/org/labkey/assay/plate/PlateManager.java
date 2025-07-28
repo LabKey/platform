@@ -2218,7 +2218,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void indexPlate(SearchService.IndexTask task, @NotNull Plate plate)
     {
         WebdavResource resource = PlateDocumentProvider.createDocument(plate);
-        task.addResource(resource, SearchService.PRIORITY.modifiedHigh);
+        task.addResource(resource, SearchService.PRIORITY.modified);
     }
 
     public void indexPlates(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
@@ -2244,7 +2244,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
     {
         WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
-        task.addResource(resource, SearchService.PRIORITY.modifiedHigh);
+        task.addResource(resource, SearchService.PRIORITY.modified);
     }
 
     public void indexPlateSets(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)

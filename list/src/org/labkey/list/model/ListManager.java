@@ -513,7 +513,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
         };
 
-        task.addRunnable(c, SearchService.PRIORITY.crawlLow, r);
+        task.addRunnable(c, SearchService.PRIORITY.crawl, r);
     }
 
     public void indexList(final ListDefinition def)
@@ -553,7 +553,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
             else
             {
-                task.addRunnable(c, SearchService.PRIORITY.modifiedHigh, r);
+                task.addRunnable(c, SearchService.PRIORITY.modified, r);
             }
 
         }
@@ -727,7 +727,7 @@ public class ListManager implements SearchService.DocumentProvider
                 String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                task.addResource(r, SearchService.PRIORITY.modifiedHigh);
+                task.addResource(r, SearchService.PRIORITY.modified);
                 LOG.debug("List \"" + list + "\": Queued indexing of item with PK = " + pk);
             });
         }
@@ -789,7 +789,7 @@ public class ListManager implements SearchService.DocumentProvider
                         );
 
                         attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                        task.addResource(attachmentRes, SearchService.PRIORITY.modifiedHigh);
+                        task.addResource(attachmentRes, SearchService.PRIORITY.modified);
                         LOG.debug("List \"" + list + "\": Queued indexing of attachment \"" + documentName + "\" for item with PK = " + map.get(list.getKeyName()));
                     });
                 });
@@ -892,7 +892,7 @@ public class ListManager implements SearchService.DocumentProvider
                     }
                 };
 
-                task.addResource(r, SearchService.PRIORITY.modifiedHigh);
+                task.addResource(r, SearchService.PRIORITY.modified);
                 LOG.debug("List \"" + list + "\": Queued indexing of entire list document");
             }
         }

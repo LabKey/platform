@@ -120,7 +120,7 @@ public void setUp()
 public void tearDown() throws InterruptedException
 {
     // Wait for the indexer to finish working on the data we just added to help avoid deadlocks
-    SearchService.get().drainQueue(SearchService.PRIORITY.crawlLow, 15, TimeUnit.SECONDS);
+    SearchService.get().drainQueue(SearchService.PRIORITY.crawl, 15, TimeUnit.SECONDS);
     ContainerManager.deleteAll(c, TestContext.get().getUser());
 }
 

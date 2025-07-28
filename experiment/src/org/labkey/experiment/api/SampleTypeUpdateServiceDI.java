@@ -529,10 +529,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(_sampleType.getContainer(), SearchService.PRIORITY.modifiedLow, () ->
+                            searchService.defaultTask().addRunnable(_sampleType.getContainer(), SearchService.PRIORITY.modified, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
-                                    expMaterial.index(SearchService.PRIORITY.modifiedHigh, searchService.defaultTask(), tableInfo);
+                                    expMaterial.index(SearchService.PRIORITY.modified, searchService.defaultTask(), tableInfo);
                             })
                     );
                 }, DbScope.CommitTaskOption.POSTCOMMIT);

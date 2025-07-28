@@ -239,7 +239,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     // Consider: remove _op/OPERATION (not used), subclasses for resource vs. runnable (would clarify invariants and make
     // hashCode() & equals() more straightforward), formalize _id (using Runnable.toString() seems weak).
-    public class Item implements Comparable<Item>
+    public static class Item implements Comparable<Item>
     {
         static final AtomicLong seq = new AtomicLong();
 
@@ -290,7 +290,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (null == _res)
             {
                 _start = HeartBeat.currentTimeMillis();
-                _res = resolveResource(_id);
+                _res = get().resolveResource(_id);
             }
             return _res;
         }
@@ -344,6 +344,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         public int compareTo(@NotNull AbstractSearchService.Item o)
         {
             int res = _pri.compareTo(o._pri) * -1;
+            if (res == 0)
+            {
+                // Treat Runnables as a lower priority than Resources
+                if (this._run != null && o._run == null)
+                {
+                    return 1;
+                }
+                if (this._run == null && o._run != null)
+                {
+                    return -1;
+                }
+            }
             if (res == 0 && o != this)
                 res = (_seqNum < o._seqNum ? -1 : 1);
             return res;
@@ -1343,7 +1355,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 p.enumerateDocuments(task, c, since);
             }
         };
-        task.addRunnable(c, PRIORITY.crawlLow, r);
+        task.addRunnable(c, PRIORITY.crawl, r);
         if (null == in)
             task.setReady();
         return task;
@@ -1370,7 +1382,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 indexContainer(task, i, null);
             }
         };
-        task.addRunnable(c, PRIORITY.crawlLow, r);
+        task.addRunnable(c, PRIORITY.crawl, r);
         if (null == in)
             task.setReady();
         return task;
