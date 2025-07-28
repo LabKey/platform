@@ -259,7 +259,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), allowMultiple ? "File field provided for assay import" : "Primary file provided for assay import");
                                 event.setProvidedFileName(fileName);
                                 event.setFile(file.getName());
-                                event.setDirectory(dir.getParent().toURI().getPath());
+                                event.setDirectory(dir.toURI().getPath());
                                 AuditLogService.get().addEvent(context.getUser(), event);
                             }
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
