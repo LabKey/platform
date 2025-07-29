@@ -1953,7 +1953,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        moveFile(renameData, sourceContainer, user);
+                        moveFile(renameData, sourceContainer, user, transaction.getAuditId());
                 }
             }, POSTCOMMIT);
 
@@ -2064,7 +2064,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return runCount;
     }
 
-    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName) {}
+    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName, String fieldName) {}
 
     // return the map of file renames
     private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
@@ -2109,7 +2109,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     {
 
                         if (!fileMoveReferences.containsKey(sourceFileName))
-                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName()));
+                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName(), fileProp.getName()));
                         if (!fileMoveCounts.containsKey(sourceFileName))
                             fileMoveCounts.put(sourceFileName, 0);
                         fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
@@ -2132,17 +2132,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
             fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
-            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(ref.sourceContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
             event.setProvidedFileName(sourceFile.getName());
             event.setFile(ref.targetFile.getName());
             event.setDirectory(ref.targetFile.getParent());
+            event.setFieldName(ref.fieldName);
             AuditLogService.get().addEvent(user, event);
         }
 
         return sampleFileRenames;
     }
 
-    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user)
+    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user, Long txAuditId)
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
@@ -2166,8 +2167,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        String changeDetail = String.format("'%s' sample '%s' (field: '%s')", renameData.sampleType.getName(), renameData.sampleName, renameData.fieldName);
-        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail);
+        String changeDetail = String.format("sample type '%s' sample '%s'", renameData.sampleType.getName(), renameData.sampleName);
+        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail, txAuditId, renameData.fieldName);
     }
 
     @Override
