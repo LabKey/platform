@@ -304,8 +304,9 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             if (name.startsWith(gttp) && 10 < name.indexOf('$'))
                 name = name.substring(gttp.length(), name.indexOf("$"));
         }
-        String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect());
-        r += "_" + _uniqueAliasCounter;
+        String suffix = "_" + _uniqueAliasCounter;
+        String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true, suffix.length());
+        r += suffix;
         return r;
     }
 

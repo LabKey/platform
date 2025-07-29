@@ -2,6 +2,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.AdminUrls;
@@ -22,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -39,6 +41,8 @@ import static org.labkey.api.util.DateUtil.META_FORMATS;
 
 public class DisplayFormatAnalyzer
 {
+    private static final Logger LOG = LogHelper.getLogger(DisplayFormatAnalyzer.class, "Warnings during date format analysis");
+
     public record DisplayFormatContext(String message, ActionURL url){}
 
     public interface DisplayFormatHandler
@@ -162,14 +166,31 @@ public class DisplayFormatAnalyzer
             });
 
         _propertyCandidateMap.get(c)
-            .forEach(candidate -> handler.handle(c, candidate.type(), candidate.format(),
-                () -> {
-                    GWTDomain<?> domain = DomainUtil.getDomainDescriptor(user, candidate.domainUri(), c);
-                    return new DisplayFormatContext(
-                        candidate.type().name() + " property \"" + domain.getSchemaName() + "." + domain.getQueryName() + "." + candidate.columnName() + "\"",
-                            _queryUrls.urlSchemaBrowser(c, domain.getSchemaName(), domain.getQueryName())
-                    );
-                }));
+            .forEach(candidate ->
+                {
+                    try
+                    {
+                        GWTDomain<?> domain = DomainUtil.getDomainDescriptor(user, candidate.domainUri(), c);
+                        if (domain == null)
+                        {
+                            LOG.warn("Could not find domain for {}.{} ({})", candidate.tableName(), candidate.columnName(), candidate.domainUri());
+                        }
+                        else
+                        {
+                            handler.handle(c, candidate.type(), candidate.format(),
+                                () -> new DisplayFormatContext(
+                                    candidate.type().name() + " property \"" + domain.getSchemaName() + "." + domain.getQueryName() + "." + candidate.columnName() + "\"",
+                                    _queryUrls.urlSchemaBrowser(c, domain.getSchemaName(), domain.getQueryName())
+                                ));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        // Best effort -- skip if domainUri is unrecognized or other exception occurs, Issue 53488
+                        LOG.warn("Exception while attempting to analyze {}.{}", candidate.tableName(), candidate.columnName(), e);
+                    }
+                }
+            );
     }
 
     public void handleAll(User user, DisplayFormatHandler handler)
