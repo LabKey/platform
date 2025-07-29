@@ -1551,6 +1551,7 @@ public class ContainerManager
                             if (isNavAccessOpen)
                             {
                                 NavTree noLinkTree = new NavTree(missing.getName());
+                                noLinkTree.setId(missing.getId());
                                 m.put(missing.getId(), noLinkTree);
                             }
                             else
