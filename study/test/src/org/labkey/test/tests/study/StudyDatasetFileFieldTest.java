@@ -111,7 +111,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         log("Edit the dataset");
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
-        setFormElement(Locator.name("quf_textField"), "Welcome..!");
+        setFormElement(Locator.name("quf_" + TEXT_FIELD), "Welcome..!");
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
         clickButton("Submit");
 
