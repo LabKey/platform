@@ -545,7 +545,7 @@
   <table tableName="ContainerAliases" tableDbType="TABLE">
     <columns>
       <column columnName="Path"/>
-      <column columnName="ContainerId"/>
+      <column columnName="ContainerRowId"/>
     </columns>
   </table>
 
