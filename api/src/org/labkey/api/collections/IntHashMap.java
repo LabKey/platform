@@ -18,7 +18,7 @@ public class IntHashMap<V> extends HashMap<Integer, V>
 
     private Integer _int(Object key)
     {
-        if (key.getClass() != Integer.class)
+        if (null != key && key.getClass() != Integer.class)
             throw new IllegalStateException();
         return (Integer)key;
     }

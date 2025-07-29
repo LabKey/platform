@@ -23,7 +23,7 @@ public class LongHashMap<V> extends HashMap<Long, V>
 
     private Long _long(Object key)
     {
-        if (key.getClass() != Long.class)
+        if (null != key && key.getClass() != Long.class)
             throw new IllegalStateException();
         return (Long)key;
     }
