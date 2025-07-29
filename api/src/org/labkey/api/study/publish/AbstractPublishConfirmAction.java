@@ -69,8 +69,8 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected Map<Object, String> _postedDates;
     protected Map<Object, String> _postedPtids;
     protected Map<Object, String> _postedTargetStudies;
-    protected Set<Integer> _selectedObjects;
-    protected List<Integer> _allObjects = Collections.emptyList();
+    protected Set<Long> _selectedObjects;
+    protected List<Long> _allObjects = Collections.emptyList();
     protected Container _targetStudy;
     protected ActionURL _successURL;
 
@@ -198,7 +198,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     /**
      * Perform the link to study operation
      */
-    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Long, PublishKey> publishData, List<String> publishErrors);
 
     /**
      * Returns the hidden form fields that need to be included on the data region form
@@ -309,7 +309,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     }
 
     private void attemptLinkage(FORM form, BindException errors,
-                            Set<Integer> selectedObjects, List<Integer> allObjects,
+                            Set<Long> selectedObjects, List<Long> allObjects,
                             Container targetStudy,
                             Map<Object, String> postedTargetStudies,
                             Map<Object, String> postedVisits,
@@ -317,7 +317,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                             Map<Object, String> postedPtids)
             throws RedirectException
     {
-        Map<Integer, PublishKey> publishData = new LinkedHashMap<>();
+        Map<Long, PublishKey> publishData = new LinkedHashMap<>();
         String[] participantIds = form.getParticipantId();
         String[] visitIds = form.getVisitId();
         String[] dates = form.getDate();
@@ -332,7 +332,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         boolean badVisitIds = false;
         boolean badDates = false;
         int index = 0;
-        for (int objectId : allObjects)
+        for (long objectId : allObjects)
         {
             // we only want to give errors for selected rows, but we want to compute visits and ptids regardless
             boolean selected = selectedObjects.contains(objectId);

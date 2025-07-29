@@ -1503,7 +1503,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 if (dbSequenceBatchSize == null)
                     dbSequenceBatchSize = 100;
 
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, dbSequenceBatchSize, null);
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), (Integer)null, dbSequenceBatchSize, null);
                 added.add(columnInfo.getName());
             });
         return added;
@@ -1596,7 +1596,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName)
     {
-        return addSequenceColumn(col, sequenceContainer, sequenceName, null, null, null);
+        return addSequenceColumn(col, sequenceContainer, sequenceName, (Integer)null, null, null);
+    }
+
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Long sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)
+    {
+        // TODO BIGITN
+        if (null != sequenceId && sequenceId > Integer.MAX_VALUE)
+            throw new UnsupportedOperationException("sequenceId is too large");
+        return addSequenceColumn(col, sequenceContainer, sequenceName, null==sequenceId?null:sequenceId.intValue(), batchSize, minValue);
     }
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)

@@ -1,5 +1,6 @@
 package org.labkey.assay;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,6 +15,8 @@ import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -309,8 +312,8 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            Map<Integer, String> plateSetPaths = new HashMap<>();
-            Map<Integer, List<Integer>> plateSetsToHits = new HashMap<>();
+            Map<Integer, String> plateSetPaths = new IntHashMap<>();
+            Map<Integer, List<Integer>> plateSetsToHits = new IntHashMap<>();
 
             SQLFragment sql = new SQLFragment("SELECT Hit.RowId AS HitRowId, PlateSet.RowId AS PlateSetRowId")
                     .append(" FROM assay.PlateSet")
@@ -409,15 +412,15 @@ public class AssayUpgradeCode implements UpgradeCode
                     )
                 """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
 
-                Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
+                Map<Long, Map<Long, PlateManager.WellGroupChange>> wellGroupChanges = new LongHashMap<>();
                 Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
                 for (Map<String, Object> sampleWellRow : sampleWellRows)
                 {
-                    Integer plateRowId = (Integer) sampleWellRow.get("PlateId");
-                    Integer wellRowId = (Integer) sampleWellRow.get("RowId");
+                    Long plateRowId = MapUtils.getLong(sampleWellRow,"PlateId");
+                    Long wellRowId = MapUtils.getLong(sampleWellRow,"RowId");
                     PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null, null);
 
-                    wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
+                    wellGroupChanges.computeIfAbsent(plateRowId, (x) -> new HashMap<>()).put(wellRowId, change);
                 }
 
                 if (wellGroupChanges.isEmpty())
@@ -441,7 +444,7 @@ public class AssayUpgradeCode implements UpgradeCode
     private static void computeWellGroups(
         Container container,
         User user,
-        Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges
+        Map<Long, Map<Long, PlateManager.WellGroupChange>> wellGroupChanges
     ) throws Exception
     {
         for (var entry : wellGroupChanges.entrySet())
@@ -647,7 +650,7 @@ public class AssayUpgradeCode implements UpgradeCode
         }
     }
 
-    private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types)
+    private static void addInsertedValues(List<List<?>> insertedValues, Long rowId, String... types)
     {
         for (String type : types)
         {
@@ -671,9 +674,9 @@ public class AssayUpgradeCode implements UpgradeCode
             SQLFragment sqlFragment = new SQLFragment("SELECT DISTINCT plateset FROM assay.Plate WHERE assaytype = '" + TsvPlateLayoutHandler.TYPE + "'");
             ArrayList<Integer> plateSetIds = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sqlFragment).getArrayList(Integer.class);
 
-            Set<Integer> assayPSes = new HashSet<>();
-            Set<Integer> primaryPSes = new HashSet<>();
-            Set<Integer> templatePSes = new HashSet<>();
+            Set<Long> assayPSes = new HashSet<>();
+            Set<Long> primaryPSes = new HashSet<>();
+            Set<Long> templatePSes = new HashSet<>();
 
             for (Integer plateSetId : plateSetIds)
             {

@@ -22,6 +22,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -100,7 +101,7 @@ public class WebPartCache
         SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).append(" WHERE Container = ? ORDER BY \"index\"").add(container);
         Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
 
-        Map<Integer, Portal.PortalPage> pagesByRowId = new HashMap<>();       // For webparts to lookup
+        Map<Integer, Portal.PortalPage> pagesByRowId = new IntHashMap<>();       // For webparts to lookup
         for (Portal.PortalPage p : pagesSelect)
         {
             if (null == p.getEntityId())

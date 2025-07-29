@@ -10,6 +10,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
@@ -250,7 +251,7 @@ public class SpecimenRequestManager
                 return _locationToDefaultValue;
             String defaultObjectLsid = getRequestInputDefaultObjectLsid(container);
             String setItemLsid = ensureOntologyManagerSetItem(container, defaultObjectLsid, getTitle());
-            Map<Integer, String> locationToValue = new HashMap<>();
+            Map<Integer, String> locationToValue = new IntHashMap<>();
 
             Map<String, ObjectProperty> defaultValueProperties = OntologyManager.getPropertyObjects(container, setItemLsid);
             if (defaultValueProperties != null)
@@ -351,7 +352,7 @@ public class SpecimenRequestManager
     {
         try (var ignore = SpringActionController.ignoreSqlUpdates())
         {
-            Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
+            Long listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
             String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
             String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
             String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;

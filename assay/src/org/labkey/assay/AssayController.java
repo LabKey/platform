@@ -1019,14 +1019,14 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... batchIds)
+        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, long... batchIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayRunsAction.class);
             if (batchIds.length > 1)
             {
                 String sep = "";
                 StringBuilder filterValue = new StringBuilder();
-                for (int batchId : batchIds)
+                for (long batchId : batchIds)
                 {
                     filterValue.append(sep).append(batchId);
                     sep = ";";
@@ -1062,18 +1062,18 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, long... runIds)
         {
             return getAssayResultsURL(container, protocol, (ContainerFilter.Type)null, runIds);
         }
 
         @Override
-        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... runIds)
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, long... runIds)
         {
             return getAssayResultsURL(container, protocol, null==containerFilter?null:containerFilter.getType(), runIds);
         }
         @Override
-        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter.Type containerFilterType, int... runIds)
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter.Type containerFilterType, long... runIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -1088,7 +1088,7 @@ public class AssayController extends SpringActionController
             // Check if we need to set a filter on the URL to show replaced data, which is usually filtered out
             if (provider.getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
-                for (int runId : runIds)
+                for (long runId : runIds)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(runId);
                     if (run != null && run.getReplacedByRun() != null)
@@ -1103,7 +1103,7 @@ public class AssayController extends SpringActionController
             {
                 String sep = "";
                 StringBuilder filterValue = new StringBuilder();
-                for (int runId : runIds)
+                for (long runId : runIds)
                 {
                     filterValue.append(sep).append(runId);
                     sep = ";";
@@ -1122,7 +1122,7 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId)
+        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, long rowId)
         {
             ActionURL resultsURL = getAssayResultsURL(container, protocol);
             resultsURL.addFilter("Data", FieldKey.fromParts("rowId"), CompareType.EQUAL, rowId);
@@ -1471,16 +1471,16 @@ public class AssayController extends SpringActionController
 
     public static class UpdateQCStateForm extends ReturnUrlForm
     {
-        private Integer _state;
+        private Long _state;
         private String _comment;
-        private Set<Integer> _runs;
+        private Set<Long> _runs;
 
-        public Integer getState()
+        public Long getState()
         {
             return _state;
         }
 
-        public void setState(Integer state)
+        public void setState(Long state)
         {
             _state = state;
         }
@@ -1495,17 +1495,17 @@ public class AssayController extends SpringActionController
             _comment = comment;
         }
 
-        public Set<Integer> getRuns()
+        public Set<Long> getRuns()
         {
             return _runs;
         }
 
-        public void setRuns(Set<Integer> runs)
+        public void setRuns(Set<Long> runs)
         {
             _runs = runs;
         }
 
-        public void setRun(Integer run)
+        public void setRun(Long run)
         {
             if (_runs == null)
                 _runs = new HashSet<>();
@@ -1583,7 +1583,7 @@ public class AssayController extends SpringActionController
                 errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
             else
             {
-                for (int id : form.getRuns())
+                for (long id : form.getRuns())
                 {
                     // just get the first run
                     _firstRun = ExperimentService.get().getExpRun(id);
@@ -1694,14 +1694,14 @@ public class AssayController extends SpringActionController
         {
             ExperimentService service = ExperimentService.get();
 
-            Collection<Integer> allowedIds = form.getIds(false);
+            Collection<Long> allowedIds = form.getIds(false);
             List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
 
-            Set<Integer> notAllowedIds = new HashSet<>();
+            Set<Long> notAllowedIds = new HashSet<>();
             Map<String, Object> response = new HashMap<>();
 
             Collection<Container> containers = new HashSet<>();
-            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Collection<Long> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
             for (ExpRun expRun : allRuns)
             {
@@ -1758,7 +1758,7 @@ public class AssayController extends SpringActionController
         @Override
         public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
         {
-            Collection<Integer> allowedIds = form.getIds(false);
+            Collection<Long> allowedIds = form.getIds(false);
 
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
@@ -1785,7 +1785,7 @@ public class AssayController extends SpringActionController
                 if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
                     permittedRowIds.add(rowId);
             }
-            List<Map<String, Integer>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
+            List<Map<String, Long>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
 
             Map<String, Object> response = new HashMap<>();
             Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
@@ -1855,14 +1855,14 @@ public class AssayController extends SpringActionController
 
     public static class SyncRunLineageForm
     {
-        private List<Integer> _runIds = new ArrayList<>();
+        private List<Long> _runIds = new ArrayList<>();
 
-        public List<Integer> getRunIds()
+        public List<Long> getRunIds()
         {
             return _runIds;
         }
 
-        public void setRunIds(List<Integer> runIds)
+        public void setRunIds(List<Long> runIds)
         {
             _runIds = runIds;
         }

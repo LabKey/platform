@@ -399,7 +399,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().setFormActionUrl(action);
 
         view.getDataRegion().addHiddenFormField("uploadStep", uploadStepName);
-        view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
+        view.getDataRegion().addHiddenFormField("rowId", Long.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("multiRunUpload", "false");
         view.getDataRegion().addHiddenFormField("severityLevel",((form.getTransformResult().getWarnings() != null)?"ERROR":"WARN"));
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");

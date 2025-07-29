@@ -3099,7 +3099,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName)
+    public int moveAuditEvents(Container targetContainer, List<Long> rowPks, String schemaName, String queryName)
     {
         QueryUpdateAuditProvider provider = new QueryUpdateAuditProvider();
         return provider.moveEvents(targetContainer, rowPks, schemaName, queryName);

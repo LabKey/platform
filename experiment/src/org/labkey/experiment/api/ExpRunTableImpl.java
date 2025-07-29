@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1016,8 +1017,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                     else if (Column.WorkflowTask.toString().equalsIgnoreCase(columnName))
                     {
-                        Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
-                        Integer oldWorkflowTaskID = null;
+                        Long newWorkflowTaskId = value == null ? null : (Long)ConvertUtils.convert(value.toString(), Long.class);
+                        Long oldWorkflowTaskID = null;
                         if (run.getWorkflowTask() != null)
                             oldWorkflowTaskID = run.getWorkflowTask().getRowId();
 
@@ -1176,15 +1177,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         private Map<Container, List<ExpRun>> getRunsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
         {
-            Set<Integer> runIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+            Set<Long> runIds = rows.stream().map(row -> MapUtils.getLong(row,RowId.toString())).collect(Collectors.toSet());
             if (runIds.isEmpty())
             {
                 errors.addRowError(new ValidationException("Run IDs must be specified for the move operation."));
                 return null;
             }
 
-            Set<Integer> runIdsCascadeMove = new HashSet<>();
-            for (int runId : runIds)
+            Set<Long> runIdsCascadeMove = new HashSet<>();
+            for (long runId : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run != null)
@@ -1216,7 +1217,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return containerObjects;
         }
 
-        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        private void addReplacesRuns(ExpRun run, Set<Long> runIds)
         {
             for (ExpRun replacedRun : run.getReplacesRuns())
             {
@@ -1242,7 +1243,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
             String sql = "SELECT RowId FROM " + svc.getTinfoExperimentRun() + " WHERE Container = ?";
-            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql, c).getArray(Integer.class));
+            long[] runIds = ArrayUtils.toPrimitive(new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql, c).getArray(Long.class));
 
             svc.deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;

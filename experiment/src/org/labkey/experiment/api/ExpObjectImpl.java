@@ -37,7 +37,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
     protected boolean _locked = false;
     // TODO: add objectId column to the exp.* tables that need it and to IdentifiableBase java bean
-    protected int _objectId;
+    protected long _objectId;
 
     // For serialization
     protected ExpObjectImpl() {}
@@ -57,7 +57,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     }
 
     @Override
-    public final @Nullable Integer getObjectId()
+    public final @Nullable Long getObjectId()
     {
         // hasn't been inserted yet
         if (getRowId() == 0)
@@ -69,6 +69,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             if (oo == null)
                 return null;
             _objectId = oo.getObjectId();
+            assert _objectId > 0;
         }
 
         return _objectId;
@@ -174,7 +175,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
 
     public int hashCode()
     {
-        return getRowId() ^ getClass().hashCode();
+        return (int)getRowId() ^ getClass().hashCode();
     }
 
     @Override

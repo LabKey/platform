@@ -839,12 +839,27 @@ public class PageFlowUtil
         return toInts(strings.toArray(new String[0]));
     }
 
+    public static long[] toLongs(Collection<String> strings)
+    {
+        return toLongs(strings.toArray(new String[0]));
+    }
+
     public static int[] toInts(String[] strings)
     {
         int[] result = new int[strings.length];
         for (int i = 0; i < strings.length; i++)
         {
             result[i] = Integer.parseInt(strings[i]);
+        }
+        return result;
+    }
+
+    public static long[] toLongs(String[] strings)
+    {
+        long[] result = new long[strings.length];
+        for (int i = 0; i < strings.length; i++)
+        {
+            result[i] = Long.parseLong(strings[i]);
         }
         return result;
     }

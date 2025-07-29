@@ -20,7 +20,7 @@ public class DataViewSnapshotSelectionForm extends DataViewSelectionForm
     }
 
     @Override
-    public Set<Integer> getIds(boolean clear)
+    public Set<Long> getIds(boolean clear)
     {
         if (_rowIds != null) return _rowIds;
         if (_useSnapshotSelection)

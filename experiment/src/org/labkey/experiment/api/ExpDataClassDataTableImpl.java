@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -26,7 +27,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -47,7 +47,6 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -932,7 +931,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 final var scope = propertiesTable.getSchema().getScope();
                 step0.setIndexFunction(searchIndexDataKeys -> scope.addCommitTask(() ->
                 {
-                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+                    List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
                     // Issue 51263: order by RowId to reduce deadlock
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
@@ -1207,7 +1206,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         private Map<Container, List<ExpData>> getDataClassObjectsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
         {
-            Set<Integer> dataIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+            Set<Long> dataIds = rows.stream().map(row -> MapUtils.getLong(row,RowId.name())).collect(Collectors.toSet());
             if (dataIds.isEmpty())
             {
                 errors.addRowError(new ValidationException("Source IDs must be specified for the move operation."));
@@ -1253,10 +1252,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
+            Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
-            Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
+            Long classId = (Long)JdbcType.BIGINT.convert(keys.get(Column.ClassId.name()));
 
             if (classId == null)
                 classId = _dataClass.getRowId();
@@ -1273,7 +1272,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowId, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
+        protected Map<String, Object> _select(Container container, Long rowId, String lsid, String name, Long classId, boolean allowCrossContainer) throws SQLException
         {
             if (null == rowId && null == lsid && (null == name || null == classId))
                 return null;
@@ -1412,10 +1411,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     DbScope scope = getUserSchema().getDbSchema().getScope();
                     scope.addCommitTask(() ->
                     {
-                        List<Integer> orderedRowIds = new ArrayList<>();
+                        List<Long> orderedRowIds = new ArrayList<>();
                         for (Map<String, Object> result : results)
                         {
-                            Integer rowId = (Integer) result.get(RowId.name());
+                            Long rowId = MapUtils.getLong(result,RowId.name());
                             if (rowId != null)
                                 orderedRowIds.add(rowId);
                         }

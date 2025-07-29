@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.query;
 
+import org.apache.commons.collections.MapUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -244,7 +245,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
-            Integer rowId = (Integer) oldRowMap.get(Column.RowId.name());
+            Long rowId = MapUtils.getLong(oldRowMap,Column.RowId.name());
             PlateSet plateSet = PlateManager.get().getPlateSet(container, rowId);
             if (plateSet == null)
                 throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", rowId));

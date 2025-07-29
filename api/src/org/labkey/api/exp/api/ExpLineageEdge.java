@@ -26,6 +26,16 @@ public class ExpLineageEdge
         _sourceKey = sourceKey;
     }
 
+    public ExpLineageEdge(long fromObjectId, long toObjectId, Long runId, Long sourceId, String sourceKey)
+    {
+        // TODO BIGINT conversion
+        _fromObjectId = (int)fromObjectId;
+        _toObjectId = (int)toObjectId;
+        _runId = runId == null ? null : runId.intValue();
+        _sourceId = sourceId == null ? null : sourceId.intValue();
+        _sourceKey = sourceKey;
+    }
+
     public int getFromObjectId()
     {
         return _fromObjectId;
@@ -114,21 +124,24 @@ public class ExpLineageEdge
         public String sourceKey;
         public Integer toObjectId;
 
-        public FilterOptions fromObjectId(Integer fromObjectId)
+        public FilterOptions fromObjectId(Long fromObjectId)
         {
-            this.fromObjectId = fromObjectId;
+            // TODO BIGINT
+            this.fromObjectId = fromObjectId.intValue();
             return this;
         }
 
-        public FilterOptions runId(Integer runId)
+        public FilterOptions runId(Long runId)
         {
-            this.runId = runId;
+            // TODO BIGINT conversion
+            this.runId = runId.intValue();
             return this;
         }
 
-        public FilterOptions sourceId(Integer sourceId)
+        public FilterOptions sourceId(Long sourceId)
         {
-            this.sourceIds = Set.of(sourceId);
+            // TODO BIGINT conversion
+            this.sourceIds = Set.of(sourceId.intValue());
             return this;
         }
 

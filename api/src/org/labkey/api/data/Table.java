@@ -543,7 +543,7 @@ public class Table
             _getterMap.put(c, this);
         }
 
-        public static <K> Getter forClass(Class<K> c)
+        public static <K> @Nullable Getter forClass(Class<K> c)
         {
             return _getterMap.get(c);
         }

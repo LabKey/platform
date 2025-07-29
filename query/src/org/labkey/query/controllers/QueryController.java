@@ -86,6 +86,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
@@ -4959,11 +4960,11 @@ public class QueryController extends SpringActionController
 
         private void setRowsFromSelectionKey(MoveRowsForm form)
         {
-            Set<Integer> rowIds = form.getIds(getViewContext(), false); // handle clear of selectionKey after move complete
+            Set<Long> rowIds = form.getIds(getViewContext(), false); // handle clear of selectionKey after move complete
 
             // convert rowIds to a JSONArray of JSONObjects with a single property "RowId"
             JSONArray rows = new JSONArray();
-            for (Integer rowId : rowIds)
+            for (Long rowId : rowIds)
             {
                 JSONObject row = new JSONObject();
                 row.put("RowId", rowId);
@@ -5006,7 +5007,7 @@ public class QueryController extends SpringActionController
             _useSnapshotSelection = json.optBoolean("useSnapshotSelection", false);
         }
 
-        public Set<Integer> getIds(ViewContext context, boolean clear)
+        public Set<Long> getIds(ViewContext context, boolean clear)
         {
             if (_useSnapshotSelection)
                 return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(context, getDataRegionSelectionKey()));
@@ -8262,7 +8263,7 @@ public class QueryController extends SpringActionController
 
         private Map<Integer, Object> getRowFiles()
         {
-            Map<Integer, Object> rowFiles = new HashMap<>();
+            Map<Integer, Object> rowFiles = new IntHashMap<>();
             if (getFileMap() != null)
             {
                 for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())

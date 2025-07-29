@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -813,7 +814,7 @@ public class SpecimenImporter extends SpecimenTableManager
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
         SpecimenRequestManager.get().clearCaches(getContainer());
-        final Map<Integer, Location> siteMap = new HashMap<>();
+        final Map<Integer, Location> siteMap = new IntHashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
         SQLFragment vialPropertiesSql = new SQLFragment("UPDATE ").append(vialTable.getSelectName())

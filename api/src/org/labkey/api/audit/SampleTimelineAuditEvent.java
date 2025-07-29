@@ -83,10 +83,10 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     }
 
     private String _sampleLsid;
-    private int _sampleId;
+    private long _sampleId;
     private String _sampleName;
     private String _sampleType;
-    private int _sampleTypeId;
+    private long _sampleTypeId;
     private boolean _isLineageUpdate;
     private String _metadata;
     private String _inventoryUpdateType;
@@ -109,12 +109,12 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         _sampleLsid = sampleLsid;
     }
 
-    public int getSampleId()
+    public long getSampleId()
     {
         return _sampleId;
     }
 
-    public void setSampleId(int sampleId)
+    public void setSampleId(long sampleId)
     {
         _sampleId = sampleId;
     }
@@ -139,12 +139,12 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         _sampleType = sampleType;
     }
 
-    public int getSampleTypeId()
+    public long getSampleTypeId()
     {
         return _sampleTypeId;
     }
 
-    public void setSampleTypeId(int sampleTypeId)
+    public void setSampleTypeId(long sampleTypeId)
     {
         _sampleTypeId = sampleTypeId;
     }
@@ -243,7 +243,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         if (row.get("samplestate") != null && !StringUtils.isBlank(row.get("samplestate")))
         {
-            DataState status = SampleStatusService.get().getStateForRowId(container, Integer.parseInt(row.get("samplestate")));
+            DataState status = SampleStatusService.get().getStateForRowId(container, Long.parseLong(row.get("samplestate")));
             if (status != null)
                 return status.getLabel();
         }

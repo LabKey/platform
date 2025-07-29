@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
@@ -1533,7 +1535,7 @@ public class StudyManager
 
     public Map<Integer, List<VisitTagMapEntry>> getVisitTagMapMap(Study study)
     {
-        final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
+        final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new IntHashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
         new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
@@ -1789,7 +1791,7 @@ public class StudyManager
     @Nullable
     public DataState getDefaultQCState(StudyImpl study)
     {
-        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        Long defaultQcStateId = study.getDefaultDirectEntryQCState();
         DataState defaultQCState = null;
         if (defaultQcStateId != null)
             defaultQCState = QCStateManager.getInstance().getStateForRowId(
@@ -1884,7 +1886,7 @@ public class StudyManager
         {
             String lsid = (String) row.get("lsid");
 
-            Integer oldStateId = (Integer) row.get(DatasetTableImpl.QCSTATE_ID_COLNAME);
+            Long oldStateId = MapUtils.getLong(row,DatasetTableImpl.QCSTATE_ID_COLNAME);
             DataState oldState = null;
             if (oldStateId != null)
                 oldState = QCStateManager.getInstance().getStateForRowId(container, oldStateId);
@@ -1949,6 +1951,15 @@ public class StudyManager
     }
 
     public static boolean safeIntegersEqual(Integer first, Integer second)
+    {
+        if (first == null && second == null)
+            return true;
+        if (first == null)
+            return false;
+        return first.equals(second);
+    }
+
+    public static boolean safeIntegersEqual(Long first, Long second)
     {
         if (first == null && second == null)
             return true;

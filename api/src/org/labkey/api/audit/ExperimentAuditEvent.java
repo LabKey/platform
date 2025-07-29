@@ -12,9 +12,9 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     private String _protocolLsid;
     private String _runLsid;
     private String _protocolRun;
-    private int _runGroup;
+    private long _runGroup;
     private String _message;
-    private Integer _qcState;
+    private Long _qcState;
 
     /** Important for reflection-based instantiation */
     @SuppressWarnings("unused")
@@ -55,12 +55,12 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         _protocolRun = protocolRun;
     }
 
-    public int getRunGroup()
+    public long getRunGroup()
     {
         return _runGroup;
     }
 
-    public void setRunGroup(int runGroup)
+    public void setRunGroup(long runGroup)
     {
         _runGroup = runGroup;
     }
@@ -75,12 +75,12 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         _message = message;
     }
 
-    public Integer getQcState()
+    public Long getQcState()
     {
         return _qcState;
     }
 
-    public void setQcState(Integer qcState)
+    public void setQcState(Long qcState)
     {
         _qcState = qcState;
     }

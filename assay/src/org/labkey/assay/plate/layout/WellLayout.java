@@ -6,12 +6,12 @@ import org.labkey.api.assay.plate.PlateType;
 
 public class WellLayout
 {
-    public record Well(int destinationRowIdx, int destinationColIdx, int sourcePlateId, int sourceRowIdx, int sourceColIdx, Integer sourceSampleId) {}
+    public record Well(int destinationRowIdx, int destinationColIdx, long sourcePlateId, int sourceRowIdx, int sourceColIdx, Long sourceSampleId) {}
 
     private final PlateType _plateType;
     private final boolean _sampleOnly;
-    private final Integer _targetPlateId;
-    private final Integer _targetTemplateId;
+    private final Long _targetPlateId;
+    private final Long _targetTemplateId;
     private final Well[] _wells;
 
     public WellLayout(@NotNull PlateType plateType)
@@ -19,7 +19,7 @@ public class WellLayout
         this(plateType, false, null, null);
     }
 
-    public WellLayout(@NotNull PlateType plateType, boolean sampleOnly, @Nullable Integer targetTemplateId, @Nullable Integer targetPlateId)
+    public WellLayout(@NotNull PlateType plateType, boolean sampleOnly, @Nullable Long targetTemplateId, @Nullable Long targetPlateId)
     {
         _plateType = plateType;
         _sampleOnly = sampleOnly;
@@ -28,12 +28,12 @@ public class WellLayout
         _wells = new Well[plateType.getWellCount()];
     }
 
-    public @Nullable Integer getTargetPlateId()
+    public @Nullable Long getTargetPlateId()
     {
         return _targetPlateId;
     }
 
-    public @Nullable Integer getTargetTemplateId()
+    public @Nullable Long getTargetTemplateId()
     {
         return _targetTemplateId;
     }
@@ -61,12 +61,12 @@ public class WellLayout
         return _sampleOnly;
     }
 
-    public void setWell(int destinationRowIdx, int destinationColIdx, int sourcePlateId, int sourceWellRowIdx, int sourceWellColIdx)
+    public void setWell(int destinationRowIdx, int destinationColIdx, long sourcePlateId, int sourceWellRowIdx, int sourceWellColIdx)
     {
         setWell(destinationRowIdx, destinationColIdx, sourcePlateId, sourceWellRowIdx, sourceWellColIdx, null);
     }
 
-    public void setWell(int destinationRowIdx, int destinationColIdx, int sourcePlateId, int sourceWellRowIdx, int sourceWellColIdx, Integer sourceSampleId)
+    public void setWell(int destinationRowIdx, int destinationColIdx, long sourcePlateId, int sourceWellRowIdx, int sourceWellColIdx, Long sourceSampleId)
     {
         int index = getWellIndex(destinationRowIdx, destinationColIdx);
         _wells[index] = new Well(destinationRowIdx, destinationColIdx, sourcePlateId, sourceWellRowIdx, sourceWellColIdx, sourceSampleId);

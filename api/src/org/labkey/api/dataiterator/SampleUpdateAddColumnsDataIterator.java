@@ -1,6 +1,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -27,7 +28,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     final CachingDataIterator _unwrapped;
     final TableInfo target;
-    final int _sampleTypeId;
+    final long _sampleTypeId;
     final ColumnInfo pkColumn;
     final Supplier<Object> pkSupplier;
     final int _aliquotedFromColIndex;
@@ -37,11 +38,11 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
-    final HashMap<Integer, String> aliquotParents = new HashMap<>();
-    final HashMap<Integer, Integer> aliquotRoots = new HashMap<>();
-    final HashMap<Integer, Integer> sampleState = new HashMap<>();
+    final IntHashMap<String> aliquotParents = new IntHashMap<>();
+    final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
+    final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useLsid)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, boolean useLsid)
     {
         super(in);
 

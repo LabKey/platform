@@ -91,11 +91,12 @@ public class ExpLineageServiceImpl implements ExpLineageService
                 throw new RuntimeException("Lineage not available for unknown object");
 
             // CONSIDER: add objectId to Identifiable?
+            // TODO BIGINT
             int objectId = -1;
             if (seed instanceof ExpObject expObjectSeed)
-                objectId = expObjectSeed.getObjectId();
+                objectId = expObjectSeed.getObjectId().intValue();
             else if (seed instanceof IdentifiableBase identifiableSeed)
-                objectId = identifiableSeed.getObjectId();
+                objectId = identifiableSeed.getObjectId().intValue();
 
             if (objectId == -1)
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
@@ -121,6 +122,19 @@ public class ExpLineageServiceImpl implements ExpLineageService
         }
 
         return new SeedIdentifiers(seedObjectIds, seedLsids);
+    }
+
+    private static Integer _int(Object o)
+    {
+        return null == o ? null : ((Number)o).intValue();
+    }
+    private static Long _long(Object o)
+    {
+        return null == o ? null : ((Number)o).longValue();
+    }
+    Set<Long> _toLongSet(Set<Integer> ints)
+    {
+        return ints.stream().map(Long::valueOf).collect(toSet());
     }
 
     public LineageResult getLineageResult(Container container, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
@@ -166,8 +180,9 @@ public class ExpLineageServiceImpl implements ExpLineageService
             String parentExpType = (String) m.get("parent_exptype");
             String childExpType = (String) m.get("child_exptype");
 
-            Integer parentRowId = (Integer )m.get("parent_rowid");
-            Integer childRowId = (Integer) m.get("child_rowid");
+            // TODO BIGINT
+            Integer parentRowId = _int(m.get("parent_rowid"));
+            Integer childRowId = _int(m.get("child_rowid"));
 
             if (parentRowId == null || childRowId == null)
             {
@@ -234,9 +249,10 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         LsidManager lsidManager = LsidManager.get();
         ExperimentServiceImpl expSvc = ExperimentServiceImpl.get();
-        Set<ExpData> data = expSvc.getExpDatas(result.dataIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpMaterial> materials = expSvc.getExpMaterials(result.materialIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpRun> runs = expSvc.getExpRuns(result.runIds).stream().filter(lineageItemFilter).collect(toSet());
+        // TODO BIGINT
+        Set<ExpData> data = expSvc.getExpDatas(_toLongSet(result.dataIds)).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpMaterial> materials = expSvc.getExpMaterials(_toLongSet(result.materialIds)).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpRun> runs = expSvc.getExpRuns(_toLongSet(result.runIds)).stream().filter(lineageItemFilter).collect(toSet());
         Set<Identifiable> otherObjects = result.objectLsids.stream().map(lsidManager::getObject).filter(lineageItemFilter).collect(toSet());
 
         return new ExpLineage(seeds, data, materials, runs, otherObjects, result.edges);

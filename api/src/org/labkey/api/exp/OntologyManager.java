@@ -29,6 +29,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -103,7 +104,7 @@ public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
-    private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
+    private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
@@ -270,7 +271,7 @@ public class OntologyManager
 
     public static void insertTabDelimited(Container c,
                                           User user,
-                                          @Nullable Integer ownerObjectId,
+                                          @Nullable Long ownerObjectId,
                                           ImportHelper helper,
                                           Domain domain,
                                           DataIterator rows,
@@ -329,7 +330,7 @@ public class OntologyManager
 
     public static void insertTabDelimited(Container c,
                                           User user,
-                                          @Nullable Integer ownerObjectId,
+                                          @Nullable Long ownerObjectId,
                                           ImportHelper helper,
                                           List<PropertyDescriptor> descriptors,
                                           DataIterator rawRows,
@@ -362,7 +363,7 @@ public class OntologyManager
                 objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<>();
-            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
+            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new IntHashMap<>();
 
             // cache all the property validators for this upload
             for (PropertyDescriptor pd : descriptors)
@@ -396,7 +397,7 @@ public class OntologyManager
                 assert before.stop();
 
                 assert ensure.start();
-                int objectId;
+                long objectId;
                 if (ensureObjects)
                     objectId = ensureObject(c, lsid, ownerObjectId);
                 else
@@ -937,23 +938,23 @@ public class OntologyManager
         return new ArrayList<>(props.keySet());
     }
 
-    public static int ensureObject(Container container, String objectURI)
+    public static long ensureObject(Container container, String objectURI)
     {
-        return ensureObject(container, objectURI, (Integer) null);
+        return ensureObject(container, objectURI, (Long) null);
     }
 
-    public static int ensureObject(Container container, String objectURI, String ownerURI)
+    public static long ensureObject(Container container, String objectURI, String ownerURI)
     {
-        Integer ownerId = null;
+        Long ownerId = null;
         if (null != ownerURI)
-            ownerId = ensureObject(container, ownerURI, (Integer) null);
+            ownerId = ensureObject(container, ownerURI, (Long) null);
         return ensureObject(container, objectURI, ownerId);
     }
 
-    public static int ensureObject(Container container, String objectURI, Integer ownerId)
+    public static long ensureObject(Container container, String objectURI, Long ownerId)
     {
         //TODO: (marki) Transact?
-        Integer objId = OBJECT_ID_CACHE.get(objectURI, container);
+        Long objId = OBJECT_ID_CACHE.get(objectURI, container);
 
         if (null == objId)
         {
@@ -970,10 +971,10 @@ public class OntologyManager
         return objId;
     }
 
-    private static class ObjectIdCacheLoader implements CacheLoader<String, Integer>
+    private static class ObjectIdCacheLoader implements CacheLoader<String, Long>
     {
         @Override
-        public Integer load(@NotNull String objectURI, @Nullable Object argument)
+        public Long load(@NotNull String objectURI, @Nullable Object argument)
         {
             Container container = (Container)argument;
             OntologyObject obj = getOntologyObject(container, objectURI);
@@ -1052,12 +1053,12 @@ public class OntologyManager
     }
 
 
-    public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, int... objectIds)
+    public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, long... objectIds)
     {
         deleteOntologyObjects(c, deleteOwnedObjects, true, true, objectIds);
     }
 
-    public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, boolean deleteObjectProperties, boolean deleteObjects, int... objectIds)
+    public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, boolean deleteObjectProperties, boolean deleteObjects, long... objectIds)
     {
         if (objectIds.length == 0)
             return;
@@ -1072,7 +1073,7 @@ public class OntologyManager
 
                 for (int s = 0; s < objectIds.length; s += lenBatch)
                 {
-                    int[] sub = new int[Math.min(lenBatch, objectIds.length - s)];
+                    long[] sub = new long[Math.min(lenBatch, objectIds.length - s)];
                     System.arraycopy(objectIds, s, sub, 0, sub.length);
                     deleteOntologyObjects(c, deleteOwnedObjects, deleteObjectProperties, deleteObjects, sub);
                 }
@@ -1141,7 +1142,7 @@ public class OntologyManager
     }
 
 
-    public static OntologyObject getOntologyObject(int id)
+    public static OntologyObject getOntologyObject(long id)
     {
         return new TableSelector(getTinfoObject()).getObject(id, OntologyObject.class);
     }
@@ -2011,7 +2012,7 @@ public class OntologyManager
             if (null == property)
                 continue;
 
-            int objectId = property.getObjectId();
+            long objectId = property.getObjectId();
             int propertyId = property.getPropertyId();
             String mvIndicator = property.getMvIndicator();
             assert mvIndicator == null || MvUtil.isMvIndicator(mvIndicator, container) : "Attempt to insert an invalid missing value indicator: " + mvIndicator;
@@ -2092,7 +2093,7 @@ public class OntologyManager
     /**
      * Delete properties owned by the objects.
      */
-    public static void deleteProperties(Container objContainer, int objectId)
+    public static void deleteProperties(Container objContainer, long objectId)
     {
         deleteProperties(objContainer, new SQLFragment(" = ?", objectId));
     }
@@ -2194,9 +2195,9 @@ public class OntologyManager
     {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            Integer parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
+            Long parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
             HashMap<String, PropertyDescriptor> descriptors = new HashMap<>();
-            HashMap<String, Integer> objects = new HashMap<>();
+            HashMap<String, Long> objects = new HashMap<>();
             List<ValidationError> errors = new ArrayList<>();
 
             ValidatorContext validatorCache = new ValidatorContext(container, user);
@@ -2226,7 +2227,7 @@ public class OntologyManager
                 }
                 if (0 == property.getObjectId())
                 {
-                    Integer objectId = objects.get(property.getObjectURI());
+                    Long objectId = objects.get(property.getObjectURI());
                     if (null == objectId)
                     {
                         // I'm assuming all properties are in the same container
@@ -3614,7 +3615,7 @@ public class OntologyManager
     @Deprecated // Fold into ObjectProperty? Eliminate insertTabDelimited() methods, the only usage of PropertyRow.
     public static class PropertyRow
     {
-        protected int objectId;
+        protected long objectId;
         protected int propertyId;
         protected char typeTag;
         protected Double floatValue;
@@ -3626,7 +3627,7 @@ public class OntologyManager
         {
         }
 
-        public PropertyRow(int objectId, PropertyDescriptor pd, Object value, PropertyType pt)
+        public PropertyRow(long objectId, PropertyDescriptor pd, Object value, PropertyType pt)
         {
             this.objectId = objectId;
             this.propertyId = pd.getPropertyId();
@@ -3639,12 +3640,12 @@ public class OntologyManager
             pt.init(this, p.first);
         }
 
-        public int getObjectId()
+        public long getObjectId()
         {
             return objectId;
         }
 
-        public void setObjectId(int objectId)
+        public void setObjectId(long objectId)
         {
             this.objectId = objectId;
         }

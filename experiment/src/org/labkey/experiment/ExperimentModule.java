@@ -24,6 +24,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -465,11 +466,11 @@ public class ExperimentModule extends SpringModule
             @Override
             public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
             {
-                Set<Integer> rowIds = new HashSet<>();
-                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                Set<Long> rowIds = new HashSet<>();
+                Map<Long, String> rowIdIdentifierMap = new LongHashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                    long rowId = NumberUtils.toLong(resourceIdentifier.replace(categoryName + ":", ""));
                     if (rowId != 0)
                     {
                         rowIds.add(rowId);

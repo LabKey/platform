@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -250,7 +251,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
 
     protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        Map<Integer, NameLabelPair> typeMap = new IntHashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
@@ -274,7 +275,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
 
     public Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container)
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        Map<Integer, NameLabelPair> typeMap = new IntHashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         List<PrimaryType> primaryTypes = SpecimenManager.get().getPrimaryTypes(container);
 
@@ -293,7 +294,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
 
     protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
     {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        Map<Integer, NameLabelPair> typeMap = new IntHashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
@@ -315,7 +316,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
 
     protected Map<Integer, NameLabelPair> getSiteMap(Container container)
     {
-        Map<Integer, NameLabelPair> siteMap = new HashMap<>();
+        Map<Integer, NameLabelPair> siteMap = new IntHashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         List<LocationImpl> locations = LocationManager.get().getLocations(container);
 

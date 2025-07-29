@@ -39,21 +39,21 @@ import java.util.Map;
  */
 public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCalculator
 {
-    private final Integer _runRowId;
+    private final Long _runRowId;
     private final int[] _cutoffs;
     private Map<Integer, String> _cutoffFormats;
     private File _dataFile;
     protected StatsService.CurveFitType _renderedCurveFitType;
     private boolean _lockAxes;
 
-    public Luc5Assay(Integer runRowId, int[] cutoffs, StatsService.CurveFitType renderCurveFitType)
+    public Luc5Assay(Long runRowId, int[] cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         _renderedCurveFitType = renderCurveFitType;
         _runRowId = runRowId;
         _cutoffs = cutoffs;
     }
 
-    public Luc5Assay(int runRowId, List<Integer> cutoffs, StatsService.CurveFitType renderCurveFitType)
+    public Luc5Assay(long runRowId, List<Integer> cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         this(runRowId, toIntArray(cutoffs), renderCurveFitType);
     }
@@ -79,7 +79,7 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
 
     public abstract DilutionSummary[] getSummaries();
 
-    public Integer getRunRowId()
+    public Long getRunRowId()
     {
         return _runRowId;
     }

@@ -170,7 +170,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             _protocol = _context.mock(ExpProtocol.class);
             _context.checking(new Expectations() {{
                 allowing(_protocol).getRowId();
-                will(returnValue(123));
+                will(returnValue(123L));
             }});
 
             _run = _context.mock(ExpRun.class);
@@ -180,7 +180,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             }});
             _context.checking(new Expectations() {{
                 allowing(_run).getRowId();
-                will(returnValue(456));
+                will(returnValue(456L));
             }});
         }
 

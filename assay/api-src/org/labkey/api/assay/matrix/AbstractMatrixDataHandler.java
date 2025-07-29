@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.matrix;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +89,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     }
 
     public abstract DbSchema getDbSchema();
-    public abstract void insertMatrixData(Container c, User user, Map<String, ExpMaterial> samplesMap, DataLoader loader, Map<String, String> runProps, Integer dataRowId) throws ExperimentException;
+    public abstract void insertMatrixData(Container c, User user, Map<String, ExpMaterial> samplesMap, DataLoader loader, Map<String, String> runProps, Long dataRowId) throws ExperimentException;
 
     public String getIdColumnName()
     {
@@ -176,7 +177,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             throw new ExperimentException(idColumnName + " column header must be present and cannot be blank");
     }
 
-    public static Map<String, ExpMaterial> ensureSamples(Container container, User user, Collection<String> columnNames, String columnName, @NotNull RemapCache cache, @NotNull Map<Integer, ExpMaterial> materialCache) throws ExperimentException
+    public static Map<String, ExpMaterial> ensureSamples(Container container, User user, Collection<String> columnNames, String columnName, @NotNull RemapCache cache, @NotNull Map<Long, ExpMaterial> materialCache) throws ExperimentException
     {
         Set<String> sampleNames = new HashSet<>(columnNames.size());
         for (String name : columnNames)
@@ -234,7 +235,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME);
         TableInfo table = schema.getTable(sampleType.getName());
 
-        List<Integer> rowIds;
+        List<Long> rowIds;
         try (DbScope.Transaction tx = schema.getDbSchema().getScope().ensureTransaction())
         {
             List<Map<String, Object>> rows = new ArrayList<>(sampleNames.size());
@@ -249,7 +250,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             if (inserted.size() != sampleNames.size())
                 throw new ExperimentException("Expected to insert " + sampleNames.size() + " samples; only inserted " + inserted.size());
 
-            rowIds = inserted.stream().map(m -> (Integer)m.get("rowId")).collect(Collectors.toList());
+            rowIds = inserted.stream().map(m -> MapUtils.getLong(m,"rowId")).collect(Collectors.toList());
             tx.commit();
         }
         catch (SQLException e)

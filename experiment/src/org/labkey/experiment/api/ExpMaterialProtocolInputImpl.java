@@ -61,7 +61,7 @@ public class ExpMaterialProtocolInputImpl extends ExpProtocolInputImpl<MaterialP
     @Override
     public @Nullable ExpSampleTypeImpl getType()
     {
-        Integer materialSourceId = _object.getMaterialSourceId();
+        Long materialSourceId = _object.getMaterialSourceId();
         if (materialSourceId == null)
             return null;
 

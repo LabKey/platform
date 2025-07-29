@@ -704,7 +704,7 @@ public void testContainerDelete() throws Exception
     props.add(new GWTPropertyDescriptor("aa", "int"));
 
     final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
-    final int dataClassId = dataClass.getRowId();
+    final long dataClassId = dataClass.getRowId();
 
     TableInfo table = getDataClassTable(dataClassName);
 

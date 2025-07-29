@@ -603,7 +603,7 @@ public class StatementUtils
                 sqlfInsertObject.append(" AS Container,");
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
                 sqlfInsertObject.append(" AS ObjectURI, ");
-                Integer ownerObjectId = updatable.getOwnerObjectId();
+                Long ownerObjectId = updatable.getOwnerObjectId();
                 sqlfInsertObject.append( null == ownerObjectId ? "NULL" : String.valueOf(ownerObjectId) ).append(" AS OwnerObjectId");
                 sqlfInsertObject.append(" WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);

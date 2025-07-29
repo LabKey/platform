@@ -51,7 +51,7 @@ public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> impl
     @Override
     public ExpMaterialProtocolInput getProtocolInput()
     {
-        Integer protocolInputId = _input.getProtocolInputId();
+        Long protocolInputId = _input.getProtocolInputId();
         if (protocolInputId == null)
             return null;
 

@@ -25,19 +25,19 @@ import org.labkey.api.data.Entity;
 public class ExpQCFlag extends Entity
 {
     private int _rowId;
-    private int _runId;
+    private long _runId;
     private String _flagType;
     private String _description;
     private String _comment;
     private boolean _enabled;
-    private int _intKey1;
-    private int _intKey2;
+    private long _intKey1;
+    private long _intKey2;
     private String _key1;
     private String _key2;
 
     public ExpQCFlag() {}
 
-    public ExpQCFlag(int runId, String flagType, String description)
+    public ExpQCFlag(long runId, String flagType, String description)
     {
         _runId = runId;
         _flagType = flagType;
@@ -54,7 +54,7 @@ public class ExpQCFlag extends Entity
         _rowId = rowId;
     }
 
-    public int getRunId()
+    public long getRunId()
     {
         return _runId;
     }
@@ -104,22 +104,22 @@ public class ExpQCFlag extends Entity
         _enabled = enabled;
     }
 
-    public int getIntKey1()
+    public long getIntKey1()
     {
         return _intKey1;
     }
 
-    public void setIntKey1(int intKey1)
+    public void setIntKey1(long intKey1)
     {
         _intKey1 = intKey1;
     }
 
-    public int getIntKey2()
+    public long getIntKey2()
     {
         return _intKey2;
     }
 
-    public void setIntKey2(int intKey2)
+    public void setIntKey2(long intKey2)
     {
         _intKey2 = intKey2;
     }

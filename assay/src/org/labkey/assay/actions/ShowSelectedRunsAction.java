@@ -53,7 +53,7 @@ public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRun
     public ActionURL getRedirectURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
-        int[] selectedIds = PageFlowUtil.toInts(selection);
+        long[] selectedIds = PageFlowUtil.toLongs(selection);
 
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)

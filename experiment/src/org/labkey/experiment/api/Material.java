@@ -31,10 +31,10 @@ import java.util.Date;
  */
 public class Material extends RunItem
 {
-    private Integer materialSourceId;
-    private Integer rootMaterialRowId;
+    private Long materialSourceId;
+    private Long rootMaterialRowId;
     private String aliquotedFromLSID;
-    private Integer sampleState;
+    private Long sampleState;
 
     private Date materialExpDate;
     private Double storedAmount;
@@ -50,22 +50,22 @@ public class Material extends RunItem
         setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
     }
 
-    public Integer getMaterialSourceId()
+    public Long getMaterialSourceId()
     {
         return this.materialSourceId;
     }
 
-    public void setMaterialSourceId(Integer materialSourceId)
+    public void setMaterialSourceId(Long materialSourceId)
     {
         this.materialSourceId = materialSourceId;
     }
 
-    public Integer getRootMaterialRowId()
+    public Long getRootMaterialRowId()
     {
         return rootMaterialRowId;
     }
 
-    public void setRootMaterialRowId(Integer rootMaterialRowId)
+    public void setRootMaterialRowId(Long rootMaterialRowId)
     {
         this.rootMaterialRowId = rootMaterialRowId;
     }
@@ -80,7 +80,7 @@ public class Material extends RunItem
         this.aliquotedFromLSID = aliquotedFromLSID;
     }
 
-    public Integer getSampleState()
+    public Long getSampleState()
     {
         return sampleState;
     }
@@ -105,7 +105,7 @@ public class Material extends RunItem
         this.units = units;
     }
 
-    public void setSampleState(Integer sampleState)
+    public void setSampleState(Long sampleState)
     {
         this.sampleState = sampleState;
     }
@@ -174,7 +174,7 @@ public class Material extends RunItem
     @Override
     public int hashCode()
     {
-        return getRowId();
+        return (int)getRowId();
     }
 
     @Override

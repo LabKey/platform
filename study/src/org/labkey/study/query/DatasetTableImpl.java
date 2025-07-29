@@ -911,7 +911,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private static class QCStateDisplayColumn extends DataColumn
     {
-        private Map<Integer, DataState> _qcStateCache;
+        private Map<Long, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
         {
             super(col);
@@ -931,7 +931,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             return formattedValue.getHtmlString();
         }
 
-        private Map<Integer, DataState> getStateCache(RenderContext ctx)
+        private Map<Long, DataState> getStateCache(RenderContext ctx)
         {
             if (_qcStateCache == null)
             {

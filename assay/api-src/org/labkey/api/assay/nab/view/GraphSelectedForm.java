@@ -24,19 +24,19 @@ import org.labkey.api.data.statistics.StatsService;
 public class GraphSelectedForm
 {
     private int _protocolId;
-    private int[] _id;
+    private long[] _id;
     private String _captionColumn;
     private String _chartTitle;
     private StatsService.CurveFitType _fitType;
     private int _height = -1;
     private int _width = -1;
 
-    public int[] getId()
+    public long[] getId()
     {
         return _id;
     }
 
-    public void setId(int[] id)
+    public void setId(long[] id)
     {
         _id = id;
     }

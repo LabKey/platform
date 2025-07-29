@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -107,7 +108,7 @@ public class UserManager
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.
-    private static final Map<Integer, Long> RECENT_USERS = new HashMap<>(100);
+    private static final Map<Integer, Long> RECENT_USERS = new IntHashMap<>(100);
     public static final String GROUP_NAME_CHAR_EXCLUSION_LIST = "@/\\&~";  // see renameGroup.jsp if you change this
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
@@ -326,7 +327,7 @@ public class UserManager
         USER_DETAILS_BUTTON_PROVIDERS.get(category).forEach(provider -> provider.addButton(bb, c, currentUser, detailsUser, returnUrl));
     }
 
-    public static @Nullable User getUser(int userId)
+    public static @Nullable User getUser(long userId)
     {
         if (userId == User.guest.getUserId())
             return User.guest;

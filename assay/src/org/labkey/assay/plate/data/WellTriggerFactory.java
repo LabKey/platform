@@ -1,11 +1,13 @@
 package org.labkey.assay.plate.data;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -186,9 +188,9 @@ public final class WellTriggerFactory implements TriggerFactory
     @SuppressWarnings("InnerClassMayBeStatic")
     private class ComputeWellGroupsTrigger implements Trigger
     {
-        private final Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
-        private final Set<Integer> modifiedPlates = new HashSet<>();
-        private final Map<Integer, Map<Integer, String>> wellReplicateGroupMap = new HashMap<>();
+        private final Map<Long, Map<Long, PlateManager.WellGroupChange>> wellGroupChanges = new LongHashMap<>();
+        private final Set<Long> modifiedPlates = new HashSet<>();
+        private final Map<Long, Map<Long, String>> wellReplicateGroupMap = new LongHashMap<>();
 
         private void checkForChanges(
             Container container,
@@ -217,18 +219,18 @@ public final class WellTriggerFactory implements TriggerFactory
                 );
             }
 
-            var wellRowId = (Integer) newRow.get(WellTable.Column.RowId.name());
+            var wellRowId = MapUtils.getLong(newRow,WellTable.Column.RowId.name());
             if (wellRowId == null)
             {
                 errors.addError(new SimpleValidationError("Failed to resolve well \"RowId\"."));
                 return;
             }
 
-            var plateRowId = (Integer) newRow.get(WellTable.Column.PlateId.name());
+            var plateRowId = MapUtils.getLong(newRow,WellTable.Column.PlateId.name());
             if (plateRowId == null)
             {
                 if (oldRow != null)
-                    plateRowId = (Integer) oldRow.get(WellTable.Column.PlateId.name());
+                    plateRowId = MapUtils.getLong(oldRow,WellTable.Column.PlateId.name());
                 if (plateRowId == null)
                 {
                     String error = String.format("Failed to resolve \"PlateId\" for well RowId (%d)", wellRowId);
@@ -253,7 +255,7 @@ public final class WellTriggerFactory implements TriggerFactory
                 var replicateGroup = getStringValue(WellTable.Column.ReplicateGroup, newRow);
                 var change = new PlateManager.WellGroupChange(plateRowId, wellRowId, type, group, replicateGroup);
 
-                wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
+                wellGroupChanges.computeIfAbsent(plateRowId, (x) -> new HashMap<>()).put(wellRowId, change);
             }
         }
 
@@ -271,7 +273,7 @@ public final class WellTriggerFactory implements TriggerFactory
             return value;
         }
 
-        private boolean hasReplicateChange(Container container, User user, @NotNull Integer plateRowId, @NotNull Integer wellRowId)
+        private boolean hasReplicateChange(Container container, User user, @NotNull Long plateRowId, @NotNull Long wellRowId)
         {
             var wellMap = wellReplicateGroupMap.computeIfAbsent(plateRowId, (pid) -> getWellReplicateGroups(container, user, pid));
 
@@ -363,14 +365,14 @@ public final class WellTriggerFactory implements TriggerFactory
         return map;
     }
 
-    private Map<Integer, String> getWellReplicateGroups(Container container, User user, int plateRowId)
+    private Map<Long, String> getWellReplicateGroups(Container container, User user, long plateRowId)
     {
-        var map = new HashMap<Integer, String>();
+        var map = new HashMap<Long, String>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
         SQLFragment sql = new SQLFragment("SELECT RowId, ReplicateGroup FROM plate.Well WHERE PlateId = ?").add(plateRowId);
         QueryService.get().getSelectBuilder(schema, sql.toDebugString())
                 .buildSqlSelector(null)
-                .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.ReplicateGroup.name())));
+                .forEach(r -> map.put(r.getLong(WellTable.Column.RowId.name()), r.getString(WellTable.Column.ReplicateGroup.name())));
 
         return map;
     }

@@ -227,7 +227,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
@@ -235,7 +235,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     @Override
     public ExpRunImpl getRun()
     {
-        Integer runId = _object.getRunId();
+        Long runId = _object.getRunId();
         return runId == null ? null : ExperimentServiceImpl.get().getExpRun(runId.intValue());
     }
 
@@ -501,9 +501,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput)
+    public void addMaterialInputs(User user, Collection<Long> materialRowIds, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput)
     {
-        Integer protocolInputRowId = null;
+        Long protocolInputRowId = null;
         if (protocolInput != null)
         {
             if (!getProtocol().equals(protocolInput.getProtocol()))
@@ -519,7 +519,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         if (StringUtils.trimToNull(role) == null)
             role = ExpMaterialRunInput.DEFAULT_ROLE;
 
-        for (Integer materialRowId : materialRowIds)
+        for (Long materialRowId : materialRowIds)
             params.add(Arrays.asList(materialRowId, getRowId(), role, protocolInputRowId));
 
         TableInfo table = ExperimentServiceImpl.get().getTinfoMaterialInput();
@@ -541,7 +541,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _inputMaterials = null;
     }
 
-    private void removeInputs(TableInfo tableInfo, String idColName, Collection<String> inputLsids, Collection<Integer> rowIds)
+    private void removeInputs(TableInfo tableInfo, String idColName, Collection<String> inputLsids, Collection<Long> rowIds)
     {
         if (inputLsids.size() != rowIds.size())
             throw new IllegalArgumentException(String.format("Unable to remove inputs. Mismatch between provided number of lsids (%d) and rowIds (%d).", inputLsids.size(), rowIds.size()));
@@ -577,7 +577,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void removeDataInputs(User user, Collection<Integer> rowIds)
+    public void removeDataInputs(User user, Collection<Long> rowIds)
     {
         // Clean up DataInput exp.object and properties
         List<String> inputLsids = rowIds.stream().map(rowId -> DataInput.lsid(rowId, getRowId())).toList();
@@ -601,7 +601,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void removeMaterialInputs(User user, Collection<Integer> rowIds)
+    public void removeMaterialInputs(User user, Collection<Long> rowIds)
     {
         // Clean up MaterialInput exp.object and properties
         List<String> inputLsids = rowIds.stream().map(rowId -> MaterialInput.lsid(rowId, getRowId())).toList();

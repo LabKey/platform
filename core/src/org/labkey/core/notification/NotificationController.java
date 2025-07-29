@@ -27,6 +27,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -46,7 +47,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -389,7 +389,7 @@ public class NotificationController extends SpringActionController
 
         private JSONObject getNotificationJson(User user)
         {
-            Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
+            Map<Integer, Map<String, Object>> notificationsPropMap = new IntHashMap<>();
             Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
             int unreadCount = 0;
             boolean hasRead = false;

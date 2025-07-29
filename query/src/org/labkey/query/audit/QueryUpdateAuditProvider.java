@@ -191,7 +191,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-    public int moveEvents(Container targetContainer, Collection<Integer> rowIds, String schemaName, String queryName)
+    public int moveEvents(Container targetContainer, Collection<Long> rowIds, String schemaName, String queryName)
     {
         TableInfo auditTable = createStorageTableInfo();
         SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)

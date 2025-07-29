@@ -53,30 +53,30 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public Set<Pair<String, String>> getProvenanceObjectUris(int protocolAppId)
+    public Set<Pair<String, String>> getProvenanceObjectUris(long protocolAppId)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<String> getProvenanceObjectUriSet(int protocolAppId)
+    public Set<String> getProvenanceObjectUriSet(long protocolAppId)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Pair<Integer, Integer>> getProvenanceObjectIds(int protocolAppId)
+    public Set<Pair<Long, Long>> getProvenanceObjectIds(long protocolAppId)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public void deleteProvenance(int protocolAppId)
+    public void deleteProvenance(long protocolAppId)
     {
     }
 
     @Override
-    public void deleteRunProvenance(int runId)
+    public void deleteRunProvenance(long runId)
     {
     }
 
@@ -91,7 +91,7 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public void deleteObjectProvenance(int objectId)
+    public void deleteObjectProvenance(long objectId)
     {
     }
 

@@ -69,8 +69,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
-    @Nullable
-    default Integer getWorkflowTask() {
+    default @Nullable Long getWorkflowTask() {
         return null;
     }
 
@@ -157,7 +156,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     void setTransformResult(TransformResult result);
 
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
-    Integer getReRunId();
+    Long getReRunId();
 
     default ReImportOption getReImportOption()
     {
@@ -224,9 +223,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected ViewContext _context;
         protected String _comments;
         protected String _name;
-        protected Integer _workflowTask;
+        protected Long _workflowTask;
         protected String _targetStudy;
-        protected Integer _reRunId;
+        protected Long _reRunId;
         protected AssayRunUploadContext.ReImportOption _reImportOption;
         protected Map<String, Object> _rawRunProperties;
         protected Map<String, Object> _rawBatchProperties;
@@ -287,7 +286,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-        public final FACTORY setWorkflowTask(Integer workflowTask)
+        public final FACTORY setWorkflowTask(Long workflowTask)
         {
             _workflowTask = workflowTask;
             return self();
@@ -299,7 +298,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-        public final FACTORY setReRunId(Integer reRunId)
+        public final FACTORY setReRunId(Long reRunId)
         {
             _reRunId = reRunId;
             return self();

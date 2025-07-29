@@ -18,6 +18,7 @@ package org.labkey.assay.plate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,8 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -190,7 +193,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
-    private final Map<Container, Set<Integer>> _plateIndexMap = new ConcurrentHashMap<>();
+    private final Map<Container, Set<Long>> _plateIndexMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _pausePlateIndex = new AtomicBoolean(false);
     private static final Object PLATE_INDEX_LOCK = new Object();
 
@@ -270,7 +273,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excluded, long runId, int plateNumber)
     {
         if (plate == null)
             return null;
@@ -291,7 +294,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         @NotNull Container container,
         @NotNull User user,
         @NotNull Plate plate,
-        @Nullable Integer plateSetId,
+        @Nullable Long plateSetId,
         @Nullable List<Map<String, Object>> data
     ) throws Exception
     {
@@ -317,7 +320,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ((PlateImpl) plate).setPlateSet(plateSet);
             }
 
-            int plateRowId = save(container, user, plate, data);
+            long plateRowId = save(container, user, plate, data);
             plate = getPlate(container, plateRowId);
             if (plate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
@@ -481,13 +484,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(Container container, int rowId)
+    public @Nullable PlateSet getPlateSet(Container container, long rowId)
     {
         return PlateSetCache.getPlateSet(container, rowId);
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)
+    public @Nullable PlateSet getPlateSet(ContainerFilter cf, long rowId)
     {
         return PlateSetCache.getPlateSet(cf, rowId);
     }
@@ -499,7 +502,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (se == null)
             return emptyList();
 
-        Collection<Integer> runIds = se.getCollection(Integer.class);
+        Collection<Long> runIds = se.getCollection(Long.class);
         return ExperimentService.get().getExpRuns(runIds);
     }
 
@@ -520,12 +523,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      * @return A map of plate rowId to total number of runs across all plate-based assay runs in the
      * container/user scope for the specified plates.
      */
-    public Map<Integer, Long> getPlateRunCounts(@NotNull Container c, @NotNull User user, @NotNull Collection<Plate> plates)
+    public Map<Long, Long> getPlateRunCounts(@NotNull Container c, @NotNull User user, @NotNull Collection<Plate> plates)
     {
         if (plates.isEmpty())
             return emptyMap();
 
-        Map<Integer, Long> resultMap = new HashMap<>();
+        Map<Long, Long> resultMap = new LongHashMap<>();
         for (Plate plate : plates)
         {
             if (plate.getRowId() != null)
@@ -543,7 +546,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<SQLFragment> fragments = new ArrayList<>();
         TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
         TableInfo dataTable = ExperimentService.get().getTinfoData();
-        Set<Integer> plateRowIds = resultMap.keySet();
+        Set<Long> plateRowIds = resultMap.keySet();
 
         for (ExpProtocol protocol : protocols)
         {
@@ -584,7 +587,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             while (rs.next())
             {
-                Integer plateRowId = rs.getInt("Plate");
+                Long plateRowId = rs.getLong("Plate");
                 Long runCount = rs.getLong("RunCount");
                 resultMap.put(plateRowId, resultMap.get(plateRowId) + runCount);
             }
@@ -705,13 +708,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable Plate getPlate(Container container, int rowId)
+    public @Nullable Plate getPlate(Container container, long rowId)
     {
         return PlateCache.getPlate(container, rowId);
     }
 
     @Override
-    public @Nullable Plate getPlate(ContainerFilter cf, int rowId)
+    public @Nullable Plate getPlate(ContainerFilter cf, long rowId)
     {
         return PlateCache.getPlate(cf, rowId);
     }
@@ -735,7 +738,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier)
+    public @Nullable Plate getPlate(ContainerFilter cf, Long plateSetId, Object plateIdentifier)
     {
         if (plateSetId == null)
             throw new IllegalArgumentException("Plate set is required.");
@@ -828,12 +831,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         throw new ValidationException(error);
     }
 
-    public @NotNull Plate requirePlate(Container container, int plateRowId, @Nullable String errorPrefix) throws ValidationException
+    public @NotNull Plate requirePlate(Container container, long plateRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (Plate) require(getPlate(container, plateRowId), "Plate id \"" + plateRowId + "\" not found.", errorPrefix);
     }
 
-    public @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    public @NotNull PlateSet requirePlateSet(Container container, long plateSetRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateSet) require(
             getPlateSet(container, plateSetRowId),
@@ -842,7 +845,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         );
     }
 
-    public @NotNull PlateSet requirePlateSet(Container container, ContainerFilter cf, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    public @NotNull PlateSet requirePlateSet(Container container, ContainerFilter cf, long plateSetRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateSet) require(
             getPlateSet(cf, plateSetRowId),
@@ -860,7 +863,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         );
     }
 
-    private @NotNull PlateType requirePlateType(int plateTypeRowId, @Nullable String errorPrefix) throws ValidationException
+    private @NotNull PlateType requirePlateType(long plateTypeRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateType) require(
             getPlateType(plateTypeRowId),
@@ -976,12 +979,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public int save(Container container, User user, Plate plate) throws Exception
+    public long save(Container container, User user, Plate plate) throws Exception
     {
         return save(container, user, plate, null);
     }
 
-    private int save(Container container, User user, Plate plate, @Nullable List<Map<String, Object>> wellData) throws Exception
+    private long save(Container container, User user, Plate plate, @Nullable List<Map<String, Object>> wellData) throws Exception
     {
         if (plate instanceof PlateImpl plateTemplate)
             return savePlateImpl(container, user, plateTemplate, false, wellData);
@@ -1011,7 +1014,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Collection<Map<String, Object>> allGroupPositions = ss.getMapCollection();
 
         // construct wellToWellGroups: map of wellId -> Set of wellGroupId
-        Map<Integer, Set<Integer>> wellToWellGroups = new HashMap<>();
+        Map<Integer, Set<Integer>> wellToWellGroups = new IntHashMap<>();
         for (Map<String, Object> groupPosition : allGroupPositions)
         {
             Integer wellId = (Integer) groupPosition.get("wellId");
@@ -1021,7 +1024,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         // construct groupIdToPositions: map of wellGroupId -> List of PositionImpl
-        Map<Integer, List<PositionImpl>> groupIdToPositions = new HashMap<>();
+        Map<Integer, List<PositionImpl>> groupIdToPositions = new IntHashMap<>();
         WellImpl[] wells = getWells(plate);
         WellImpl[][] wellArray = new WellImpl[plate.getRows()][plate.getColumns()];
         for (WellImpl well : wells)
@@ -1097,17 +1100,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
     }
 
-    public int savePlateImpl(Container container, User user, @NotNull PlateImpl plate) throws Exception
+    public long savePlateImpl(Container container, User user, @NotNull PlateImpl plate) throws Exception
     {
         return savePlateImpl(container, user, plate, false);
     }
 
-    private int savePlateImpl(Container container, User user, @NotNull PlateImpl plate, boolean isCopy) throws Exception
+    private long savePlateImpl(Container container, User user, @NotNull PlateImpl plate, boolean isCopy) throws Exception
     {
         return savePlateImpl(container, user, plate, isCopy, null);
     }
 
-    private int savePlateImpl(
+    private long savePlateImpl(
         Container container,
         User user,
         @NotNull PlateImpl plate,
@@ -1119,7 +1122,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            Integer plateId = plate.getRowId();
+            Long plateId = plate.getRowId();
 
             if (!updateExisting && plate.getPlateSet() == null)
             {
@@ -1150,7 +1153,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (errors.hasErrors())
                     throw errors;
                 Map<String, Object> row = insertedRows.get(0);
-                plateId = (Integer) row.get("RowId");
+                plateId = MapUtils.getLong(row,"RowId");
                 plate.setRowId(plateId);
                 plate.setLsid((String) row.get("Lsid"));
                 plate.setName((String) row.get("Name"));
@@ -1277,7 +1280,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!updateExisting && !plate.getCustomFields().isEmpty())
                 setFields(container, user, plate.getRowId(), plate.getCustomFields());
 
-            final Integer plateRowId = plateId;
+            final Long plateRowId = plateId;
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
                 indexPlate(container, plateRowId, false);
@@ -1417,7 +1420,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public void deletePlate(Container container, User user, int rowId) throws Exception
+    public void deletePlate(Container container, User user, long rowId) throws Exception
     {
         Map<String, Object> key = Collections.singletonMap("RowId", rowId);
         QueryUpdateService qus = getPlateUpdateService(container, user);
@@ -1466,12 +1469,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     // Called by the Plate Set Query Update Service before deleting a plate set
-    public void beforePlateSetDelete(Container container, User user, Integer rowId)
+    public void beforePlateSetDelete(Container container, User user, Long rowId)
     {
         beforePlateSetsDelete(List.of(rowId), container);
     }
 
-    private void beforePlateSetsDelete(Collection<Integer> plateSetIds, Container container)
+    private void beforePlateSetsDelete(Collection<Long> plateSetIds, Container container)
     {
         assert requireActiveTransaction();
 
@@ -1600,7 +1603,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).append(")")
                         .append(" AND Container = ?").add(container);
 
-                ArrayList<Integer> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Integer.class);
+                ArrayList<Long> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Long.class);
 
                 if (!emptyPlateSetIds.isEmpty())
                 {
@@ -1902,9 +1905,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public Plate copyPlate(
         Container container,
         User user,
-        Integer sourcePlateRowId,
+        Long sourcePlateRowId,
         boolean copyAsTemplate,
-        @Nullable Integer destinationPlateSetRowId,
+        @Nullable Long destinationPlateSetRowId,
         @Nullable String name,
         @Nullable String description,
         @Nullable Boolean copySamples
@@ -1965,7 +1968,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             copyWellGroups(sourcePlate, newPlate);
 
             // Save the plate
-            int plateId = savePlateImpl(container, user, newPlate, true);
+            long plateId = savePlateImpl(container, user, newPlate, true);
             newPlate = (PlateImpl) getPlate(container, plateId);
             if (newPlate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
@@ -1982,7 +1985,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     /**
-     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, Integer, String, String, Boolean)}
+     * @deprecated Use {@link #copyPlate(Container, User, Long, boolean, Long, String, String, Boolean)}
      */
     @Deprecated
     public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
@@ -1996,7 +1999,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         copyProperties(source, newPlate);
         copyWellGroups(source, newPlate);
 
-        int plateId = save(destContainer, user, newPlate);
+        long plateId = save(destContainer, user, newPlate);
         return getPlate(destContainer, plateId);
     }
 
@@ -2023,7 +2026,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     /**
      * Clear the plate cache for an arbitrary collection of plates where only the rowIds are known.
      */
-    private void clearCache(Collection<Integer> plateRowIds)
+    private void clearCache(Collection<Long> plateRowIds)
     {
         var table = AssayDbSchema.getInstance().getTableInfoPlate();
         SQLFragment sql = new SQLFragment("SELECT rowId, container FROM ").append(table, "")
@@ -2050,9 +2053,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void clearPlateSetCache(Container container, Collection<Integer> plateSetRowIds)
+    private void clearPlateSetCache(Container container, Collection<Long> plateSetRowIds)
     {
-        for (Integer plateSetId : plateSetRowIds)
+        for (Long plateSetId : plateSetRowIds)
             PlateSetCache.uncache(container, plateSetId);
     }
 
@@ -2114,7 +2117,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return layouts;
     }
 
-    public PlateType getPlateType(Integer plateTypeId)
+    public PlateType getPlateType(Long plateTypeId)
     {
         if (plateTypeId == null) return null;
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeBean.class);
@@ -2123,17 +2126,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public @NotNull Map<String, List<Map<String, Object>>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull User user,
-        @NotNull Set<Integer> plateRowIds
+        @NotNull Set<Long> plateRowIds
     )
     {
-        Set<Integer> permittedIds = new HashSet<>(plateRowIds);
-        Set<Integer> notPermittedIds = new HashSet<>();
+        Set<Long> permittedIds = new HashSet<>(plateRowIds);
+        Set<Long> notPermittedIds = new HashSet<>();
 
         ExperimentService.get().getObjectReferencers().forEach(referencer ->
                 notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "plate")));
         permittedIds.removeAll(notPermittedIds);
 
-        Map<Integer, Plate> plates = new HashMap<>();
+        Map<Long, Plate> plates = new LongHashMap<>();
         plateRowIds.forEach(rowId -> {
             // TODO: This is really expensive. Find a way to consolidate this check into a single query.
             if (rowId != null)
@@ -2207,7 +2210,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void indexPlate(Container c, Integer plateRowId, boolean ignorePauseFlag)
+    private void indexPlate(Container c, Long plateRowId, boolean ignorePauseFlag)
     {
         if (_pausePlateIndex.get() && !ignorePauseFlag)
         {
@@ -2240,7 +2243,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void indexPlateSet(Container container, Integer plateSetRowId)
+    public void indexPlateSet(Container container, Long plateSetRowId)
     {
         PlateSet plateSet = getPlateSet(container, plateSetRowId);
         SearchService ss = SearchService.get();
@@ -2266,7 +2269,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public static void deindexPlateSet(Container container, Integer plateSetRowId)
+    public static void deindexPlateSet(Container container, Long plateSetRowId)
     {
         SearchService ss = SearchService.get();
         if (ss == null || plateSetRowId == null)
@@ -2438,7 +2441,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public @NotNull List<PlateCustomField> addFields(
         Container container,
         User user,
-        Integer plateId,
+        Long plateId,
         List<PlateCustomField> fields
     ) throws SQLException, ValidationException
     {
@@ -2521,13 +2524,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return getFields(container, plateId);
     }
 
-    public @NotNull List<PlateCustomField> getFields(Container container, Integer plateId) throws ValidationException
+    public @NotNull List<PlateCustomField> getFields(Container container, Long plateId) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to get plate custom fields.");
         return plate.getCustomFields();
     }
 
-    private @NotNull List<PlateCustomField> getCustomFields(Container container, @NotNull Domain metadataDomain, int plateId)
+    private @NotNull List<PlateCustomField> getCustomFields(Container container, @NotNull Domain metadataDomain, long plateId)
     {
         AssayDbSchema schema = AssayDbSchema.getInstance();
         SQLFragment sql = new SQLFragment("SELECT FieldKey, PropertyURI FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
@@ -2620,7 +2623,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
 
-    public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws ValidationException
+    public List<PlateCustomField> removeFields(Container container, User user, Long plateId, List<PlateCustomField> fields) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to remove plate custom fields.");
         PlateSet plateSet = requirePlateSet(plate, "Failed to remove plate custom fields.");
@@ -2684,7 +2687,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return getFields(container, plateId);
     }
 
-    public List<PlateCustomField> setFields(Container container, User user, Integer plateRowId, List<PlateCustomField> fields) throws SQLException, ValidationException
+    public List<PlateCustomField> setFields(Container container, User user, Long plateRowId, List<PlateCustomField> fields) throws SQLException, ValidationException
     {
         requirePlate(container, plateRowId, "Failed to set plate custom fields.");
         List<PlateCustomField> allFields = getPlateMetadataFields(container, user, true);
@@ -2749,12 +2752,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record PlateData(String name, Integer plateType, Integer templateId, String barcode, List<Map<String, Object>> data) {}
+    public record PlateData(String name, Long plateType, Long templateId, String barcode, List<Map<String, Object>> data) {}
 
     private List<Plate> addPlatesToPlateSet(
         Container container,
         User user,
-        int plateSetId,
+        long plateSetId,
         boolean plateSetIsTemplate,
         @NotNull List<PlateData> plates
     ) throws Exception
@@ -2790,7 +2793,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         @NotNull PlateSetImpl plateSet,
         @Nullable List<PlateData> plates,
-        @Nullable Integer parentPlateSetId
+        @Nullable Long parentPlateSetId
     ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
@@ -2891,12 +2894,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Container container,
         User user,
         @NotNull PlateSetImpl targetPlateSet,
-        Integer sourcePlateSetRowId
+        Long sourcePlateSetRowId
     ) throws Exception
     {
         PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, null);
 
-        Integer parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
+        Long parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
@@ -2916,14 +2919,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         assert requireActiveTransaction();
 
         // Configure rootPlateSetId
-        Integer rootPlateSetId = null;
+        Long rootPlateSetId = null;
         if (PlateSetType.primary.equals(plateSetType))
             rootPlateSetId = parentPlateSet == null ? plateSetId : parentPlateSet.getRootPlateSetId();
         else if (PlateSetType.assay.equals(plateSetType))
             rootPlateSetId = parentPlateSet == null ? null : parentPlateSet.getRootPlateSetId();
 
         // Configure primaryPlateSetId
-        Integer primaryPlateSetId = null;
+        Long primaryPlateSetId = null;
         if (parentPlateSet != null)
         {
             if (parentPlateSet.isPrimary())
@@ -2954,7 +2957,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return archive ? "archive" : "restore";
     }
 
-    public void archive(Container container, User user, @Nullable List<Integer> plateSetIds, @Nullable List<Integer> plateIds, boolean archive) throws Exception
+    public void archive(Container container, User user, @Nullable List<Long> plateSetIds, @Nullable List<Long> plateIds, boolean archive) throws Exception
     {
         boolean archivingPlates = plateIds != null && !plateIds.isEmpty();
         boolean archivingPlateSets = plateSetIds != null && !plateSetIds.isEmpty();
@@ -2980,7 +2983,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void archive(Container container, User user, @NotNull TableInfo table, String type, @NotNull List<Integer> rowIds, boolean archive) throws Exception
+    private void archive(Container container, User user, @NotNull TableInfo table, String type, @NotNull List<Long> rowIds, boolean archive) throws Exception
     {
         Class<? extends Permission> perm = UpdatePermission.class;
 
@@ -3063,7 +3066,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return QueryService.get().getProductContainerFilterForLookups(container, user, ContainerFilter.Type.Current.create(container, user));
     }
 
-    public PlateSetLineage getPlateSetLineage(Container container, User user, int seedPlateSetId, @Nullable ContainerFilter cf)
+    public PlateSetLineage getPlateSetLineage(Container container, User user, long seedPlateSetId, @Nullable ContainerFilter cf)
     {
         cf = ensureContainerFilterForLineage(container, user, cf);
         PlateSetImpl seedPlateSet = (PlateSetImpl) getPlateSet(cf, seedPlateSetId);
@@ -3071,7 +3074,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new NotFoundException();
 
         PlateSetLineage lineage = new PlateSetLineage(seedPlateSetId);
-        Integer rootPlateSetId = seedPlateSet.getRootPlateSetId();
+        Long rootPlateSetId = seedPlateSet.getRootPlateSetId();
 
         // stand-alone plate set
         if (rootPlateSetId == null)
@@ -3085,7 +3088,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<PlateSetEdge> edges = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSetEdge(), filter, null).getArrayList(PlateSetEdge.class);
         lineage.setEdges(edges);
 
-        Set<Integer> nodeIds = new HashSet<>();
+        Set<Long> nodeIds = new HashSet<>();
         nodeIds.add(seedPlateSetId);
         nodeIds.add(rootPlateSetId);
         for (var edge : edges)
@@ -3100,7 +3103,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         filterPS.addInClause(FieldKey.fromParts("RowId"), nodeIds);
         List<PlateSetImpl> nodes = new TableSelector(plateSetTable, filterPS, null).getArrayList(PlateSetImpl.class);
 
-        Map<Integer, PlateSet> plateSets = new HashMap<>();
+        Map<Long, PlateSet> plateSets = new LongHashMap<>();
         for (var node : nodes)
             plateSets.put(node.getRowId(), node);
         lineage.setPlateSets(plateSets);
@@ -3108,7 +3111,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return lineage;
     }
 
-    private Collection<Integer> getResultRowsIds(@Nullable List<Integer> resultRowIds, @Nullable String resultSelectionKey)
+    private Collection<Long> getResultRowsIds(@Nullable List<Long> resultRowIds, @Nullable String resultSelectionKey)
     {
         if (resultRowIds != null && !resultRowIds.isEmpty())
             return new ArrayList<>(new HashSet<>(resultRowIds));
@@ -3118,7 +3121,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return emptyList();
     }
 
-    private Collection<Integer> getSelection(@NotNull String selectionKey)
+    private Collection<Long> getSelection(@NotNull String selectionKey)
     {
         ViewContext viewContext = HttpView.currentContext();
         if (viewContext == null)
@@ -3130,9 +3133,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void markHits(
         Container container,
         User user,
-        int protocolId,
+        long protocolId,
         boolean markAsHit,
-        @Nullable List<Integer> resultRowIds,
+        @Nullable List<Long> resultRowIds,
         @Nullable String resultSelectionKey
     ) throws SQLException, ValidationException
     {
@@ -3156,7 +3159,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!provider.isPlateMetadataEnabled(protocol))
             throw new ValidationException(String.format("Failed to mark hits. Assay \"%s\" does not support plate metadata.", protocol.getName()));
 
-        Collection<Integer> rowIds = getResultRowsIds(resultRowIds, resultSelectionKey);
+        Collection<Long> rowIds = getResultRowsIds(resultRowIds, resultSelectionKey);
         if (rowIds.isEmpty())
             return;
 
@@ -3191,7 +3194,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     TableSelector selector = new TableSelector(resultsTable, PageFlowUtil.set("Plate", "RowId", "Run", "WellLsid"), filter, null);
 
                     List<List<?>> newHits = new LinkedList<>();
-                    Map<Integer, Pair<GUID, String>> cache = new HashMap<>();
+                    Map<Integer, Pair<GUID, String>> cache = new IntHashMap<>();
                     for (var row : selector.getMapCollection())
                     {
                         Integer resultId = (Integer) row.get("RowId");
@@ -3244,7 +3247,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     /**
      * Checks whether the specified data operation is permitted on the existing assay result rows.
      */
-    private boolean isOperationPermittedOnResults(Container container, User user, @NotNull ExpProtocol protocol, Collection<Integer> rowIds, PlateDataStateManager.DataOperation operation)
+    private boolean isOperationPermittedOnResults(Container container, User user, @NotNull ExpProtocol protocol, Collection<Long> rowIds, PlateDataStateManager.DataOperation operation)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain resultDomain = provider.getResultsDomain(protocol);
@@ -3255,8 +3258,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             TableInfo resultsTable = schema.createDataTable(null, false);
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, CompareType.IN);
-            Set<Integer> dataStates = new HashSet<>(new TableSelector(resultsTable, Collections.singleton(stateProp.getName()), filter, null).getArrayList(Integer.class));
-            for (Integer state : dataStates)
+            Set<Long> dataStates = new HashSet<>(new TableSelector(resultsTable, Collections.singleton(stateProp.getName()), filter, null).getArrayList(Long.class));
+            for (Long state : dataStates)
             {
                 DataState dataState = PlateDataStateManager.get().getStateForRowId(container, state);
                 if (!PlateDataStateManager.get().isOperationPermitted(dataState, operation))
@@ -3281,7 +3284,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(new SimpleFilter(fieldKey, objects.stream().map(ExpObject::getRowId).toList(), CompareType.IN));
     }
 
-    public void deleteHits(int protocolId, Collection<Integer> resultIds)
+    public void deleteHits(long protocolId, Collection<Long> resultIds)
     {
         if (resultIds == null || resultIds.isEmpty())
             return;
@@ -3291,7 +3294,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(filter);
     }
 
-    public void deleteHitsForRuns(Collection<Integer> runIds)
+    public void deleteHitsForRuns(Collection<Long> runIds)
     {
         if (runIds == null || runIds.isEmpty())
             return;
@@ -3338,14 +3341,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (provider == null || !provider.isPlateMetadataEnabled(run.getProtocol()))
             return;
 
-        deleteHits(run.getProtocol().getRowId(), List.of((Integer) resultRow.get("RowId")));
+        deleteHits(run.getProtocol().getRowId(), List.of(MapUtils.getLong(resultRow,"RowId")));
     }
 
     /**
      * Returns a PlateSetAssays model for all plate enabled GPAT assays for a given container and containerFilter that
      * have data associated with a given plateSetId or its descendents.
      */
-    public PlateSetAssays getPlateSetAssays(Container container, User user, int plateSetId, @Nullable ContainerFilter cf)
+    public PlateSetAssays getPlateSetAssays(Container container, User user, long plateSetId, @Nullable ContainerFilter cf)
     {
         PlateSetAssays plateSetAssays = new PlateSetAssays();
         // Get the list of GPAT protocols in the container
@@ -3356,8 +3359,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         cf = ensureContainerFilterForLineage(container, user, cf);
         PlateSetLineage lineage = getPlateSetLineage(container, user, plateSetId, cf);
-        Map<Integer, List<Integer>> protocolPlateSets = new HashMap<>();
-        Map<Integer, PlateSet> plateSets = lineage.getPlateSetAndDescendents(plateSetId);
+        Map<Long, List<Long>> protocolPlateSets = new LongHashMap<>();
+        Map<Long, PlateSet> plateSets = lineage.getPlateSetAndDescendents(plateSetId);
         plateSetAssays.setPlateSets(plateSets);
         TableInfo plateTable = getPlateTable(container, user, cf);
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(container, provider)
@@ -3377,7 +3380,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         .append(plateTable, "pt")
                         .append(" ON ad.plate = pt.rowId WHERE pt.plateset ")
                         .appendInClause(plateSets.keySet(), assayDataTable.getSqlDialect());
-                ArrayList<Integer> plateSetRowIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
+                ArrayList<Long> plateSetRowIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Long.class);
 
                 if (!plateSetRowIds.isEmpty())
                     protocolPlateSets.put(protocol.getRowId(), plateSetRowIds);
@@ -3456,7 +3459,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     Pair<Integer, List<Map<String, Object>>> getWellSampleData(
         Container c,
-        @NotNull List<Integer> sampleIds,
+        @NotNull List<Long> sampleIds,
         Integer rowCount,
         Integer columnCount,
         int sampleIdsCounter,
@@ -3561,18 +3564,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (plates.isEmpty())
             throw new ValidationException("Failed to generate plate data. No plates specified.");
 
-        List<Integer> selectedSampleIds = getSelection(selectionKey).stream().sorted().toList();
+        List<Long> selectedSampleIds = getSelection(selectionKey).stream().sorted().toList();
         if (selectedSampleIds.isEmpty())
             throw new ValidationException("Failed to generate plate data. No samples selected.");
 
         int sampleIdsCounter = 0;
         List<PlateData> platesData = new ArrayList<>();
-        Map<Integer, PlateType> plateTypes = new HashMap<>();
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap = new HashMap<>();
+        Map<Long, PlateType> plateTypes = new LongHashMap<>();
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap = new HashMap<>();
 
         for (PlateData plate : plates)
         {
-            int plateTypeId = plate.plateType;
+            long plateTypeId = plate.plateType;
             if (!plateTypes.containsKey(plateTypeId))
                 plateTypes.put(plateTypeId, requirePlateType(plateTypeId, "Failed to generate plate data."));
             PlateType plateType = plateTypes.get(plateTypeId);
@@ -3607,8 +3610,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private int plateSamples(
         List<WellData> wellDataList,
-        List<Integer> sampleIds,
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
+        List<Long> sampleIds,
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap,
         int counter
     )
     {
@@ -3627,7 +3630,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             else if (isSampleOrReplicate)
             {
-                Integer sampleId = sampleIds.get(counter);
+                Long sampleId = sampleIds.get(counter);
 
                 if (groupKey != null)
                 {
@@ -3675,8 +3678,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     public List<Object[]> getWorklist(
-        int sourcePlateSetId,
-        int destinationPlateSetId,
+        long sourcePlateSetId,
+        long destinationPlateSetId,
         List<FieldKey> sourceIncludedMetadataCols,
         List<FieldKey> destinationIncludedMetadataCols,
         Container c,
@@ -3687,7 +3690,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new PlateSetExport().getWorklist(wellTable, sourcePlateSetId, destinationPlateSetId, sourceIncludedMetadataCols, destinationIncludedMetadataCols);
     }
 
-    public List<Object[]> getInstrumentInstructions(int plateSetId, List<FieldKey> includedMetadataCols, Container c, User u)
+    public List<Object[]> getInstrumentInstructions(long plateSetId, List<FieldKey> includedMetadataCols, Container c, User u)
     {
         TableInfo wellTable = getWellTable(c, u);
         return new PlateSetExport().getInstrumentInstructions(wellTable, plateSetId, includedMetadataCols);
@@ -3813,7 +3816,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fileBytes;
     }
 
-    public List<WellData> getWellData(Container container, User user, int plateRowId, boolean includeSamples, boolean includeMetadata)
+    public List<WellData> getWellData(Container container, User user, long plateRowId, boolean includeSamples, boolean includeMetadata)
     {
         Set<String> columns = new HashSet<>();
         columns.add(WellTable.Column.Col.name());
@@ -3896,7 +3899,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return wellDataList;
     }
 
-    public record WellGroupChange(Integer plateRowId, Integer wellRowId, String type, String group, String replicateGroup) {}
+    public record WellGroupChange(Long plateRowId, Long wellRowId, String type, String group, String replicateGroup) {}
 
     /**
      * Computes the well groups based on changes (updates) made to the well "Type", "WellGroup", and "ReplicateGroup".
@@ -3905,7 +3908,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void computeWellGroups(
         Container container,
         User user,
-        Map<Integer, Map<Integer, WellGroupChange>> wellGroupChanges
+        Map<Long, Map<Long, WellGroupChange>> wellGroupChanges
     ) throws ValidationException
     {
         assert requireActiveTransaction();
@@ -4004,12 +4007,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
+    public void validateWellGroups(Container container, User user, Collection<Long> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
-        Set<Integer> plateSetsWithSampleGroups = new HashSet<>();
-        Set<Integer> plateSetsWithReplicateGroups = new HashSet<>();
-        Set<Pair<Integer, Integer>> plateSetsWithControls = new HashSet<>();
+        Set<Long> plateSetsWithSampleGroups = new HashSet<>();
+        Set<Long> plateSetsWithReplicateGroups = new HashSet<>();
+        Set<Pair<Long, Long>> plateSetsWithControls = new HashSet<>();
 
         for (var plateRowId : plateRowIds)
         {
@@ -4111,7 +4114,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private String getControlGroupLabKeySql(Pair<Integer, Integer> plateSetRowIds)
+    private String getControlGroupLabKeySql(Pair<Long, Long> plateSetRowIds)
     {
         String controlTypes = StringUtils.join(
                 Stream.of(WellGroup.Type.CONTROL, WellGroup.Type.NEGATIVE_CONTROL, WellGroup.Type.POSITIVE_CONTROL)
@@ -4133,7 +4136,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         """, plateSetRowIds.second, plateSetRowIds.first, controlTypes);
     }
 
-    private void validatePlateSetControls(Container container, User user, Pair<Integer, Integer> plateSetRowIds) throws ValidationException
+    private void validatePlateSetControls(Container container, User user, Pair<Long, Long> plateSetRowIds) throws ValidationException
     {
         String invalidSampleName = null;
         UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
@@ -4153,7 +4156,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException(String.format("The sample \"%s\" is not a valid control.", invalidSampleName));
     }
 
-    private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
     {
         String labkeySql = String.format("""
             SELECT DISTINCT WellGroup, ReplicateGroup
@@ -4163,7 +4166,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
     }
 
-    private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
     {
         var wellTable = plateSchema.getTableOrThrow(WellTable.NAME);
         var columnNames = new CaseInsensitiveHashSet(wellTable.getColumnNameSet());
@@ -4199,7 +4202,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         """, columnsSql, plateSetRowId, columnsSql);
     }
 
-    private void validatePlateSetReplicateGroups(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    private void validatePlateSetReplicateGroups(Container container, User user, @NotNull Long plateSetRowId) throws ValidationException
     {
         var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         var replicateWellGroupCount = getReplicateGroupCount(plateSchema, plateSetRowId);
@@ -4236,7 +4239,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         throw new ValidationException(String.format("Plate set (%d) contains mismatched replicate well data.", plateSetRowId));
     }
 
-    private String getSampleGroupLabKeySql(@NotNull Integer plateSetRowId, boolean includeSampleId)
+    private String getSampleGroupLabKeySql(@NotNull Long plateSetRowId, boolean includeSampleId)
     {
         List<String> columnNames = new ArrayList<>();
         columnNames.add(WellTable.Column.Type.name());
@@ -4258,13 +4261,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         """, columns, plateSetRowId, wellTypes, columns);
     }
 
-    private long getSampleGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    private long getSampleGroupCount(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
     {
         String labkeySql = getSampleGroupLabKeySql(plateSetRowId, false);
         return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
     }
 
-    private void validatePlateSetSampleGroups(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    private void validatePlateSetSampleGroups(Container container, User user, @NotNull Long plateSetRowId) throws ValidationException
     {
         var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         var sampleGroupCount = getSampleGroupCount(plateSchema, plateSetRowId);
@@ -4334,11 +4337,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PreviewPlateData(
         String name,
-        Integer plateType,
-        Integer templateId,
+        Long plateType,
+        Long templateId,
         String barcode,
         List<Map<String, Object>> data,
-        Integer plateRowId,
+        Long plateRowId,
         Integer wellCount,
         Integer wellsEmpty,
         Integer wellsFilled,
@@ -4347,7 +4350,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     ) {
         static PreviewPlateData create(
             PlateData plateData,
-            Integer plateRowId,
+            Long plateRowId,
             Integer wellCount,
             Integer wellsEmpty,
             Integer wellsFilled,
@@ -4364,9 +4367,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<PreviewPlateData> previewData,
         Integer plateCountCreated,
         Integer plateCountUpdated,
-        Integer plateSetRowId,
+        Long plateSetRowId,
         String plateSetName,
-        List<Integer> plateRowIds,
+        List<Long> plateRowIds,
         Integer platedSampleCount,
         Integer selectedSampleCount
     ) {}
@@ -4414,7 +4417,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         engine.setTargetTemplate(targetPlateSource.second);
 
         // Resolve selected sample configuration (if any)
-        Pair<Collection<Integer>, Integer> sampleSelection = resolveSelectedSamples(options.getSampleSelectionKey(), targetPlateSet);
+        Pair<Collection<Long>, Integer> sampleSelection = resolveSelectedSamples(options.getSampleSelectionKey(), targetPlateSet);
         engine.setSampleIds(sampleSelection.first);
         Integer selectedSampleCount = sampleSelection.second;
 
@@ -4451,14 +4454,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (plateData.isEmpty() && existingPlates.isEmpty())
             throw new ValidationException("This operation as configured does not create or update any plates.");
 
-        Integer plateSetRowId;
+        Long plateSetRowId;
         String plateSetName;
         List<Plate> newPlates;
 
         if (targetPlateSet.isNew())
         {
             PlateSet parentPlateSet = resolveParentPlateSet(container, user, options, sourcePlateSet);
-            Integer parentPlateSetId = parentPlateSet != null ? parentPlateSet.getRowId() : null;
+            Long parentPlateSetId = parentPlateSet != null ? parentPlateSet.getRowId() : null;
 
             PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, plateData, parentPlateSetId);
             plateSetRowId = newPlateSet.getRowId();
@@ -4491,7 +4494,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
         }
 
-        List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
+        List<Long> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
         return new ReformatResult(null, plateRowIds.size(), existingPlates.size(), plateSetRowId, plateSetName, plateRowIds, hydratedResults.platedSampleCount(), selectedSampleCount);
     }
 
@@ -4506,7 +4509,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return null;
 
         List<PreviewPlateData> previewData = new ArrayList<>();
-        Map<Integer, PlateType> plateTypes = new HashMap<>();
+        Map<Long, PlateType> plateTypes = new LongHashMap<>();
 
         for (PlateType type : allPlateTypes)
             plateTypes.put(type.getRowId(), type);
@@ -4611,7 +4614,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
-    private @NotNull List<Integer> getSourcePlateRowIds(ReformatOptions options, LayoutOperation layoutOperation) throws ValidationException
+    private @NotNull List<Long> getSourcePlateRowIds(ReformatOptions options, LayoutOperation layoutOperation) throws ValidationException
     {
         boolean hasPlateRowIds = options.getPlateRowIds() != null && !options.getPlateRowIds().isEmpty();
 
@@ -4623,7 +4626,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         else if (!hasPlateRowIds && !hasPlateSelectionKey && layoutOperation.requiresSourcePlates())
             throw new ValidationException("Either \"plateRowIds\" or \"plateSelectionKey\" must be specified for this operation.");
 
-        List<Integer> plateRowIds = emptyList();
+        List<Long> plateRowIds = emptyList();
         if (hasPlateRowIds)
             plateRowIds = options.getPlateRowIds();
         else if (selectionKey != null)
@@ -4632,7 +4635,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (plateRowIds.isEmpty() && layoutOperation.requiresSourcePlates())
             throw new ValidationException("No source plates are specified.");
 
-        for (Integer plateRowId : plateRowIds)
+        for (Long plateRowId : plateRowIds)
         {
             if (plateRowId == null)
                 throw new ValidationException("An invalid null plate row id was specified.");
@@ -4735,7 +4738,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         List<Plate> sourcePlates = new ArrayList<>();
         PlateSet sourcePlateSet = null;
-        for (Integer plateRowId : getSourcePlateRowIds(options, layoutOperation))
+        for (Long plateRowId : getSourcePlateRowIds(options, layoutOperation))
         {
             Plate sourcePlate = requirePlate(container, plateRowId, null);
             PlateSet plateSet = sourcePlate.getPlateSet();
@@ -4776,13 +4779,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateData;
     }
 
-    public @NotNull Pair<Collection<Integer>, Integer> resolveSelectedSamples(String sampleSelectionKey, @NotNull PlateSetImpl targetPlateSet) throws ValidationException
+    public @NotNull Pair<Collection<Long>, Integer> resolveSelectedSamples(String sampleSelectionKey, @NotNull PlateSetImpl targetPlateSet) throws ValidationException
     {
         String selectionKey = StringUtils.trimToNull(sampleSelectionKey);
         if (selectionKey == null)
             return Pair.of(emptyList(), null);
 
-        Collection<Integer> sampleIds = getSelection(selectionKey).stream().toList();
+        Collection<Long> sampleIds = getSelection(selectionKey).stream().toList();
         if (sampleIds.isEmpty())
             throw new ValidationException("Empty sample selection.");
 
@@ -4860,7 +4863,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (well == null)
                 continue;
 
-            int sourcePlateId = well.sourcePlateId();
+            long sourcePlateId = well.sourcePlateId();
 
             if (sourcePlateId > 0)
             {
@@ -4929,7 +4932,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             WellLayout.Well well = wellLayout.getWell(rowIdx, colIdx);
             if (well != null)
             {
-                Integer sampleId = well.sourceSampleId();
+                Long sampleId = well.sourceSampleId();
                 d.setSampleId(sampleId);
                 if (sampleId != null)
                     context.platedSampleIds().add(sampleId);
@@ -4950,7 +4953,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<WellLayout> wellLayouts,
         ReformatOptions options,
         LayoutOperation operation,
-        Set<Integer> platedSampleIds,
+        Set<Long> platedSampleIds,
         WellData.Cache wellDataCache
     ) {}
 
@@ -5009,9 +5012,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private class BulkPlateIndexer extends Thread
     {
-        Map<Container, Set<Integer>> _plates;
+        Map<Container, Set<Long>> _plates;
 
-        public BulkPlateIndexer(Map<Container, Set<Integer>> plates)
+        public BulkPlateIndexer(Map<Container, Set<Long>> plates)
         {
             _plates = plates;
         }
@@ -5019,9 +5022,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         @Override
         public void run()
         {
-            for (Map.Entry<Container, Set<Integer>> entry : _plates.entrySet())
+            for (Map.Entry<Container, Set<Long>> entry : _plates.entrySet())
             {
-                for (Integer plateId : entry.getValue())
+                for (Long plateId : entry.getValue())
                 {
                     LOG.debug("Indexing plate ID " + plateId);
                     indexPlate(entry.getKey(), plateId, true);

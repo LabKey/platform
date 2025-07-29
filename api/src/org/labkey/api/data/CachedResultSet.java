@@ -368,7 +368,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
     {
         if (null == o)
             return 0;
-        if (o instanceof Long || o instanceof Short || o instanceof Byte)
+        if (o instanceof Long || o instanceof Integer || o instanceof Short || o instanceof Byte)
             return ((Number) o).longValue();
         throwConversionError("Can't convert '" + o.getClass() + "' to long");
         return 0;

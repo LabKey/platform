@@ -30,21 +30,21 @@ public abstract class AbstractRunInput extends IdentifiableBase
 {
     private final String _defaultRole;
 
-    private int _targetApplicationId;
+    private long _targetApplicationId;
     protected String _role;
-    protected Integer _protocolInputId;
+    protected Long _protocolInputId;
 
     protected AbstractRunInput(String defaultRole)
     {
         _defaultRole = defaultRole;
     }
 
-    public int getTargetApplicationId()
+    public long getTargetApplicationId()
     {
         return _targetApplicationId;
     }
 
-    public void setTargetApplicationId(int targetApplicationId)
+    public void setTargetApplicationId(long targetApplicationId)
     {
         _targetApplicationId = targetApplicationId;
     }
@@ -70,20 +70,20 @@ public abstract class AbstractRunInput extends IdentifiableBase
         _role = role;
     }
 
-    public Integer getProtocolInputId()
+    public Long getProtocolInputId()
     {
         return _protocolInputId;
     }
 
-    public void setProtocolInputId(Integer protocolInputId)
+    public void setProtocolInputId(Long protocolInputId)
     {
         _protocolInputId = protocolInputId;
     }
 
-    protected abstract int getInputKey();
+    protected abstract long getInputKey();
 
 
-    protected static String lsid(String namespace, int inputKey, int targetApplicationId)
+    protected static String lsid(String namespace, long inputKey, long targetApplicationId)
     {
         if (targetApplicationId == 0 || inputKey == 0)
             throw new IllegalStateException("LSID requires targetApplicationId and input id");
@@ -115,8 +115,8 @@ public abstract class AbstractRunInput extends IdentifiableBase
     @Override
     public int hashCode()
     {
-        int result = getInputKey();
-        result = 31 * result + _targetApplicationId;
+        int result = (int)getInputKey();
+        result = 31 * result + (int)_targetApplicationId;
         result = 31 * result + (_role == null ? 0 : _role.hashCode());
         result = 31 * result + (_protocolInputId == null ? 0 : _protocolInputId.hashCode());
         return result;

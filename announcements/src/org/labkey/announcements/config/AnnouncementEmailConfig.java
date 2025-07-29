@@ -81,7 +81,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
         if (selectedOption != null)
         {
             int newOption = NumberUtils.toInt((String)selectedOption);
-            for (Integer selected : DataRegionSelection.getSelectedIntegers(context, true))
+            for (Long selected : DataRegionSelection.getSelectedIntegers(context, true))
             {
                 User projectUser = UserManager.getUser(selected);
                 int currentEmailOption = AnnouncementManager.getUserEmailOption(context.getContainer(), projectUser, srcIdentifier);

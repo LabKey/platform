@@ -174,7 +174,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
             return new ActionURL(defaultActionClass, getContainer());
     }
 
-    protected HtmlString getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Integer qcStateId)
+    protected HtmlString getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Long qcStateId)
     {
         HtmlStringBuilder qcStateHtml = HtmlStringBuilder.of();
         qcStateHtml.unsafeAppend("          <td>");

@@ -15,6 +15,7 @@
  */
 package org.labkey.specimen.report;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.CustomView;
@@ -54,7 +55,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private final boolean _viewPtidList;
     private final boolean _viewVialCount;
     private final String _title;
-    private final Map<Integer, Integer> _nonEmptyColumns = new HashMap<>();
+    private final Map<Integer, Integer> _nonEmptyColumns = new IntHashMap<>();
 
     protected final Container _container;
     protected final SimpleFilter _filter;
@@ -254,7 +255,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     public class Row
     {
         private final SpecimenReportTitle[] _titleHierarchy;
-        private final Map<Integer, CELLDATA> _visitData = new HashMap<>();
+        private final Map<Integer, CELLDATA> _visitData = new IntHashMap<>();
 
         public Row(String[] stringHierarchy)
         {

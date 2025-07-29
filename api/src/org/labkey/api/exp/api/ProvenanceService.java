@@ -90,27 +90,27 @@ public interface ProvenanceService
     /**
      * Get list of provenance input LSIDs and output LSIDs for a protocol application.
      */
-    Set<Pair<String,String>> getProvenanceObjectUris(int protocolAppId);
+    Set<Pair<String,String>> getProvenanceObjectUris(long protocolAppId);
 
     /**
      * Get all input and output lsids for a protocol application.
      */
-    Set<String> getProvenanceObjectUriSet(int protocolAppId);
+    Set<String> getProvenanceObjectUriSet(long protocolAppId);
 
     /**
      * Get list of provenance input object IDs and output object IDs for a protocol application.
      */
-    Set<Pair<Integer, Integer>> getProvenanceObjectIds(int protocolAppId);
+    Set<Pair<Long, Long>> getProvenanceObjectIds(long protocolAppId);
 
     /**
      * Delete provenance for a single protocol application.
      */
-    void deleteProvenance(int protocolAppId);
+    void deleteProvenance(long protocolAppId);
 
     /**
      * Delete provenance for all protocol applications within the run.
      */
-    void deleteRunProvenance(int runId);
+    void deleteRunProvenance(long runId);
 
     void deleteProvenanceByLsids(
             Container c, User user, @NotNull Collection<String> lsids,
@@ -124,7 +124,7 @@ public interface ProvenanceService
     /**
      * Delete provenance for a assay result row.
      */
-    void deleteObjectProvenance(int objectId);
+    void deleteObjectProvenance(long objectId);
 
     /**
      * Get protocol applications for the lsid

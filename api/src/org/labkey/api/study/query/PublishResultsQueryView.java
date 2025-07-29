@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -127,7 +128,7 @@ public class PublishResultsQueryView extends QueryView
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
                                    Dataset.PublishSource publishSource,
                                    FieldKey objectIdFieldKey,
-                                   List<Integer> objectIds,
+                                   List<Long> objectIds,
                                    @Nullable Container targetStudyContainer,
                                    Map<Object, String> reshowTargetStudies,
                                    Map<Object, String> reshowVisits,
@@ -313,7 +314,7 @@ public class PublishResultsQueryView extends QueryView
 
         private final Map<LinkToStudyKeys, ColumnInfo> _linkedColumnMap;
         private final ColumnInfo _objectIdCol;
-        private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
+        private final Map<Integer, ParticipantVisitResolver> _resolvers = new IntHashMap<>();
 
         private Map<Object, String> _reshowVisits;
         private Map<Object, String> _reshowDates;

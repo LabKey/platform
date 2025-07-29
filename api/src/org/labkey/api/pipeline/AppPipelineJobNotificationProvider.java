@@ -284,7 +284,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     {
         ActionURL appURL = getAppURL(job.getContainer());
         String urlFragment = "/pipeline";
-        Integer jobId = PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID());
+        Long jobId = PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID());
         if (jobId != null)
             urlFragment = urlFragment + "/" + jobId;
 

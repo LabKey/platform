@@ -317,7 +317,7 @@ public class RenderAssayBean extends RenderAssayForm
                 entityId, pageUrl, discussionTitle, true, false);
     }
 
-    public int getRunId()
+    public long getRunId()
     {
         return _assay.getRun().getRowId();
     }

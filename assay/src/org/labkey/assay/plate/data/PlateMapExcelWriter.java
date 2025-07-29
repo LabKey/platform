@@ -10,6 +10,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -43,7 +44,7 @@ public class PlateMapExcelWriter extends ExcelWriter
 
     // Map of Row label (A, B, etc.) to Column Data, which is a Map of Column Label (1, 2, etc.) to Well Data (Sample
     // ID, metadata column values)
-    private final Map<Integer, Map<Integer, RowMap<Object>>> _wellData = new HashMap<>();
+    private final Map<Integer, Map<Integer, RowMap<Object>>> _wellData = new IntHashMap<>();
 
     public PlateMapExcelWriter(Plate plate, List<DisplayColumn> displayColumns, QueryView queryView) throws SQLException, IOException
     {

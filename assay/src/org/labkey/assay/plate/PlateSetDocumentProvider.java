@@ -56,7 +56,7 @@ public class PlateSetDocumentProvider implements SearchService.DocumentProvider
         return getDocumentId(plateSet.getContainer(), plateSet.getRowId());
     }
 
-    public static String getDocumentId(@NotNull Container container, int plateSetRowId)
+    public static String getDocumentId(@NotNull Container container, long plateSetRowId)
     {
         return getDocumentIdPrefix() + container.getId() + ":" + plateSetRowId;
     }

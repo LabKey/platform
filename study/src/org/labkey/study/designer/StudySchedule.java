@@ -18,6 +18,7 @@ package org.labkey.study.designer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
@@ -145,7 +146,7 @@ public class StudySchedule implements ApiJsonForm
     private JSONArray serializeData(User user, List<DatasetDefinition> datasets, Collection<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
-        Map<Integer, VisitImpl> visitMap = new HashMap<>();
+        Map<Integer, VisitImpl> visitMap = new IntHashMap<>();
 
         for (VisitImpl visit : visits)
             visitMap.put(visit.getRowId(), visit);

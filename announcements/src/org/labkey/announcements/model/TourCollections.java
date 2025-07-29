@@ -16,6 +16,7 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.IntHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +30,7 @@ import java.util.Map;
  */
 public class TourCollections
 {
-    private final Map<Integer, TourModel> toursByRowId = new HashMap<>();
+    private final Map<Integer, TourModel> toursByRowId = new IntHashMap<>();
     private final Map<String, TourModel> toursByEntityId = new HashMap<>();
     private final List<TourModel> toursList = new ArrayList<>();
 

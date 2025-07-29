@@ -145,7 +145,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         return false;
     }
 
-    public int moveEvents(Container targetContainer, Collection<Integer> sampleIds)
+    public int moveEvents(Container targetContainer, Collection<Long> sampleIds)
     {
         return moveEvents(targetContainer, SAMPLE_ID_COLUMN_NAME, sampleIds);
     }

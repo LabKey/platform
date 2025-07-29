@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,7 @@ import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -136,7 +138,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -217,7 +218,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    public ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Long, PublishKey> dataKeys, List<String> errors)
     {
         try
         {
@@ -238,7 +239,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             List<Map<String, Object>> dataMaps = new ArrayList<>();
             Container sourceContainer = null;
-            Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
+            Map<Container, Set<Long>> rowIdsByTargetContainer = new HashMap<>();
 
             try (ResultSet rs = new SqlSelector(dataTable.getSchema(), sql).getResultSet())
             {
@@ -282,7 +283,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to link, partitioned by the target study
-                    Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
+                    Set<Long> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
                     if (rowIds == null)
                     {
                         rowIds = new HashSet<>();
@@ -310,7 +311,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    protected String getSourceLSID(String runLSID, int dataId, int resultRowId)
+    protected String getSourceLSID(String runLSID, long dataId, int resultRowId)
     {
         return runLSID;
     }
@@ -775,7 +776,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     // CONSIDER: combining with .getTargetStudy()
     // UNDONE: Doesn't look at TargetStudy in Results domain yet.
     @Override
-    public Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Integer> rowIds)
+    public Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Long> rowIds)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
         if (pair == null)
@@ -819,22 +820,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Nullable
-    public final ExpData getDataForDataRow(int resultRowId, ExpProtocol protocol)
+    public final ExpData getDataForDataRow(long resultRowId, ExpProtocol protocol)
     {
         Set<ExpData> matches = getDatasForResultRows(Collections.singleton(resultRowId), protocol, new ResolverCache());
         return matches.isEmpty() ? null : matches.iterator().next();
     }
 
     /** Resolve result rows to their owning ExpData object. Optional method for assays that support link to study */
-    public Set<ExpData> getDatasForResultRows(Collection<Integer> rowIds, ExpProtocol protocol, ResolverCache cache)
+    public Set<ExpData> getDatasForResultRows(Collection<Long> rowIds, ExpProtocol protocol, ResolverCache cache)
     {
         return Collections.emptySet();
     }
 
     public static class ResolverCache
     {
-        private final Map<Integer, ExpData> _dataById = new HashMap<>();
-        private final Map<Integer, ExpRun> _runById = new HashMap<>();
+        private final Map<Long, ExpData> _dataById = new LongHashMap<>();
+        private final Map<Long, ExpRun> _runById = new LongHashMap<>();
         private final Map<ExpRun, ExpExperiment> _batchByRun = new HashMap<>();
 
         private <K, T extends ExpObject> T get(K key, Map<K, T> cache, Supplier<T> supplier)
@@ -854,12 +855,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         }
 
-        public ExpData getDataById(int dataId)
+        public ExpData getDataById(long dataId)
         {
             return get(dataId, _dataById, () -> ExperimentService.get().getExpData(dataId));
         }
 
-        public ExpRun getRun(int runId)
+        public ExpRun getRun(long runId)
         {
             return get(runId, _runById, () -> ExperimentService.get().getExpRun(runId));
         }
@@ -1229,7 +1230,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 for (ExpMaterial material : protApp.getInputMaterials())
                     newInputs.remove(material);
 
-                Map<String, Set<Integer>> inputGroups = new HashMap<>();
+                Map<String, Set<Long>> inputGroups = new HashMap<>();
                 for (Map.Entry<ExpMaterial, String> entry : newInputs.entrySet())
                 {
                     ExpMaterial newInput = entry.getKey();
@@ -1795,7 +1796,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}
 
-    public record AssayMoveData(Map<String, Integer> counts, Map<Integer, List<AssayFileMoveData>> fileMovesByRunId) {}
+    public record AssayMoveData(Map<String, Integer> counts, Map<Long, List<AssayFileMoveData>> fileMovesByRunId) {}
 
     @Override
     public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException
@@ -1816,7 +1817,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // update ExperimentRun container, filepathroot, modified/modifiedby
         String filePathRoot = AssayRunUploadForm.getAssayDirectory(targetContainer, null).getAbsolutePath();
         TableInfo runsTable = experimentService.getTinfoExperimentRun();
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(runsTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
@@ -1880,23 +1881,23 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private void moveRunsBatch(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
-        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+        Map<Long, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
         Map<String, Integer> updateCounts = assayMoveData.counts;
 
         TableInfo experimentTable = ExperimentService.get().getTinfoExperiment();
         TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
-        List<Integer> runBatchIds = runs.stream().map(ExpRun::getBatch).filter(Objects::nonNull).map(ExpExperiment::getRowId).toList();
+        List<Long> runBatchIds = runs.stream().map(ExpRun::getBatch).filter(Objects::nonNull).map(ExpExperiment::getRowId).toList();
 
-        Map<Integer, ExpExperiment> batches = new HashMap<>();
-        Map<Integer, ExpRun> batchRun = new HashMap<>();
+        Map<Long, ExpExperiment> batches = new LongHashMap<>();
+        Map<Long, ExpRun> batchRun = new LongHashMap<>();
         Set<String> batchLsids = new HashSet<>();
         for (ExpRun expRun : runs)
         {
             ExpExperiment batch = expRun.getBatch();
             if (batch == null)
                 continue;
-            Integer batchId = batch.getRowId();
+            Long batchId = batch.getRowId();
             if (!batches.containsKey(batchId))
             {
                 batches.put(batchId, batch);
@@ -1905,15 +1906,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
 
-        Set<Integer> batchRowIds = batches.keySet();
+        Set<Long> batchRowIds = batches.keySet();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("batchid"), batchRowIds, IN);
         TableSelector ts = new TableSelector(runsTable, runsTable.getColumns("rowid"), filter, null);
-        List<Integer> allBatchRuns = ts.getArrayList(Integer.class);
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        List<Long> allBatchRuns = ts.getArrayList(Long.class);
+        List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         if (allBatchRuns.size() > runRowIds.size())
             throw new IllegalArgumentException("All runs from the same batch must be selected for move operation.");
-        for (Integer runId : allBatchRuns)
+        for (Long runId : allBatchRuns)
         {
             if (!runRowIds.contains(runId))
                 throw new IllegalArgumentException("All runs from the same batch must be selected for move operation.");
@@ -1975,7 +1976,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
 
                         ExpRun run = batchRun.get(experiment.getRowId());
-                        Integer runId = run.getRowId();
+                        Long runId = run.getRowId();
                         movedFiles.putIfAbsent(runId, new ArrayList<>());
                         movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
                     }
@@ -2007,7 +2008,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
-        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+        Map<Long, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
         ExpProtocol assayProtocol = runs.get(0).getProtocol();
 
@@ -2056,7 +2057,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         fileMoveCounts.put(sourceFileName, 0);
                     fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
 
-                    Integer runId = run.getRowId();
+                    Long runId = run.getRowId();
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
                 }
@@ -2078,14 +2079,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private void updateDataFileUrl(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
     {
-        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+        Map<Long, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
         TableInfo expDataTable = ExperimentService.get().getTinfoData();
 
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("runid"), runRowIds, IN);
         TableSelector ts = new TableSelector(expDataTable, expDataTable.getColumns("runid","datafileurl"), filter, null);
-        Map<Integer, String> runFile = ts.getValueMap();
+        Map<Long, String> runFile = ts.getValueMap();   // TODO BIGINT
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService == null)
             return;
@@ -2093,9 +2094,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (runFile.isEmpty())
             return;
 
-        Map<Integer, ExpRun> runMap = new HashMap<>();
+        Map<Long, ExpRun> runMap = new LongHashMap<>();
         runs.forEach(run -> runMap.put(run.getRowId(), run));
-        for (Integer runId : runFile.keySet())
+        for (Long runId : runFile.keySet())
         {
             String oldFileUrl = runFile.get(runId);
             if (StringUtils.isEmpty(oldFileUrl))
@@ -2109,7 +2110,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFile.getAbsolutePath(), sourceContainer, targetContainer);
                 if (updatedFile != null)
                 {
-                    ExpRun run = runMap.get(runId);
+                    ExpRun run = runMap.get(runId.longValue());
                     if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile, 1))
                         throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
@@ -2160,17 +2161,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (fileFields.isEmpty())
             return;
 
-        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+        Map<Long, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
         SimpleFilter filter = new SimpleFilter();
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         filter.addCondition(FieldKey.fromParts("run"), runRowIds, IN);
 
-        Map<Integer, ExpRun> runMap = new HashMap<>();
+        Map<Long, ExpRun> runMap = new LongHashMap<>();
         runs.forEach(run -> runMap.put(run.getRowId(), run));
 
         Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
-        Map<String, List<Integer>> fileMoveResultRowIds = new HashMap<>();
+        Map<String, List<Long>> fileMoveResultRowIds = new HashMap<>();
         for (String fileField : fileFields)
         {
             var fileColumn = assayResultTable.getColumn(fileField);
@@ -2182,8 +2183,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 String sourceFileName = (String) fileColumn.getValue(resultRow);
                 if (StringUtils.isEmpty(sourceFileName))
                     continue;
-                Integer resultRowId = (Integer) resultRow.get("rowid");
-                Integer resultRunId = (Integer) resultRow.get("run");
+                Long resultRowId = MapUtils.getLong(resultRow,"rowid");
+                Long resultRunId = MapUtils.getLong(resultRow,"run");
                 if (!fileMoveResultRowIds.containsKey(sourceFileName))
                     fileMoveResultRowIds.put(sourceFileName, new ArrayList<>());
                 fileMoveResultRowIds.get(sourceFileName).add(resultRowId);

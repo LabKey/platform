@@ -112,7 +112,7 @@ public interface InventoryService
 
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache);
 
-    Map<String, Integer> moveSamples(Collection<Integer> sampleIds, Container targetContainer, User user);
+    Map<String, Integer> moveSamples(Collection<Long> sampleIds, Container targetContainer, User user);
 
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);

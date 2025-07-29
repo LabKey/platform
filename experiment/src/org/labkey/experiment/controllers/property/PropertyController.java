@@ -42,6 +42,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DbSchema;
@@ -1958,7 +1959,7 @@ public class PropertyController extends SpringActionController
             // If we have the selected domains, then align the default values
             if (domains != null)
             {
-                Map<Integer, Object> defaultValues = new HashMap<>();
+                Map<Integer, Object> defaultValues = new IntHashMap<>();
                 for (Domain domain : domains)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
@@ -2297,7 +2298,7 @@ public class PropertyController extends SpringActionController
 
             // create some exp.object and attach properties
             Lsid a1Lsid = lsidBuilder.setObjectId("A1").build();
-            int a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
+            long a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
             Identifiable a1 = LsidManager.get().getObject(a1Lsid);
             assertNotNull(a1);
             OntologyManager.insertProperties(c, user, a1Lsid.toString(), true, true,

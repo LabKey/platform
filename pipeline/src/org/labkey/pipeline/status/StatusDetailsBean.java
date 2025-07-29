@@ -43,7 +43,7 @@ public class StatusDetailsBean
 {
     public static final Logger LOG = LogManager.getLogger(StatusDetailsBean.class);
 
-    public final int rowId;
+    public final long rowId;
     public final String jobId;
     public final String created;
     public final String modified;
@@ -220,12 +220,12 @@ public class StatusDetailsBean
 
     public static class StatusDetailRun
     {
-        public final int rowId;
+        public final long rowId;
         public final String name;
         public final String lsid;
         public final ActionURL url;
 
-        public StatusDetailRun(int rowId, String name, String lsid, ActionURL detailsURL)
+        public StatusDetailRun(long rowId, String name, String lsid, ActionURL detailsURL)
         {
             this.rowId = rowId;
             this.name = name;
@@ -245,12 +245,12 @@ public class StatusDetailsBean
         public final ActionURL viewUrl;
         public final ActionURL downloadUrl;
 
-        public StatusDetailFile(Container c, int rowId, Path path)
+        public StatusDetailFile(Container c, long rowId, Path path)
         {
             this(c, rowId, path.getFileName().toString());
         }
 
-        public StatusDetailFile(Container c, int rowId, String fileName)
+        public StatusDetailFile(Container c, long rowId, String fileName)
         {
             this.name = fileName;
             this.viewUrl = StatusController.urlShowFile(c, rowId, name, false);

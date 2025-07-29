@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -470,7 +471,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run, List<Plate> plates, User user,
                                                                List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
-    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, int... dataObjectIds) throws ExperimentException, SQLException;
+    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException, SQLException;
 
     protected DilutionDataFileParser getDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
     {
@@ -617,7 +618,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
 
-        Map<Integer, String> cutoffs = new HashMap<>();
+        Map<Integer, String> cutoffs = new IntHashMap<>();
         for (String cutoffPropName : DilutionAssayProvider.CUTOFF_PROPERTIES)
         {
             DomainProperty cutoffProp = runProperties.get(cutoffPropName);

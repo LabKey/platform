@@ -3,6 +3,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -43,7 +44,7 @@ import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
  */
 public class SampleParticipantVisitResolver extends StudyParticipantVisitResolver
 {
-    private final Map<Integer, Pair<Boolean, ParticipantVisit>> _resolvedSamples = new HashMap<>();
+    private final Map<Integer, Pair<Boolean, ParticipantVisit>> _resolvedSamples = new IntHashMap<>();
     private Map<LinkToStudyKeys, FieldKey> _fieldKeyMap;
 
     public SampleParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)

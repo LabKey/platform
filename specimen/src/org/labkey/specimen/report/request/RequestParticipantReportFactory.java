@@ -15,6 +15,7 @@
  */
 package org.labkey.specimen.report.request;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -113,7 +114,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         }
 
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        Map<Integer, Collection<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visit
+        Map<Integer, Collection<? extends Visit>> visitListCache = new IntHashMap<>(); // cohort rowId -> visit
         boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
         Collection<? extends Visit> allVisits = null;
         Study study = StudyService.get().getStudy(getContainer());

@@ -212,8 +212,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName);
     boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options);
 
-    Integer getJobId(User u, Container c, String jobGUID);
-    String getJobGUID(User u, Container c, int rowId);
+    Long getJobId(User u, Container c, String jobGUID);
+    String getJobGUID(User u, Container c, long rowId);
 
     PathAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
 
@@ -256,7 +256,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     @Nullable
     File getProtocolParametersFile(ExpRun expRun);
 
-    void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
+    void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Long> rowIds) throws PipelineProvider.HandlerException;
 
     PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name);
 

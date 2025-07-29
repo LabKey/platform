@@ -26,6 +26,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AssayResultsFileConverter;
 import org.labkey.api.data.ColumnInfo;
@@ -239,7 +240,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         User user = context.getUser();
 
         AssayRunUploadContext<?> runUploadContext = ((AssayUploadXarContext)context).getContext();
-        Integer plateSetId = AssayPlateMetadataService.get().getPlateSetId(runUploadContext, provider, protocol);
+        Long plateSetId = AssayPlateMetadataService.get().getPlateSetId(runUploadContext, provider, protocol);
         DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, runUploadContext, data, provider,
                 protocol, plateSetId, dataFile, settings);
 
@@ -361,7 +362,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             ExpRun run = entry.getKey();
             List<ExpData> dataForRun = entry.getValue();
-            List<Integer> dataIds = dataForRun.stream().map(ExpData::getRowId).collect(toList());
+            List<Long> dataIds = dataForRun.stream().map(ExpData::getRowId).collect(toList());
 
             ExpProtocol protocol = run.getProtocol();
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -615,7 +616,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         else
         {
-            Integer id = OntologyManager.ensureObject(container, data.getLSID());
+            var id = OntologyManager.ensureObject(container, data.getLSID());
             OntologyManager.insertTabDelimited(container, user, id, importHelper, dataDomain, fileData, false, rowCallback);
         }
     }
@@ -710,7 +711,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         RemapCache cache = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
-        Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+        Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
 
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeById = new HashMap<>();
@@ -1007,7 +1008,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                         }
                         else if (o instanceof Number n)
-                            material = materialCache.computeIfAbsent(n.intValue(), (id) -> exp.getExpMaterial(id, containerFilter));
+                            material = materialCache.computeIfAbsent(n.longValue(), (id) -> exp.getExpMaterial(id, containerFilter));
 
                         if (material != null)
                         {

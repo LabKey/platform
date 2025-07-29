@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 {
-    private int rowId;
+    private long rowId;
     protected String entityId;
     private int createdBy;
     private long created = 0;
@@ -123,13 +123,14 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
         this.modified = modified == null ? 0 : modified.getTime();
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
+        assert rowId > 0;
         this.rowId = rowId;
     }
 

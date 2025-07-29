@@ -30,20 +30,20 @@ public class PlateSetImpl extends Entity implements PlateSet
     private String _description;
     private String _name;
     private String _plateSetId;
-    private Integer _primaryPlateSetId;
-    private Integer _rootPlateSetId;
-    private Integer _rowId;
+    private Long _primaryPlateSetId;
+    private Long _rootPlateSetId;
+    private Long _rowId;
     private boolean _template;
     private PlateSetType _type;
     private String _lsid;
 
     @Override
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
@@ -196,23 +196,23 @@ public class PlateSetImpl extends Entity implements PlateSet
         _description = description;
     }
 
-    public Integer getPrimaryPlateSetId()
+    public Long getPrimaryPlateSetId()
     {
         return _primaryPlateSetId;
     }
 
-    public void setPrimaryPlateSetId(Integer primaryPlateSetId)
+    public void setPrimaryPlateSetId(Long primaryPlateSetId)
     {
         _primaryPlateSetId = primaryPlateSetId;
     }
 
     @Override
-    public Integer getRootPlateSetId()
+    public Long getRootPlateSetId()
     {
         return _rootPlateSetId;
     }
 
-    public void setRootPlateSetId(Integer rootPlateSetId)
+    public void setRootPlateSetId(Long rootPlateSetId)
     {
         _rootPlateSetId = rootPlateSetId;
     }

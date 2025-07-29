@@ -1688,7 +1688,7 @@ public class AdminController extends SpringActionController
             if (null == jobGuid)
                 throw new NotFoundException("Unable to determine pipeline job GUID");
 
-            Integer jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
+            Long jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
 
             if (null == jobId)
                 throw new NotFoundException("Unable to determine pipeline job ID");
@@ -3538,7 +3538,7 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class SystemMaintenanceAction extends FormHandlerAction<SystemMaintenanceForm>
     {
-        private Integer _jobId = null;
+        private Long _jobId = null;
         private URLHelper _url = null;
 
         @Override

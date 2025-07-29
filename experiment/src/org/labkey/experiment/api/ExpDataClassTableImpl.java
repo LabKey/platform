@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -277,7 +278,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             String description = (String)row.get("description");
             String nameExpression = (String)row.get("nameExpression");
-            Integer materialSourceId = (Integer)row.get("sampleSet");
+            Long materialSourceId = MapUtils.getLong(row,"sampleSet");
             String category = (String)row.get("category");
 
             try

@@ -97,7 +97,7 @@ public class QCStateSet
     private static List<DataState> getStatesForIds(Container container, int[] stateRowIds)
     {
         List<DataState> stateSet = new ArrayList<>();
-        for (int stateRowId : stateRowIds)
+        for (long stateRowId : stateRowIds)
         {
             DataState state = QCStateManager.getInstance().getStateForRowId(container, stateRowId);
             if (state != null)

@@ -1310,7 +1310,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @Override
-        public Integer getWorkflowTask()
+        public @Nullable Long getWorkflowTask()
         {
             return null;
         }
@@ -1365,7 +1365,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @Override
-        public Integer getReRunId()
+        public Long getReRunId()
         {
             throw new UnsupportedOperationException("Not Supported");
         }

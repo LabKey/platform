@@ -698,7 +698,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         {
             String inputQCText = (String)DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_LABEL_COLNAME));
             QCStateImportHelper qcih = new QCStateImportHelper(user, _dataset, true, StudyManager.getInstance().getDefaultQCState(_dataset.getStudy()));
-            Integer qcState = qcih.translateQCState(inputQCText);
+            Long qcState = qcih.translateQCState(inputQCText);
             if (qcState != null)
                 row.put(DatasetTableImpl.QCSTATE_ID_COLNAME, qcState);
         }

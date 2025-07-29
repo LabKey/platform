@@ -154,7 +154,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
@@ -202,7 +202,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return true;
     }
 
-    protected void setBatchId(Integer batchId)
+    protected void setBatchId(Long batchId)
     {
         assert batchId == null || checkBatch(ExperimentServiceImpl.get().getExpExperiment(batchId));
         _object.setBatchId(batchId);
@@ -415,14 +415,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public void setJobId(Integer jobId)
+    public void setJobId(Long jobId)
     {
         ensureUnlocked();
         _object.setJobId(jobId);
     }
 
     @Override
-    public Integer getJobId()
+    public Long getJobId()
     {
         return _object.getJobId();
     }
@@ -519,7 +519,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public ExpRun getReplacedByRun()
     {
-        Integer id = _object.getReplacedByRunId();
+        Long id = _object.getReplacedByRunId();
         if (id == null)
         {
             return null;
@@ -1041,7 +1041,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public void setWorkflowTaskId(@Nullable Integer workflowTaskId)
+    public void setWorkflowTaskId(@Nullable Long workflowTaskId)
     {
         _object.setWorkflowTask(workflowTaskId);
     }
@@ -1049,7 +1049,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public ExpProtocolApplication getWorkflowTask()
     {
-        Integer id = _object.getWorkflowTask();
+        Long id = _object.getWorkflowTask();
 
         if (id == null) {
             return null;

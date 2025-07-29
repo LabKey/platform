@@ -762,7 +762,7 @@
 </table>
 <%!
 
-    Map<Integer, DataState> qcstates = null;
+    Map<Long, DataState> qcstates = null;
 
     DataState getQCState(Study study, Integer id)
     {

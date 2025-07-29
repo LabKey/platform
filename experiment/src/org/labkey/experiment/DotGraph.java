@@ -17,6 +17,7 @@ package org.labkey.experiment;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -24,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -55,15 +55,15 @@ public class DotGraph
     private final PrintWriter _pwOut;
     private final Container _c;
 
-    private final SortedMap<Integer, DotNode> _pendingMNodes = new TreeMap<>();
-    private final SortedMap<Integer, DotNode> _pendingDNodes = new TreeMap<>();
-    private final SortedMap<Integer, DotNode> _pendingProcNodes = new TreeMap<>();
-    private final Map<Integer, GroupedNode> _groupMNodes = new HashMap<>();
-    private final Map<Integer, GroupedNode> _groupDNodes = new HashMap<>();
-    private final Map<Integer, GroupedNode> _groupPANodes = new HashMap<>();
-    private final Map<Integer, DotNode> _writtenMNodes = new HashMap<>();
-    private final Map<Integer, DotNode> _writtenDNodes = new HashMap<>();
-    private final Map<Integer, DotNode> _writtenProcNodes = new HashMap<>();
+    private final SortedMap<Long, DotNode> _pendingMNodes = new TreeMap<>();
+    private final SortedMap<Long, DotNode> _pendingDNodes = new TreeMap<>();
+    private final SortedMap<Long, DotNode> _pendingProcNodes = new TreeMap<>();
+    private final Map<Long, GroupedNode> _groupMNodes = new LongHashMap<>();
+    private final Map<Long, GroupedNode> _groupDNodes = new LongHashMap<>();
+    private final Map<Long, GroupedNode> _groupPANodes = new LongHashMap<>();
+    private final Map<Long, DotNode> _writtenMNodes = new LongHashMap<>();
+    private final Map<Long, DotNode> _writtenDNodes = new LongHashMap<>();
+    private final Map<Long, DotNode> _writtenProcNodes = new LongHashMap<>();
     private final Set<String> _pendingConnects = new HashSet<>();
     private final Set<String> _writtenConnects = new HashSet<>();
 
@@ -98,22 +98,22 @@ public class DotGraph
         _pwOut.println("}");
     }
 
-    public Integer getPAGroupId(int rowIdPA)
+    public Long getPAGroupId(long rowIdPA)
     {
         return getGroupId(rowIdPA, _pendingProcNodes, _writtenProcNodes);
     }
 
-    public Integer getMGroupId(Integer rowIdM)
+    public Long getMGroupId(Long rowIdM)
     {
         return getGroupId(rowIdM, _pendingMNodes, _writtenMNodes);
     }
 
-    public Integer getDGroupId(int rowIdD)
+    public Long getDGroupId(long rowIdD)
     {
         return getGroupId(rowIdD, _pendingDNodes, _writtenDNodes);
     }
 
-    public @Nullable Integer getGroupId(Integer rowId, Map<Integer, DotNode> pendingNodes, Map<Integer, DotNode> writtenNodes)
+    public @Nullable Long getGroupId(Long rowId, Map<Long, DotNode> pendingNodes, Map<Long, DotNode> writtenNodes)
     {
         DotNode node = null;
         if (pendingNodes.containsKey(rowId))
@@ -128,7 +128,7 @@ public class DotGraph
         return null;
     }
 
-    public void addStartingMaterial(ExpMaterial m, Integer groupId, Integer actionseq, int runId)
+    public void addStartingMaterial(ExpMaterial m, Long groupId, Integer actionseq, long runId)
     {
         DotNode node = new MNode(m);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
@@ -142,7 +142,7 @@ public class DotGraph
         _pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addStartingData(ExpData d, Integer groupId, Integer actionseq, int runId)
+    public void addStartingData(ExpData d, Long groupId, Integer actionseq, long runId)
     {
         DotNode node = new DNode(d);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
@@ -157,7 +157,7 @@ public class DotGraph
         _pendingDNodes.put(d.getRowId(), node);
     }
 
-    private GroupedNode addNodeToGroup(DotNode node, Integer groupId, Integer actionseq, Map<Integer, GroupedNode> groupNodes)
+    private GroupedNode addNodeToGroup(DotNode node, Long groupId, Integer actionseq, Map<Long, GroupedNode> groupNodes)
     {
         GroupedNode gnode;
         if (groupNodes.containsKey(groupId))
@@ -174,7 +174,7 @@ public class DotGraph
         return gnode;
     }
 
-    public void addMaterial(ExpMaterial m, Integer groupId, Integer actionseq, boolean output)
+    public void addMaterial(ExpMaterial m, Long groupId, Integer actionseq, boolean output)
     {
         if (_writtenMNodes.containsKey(m.getRowId()) || _pendingMNodes.containsKey(m.getRowId()))
             return;
@@ -190,7 +190,7 @@ public class DotGraph
         _pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addData(ExpData d, Integer groupId, Integer actionseq, boolean output)
+    public void addData(ExpData d, Long groupId, Integer actionseq, boolean output)
     {
         if (_writtenDNodes.containsKey(d.getRowId()) || _pendingDNodes.containsKey(d.getRowId()))
             return;
@@ -206,7 +206,7 @@ public class DotGraph
         _pendingDNodes.put(d.getRowId(), node);
     }
 
-    public void addProtApp(Integer groupId, int rowId, String name, Integer actionseq)
+    public void addProtApp(Long groupId, long rowId, String name, Integer actionseq)
     {
         if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
@@ -218,7 +218,7 @@ public class DotGraph
         _pendingProcNodes.put(rowId, node);
     }
 
-    public void addOutputNode(Integer groupId, int rowId, String name, Integer actionseq)
+    public void addOutputNode(Long groupId, long rowId, String name, Integer actionseq)
     {
         if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
@@ -228,63 +228,63 @@ public class DotGraph
         _pendingProcNodes.put(rowId, node);
     }
 
-    public void addExpRun(int runId, String name)
+    public void addExpRun(long runId, String name)
     {
         DotNode node = new ExpNode(runId, name);
         _pendingProcNodes.put(runId, node);
     }
 
-    public void addLinkedRun(int runId, String name)
+    public void addLinkedRun(long runId, String name)
     {
         DotNode node = new LinkedExpNode(runId, name);
         _pendingProcNodes.put(runId, node);
     }
 
-    public void connectMaterialToProtocolApp(Integer rowIdM, Integer rowIdPA, String label)
+    public void connectMaterialToProtocolApp(Long rowIdM, Long rowIdPA, String label)
     {
         addConnectorObject(rowIdM, rowIdPA, _pendingMNodes, _writtenMNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
-    public void connectDataToProtocolApp(Integer rowIdD, Integer rowIdPA, String label)
+    public void connectDataToProtocolApp(Long rowIdD, Long rowIdPA, String label)
     {
         addConnectorObject(rowIdD, rowIdPA, _pendingDNodes, _writtenDNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
-    public void connectProtocolAppToMaterial(Integer rowIdPA, Integer rowIdM)
+    public void connectProtocolAppToMaterial(Long rowIdPA, Long rowIdM)
     {
         addConnectorObject(rowIdPA, rowIdM, _pendingProcNodes, _writtenProcNodes, _pendingMNodes, _writtenMNodes, null);
     }
 
-    public void connectProtocolAppToData(Integer rowIdPA, Integer rowIdD)
+    public void connectProtocolAppToData(Long rowIdPA, Long rowIdD)
     {
         addConnectorObject(rowIdPA, rowIdD, _pendingProcNodes, _writtenProcNodes, _pendingDNodes, _writtenDNodes, null);
     }
 
-    public void connectRunToMaterial(Integer runId, Integer rowIdM)
+    public void connectRunToMaterial(Long runId, Long rowIdM)
     {
         addConnectorObject(runId, rowIdM, _pendingProcNodes, null, _pendingMNodes, _writtenMNodes, null);
     }
 
-    public void connectRunToData(Integer runId, Integer rowIdD)
+    public void connectRunToData(Long runId, Long rowIdD)
     {
         addConnectorObject(runId, rowIdD, _pendingProcNodes, null, _pendingDNodes, _writtenDNodes, null);
     }
 
-    public void connectMaterialToRun(Integer rowIdM, Integer runId, String label)
+    public void connectMaterialToRun(Long rowIdM, Long runId, String label)
     {
         addConnectorObject(rowIdM, runId, _pendingMNodes, _writtenMNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
-    public void connectDataToRun(Integer rowIdD, Integer runId, String label)
+    public void connectDataToRun(Long rowIdD, Long runId, String label)
     {
         addConnectorObject(rowIdD, runId, _pendingDNodes, _writtenDNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
-    private void addConnectorObject(Integer srcRow, Integer trgtRow,
-                                    Map<Integer, DotNode> pendingSrcMap,
-                                    @Nullable Map<Integer, DotNode> writtenSrcMap,
-                                    Map<Integer, DotNode> pendingTrgtMap,
-                                    Map<Integer, DotNode> writtenTrgtMap, @Nullable String label)
+    private void addConnectorObject(Long srcRow, Long trgtRow,
+                                    Map<Long, DotNode> pendingSrcMap,
+                                    @Nullable Map<Long, DotNode> writtenSrcMap,
+                                    Map<Long, DotNode> pendingTrgtMap,
+                                    Map<Long, DotNode> writtenTrgtMap, @Nullable String label)
     {
         DotNode src = null;
         DotNode trgt = null;
@@ -348,17 +348,17 @@ public class DotGraph
         _groupPANodes.clear();
     }
 
-    public void writePending(Map<Integer, DotNode> pendingMap, Map<Integer, DotNode> writtenMap)
+    public void writePending(Map<Long, DotNode> pendingMap, Map<Long, DotNode> writtenMap)
     {
-        Set<Integer> nodesToMove = new HashSet<>();
-        for (Integer key : pendingMap.keySet())
+        Set<Long> nodesToMove = new HashSet<>();
+        for (Long key : pendingMap.keySet())
         {
             DotNode node = pendingMap.get(key);
             if (!nodesToMove.contains(key))
                 node.save(_pwOut);
             if (node instanceof GroupedNode)
             {
-                for (Integer memberkey : ((GroupedNode) node)._gMap.keySet())
+                for (Long memberkey : ((GroupedNode) node)._gMap.keySet())
                 {
                     assert (pendingMap.containsKey(memberkey));
                     writtenMap.put(memberkey, node);
@@ -371,7 +371,7 @@ public class DotGraph
                 nodesToMove.add(key);
             }
         }
-        for (Integer removeId : nodesToMove)
+        for (Long removeId : nodesToMove)
         {
             pendingMap.remove(removeId);
         }
@@ -379,7 +379,7 @@ public class DotGraph
 
     private class DotNode
     {
-        private final int _id;
+        private final long _id;
         private final String _type;
 
         protected final String _key;
@@ -394,7 +394,7 @@ public class DotGraph
         protected Float _height = null;
         protected Float _width = null;
 
-        public DotNode(String nodeType, int nodeId, String nodeLabel)
+        public DotNode(String nodeType, long nodeId, String nodeLabel)
         {
             _id = nodeId;
             _type = nodeType;
@@ -521,7 +521,7 @@ public class DotGraph
 
     private class PANode extends DotNode
     {
-        public PANode(int id, String name)
+        public PANode(long id, String name)
         {
             super(TYPECODE_PROT_APP, id, name);
             setShape("diamond", PROTOCOLAPP_COLOR);
@@ -531,7 +531,7 @@ public class DotGraph
 
     private class ExpNode extends PANode
     {
-        public ExpNode(int runid, String name)
+        public ExpNode(long runid, String name)
         {
             super(runid, name);
             setShape("hexagon", EXPRUN_COLOR);
@@ -541,7 +541,7 @@ public class DotGraph
 
     private class LinkedExpNode extends PANode
     {
-        public LinkedExpNode(int runid, String name)
+        public LinkedExpNode(long runid, String name)
         {
             super(runid, name);
             setShape("hexagon", LINKEDRUN_COLOR);
@@ -551,7 +551,7 @@ public class DotGraph
 
     private class OutputNode extends PANode
     {
-        public OutputNode(int id, String name)
+        public OutputNode(long id, String name)
         {
             super(id, name);
             setShape(null, null);
@@ -560,11 +560,11 @@ public class DotGraph
 
     private class GroupedNode extends DotNode
     {
-        private final Integer _gid;
-        private final SortedMap<Integer, DotNode> _gMap = new TreeMap<>();
+        private final Long _gid;
+        private final SortedMap<Long, DotNode> _gMap = new TreeMap<>();
         private final String _nodeType;
 
-        public GroupedNode(Integer groupId, Integer actionseq, DotNode node)
+        public GroupedNode(Long groupId, Integer actionseq, DotNode node)
         {
             super(GROUP_ID_PREFIX + actionseq + node._type, node._id, "More... ");
             _gid = groupId;
@@ -588,7 +588,7 @@ public class DotGraph
 
             String sep = "";
             StringBuilder sbIn = new StringBuilder();
-            for (Integer rowid : _gMap.keySet())
+            for (Long rowid : _gMap.keySet())
             {
                 sbIn.append(sep).append(rowid);
                 sep = ",";

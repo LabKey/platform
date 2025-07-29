@@ -17,6 +17,7 @@
 package org.labkey.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +37,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -230,10 +232,10 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
-                                          List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
+    public void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Long> publishSource,
+                                          List<String> errors, Map<Container, Set<Long>> rowIdsByTargetContainer)
     {
-        for (Map.Entry<Container, Set<Integer>> entry : rowIdsByTargetContainer.entrySet())
+        for (Map.Entry<Container, Set<Long>> entry : rowIdsByTargetContainer.entrySet())
         {
             Study targetStudy = StudyService.get().getStudy(entry.getKey());
 
@@ -263,7 +265,7 @@ public class StudyPublishManager implements StudyPublishService
 
     @Override
     public ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
-                                 Pair<Dataset.PublishSource, Integer> publishSource,
+                                 Pair<Dataset.PublishSource, Long> publishSource,
                                  List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
         return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, types, null, errors);
@@ -271,14 +273,14 @@ public class StudyPublishManager implements StudyPublishService
 
     @Override
     public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
-                                 String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
+                                 String sourceName, Pair<Dataset.PublishSource, Long> publishSource,
                                  List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
         return publishData(user, sourceContainer, targetContainer, datasetCategory, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
     }
 
     private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
-                                  Pair<Dataset.PublishSource, Integer> publishSource,
+                                  Pair<Dataset.PublishSource, Long> publishSource,
                                   List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
         TimepointType timetype = StudyManager.getInstance().getStudy(targetContainer).getTimepointType();
@@ -300,14 +302,14 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
-                                  Pair<Dataset.PublishSource, Integer> publishSource,
+                                  Pair<Dataset.PublishSource, Long> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         return publishData(user, sourceContainer, targetContainer, null, sourceName, publishSource, dataMaps, columns, keyPropertyName, errors);
     }
 
     private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
-                                  String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
+                                  String sourceName, Pair<Dataset.PublishSource, Long> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         // Partition dataMaps by targetStudy.
@@ -336,7 +338,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, @Nullable String datasetCategory, String sourceName,
-                                   Pair<Dataset.PublishSource, Integer> publishSource,
+                                   Pair<Dataset.PublishSource, Long> publishSource,
                                    List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         if (dataMaps.isEmpty())
@@ -399,7 +401,7 @@ public class StudyPublishManager implements StudyPublishService
             }
             else if (publishSource.second != null)
             {
-                Integer datasetPublishSourceId = dataset.getPublishSourceId();
+                Long datasetPublishSourceId = dataset.getPublishSourceId();
                 if (datasetPublishSourceId == null)
                 {
                     dataset = dataset.createMutable();
@@ -450,10 +452,10 @@ public class StudyPublishManager implements StudyPublishService
             if (schemaChanged)
                 StudyManager.getInstance().uncache(dataset);
             dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
-            Integer defaultQCStateId = targetStudy.getDefaultPublishDataQCState();
+            Long defaultQCStateId = targetStudy.getDefaultPublishDataQCState();
             DataState defaultQCState = null;
             if (defaultQCStateId != null)
-                defaultQCState = DataStateManager.getInstance().getStateForRowId(targetContainer, defaultQCStateId.intValue());
+                defaultQCState = DataStateManager.getInstance().getStateForRowId(targetContainer, defaultQCStateId);
 
             BatchValidationException validationException = new BatchValidationException();
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
@@ -643,12 +645,12 @@ public class StudyPublishManager implements StudyPublishService
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                     String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
-                    List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
+                    List<Long> sampleIds = rows.stream().map(m -> MapUtils.getLong(m,StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
                     List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                     for (ExpMaterial sample : samples)
                     {
-                        int sampleId = sample.getRowId();
+                        long sampleId = sample.getRowId();
                         String sampleName = sample.getName();
                         String sampleLsid = sample.getLSID();
 
@@ -997,10 +999,10 @@ public class StudyPublishManager implements StudyPublishService
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+                Long defaultQCStateId = study.getDefaultDirectEntryQCState();
                 DataState defaultQCState = null;
                 if (defaultQCStateId != null)
-                    defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                    defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId);
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, insertOption, null, lookupResolutionType, auditBehaviorType);
 
@@ -1060,13 +1062,13 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL getPublishHistory(Container c, Dataset.PublishSource source, Integer publishSourceId)
+    public ActionURL getPublishHistory(Container c, Dataset.PublishSource source, Long publishSourceId)
     {
         return getPublishHistory(c, source, publishSourceId, null);
     }
 
     @Override
-    public ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId, ContainerFilter containerFilter)
+    public ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Long publishSourceId, ContainerFilter containerFilter)
     {
         if (source != null && publishSourceId != null)
         {
@@ -1104,7 +1106,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema)
+    public boolean hasMismatchedInfo(List<Long> dataRowPKs, AssayProtocolSchema schema)
     {
         TableInfo tableInfo = schema.createDataTable(null);
         if (tableInfo == null)
@@ -1169,7 +1171,7 @@ public class StudyPublishManager implements StudyPublishService
      * @param keys - the list of sample row IDs to link to the configured study
      */
     @Override
-    public void autoLinkDerivedSamples(ExpSampleType sampleType, List<Integer> keys, Container container, User user) throws ExperimentException
+    public void autoLinkDerivedSamples(ExpSampleType sampleType, List<Long> keys, Container container, User user) throws ExperimentException
     {
         if (sampleType != null && sampleType.getAutoLinkTargetContainer() != null)
         {
@@ -1417,7 +1419,7 @@ public class StudyPublishManager implements StudyPublishService
                 final ColumnInfo ptidColumn = cols.get(ptidFK);
                 final ColumnInfo visitColumn = cols.get(visitFK);
                 final ColumnInfo objectIdColumn = cols.get(objectIdFK);
-                final Map<Integer, PublishKey> keys = new HashMap<>();
+                final Map<Long, PublishKey> keys = new LongHashMap<>();
                 assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
                 SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
@@ -1427,7 +1429,7 @@ public class StudyPublishManager implements StudyPublishService
                     // Be careful to not assume that we have participant or visit columns in our data domain
                     Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
                     String ptid = ptidObject == null ? null : ptidObject.toString();
-                    int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
+                    long objectId = ((Number) objectIdColumn.getValue(rs)).longValue();
                     Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
                     // Only link rows that have a participant and a visit/date
                     if (ptid != null && visit != null)
@@ -1481,7 +1483,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public Set<DatasetDefinition> getDatasetsForPublishSource(int publishSourceId, Dataset.PublishSource publishSource)
+    public Set<DatasetDefinition> getDatasetsForPublishSource(long publishSourceId, Dataset.PublishSource publishSource)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
@@ -1505,7 +1507,7 @@ public class StudyPublishManager implements StudyPublishService
         // Cache the datasets for a specific protocol (assay design)
         Map<ExpProtocol, Set<DatasetDefinition>> protocolDatasets = new HashMap<>();
         // Remember all the run RowIds for a given protocol (assay design)
-        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
+        Map<ExpProtocol, List<Long>> allProtocolRunIds = new HashMap<>();
 
         // Go through the runs and figure out what protocols they belong to, and what datasets they could have been linked to
         for (ExpRun run : runs)
@@ -1517,7 +1519,7 @@ public class StudyPublishManager implements StudyPublishService
                 datasets = StudyPublishManager.getInstance().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
                 protocolDatasets.put(protocol, datasets);
             }
-            List<Integer> protocolRunIds = allProtocolRunIds.computeIfAbsent(protocol, k -> new ArrayList<>());
+            List<Long> protocolRunIds = allProtocolRunIds.computeIfAbsent(protocol, k -> new ArrayList<>());
             protocolRunIds.add(run.getRowId());
         }
 
@@ -1550,7 +1552,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public String checkForLockedLinks(Dataset def, @Nullable  List<Integer> rowIds)
+    public String checkForLockedLinks(Dataset def, @Nullable List<Long> rowIds)
     {
         Dataset.PublishSource sourceType = def.getPublishSource();
         if (sourceType != null)
@@ -1568,7 +1570,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> pairs)
+    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Long>> pairs)
     {
         Dataset.PublishSource sourceType = def.getPublishSource();
         if (sourceType != null)
@@ -1596,12 +1598,12 @@ public class StudyPublishManager implements StudyPublishService
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                 String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
-                List<Integer> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
+                List<Long> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
                 List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
                 List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                 for (ExpMaterial sample : samples)
                 {
-                    int sampleId = sample.getRowId();
+                    long sampleId = sample.getRowId();
                     String sampleName = sample.getName();
                     String sampleLsid = sample.getLSID();
 
@@ -1650,7 +1652,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user)
+    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, long rowId, String rowIdName, User user)
     {
         Set<String> visibleColumnNames = new HashSet<>();
         StudyService svc = StudyService.get();

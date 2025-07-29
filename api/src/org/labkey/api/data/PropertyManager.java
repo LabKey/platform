@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
@@ -207,7 +208,7 @@ public class PropertyManager
         while (curContainer != null)
         {
             String value = getProperty(user, curContainer, category, name);
-            Map<Integer, String> containerMap = new HashMap<>();
+            Map<Integer, String> containerMap = new IntHashMap<>();
 
             if (value != null)
                 containerMap.put(user.getUserId(), value);

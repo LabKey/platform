@@ -461,7 +461,7 @@ public interface QueryService
     List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId, @Nullable ContainerFilter containerFilter);
     AuditHandler getDefaultAuditHandler();
 
-    int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName);
+    int moveAuditEvents(Container targetContainer, List<Long> rowPks, String schemaName, String queryName);
 
     /**
      * Returns a URL for the audit history for the table.

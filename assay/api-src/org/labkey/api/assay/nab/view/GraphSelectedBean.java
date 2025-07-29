@@ -35,13 +35,13 @@ public abstract class GraphSelectedBean
     protected ViewContext _context;
     protected int[] _cutoffs;
     protected ExpProtocol _protocol;
-    protected int[] _dataObjectIds;
+    protected long[] _dataObjectIds;
     protected QueryView _queryView;
     protected int[] _graphableIds;
     protected String _captionColumn;
     protected String _chartTitle;
 
-    public GraphSelectedBean(ViewContext context, ExpProtocol protocol, int[] cutoffs, int[] dataObjectIds, String captionColumn, String chartTitle)
+    public GraphSelectedBean(ViewContext context, ExpProtocol protocol, int[] cutoffs, long[] dataObjectIds, String captionColumn, String chartTitle)
     {
         _context = context;
         _cutoffs = cutoffs;

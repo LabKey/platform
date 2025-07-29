@@ -20,6 +20,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.data.Table.Getter;
 
@@ -596,43 +598,62 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     }
 
     // Unfortunately, Map and MultiValuedMap don't share an interface for the put method, so we have to pass in a method reference.
-    private <K, V> void fillValues(BiFunction<K, V, ?> fn)
+    private <K, V> void fillValues(@Nullable Class<K> keyClass, BiFunction<K, V, ?> fn)
     {
+        final Getter getter = Getter.forClass(keyClass);
+
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
         getStandardResultSetFactory().handleResultSet((rs, conn) -> {
             int columnCount = rs.getMetaData().getColumnCount();
-            ResultSetIterator iter = new ResultSetIterator(rs);
 
-            while (iter.hasNext())
+            if (null != getter)
             {
-                RowMap<?> rowMap = iter.next();
-                //noinspection unchecked
-                K key = (K)rowMap.get(1);
-                //noinspection unchecked
-                fn.apply(key, (V)(1 == columnCount ? key : rowMap.get(2))); // One column => treat as an identity map
+                while (rs.next())
+                {
+                    K key = (K) getter.getObject(rs, 1);
+                    Object value = 1 == columnCount ? key : rs.getObject(2);
+                    //noinspection unchecked
+                    fn.apply(key, (V) value); // One column => treat as an identity map
+                }
             }
-
+            else
+            {
+                while (rs.next())
+                {
+                    K key = (K) rs.getObject(1);
+                    Object value = 1 == columnCount ? key : rs.getObject(2);
+                    //noinspection unchecked
+                    fn.apply(key, (V) value); // One column => treat as an identity map
+                }
+            }
             return null;
         });
     }
 
     @Override
-    public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
+    public @NotNull <K, V> Map<K, V> fillValueMap(@Nullable Class<K> keyClass, @NotNull final Map<K, V> fillMap)
     {
-        fillValues(fillMap::put);
+        fillValues(keyClass, fillMap::put);
         return fillMap;
     }
 
     @Override
-    public @NotNull <K, V> Map<K, V> getValueMap()
+    public @NotNull <K, V> Map<K, V> getValueMap(Class<K> keyClass)
     {
-        return fillValueMap(new HashMap<>());
+        HashMap<K,V> map;
+        if (keyClass == Long.class)
+            map = (HashMap<K,V>)new LongHashMap<V>();
+        else if (keyClass == Integer.class)
+            map = (HashMap<K,V>)new IntHashMap<V>();
+        else
+            map = new HashMap<>();
+        return fillValueMap(keyClass, map);
     }
 
     @Override
     public @NotNull <K, V> MultiValuedMap<K, V> fillMultiValuedMap(@NotNull final MultiValuedMap<K, V> multiMap)
     {
-        fillValues(multiMap::put);
+        fillValues(null, multiMap::put);
         return multiMap;
     }
 
@@ -652,6 +673,20 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
                 //noinspection unchecked
                 RowMap<K> rowMap = (RowMap<K>)iter.next();
                 fillSet.add(rowMap.get(1));
+            }
+            return null;
+        });
+        return fillSet;
+    }
+
+    @Override
+    public @NotNull <K> Set<K> fillSet(Class<K> keyClass, @NotNull final Set<K> fillSet)
+    {
+        final Getter getter = Getter.forClass(keyClass);
+        getStandardResultSetFactory().handleResultSet((rs, conn) -> {
+            while (rs.next())
+            {
+                fillSet.add((K)getter.getObject(rs,1));
             }
             return null;
         });

@@ -113,7 +113,7 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
     }
 
     @Override
-    public int deleteFlagsForRun(Container container, User user, int runId)
+    public int deleteFlagsForRun(Container container, User user, long runId)
     {
         TableInfo tableInfo = getQCFlagTable(container, user);
         if (tableInfo != null)
@@ -146,7 +146,7 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
     }
 
     @Override
-    public <FlagType extends ExpQCFlag> List<FlagType> getFlags(int runId, Class<FlagType> cls)
+    public <FlagType extends ExpQCFlag> List<FlagType> getFlags(long runId, Class<FlagType> cls)
     {
         return new TableSelector(ExperimentService.get().getTinfoAssayQCFlag(), new SimpleFilter(FieldKey.fromParts("runId"), runId), null).getArrayList(cls);
     }

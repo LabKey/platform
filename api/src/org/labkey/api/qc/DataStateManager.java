@@ -43,13 +43,13 @@ public class DataStateManager
     private static class DataStateCollections
     {
         private final List<DataState> _dataStates;
-        private final Map<Integer, DataState> _dataStateIdMap;
+        private final Map<Long, DataState> _dataStateIdMap;
         private final Map<String, DataState> _dataStateLabelMap;
 
         private DataStateCollections(Container c)
         {
             List<DataState> dataStates = new ArrayList<>();
-            Map<Integer, DataState> dataStateIdMap = new HashMap<>();
+            Map<Long, DataState> dataStateIdMap = new HashMap<>();
             Map<String, DataState>  dataStateLabelMap = new HashMap<>();
 
             new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(DataState.class, dataState -> {
@@ -70,7 +70,7 @@ public class DataStateManager
             return _dataStateLabelMap.get(label);
         }
 
-        DataState getState(int rowId)
+        DataState getState(long rowId)
         {
             return _dataStateIdMap.get(rowId);
         }
@@ -137,7 +137,7 @@ public class DataStateManager
         return (preDeleteStates.size() == 1);
     }
 
-    public DataState getStateForRowId(Container container, Integer rowId)
+    public DataState getStateForRowId(Container container, Long rowId)
     {
         if (rowId == null)
             return null;

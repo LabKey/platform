@@ -41,6 +41,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -691,7 +692,7 @@ public class PipelineController extends SpringActionController
                 if (form.isEnable())
                 {
                     List<Group> groupsAll = SecurityManager.getGroups(c.getProject(), true);
-                    Map<Integer,Group> map = new HashMap<>(groupsAll.size() * 2);
+                    Map<Integer,Group> map = new IntHashMap<>(groupsAll.size() * 2);
                     for (Group g : groupsAll)
                         map.put(g.getUserId(),g);
 
@@ -1759,7 +1760,7 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL statusDetails(Container container, int jobRowId)
+        public ActionURL statusDetails(Container container, long jobRowId)
         {
             return new ActionURL(StatusController.DetailsAction.class, container).addParameter("rowId", jobRowId);
         }

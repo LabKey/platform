@@ -32,6 +32,7 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -375,7 +376,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
-    public ExpSampleTypeImpl getSampleTypeByObjectId(Integer objectId)
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Long objectId)
     {
         OntologyObject obj = OntologyManager.getOntologyObject(objectId);
         if (obj == null)
@@ -393,7 +394,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         @Nullable ContainerFilter cf
     )
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer, cf);
+        Long legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
             return getSampleTypeByObjectId(legacyObjectId);
 
@@ -442,13 +443,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpSampleTypeImpl getSampleType(@NotNull Container c, int rowId)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId)
     {
         return getSampleType(c, null, rowId, false);
     }
 
     @Override
-    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, int rowId)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, long rowId)
     {
         return getSampleType(c, user, rowId, true);
     }
@@ -466,11 +467,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (null == st)
             st = _getSampleType(lsid);
         if (null != st && null==id)
+        if (null != st && null==id)
             sampleTypeCache.put(lsid,st.getContainer().getId());
         return st;
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, long rowId, boolean includeOtherContainers)
     {
         return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
@@ -493,7 +495,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     @Nullable
     @Override
-    public ExpSampleTypeImpl getSampleType(int rowId)
+    public ExpSampleTypeImpl getSampleType(long rowId)
     {
         // TODO: Cache
         MaterialSource materialSource = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
@@ -512,7 +514,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     @Nullable
     @Override
-    public DataState getSampleState(Container container, Integer stateRowId)
+    public DataState getSampleState(Container container, Long stateRowId)
     {
         return SampleStatusService.get().getStateForRowId(container, stateRowId);
     }
@@ -590,7 +592,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException
+    public void deleteSampleType(long rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException
     {
         CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
@@ -640,7 +642,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         // Delete sequences (genId and the unique counters)
-        DbSequenceManager.deleteLike(c, ExpSampleType.SEQUENCE_PREFIX, source.getRowId(), getExpSchema().getSqlDialect());
+        DbSequenceManager.deleteLike(c, ExpSampleType.SEQUENCE_PREFIX, (int)source.getRowId(), getExpSchema().getSqlDialect());
 
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
         QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
@@ -1367,15 +1369,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
-        Pair<Collection<Integer>, Collection<Integer>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container);
-        Collection<Integer> allParents = parentsGroup.first;
-        Collection<Integer> withAmountsParents = parentsGroup.second;
+        Pair<Collection<Long>, Collection<Long>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container);
+        Collection<Long> allParents = parentsGroup.first;
+        Collection<Long> withAmountsParents = parentsGroup.second;
         return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit(), container);
     }
 
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     @Override
-    public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
+    public int recomputeSamplesRollup(Collection<Long> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
     {
         return recomputeSamplesRollup(sampleIds, sampleIds, sampleTypeMetricUnit, container);
     }
@@ -1385,26 +1387,26 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public record AliquotAvailableAmountUnit(Double amount, String unit, Double availableAmount) {}
 
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
-    private int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    private int recomputeSamplesRollup(Collection<Long> parents, Collection<Long> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container, false);
     }
 
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     public int recomputeSamplesRollup(
-        Collection<Integer> parents,
-        @Nullable Collection<Integer> availableParents,
-        Collection<Integer> withAmountsParents,
+        Collection<Long> parents,
+        @Nullable Collection<Long> availableParents,
+        Collection<Long> withAmountsParents,
         String sampleTypeUnit,
         Container container,
         boolean useRootMaterialLSID
     ) throws IllegalStateException, SQLException
     {
-        Map<Integer, String> sampleUnits = new HashMap<>();
+        Map<Long, String> sampleUnits = new LongHashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
         DbScope scope = materialTable.getSchema().getScope();
 
-        List<Integer> availableSampleStates = new ArrayList<>();
+        List<Long> availableSampleStates = new ArrayList<>();
 
         if (SampleStatusService.get().supportsSampleStatus())
         {
@@ -1417,7 +1419,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!parents.isEmpty())
         {
-            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents, useRootMaterialLSID);
+            Map<Long, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents, useRootMaterialLSID);
             try (Connection c = scope.getConnection())
             {
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
@@ -1425,13 +1427,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
                         new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
-                List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
+                List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
                 ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
                 {
-                    for (Map.Entry<Integer, Pair<Integer, String>> sampleAliquotCount: sublist)
+                    for (Map.Entry<Long, Pair<Integer, String>> sampleAliquotCount: sublist)
                     {
-                        Integer sampleId = sampleAliquotCount.getKey();
+                        Long sampleId = sampleAliquotCount.getKey();
                         Integer aliquotCount = sampleAliquotCount.getValue().first;
                         String sampleUnit = sampleAliquotCount.getValue().second;
                         sampleUnits.put(sampleId, sampleUnit);
@@ -1452,7 +1454,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!parents.isEmpty() || (availableParents != null && !availableParents.isEmpty()))
         {
-            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAvailableAliquotCounts(availableParents == null ? parents : availableParents, availableSampleStates, useRootMaterialLSID);
+            Map<Long, Pair<Integer, String>> sampleAliquotCounts = getSampleAvailableAliquotCounts(availableParents == null ? parents : availableParents, availableSampleStates, useRootMaterialLSID);
             try (Connection c = scope.getConnection())
             {
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
@@ -1460,13 +1462,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
                         new SQLFragment("UPDATE ").append(materialTable).append(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
-                List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
+                List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
                 ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
                 {
-                    for (Map.Entry<Integer, Pair<Integer, String>> sampleAliquotCount: sublist)
+                    for (var sampleAliquotCount: sublist)
                     {
-                        Integer sampleId = sampleAliquotCount.getKey();
+                        var sampleId = sampleAliquotCount.getKey();
                         Integer aliquotCount = sampleAliquotCount.getValue().first;
                         String sampleUnit = sampleAliquotCount.getValue().second;
                         sampleUnits.put(sampleId, sampleUnit);
@@ -1487,7 +1489,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!withAmountsParents.isEmpty())
         {
-            Map<Integer, List<AliquotAmountUnitResult>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents, availableSampleStates, useRootMaterialLSID);
+            Map<Long, List<AliquotAmountUnitResult>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents, availableSampleStates, useRootMaterialLSID);
 
             try (Connection c = scope.getConnection())
             {
@@ -1499,13 +1501,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
                         new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
 
-                List<Map.Entry<Integer, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
+                List<Map.Entry<Long, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 
                 ListUtils.partition(sampleAliquotAmountsList, 1000).forEach(sublist ->
                 {
-                    for (Map.Entry<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts: sublist)
+                    for (Map.Entry<Long, List<AliquotAmountUnitResult>> sampleAliquotAmounts: sublist)
                     {
-                        Integer sampleId = sampleAliquotAmounts.getKey();
+                        Long sampleId = sampleAliquotAmounts.getKey();
                         List<AliquotAmountUnitResult> aliquotAmounts = sampleAliquotAmounts.getValue();
 
                         AliquotAvailableAmountUnit amountUnit = convertToDisplayUnits(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
@@ -1532,9 +1534,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Integer> rootRowIds, Set<String> parentNames, Container container) throws SQLException
+    public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws SQLException
     {
-        Set<Integer> rootSamplesToRecalc = new HashSet<>();
+        Set<Long> rootSamplesToRecalc = new HashSet<>();
         if (rootRowIds != null)
             rootSamplesToRecalc.addAll(rootRowIds);
         if (parentNames != null)
@@ -1543,7 +1545,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
     }
 
-    private Set<Integer> getRootSampleIdsFromParentNames(String sampleTypeLsid, Set<String> parentNames)
+    private Set<Long> getRootSampleIdsFromParentNames(String sampleTypeLsid, Set<String> parentNames)
     {
         if (parentNames == null || parentNames.isEmpty())
             return Collections.emptySet();
@@ -1557,7 +1559,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" WHERE Name").appendInClause(parentNames, tableInfo.getSqlDialect())
                 .append(")");
 
-        return new SqlSelector(tableInfo.getSchema(), sql).fillSet(new HashSet<>());
+        return new SqlSelector(tableInfo.getSchema(), sql).fillSet(Long.class, new HashSet<>());
     }
 
     private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
@@ -1645,19 +1647,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new AliquotAvailableAmountUnit(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name(), totalAvailableVolume);
     }
 
-    public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
+    public Pair<Collection<Long>, Collection<Long>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
     {
-        Collection<Integer> parents = getAliquotParents(sampleTypeLsid, container);
-        Collection<Integer> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, container);
+        Collection<Long> parents = getAliquotParents(sampleTypeLsid, container);
+        Collection<Long> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, container);
         return new Pair<>(parents, withAmountsParents);
     }
 
-    private Collection<Integer> getAliquotParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
+    private Collection<Long> getAliquotParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
     {
         return getAliquotParents(sampleTypeLsid, false, container);
     }
 
-    private Collection<Integer> getAliquotsWithAmountsParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
+    private Collection<Long> getAliquotsWithAmountsParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
     {
         return getAliquotParents(sampleTypeLsid, true, container);
     }
@@ -1684,7 +1686,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         """);
     }
 
-    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
+    private Collection<Long> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
@@ -1696,17 +1698,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql.append(" AND parent.container = ?");
         sql.add(container.getId());
 
-        Set<Integer> parentIds = new HashSet<>();
+        Set<Long> parentIds = new HashSet<>();
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
-                parentIds.add(rs.getInt(1));
+                parentIds.add(rs.getLong(1));
         }
 
         return parentIds;
     }
 
-    private Map<Integer, Pair<Integer, String>> getSampleAliquotCounts(Collection<Integer> sampleIds, boolean useRootMaterialLSID) throws SQLException
+    private Map<Long, Pair<Integer, String>> getSampleAliquotCounts(Collection<Long> sampleIds, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
@@ -1719,12 +1721,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
+        Map<Long, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
             {
-                int parentId = rs.getInt(1);
+                long parentId = rs.getLong(1);
                 String sampleUnit = rs.getString(2);
                 int aliquotCount = rs.getInt(3);
 
@@ -1735,7 +1737,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotCounts;
     }
 
-    private Map<Integer, Pair<Integer, String>> getSampleAvailableAliquotCounts(Collection<Integer> sampleIds, Collection<Integer> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
+    private Map<Long, Pair<Integer, String>> getSampleAvailableAliquotCounts(Collection<Long> sampleIds, Collection<Long> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
@@ -1780,12 +1782,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order by rowId to reduce deadlock with search indexer
+        Map<Long, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order by rowId to reduce deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
             {
-                int parentId = rs.getInt(1);
+                long parentId = rs.getLong(1);
                 String sampleUnit = rs.getString(2);
                 int aliquotCount = rs.getInt(3);
 
@@ -1796,7 +1798,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotCounts;
     }
 
-    private Map<Integer, List<AliquotAmountUnitResult>> getSampleAliquotAmounts(Collection<Integer> sampleIds, List<Integer> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
+    private Map<Long, List<AliquotAmountUnitResult>> getSampleAliquotAmounts(Collection<Long> sampleIds, List<Long> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema exp = getExpSchema();
         SqlDialect dialect = exp.getSqlDialect();
@@ -1812,13 +1814,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" AND parent.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new HashMap<>();
+        Map<Long, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new LongHashMap<>();
 
         try (ResultSet rs = new SqlSelector(exp, sql).getResultSet())
         {
             while (rs.next())
             {
-                int parentId = rs.getInt(1);
+                long parentId = rs.getLong(1);
                 Double volume = rs.getDouble(2);
                 String unit = rs.getString(3);
                 int sampleState = rs.getInt(4);
@@ -1830,7 +1832,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
         // for any parents with no remaining aliquots, set the amounts to 0
-        for (Integer parentId : sampleIds)
+        for (var parentId : sampleIds)
         {
             if (!sampleAliquotAmounts.containsKey(parentId))
             {
@@ -1858,7 +1860,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
-        Map<Integer, List<FileFieldRenameData>> fileMovesBySampleId = new HashMap<>();
+        Map<Long, List<FileFieldRenameData>> fileMovesBySampleId = new LongHashMap<>();
         ExperimentService expService = ExperimentService.get();
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -1877,7 +1879,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 TableInfo samplesTable = schema.getTable(sampleType, null);
 
                 List<ExpMaterial> typeSamples = entry.getValue();
-                List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
+                List<Long> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
                 updateCounts.put("samples", updateCounts.get("samples") + ContainerManager.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
@@ -1973,7 +1975,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
     {
         // collect unique runIds mapped to the samples that are moving that have that runId
-        Map<Integer, Set<ExpMaterial>> runIdSamples = new HashMap<>();
+        Map<Long, Set<ExpMaterial>> runIdSamples = new LongHashMap<>();
         samples.forEach(sample -> {
             if (sample.getRunId() != null)
                 runIdSamples.computeIfAbsent(sample.getRunId(), t -> new HashSet<>()).add(sample);
@@ -1985,8 +1987,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         List<ExpRun> toSplit = new ArrayList<>();
         for (ExpRun run : runs)
         {
-            Set<Integer> outputIds = run.getMaterialOutputs().stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
-            Set<Integer> movingIds = runIdSamples.get(run.getRowId()).stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            Set<Long> outputIds = run.getMaterialOutputs().stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            Set<Long> movingIds = runIdSamples.get(run.getRowId()).stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
             if (movingIds.size() == outputIds.size() && movingIds.containsAll(outputIds))
                 toUpdate.add(run);
             else
@@ -1998,7 +2000,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return Map.of("sampleDerivationRunsUpdated", updateCount, "sampleDerivationRunsSplit", splitCount);
     }
 
-    private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    private int splitExperimentRuns(List<ExpRun> runs, Map<Long, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
     {
         final ViewBackgroundInfo targetInfo = new ViewBackgroundInfo(targetContainer, user, null);
         ExperimentServiceImpl expService = (ExperimentServiceImpl) ExperimentService.get();
@@ -2060,7 +2062,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 throw errors;
             }
             run.save(user);
-            List<Integer> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();
+            List<Long> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();
 
             outputApp.removeMaterialInputs(user, movingSampleIds);
             if (sourceApplication != null)
@@ -2074,9 +2076,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName) {}
 
     // return the map of file renames
-    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
+    private Map<Long, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
     {
-        Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
+        Map<Long, List<FileFieldRenameData>> sampleFileRenames = new LongHashMap<>();
 
         FileContentService fileService = FileContentService.get();
         if (fileService == null)

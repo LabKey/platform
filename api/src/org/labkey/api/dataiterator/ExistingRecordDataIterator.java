@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -57,7 +58,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     // prefetch of existing records
     final boolean useMark;
     int lastPrefetchRowNumber = -1;
-    final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
+    final HashMap<Integer,Map<String,Object>> existingRecords = new IntHashMap<>();
     final Set<String> _dataColumnNames = new CaseInsensitiveHashSet();
 
     final User user;
@@ -254,7 +255,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         {
             SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
-            Map<Integer, String> rowNumContainers = new HashMap<>();
+            Map<Integer, String> rowNumContainers = new IntHashMap<>();
             String container;
             do
             {

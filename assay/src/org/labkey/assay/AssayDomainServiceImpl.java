@@ -98,7 +98,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
     @Override
     @Nullable
-    public GWTProtocol getAssayDefinition(int rowId, boolean copy)
+    public GWTProtocol getAssayDefinition(long rowId, boolean copy)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(rowId);
         if (protocol != null)

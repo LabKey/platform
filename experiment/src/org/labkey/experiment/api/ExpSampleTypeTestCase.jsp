@@ -1071,7 +1071,7 @@ public void testExpMaterialPermissions() throws Exception
     assertFalse(msg, errors.hasErrors());
     assertEquals(1,ret.size());
     assertNotNull(ret.get(0).get("rowid"));
-    int stSampleId = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+    long stSampleId = (long) JdbcType.BIGINT.convert(ret.get(0).get("rowid"));
 
     // verify insert, update aren't allowed, but read and delete are allowed
     var materialsTable = schema.getTable(ExpSchema.TableType.Materials.name());
