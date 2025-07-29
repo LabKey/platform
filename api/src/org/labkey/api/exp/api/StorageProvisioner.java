@@ -77,6 +77,12 @@ public interface StorageProvisioner
      */
     String ensureStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
 
+    /**
+     * Used by DatabaseMigration only. Creates the storage table associated with this domain, using the storage table
+     * name provided by the domain.
+     */
+    void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
+
     void dropNotRequiredIndices(Domain domain);
     void addMissingRequiredIndices(Domain domain);
     void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode);

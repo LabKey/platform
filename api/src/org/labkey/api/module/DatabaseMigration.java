@@ -7,6 +7,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
@@ -19,6 +21,9 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -37,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -153,20 +159,51 @@ public class DatabaseMigration
             JOIN
                 sys.identity_columns identity_columns ON tables.object_id = identity_columns.object_id
             WHERE last_value IS NOT NULL""";
-        Map<String, Map<String, Sequence>> sequences = new HashMap<>();
+        Map<String, Map<String, Sequence>> sequenceMap = new HashMap<>();
         new SqlSelector(sourceScope, sequenceQuery).forEach(rs -> {
             Sequence sequence = new Sequence(rs.getString("SchemaName"), rs.getString("TableName"), rs.getString("ColumnName"), rs.getInt("last_value"));
-            Map<String, Sequence> schemaMap = sequences.computeIfAbsent(sequence.schemaName(), s -> new HashMap<>());
+            Map<String, Sequence> schemaMap = sequenceMap.computeIfAbsent(sequence.schemaName(), s -> new HashMap<>());
             schemaMap.put(sequence.tableName(), sequence);
         });
 
-        // Get target schemas in module order, which helps with foreign key relationships
-        List<DbSchema> schemas = ModuleLoader.getInstance().getModules().stream()
+        // Get the target module schemas in module order, which helps with foreign key relationships
+        List<DbSchema> targetModuleSchemas = ModuleLoader.getInstance().getModules().stream()
             .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
             .map(name -> targetScope.getSchema(name, DbSchemaType.Module))
             .toList();
 
-        for (DbSchema targetSchema : schemas)
+        // Migrate all data in the module schemas
+        migrateSchemas(migrationDataSource, sourceScope, targetScope, targetModuleSchemas, (schema, handler) -> handler.getTablesToCopy(schema), sequenceMap);
+
+        // Create all provisioned tables listed in exp.DomainDescriptor
+        PropertyService svc = PropertyService.get();
+        StorageProvisioner provisioner = StorageProvisioner.get();
+        new SqlSelector(targetScope, "SELECT Container, DomainURI, Name FROM exp.DomainDescriptor WHERE StorageSchemaName IS NOT NULL").forEach(rs -> {
+            Container c = ContainerManager.getForId(rs.getString("Container"));
+            if (c != null)
+            {
+                String domainURI = rs.getString("DomainURI");
+                String name = rs.getString("Name");
+                Domain d = svc.ensureDomain(c, null, domainURI, name);
+                provisioner.createStorageTable(d, d.getDomainKind(), targetScope);
+            }
+        });
+
+        // Get the target provisioned schemas
+        List<DbSchema> targetProvisionedSchemas = ModuleLoader.getInstance().getModules().stream()
+            .flatMap(module -> module.getSchemaNames().stream().filter(name -> module.getProvisionedSchemaNames().contains(name)))
+            .map(name -> targetScope.getSchema(name, DbSchemaType.Bare))
+            .toList();
+
+        // Migrate all data in the provisioned schemas
+        migrateSchemas(migrationDataSource, sourceScope, targetScope, targetProvisionedSchemas, (schema, handler) -> getTables(schema), sequenceMap);
+
+        LOG.info("Database migration is complete");
+    }
+
+    private static void migrateSchemas(String migrationDataSource, DbScope sourceScope, DbScope targetScope, List<DbSchema> targetSchemas, BiFunction<DbSchema, MigrationHandler, List<TableInfo>> tableProducer, Map<String, Map<String, Sequence>> sequenceMap)
+    {
+        for (DbSchema targetSchema : targetSchemas)
         {
             DbSchema sourceSchema = sourceScope.getSchema(targetSchema.getName(), DbSchemaType.Bare);
             if (!sourceSchema.existsInDatabase())
@@ -178,23 +215,23 @@ public class DatabaseMigration
                 MigrationHandler handler = getHandler(targetSchema);
                 handler.beforeSchema(targetSchema);
 
-                List<SchemaTableInfo> sourceTables = getTables(sourceSchema);
-                List<SchemaTableInfo> targetTables = getTables(targetSchema);
+                List<TableInfo> sourceTables = getTables(sourceSchema);
+                List<TableInfo> targetTables = getTables(targetSchema);
 
                 if (sourceTables.size() != targetTables.size())
                 {
                     LOG.warn("{} schemas have different table counts, {} vs. {}", sourceSchema.getName(), sourceTables.size(), targetTables.size());
-                    Set<String> sourceTableNames = sourceTables.stream().map(SchemaTableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
-                    Set<String> targetTableNames = targetTables.stream().map(SchemaTableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
+                    Set<String> sourceTableNames = sourceTables.stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
+                    Set<String> targetTableNames = targetTables.stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
                     Set<String> sourceTableNamesCopy = new CaseInsensitiveHashSet(sourceTableNames);
                     sourceTableNames.removeAll(targetTableNames);
                     targetTableNames.removeAll(sourceTableNamesCopy);
                     LOG.warn("Table differences: {} and {}", sourceTableNames, targetTableNames);
                 }
 
-                Map<String, Sequence> schemaSequenceMap = sequences.getOrDefault(sourceSchema.getName(), Map.of());
+                Map<String, Sequence> schemaSequenceMap = sequenceMap.getOrDefault(sourceSchema.getName(), Map.of());
 
-                for (TableInfo targetTable : handler.getTablesToCopy(targetSchema))
+                for (TableInfo targetTable : tableProducer.apply(targetSchema, handler))
                 {
                     String targetTableName = targetTable.getName();
                     SchemaTableInfo sourceTable = sourceSchema.getTable(targetTableName);
@@ -275,17 +312,9 @@ public class DatabaseMigration
                 handler.afterSchema(targetSchema);
             }
         }
-
-        // We can't handle provisioned tables yet, so (for now) delete all copied audit table remnants, allowing the new DB to create these tables on restart
-        SqlExecutor executor = new SqlExecutor(targetScope);
-        executor.execute("DELETE FROM exp.PropertyDomain WHERE DomainId IN (SELECT DomainID FROM exp.DomainDescriptor WHERE storageschemaname = 'audit')");
-        executor.execute("DELETE FROM exp.DomainDescriptor WHERE storageschemaname = 'audit'");
-        executor.execute("DELETE FROM exp.PropertyDescriptor WHERE PropertyId NOT IN (SELECT PropertyId FROM exp.PropertyDomain)");
-
-        LOG.info("Database migration is complete");
     }
 
-    private static List<SchemaTableInfo> getTables(DbSchema schema)
+    private static List<TableInfo> getTables(DbSchema schema)
     {
         return new ArrayList<>(schema.getTableNames().stream()
             .map(schema::getTable)
