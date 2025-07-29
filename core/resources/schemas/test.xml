@@ -137,14 +137,14 @@
         <description>This is used to test synonyms on SQL Server</description>
         <columns>
             <column columnName="Path"/>
-            <column columnName="ContainerId"/>
+            <column columnName="ContainerRowId"/>
         </columns>
     </table>
     <table tableName="a%b" tableDbType="VIEW">
         <description>This is used to test LIKE wild card characters in table/view names</description>
         <columns>
             <column columnName="Path"/>
-            <column columnName="ContainerId"/>
+            <column columnName="ContainerRowId"/>
         </columns>
     </table>
     <table tableName="Users2" tableDbType="UNKNOWN">

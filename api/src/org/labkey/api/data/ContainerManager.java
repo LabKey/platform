@@ -160,10 +160,9 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    // Use double the max count as the size since we cache by both EntityId and Path
-    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 2, CacheManager.DAY, "Containers");
-    private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
-    private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child Container objects of Containers");
+    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
+    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
+    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -1074,7 +1073,7 @@ public class ContainerManager
             return Collections.emptyMap();
         }
 
-        List<String> childIds = CACHE_CHILDREN.get(parent.getId());
+        List<GUID> childIds = CACHE_CHILDREN.get(parent.getEntityId());
         if (null == childIds)
         {
             try (DbScope.Transaction t = ensureTransaction())
@@ -1086,11 +1085,11 @@ public class ContainerManager
                 childIds = new ArrayList<>(children.size());
                 for (Container c : children)
                 {
-                    childIds.add(c.getId());
+                    childIds.add(c.getEntityId());
                     _addToCache(c);
                 }
                 childIds = Collections.unmodifiableList(childIds);
-                CACHE_CHILDREN.put(parent.getId(), childIds);
+                CACHE_CHILDREN.put(parent.getEntityId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
             }
@@ -1101,7 +1100,7 @@ public class ContainerManager
 
         // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily alphabetical
         Map<String, Container> ret = new LinkedHashMap<>();
-        for (String id : childIds)
+        for (GUID id : childIds)
         {
             Container c = getForId(id);
             if (null != c)
@@ -1121,17 +1120,19 @@ public class ContainerManager
         return guid != null ? getForId(guid.toString()) : null;
     }
 
-    public static @Nullable Container getForId(String id)
+    public static @Nullable Container getForId(@Nullable String id)
     {
-        Container d = getFromCacheId(id);
-        if (null != d)
-            return d;
-
         //if the input string is not a GUID, just return null,
         //so that we don't get a SQLException when the database
         //tries to convert it to a unique identifier.
-        if (null != id && !GUID.isGUID(id))
+        if (!GUID.isGUID(id))
             return null;
+
+        GUID guid = new GUID(id);
+
+        Container d = CACHE_ENTITY_ID.get(guid);
+        if (null != d)
+            return d;
 
         try (DbScope.Transaction t = ensureTransaction())
         {
@@ -1275,14 +1276,16 @@ public class ContainerManager
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // Delete all of the aliases for the current container, plus any of the aliases that might be associated
+            // with another container right now
             SQLFragment deleteSQL = new SQLFragment();
             deleteSQL.append("DELETE FROM ");
             deleteSQL.append(CORE.getTableInfoContainerAliases());
-            deleteSQL.append(" WHERE ContainerId = ? ");
-            deleteSQL.add(container.getId());
+            deleteSQL.append(" WHERE ContainerRowId = ? ");
+            deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR LOWER(Path) IN (");
+                deleteSQL.append(" OR Path IN (");
                 String separator = "";
                 for (String alias : aliases)
                 {
@@ -1295,14 +1298,15 @@ public class ContainerManager
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
+            // Store the alias as LOWER() so that we can query against it using the index
             for (String alias : newAliases)
             {
                 SQLFragment insertSQL = new SQLFragment();
                 insertSQL.append("INSERT INTO ");
                 insertSQL.append(CORE.getTableInfoContainerAliases());
-                insertSQL.append(" (Path, ContainerId) VALUES (?, ?)");
+                insertSQL.append(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
                 insertSQL.add(alias);
-                insertSQL.add(container.getId());
+                insertSQL.add(container.getRowId());
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
             }
 
@@ -1928,7 +1932,7 @@ public class ContainerManager
             fireDeleteContainer(c, user);
 
             SqlExecutor sqlExecutor = new SqlExecutor(CORE.getSchema());
-            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
+            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId=?", c.getRowId());
             sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
             // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
             SecurityPolicyManager.removeAll(c);
@@ -2048,61 +2052,31 @@ public class ContainerManager
         }
     }
 
-    private static Set<Container> _getAllChildrenFromCache(Container c)
-    {
-        return CACHE_ALL_CHILDREN.get(c.getId());
-    }
-
-    private static void _addAllChildrenToCache(Container c, Set<Container> children)
-    {
-        CACHE_ALL_CHILDREN.put(c.getId(), children);
-    }
-
-    public static Container getFromCacheId(String id)
-    {
-        return CACHE.get(id);
-    }
-
     private static Container _getFromCachePath(Path path)
     {
-        return CACHE.get(toString(path));
-    }
-
-    // UNDONE: use Path directly instead of toString()
-    private static String toString(Container c)
-    {
-        return toString(c.getParsedPath());
-    }
-
-    private static String toString(Path p)
-    {
-        return StringUtils.strip(p.toString(), "/").toLowerCase();
+        return CACHE_PATH.get(path);
     }
 
     private static Container _addToCache(Container c)
     {
         assert DATABASE_QUERY_LOCK.isHeldByCurrentThread() : "Any cache modifications must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        CACHE.put(toString(c), c);
-        CACHE.put(c.getId(), c);
+        CACHE_ENTITY_ID.put(c.getEntityId(), c);
+        CACHE_PATH.put(c.getParsedPath(), c);
         return c;
     }
 
     private static void _clearChildrenFromCache(Container c)
     {
-        CACHE_CHILDREN.remove(c.getId());
+        CACHE_CHILDREN.remove(c.getEntityId());
         navTreeManageUncache(c);
     }
 
     /** @param hierarchyChange whether the shape of the container tree has changed */
     private static void _removeFromCache(Container c, boolean hierarchyChange)
     {
-        CACHE.remove(toString(c));
-        CACHE.remove(c.getId());
-
-        // Blow away the children caches, which can be outdated even if the hierarchy hasn't changed
-        // For example, changing the folder type or enabled modules in a parent can impact child workbooks
-        CACHE_ALL_CHILDREN.clear();
+        CACHE_ENTITY_ID.remove(c.getEntityId());
+        CACHE_PATH.remove(c.getParsedPath());
 
         if (hierarchyChange)
         {
@@ -2116,9 +2090,9 @@ public class ContainerManager
 
     public static void clearCache()
     {
-        CACHE.clear();
+        CACHE_PATH.clear();
+        CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
-        CACHE_ALL_CHILDREN.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2162,19 +2136,13 @@ public class ContainerManager
     }
 
 
-    /** including root node */
+    /** Recursive, including root node */
     public static Set<Container> getAllChildren(Container root)
     {
-        Set<Container> children = _getAllChildrenFromCache(root);
-        if (children != null)
-            return children;
-
-        children = getAllChildrenDepthFirst(root);
+        Set<Container> children = getAllChildrenDepthFirst(root);
         children.add(root);
 
-        children = Collections.unmodifiableSet(children); // don't let callers modify the cached copy
-        _addAllChildrenToCache(root, children);
-        return children;
+        return Collections.unmodifiableSet(children);
     }
 
     /**
@@ -2607,8 +2575,8 @@ public class ContainerManager
     public static List<String> getAliasesForContainer(Container c)
     {
         return Collections.unmodifiableList(new SqlSelector(CORE.getSchema(),
-                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)",
-                        c.getId())).getArrayList(String.class));
+                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId = ? ORDER BY Path",
+                        c.getRowId())).getArrayList(String.class));
     }
 
     @Nullable
@@ -2660,8 +2628,9 @@ public class ContainerManager
     @Nullable
     private static Container getForPathAlias(String path)
     {
+        // We store the path as lower-case, so we don't need to also LOWER() on the value in core.ContainerAliases, letting the DB use the index
         Container[] ret = new SqlSelector(CORE.getSchema(),
-                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerId = c.EntityId AND LOWER(ca.path) = LOWER(?)",
+                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerRowId = c.RowId AND ca.path = LOWER(?)",
                 path).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];

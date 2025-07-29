@@ -728,6 +728,28 @@ public class ExperimentModule extends SpringModule
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
                 results.put("duplicateSpecimenMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype = 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
+                String duplicateCaseInsensitiveSampleNameCountSql = """
+                        SELECT COUNT(*) FROM
+                            (
+                                SELECT 1 AS found
+                                FROM exp.material
+                                WHERE materialsourceid IS NOT NULL
+                                GROUP BY LOWER(name), materialsourceid
+                                HAVING COUNT(*) > 1
+                            ) AS duplicates
+                        """;
+                String duplicateCaseInsensitiveDataNameCountSql = """
+                        SELECT COUNT(*) FROM
+                            (
+                                SELECT 1 AS found
+                                FROM exp.data
+                                WHERE classid IS NOT NULL
+                                GROUP BY LOWER(name), classid
+                                HAVING COUNT(*) > 1
+                            ) AS duplicates
+                        """;
+                results.put("duplicateCaseInsensitiveSampleNameCount", new SqlSelector(schema, duplicateCaseInsensitiveSampleNameCountSql).getObject(Long.class));
+                results.put("duplicateCaseInsensitiveDataNameCount", new SqlSelector(schema, duplicateCaseInsensitiveDataNameCountSql).getObject(Long.class));
 
                 results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
