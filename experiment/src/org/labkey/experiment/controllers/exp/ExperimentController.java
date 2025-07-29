@@ -366,6 +366,7 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.experiment.ExpDataIterators.setContainerFilterForImport;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 public class ExperimentController extends SpringActionController
@@ -4530,8 +4531,7 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            query.setContainerFilter(QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
+            setContainerFilterForImport(query, getContainer(), getUser());
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
 

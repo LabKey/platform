@@ -234,11 +234,16 @@ public class NotificationController extends SpringActionController
         {
             for (Integer rowId : form.getRowIds())
             {
-                Notification notification = NotificationService.get().getNotification(rowId);
-                if (notification == null || notification.getUserId() != user.getUserId())
-                    errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
+                if (rowId == null)
+                    errors.reject(ERROR_MSG, "No rowId specified");
                 else
-                    notifications.add(notification);
+                {
+                    Notification notification = NotificationService.get().getNotification(rowId);
+                    if (notification == null || notification.getUserId() != user.getUserId())
+                        errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
+                    else
+                        notifications.add(notification);
+                }
             }
         }
 

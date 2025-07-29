@@ -53,10 +53,9 @@ import java.util.function.Supplier;
 
 
 /**
- * BEWARE: Our shorts are showing a bit here.  Our primary HTML components (aka views)
- * are not spring Views.  Architecturally they act like ModelAndView.  We may want to
- * fix this in the future, but we're moving forward with this conceptual co-mingling
- * for now.
+ * BEWARE: Our shorts are showing a bit here. Our primary HTML components (aka views) are not spring Views.
+ * Architecturally, they act like ModelAndView. We may want to fix this in the future, but we're moving forward with
+ * this conceptual co-mingling for now.
  */
 public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View, HasViewContext
 {
@@ -595,19 +594,20 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
     {
-        return new HttpRedirectView((!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString());
+        String redirectUrl = (!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString();
+        return redirect(redirectUrl);
     }
 
-    public static HttpView<?> redirect(URLHelper url)
+    public static HttpView<?> redirect(ActionURL url)
     {
-        return new HttpRedirectView(url.getLocalURIString());
+        return redirect(url.getLocalURIString());
     }
 
+    @Deprecated(forRemoval = true) // Use ActionURL or URLHelper variant instead. TODO: Remove
     public static HttpView<?> redirect(String url)
     {
-        return new HttpRedirectView(url);
+        throw new RedirectException(url);
     }
-
 
     /**
      * Pulls out the context's URL for redirecting. This fetches
