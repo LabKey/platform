@@ -716,7 +716,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
                 }
-                catch (ConvertHelper.FileLinkConversionException e)
+                catch (ConvertHelper.FileConversionException e)
                 {
                     throw e;
                 }

@@ -888,7 +888,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                             throw new ConversionException(sb.toString(), x);
                         }
-                        else if (x instanceof ConvertHelper.FileLinkConversionException)
+                        else if (x instanceof ConvertHelper.FileConversionException)
                         {
                             throw x;
                         }
@@ -925,7 +925,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     else
                         throw new RuntimeException(e);
                 }
-                if (e instanceof ConvertHelper.FileLinkConversionException)
+                if (e instanceof ConvertHelper.FileConversionException)
                 {
                     throw e;
                 }

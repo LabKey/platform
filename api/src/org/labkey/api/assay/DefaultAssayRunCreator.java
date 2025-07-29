@@ -455,7 +455,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException | ConvertHelper.FileLinkConversionException e)
+        catch (ExperimentException | IOException | ConvertHelper.FileConversionException e)
         {
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
@@ -465,7 +465,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
-            else if (e instanceof ConvertHelper.FileLinkConversionException)
+            else if (e instanceof ConvertHelper.FileConversionException)
                 throw new ApiUsageException(e.getMessage(), e);
             else
                 throw new ExperimentException(e);

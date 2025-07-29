@@ -451,9 +451,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
-    public static class FileLinkConversionException extends ConversionException implements SkipMothershipLogging
+    public static class FileConversionException extends ConversionException implements SkipMothershipLogging
     {
-        public FileLinkConversionException(String msg)
+        public FileConversionException(String msg)
         {
             super(msg);
         }

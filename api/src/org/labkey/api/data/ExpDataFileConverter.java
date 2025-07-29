@@ -233,9 +233,9 @@ public class ExpDataFileConverter implements Converter
                 if (f.isDirectory())
                 {
                     if (value instanceof String)
-                        throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value);
+                        throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
                     else
-                        throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + f.getPath());
+                        throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
                 }
 
                 // Strip out ".." and "."
@@ -288,9 +288,9 @@ public class ExpDataFileConverter implements Converter
                 }
 
                 if (value instanceof String)
-                    throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value);
+                    throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
                 else
-                    throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + f.getPath());
+                    throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
             }
         }
         return null;
@@ -303,13 +303,13 @@ public class ExpDataFileConverter implements Converter
         {
             return _convert(type, value);
         }
-        catch (ConvertHelper.FileLinkConversionException e)
+        catch (ConvertHelper.FileConversionException e)
         {
             throw e;
         }
         catch (Exception e)
         {
-            throw new ConvertHelper.FileLinkConversionException("Invalid file path: " + value.toString());
+            throw new ConvertHelper.FileConversionException("Invalid file path: " + value.toString());
         }
     }
 
