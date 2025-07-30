@@ -329,7 +329,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             for (int f = 0; f < nCols; f++)
             {
                 List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
-                Class knownColumnClass = null;
+                Class knownColumnClass;
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -339,25 +339,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     {
                         String name = lineFields[0][f];
                         name = StringUtilsLabKey.sanitizeSeparatorsAndTrim(name);
-                        if (_columnInfoMap.containsKey(name))
+
+                        ColumnInfo knownColumn = getKnownColumn(name, renamedColumns);
+
+                        if (knownColumn != null)
                         {
-                            //preferentially use this class if it matches
-                            knownColumnClass = _columnInfoMap.get(name).getJavaClass();
+                            knownColumnClass = knownColumn.getJavaClass();
                             classesToTest.add(0, knownColumnClass);
-                        }
-                        else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
-                        {
-                            knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
-                            classesToTest.add(0, knownColumnClass);
+
+                            // Issue 49830: if we know the column class is File based on the columnInfoMap, use it instead of trying to infer the class based on the data
+                            if (setFileColDescriptor(colDescs[f], knownColumn))
+                                continue;
                         }
                     }
-                }
-
-                // Issue 49830: if we know the column class is File based on the columnInfoMap, use it instead of trying to infer the class based on the data
-                if (File.class.equals(knownColumnClass))
-                {
-                    colDescs[f].clazz = knownColumnClass;
-                    continue;
                 }
 
                 for (int line = inferStartLine; line < numLines; line++)
@@ -474,25 +468,39 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
             // use File converter for known file fields even if inferTypes = false. If inferTypes, this is already done.
             if (!getInferTypes())
-            {
-                ColumnInfo knownColumn = null;
-                Class knownColumnClass;
-                if (_columnInfoMap.containsKey(name))
-                    knownColumn = _columnInfoMap.get(name);
-                else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
-                    knownColumn = _columnInfoMap.get(renamedColumns.get(name));
-
-                if (knownColumn != null  && String.class.equals(colDesc.clazz))
-                {
-                    knownColumnClass = knownColumn.getJavaClass();
-                    if (File.class.equals(knownColumnClass) && !knownColumn.getPropertyType().equals(PropertyType.ATTACHMENT)) // skip attachment conversion
-                        colDesc.clazz = File.class;
-                }
-
-            }
+                setFileColDescriptor(colDesc, getKnownColumn(name, renamedColumns));
         }
 
         _columns = colDescs;
+    }
+
+    private boolean setFileColDescriptor(ColumnDescriptor colDesc, @Nullable ColumnInfo knownColumn)
+    {
+        if (knownColumn == null)
+            return false;
+
+        Class knownColumnClass = knownColumn.getJavaClass();
+
+        if (File.class.equals(knownColumnClass))
+        {
+            // TODO. Issue 53498 handle attachment conversion with incoming merge from 25.7
+            if (!PropertyType.ATTACHMENT.equals(knownColumn.getPropertyType()))
+                colDesc.clazz = knownColumnClass;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private ColumnInfo getKnownColumn(String name, @NotNull Map<String, String> renamedColumns)
+    {
+        ColumnInfo knownColumn = null;
+        if (_columnInfoMap.containsKey(name))
+            knownColumn = _columnInfoMap.get(name);
+        else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
+            knownColumn = _columnInfoMap.get(renamedColumns.get(name));
+        return knownColumn;
     }
 
     protected String getDefaultColumnName(int col)
