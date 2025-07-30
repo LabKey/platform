@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.OrderWith;
 import org.junit.runner.manipulation.Alphanumeric;
+import org.labkey.serverapi.util.UsageReportingLevel;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -94,7 +95,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     @Test
     public void testTopLevelItems() throws Exception
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+        _mothershipHelper.createUsageReport(UsageReportingLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
         String distributionName = getDeployedDistributionName();
         Assert.assertEquals("Distribution name.", distributionName, installDetail.getDistributionName());
@@ -129,7 +130,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     @Test
     public void testJsonMetrics() throws Exception
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, false, null);
+        _mothershipHelper.createUsageReport(UsageReportingLevel.ON, false, null);
         assertTextPresent("jsonMetrics",
                 "modules",
                 "controllerHits", // Should have multiple sections for this across different modules
@@ -193,7 +194,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     {
         log("Simulate receiving a report behind a load balancer");
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
+        _mothershipHelper.createUsageReport(UsageReportingLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
         Assert.assertEquals("Forwarded for", forwardedFor, installDetail.getServerIP());
     }
@@ -213,7 +214,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     public void testServerHostName() throws Exception
     {
         log("Send test server host name from base server url");
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+        _mothershipHelper.createUsageReport(UsageReportingLevel.ON, true, null);
 
         String hostName = new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
         String hostName2 = "TEST_" + hostName;
