@@ -28,15 +28,14 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.SimpleGetCommand;
 import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
+import org.labkey.serverapi.util.UsageReportingLevel;
 import org.labkey.test.LabKeySiteWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
@@ -49,6 +48,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.TestLogger;
+import org.labkey.test.util.core.admin.ServerUsageUtils;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WrapsDriver;
@@ -59,6 +59,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 
@@ -85,7 +86,7 @@ public class MothershipHelper extends LabKeySiteWrapper
     }
 
     @Override
-    public WebDriver getWrappedDriver()
+    public @NotNull WebDriver getWrappedDriver()
     {
         return _driver.getWrappedDriver();
     }
@@ -192,7 +193,7 @@ public class MothershipHelper extends LabKeySiteWrapper
             params.put("Comments", comments);
         if (assignedToEmail != null)
         {
-            String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(this).getUserId(assignedToEmail).toString();
+            String assignedToId = assignedToEmail.isEmpty() ? "" : Objects.requireNonNull(new APIUserHelper(this).getUserId(assignedToEmail), () -> "User not found: " + assignedToEmail).toString();
             params.put("AssignedTo", assignedToId);
         }
         command.setParameters(params);
@@ -222,43 +223,29 @@ public class MothershipHelper extends LabKeySiteWrapper
         }
     }
 
-    public enum ReportLevel
-    {
-        NONE,
-        ON
-    }
-
-    public void createUsageReport(ReportLevel level, boolean submit, String forwardedFor)
+    public void createUsageReport(UsageReportingLevel level, boolean submit, String forwardedFor)
     {
         createMothershipReport("CheckForUpdates", level, submit, forwardedFor);
     }
 
-    public void createExceptionReport(ReportLevel level, boolean submit)
+    public void createExceptionReport(UsageReportingLevel level, boolean submit)
     {
         createMothershipReport("ReportException", level, submit, null);
     }
 
-    private void createMothershipReport(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
+    private void createMothershipReport(String type, UsageReportingLevel level, boolean submit, @Nullable String forwardedFor)
     {
-        String relativeUrl = getTestMothershipReportUrl(type, level, submit, forwardedFor);
+        String relativeUrl = ServerUsageUtils.getTestMothershipReportUrl(type, level, submit, forwardedFor);
         beginAt(relativeUrl);
     }
 
     public void submitMockUsageReport(String hostName, String serverGUID, String sessionGUID) throws IOException, CommandException
     {
-        Map<String, Object> usageReportJson = getUsageReportJson();
+        Map<String, Object> usageReportJson = ServerUsageUtils.getUsageReportJson(createDefaultConnection());
         usageReportJson.put("serverHostName", hostName);
         usageReportJson.put("serverGUID", serverGUID);
         usageReportJson.put("serverSessionGUID", sessionGUID);
         submitUsageReport(usageReportJson);
-    }
-
-    public Map<String, Object> getUsageReportJson() throws IOException, CommandException
-    {
-        SimpleGetCommand command = new SimpleGetCommand("admin", "testMothershipReport");
-        command.setParameters(getMothershipReportParams("CheckForUpdates", ReportLevel.ON, false, null));
-        CommandResponse response = command.execute(createDefaultConnection(), "/");
-        return response.getParsedData();
     }
 
     private void submitUsageReport(Map<String, Object> report) throws IOException
@@ -286,26 +273,6 @@ public class MothershipHelper extends LabKeySiteWrapper
                 EntityUtils.consumeQuietly(response.getEntity());
             }
         }
-    }
-
-    @NotNull
-    public static String getTestMothershipReportUrl(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
-    {
-        Map<String, Object> params = getMothershipReportParams(type, level, submit, forwardedFor);
-        return WebTestHelper.buildURL("admin", "testMothershipReport", params);
-    }
-
-    @NotNull
-    private static Map<String, Object> getMothershipReportParams(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
-    {
-        Map<String, Object> params = new HashMap<>();
-        params.put("type", type);
-        params.put("level", level.toString());
-        params.put("submit", submit);
-        params.put("testMode", true);
-        if (null != forwardedFor)
-            params.put("forwardedFor", forwardedFor);
-        return params;
     }
 
     @LogMethod
