@@ -845,7 +845,7 @@ public class StudyManager
                     QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                             QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
                 }
-                indexDataset(null, datasetDefinition);
+                indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT);
 
             // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
