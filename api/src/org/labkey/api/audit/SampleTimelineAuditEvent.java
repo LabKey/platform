@@ -92,11 +92,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private String _inventoryUpdateType;
 
     /** Important for reflection-based instantiation */
-    public SampleTimelineAuditEvent() {}
+    public SampleTimelineAuditEvent()
+    {
+        super();
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+    }
 
     public SampleTimelineAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
     }
 
     public String getSampleLsid()

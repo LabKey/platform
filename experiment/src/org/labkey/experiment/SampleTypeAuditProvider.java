@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -120,14 +121,18 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         private String _sampleSetName;
         private String _insertUpdateChoice;
 
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
         public SampleTypeAuditEvent()
         {
             super();
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public SampleTypeAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public String getSourceLsid()

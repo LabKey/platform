@@ -3,7 +3,6 @@ package org.labkey.api.assay.transform;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
@@ -280,7 +279,7 @@ public class DataTransformService
             FileUtil.mkdir(tempRoot);
 
         FileLike tempParent = tempRoot.resolveChild("AssayId_" + protocol.getRowId());
-        FileLike tempFolder = AssayFileWriter.findUniqueFileName("work", tempParent);
+        FileLike tempFolder = FileUtil.findUniqueFileName("work", tempParent);
         if (!tempFolder.exists())
             FileUtil.mkdirs(tempFolder);
 
