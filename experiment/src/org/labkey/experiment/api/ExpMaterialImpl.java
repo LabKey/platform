@@ -315,7 +315,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             }
         }
 
-        index(SearchService.PRIORITY.modified);
+        index(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), null);
     }
 
     @Override

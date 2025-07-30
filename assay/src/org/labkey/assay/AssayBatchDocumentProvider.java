@@ -3,7 +3,6 @@ package org.labkey.assay;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -26,10 +25,9 @@ import static org.labkey.api.util.StringUtilsLabKey.append;
 public class AssayBatchDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
-    public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> AssayManager.get().indexAssayBatches(task, c, modifiedSince, SearchService.PRIORITY.crawl);
-        task.addRunnable(c, SearchService.PRIORITY.crawl, runEnumerate);
+        queue.addRunnable((q) -> AssayManager.get().indexAssayBatches(q, modifiedSince));
     }
 
     private static SearchService.SearchCategory getSearchCategory()

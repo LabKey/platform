@@ -1519,12 +1519,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public void enumerateDocuments(final SearchService.IndexTask task, @NotNull final Container c, Date since)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, Date since)
     {
-        final SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
+        Container c = queue.getContainer();
         if (c.isRoot())
             return;
 
@@ -1581,10 +1578,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     UserManager.getUser(c.getCreatedBy()), c.getCreated(),
                     null, null,
                     properties);
-            (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.crawl);
+            queue.addResource(doc);
         };
-        // running this asynchronously seems to expose race conditions in domain checking/creation
-        // (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
         r.run();
     }
 

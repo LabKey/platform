@@ -356,7 +356,7 @@ public class AnnouncementManager
                 sendNotificationEmails(ann, currentRendererType, c, user);
             }
 
-            indexThread(ann);
+            indexThread(ann, c);
         }
     }
 
@@ -688,7 +688,7 @@ public class AnnouncementManager
         }
         finally
         {
-            indexThread(update);
+            indexThread(update, c);
         }
 
         return result;
@@ -851,26 +851,25 @@ public class AnnouncementManager
         ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), c, null);
     }
 
-    public static void indexMessages(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexMessages(SearchService.TaskIndexingQueue queue, Date modifiedSince)
     {
-        indexMessages(task, c.getId(), modifiedSince, null, SearchService.PRIORITY.modified);
+        indexMessages(queue, modifiedSince, null);
     }
 
 
     // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
-    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, @Nullable String threadId, SearchService.PRIORITY priority)
+    public static void indexMessages(SearchService.TaskIndexingQueue queue, Date modifiedSince, @Nullable String threadId)
     {
-        assert null != containerId;
-        if (null == containerId || (null != modifiedSince && null != threadId))
+        if ((null != modifiedSince && null != threadId))
             throw new IllegalArgumentException();
         // make sure container still exists
-        Container c = ContainerManager.getForId(containerId);
+        Container c = queue.getContainer();
         if (null == c || isSecure(c))
             return;
 
         SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
         sql.append(" WHERE Container = ?");
-        sql.add(containerId);
+        sql.add(c);
         String and = " AND ";
 
         if (null != threadId)
@@ -897,7 +896,7 @@ public class AnnouncementManager
                 {
                     String docid = "thread:" + entityId;
                     ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-                    url.setExtraPath(containerId);
+                    url.setExtraPath(c.getId());
                     url.addParameter("entityId", entityId);
 
                     Map<String, Object> props = new HashMap<>();
@@ -927,7 +926,7 @@ public class AnnouncementManager
                         }
                     };
 
-                    task.addResource(sdr, priority);
+                    queue.addResource(sdr);
                 }
             });
         }
@@ -937,7 +936,7 @@ public class AnnouncementManager
         // find all messages that have attachments
         sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
         sql.append("\nWHERE a.container = ?");
-        sql.add(containerId);
+        sql.add(c);
         and = " AND ";
         if (null != threadId)
         {
@@ -966,7 +965,7 @@ public class AnnouncementManager
             AnnouncementModel ann = new AnnouncementModel();
             ann.setEntityId(entityId);
             ann.setParent(parent);
-            ann.setContainer(containerId);
+            ann.setContainer(c.getId());
             ann.setTitle(title);
             map.put(entityId, ann);
         });
@@ -975,7 +974,7 @@ public class AnnouncementManager
         {
             List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
             ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-            urlThread.setExtraPath(containerId);
+            urlThread.setExtraPath(c.getId());
 
             for (Pair<String, String> pair : list)
             {
@@ -996,7 +995,7 @@ public class AnnouncementManager
                         ann.getAttachmentParent(),
                         documentName, searchCategory);
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.modified);
+                queue.addResource(attachmentRes);
             }
         }
     }
@@ -1019,26 +1018,16 @@ public class AnnouncementManager
     private static void unindexThread(@NotNull AnnouncementModel ann)
     {
         String docid = "thread:" + ann.getEntityId();
-        SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            ss.deleteResource(docid);
-        }
+        SearchService.get().deleteResource(docid);
         // Note: Attachments are unindexed by attachment service
     }
 
 
-    static void indexThread(AnnouncementModel ann)
+    static void indexThread(AnnouncementModel ann, Container c)
     {
         String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
-        String container = ann.getContainerId();
-        SearchService svc = SearchService.get();
-        if (svc != null)
-        {
-            SearchService.IndexTask task = svc.defaultTask();
-            // indexMessages is overkill, but I don't want to duplicate the code
-            indexMessages(task, container, null, parent, SearchService.PRIORITY.modified);
-        }
+        // indexMessages is overkill, but I don't want to duplicate the code
+        indexMessages(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null, parent);
     }
 
     public static HtmlString getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)

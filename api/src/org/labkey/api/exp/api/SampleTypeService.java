@@ -223,7 +223,7 @@ public interface SampleTypeService
     void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     // used by DomainKind.invalidate()
-    void indexSampleType(ExpSampleType sampleType, SearchService.PRIORITY priority);
+    void indexSampleType(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue);
 
     @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly);
 

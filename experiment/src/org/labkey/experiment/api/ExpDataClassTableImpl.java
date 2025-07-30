@@ -314,7 +314,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             ExperimentServiceImpl.get().clearDataClassCache(c);
             dc = ExperimentServiceImpl.get().getDataClass(c, rowId); // retrieve the new data class with updated domain
-            ExperimentServiceImpl.get().indexDataClass(dc, SearchService.PRIORITY.modified);
+            ExperimentServiceImpl.get().indexDataClass(dc, SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified));
 
             return ret;
         }

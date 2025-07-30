@@ -18,7 +18,6 @@ package org.labkey.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -38,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class ExternalSchemaDocumentProvider implements SearchService.DocumentProvider
 {
@@ -56,26 +56,18 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
     }
 
     @Override
-    public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, Date since)
     {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
-        final SearchService.IndexTask task = null==t ? ss.defaultTask() : t;
-
-        Runnable r = () ->
+        Consumer<SearchService.TaskIndexingQueue> r = (q) ->
         {
+            Container c = q.getContainer();
             User user = User.getSearchUser();
             QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
             Map<String, UserSchema> externalSchemas = svc.getExternalSchemas(user, c);
 
             // First, delete all external schema docs in this container.  This addresses schemas/tables that have
             // disappeared from the data source plus existing schemas that get changed to not index.
-            SearchService ss1 = SearchService.get();
-
-            if (null != ss1)
-                ss1.deleteResourcesForPrefix("externalTable:" + c.getId());
+            SearchService.get().deleteResourcesForPrefix("externalTable:" + c.getId());
 
             for (UserSchema schema : externalSchemas.values())
             {
@@ -152,11 +144,11 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                             body.toString(),
                             url,
                             props);
-                    task.addResource(r1, SearchService.PRIORITY.modified);
+                    q.addResource(r1);
                 }
             }
         };
 
-        task.addRunnable(c, SearchService.PRIORITY.crawl, r);
+        queue.addRunnable(r);
     }
 }

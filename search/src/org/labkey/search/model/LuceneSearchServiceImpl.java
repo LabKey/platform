@@ -146,6 +146,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -2087,7 +2088,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         @Test
         public void testSort()
         {
-            Runnable r = () -> {};
+            Consumer<TaskIndexingQueue> r = (q) -> {};
 
             // Create crawl/Runnable items to ensure they get ordered based on creation order
             Item crawlRunnable1 = new Item(_ss.defaultTask(), r, PRIORITY.crawl, null);

@@ -131,10 +131,10 @@ public interface AssayService
     @Nullable
     ExpExperiment findBatch(ExpRun run);
 
-    void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol, SearchService.PRIORITY priority);
-    void indexAssays(SearchService.IndexTask task, Container c, SearchService.PRIORITY priority);
+    void indexAssay(SearchService.TaskIndexingQueue queue, ExpProtocol protocol);
+    void indexAssays(SearchService.TaskIndexingQueue queue);
 
-    void indexAssayRun(int expRunRowId, SearchService.PRIORITY priority);
+    void indexAssayRun(SearchService.TaskIndexingQueue queue, int expRunRowId);
 
     void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
 

@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public interface SearchService extends SearchMXBean
 {
@@ -96,9 +97,12 @@ public interface SearchService extends SearchMXBean
     // marker value for documents with indexing errors
     Date failDate = new Timestamp(DateUtil.parseISODateTime("1899-12-30"));
 
-    static @Nullable SearchService get()
+    static final SearchService NO_OP = new NoopSearchService();
+
+    static @NotNull SearchService get()
     {
-        return ServiceRegistry.get().getService(SearchService.class);
+        SearchService service = ServiceRegistry.get().getService(SearchService.class);
+        return service == null ? NO_OP : service;
     }
 
     static void setInstance(SearchService impl)
@@ -111,7 +115,10 @@ public interface SearchService extends SearchMXBean
      */
     void reindexContainerFiles(Container c);
 
-    void purgeForContainer(Container container);
+    /**
+     * Removes all non-delete work from the queue associated with the target container
+     */
+    void purgeForContainer(@NotNull Container container);
 
     /**
      * Puts work in the indexer queue at the specified priority and waits up to the timeout for it to complete
@@ -199,18 +206,23 @@ public interface SearchService extends SearchMXBean
          */
         void setReady();
 
+        TaskIndexingQueue getQueue(@Nullable Container container, @NotNull SearchService.PRIORITY pri);
+    }
+
+    interface TaskIndexingQueue
+    {
         /**
          * Runnables are used to queue up search work that will often involve adding many individual resources.
          * This lets us avoid holding lots of to-be-index resources in memory all at once.
-         * @param container optionally, the container associated with the indexer work. Used to purge work from the queue when a container is about to be deleted */
-        void addRunnable(@Nullable Container container, @NotNull SearchService.PRIORITY pri, @NotNull Runnable r);
+         */
+        void addRunnable(@NotNull Consumer<TaskIndexingQueue> r);
 
         /**
-         * Resources are individual documents that should be added to the index
-         * @param r
-         * @param pri
+         * Resources represent individual documents that should be added to the index
          */
-        void addResource(@NotNull WebdavResource r, @NotNull SearchService.PRIORITY pri);
+        void addResource(@NotNull WebdavResource r);
+
+        Container getContainer();
     }
 
 
@@ -421,8 +433,6 @@ public interface SearchService extends SearchMXBean
     void addPathToCrawl(Path path, @Nullable Date nextCrawl);
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
-    // TODO: Remove? This is never called
-    IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
     void indexFull(boolean force, String reason);
 
     void waitForIdle() throws InterruptedException;
@@ -463,7 +473,7 @@ public interface SearchService extends SearchMXBean
          *
          * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
-        void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince);
+        void enumerateDocuments(TaskIndexingQueue adder, @Nullable Date modifiedSince);
 
         /**
          * if the full-text search index is deleted, providers may need to clear stored lastIndexed values.

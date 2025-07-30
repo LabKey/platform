@@ -26,7 +26,7 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterExperimentSaved(Container c, User user, ExpExperiment experiment)
     {
-        AssayManager.get().indexAssayBatch(experiment.getRowId(), SearchService.PRIORITY.modified);
+        AssayManager.get().indexAssayBatch(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), experiment);
     }
 
     @Override
@@ -41,6 +41,6 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run)
     {
-        AssayManager.get().indexAssayRun(run.getRowId(), SearchService.PRIORITY.modified);
+        AssayManager.get().indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), run.getRowId());
     }
 }

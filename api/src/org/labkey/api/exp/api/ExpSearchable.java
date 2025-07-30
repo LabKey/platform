@@ -12,30 +12,11 @@ public interface ExpSearchable
 {
     @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table);
 
-    default void index(@NotNull SearchService.PRIORITY priority)
+    default void index(@NotNull SearchService.TaskIndexingQueue queue, @Nullable TableInfo table)
     {
-        index(priority, null);
-    }
-
-    default void index(@NotNull SearchService.PRIORITY priority, @Nullable SearchService.IndexTask task)
-    {
-        index(priority, task, null);
-    }
-
-    default void index(@NotNull SearchService.PRIORITY priority, @Nullable SearchService.IndexTask task, @Nullable TableInfo table)
-    {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-
-            task = ss.defaultTask();
-        }
-
         var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
         var doc = expScope.executeWithRetryReadOnly((tx) -> createIndexDocument(table));
         if (doc != null)
-            task.addResource(doc, priority);
+            queue.addResource(doc);
     }
 }

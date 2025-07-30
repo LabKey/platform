@@ -45,7 +45,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.User;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
@@ -686,8 +685,11 @@ public class WikiManager implements WikiService
             return;
         }
         Container c = ContainerService.get().getForId(page.getContainerId());
-        if (null != c)
-            indexWikis(null, c, null, page.getName(), SearchService.PRIORITY.modified);
+        SearchService ss = getSearchService();
+        if (null != ss && c != null)
+        {
+            indexWikis(ss.defaultTask().getQueue(c, SearchService.PRIORITY.modified), null, page.getName());
+        }
     }
 
 
@@ -704,32 +706,23 @@ public class WikiManager implements WikiService
     }
 
 
-    public void indexWikis(@Nullable IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName, SearchService.PRIORITY priority)
+    public void indexWikis(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
-        final SearchService ss = getSearchService();
-        if (null == ss)
-            return;
-
-        if (null == task)
-            task = ss.defaultTask();
-
-        final IndexTask fTask = task;
-
         // Use a Runnable to postpone construction of the MockViewContext; if we're bootstrapping then base server URL won't be ready.
-        fTask.addRunnable(c, priority, () -> {
+        queue.addRunnable((q) -> {
             // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webparts
-            try (StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
+            try (StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), q.getContainer(), new ActionURL()))
             {
-                indexWikiContainerFast(fTask, c, modifiedSince, wikiName);
+                indexWikiContainerFast(q, modifiedSince, wikiName);
             }
         });
     }
 
 
-    private void indexWikiContainerFast(@NotNull IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
+    private void indexWikiContainerFast(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
         LOG.debug("indexWikiContainerFast(" + wikiName + ")");
-
+        Container c = queue.getContainer();
         SQLFragment f = new SQLFragment();
         f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
             .append("V.title, V.body, V.renderertype\n");
@@ -791,7 +784,7 @@ public class WikiManager implements WikiService
                 try
                 {
                     WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, wikiName, entityId, body, rendererType, props);
-                    task.addResource(r, SearchService.PRIORITY.modified);
+                    queue.addResource(r);
                 }
                 catch (Throwable t)
                 {
@@ -851,7 +844,7 @@ public class WikiManager implements WikiService
                 NavTree t = new NavTree("wiki page", wikiUrl);
                 String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.modified);
+                queue.addResource(attachmentRes);
             }
         }
     }

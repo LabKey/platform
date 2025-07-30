@@ -6502,9 +6502,7 @@ public class DavController extends SpringActionController
         if (isTempFile(r))
             return;
         
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            ss.defaultTask().addResource(r, SearchService.PRIORITY.modified);
+        SearchService.get().defaultTask().getQueue(ContainerManager.getForId(r.getContainerId()), SearchService.PRIORITY.modified).addResource(r);
     }
 
 

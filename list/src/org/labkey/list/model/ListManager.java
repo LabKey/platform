@@ -54,7 +54,6 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
@@ -87,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ListManager implements SearchService.DocumentProvider
@@ -472,38 +472,25 @@ public class ListManager implements SearchService.DocumentProvider
 
     // Index all lists in this container
     @Override
-    public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date since)
     {
-        final IndexTask task;
-        if (null == t)
-        {
-            final SearchService ss = SearchService.get();
-            if (ss == null)
-                return;
-            task = ss.defaultTask();
-        }
-        else
-        {
-            task = t;
-        }
-
-        Runnable r = () -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(c, null, false);
+        Consumer<SearchService.TaskIndexingQueue> r = (q) -> {
+            Map<String, ListDefinition> lists = ListService.get().getLists(q.getContainer(), null, false);
 
             try
             {
                 QueryService.get().setEnvironment(QueryService.Environment.USER, User.getSearchUser());
-                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, q.getContainer());
                 for (ListDefinition list : lists.values())
                 {
                     try
                     {
                         boolean reindex = since == null;
-                        indexList(task, list, reindex);
+                        indexList(q, list, reindex);
                     }
                     catch (Exception ex)
                     {
-                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + c.getPath() + "'.", ex);
+                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + q.getContainer().getPath() + "'.", ex);
                     }
                 }
             }
@@ -513,7 +500,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
         };
 
-        task.addRunnable(c, SearchService.PRIORITY.crawl, r);
+        queue.addRunnable(r);
     }
 
     public void indexList(final ListDefinition def)
@@ -524,28 +511,9 @@ public class ListManager implements SearchService.DocumentProvider
     // Index a single list
     public void indexList(final ListDef def)
     {
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
+        SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(def.lookupContainer(), SearchService.PRIORITY.modified);
+        Consumer<SearchService.TaskIndexingQueue> r = (q) ->
         {
-            final IndexTask task = ss.defaultTask();
-
-            Runnable r = () ->
-            {
-                Container c = def.lookupContainer();
-                if (!ContainerManager.exists(c))
-                {
-                    LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
-                }
-                else
-                {
-                    //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
-                    ListDefinition list = ListService.get().getList(c, def.getListId());
-                    if (null != list) // Could have just been deleted
-                        indexList(task, list, false);
-                }
-            };
-
             Container c = def.lookupContainer();
             if (!ContainerManager.exists(c))
             {
@@ -553,13 +521,25 @@ public class ListManager implements SearchService.DocumentProvider
             }
             else
             {
-                task.addRunnable(c, SearchService.PRIORITY.modified, r);
+                //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
+                ListDefinition list = ListService.get().getList(c, def.getListId());
+                if (null != list) // Could have just been deleted
+                    indexList(q, list, false);
             }
+        };
 
+        Container c = def.lookupContainer();
+        if (!ContainerManager.exists(c))
+        {
+            LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+        }
+        else
+        {
+            queue.addRunnable(r);
         }
     }
 
-    private void indexList(@NotNull IndexTask task, ListDefinition list, final boolean reindex)
+    private void indexList(SearchService.TaskIndexingQueue queue, ListDefinition list, final boolean reindex)
     {
         Domain domain = list.getDomain();
 
@@ -569,9 +549,9 @@ public class ListManager implements SearchService.DocumentProvider
             // indexing methods turn off JDBC driver caching and use a side connection, so we must not be in a transaction
             assert !DbScope.getLabKeyScope().isTransactionActive() : "Should not be in a transaction since this code path disables JDBC driver caching";
 
-            indexEntireList(task, list, reindex);
-            indexModifiedItems(task, list, reindex);
-            indexAttachments(task, list, reindex);
+            indexEntireList(queue, list, reindex);
+            indexModifiedItems(queue, list, reindex);
+            indexAttachments(queue, list, reindex);
         }
     }
 
@@ -582,23 +562,16 @@ public class ListManager implements SearchService.DocumentProvider
         // because it turns off JDBC caching, using a non-transacted connection (bad news if we call it mid-transaction).
         getListMetadataSchema().getScope().addCommitTask(() ->
         {
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(list.getContainer(), SearchService.PRIORITY.modified);
+            if (list.getEachItemIndex())
             {
-                final IndexTask task = ss.defaultTask();
+                SearchService.get().deleteResource(getDocumentId(list, entityId));
+            }
 
-                if (list.getEachItemIndex())
-                {
-                    Runnable r = () -> ss.deleteResource(getDocumentId(list, entityId));
-                    task.addRunnable(list.getContainer(), SearchService.PRIORITY.delete, r);
-                }
-
-                // Reindex the entire list document iff data is being indexed
-                if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
-                {
-                    indexEntireList(task, list, true);
-                }
+            // Reindex the entire list document iff data is being indexed
+            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+            {
+                indexEntireList(queue, list, true);
             }
         }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
@@ -621,7 +594,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex)
+    private void indexModifiedItems(@NotNull SearchService.TaskIndexingQueue queue, final ListDefinition list, final boolean reindex)
     {
         if (list.getEachItemIndex())
         {
@@ -631,12 +604,12 @@ public class ListManager implements SearchService.DocumentProvider
             lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
             SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
 
-            indexItems(task, list, filter);
+            indexItems(queue, list, filter);
         }
     }
 
     // Reindex items specified by filter
-    private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private void indexItems(@NotNull SearchService.TaskIndexingQueue queue, final ListDefinition list, SimpleFilter filter)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
 
@@ -727,7 +700,7 @@ public class ListManager implements SearchService.DocumentProvider
                 String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                task.addResource(r, SearchService.PRIORITY.modified);
+                queue.addResource(r);
                 LOG.debug("List \"" + list + "\": Queued indexing of item with PK = " + pk);
             });
         }
@@ -735,10 +708,9 @@ public class ListManager implements SearchService.DocumentProvider
 
     /**
      * Add searchable resources to Indexing task for file attachments
-     * @param task indexing task
      * @param list containing file attachments
      */
-    private void indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean reindex)
+    private void indexAttachments(@NotNull final SearchService.TaskIndexingQueue queue, ListDefinition list, boolean reindex)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
         if (listTable != null && list.getFileAttachmentIndex() && hasAttachmentColumns(listTable))
@@ -789,7 +761,7 @@ public class ListManager implements SearchService.DocumentProvider
                         );
 
                         attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                        task.addResource(attachmentRes, SearchService.PRIORITY.modified);
+                        queue.addResource(attachmentRes);
                         LOG.debug("List \"" + list + "\": Queued indexing of attachment \"" + documentName + "\" for item with PK = " + map.get(list.getKeyName()));
                     });
                 });
@@ -797,7 +769,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-    private void indexEntireList(@NotNull IndexTask task, final ListDefinition list, boolean reindex)
+    private void indexEntireList(SearchService.TaskIndexingQueue queue, final ListDefinition list, boolean reindex)
     {
         if (list.getEntireListIndex())
         {
@@ -892,7 +864,7 @@ public class ListManager implements SearchService.DocumentProvider
                     }
                 };
 
-                task.addResource(r, SearchService.PRIORITY.modified);
+                queue.addResource(r);
                 LOG.debug("List \"" + list + "\": Queued indexing of entire list document");
             }
         }

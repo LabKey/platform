@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
-import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.DateUtils;
@@ -69,7 +68,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,6 +79,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
@@ -113,7 +112,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     enum OPERATION
     {
-        add, delete, noop
+        add, noop
     }
 
     public AbstractSearchService()
@@ -172,16 +171,38 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             super(description, l);
         }
 
-
         @Override
-        public void addRunnable(Container container, @NotNull PRIORITY pri, @NotNull Runnable r)
+        public TaskIndexingQueue getQueue(@Nullable Container container, @NotNull PRIORITY pri)
+        {
+            return new TaskIndexingQueue()
+            {
+                @Override
+                public void addRunnable(@NotNull Consumer<TaskIndexingQueue> r)
+                {
+                    _IndexTask.this.addRunnable(container, pri, r);
+                }
+
+                @Override
+                public void addResource(@NotNull WebdavResource r)
+                {
+                    _IndexTask.this.addResource(r, pri);
+                }
+
+                @Override
+                public Container getContainer()
+                {
+                    return container;
+                }
+            };
+        }
+
+        public void addRunnable(Container container, @NotNull PRIORITY pri, @NotNull Consumer<TaskIndexingQueue> r)
         {
             Item i = new Item(this, r, pri, container);
-            this.addItem(i);
+            addItem(i);
             queueItem(i);
         }
 
-        @Override
         public void addResource(@NotNull WebdavResource r, @NotNull PRIORITY pri)
         {
             if (!r.shouldIndex())
@@ -203,7 +224,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
             };
             addItem(i);
-            final Item r = new Item(this, () -> queueItem(i), pri, null);
+            final Item r = new Item(this, (q) -> queueItem(i), pri, null);
             queueItem(r);
         }
 
@@ -247,10 +268,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         String _id;
         _IndexTask _task;
         WebdavResource _res;
-        Runnable _run;
+        Consumer<TaskIndexingQueue> _run;
         PRIORITY _pri;
         // Used to ensure FIFO ordering in the queue
-        final long _seqNum = seq.incrementAndGet();
+        final long _seqNum;
         final GUID _containerId;
 
         int _preprocessAttempts = 0;
@@ -269,15 +290,40 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _pri = pri;
             _task = task;
             _containerId = r == null ? null : r.getContainerId();
+            _seqNum = seq.incrementAndGet();
         }
 
-        Item(_IndexTask task, Runnable r, @NotNull PRIORITY pri, Container container)
+        Item(_IndexTask task, Consumer<TaskIndexingQueue> r, @NotNull PRIORITY pri, Container container)
         {
             _run = r;
             _pri = pri;
             _task = task;
             _id = String.valueOf(r);
             _containerId = container == null ? null : container.getEntityId();
+            _seqNum = seq.incrementAndGet();
+        }
+
+        Item(Item parentItem, Consumer<TaskIndexingQueue> r, WebdavResource resource)
+        {
+            if (null != resource)
+            {
+                _start = HeartBeat.currentTimeMillis();
+                _op = OPERATION.add;
+                _res = resource;
+            }
+            else if (r != null)
+            {
+                _run = r;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Both resource and runnable cannot be null");
+            }
+            _pri = parentItem._pri;
+            _task = parentItem._task;
+            _id = r == null ? resource.getDocumentId() : String.valueOf(r);
+            _containerId = parentItem._containerId;
+            _seqNum = parentItem._seqNum;
         }
 
         OPERATION getOperation()
@@ -363,7 +409,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    final Item _commitItem = new Item(null, () -> {}, PRIORITY.commit, null);
+    final Item _commitItem = new Item(null, (q) -> {}, PRIORITY.commit, null);
 
 
     @Override
@@ -420,15 +466,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public final void deleteContainer(final String id)
     {
-        Runnable r = () -> {
+        Consumer<TaskIndexingQueue> r = (q) -> {
             deleteIndexedContainer(id);
             synchronized (_commitLock)
             {
                 _countIndexedSinceCommit++;
             }
         };
-        // Don't try to pass in a container because we don't want to eject this from the queue as part of the container
-        // deletion process
         queueItem(new Item(defaultTask(), r, PRIORITY.delete, null));
     }
 
@@ -465,7 +509,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void reindexContainerFiles(Container c)
     {
         //Create new runnable instead of using existing methods so they can be run within the same job.
-        Runnable r = () -> {
+        Consumer<TaskIndexingQueue> r = (q) -> {
             //Remove old items
             clearIndexedFileSystemFiles(c);
 
@@ -473,8 +517,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             //Recrawl files as the container name may be used in paths & Urls. Issue #39696
             DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
         };
-        // Don't pass a container because we don't want to skip this when a container is deleted
-        queueItem(new Item(defaultTask(), r, PRIORITY.delete, null));
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete, c));
     }
 
     private void queueItem(Item i)
@@ -633,10 +676,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public void purgeForContainer(Container container)
+    public void purgeForContainer(@NotNull Container container)
     {
-        _runQueue.removeIf(i -> container.getEntityId().equals(i._containerId));
-        _itemQueue.removeIf(i -> container.getEntityId().equals(i._containerId));
+        _runQueue.removeIf(i -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete);
+        _itemQueue.removeIf(i -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete);
     }
 
     @Override
@@ -663,7 +706,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         });
         // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
         // queue an Item to ensure all queues are cleared
-        task.addRunnable(null, priority, () -> {
+        task.addRunnable(null, priority, (q) -> {
             logQueueStatus("drainQueue's Runnable.run()");
             task.addNoop(priority);
         });
@@ -1031,11 +1074,35 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
                 if (null != i)
                 {
+                    final Item item = i;
                     while (!_shuttingDown && _itemQueue.size() > 1000)
                     {
                         try {Thread.sleep(100);}catch(InterruptedException ignored){}
                     }
-                    i._run.run();
+                    item._run.accept(new TaskIndexingQueue()
+                    {
+                        @Override
+                        public void addRunnable(@NotNull Consumer<TaskIndexingQueue> r)
+                        {
+                            Item childItem = new Item(item, r, null);
+                            item._task.addItem(childItem);
+                            queueItem(childItem);
+                        }
+
+                        @Override
+                        public void addResource(@NotNull WebdavResource r)
+                        {
+                            Item childItem = new Item(item, null, r);
+                            item._task.addItem(childItem);
+                            queueItem(childItem);
+                        }
+
+                        @Override
+                        public Container getContainer()
+                        {
+                            return ContainerManager.getForId(item._containerId);
+                        }
+                    });
                 }
             }
             catch (InterruptedException ignored) {}
@@ -1347,42 +1414,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         _log.debug("Indexing container \"" + c + "\", since: " + since);
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
-
-        Runnable r = () ->
+        task.getQueue(c, PRIORITY.crawl).addRunnable((q) ->
         {
             for (DocumentProvider p : _documentProviders)
             {
-                p.enumerateDocuments(task, c, since);
+                p.enumerateDocuments(q, since);
             }
-        };
-        task.addRunnable(c, PRIORITY.crawl, r);
-        if (null == in)
-            task.setReady();
-        return task;
-    }
-
-
-    // TODO: Remove? This is never called
-    // UNDONE: get last crawl time from Crawler? support incrementals
-    @Override
-    public IndexTask indexProject(IndexTask in, final Container c)
-    {
-        final IndexTask task = null==in ? createTask("Index project " + c.getName()) : in;
-
-        Runnable r = () -> {
-            MultiValuedMap<Container, Container> mmap = ContainerManager.getContainerTree(c);
-            Set<Container> set = new HashSet<>();
-            for (Container key : mmap.keySet())
-            {
-                set.add(key);
-                set.addAll(mmap.get(key));
-            }
-            for (Container i : set)
-            {
-                indexContainer(task, i, null);
-            }
-        };
-        task.addRunnable(c, PRIORITY.crawl, r);
+        });
         if (null == in)
             task.setReady();
         return task;

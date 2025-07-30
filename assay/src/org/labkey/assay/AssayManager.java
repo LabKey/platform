@@ -620,22 +620,18 @@ public class AssayManager implements AssayService
      * the names and comments from all the runs.
      */
     @Override
-    public void indexAssays(SearchService.IndexTask task, Container c, SearchService.PRIORITY priority)
+    public void indexAssays(SearchService.TaskIndexingQueue queue)
     {
-        SearchService ss = SearchService.get();
-
-        if (null == ss)
-            return;
-
-        List<ExpProtocol> protocols = getAssayProtocols(c);
+        List<ExpProtocol> protocols = getAssayProtocols(queue.getContainer());
 
         for (ExpProtocol protocol : protocols)
-            indexAssay(task, c, protocol, priority);
+            indexAssay(queue, protocol);
     }
 
     @Override
-    public void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol, SearchService.PRIORITY priority)
+    public void indexAssay(SearchService.TaskIndexingQueue queue, ExpProtocol protocol)
     {
+        Container c = queue.getContainer();
         AssayProvider provider = getProvider(protocol);
 
         if (null == provider || null == c)
@@ -677,7 +673,7 @@ public class AssayManager implements AssayService
 
         String docId = protocol.getDocumentId();
         WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
-        task.addResource(r, SearchService.PRIORITY.modified);
+        queue.addResource(r);
     }
 
     private boolean shouldIndexBatch(ExpExperiment batch)
@@ -712,94 +708,71 @@ public class AssayManager implements AssayService
         return expRun != null && getProvider(expRun) != null && expRun.getReplacedByRun() == null;
     }
 
-    public void indexAssayBatch(int expRunRowId, SearchService.PRIORITY priority)
-    {
-        ExpRun run = ExperimentService.get().getExpRun(expRunRowId);
-        if (run == null)
-            return;
-
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
-        ExpExperiment batch = run.getBatch();
-        if (shouldIndexBatch(batch))
-            indexAssayBatch(ss.defaultTask(), batch, priority);
-    }
-
-    private void indexAssayBatch(@NotNull SearchService.IndexTask task, ExpExperiment batch, SearchService.PRIORITY priority)
+    public void indexAssayBatch(@NotNull SearchService.TaskIndexingQueue queue, ExpExperiment batch)
     {
         WebdavResource resource = AssayBatchDocumentProvider.createDocument(batch);
-        task.addResource(resource, priority);
+        queue.addResource(resource);
     }
 
-    public void indexAssayBatches(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince, SearchService.PRIORITY priority)
+    public void indexAssayBatches(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        for (ExpProtocol protocol : getAssayProtocols(c))
+        for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
         {
             if (shouldIndexProtocolBatches(protocol))
-                indexAssayBatches(task, protocol, modifiedSince, priority);
+                indexAssayBatches(queue, protocol, modifiedSince);
         }
     }
 
-    private void indexAssayBatches(SearchService.IndexTask task, ExpProtocol protocol, @Nullable Date modifiedSince, SearchService.PRIORITY priority)
+    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
     {
         if (shouldIndexProtocolBatches(protocol))
         {
             for (ExpExperiment batch : protocol.getBatches())
             {
                 if (modifiedSince == null || modifiedSince.before(batch.getModified()))
-                    indexAssayBatch(task, batch, priority);
+                    indexAssayBatch(queue, batch);
             }
         }
     }
 
-    public void indexAssayRuns(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince, SearchService.PRIORITY priority)
+    public void indexAssayRuns(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        for (ExpProtocol protocol : getAssayProtocols(c))
-            indexAssayRuns(task, c, protocol, modifiedSince, priority);
+        for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
+            indexAssayRuns(queue, protocol, modifiedSince);
     }
 
-    private void indexAssayRuns(SearchService.IndexTask task, Container c, ExpProtocol protocol, @Nullable Date modifiedSince, SearchService.PRIORITY priority)
+    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
     {
-        ExperimentService.get().getExpRuns(c, protocol, null, run ->
+        ExperimentService.get().getExpRuns(queue.getContainer(), protocol, null, run ->
                 modifiedSince == null || modifiedSince.before(run.getModified())
-        ).forEach(r -> indexAssayRun(task, r, priority));
+        ).forEach(r -> indexAssayRun(queue, r));
     }
 
     @Override
-    public void indexAssayRun(int expRunRowId, SearchService.PRIORITY priority)
+    public void indexAssayRun(SearchService.TaskIndexingQueue queue, int expRunRowId)
     {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
         ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
         if (expRun == null)
             return;
         
         if (shouldIndexRun(expRun))
-            indexAssayRun(ss.defaultTask(), ExperimentService.get().getExpRun(expRunRowId), priority);
+            indexAssayRun(queue, ExperimentService.get().getExpRun(expRunRowId));
     }
 
-    private void indexAssayRun(SearchService.IndexTask task, ExpRun run, SearchService.PRIORITY priority)
+    private void indexAssayRun(SearchService.TaskIndexingQueue queue, ExpRun run)
     {
         if (run == null)
             return;
 
         WebdavResource resource = AssayRunDocumentProvider.createDocument(run);
-        task.addResource(resource, priority);
+        queue.addResource(resource);
     }
 
     @Override
     public void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols)
     {
-        SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
-
         for (ExpProtocol protocol : expProtocols)
-            ss.deleteResource(protocol.getDocumentId());
+            SearchService.get().deleteResource(protocol.getDocumentId());
     }
 
     @Override
@@ -808,15 +781,11 @@ public class AssayManager implements AssayService
         if (expRuns == null || expRuns.isEmpty())
             return;
 
-        SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
-
         Set<String> documentIds = new HashSet<>();
         for (ExpRun expRun : expRuns)
             documentIds.add(AssayRunDocumentProvider.getDocumentId(expRun));
 
-        ss.deleteResources(documentIds);
+        SearchService.get().deleteResources(documentIds);
     }
 
     public void deindexAssayBatches(Collection<? extends ExpExperiment> batches)
@@ -824,15 +793,11 @@ public class AssayManager implements AssayService
         if (batches == null || batches.isEmpty())
             return;
 
-        SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
-
         Set<String> documentIds = new HashSet<>();
         for (ExpExperiment batch : batches)
             documentIds.add(AssayBatchDocumentProvider.getDocumentId(batch));
 
-        ss.deleteResources(documentIds);
+        SearchService.get().deleteResources(documentIds);
     }
 
     @Override

@@ -179,7 +179,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         super.setComment(user, comment);
 
         if (index)
-            index(SearchService.PRIORITY.modified);
+            index(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), null);
     }
 
     @Override
@@ -267,7 +267,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 Table.insert(user, dataClass.getTinfo(), map);
             }
         }
-        index(SearchService.PRIORITY.modified);
+        index(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), null);
     }
 
     @Override

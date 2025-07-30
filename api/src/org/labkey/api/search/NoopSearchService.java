@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.search;
+package org.labkey.api.search;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.search.SearchResultTemplate;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -37,20 +35,36 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class NoopSearchService implements SearchService
 {
     IndexTask _dummyTask = new IndexTask()
     {
-        @Override
-        public void addRunnable(Container container, @NotNull PRIORITY pri, @NotNull Runnable r)
-        {
-        }
-
 
         @Override
-        public void addResource(@NotNull WebdavResource r, @NotNull PRIORITY pri)
+        public TaskIndexingQueue getQueue(@Nullable Container container, @NotNull PRIORITY pri)
         {
+            return new TaskIndexingQueue()
+            {
+                @Override
+                public void addRunnable(@NotNull Consumer<TaskIndexingQueue> r)
+                {
+
+                }
+
+                @Override
+                public void addResource(@NotNull WebdavResource r)
+                {
+
+                }
+
+                @Override
+                public Container getContainer()
+                {
+                    return container;
+                }
+            };
         }
 
         @Override
@@ -178,7 +192,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void purgeForContainer(Container container)
+    public void purgeForContainer(@NotNull Container container)
     {
     }
 
@@ -370,12 +384,6 @@ public class NoopSearchService implements SearchService
 
     @Override
     public IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since)
-    {
-        return null==task?_dummyTask:task;
-    }
-
-    @Override
-    public IndexTask indexProject(@Nullable IndexTask task, Container project)
     {
         return null==task?_dummyTask:task;
     }
