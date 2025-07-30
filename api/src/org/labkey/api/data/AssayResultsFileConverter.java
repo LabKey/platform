@@ -1,6 +1,5 @@
 package org.labkey.api.data;
 
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.FileUtil;
@@ -36,7 +35,7 @@ public class AssayResultsFileConverter extends ExpDataFileConverter
 
                 for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
                 {
-                    String resultsFileName = AssayFileWriter.getAppendedFileName(valueStr, i);
+                    String resultsFileName = FileUtil.getAppendedFileName(valueStr, i);
                     File resultsFile = FileUtil.appendName(runRoot, resultsFileName);
                     if (!resultsFile.exists() || !URIUtil.isDescendant(runRoot.toURI(), resultsFile.toURI()))
                         break;

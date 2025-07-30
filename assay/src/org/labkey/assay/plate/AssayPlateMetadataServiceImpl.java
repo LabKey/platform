@@ -442,7 +442,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // replace the contents of the uploaded data file with the new combined data
                 FileLike dir = dataFile.getParent() != null ? dataFile.getParent() : AssayFileWriter.ensureUploadDirectory(container);
                 String newName = FileUtil.getBaseName(dataFile.toNioPathForRead().toFile()) + ".tsv";
-                FileLike newPath = AssayFileWriter.findUniqueFileName(newName, dir);
+                FileLike newPath = FileUtil.findUniqueFileName(newName, dir);
                 try (TSVMapWriter writer = new TSVMapWriter(newRows))
                 {
                     writer.write(newPath.toNioPathForWrite().toFile());
