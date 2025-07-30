@@ -20,6 +20,7 @@ import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.TestDataGenerator;
 
 import java.io.File;
@@ -41,10 +42,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {
     private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
     private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
-    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS);
-    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS);
-    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS);
-    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS);
+    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
 
     @BeforeClass
     public static void doSetup()
@@ -159,7 +160,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
-        setFormElement(Locator.name("quf_intField"), "NOT A NUMBER");
+        setFormElement(Locator.name("quf_" + INT_FIELD), "NOT A NUMBER");
         clickButton("Submit");
 
         // assert correct reshow with error
@@ -169,8 +170,8 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         // Issue : 53320. Update a file field with a different file
         click(Locator.linkContainingText("remove"));
         File updateFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
-        setFormElement(Locator.name("quf_intField"), "2");
-        setFormElement(Locator.name("quf_fileField"), updateFile.toString());
+        setFormElement(Locator.name("quf_" + INT_FIELD), "2");
+        setFormElement(Locator.name("quf_" + FILE_FIELD_1), updateFile.toString());
         clickButton("Submit");
     }
 
@@ -221,11 +222,12 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         ));
     }
 
-    protected void verifyFileAuditLogs( List<Map<String, Object>> expectedFileData) throws IOException, CommandException
+    protected void verifyFileAuditLogs(List<Map<String, Object>> expectedFileData) throws IOException, CommandException
     {
         List<String> columnNames = expectedFileData.get(0).keySet().stream().map(Object::toString).toList();
         AuditLogHelper auditLogHelper = new AuditLogHelper(this, () -> WebTestHelper.getRemoteApiConnection(false));
         List<Map<String, Object>> events = auditLogHelper.getAuditLogsFromLKS(getProjectName(), AuditLogHelper.AuditEvent.FILE_SYSTEM_EVENT, columnNames, null, expectedFileData.size(), null).getRows();
+        assertEquals("Number of file audit log events not as expected", expectedFileData.size(), events.size());
         for (int i = 0; i < expectedFileData.size(); i++)
         {
             for (String key : columnNames)
