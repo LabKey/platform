@@ -98,7 +98,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         created.setLabel("Date");
         created.setFormat("DateTime");
 
-        var container = getMutableColumn("Container");
+        getMutableColumn("Container");
 
         var project = getMutableColumn("ProjectId");
         project.setLabel("Project");
@@ -176,22 +176,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
             AliasedColumn a = new AliasedColumn(this, name, col);
             a.setLabel(col.getLabel());
             return a;
-        }
-
-
-        // Now check for 'Property/...' columns
-        if (name.equalsIgnoreCase("Property"))
-        {
-            // UNDONE: backwards compat to "Property/*" columns
-//            col = new BaseColumnInfo("Property", this);
-//            col.setFk(new LookupForeignKey()
-//            {
-//                @Override
-//                public TableInfo getLookupTableInfo()
-//                {
-//                    return new VirtualPropertiesTable();
-//                }
-//            });
         }
 
         // Other legacy audit columns

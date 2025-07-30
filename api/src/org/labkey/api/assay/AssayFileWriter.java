@@ -20,8 +20,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -32,9 +32,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
-
 import org.labkey.vfs.FileLike;
-
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -180,57 +178,6 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return pipelineRoot;
     }
 
-    public static File findUniqueFileName(String originalFilename, File dir)
-    {
-        if (originalFilename == null || originalFilename.isEmpty())
-        {
-            originalFilename = "[unnamed]";
-        }
-        File file;
-        int uniquifier = 0;
-        do
-        {
-            String fullName = getAppendedFileName(originalFilename, uniquifier);
-            file = FileUtil.appendName(dir, fullName);
-            uniquifier++;
-        }
-        while (file.exists());
-        return file;
-    }
-
-    public static FileLike findUniqueFileName(String originalFilename, FileLike dir)
-    {
-        if (originalFilename == null || originalFilename.isEmpty())
-        {
-            originalFilename = "[unnamed]";
-        }
-        FileLike file;
-        int uniquifier = 0;
-        do
-        {
-            String fullName = getAppendedFileName(originalFilename, uniquifier);
-            file = dir.resolveChild(fullName);
-            uniquifier++;
-        }
-        while (file.exists());
-        return file;
-    }
-
-    public static String getAppendedFileName(String originalFilename, int uniquifier)
-    {
-        String prefix = originalFilename;
-        String suffix = "";
-
-        int index = originalFilename.indexOf('.');
-        if (index != -1)
-        {
-            prefix = originalFilename.substring(0, index);
-            suffix = originalFilename.substring(index);
-        }
-
-        return prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
-    }
-
     protected FileLike getFileTargetDir(ContextType context) throws ExperimentException
     {
         return ensureUploadDirectory(context.getContainer());
@@ -305,8 +252,16 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                         if (!multipartFile.isEmpty())
                         {
                             FileLike dir = getFileTargetDir(context);
-                            FileLike file = findUniqueFileName(fileName, dir);
+                            FileLike file = FileUtil.findUniqueFileName(fileName, dir);
                             multipartFile.transferTo(toFileForWrite(file));
+                            if (!dir.toURI().getPath().contains(TEMP_DIR_NAME))
+                            {
+                                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), allowMultiple ? "File field provided for assay import" : "Primary file provided for assay import");
+                                event.setProvidedFileName(fileName);
+                                event.setFile(file.getName());
+                                event.setDirectory(dir.toURI().getPath());
+                                AuditLogService.get().addEvent(context.getUser(), event);
+                            }
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
                             {
                                 files.put(multipartFile.getName(), file);
@@ -345,7 +300,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     public FileLike safeDuplicate(ViewContext context, FileLike file) throws ExperimentException
     {
         FileLike dir = ensureUploadDirectory(context.getContainer());
-        FileLike newFile = findUniqueFileName(file.getName(), dir);
+        FileLike newFile = FileUtil.findUniqueFileName(file.getName(), dir);
         try
         {
             FileUtils.copyFile(toFileForRead(file), newFile.openOutputStream());
@@ -357,15 +312,4 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         }
     }
 
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void testGetAppendedFileName()
-        {
-            String originalFilename = "test.txt";
-            assertEquals("test.txt", getAppendedFileName(originalFilename, 0));
-            assertEquals("test-1.txt", getAppendedFileName(originalFilename, 1));
-            assertEquals("test-2.txt", getAppendedFileName(originalFilename, 2));
-        }
-    }
 }

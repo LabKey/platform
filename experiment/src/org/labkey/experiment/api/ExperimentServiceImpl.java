@@ -9815,7 +9815,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                        moveFile(renameData, container, user);
+                        moveFile(renameData, container, user, transaction.getAuditId());
                 }
             }, POSTCOMMIT);
 
@@ -9825,7 +9825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return assayMoveData.counts();
     }
 
-    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user)
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user, Long txAuditId)
     {
         String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
         File targetFile = renameData.targetFile();
@@ -9847,8 +9847,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
 
-        String changeDetail = String.format("'%s' assay run '%s' (field: '%s')", assayName, runName, fieldName);
-        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail);
+        String changeDetail = String.format("assay '%s' run '%s'", assayName, runName);
+        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail, txAuditId, fieldName);
     }
 
     @Override
@@ -10028,7 +10028,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      *
      * Move file (post-commit) after moving sample/assay data
      */
-    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment)
+    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment, Long txAuditId, String fieldName)
     {
         if (!sourceFile.exists())
             return false;
@@ -10060,10 +10060,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return false;
             }
         }
-
+        if (txAuditId != null && event.getTransactionId() == null)
+            event.setTransactionId(txAuditId);
         event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
-        event.setFile(sourceFile.getName());
+        event.setFile(targetFile.getName());
+        event.setProvidedFileName(sourceFile.getName());
         event.setResourcePath(sourceFile.getAbsolutePath());
+        if (!"datafileurl".equals(fieldName)) // don't want to show this as a field name
+            event.setFieldName(fieldName);
 
         AuditLogService.get().addEvent(user, event);
         return true;

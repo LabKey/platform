@@ -3129,9 +3129,6 @@ public class QueryServiceImpl implements QueryService
             private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
             {
                 QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c, comment);
-                DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
-                if (tx != null)
-                    event.setTransactionId(tx.getAuditId());
 
                 event.setSchemaName(tinfo.getPublicSchemaName());
                 event.setQueryName(tinfo.getPublicName());
