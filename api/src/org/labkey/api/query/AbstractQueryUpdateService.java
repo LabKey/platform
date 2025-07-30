@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -1004,11 +1005,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
+        String auditMessageFormat = "Saved file '%s' for field '%s' in folder %s.";
         FileLike file = null;
         try
         {
             FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(container, null);
             if (value instanceof MultipartFile multipartFile)
             {
                 // Once we've found one, write it to disk and replace the row's value with just the File reference to it
@@ -1016,16 +1019,24 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
                 }
-                file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
-                file = checkFileUnderRoot(container, file);
+                file = FileUtil.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
+                checkFileUnderRoot(container, file);
                 multipartFile.transferTo(toFileForWrite(file));
+                event.setComment(String.format(auditMessageFormat, multipartFile.getOriginalFilename(), name, container.getPath()));
+                event.setProvidedFileName(multipartFile.getOriginalFilename());
             }
             else if (value instanceof SpringAttachmentFile saf)
             {
-                file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-                file = checkFileUnderRoot(container, file);
+                file = FileUtil.findUniqueFileName(saf.getFilename(), dir);
+                checkFileUnderRoot(container, file);
                 saf.saveTo(file);
+                event.setComment(String.format(auditMessageFormat, saf.getFilename(), name, container.getPath()));
+                event.setProvidedFileName(saf.getFilename());
             }
+            event.setFile(file.getName());
+            event.setFieldName(name);
+            event.setDirectory(file.getParent().toURI().getPath());
+            AuditLogService.get().addEvent(user, event);
         }
         catch (IOException | ExperimentException e)
         {

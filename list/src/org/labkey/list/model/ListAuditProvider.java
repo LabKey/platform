@@ -19,6 +19,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -151,7 +152,11 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
 
         /** Important for reflection-based instantiation */
         @SuppressWarnings("unused")
-        public ListAuditEvent() {}
+        public ListAuditEvent()
+        {
+            super();
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+        }
 
         public ListAuditEvent(Container container, String comment, ListDefinitionImpl list)
         {
@@ -159,6 +164,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             setListDomainUri(list.getDomain().getTypeURI());
             setListId(list.getListId());
             setListName(list.getName());
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public int getListId()
@@ -232,6 +238,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             // to be indexed
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING, 300)); // UNDONE: is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);

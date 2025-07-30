@@ -18,11 +18,16 @@ public class ExperimentAuditEvent extends AuditTypeEvent
 
     /** Important for reflection-based instantiation */
     @SuppressWarnings("unused")
-    public ExperimentAuditEvent() {}
+    public ExperimentAuditEvent()
+    {
+        super();
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+    }
 
     public ExperimentAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
     }
 
     public String getProtocolLsid()
@@ -96,6 +101,7 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         elements.put("message", getMessage());
         elements.put("qcState", getQcState());
         elements.put("userComment", getUserComment());
+        elements.put("transactionId", getTransactionId());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

@@ -1881,6 +1881,57 @@ quickScan:
         }
     }
 
+    public static File findUniqueFileName(String originalFilename, File dir)
+    {
+        if (originalFilename == null || originalFilename.isEmpty())
+        {
+            originalFilename = "[unnamed]";
+        }
+        File file;
+        int uniquifier = 0;
+        do
+        {
+            String fullName = getAppendedFileName(originalFilename, uniquifier);
+            file = appendName(dir, fullName);
+            uniquifier++;
+        }
+        while (file.exists());
+        return file;
+    }
+
+    public static FileLike findUniqueFileName(String originalFilename, FileLike dir)
+    {
+        if (originalFilename == null || originalFilename.isEmpty())
+        {
+            originalFilename = "[unnamed]";
+        }
+        FileLike file;
+        int uniquifier = 0;
+        do
+        {
+            String fullName = getAppendedFileName(originalFilename, uniquifier);
+            file = dir.resolveChild(fullName);
+            uniquifier++;
+        }
+        while (file.exists());
+        return file;
+    }
+
+    public static String getAppendedFileName(String originalFilename, int uniquifier)
+    {
+        String prefix = originalFilename;
+        String suffix = "";
+
+        int index = originalFilename.indexOf('.');
+        if (index != -1)
+        {
+            prefix = originalFilename.substring(0, index);
+            suffix = originalFilename.substring(index);
+        }
+
+        return prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
+    }
+
 
     /* If you have a write once, read once text file/stream, you can use this class.
      * It wraps the calls to create and delete a temp file, and also will use
@@ -2315,6 +2366,15 @@ quickScan:
             assertNull("Combined extension should be allowed, but wasn't", checkExtension("multi.tar.a_v", mockProps));
             assertNull("No extension should be allowed, but wasn't", checkExtension("No extension", mockProps));
             assertNull("Numeric extension should be allowed", checkExtension("test.1", mockProps));
+        }
+
+        @Test
+        public void testGetAppendedFileName()
+        {
+            String originalFilename = "test.txt";
+            assertEquals("test.txt", getAppendedFileName(originalFilename, 0));
+            assertEquals("test-1.txt", getAppendedFileName(originalFilename, 1));
+            assertEquals("test-2.txt", getAppendedFileName(originalFilename, 2));
         }
     }
 }
