@@ -523,7 +523,12 @@ public class PropertyController extends SpringActionController
                 throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
 
             // try using the DomainKind to generate a domain URI, if it supports it. default to using a fake / representative URI
-            String typeURI = kind.generateDomainURI("schemaName", "queryName", getContainer(), getUser());
+            String typeURI = null;
+            try
+            {
+                typeURI = kind.generateDomainURI("schemaName", "queryName", getContainer(), getUser());
+            }
+            catch (AssertionError ignored) {} // no-op if the DomainKind does not support generateDomainURI()
             if (typeURI == null)
                 typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-21085:Test+Domain+Name-115c61b7-4faa-103e-8e7f-a47ad552213c";
 
