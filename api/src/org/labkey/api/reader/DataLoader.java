@@ -483,7 +483,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
         if (File.class.equals(knownColumnClass))
         {
-            // TODO. Issue 53498 handle attachment conversion with incoming merge from 25.7
+            // TODO. Issue 53498: handle attachment conversion with incoming merge from 25.7
+//            if (PropertyType.ATTACHMENT.equals(knownColumn.getPropertyType()))
+//                colDesc.clazz = AttachmentData.class;
+//            else
+//                colDesc.clazz = knownColumnClass;
             if (!PropertyType.ATTACHMENT.equals(knownColumn.getPropertyType()))
                 colDesc.clazz = knownColumnClass;
 

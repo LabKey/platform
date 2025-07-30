@@ -714,6 +714,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
+                    // TODO. Issue 53498: handle attachment conversion with incoming merge from 25.7
+//                    if (PropertyType.ATTACHMENT.equals(col.getPropertyType()) && value instanceof String strVal)
+//                    {
+//                        if (!StringUtils.isEmpty(strVal))
+//                            throw new ConvertHelper.FileConversionException("Invalid attachment value: " + strVal);
+//                    }
                     value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
                 }
                 catch (ConvertHelper.FileConversionException e)
