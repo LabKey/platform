@@ -29,6 +29,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
 import org.springframework.validation.BindException;
@@ -37,10 +38,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * User: Karl Lum
- * Date: Oct 5, 2007
- */
+import static org.labkey.audit.AuditModule.LEGACY_UNION_AUDIT_TABLE;
+
 public class AuditQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "auditLog";
@@ -86,12 +85,12 @@ public class AuditQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        // event specific audit views are implemented as queries on the audit schema
+        // event-specific audit views are implemented as queries on the audit schema
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
         if (provider != null)
             return provider.createTableInfo(this, cf);
 
-        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name))
+        if (OptionalFeatureService.get().isFeatureEnabled(LEGACY_UNION_AUDIT_TABLE) && AUDIT_TABLE_NAME.equalsIgnoreCase(name))
             return new AuditLogUnionTable(this, cf);
 
         return null;
