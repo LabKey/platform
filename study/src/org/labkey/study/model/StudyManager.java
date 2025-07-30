@@ -670,7 +670,7 @@ public class StudyManager
             QueryService.get().updateLastModified();
             transaction.commit();
         }
-        indexDataset(null, datasetDefinition);
+        indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
     }
 
     /**
