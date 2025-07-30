@@ -1276,14 +1276,16 @@ public class ContainerManager
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // Delete all of the aliases for the current container, plus any of the aliases that might be associated
+            // with another container right now
             SQLFragment deleteSQL = new SQLFragment();
             deleteSQL.append("DELETE FROM ");
             deleteSQL.append(CORE.getTableInfoContainerAliases());
-            deleteSQL.append(" WHERE ContainerId = ? ");
-            deleteSQL.add(container.getId());
+            deleteSQL.append(" WHERE ContainerRowId = ? ");
+            deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR LOWER(Path) IN (");
+                deleteSQL.append(" OR Path IN (");
                 String separator = "";
                 for (String alias : aliases)
                 {
@@ -1296,14 +1298,15 @@ public class ContainerManager
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
+            // Store the alias as LOWER() so that we can query against it using the index
             for (String alias : newAliases)
             {
                 SQLFragment insertSQL = new SQLFragment();
                 insertSQL.append("INSERT INTO ");
                 insertSQL.append(CORE.getTableInfoContainerAliases());
-                insertSQL.append(" (Path, ContainerId) VALUES (?, ?)");
+                insertSQL.append(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
                 insertSQL.add(alias);
-                insertSQL.add(container.getId());
+                insertSQL.add(container.getRowId());
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
             }
 
@@ -1551,6 +1554,7 @@ public class ContainerManager
                             if (isNavAccessOpen)
                             {
                                 NavTree noLinkTree = new NavTree(missing.getName());
+                                noLinkTree.setId(missing.getId());
                                 m.put(missing.getId(), noLinkTree);
                             }
                             else
@@ -1929,7 +1933,7 @@ public class ContainerManager
             fireDeleteContainer(c, user);
 
             SqlExecutor sqlExecutor = new SqlExecutor(CORE.getSchema());
-            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
+            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId=?", c.getRowId());
             sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
             // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
             SecurityPolicyManager.removeAll(c);
@@ -2572,8 +2576,8 @@ public class ContainerManager
     public static List<String> getAliasesForContainer(Container c)
     {
         return Collections.unmodifiableList(new SqlSelector(CORE.getSchema(),
-                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)",
-                        c.getId())).getArrayList(String.class));
+                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId = ? ORDER BY Path",
+                        c.getRowId())).getArrayList(String.class));
     }
 
     @Nullable
@@ -2625,8 +2629,9 @@ public class ContainerManager
     @Nullable
     private static Container getForPathAlias(String path)
     {
+        // We store the path as lower-case, so we don't need to also LOWER() on the value in core.ContainerAliases, letting the DB use the index
         Container[] ret = new SqlSelector(CORE.getSchema(),
-                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerId = c.EntityId AND LOWER(ca.path) = LOWER(?)",
+                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerRowId = c.RowId AND ca.path = LOWER(?)",
                 path).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];

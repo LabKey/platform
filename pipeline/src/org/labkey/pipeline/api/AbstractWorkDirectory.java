@@ -609,8 +609,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             if (!success && _transferToDirOnFailure != null)
             {
-                AssayFileWriter writer = new AssayFileWriter();
-                File dest = writer.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
+                File dest = FileUtil.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
                 _jobLog.debug("after failure, moving working directory to: " + dest.getPath());
 
                 try

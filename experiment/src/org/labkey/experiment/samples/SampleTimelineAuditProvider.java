@@ -173,7 +173,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING, -1));
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
-            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));        // varchar max
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 
