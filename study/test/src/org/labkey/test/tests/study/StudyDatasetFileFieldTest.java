@@ -6,10 +6,12 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Checkbox;
@@ -18,8 +20,11 @@ import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
+import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.PasswordUtil;
 import org.openqa.selenium.NoSuchElementException;
@@ -30,6 +35,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 /*
 Added the test to provide additional test coverage for below mentioned issue
 https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=42309
@@ -39,7 +46,12 @@ https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {
-    private final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
+    private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
+    private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
+    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
 
     @BeforeClass
     public static void doSetup()
@@ -77,17 +89,17 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _containerHelper.deleteProject(getProjectName(), afterTest);
-        _containerHelper.deleteProject(IMPORT_PROJECT, afterTest);
+        _containerHelper.deleteProject(IMPORT_PROJECT, false);
     }
 
     @Test
-    public void testFileField() throws IOException
+    public void testFileField() throws IOException, CommandException
     {
         new ApiPermissionsHelper(this)
                 .setSiteRoleUserPermissions(PasswordUtil.getUsername(), "See Absolute File Paths");
 
         String datasetName = "Dataset-1";
-        File inputFile = TestFileUtils.getSampleData("fileTypes/sample.txt"); //random file
+        File inputFile = TestFileUtils.getSampleData("fileTypes/sample.txt"); //arbitrary file
         goToProjectHome();
         createDataset(datasetName);
 
@@ -99,14 +111,17 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         insertDataPage.insert(Map.of("ParticipantId", "1",
                 "SequenceNum", "2",
                 "date", "2020-08-04",
-                "fileField", inputFile.toString(),
-                "textField", "Hello World..!",
-                "intField", "25"));
-
+                FILE_FIELD_1, inputFile.toString(),
+                TEXT_FIELD, "Hello World..!",
+                INT_FIELD, "25"));
+        verifyFileAuditLogs(List.of(Map.of(
+                AuditLogHelper.COL_FILE_AUDIT_FILE, inputFile.getName(),
+                AuditLogHelper.COL_FILE_AUDIT_PROVIDED_FILE, inputFile.getName()
+        )));
         log("Edit the dataset");
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
-        setFormElement(Locator.name("quf_textField"), "Welcome..!");
+        setFormElement(Locator.name("quf_" + TEXT_FIELD), "Welcome..!");
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
         clickButton("Submit");
 
@@ -156,7 +171,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
-        setFormElement(Locator.name("quf_intField"), "NOT A NUMBER");
+        setFormElement(Locator.name("quf_" + INT_FIELD), "NOT A NUMBER");
         clickButton("Submit");
 
         // assert correct reshow with error
@@ -166,8 +181,8 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         // Issue : 53320. Update a file field with a different file
         click(Locator.linkContainingText("remove"));
         File updateFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
-        setFormElement(Locator.name("quf_intField"), "2");
-        setFormElement(Locator.name("quf_fileField"), updateFile.toString());
+        setFormElement(Locator.name("quf_" + INT_FIELD), "2");
+        setFormElement(Locator.name("quf_" + FILE_FIELD_1), updateFile.toString());
         clickButton("Submit");
 
         FileBrowserHelper.FileDetailInfo fileInfoImportedFile = _fileBrowserHelper.getFileDetailInfo(IMPORT_PROJECT, "sample.txt");
@@ -241,6 +256,66 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         }
     }
 
+    @Test
+    public void testFileRenamingAndAuditing() throws IOException, CommandException
+    {
+        String datasetName = "Dataset-Multi-File";
+        File inputFile = TestFileUtils.getSampleData("fileTypes/csv_sample.csv");
+        goToProjectHome();
+        createDataset(datasetName);
+
+        DatasetInsertPage insertDataPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData()
+                .insertDatasetRow();
+
+        insertDataPage.insert(Map.of("ParticipantId", "1",
+                "SequenceNum", "2",
+                "date", "2020-08-04",
+                FILE_FIELD_1, inputFile.toString(),
+                FILE_FIELD_2, inputFile.toString(),
+                INT_FIELD, "26"));
+        verifyFileAuditLogs(List.of(
+                Map.of(
+                    AuditLogHelper.COL_FILE_AUDIT_FILE, "csv_sample-1.csv",
+                    AuditLogHelper.COL_FILE_AUDIT_PROVIDED_FILE, "csv_sample.csv"
+                ),
+                Map.of(
+                        AuditLogHelper.COL_FILE_AUDIT_FILE, inputFile.getName(),
+                        AuditLogHelper.COL_FILE_AUDIT_PROVIDED_FILE, inputFile.getName()
+                )
+        ));
+
+        insertDataPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData()
+                .insertDatasetRow();
+        insertDataPage.insert(Map.of("ParticipantId", "1",
+                "SequenceNum", "3",
+                "date", "2020-08-04",
+                FILE_FIELD_2, inputFile.toString(),
+                INT_FIELD, "27"));
+        verifyFileAuditLogs(List.of(
+                Map.of(
+                    AuditLogHelper.COL_FILE_AUDIT_FILE, "csv_sample-2.csv",
+                    AuditLogHelper.COL_FILE_AUDIT_PROVIDED_FILE, "csv_sample.csv"
+                )
+        ));
+    }
+
+    protected void verifyFileAuditLogs(List<Map<String, Object>> expectedFileData) throws IOException, CommandException
+    {
+        List<String> columnNames = expectedFileData.get(0).keySet().stream().map(Object::toString).toList();
+        AuditLogHelper auditLogHelper = new AuditLogHelper(this, () -> WebTestHelper.getRemoteApiConnection(false));
+        List<Map<String, Object>> events = auditLogHelper.getAuditLogsFromLKS(getProjectName(), AuditLogHelper.AuditEvent.FILE_SYSTEM_EVENT, columnNames, null, expectedFileData.size(), null).getRows();
+        assertEquals("Number of file audit log events not as expected", expectedFileData.size(), events.size());
+        for (int i = 0; i < expectedFileData.size(); i++)
+        {
+            for (String key : columnNames)
+                assertEquals("Event value for " + key + " not as expected", expectedFileData.get(i).get(key), events.get(i).get(key));
+        }
+    }
+
     protected void createDataset(String name)
     {
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
@@ -248,9 +323,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
                 .setName(name);
 
         DomainFormPanel panel = definitionPage.getFieldsPanel();
-        panel.manuallyDefineFields("textField");
-        panel.addField(new FieldDefinition("intField", FieldDefinition.ColumnType.Integer));
-        panel.addField(new FieldDefinition("fileField", FieldDefinition.ColumnType.File));
+        panel.manuallyDefineFields(TEXT_FIELD);
+        panel.addField(new FieldDefinition(INT_FIELD, FieldDefinition.ColumnType.Integer));
+        panel.addField(new FieldDefinition(FILE_FIELD_1, FieldDefinition.ColumnType.File));
+        panel.addField(new FieldDefinition(FILE_FIELD_2, FieldDefinition.ColumnType.File));
         definitionPage.clickSave();
     }
 }

@@ -150,6 +150,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getTargetStudy();
 
+    default Long getTransactionAuditId() { return null; }
+
+    default void setTransactionAuditId(Long transactionAuditId) { }
+
     default String getAuditUserComment() { return null; }
 
     TransformResult getTransformResult();
@@ -240,6 +244,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<String, FileLike> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
+        protected Long _transactionAuditId;
         protected String _auditUserComment;
 
         public Factory(
@@ -407,6 +412,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setAuditUserComment(String auditUserComment)
         {
             _auditUserComment = auditUserComment;
+            return self();
+        }
+
+        public FACTORY setTransactionAuditId(Long transactionAuditId)
+        {
+            _transactionAuditId = transactionAuditId;
             return self();
         }
 

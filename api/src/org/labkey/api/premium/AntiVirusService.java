@@ -108,6 +108,7 @@ public interface AntiVirusService
         if (null != info.getURL())
             event.setDirectory(info.getURL().getPath());
         event.setFile(originalName);
+        event.setProvidedFileName(originalName);
         AuditLogService.get().addEvent(info.getUser(), event);
     }
 

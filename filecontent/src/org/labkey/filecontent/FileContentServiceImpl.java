@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -1668,7 +1667,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
         File targetFile = new File(targetPath);
-        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile());
+        return FileUtil.findUniqueFileName(file.getName(), targetFile.getParentFile());
     }
 
     @Override
