@@ -115,7 +115,7 @@ public interface InventoryService
     Map<String, Integer> moveSamples(Collection<Long> sampleIds, Container targetContainer, User user);
 
     @NotNull
-    List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
+    List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, long sampleId);
 
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container, User user);
 

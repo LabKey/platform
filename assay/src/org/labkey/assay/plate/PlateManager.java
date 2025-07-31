@@ -4313,7 +4313,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // TODO: Handle the warning "Attempt to update table 'Well' with no valid fields." when only editing type.
 
-        Integer sampleId = null;
+        Long sampleId = null;
         for (var position : wellGroup.getPositions())
         {
             var well = plate.getWell(position.getRow(), position.getColumn());
@@ -4524,11 +4524,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Integer wellsFilled = 0;
             Integer samplesAdded = 0;
             Set<String> updatedPositions = new HashSet<>();
-            Set<Integer> sampleIds = new HashSet<>();
+            Set<Long> sampleIds = new HashSet<>();
 
             for (Map<String, Object> row : plateData.data)
             {
-                Integer sampleId = (Integer) row.get(WellTable.Column.SampleID.name());
+                Long sampleId = MapUtils.getLong(row, WellTable.Column.SampleID.name());
                 if (sampleId != null)
                 {
                     wellsFilled++;

@@ -415,8 +415,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (rows instanceof DataLoader dataLoader) // junit test uses ListofMapsDataIterator
             {
-                if (!context.isCrossTypeImport() && dataLoader.getColumnInfoMap().isEmpty())
-                    dataLoader.setKnownColumns(getQueryTable().getColumns());
                 ColumnDescriptor[] columnDescriptors = dataLoader.getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
                 for (ColumnDescriptor columnDescriptor : columnDescriptors)
                 {

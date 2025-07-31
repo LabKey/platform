@@ -3,7 +3,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -34,7 +34,6 @@ import org.labkey.api.view.DataView;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
@@ -44,7 +43,7 @@ import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
  */
 public class SampleParticipantVisitResolver extends StudyParticipantVisitResolver
 {
-    private final Map<Integer, Pair<Boolean, ParticipantVisit>> _resolvedSamples = new IntHashMap<>();
+    private final Map<Long, Pair<Boolean, ParticipantVisit>> _resolvedSamples = new LongHashMap<>();
     private Map<LinkToStudyKeys, FieldKey> _fieldKeyMap;
 
     public SampleParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)
@@ -58,7 +57,7 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
         ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(sampleId, participantID, visitID, date, getRunContainer(), targetStudyContainer);
         if (targetStudyContainer != null && sampleId != null)
         {
-            Integer id = Integer.valueOf(sampleId);
+            Long id = Long.valueOf(sampleId);
 
             if (_resolvedSamples.containsKey(id))
             {
@@ -173,7 +172,7 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
     /**
      * Does the sample exist in the target study (in one of the sample type datasets)
      */
-    public boolean isSampleMatched(Integer sampleId)
+    public boolean isSampleMatched(Long sampleId)
     {
         if (_resolvedSamples.containsKey(sampleId))
         {

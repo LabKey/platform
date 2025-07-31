@@ -97,6 +97,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.DIV;
@@ -746,8 +747,8 @@ public class PublishResultsQueryView extends QueryView
                 if (sampleCol != null)
                 {
                     Object sampleId = sampleCol.getValue(ctx);
-                    if (sampleId instanceof Integer)
-                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
+                    if (sampleId instanceof Number)
+                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched(asLong(sampleId));
                 }
             }
 

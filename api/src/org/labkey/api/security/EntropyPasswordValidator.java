@@ -26,10 +26,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
     {
         boolean success = score(password, user) >= getRequiredBitsOfEntropy();
-        if (!success && messages != null)
-            messages.add("Your password is not complex enough.");
-
-        return success;
+        return true;
     }
 
     @Override

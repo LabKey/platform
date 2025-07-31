@@ -2190,7 +2190,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         for (String fileField : fileFields)
         {
             Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
-            Map<String, List<Integer>> fileMoveResultRowIds = new HashMap<>();
+            Map<String, List<Long>> fileMoveResultRowIds = new HashMap<>();
             var fileColumn = assayResultTable.getColumn(fileField);
             TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", fileField), filter, null);
             Map<String, Object>[] resultFiles = ts.getMapArray();
