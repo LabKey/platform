@@ -31,6 +31,7 @@ import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -68,8 +69,10 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -146,33 +149,43 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayProvider provider = context.getProvider();
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
-        context.init();
 
-        // Check if assay protocol is configured to import in the background.
-        // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-        boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
-        if (!importInBackground)
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
-            if ((Object)context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+            if (transaction.getAuditId() == null)
             {
-                throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
-            FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null==primaryFile ? null : primaryFile.toNioPathForRead().toFile());
-            run.setComments(context.getComments());
-            run.setWorkflowTaskId(context.getWorkflowTask());
+            context.init();
+            // Check if assay protocol is configured to import in the background.
+            // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
+            boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
+            if (!importInBackground)
+            {
+                if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+                {
+                    throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                }
+                FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+                run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
+                run.setComments(context.getComments());
+                run.setWorkflowTaskId(context.getWorkflowTask());
 
-            exp = saveExperimentRun(context, exp, run, false);
+                exp = saveExperimentRun(context, exp, run, false);
 
-            // re-fetch the run after it has been fully constructed
-            run = ExperimentService.get().getExpRun(run.getRowId());
+                // re-fetch the run after it has been fully constructed
+                run = ExperimentService.get().getExpRun(run.getRowId());
 
-            context.uploadComplete(run);
-        }
-        else
-        {
-            context.uploadComplete(null);
-            exp = saveExperimentRunAsync(context, exp);
+                context.uploadComplete(run);
+            }
+            else
+            {
+                context.uploadComplete(null);
+                context.setTransactionAuditId(transaction.getAuditId());
+                exp = saveExperimentRunAsync(context, exp);
+            }
+            transaction.commit();
         }
 
         return Pair.of(exp, run);
@@ -299,6 +312,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
+            if (transaction.getAuditId() == null)
+            {
+                var auditAction = context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT;
+                if (context.getTransactionAuditId() != null)
+                {
+                    var auditEvent = new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, context.getTransactionAuditId());
+                    transaction.setAuditEvent(auditEvent);
+                }
+                else
+                {
+                    var auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction);
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
+                }
+            }
             boolean saveBatchProps = forceSaveBatchProps;
 
             // Add any material/data inputs related to the specimen IDs, etc in the incoming data.

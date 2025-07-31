@@ -30,6 +30,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongHashMap;
@@ -632,7 +633,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+            addSampleTypeDeletedAuditEvent(user, c, source, auditUserComment);
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
@@ -664,18 +665,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, @Nullable String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, @Nullable String auditUserComment)
     {
-        addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
+        addSampleTypeAuditEvent(user, c, sampleType, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
-
-        if (txAuditId != null)
-            event.setTransactionId(txAuditId);
 
         if (sampleType != null)
         {
@@ -1215,9 +1213,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
-        var tx = getExpSchema().getScope().getCurrentTransaction();
-        if (tx != null)
-            event.setTransactionId(tx.getAuditId());
 
         var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
@@ -1277,8 +1272,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, comment);
-        if (getExpSchema().getScope().getCurrentTransaction() != null)
-            event.setTransactionId(getExpSchema().getScope().getCurrentTransaction().getAuditId());
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
         event.setSampleId(sample.getRowId());
@@ -1905,9 +1898,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 // create summary audit entries for the source and target containers
                 String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
-                addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, sourceContainer, sampleType,
                         "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved from project");
-                addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, targetContainer, sampleType,
                         "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved to project");
 
                 // move the events associated with the samples that have moved
@@ -1962,7 +1955,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        moveFile(renameData, sourceContainer, user);
+                        moveFile(renameData, sourceContainer, user, transaction.getAuditId());
                 }
             }, POSTCOMMIT);
 
@@ -2073,7 +2066,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return runCount;
     }
 
-    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName) {}
+    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName, String fieldName) {}
 
     // return the map of file renames
     private Map<Long, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
@@ -2118,7 +2111,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     {
 
                         if (!fileMoveReferences.containsKey(sourceFileName))
-                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName()));
+                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName(), fileProp.getName()));
                         if (!fileMoveCounts.containsKey(sourceFileName))
                             fileMoveCounts.put(sourceFileName, 0);
                         fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
@@ -2141,12 +2134,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
             fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            event.setProvidedFileName(sourceFile.getName());
+            event.setFile(ref.targetFile.getName());
+            event.setDirectory(ref.targetFile.getParent());
+            event.setFieldName(ref.fieldName);
+            AuditLogService.get().addEvent(user, event);
         }
 
         return sampleFileRenames;
     }
 
-    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user)
+    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user, Long txAuditId)
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
@@ -2170,8 +2169,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        String changeDetail = String.format("'%s' sample '%s' (field: '%s')", renameData.sampleType.getName(), renameData.sampleName, renameData.fieldName);
-        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail);
+        String changeDetail = String.format("sample type '%s' sample '%s'", renameData.sampleType.getName(), renameData.sampleName);
+        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail, txAuditId, renameData.fieldName);
     }
 
     @Override

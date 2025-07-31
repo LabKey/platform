@@ -33,6 +33,7 @@ import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -1799,7 +1800,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public record AssayMoveData(Map<String, Integer> counts, Map<Long, List<AssayFileMoveData>> fileMovesByRunId) {}
 
     @Override
-    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException
+    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         if (runs.isEmpty())
             return;
@@ -1969,7 +1970,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     if (updatedFile != null)
                     {
                         if (!fileMoveReferences.containsKey(sourceFileName))
-                            fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, experiment.getName()));
+                            fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, experiment.getName(), fileProp.getName()));
 
                         if (!fileMoveCounts.containsKey(sourceFileName))
                             fileMoveCounts.put(sourceFileName, 0);
@@ -1992,6 +1993,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     throw new ExperimentException("Assay batch " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
                 fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                event.setProvidedFileName(sourceFile.getName());
+                event.setFile(ref.updatedFile.getName());
+                event.setDirectory(ref.updatedFile.getParent());
+                AuditLogService.get().addEvent(user, event);
             }
 
         }
@@ -2051,7 +2057,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (updatedFile != null)
                 {
                     if (!fileMoveReferences.containsKey(sourceFileName))
-                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName()));
+                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName(), fileProp.getName()));
 
                     if (!fileMoveCounts.containsKey(sourceFileName))
                         fileMoveCounts.put(sourceFileName, 0);
@@ -2073,6 +2079,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw new ExperimentException("Assay run " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
             fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            event.setProvidedFileName(sourceFile.getName());
+            event.setFile(ref.updatedFile.getName());
+            event.setDirectory(ref.updatedFile.getParent());
+            event.setFieldName(ref.fieldName);
+            AuditLogService.get().addEvent(user, event);
         }
 
     }
@@ -2117,6 +2129,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), null, sourceFile, updatedFile));
                     fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
+                    FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                    event.setProvidedFileName(sourceFile.getName());
+                    event.setFile(updatedFile.getName());
+                    event.setDirectory(updatedFile.getParent());
+                    AuditLogService.get().addEvent(user, event);
                 }
             }
             catch (Exception e)
@@ -2137,7 +2154,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         updateResultFiles(assayResultTable, runs, protocol, sourceContainer, targetContainer, user, assayMoveData);
     }
 
-    record AssayFileMoveReference(String sourceFilePath, File updatedFile, String runName) {}
+    record AssayFileMoveReference(String sourceFilePath, File updatedFile, String runName, String fieldName) {}
 
     private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
@@ -2170,10 +2187,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<Long, ExpRun> runMap = new LongHashMap<>();
         runs.forEach(run -> runMap.put(run.getRowId(), run));
 
-        Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
-        Map<String, List<Long>> fileMoveResultRowIds = new HashMap<>();
         for (String fileField : fileFields)
         {
+            Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
+            Map<String, List<Integer>> fileMoveResultRowIds = new HashMap<>();
             var fileColumn = assayResultTable.getColumn(fileField);
             TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", fileField), filter, null);
             Map<String, Object>[] resultFiles = ts.getMapArray();
@@ -2195,7 +2212,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     ExpRun run = runMap.get(resultRunId);
 
                     if (!fileMoveReferences.containsKey(sourceFileName))
-                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName()));
+                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName(),fileField));
 
                     movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
                     movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));
@@ -2235,6 +2252,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         .append(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
                 new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
 
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+                event.setProvidedFileName(sourceFile.getName());
+                event.setFile(updatedFile.getName());
+                event.setDirectory(updatedFile.getParent());
+                event.setFieldName(ref.fieldName);
+                AuditLogService.get().addEvent(user, event);
             }
 
         }

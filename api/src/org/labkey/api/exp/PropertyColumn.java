@@ -43,6 +43,7 @@ import org.labkey.api.util.CachingSupplier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 
@@ -184,10 +185,17 @@ public class PropertyColumn extends LookupColumn
 
         if (user != null && ((pd.getLookupSchema() != null && pd.getLookupQuery() != null) || pd.getConceptURI() != null))
         {
-            // Issue 52504: Use proper container filter for lookups
-            var _cf = pd.isLookup() ? QueryService.get().getContainerFilterForLookups(container, user) : cf;
+            var lookupCf = cf;
 
-            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, _cf));
+            // Issue 52504: Use proper container filter for lookups
+            if (pd.isLookup())
+            {
+                var _cf = QueryService.get().getContainerFilterForLookups(container, user);
+                if (_cf != null)
+                    lookupCf = _cf;
+            }
+
+            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, lookupCf));
         }
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());

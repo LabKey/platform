@@ -522,8 +522,18 @@ public class PropertyController extends SpringActionController
             DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
             if (kind == null)
                 throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
-            String typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-1000.1001:1002"; // note using a fake lsid here, since not all domain kinds override generateDomainURI
-            Domain domain = PropertyService.get().createDomain(getContainer(), typeURI, "test");
+
+            // try using the DomainKind to generate a domain URI, if it supports it. default to using a fake / representative URI
+            String typeURI = null;
+            try
+            {
+                typeURI = kind.generateDomainURI("schemaName", "queryName", getContainer(), getUser());
+            }
+            catch (AssertionError ignored) {} // no-op if the DomainKind does not support generateDomainURI()
+            if (typeURI == null)
+                typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-21085:Test+Domain+Name-115c61b7-4faa-103e-8e7f-a47ad552213c";
+
+            Domain domain = PropertyService.get().createDomain(getContainer(), typeURI, "queryName");
 
             boolean checkFieldNames = !domainDesign.getFields().isEmpty();
             boolean checkDomainName = domainDesign.getName() != null;

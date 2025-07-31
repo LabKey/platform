@@ -658,6 +658,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
         event.setDirectory(dir);
         event.setFile(name);
+        event.setProvidedFileName(name);
         event.setResourcePath(getPath().toString());
 
         AuditLogService.get().addEvent(context.getUser(), event);

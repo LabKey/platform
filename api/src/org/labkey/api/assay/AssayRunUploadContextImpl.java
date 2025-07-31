@@ -80,6 +80,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final boolean _allowLookupByAlternateKey;
     private final String _auditUserComment;
 
+
     // Lazily created fields
     private Map<String, FileLike> _uploadedData;
     private Map<DomainProperty, String> _runProperties;
@@ -93,6 +94,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     protected String _jobDescription;
     protected String _jobNotificationProvider;
     protected String _pipelineJobGUID;
+    // Used to assure that the audit logs for the asynchronous assay upload are linked to the ones for
+    // the file upload, if any, which happen before the async job starts.
+    private Long _transactionAuditId;
 
     private boolean _autoFillDefaultResultColumns;
 
@@ -396,6 +400,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
+    public Long getTransactionAuditId() { return _transactionAuditId; }
+    @Override
     public String getAuditUserComment() { return _auditUserComment; }
 
     @Override
@@ -438,6 +444,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void setPipelineJobGUID(String jobGUID)
     {
         _pipelineJobGUID = jobGUID;
+    }
+
+    @Override
+    public void setTransactionAuditId(Long transactionAuditId)
+    {
+        _transactionAuditId = transactionAuditId;
     }
 
     @Override
