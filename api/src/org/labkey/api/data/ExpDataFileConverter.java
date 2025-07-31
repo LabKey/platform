@@ -59,7 +59,7 @@ import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitute
  */
 public class ExpDataFileConverter implements Converter
 {
-    private static final Converter FILE_CONVERTER = new FileConverter();
+    public static final Converter FILE_CONVERTER = new FileConverter();
 
     public static ExpData resolveExpData(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes)
     {
@@ -224,75 +224,82 @@ public class ExpDataFileConverter implements Converter
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
         if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
+            return convert(value, fileRootPath, assayResultFileRoot, container, user);
+
+        return null;
+    }
+
+    // TODO, refactor more usages to call this method directly without using needing to set/getEnvironment
+    public static File convert(@NotNull Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user)
+    {
+        File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
+
+        // If we have a file path, make sure it's supposed to be visible in the current container
+        if (f != null)
         {
-            File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
-
-            // If we have a file path, make sure it's supposed to be visible in the current container
-            if (f != null)
+            if (f.isDirectory())
             {
-                if (f.isDirectory())
-                {
-                    if (value instanceof String)
-                        throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
-                    else
-                        throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
-                }
-
-                // Strip out ".." and "."
-                f = FileUtil.resolveFile(f);
-
-                PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-                if (root != null)
-                {
-                    File fileUnderRoot = f;
-                    if (!f.isAbsolute())
-                    {
-                        // Interpret relative paths based on the file root
-                        fileUnderRoot = new File(root.getRootPath(), f.getPath());
-                    }
-
-                    if (root.isUnderRoot(fileUnderRoot) && fileUnderRoot.isFile())
-                    {
-                        return fileUnderRoot;
-                    }
-                }
-
-                FileContentService fileContent = FileContentService.get();
-
-                // It's possible to have the file root and pipeline root pointed at different paths
-                if (fileContent != null)
-                {
-                    List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
-                    for (FileContentService.ContentType fileRootType : fileRootTypes)
-                    {
-                        File fileRoot = fileContent.getFileRoot(container, fileRootType);
-                        if (fileRoot != null)
-                        {
-                            if (f.isFile() && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
-                                return f;
-
-                            if (!f.isAbsolute())
-                            {
-                                try
-                                {
-                                    File fileWithRoot = FileUtil.appendPath(fileRoot, Path.parse(f.getPath()));
-                                    if (fileWithRoot.isFile() && URIUtil.isDescendant(fileRoot.toURI(), fileWithRoot.toURI()))
-                                        return fileWithRoot;
-                                }
-                                catch (IllegalArgumentException ignore)
-                                {
-                                }
-                            }
-                        }
-                    }
-                }
-
                 if (value instanceof String)
                     throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
                 else
                     throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
             }
+
+            // Strip out ".." and "."
+            f = FileUtil.resolveFile(f);
+
+            PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+            if (root != null)
+            {
+                File fileUnderRoot = f;
+                if (!f.isAbsolute())
+                {
+                    // Interpret relative paths based on the file root
+                    fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
+                }
+
+                if (root.isUnderRoot(fileUnderRoot) && fileUnderRoot.isFile())
+                {
+                    return fileUnderRoot;
+                }
+            }
+
+            FileContentService fileContent = FileContentService.get();
+
+            // It's possible to have the file root and pipeline root pointed at different paths
+            if (fileContent != null)
+            {
+                List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+                for (FileContentService.ContentType fileRootType : fileRootTypes)
+                {
+                    File fileRoot = fileContent.getFileRoot(container, fileRootType);
+                    if (fileRoot != null)
+                    {
+                        if (f.isFile() && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                            return f;
+
+                        if (!f.isAbsolute())
+                        {
+                            try
+                            {
+                                File fileWithRoot = FileUtil.appendPath(fileRoot, Path.parse(f.getPath()));
+                                if (fileWithRoot.isFile() && URIUtil.isDescendant(fileRoot.toURI(), fileWithRoot.toURI()))
+                                    return fileWithRoot;
+                            }
+                            catch (IllegalArgumentException ignore)
+                            {
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (value instanceof String)
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
+            else
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
         }
+
         return null;
     }
 
@@ -313,7 +320,7 @@ public class ExpDataFileConverter implements Converter
         }
     }
 
-    private File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
+    public static File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
     {
         if (value instanceof File f)
         {
@@ -323,7 +330,7 @@ public class ExpDataFileConverter implements Converter
         if (value instanceof JSONObject json)
         {
             // Assume the same structure as the saveBatch and getBatch APIs work with
-            ExpData data = resolveExpData(json, container, user, Collections.emptyList());
+            ExpData data = ExpDataFileConverter.resolveExpData(json, container, user, Collections.emptyList());
             if (data != null && data.getFile() != null)
             {
                 return data.getFile();
