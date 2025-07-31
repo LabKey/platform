@@ -875,7 +875,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
         private String getLatestAuditMessage()
         {
-            return new TableSelector(QueryService.get().getUserSchema(_user, _container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME).getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT), PageFlowUtil.set("Comment"), null, new Sort("-created")).setMaxRows(1).getObject(String.class);
+            return new TableSelector(QueryService.get().getUserSchema(_user, _container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME).getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT), PageFlowUtil.set("Comment"), null, new Sort("-rowId")).setMaxRows(1).getObject(String.class);
         }
 
         @Test
