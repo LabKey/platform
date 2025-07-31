@@ -158,9 +158,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 if (null == tableName)
                 {
-                    log.warn("Storage table name was null: {} {}", domain.getTypeId(), domain.getTypeURI());
-                    transaction.commit();
-                    return null;
+                    throw new RuntimeException("Storage table name was null: " + domain.getTypeId() + " " + domain.getTypeURI());
                 }
             }
             else

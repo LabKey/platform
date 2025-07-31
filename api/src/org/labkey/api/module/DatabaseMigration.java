@@ -83,7 +83,7 @@ public class DatabaseMigration
 
         Map<Boolean, List<DbSchema>> schemaMap = scope.getSchemaNames().stream()
             .map(name -> scope.getSchema(name, DbSchemaType.Unknown))
-            .collect(Collectors.partitioningBy(schema -> schema.isModuleSchema() && schema.getModule().getSupportedDatabasesSet().contains(SupportedDatabase.mssql)));
+            .collect(Collectors.partitioningBy(schema -> schema.getModule() != null && schema.getModule().getSupportedDatabasesSet().contains(SupportedDatabase.mssql)));
 
         List<DbSchema> targetSchemas = schemaMap.get(true);
         List<String> tableWarnings = targetSchemas.stream()
@@ -215,19 +215,13 @@ public class DatabaseMigration
                 MigrationHandler handler = getHandler(targetSchema);
                 handler.beforeSchema(targetSchema);
 
-                List<TableInfo> sourceTables = getTables(sourceSchema);
-                List<TableInfo> targetTables = getTables(targetSchema);
-
-                if (sourceTables.size() != targetTables.size())
-                {
-                    LOG.warn("{} schemas have different table counts, {} vs. {}", sourceSchema.getName(), sourceTables.size(), targetTables.size());
-                    Set<String> sourceTableNames = sourceTables.stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
-                    Set<String> targetTableNames = targetTables.stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
-                    Set<String> sourceTableNamesCopy = new CaseInsensitiveHashSet(sourceTableNames);
-                    sourceTableNames.removeAll(targetTableNames);
-                    targetTableNames.removeAll(sourceTableNamesCopy);
-                    LOG.warn("Table differences: {} and {}", sourceTableNames, targetTableNames);
-                }
+                Set<String> sourceTableNames = getTables(sourceSchema).stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
+                Set<String> targetTableNames = getTables(targetSchema).stream().map(TableInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
+                Set<String> sourceTableNamesCopy = new CaseInsensitiveHashSet(sourceTableNames);
+                sourceTableNames.removeAll(targetTableNames);
+                targetTableNames.removeAll(sourceTableNamesCopy);
+                if (!sourceTableNames.isEmpty() || !targetTableNames.isEmpty())
+                    LOG.warn("Table differences in {} schema: {} and {}", sourceSchema.getName(), sourceTableNames, targetTableNames);
 
                 Map<String, Sequence> schemaSequenceMap = sequenceMap.getOrDefault(sourceSchema.getName(), Map.of());
 
@@ -260,14 +254,14 @@ public class DatabaseMigration
                                 .toList();
                             String q = StringUtils.join(Collections.nCopies(sourceColumns.size(), "?"), ", ");
                             SQLFragment sql = new SQLFragment("INSERT INTO ")
-                                .append(targetTable.getSelectName())
+                                .append(targetTable)
                                 .append("(");
 
                             String sep = "";
                             for (ColumnInfo targetColumn : targetColumns)
                             {
                                 sql.append(sep)
-                                    .append(targetColumn.getSelectIdentifier().getSql());
+                                    .appendIdentifier(targetColumn.getSelectIdentifier());
                                 sep = ", ";
                             }
 

@@ -93,6 +93,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     private AuditLogImpl()
     {
+        // If we're migrating, avoid creating all the audit log tables and inserting the queued events
         if (ModuleLoader.getInstance().shouldInsertData())
             ContextListener.addStartupListener(this);
     }
