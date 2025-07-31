@@ -3392,7 +3392,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSetAssays;
     }
 
-    public void validatePrimaryPlateSetUniqueSamples(Set<Integer> wellRowIds, BatchValidationException errors)
+    public void validatePrimaryPlateSetUniqueSamples(Set<Long> wellRowIds, BatchValidationException errors)
     {
         if (wellRowIds.isEmpty())
             return;
@@ -3931,7 +3931,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 String wellGroup = wellData.getWellGroup();
                 String replicateGroup = wellData.getReplicateGroup();
 
-                Integer wellRowId = wellData.getRowId();
+                Long wellRowId = wellData.getRowId();
                 var wellChange = wellChanges.get(wellRowId);
                 if (wellChange != null)
                 {
@@ -4572,11 +4572,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 PlateType type = plateTypes.get(plate.plateType);
                 wellCount = type.getWellCount();
                 wellsFilled = 0;
-                Set<Integer> sampleIds = new HashSet<>();
+                Set<Long> sampleIds = new HashSet<>();
 
                 for (Map<String, Object> row : plate.data)
                 {
-                    Integer sampleId = (Integer) row.get(WellTable.Column.SampleID.name());
+                    Long sampleId = MapUtils.getLong(row,WellTable.Column.SampleID.name());
                     if (sampleId != null)
                     {
                         wellsFilled++;

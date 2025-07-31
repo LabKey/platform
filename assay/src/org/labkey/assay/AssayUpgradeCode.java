@@ -461,7 +461,7 @@ public class AssayUpgradeCode implements UpgradeCode
                 WellGroup.Type type = wellData.getType();
                 String wellGroup = wellData.getWellGroup();
 
-                Integer wellRowId = wellData.getRowId();
+                Long wellRowId = wellData.getRowId();
                 var wellChange = wellChanges.get(wellRowId);
                 if (wellChange != null)
                 {

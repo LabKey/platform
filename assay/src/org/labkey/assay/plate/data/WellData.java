@@ -22,7 +22,7 @@ public class WellData
     private String _position;
     private String _replicateGroup;
     private Integer _row;
-    private Integer _rowId;
+    private Long _rowId;
     private Long _sampleId;
     private WellGroup.Type _type;
     private String _wellGroup;
@@ -157,12 +157,12 @@ public class WellData
         _row = row;
     }
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
