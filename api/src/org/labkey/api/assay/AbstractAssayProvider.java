@@ -245,7 +245,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 while (rs.next())
                 {
-                    PublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
+                    PublishKey publishKey = dataKeys.get(rowIdColumn.getLongValue(rs));
 
                     Container targetStudyContainer = study;
                     if (publishKey.getTargetStudy() != null)
