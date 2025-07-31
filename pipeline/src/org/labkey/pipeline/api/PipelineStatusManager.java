@@ -720,7 +720,7 @@ public class PipelineStatusManager
         }
     }
 
-    private static void deleteStatus(Container container, User user, boolean deleteExpRuns, Set<Integer> rowIds)
+    private static void deleteStatus(Container container, User user, boolean deleteExpRuns, Set<Long> rowIds)
     {
         assert _schema.getSchema().getScope().isTransactionActive() : "Should only be invoked inside of a transaction";
         if (rowIds.isEmpty())
@@ -731,7 +731,7 @@ public class PipelineStatusManager
         // Use a set instead of a list since the incoming set of rowIds may contain child and parent jobs, and
         // we don't want to double-log the deletion of the child jobs
         Set<PipelineStatusFile> deleteable = new HashSet<>();
-        for (int rowId : rowIds)
+        for (long rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
 
