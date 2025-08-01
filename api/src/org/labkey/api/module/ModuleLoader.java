@@ -636,7 +636,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             {
                 _log.info("Check complete: all LabKey-managed modules are recent enough to upgrade");
             }
-       }
+        }
 
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
@@ -763,6 +763,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
+
+        // Don't accept any requests if we're bootstrapping empty schemas or migrating from SQL Server
+        if (!shouldInsertData())
+            execution = Execution.Synchronous;
 
         startNonCoreUpgradeAndStartup(execution, lockFile);
 
