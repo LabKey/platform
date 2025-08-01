@@ -1041,7 +1041,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             try
                             {
-                                value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
+                                value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());//
                             }
                             catch (ConversionException e)
                             {

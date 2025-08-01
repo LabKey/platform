@@ -346,10 +346,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         {
                             knownColumnClass = knownColumn.getJavaClass();
                             classesToTest.add(0, knownColumnClass);
-
-                            // Issue 49830: if we know the column class is File based on the columnInfoMap, use it instead of trying to infer the class based on the data
-                            if (setFileColDescriptor(colDescs[f], knownColumn))
-                                continue;
                         }
                     }
                 }
@@ -465,36 +461,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
                 throw e;
             }
-
-            // use File converter for known file fields even if inferTypes = false. If inferTypes, this is already done.
-            if (!getInferTypes())
-                setFileColDescriptor(colDesc, getKnownColumn(name, renamedColumns));
         }
 
         _columns = colDescs;
-    }
-
-    private boolean setFileColDescriptor(ColumnDescriptor colDesc, @Nullable ColumnInfo knownColumn)
-    {
-        if (knownColumn == null)
-            return false;
-
-        Class knownColumnClass = knownColumn.getJavaClass();
-
-        if (File.class.equals(knownColumnClass))
-        {
-            // TODO. Issue 53498: handle attachment conversion with incoming merge from 25.7
-//            if (PropertyType.ATTACHMENT.equals(knownColumn.getPropertyType()))
-//                colDesc.clazz = AttachmentData.class;
-//            else
-//                colDesc.clazz = knownColumnClass;
-            if (!PropertyType.ATTACHMENT.equals(knownColumn.getPropertyType()))
-                colDesc.clazz = knownColumnClass;
-
-            return true;
-        }
-
-        return false;
     }
 
     private ColumnInfo getKnownColumn(String name, @NotNull Map<String, String> renamedColumns)

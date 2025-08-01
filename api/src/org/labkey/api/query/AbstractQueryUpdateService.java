@@ -43,6 +43,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -715,13 +716,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
-                    // TODO. Issue 53498: handle attachment conversion with incoming merge from 25.7
-//                    if (PropertyType.ATTACHMENT.equals(col.getPropertyType()) && value instanceof String strVal)
-//                    {
-//                        if (!StringUtils.isEmpty(strVal))
-//                            throw new ConvertHelper.FileConversionException("Invalid attachment value: " + strVal);
-//                    }
-                    value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()) && value instanceof String strVal)
+                        value = ExpDataFileConverter.convert(strVal);
+                    else
+                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
                 }
                 catch (ConvertHelper.FileConversionException e)
                 {

@@ -3339,8 +3339,7 @@ public class StudyManager
             }
 
             // let DataIterator do conversions
-            if (!File.class.equals(col.clazz))
-                col.clazz = String.class;
+            col.clazz = String.class;
 
             if (columnMap.containsKey(name))
                 name = columnMap.get(name);

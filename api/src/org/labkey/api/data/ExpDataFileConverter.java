@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -210,10 +211,18 @@ public class ExpDataFileConverter implements Converter
 
     private Object _convert(Class type, Object value)
     {
-        if (value == null)
+        if (value == null || !type.isAssignableFrom(File.class))
         {
             return null;
         }
+
+        return convert(value);
+    }
+
+    public static File convert(Object value)
+    {
+        if (value == null)
+            return null;
 
         Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
         User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
@@ -223,15 +232,18 @@ public class ExpDataFileConverter implements Converter
         FileLike assayResultFileRoot = assayResultFileRootObj == null ? null : (FileLike) assayResultFileRootObj;
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
-        if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
+        if (container != null && user != null && container.hasPermission(user, ReadPermission.class))
             return convert(value, fileRootPath, assayResultFileRoot, container, user);
 
         return null;
     }
 
     // TODO, refactor more usages to call this method directly without using needing to set/getEnvironment
-    public static File convert(@NotNull Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user)
+    public static File convert(Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user)
     {
+        if (value == null)
+            return null;
+
         File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
 
         // If we have a file path, make sure it's supposed to be visible in the current container
@@ -257,7 +269,9 @@ public class ExpDataFileConverter implements Converter
                     try
                     {
                         // Interpret relative paths based on the file root
-                        fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
+                        fileUnderRoot = new File(root.getRootPath(), f.getPath());
+                        // TODO: use appendPath when it no longer breaks "../@files/test.txt"
+                        // fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
                     }
                     catch (IllegalArgumentException ignore)
                     {
@@ -371,9 +385,18 @@ public class ExpDataFileConverter implements Converter
             {
                 try
                 {
-                    FileLike assayResultFile = assayResultFileRoot.resolveChild(webdav);
-                    if (assayResultFile.isFile())
-                        return FileUtil.toFileForRead(assayResultFile);
+                    for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
+                    {
+                        String resultsFileName = FileUtil.getAppendedFileName(webdav, i);
+                        FileLike assayResultFile = assayResultFileRoot.resolveChild(webdav);
+
+                        if (!assayResultFile.isFile())
+                            break;
+
+                        File resultsFile = FileUtil.toFileForRead(assayResultFile);
+                        if (isCaseSensitiveFileNameMatch(resultsFileName, resultsFile))
+                            return resultsFile;
+                    }
                 }
                 catch (Exception ignore)
                 {
@@ -432,5 +455,15 @@ public class ExpDataFileConverter implements Converter
 
         // Otherwise, treat it as a plain path (processed by getFileRootSubstitutedFilePath)
         return FILE_CONVERTER.convert(File.class, webdav);
+    }
+
+    // if two files were uploaded with the same name but different casing, then the file system will uniquify the names
+    // when saved (i.e. test.txt and Test-1.txt) on a case-sensitive file system, so we have to check here to see if
+    // the resolved results file name matches the canonical file name
+    private static boolean isCaseSensitiveFileNameMatch(String value, File resultsFile)
+    {
+        String caseSensitivePath = FileUtil.getAbsoluteCaseSensitiveFile(resultsFile).getAbsolutePath();
+        String caseSensitiveName = AssayResultsFileWriter.getFileNameWithoutPath(caseSensitivePath);
+        return value.equals(caseSensitiveName);
     }
 }

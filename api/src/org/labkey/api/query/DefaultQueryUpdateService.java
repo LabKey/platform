@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Parameter;
@@ -841,10 +842,15 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 case DATE, TIME, TIMESTAMP:
                     return value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class);
                 default:
-                    if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
+                    if (PropertyType.FILE_LINK == col.getPropertyType())
                     {
-                        FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
-                        value = fl.toNioPathForRead().toString();
+                        if ((value instanceof MultipartFile || value instanceof AttachmentFile))
+                        {
+                            FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+                            value = fl.toNioPathForRead().toString();
+                        }
+
+                        return ExpDataFileConverter.convert(value);
                     }
                     return ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass());
             }

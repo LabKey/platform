@@ -27,7 +27,6 @@ import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AssayResultsFileConverter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -327,8 +326,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     column.errorValues = ERROR_VALUE;
 
-                if (run != null && column.clazz == File.class)
-                    column.converter = new AssayResultsFileConverter(run);
+//                if (run != null && column.clazz == File.class)
+//                    column.converter = new AssayResultsFileConverter(run); // TODO: fix
             }
             return loader;
 
