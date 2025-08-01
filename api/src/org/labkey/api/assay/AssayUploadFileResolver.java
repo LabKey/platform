@@ -47,6 +47,7 @@ public class AssayUploadFileResolver
             return null;
 
         String uri = property.getType().getTypeURI();
+        // TODO, this is no longer used for FILE_LINK. Also, assay doesn't support ATTACHMENT, so this class can be removed?
         if (uri.equals(PropertyType.FILE_LINK.getTypeUri()) || uri.equals(PropertyType.ATTACHMENT.getTypeUri()))
         {
             File fileToResolve = null;

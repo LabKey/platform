@@ -869,10 +869,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                             throw new ConversionException(sb.toString(), x);
                         }
-                        else if (x instanceof ConvertHelper.FileConversionException)
-                        {
-                            throw x;
-                        }
                         else if (ERROR_VALUE_USE_ORIGINAL.equals(column.errorValues))
                             values[i] = fld;
                         else
@@ -905,10 +901,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         throw ((ConversionException) e);
                     else
                         throw new RuntimeException(e);
-                }
-                if (e instanceof ConvertHelper.FileConversionException)
-                {
-                    throw e;
                 }
 
                 if (null != _file)
@@ -966,16 +958,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /** Actually create an instance of DataIterator to use, which might be subclass-specific */
     protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
     {
-        ColumnDescriptor[] columnDescriptors = getActiveColumns();
-        if (context.isCrossFolderImport() || context.isCrossTypeImport())
-        {
-            for (ColumnDescriptor columnDescriptor : columnDescriptors)
-            {
-                if (columnDescriptor.clazz.equals(File.class))
-                    columnDescriptor.clazz = String.class; // defer file path validation for cross type/folder import
-            }
-        }
-        return new _DataIterator(context, columnDescriptors, isScrollable());
+//        ColumnDescriptor[] columnDescriptors = getActiveColumns();
+//        if (context.isCrossFolderImport() || context.isCrossTypeImport())
+//        {
+//            for (ColumnDescriptor columnDescriptor : columnDescriptors)
+//            {
+//                if (columnDescriptor.clazz.equals(File.class))
+//                    columnDescriptor.clazz = String.class; // defer file path validation for cross type/folder import
+//            }
+//        }
+        return new _DataIterator(context, getActiveColumns(), isScrollable());
     }
 
     protected class _DataIterator implements ScrollableDataIterator, MapDataIterator

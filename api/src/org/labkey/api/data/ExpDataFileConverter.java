@@ -58,7 +58,7 @@ import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitute
  * User: jeckels
  * Date: Sep 30, 2011
  */
-public class ExpDataFileConverter implements Converter
+public class ExpDataFileConverter
 {
     public static final Converter FILE_CONVERTER = new FileConverter();
 
@@ -209,16 +209,6 @@ public class ExpDataFileConverter implements Converter
         return AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
     }
 
-    private Object _convert(Class type, Object value)
-    {
-        if (value == null || !type.isAssignableFrom(File.class))
-        {
-            return null;
-        }
-
-        return convert(value);
-    }
-
     public static File convert(Object value)
     {
         if (value == null)
@@ -233,7 +223,20 @@ public class ExpDataFileConverter implements Converter
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
         if (container != null && user != null && container.hasPermission(user, ReadPermission.class))
-            return convert(value, fileRootPath, assayResultFileRoot, container, user);
+        {
+            try
+            {
+                return convert(value, fileRootPath, assayResultFileRoot, container, user);
+            }
+            catch (ConvertHelper.FileConversionException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
+            }
+        }
 
         return null;
     }
@@ -323,23 +326,6 @@ public class ExpDataFileConverter implements Converter
         return null;
     }
 
-    @Override
-    public Object convert(Class type, Object value)
-    {
-        try
-        {
-            return _convert(type, value);
-        }
-        catch (ConvertHelper.FileConversionException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new ConvertHelper.FileConversionException("Invalid file path: " + value.toString());
-        }
-    }
-
     public static File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
     {
         if (value instanceof File f)
@@ -388,7 +374,7 @@ public class ExpDataFileConverter implements Converter
                     for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
                     {
                         String resultsFileName = FileUtil.getAppendedFileName(webdav, i);
-                        FileLike assayResultFile = assayResultFileRoot.resolveChild(webdav);
+                        FileLike assayResultFile = assayResultFileRoot.resolveChild(resultsFileName);
 
                         if (!assayResultFile.isFile())
                             break;

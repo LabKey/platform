@@ -326,8 +326,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     column.errorValues = ERROR_VALUE;
 
-//                if (run != null && column.clazz == File.class)
-//                    column.converter = new AssayResultsFileConverter(run); // TODO: fix
             }
             return loader;
 
@@ -797,8 +795,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
 
-        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
-
         return DataIteratorUtil.mapTransformer(rawData, inputCols ->
         {
             List<String> result = new ArrayList<>(inputCols);
@@ -935,8 +931,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             try
                             {
                                 File resolvedFile;
-                                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()) && o instanceof String)
-                                    resolvedFile = (File) expDataFileConverter.convert(File.class, o);
+                                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
+                                    resolvedFile = ExpDataFileConverter.convert(o);
                                 else
                                     resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
                                 if (resolvedFile != null)

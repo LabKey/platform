@@ -737,8 +737,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     // Resolve submitted values into ExpData objects
     protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved, @Nullable Logger log) throws ValidationException
     {
-        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
-
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
@@ -750,7 +748,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             else
             {
-                File file = (File) expDataFileConverter.convert(File.class, o);
+                File file = ExpDataFileConverter.convert(o);
                 if (file != null)
                 {
                     ExpData data = ExperimentService.get().getExpDataByURL(file, c);
@@ -1110,7 +1108,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         try
         {
-            ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
             for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
                 DomainProperty pd = entry.getKey();
@@ -1118,8 +1115,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
                 // resolve any file links for batch or run properties
                 File resolvedFile;
-                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()) && value instanceof String)
-                    resolvedFile = (File) expDataFileConverter.convert(File.class, value);
+                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
+                    resolvedFile = ExpDataFileConverter.convert(value);
                 else
                     resolvedFile = AssayUploadFileResolver.resolve(value, container, pd);
                 if (resolvedFile != null)
