@@ -277,8 +277,10 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             PropertyType pt = pd == null ? null : pd.getPropertyType();
             boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
 
-            if (null == pair.target || isAttachment)
+            if (null == pair.target)
                 convert.addColumn(pair.indexFrom);
+            else if (isAttachment) // Issue 53498: attachment is blank after update from file, if the field name contains underscore
+                convert.addColumn(pair.target, pair.indexFrom);
             else
                 convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, pair.target.getRemapMissingBehavior(), context.isWithLookupRemapping());
         }
