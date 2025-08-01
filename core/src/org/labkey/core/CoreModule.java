@@ -1522,12 +1522,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public void enumerateDocuments(final SearchService.IndexTask task, @NotNull final Container c, Date since)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, Date since)
     {
-        final SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
+        Container c = queue.getContainer();
         if (c.isRoot())
             return;
 
@@ -1575,21 +1572,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
             ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             startURL.setExtraPath(c.getId());
-            WebdavResource doc = new SimpleDocumentResource(
-                c.getParsedPath(),
-                "link:" + c.getId(),
-                c.getEntityId(),
-                "text/plain",
-                body,
-                startURL,
-                UserManager.getUser(c.getCreatedBy()), c.getCreated(),
-                null, null,
-                properties
-            );
-            (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
+            WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
+                    "link:" + c.getId(),
+                    c.getEntityId(),
+                    "text/plain",
+                    body,
+                    startURL,
+                    UserManager.getUser(c.getCreatedBy()), c.getCreated(),
+                    null, null,
+                    properties);
+            queue.addResource(doc);
         };
-        // running this asynchronously seems to expose race conditions in domain checking/creation
-        // (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
         r.run();
     }
 

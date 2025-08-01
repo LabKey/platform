@@ -979,25 +979,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private static final int INDEXING_LIMIT = 1_000;
 
     @Override
-    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
     {
-        task.addRunnable(() -> {
-            for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
+        queue.addRunnable((a) -> {
+            for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(queue.getContainer(), modifiedSince))
             {
-                sampleType.index(task, SearchService.PRIORITY.bulk);
+                sampleType.index(queue, null);
             }
-        }, SearchService.PRIORITY.bulk);
+        });
 
-        task.addRunnable(() -> indexMaterials(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
+        queue.addRunnable((q) -> indexMaterials(q, modifiedSince, 0));
 
-        task.addRunnable(() -> {
-            for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
+        queue.addRunnable((q) -> {
+            for (ExpDataClassImpl dataClass : getIndexableDataClasses(q.getContainer(), modifiedSince))
             {
-                dataClass.index(task, SearchService.PRIORITY.bulk);
+                dataClass.index(q, null);
             }
-        }, SearchService.PRIORITY.bulk);
+        });
 
-        task.addRunnable(() -> indexData(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
+        queue.addRunnable((q) -> indexData(q, modifiedSince, 0));
     }
 
     @Override
@@ -1016,8 +1016,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
+    private void indexMaterials(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, int minRowId)
     {
+        Container container = queue.getContainer();
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
@@ -1042,19 +1043,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            expMaterial.index(task, SearchService.PRIORITY.bulk);
+            expMaterial.index(queue, null);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
         if (materials.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexMaterials(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
+            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.getValue()));
         }
     }
 
-    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
+    public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, int minRowId)
     {
+        Container container = queue.getContainer();
         final String dataAlias = "_d_";
         final String dataIndexedAlias = "_di_";
 
@@ -1079,14 +1081,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Data> data = selector.getArrayList(Data.class);
         data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
-            expData.index(task, SearchService.PRIORITY.bulk);
+            expData.index(queue, null);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
         if (data.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexData(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
+            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.getValue()));
         }
     }
 
@@ -1207,67 +1209,50 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 new Timestamp(ms), rowId);
     }
 
-    public void indexDataClass(ExpDataClassImpl dataClass)
+    public void indexDataClass(ExpDataClassImpl dataClass, SearchService.TaskIndexingQueue queue)
     {
         if (dataClass == null)
             return;
 
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
+        queue.addRunnable((q) -> {
+            Domain d = dataClass.getDomain();
+            if (d == null)
+                return; // Domain may be null if the DataClass has been deleted
 
-        SearchService.IndexTask task = ss.defaultTask();
-
-        Runnable r = () -> {
             if (dataClass.getContainer() == null)
                 return; // Issue 53253: container may be deleted
 
-            indexDataClass(dataClass, task);
-            indexDataClassData(dataClass, task);
-        };
+            TableInfo table = dataClass.getTinfo();
+            if (table == null)
+                return;
 
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+            indexDataClass(dataClass, q);
+            indexDataClassData(dataClass, q);
+        });
     }
 
-    private void indexDataClassData(ExpDataClassImpl dataClass, SearchService.IndexTask task)
+    private void indexDataClassData(ExpDataClassImpl dataClass, SearchService.TaskIndexingQueue queue)
     {
         TableInfo table = dataClass.getTinfo();
         // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
         SQLFragment sql = new SQLFragment()
-            .append("SELECT * FROM ").append(getTinfoData(), "d")
-            .append(" INNER JOIN ").append(table, "t")
-            .append(" ON t.lsid = d.lsid")
-            .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
-            .append(" ON d.RowId = di.DataId")
-            .append(" WHERE d.classId = ?").add(dataClass.getRowId())
-            .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
-            .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
+                .append("SELECT * FROM ").append(getTinfoData(), "d")
+                .append(" INNER JOIN ").append(table, "t")
+                .append(" ON t.lsid = d.lsid")
+                .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
+                .append(" ON d.RowId = di.DataId")
+                .append(" WHERE d.classId = ?").add(dataClass.getRowId())
+                .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
+                .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
                 .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->
-            new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
-                    task.addRunnable(() -> batch.forEach(data ->
-                        new ExpDataImpl(data).index(task)),
-                    SearchService.PRIORITY.bulk)
-        ));
-    }
-
-    private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
-    {
-        // Index the data class if it has never been indexed OR it has changed since it was last indexed
-        SQLFragment sql = new SQLFragment("SELECT * FROM ")
-            .append(getTinfoDataClass(), "dc")
-            .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
-            .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
-            .add(expDataClass.getModified());
-
-        DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
-        if (dClass != null)
-        {
-            ExpDataClassImpl impl = new ExpDataClassImpl(dClass);
-            impl.index(task);
-        }
+                new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
+                        queue.addRunnable((q) -> batch.forEach(data ->
+                                new ExpDataImpl(data).index(q, null))
+                        )
+                ));
     }
 
     private @Nullable ExpExperimentImpl getExpExperiment(SimpleFilter filter)
@@ -4347,7 +4332,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
                     transaction.addCommitTask(() ->
                         replacedRuns.forEach(replacedRun ->
-                                AssayService.get().indexAssayRun(replacedRun.getRowId())
+                                AssayService.get().indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
                         ),
                         DbScope.CommitTaskOption.POSTCOMMIT
                     );
@@ -5013,13 +4998,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
 
             // On successful commit, start task to remove items from search index
-            final SearchService ss = SearchService.get();
-            if (null != ss)
-            {
-                transaction.addCommitTask(
-                    () -> ss.defaultTask().addRunnable(() -> ss.deleteResources(docids), SearchService.PRIORITY.bulk),
-                    POSTCOMMIT);
-            }
+            transaction.addCommitTask(
+                // Use null as container because we want deletes to run even if the container is deleted
+                () -> SearchService.get().deleteResources(docids),
+                POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)
@@ -5382,17 +5364,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             afterDeleteData(user, container, expDatas);
 
             // Remove from search index
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            Set<String> documentIds = new HashSet<>();
+            for (ExpDataImpl data : ExpDataImpl.fromDatas(datas))
             {
-                Set<String> documentIds = new HashSet<>();
-                for (ExpDataImpl data : ExpDataImpl.fromDatas(datas))
-                {
-                    documentIds.add(data.getDocumentId());
-                }
-
-                transaction.addCommitTask(() -> ss.deleteResources(documentIds), POSTCOMMIT);
+                documentIds.add(data.getDocumentId());
             }
+
+            transaction.addCommitTask(() -> SearchService.get().deleteResources(documentIds), POSTCOMMIT);
 
             transaction.commit();
         }
@@ -6556,13 +6534,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return;
 
         AssayService assayService = AssayService.get();
-        SearchService ss = SearchService.get();
 
-        if (assayService != null && ss != null)
+        if (assayService != null)
         {
-            SearchService.IndexTask task = ss.defaultTask();
-            Runnable runEnumerate = () -> assayService.indexAssay(task, protocol.getContainer(), new ExpProtocolImpl(protocol));
-            task.addRunnable(runEnumerate, SearchService.PRIORITY.item);
+            SearchService.get().defaultTask().getQueue(protocol.getContainer(), SearchService.PRIORITY.modified).addRunnable((q) ->
+                    assayService.indexAssay(q, new ExpProtocolImpl(protocol)));
         }
     }
 
@@ -7946,7 +7922,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(DataTypeForExclusion.DataClass, impl.getRowId(), c, u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            tx.addCommitTask(() -> indexDataClass(getDataClass(c, bean.getName())), POSTCOMMIT);
+            tx.addCommitTask(() -> indexDataClass(getDataClass(c, bean.getName()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
             tx.commit();
         }
         catch (MetadataUnavailableException e)
@@ -8047,7 +8023,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName())), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
             }
         }
@@ -9597,7 +9573,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // update search index for moved data class object via indexDataClass() helper. It filters for data objects
                 // to index based on the modified date
                 for (ExpDataClass dataClass : dataClassesMap.keySet())
-                    indexDataClass((ExpDataClassImpl) dataClass);
+                    indexDataClass((ExpDataClassImpl) dataClass, SearchService.get().defaultTask().getQueue(dataClass.getContainer(), SearchService.PRIORITY.modified));
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
