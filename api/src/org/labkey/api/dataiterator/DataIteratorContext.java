@@ -55,6 +55,8 @@ public class DataIteratorContext
     QueryImportPipelineJob _backgroundJob = null;
     boolean _crossTypeImport = false;
     boolean _crossFolderImport = false;
+    boolean _isCrossTypePartition = false;
+    boolean _isCrossFolderPartition = false;
     boolean _allowCreateStorage = false;
     boolean _useTransactionAuditCache = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
@@ -210,6 +212,26 @@ public class DataIteratorContext
     public void setCrossFolderImport(boolean crossFolderImport)
     {
         _crossFolderImport = crossFolderImport;
+    }
+
+    public boolean isCrossTypePartition()
+    {
+        return _isCrossTypePartition;
+    }
+
+    public void setCrossTypePartition(boolean crossTypePartition)
+    {
+        _isCrossTypePartition = crossTypePartition;
+    }
+
+    public boolean isCrossFolderPartition()
+    {
+        return _isCrossFolderPartition;
+    }
+
+    public void setCrossFolderPartition(boolean crossFolderPartition)
+    {
+        _isCrossFolderPartition = crossFolderPartition;
     }
 
     public boolean isAllowCreateStorage()

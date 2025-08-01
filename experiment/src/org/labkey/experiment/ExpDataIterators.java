@@ -90,7 +90,6 @@ import org.labkey.api.query.FileColumnValueMapper;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
@@ -2534,6 +2533,8 @@ public class ExpDataIterators
                 Collection<String> importOrderKeys = getImportOrderTypeKeys();
                 if (!_context.getErrors().hasErrors())
                 {
+                    _context.setCrossTypePartition(_context.isCrossTypeImport());
+                    _context.setCrossFolderPartition(_context.isCrossFolderImport());
                     _context.setCrossTypeImport(false);
                     _context.setCrossFolderImport(false);
 
