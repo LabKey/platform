@@ -136,7 +136,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         .expireAfterWrite(1, TimeUnit.DAYS)
         .build();
 
-    private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
+    private String _create(DbScope scope, DomainKind<?> kind, Domain domain, boolean useProvidedStorageName)
     {
         //noinspection AssertWithSideEffects
         assert create.start();
@@ -148,18 +148,29 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                log.warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                log.warn("Can't find domain descriptor: {} {}", domain.getTypeId(), domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
             String tableName = dd.getStorageTableName();
-            if (null != tableName)
-            {
-                transaction.commit();
-                return tableName;
-            }
 
-            tableName = makeTableName(kind, domain);
+            if (useProvidedStorageName)
+            {
+                if (null == tableName)
+                {
+                    throw new RuntimeException("Storage table name was null: " + domain.getTypeId() + " " + domain.getTypeURI());
+                }
+            }
+            else
+            {
+                if (null != tableName)
+                {
+                    transaction.commit();
+                    return tableName;
+                }
+
+                tableName = makeTableName(kind, domain);
+            }
             TableChange change = new TableChange(domain, ChangeType.CreateTable, tableName);
 
             Set<String> base = Sets.newCaseInsensitiveHashSet();
@@ -215,12 +226,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 throw re;
             }
 
-            DomainDescriptor editDD = dd.edit()
+            if (!useProvidedStorageName)
+            {
+                DomainDescriptor editDD = dd.edit()
                     .setStorageTableName(tableName)
                     .setStorageSchemaName(kind.getStorageSchemaName())
                     .build();
 
-            OntologyManager.ensureDomainDescriptor(editDD);
+                OntologyManager.ensureDomainDescriptor(editDD);
+            }
 
             kind.invalidate(domain);
 
@@ -346,7 +360,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         if (null == domain.getStorageTableName())
         {
-            _create(scope, kind, domain);
+            _create(scope, kind, domain, false);
             return;
         }
 
@@ -826,11 +840,17 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                tableName = _create(scope, kind, domain);
+                tableName = _create(scope, kind, domain, false);
             }
         }
 
         return tableName;
+    }
+
+    @Override
+    public void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope)
+    {
+        _create(scope, kind, domain, true);
     }
 
     enum RequiredIndicesAction

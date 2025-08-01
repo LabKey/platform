@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.settings.AppProps.ALLOWED_EXTERNAL_RESOURCES;
+import static org.labkey.api.settings.AppProps.ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES;
 
 public class AllowedExternalResourceHosts
 {
@@ -74,12 +74,12 @@ public class AllowedExternalResourceHosts
 
     private static void register(Directive dir, String... hosts)
     {
-        ContentSecurityPolicyFilter.registerAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir, hosts);
+        ContentSecurityPolicyFilter.registerAllowedSources(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, dir, hosts);
     }
 
     private static void unregister(Directive dir)
     {
-        ContentSecurityPolicyFilter.unregisterAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir);
+        ContentSecurityPolicyFilter.unregisterAllowedSources(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, dir);
     }
 
     // Returns a mutable list (mutating it won't affect any cached values)

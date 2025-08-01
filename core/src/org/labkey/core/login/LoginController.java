@@ -1550,7 +1550,7 @@ public class LoginController extends SpringActionController
 
             url = configuration.getUrl(csrf, getViewContext());
 
-            return HttpView.redirect(url.getURIString());
+            return HttpView.redirect(url, true);
         }
 
         @Override

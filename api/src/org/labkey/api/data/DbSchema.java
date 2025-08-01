@@ -148,7 +148,7 @@ public class DbSchema
         }
     }
 
-    Module getModule()
+    public Module getModule()
     {
         return _module;
     }
