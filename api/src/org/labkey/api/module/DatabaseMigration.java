@@ -236,6 +236,7 @@ public class DatabaseMigration
                     }
                     else
                     {
+                        LOG.info("Migrating '{}'", targetSchema.getName() + "." + targetTableName);
                         // Inspect target table to determine column names to select from source table
                         Set<String> selectColumnNames = targetTable.getColumns().stream()
                             .filter(column -> column.getWrappedColumnName() == null) // Ignore wrapped columns

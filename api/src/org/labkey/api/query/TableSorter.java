@@ -159,14 +159,16 @@ public final class TableSorter
 
     private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted, boolean tolerateLoops)
     {
-        if (!tolerateLoops && hasLoop(visitingPath, table))
+        if (hasLoop(visitingPath, table))
         {
             String msg = "Loop detected in schema '" + schemaName + "':\n" + formatPath(visitingPath);
-            if (anyHaveContainerColumn(visitingPath))
+            if (!tolerateLoops && anyHaveContainerColumn(visitingPath))
                 throw new IllegalStateException(msg);
 
             LOG.warn(msg);
-            return;
+
+            if (!tolerateLoops)
+                return;
         }
 
         if (visited.contains(table))
