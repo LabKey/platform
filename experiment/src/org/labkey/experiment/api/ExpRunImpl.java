@@ -969,7 +969,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                             LOG.warn("Unable to create an archive directory - discontinue archive and delete.");
                             return;
                         }
-                        File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
+                        File targetFile = FileUtil.findUniqueFileName(file.getName(), archivedDir);
                         targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
                         FileUtils.moveFile(file, targetFile);
                         expData.setDataFileURI(targetFile.toURI());
