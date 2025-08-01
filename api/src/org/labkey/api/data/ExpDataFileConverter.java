@@ -254,8 +254,14 @@ public class ExpDataFileConverter implements Converter
                 File fileUnderRoot = f;
                 if (!f.isAbsolute())
                 {
-                    // Interpret relative paths based on the file root
-                    fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
+                    try
+                    {
+                        // Interpret relative paths based on the file root
+                        fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
+                    }
+                    catch (IllegalArgumentException ignore)
+                    {
+                    }
                 }
 
                 if (root.isUnderRoot(fileUnderRoot) && fileUnderRoot.isFile())
