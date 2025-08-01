@@ -334,7 +334,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         // search for new dataset with the list filter but without the dataset filter applied
         checkCheckbox(Locator.checkboxByNameAndValue("category", "list"));
-        _searchHelper.searchFor(searchTerm2, true);
+        _searchHelper.searchFor(searchTerm2, false);
         waitForElement(Locator.tagWithText("div", "Found 1 result"));
         List<String> noDatasetFilterOwl = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
         checker().withScreenshot("list-only-search")
@@ -344,7 +344,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         // now search with dataset filter applied
         checkCheckbox(Locator.checkboxByNameAndValue("category", "dataset"));
-        _searchHelper.searchFor(searchTerm2, true);
+        _searchHelper.searchFor(searchTerm2, false);
         waitForElement(Locator.tagWithText("div", "Found 2 results"));
         List<String> unionFilterOwlResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
         checker().withScreenshot("list-and-dataset-search")
@@ -354,7 +354,7 @@ public abstract class SearchTest extends StudyBaseTest
         uncheckCheckbox(Locator.checkboxByNameAndValue("category", "list"));
 
         // now search filtering on dataset only
-        _searchHelper.searchFor(searchTerm2, true);
+        _searchHelper.searchFor(searchTerm2, false);
         waitForElement(Locator.tagWithText("div", "Found 1 result"));
         List<String> datasetFilterOwlResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
         checker().withScreenshot("Dataset-filter-only")
@@ -364,7 +364,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         // search for a study subject, without the subjects filter applied
         final String searchTerm3 = "999321033";
-        _searchHelper.searchFor(searchTerm3, true);
+        _searchHelper.searchFor(searchTerm3, false);
         waitForElement(Locator.tagWithText("div", "Found 0 results"));
         List<String> subjectResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
         checker().withScreenshot("subject-without-filter-search")
