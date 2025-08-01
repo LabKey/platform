@@ -39,7 +39,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     protected boolean _isReady = false;
     final private AtomicInteger _indexed = new AtomicInteger();
     final private AtomicInteger _failed = new AtomicInteger();
-    final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<>());
+    final protected Map<AbstractSearchService.Item,AbstractSearchService.Item> _subtasks = Collections.synchronizedMap(new IdentityHashMap<>());
     final StringWriter _sw = new StringWriter();
     final PrintWriter _out = new PrintWriter(_sw);
 
@@ -89,11 +89,10 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    protected void addItem(Object item)
+    protected void addItem(AbstractSearchService.Item item)
     {
-        _subtasks.put(item,item);
+        _subtasks.put(item, item);
     }
-
 
     @Override
     public void log(String message)

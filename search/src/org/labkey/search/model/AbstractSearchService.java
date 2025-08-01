@@ -80,6 +80,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
@@ -678,8 +679,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void purgeForContainer(@NotNull Container container)
     {
-        _runQueue.removeIf(i -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete);
-        _itemQueue.removeIf(i -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete);
+        Predicate<Item> itemChecker = (i) -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete;
+        _runQueue.removeIf(itemChecker);
+        _itemQueue.removeIf(itemChecker);
+
+        // Let the task know too, treating them as failures (since they were not successfully indexed)
+        for (_IndexTask task : _tasks)
+        {
+            List<Item> toRemove = task._subtasks.keySet().stream().filter(itemChecker).toList();
+            toRemove.forEach(i -> task.completeItem(i, false));
+        }
     }
 
     @Override
@@ -1591,10 +1600,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public void run(Logger log)
         {
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
-                ss.maintenance();
+            SearchService.get().maintenance();
         }
     }
 
