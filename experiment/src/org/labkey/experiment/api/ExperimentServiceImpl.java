@@ -6333,8 +6333,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         + " ORDER BY TargetApplicationId, DataId";
 
                 new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataOutputRS -> {
-                    int successorRunId = dataOutputRS.getInt("RunId");
-                    Integer datId = dataOutputRS.getInt("DataId");
+                    long successorRunId = dataOutputRS.getLong("RunId");
+                    Long datId = dataOutputRS.getLong("DataId");
                     ExpDataImpl dat = outputDataMap.get(datId);
                     dat.addSuccessorRunId(successorRunId);
                 });
