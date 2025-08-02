@@ -1114,14 +1114,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 String value = entry.getValue();
 
                 // resolve any file links for batch or run properties
-                File resolvedFile;
                 if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
-                    resolvedFile = ExpDataFileConverter.convert(value);
-                else
-                    resolvedFile = AssayUploadFileResolver.resolve(value, container, pd);
-                if (resolvedFile != null)
                 {
-                    value = resolvedFile.getAbsolutePath();
+                    File resolvedFile = ExpDataFileConverter.convert(value);
+                    if (resolvedFile != null)
+                        value = resolvedFile.getAbsolutePath();
                 }
 
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data

@@ -2053,7 +2053,7 @@ public class ExpDataIterators
     // This should be used AFTER StandardDataIteratorBuilder, say at the beginning of PersistDataIteratorBuilder (below)
     // The incoming dataiterator should bound to target table and have complete ColumnInfo metadata
     // see SimpleQueryUpdateService.convertTypes() for similar handling of FILE_LINK columns
-    public static class FileLinkDataIterator extends WrapperDataIterator//
+    public static class FileLinkDataIterator extends WrapperDataIterator
     {
         Supplier<Object>[] suppliers;
         String[] savedFileName;
@@ -2100,7 +2100,8 @@ public class ExpDataIterators
                                 value = null;
                             }
                         }
-                        else if (value instanceof String filePath)
+
+                        if (value instanceof String filePath)
                             return ExpDataFileConverter.convert(filePath);
                         return value;
                     };

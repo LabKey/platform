@@ -329,7 +329,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             for (int f = 0; f < nCols; f++)
             {
                 List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
-                Class knownColumnClass;
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -344,7 +343,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                         if (knownColumn != null)
                         {
-                            knownColumnClass = knownColumn.getJavaClass();
+                            Class knownColumnClass = knownColumn.getJavaClass();
                             classesToTest.add(0, knownColumnClass);
                         }
                     }
@@ -450,8 +449,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Set<String> columnNames = new HashSet<>();
         for (ColumnDescriptor colDesc : colDescs)
         {
-            String name = colDesc.name;
-            if (!columnNames.add(name) && isThrowOnErrors())
+            if (!columnNames.add(colDesc.name) && isThrowOnErrors())
             {
                 // TODO: This should be refactored to not throw this here, but rather, have the callers check themselves. It
                 // is not in the interest of inferring columns that we validate duplicate columns.
@@ -958,15 +956,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /** Actually create an instance of DataIterator to use, which might be subclass-specific */
     protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
     {
-//        ColumnDescriptor[] columnDescriptors = getActiveColumns();
-//        if (context.isCrossFolderImport() || context.isCrossTypeImport())
-//        {
-//            for (ColumnDescriptor columnDescriptor : columnDescriptors)
-//            {
-//                if (columnDescriptor.clazz.equals(File.class))
-//                    columnDescriptor.clazz = String.class; // defer file path validation for cross type/folder import
-//            }
-//        }
         return new _DataIterator(context, getActiveColumns(), isScrollable());
     }
 

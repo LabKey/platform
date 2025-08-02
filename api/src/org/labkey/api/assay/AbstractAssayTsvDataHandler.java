@@ -30,6 +30,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -915,9 +916,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         valueMissing = false;
                     }
 
-                    // If the column is a file link or attachment, resolve the value to a File object
+                    // If the column is a file link, resolve the value to a File object
                     String uri = pd.getType().getTypeURI();
-                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()) || uri.equals(PropertyType.ATTACHMENT.getTypeUri()))
+                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()))
                     {
                         if ("".equals(o))
                         {
@@ -930,18 +931,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             // File column values are stored as the absolute resolved path
                             try
                             {
-                                File resolvedFile;
-                                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
-                                    resolvedFile = ExpDataFileConverter.convert(o);
-                                else
-                                    resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                                File resolvedFile = ExpDataFileConverter.convert(o);
                                 if (resolvedFile != null)
                                 {
                                     o = resolvedFile;
                                     map.put(pd.getName(), o);
                                 }
                             }
-                            catch (ValidationException e)
+                            catch (ConvertHelper.FileConversionException e)
                             {
                                 throw new RuntimeValidationException(e);
                             }
