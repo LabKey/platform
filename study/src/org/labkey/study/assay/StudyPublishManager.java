@@ -17,7 +17,7 @@
 package org.labkey.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
