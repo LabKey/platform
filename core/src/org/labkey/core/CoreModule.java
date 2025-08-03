@@ -57,6 +57,8 @@ import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
@@ -89,8 +91,6 @@ import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.module.DatabaseMigration;
-import org.labkey.api.module.DatabaseMigration.DefaultMigrationHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1268,7 +1268,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigration.registerHandler(CoreSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(CoreSchema.getInstance().getSchema(), new DefaultMigrationHandler()
         {
             @Override
             public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
