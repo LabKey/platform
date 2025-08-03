@@ -1271,6 +1271,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         DatabaseMigrationService.get().registerHandler(CoreSchema.getInstance().getSchema(), new DefaultMigrationHandler()
         {
             @Override
+            public void beforeVerification(DbSchema targetSchema)
+            {
+                super.beforeVerification(targetSchema);
+
+                // Delete root and shared containers that were needed for bootstrapping
+                TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+                Table.delete(containers);
+                DbScope targetScope = DbScope.getLabKeyScope();
+                new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
+            }
+
+            @Override
             public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
             {
                 List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);

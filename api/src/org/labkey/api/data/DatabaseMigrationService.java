@@ -40,6 +40,8 @@ public interface DatabaseMigrationService
 
     interface MigrationHandler
     {
+        void beforeVerification(DbSchema targetSchema);
+
         void beforeSchema(DbSchema targetSchema);
 
         List<TableInfo> getTablesToCopy(DbSchema targetSchema);
@@ -49,6 +51,11 @@ public interface DatabaseMigrationService
 
     class DefaultMigrationHandler implements MigrationHandler
     {
+        @Override
+        public void beforeVerification(DbSchema targetSchema)
+        {
+        }
+
         @Override
         public void beforeSchema(DbSchema targetSchema)
         {
