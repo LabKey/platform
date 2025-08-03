@@ -801,7 +801,7 @@ public class ContainerManager
     {
         ColumnValidators.validate(CORE.getTableInfoContainers().getColumn("Title"), null, 1, description);
 
-        //For some reason there is no primary key defined on core.containers
+        //For some reason, there is no primary key defined on core.containers
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
@@ -817,7 +817,7 @@ public class ContainerManager
 
     public static void updateSearchable(Container container, boolean searchable, User user)
     {
-        //For some reason there is no primary key defined on core.containers
+        //For some reason, there is no primary key defined on core.containers
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
@@ -2715,7 +2715,7 @@ public class ContainerManager
     }
 
     /**
-     * If a container at the given path does not exist create one and set permissions. If the container does exist,
+     * If a container at the given path does not exist, create one and set permissions. If the container does exist,
      * permissions are only set if there is no explicit ACL for the container. This prevents us from resetting
      * permissions if all users are dropped. Implicitly done as an admin-level service user.
      */

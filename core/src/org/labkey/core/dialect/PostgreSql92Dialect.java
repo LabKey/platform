@@ -20,9 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -203,5 +203,12 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
         assert !StringUtilsLabKey.hasBrokenSurrogate(str);
         return str;
+    }
+
+    @Override
+    // No need to split up PostgreSQL scripts; execute all statements in a single block (unless we have a special stored proc call).
+    protected Pattern getSQLScriptSplitPattern()
+    {
+        return null;
     }
 }

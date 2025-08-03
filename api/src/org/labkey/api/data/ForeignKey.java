@@ -94,7 +94,7 @@ public interface ForeignKey
         return Objects.toString(getLookupSchemaKey(),null);
     }
 
-    /* Schema path relative to the DefaultSchema (e.g. container) */
+    /* Schema path relative to the DefaultSchema (e.g., container) */
     SchemaKey getLookupSchemaKey();
 
     /**
