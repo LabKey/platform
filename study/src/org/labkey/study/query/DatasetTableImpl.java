@@ -922,9 +922,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             Object value = getValue(ctx);
             HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
-            if (value instanceof Integer)
+            if (value instanceof Number numValue)
             {
-                DataState state = getStateCache(ctx).get(value);
+                DataState state = getStateCache(ctx).get(numValue.longValue());
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(PageFlowUtil.popupHelp(HtmlString.of(state.getDescription()), "QC State " + state.getLabel()));
             }
