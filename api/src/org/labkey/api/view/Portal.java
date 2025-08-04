@@ -210,7 +210,7 @@ public class Portal implements ModuleChangeListener
                     append(getTableInfoPortalWebParts(), "pwp").
                     append(" GROUP BY Name");
 
-            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap());
+            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap(String.class));
         };
     }
 

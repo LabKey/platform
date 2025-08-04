@@ -303,7 +303,7 @@ public class SpecimenModule extends SpringModule
                         });
 
                     Map<String, Object> specimensMap = specimenBag.uniqueSet().stream().collect(Collectors.toMap(s -> s, specimenBag::getCount));
-                    Map<String, Object> requestsMap = new SqlSelector(SpecimenSchema.get().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap();
+                    Map<String, Object> requestsMap = new SqlSelector(SpecimenSchema.get().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap(String.class);
                     requestsMap.put("enabled", requestsEnabled);
                     specimensMap.put("requests", requestsMap);
                     specimensMap.put("hasLocations", hasLocations.intValue());

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.Table.Getter;
 
 import java.lang.reflect.Array;
@@ -645,6 +646,8 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             map = (HashMap<K,V>)new LongHashMap<V>();
         else if (keyClass == Integer.class)
             map = (HashMap<K,V>)new IntHashMap<V>();
+        else if (keyClass == String.class)
+            map = (HashMap<K,V>)new StringHashMap<V>();
         else
             map = new HashMap<>();
         return fillValueMap(keyClass, map);

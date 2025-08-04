@@ -331,7 +331,7 @@ public class AuthenticationManager
         Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
         Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
-                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap();
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
         Map<String, String> saveMap = new HashMap<>();
 
         map.forEach((key, value) -> {

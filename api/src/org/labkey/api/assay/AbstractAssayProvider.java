@@ -2098,7 +2098,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("runid"), runRowIds, IN);
         TableSelector ts = new TableSelector(expDataTable, expDataTable.getColumns("runid","datafileurl"), filter, null);
-        Map<Long, String> runFile = ts.getValueMap();   // TODO BIGINT
+        Map<Long, String> runFile = ts.getValueMap(Long.class);
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService == null)
             return;

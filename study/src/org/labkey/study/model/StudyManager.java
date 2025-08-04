@@ -4212,7 +4212,7 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter(columns.get(0).getFieldKey(), ptid);
 
         // Return source -> alias map
-        return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap();
+        return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap(String.class);
     }
 
     private void unindexDataset(DatasetDefinition ds)

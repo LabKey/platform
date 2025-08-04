@@ -944,7 +944,7 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpDataClassTable.Column.Name.name());
             columns.add(ExpDataClassTable.Column.DataCount.name());
 
-            Map<String, Number> results = new TableSelector(table, columns).getValueMap();
+            Map<String, Number> results = new TableSelector(table, columns).getValueMap(String.class);
             for (var entry : results.entrySet())
             {
                 long count = entry.getValue().longValue();
@@ -972,7 +972,7 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpSampleTypeTable.Column.Name.name());
             columns.add(ExpSampleTypeTable.Column.SampleCount.name());
 
-            Map<String, Number> results = new TableSelector(table, columns).getValueMap();
+            Map<String, Number> results = new TableSelector(table, columns).getValueMap(String.class);
             for (var entry : results.entrySet())
             {
                 long count = entry.getValue().longValue();

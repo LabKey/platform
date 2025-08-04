@@ -1,5 +1,7 @@
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.HashMap;
 import java.util.function.BiFunction;
 
@@ -21,12 +23,6 @@ public class IntHashMap<V> extends HashMap<Integer, V>
         if (null != key && key.getClass() != Integer.class)
             throw new IllegalStateException();
         return (Integer)key;
-    }
-
-    @Override
-    public V compute(Integer key, BiFunction<? super Integer, ? super V, ? extends V> remappingFunction)
-    {
-        return super.compute(key, remappingFunction);
     }
 
     @Override
