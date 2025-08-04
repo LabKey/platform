@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Executes a single module upgrade SQL script, including finding calls into Java code that are embedded using
@@ -51,13 +54,14 @@ public class SqlScriptExecutor
     /**
      * Splits a SQL string into blocks and executes each block, one at a time. Blocks are determined in a dialect-specific
      * way, using splitPattern and procPattern.
-     * @param scriptName Name of the SQL script for logging purposes
-     * @param sql The SQL string to split and execute
-     * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
-     * @param procPattern Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
-     * @param schema Current schema. Null is allowed for testing purposes.
+     *
+     * @param scriptName    Name of the SQL script for logging purposes
+     * @param sql           The SQL string to split and execute
+     * @param splitPattern  Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
+     * @param procPattern   Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
+     * @param schema        Current schema. Null is allowed for testing purposes.
      * @param moduleContext Current ModuleContext
-     * @param conn Connection to use, if non-null
+     * @param conn          Connection to use, if non-null
      */
     public SqlScriptExecutor(String scriptName, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, ModuleContext moduleContext, @Nullable Connection conn)
     {
@@ -79,10 +83,51 @@ public class SqlScriptExecutor
         }
     }
 
+    private static final String START_ANNOTATION = "@SkipOnEmptySchemasBegin";
+    private static final String END_ANNOTATION = "@SkipOnEmptySchemasEnd";
+
     private Collection<Block> getBlocks()
     {
+        String sql;
+
+        if (ModuleLoader.getInstance().shouldInsertData())
+        {
+            sql = _sql;
+        }
+        else
+        {
+            // Strip all statements (typically inserts) between the empty-schema START and END annotations, inclusive
+            MutableBoolean skipping = new MutableBoolean(false);
+            MutableInt lineCount = new MutableInt(0);
+            sql = _sql.lines()
+                .filter(line -> {
+                    lineCount.increment();
+                    if (line.contains(START_ANNOTATION))
+                    {
+                        if (skipping.booleanValue())
+                            throw new IllegalStateException("Unexpected " + START_ANNOTATION + " at line " + lineCount.intValue());
+
+                        skipping.setValue(true);
+                    }
+
+                    boolean ret = !skipping.booleanValue();
+
+                    if (line.contains(END_ANNOTATION))
+                    {
+                        if (!skipping.booleanValue())
+                            throw new IllegalStateException("Unexpected " + END_ANNOTATION + " at line " + lineCount.intValue());
+
+                        skipping.setValue(false);
+                    }
+
+                    return ret;
+                }
+            )
+            .collect(Collectors.joining("\n"));
+        }
+
         // Strip all comments from the script -- PostgreSQL JDBC driver goes berserk if it sees ; or ? inside a comment
-        StringBuilder stripped = new SqlScanner(_sql).stripComments();
+        StringBuilder stripped = new SqlScanner(sql).stripComments();
 
         Collection<String> sqlBlocks;
 

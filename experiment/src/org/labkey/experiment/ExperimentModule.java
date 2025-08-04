@@ -28,10 +28,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -71,6 +74,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
@@ -86,6 +90,7 @@ import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -557,7 +562,8 @@ public class ExperimentModule extends SpringModule
                 // but it should be before the CoreContainerListener
                 ContainerManager.ContainerListener.Order.Last);
 
-        SystemProperty.registerProperties();
+        if (ModuleLoader.getInstance().shouldInsertData())
+            SystemProperty.registerProperties();
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
@@ -848,6 +854,23 @@ public class ExperimentModule extends SpringModule
                 return results;
             });
         }
+
+        // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
+        DatabaseMigrationService.get().registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
+        {
+            @Override
+            public void beforeSchema(DbSchema targetSchema)
+            {
+                // Yes, the FK name is misspelled
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+            }
+
+            @Override
+            public void afterSchema(DbSchema targetSchema)
+            {
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+            }
+        });
     }
 
     @Override
@@ -857,7 +880,7 @@ public class ExperimentModule extends SpringModule
         Collection<String> list = new LinkedList<>();
         int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).size();
         if (runGroupCount > 0)
-            list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
+            list.add(StringUtilsLabKey.pluralize(runGroupCount, "Run Group"));
 
         User user = HttpView.currentContext().getUser();
 

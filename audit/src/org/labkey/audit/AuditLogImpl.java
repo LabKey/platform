@@ -38,6 +38,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -92,7 +93,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     private AuditLogImpl()
     {
-        ContextListener.addStartupListener(this);
+        // If we're migrating, avoid creating all the audit log tables and inserting the queued events
+        if (ModuleLoader.getInstance().shouldInsertData())
+            ContextListener.addStartupListener(this);
     }
 
     @Override
