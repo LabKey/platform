@@ -18,6 +18,7 @@ package org.labkey.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +68,7 @@ import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -1777,11 +1779,11 @@ public class AssayController extends SpringActionController
             // need to query to get the dataIds for the data rowIds so that we can check container permissions on that exp.data table
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), allowedIds, CompareType.IN);
             Collection<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection();
-            List<Integer> permittedRowIds = new ArrayList<>();
+            List<Long> permittedRowIds = new LongArrayList();
             Set<Container> uniqueContainers = new HashSet<>();
             for (Map<String, Object> dataRow : dataRows)
             {
-                Integer rowId = (Integer) dataRow.get("rowid");
+                Long rowId = MapUtils.getLong(dataRow,"rowid");
                 ExpData data = ExperimentService.get().getExpData((Integer) dataRow.get("dataid"));
                 if (data == null || data.getRun() == null) continue;
 
@@ -1836,7 +1838,7 @@ public class AssayController extends SpringActionController
     public static class AssayOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private AssayRunOperations _dataOperation;
-        private Integer _protocolId;
+        private Long _protocolId;
 
         public AssayRunOperations getDataOperation()
         {
@@ -1848,12 +1850,12 @@ public class AssayController extends SpringActionController
             _dataOperation = dataOperation;
         }
 
-        public Integer getProtocolId()
+        public Long getProtocolId()
         {
             return _protocolId;
         }
 
-        public void setProtocolId(Integer protocolId)
+        public void setProtocolId(Long protocolId)
         {
             _protocolId = protocolId;
         }

@@ -205,11 +205,11 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     @NotNull
     @Override
-    protected <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
+    protected <E> ArrayList<E> createPrimitiveArrayList(Class<E> clazz, ResultSet rs, @NotNull Table.Getter getter) throws SQLException
     {
         // Could be getArray(), getArrayList(), or getCollection()
         ensureStableColumnOrder("This TableSelector method");
-        return super.createPrimitiveArrayList(rs, getter);
+        return super.createPrimitiveArrayList(clazz, rs, getter);
     }
 
     @NotNull

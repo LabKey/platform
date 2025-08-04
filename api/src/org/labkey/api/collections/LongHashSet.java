@@ -1,5 +1,6 @@
 package org.labkey.api.collections;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,11 @@ public class LongHashSet extends HashSet<Long>
     public LongHashSet(Set<Long> set)
     {
         super(set);
+    }
+
+    public LongHashSet(Collection<Long> col)
+    {
+        super(col);
     }
 
     private Long _long(Object key)

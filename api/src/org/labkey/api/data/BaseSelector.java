@@ -20,7 +20,9 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.IntArrayList;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.StringHashMap;
@@ -112,9 +114,15 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     }
 
     // Simple object case: Number, String, Date, etc.
-    protected @NotNull <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Getter getter) throws SQLException
+    protected @NotNull <E> ArrayList<E> createPrimitiveArrayList(Class<E> clazz, ResultSet rs, @NotNull Getter getter) throws SQLException
     {
-        ArrayList<E> list = new ArrayList<>();
+        ArrayList<E> list;
+        if (clazz == Integer.class)
+            list = (ArrayList<E>)new IntArrayList();
+        else if (clazz == Long.class)
+            list = (ArrayList<E>)new LongArrayList();
+        else
+            list = new ArrayList<>();
 
         while (rs.next())
             //noinspection unchecked
@@ -141,7 +149,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
             if (null != getter)
             {
-                list = createPrimitiveArrayList(rs, getter);
+                list = createPrimitiveArrayList(_clazz, rs, getter);
             }
             // If not, we're generating maps or beans
             else
