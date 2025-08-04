@@ -50,7 +50,7 @@ CREATE TABLE core.Principals
   Container ENTITYID,               -- NULL for all users, NOT NULL for _ALL_ groups
   OwnerId ENTITYID NULL,
   Name VARCHAR(64),                 -- email (must contain @ and .), group name (no punctuation), or hidden (no @)
-  Type CHAR(1),                     -- 'u'=user 'g'=group (NYI 'r'=role, 'm'=managed(module specific)
+  Type CHAR(1),                     -- 'u'=user 'g'=group 'm'=module-specific
   Active BOOLEAN NOT NULL DEFAULT TRUE,
 
   CONSTRAINT PK_Principals PRIMARY KEY (UserId),
@@ -474,6 +474,7 @@ CREATE TABLE core.EmailOptions
     CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 );
 
+-- @SkipOnEmptySchemasBegin
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
 INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
@@ -493,6 +494,7 @@ INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (702, 'A
 -- labbook email notification options
 INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (801, 'No Email', 'labbook');
 INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (802, 'All emails', 'labbook');
+-- @SkipOnEmptySchemasEnd
 
 CREATE TABLE core.EmailPrefs
 (

@@ -185,6 +185,12 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
 
+    // This argument is used to specify a Microsoft SQL Server database that is the source of migration to PostgreSQL
+    private final String _migrationDataSource = System.getProperty("migrationDataSource");
+    // This argument is used to bootstrap all the database schemas without populating them with any data rows. It can
+    // be used by itself to test the empty schema handling without attempting a full migration.
+    private final boolean _emptySchemas = Boolean.valueOf(System.getProperty("emptySchemas")) || _migrationDataSource != null;
+
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
     private String _startingUpMessage = null;
@@ -630,7 +636,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             {
                 _log.info("Check complete: all LabKey-managed modules are recent enough to upgrade");
             }
-       }
+        }
 
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
@@ -757,6 +763,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
+
+        // Don't accept any requests if we're bootstrapping empty schemas or migrating from SQL Server
+        if (!shouldInsertData())
+            execution = Execution.Synchronous;
 
         startNonCoreUpgradeAndStartup(execution, lockFile);
 
@@ -1874,7 +1884,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
+    // Final step in the upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     private void afterUpgrade(File lockFile)
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
@@ -1887,6 +1897,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         lockFile.delete();
 
         verifyRequiredModules();
+        DatabaseMigration.migrate(shouldInsertData(), getMigrationDataSource());
     }
 
     // If the "requiredModules" parameter is present in application.properties then fail startup if any specified module is missing.
@@ -1978,10 +1989,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return _newInstall;
     }
 
+    // Are we bootstrapping a PostgreSQL database with empty schemas?
+    public boolean shouldInsertData()
+    {
+        return !(_emptySchemas && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
+    }
+
+    public @Nullable String getMigrationDataSource()
+    {
+        return _migrationDataSource != null && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL() ? _migrationDataSource : null;
+    }
+
     public void destroy()
     {
         // In the case of a startup failure, _modules may be null. We want to allow a context reload to succeed in this case,
-        // since the reload may contain the code change to fix the problem
+        // since the reload may contain a code change to fix the problem.
         var modules = getModules();
         if (modules != null)
         {

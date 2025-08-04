@@ -21,6 +21,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.audit.query.AuditQuerySchema;
 
@@ -30,6 +32,8 @@ import java.util.Set;
 
 public class AuditModule extends DefaultModule
 {
+    public static final String LEGACY_UNION_AUDIT_TABLE = "legacyUnionAuditTable";
+
     @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -75,6 +79,14 @@ public class AuditModule extends DefaultModule
         AuditLogService.get().registerAuditType(new SiteSettingsAuditProvider());
 
         AuditController.registerAdminConsoleLinks();
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            LEGACY_UNION_AUDIT_TABLE,
+            "Restore legacy union audit table",
+            "Restores a legacy query that unions all the event tables together into a single query. This option will be removed in LabKey Server v26.3.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated
+        ));
     }
 
     @Override
