@@ -27,6 +27,7 @@ import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.PasswordUtil;
+import org.labkey.test.util.data.TestDataUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
@@ -242,9 +243,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 
     private void importFilePathError(String participantId, String sequenceNum, String filePath)
     {
-        String header = "ParticipantId\tSequenceNum\tfileField\n";
-        String data =  participantId + "\t" + sequenceNum + "\t" + filePath + "\n";
-        setFormElement(Locator.name("text"), header + data);
+        String pasteData = TestDataUtils.tsvStringFromRowMaps(List.of(
+                Map.of("ParticipantId", participantId, "SequenceNum", sequenceNum, FILE_FIELD_1, filePath)),
+                List.of("ParticipantId", "SequenceNum", FILE_FIELD_1), true);
+        setFormElement(Locator.name("text"), pasteData);
         new ImportDataPage(getDriver()).submitExpectingError();
         try
         {

@@ -1212,7 +1212,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             try
             {
-                Object o = ConvertUtils.convert(value, type);
+                Object o;
+                if (type == File.class)
+                    o = ExpDataFileConverter.convert(value);
+                else
+                    o = ConvertUtils.convert(value, type);
                 ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
                 for (ColumnValidator validator : validators)
                 {

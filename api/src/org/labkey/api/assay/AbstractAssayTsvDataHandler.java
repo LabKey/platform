@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -940,7 +941,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                             catch (ConvertHelper.FileConversionException e)
                             {
-                                throw new RuntimeValidationException(e);
+                                throw new ApiUsageException(e);
                             }
                         }
                     }
