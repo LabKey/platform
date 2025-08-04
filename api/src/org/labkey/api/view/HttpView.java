@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -32,6 +33,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
@@ -592,9 +594,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
+    private static final Logger LOG = LogHelper.getLogger(HttpView.class, "Info to help debug redirect problems");
+
     public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
     {
         String redirectUrl = (!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString();
+        LOG.info("Redirecting to '{}' allowAbsoluteUrl='{}' isLocalUri()={} local='{}' URI='{}'", redirectUrl, allowAbsoluteUrl, url.isLocalUri(getRootContext()), url.getLocalURIString(), url.getURIString());
         return redirect(redirectUrl);
     }
 
