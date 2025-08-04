@@ -1,9 +1,6 @@
 package org.labkey.api.collections;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashMap;
-import java.util.function.BiFunction;
 
 /** Enforce that get(K) is always called with Integer. */
 public class StringHashMap<V> extends HashMap<String, V>
