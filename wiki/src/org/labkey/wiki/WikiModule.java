@@ -25,12 +25,12 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.CodeOnlyModule;
-import org.labkey.api.module.DatabaseMigration;
-import org.labkey.api.module.DatabaseMigration.DefaultMigrationHandler;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -124,7 +124,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-        DatabaseMigration.registerHandler(CommSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(CommSchema.getInstance().getSchema(), new DefaultMigrationHandler()
         {
             @Override
             public void beforeSchema(DbSchema targetSchema)

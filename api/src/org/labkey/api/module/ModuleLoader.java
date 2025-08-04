@@ -39,6 +39,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -1897,7 +1898,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         lockFile.delete();
 
         verifyRequiredModules();
-        DatabaseMigration.migrate(shouldInsertData(), getMigrationDataSource());
+        DatabaseMigrationService.get().migrate(shouldInsertData(), getMigrationDataSource());
     }
 
     // If the "requiredModules" parameter is present in application.properties then fail startup if any specified module is missing.

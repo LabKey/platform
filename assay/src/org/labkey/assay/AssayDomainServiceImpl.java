@@ -641,12 +641,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
-                    GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    updateDomainDescriptor(provider, protocol, previous, domain, hasNameChange, changeDetails.toString(), assay.getAuditUserComment(), oldProps, newProps);
-                    boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
+                    GWTDomain<GWTPropertyDescriptor> domainDescriptor = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    boolean hasExistingCalcFields = domainDescriptor != null && !domainDescriptor.getCalculatedFields().isEmpty();
 
-                    GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
+                    updateDomainDescriptor(provider, protocol, domainDescriptor, domain, hasNameChange, changeDetails.toString(), assay.getAuditUserComment(), oldProps, newProps);
+                    QueryService.get().saveCalculatedFieldsMetadata(domainDescriptor.getSchemaName(), domainDescriptor.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
                 }
 
                 QueryService.get().updateLastModified();
