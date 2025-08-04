@@ -28,6 +28,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -71,8 +73,6 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
-import org.labkey.api.module.DatabaseMigration;
-import org.labkey.api.module.DatabaseMigration.DefaultMigrationHandler;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -856,7 +856,7 @@ public class ExperimentModule extends SpringModule
         }
 
         // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
-        DatabaseMigration.registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
         {
             @Override
             public void beforeSchema(DbSchema targetSchema)
