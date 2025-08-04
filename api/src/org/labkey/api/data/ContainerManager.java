@@ -45,6 +45,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -1842,7 +1843,7 @@ public class ContainerManager
         move
     }
 
-    private static final Map<Integer, MutatingOperation> mutatingContainers = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<Integer, MutatingOperation> mutatingContainers = Collections.synchronizedMap(new IntHashMap<>());
 
     private static QuietCloser lockForMutation(MutatingOperation op, Container c)
     {

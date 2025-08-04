@@ -68,6 +68,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.IntHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ActionButton;
@@ -4483,7 +4484,7 @@ public class StudyController extends BaseStudyController
             String[] labels = form.getLabel() == null ? new String[0] : form.getLabel();
             String[] typeStrs = form.getExtraData()== null ? new String[0] : form.getExtraData();
 
-            Set<Integer> visible = new HashSet<>(visibleIds.length);
+            Set<Integer> visible = new IntHashSet(visibleIds.length);
             for (int id : visibleIds)
                 visible.add(id);
             if (allIds.length != form.getLabel().length)
@@ -5380,7 +5381,7 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetPropertyForm implements HasAllowBindParameter
     {
-        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
+        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new IntHashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
         public Map<Integer, DatasetVisibilityData> getDataset()
         {

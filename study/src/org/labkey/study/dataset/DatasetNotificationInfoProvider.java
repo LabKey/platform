@@ -15,6 +15,8 @@
  */
 package org.labkey.study.dataset;
 
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -32,7 +34,6 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +42,7 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
     @Override
     public Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {
-        final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new HashMap<>();
+        final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new StringHashMap<>();
         TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataset();
         SimpleFilter filter = new SimpleFilter();
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
@@ -50,7 +51,7 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
         selector.forEach(DatasetDB.class, report -> {
             String containerId = report.getContainer();
             if (!notificationInfoMap.containsKey(containerId))
-                notificationInfoMap.put(containerId, new HashMap<>());
+                notificationInfoMap.put(containerId, new IntHashMap<>());
             Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
             if (null != report.getContainer())
             {

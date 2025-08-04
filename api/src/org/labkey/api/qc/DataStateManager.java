@@ -18,6 +18,8 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -49,8 +51,8 @@ public class DataStateManager
         private DataStateCollections(Container c)
         {
             List<DataState> dataStates = new ArrayList<>();
-            Map<Long, DataState> dataStateIdMap = new HashMap<>();
-            Map<String, DataState>  dataStateLabelMap = new HashMap<>();
+            Map<Long, DataState> dataStateIdMap = new LongHashMap<>();
+            Map<String, DataState>  dataStateLabelMap = new StringHashMap<>();
 
             new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(DataState.class, dataState -> {
 

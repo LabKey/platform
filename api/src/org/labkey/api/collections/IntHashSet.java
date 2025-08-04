@@ -1,5 +1,6 @@
 package org.labkey.api.collections;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,11 @@ public class IntHashSet extends HashSet<Integer>
     public IntHashSet(Set<Integer> set)
     {
         super(set);
+    }
+
+    public IntHashSet(Collection<Integer> c)
+    {
+        super(c);
     }
 
     private Integer _int(Object key)
