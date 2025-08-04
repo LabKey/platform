@@ -16,7 +16,6 @@
 
 package org.labkey.assay;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,13 +159,19 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomain.setProvisioned(domain.isProvisioned());
 
-            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
-            Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
             Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(domain.getDomainKind().getMandatoryPropertyNames(domain));
+
+            Map<String, GWTPropertyDescriptor> fieldMap = new HashMap<>();
+            for (GWTPropertyDescriptor field : gwtDomain.getFields())
+                fieldMap.put(field.getName(), field);
 
             for (DomainProperty prop : domain.getProperties())
             {
-                GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
+                GWTPropertyDescriptor gwtProp = fieldMap.get(prop.getName());
+
+                if (copy)
+                    gwtProp.setPropertyId(0);
+
                 if (gwtProp.getDefaultValueType() == null)
                 {
                     // Explicitly set these "special" properties NOT to remember the user's last entered
@@ -178,21 +183,19 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     {
                         prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
                     }
-                    else
-                        gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
                 }
 
-                Object defaultValue = defaultValues.get(prop);
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()) && defaultValue instanceof String)
+                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()))
                 {
-                    Container studyContainer = ContainerManager.getForId((String) defaultValue);
-                    if (studyContainer != null)
-                        gwtProp.setDefaultDisplayValue(studyContainer.getPath());
+                    Object defaultValue = domainInfo.getValue().get(prop);
+                    if (defaultValue instanceof String containerId)
+                    {
+                        Container studyContainer = ContainerManager.getForId(containerId);
+                        if (studyContainer != null)
+                            gwtProp.setDefaultDisplayValue(studyContainer.getPath());
+                    }
                 }
-                else
-                    gwtProp.setDefaultDisplayValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValue));
 
-                gwtProp.setDefaultValue(ConvertUtils.convert(defaultValue));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
 
@@ -207,12 +210,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                     gwtProp.setFilterCriteria(FilterCriteria.toGWTFilterCriteria(fieldFilterCriteria));
                 }
-
-                gwtProps.add(gwtProp);
             }
 
-            gwtProps.addAll(gwtDomain.getCalculatedFields());
-            gwtDomain.setFields(gwtProps);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
 
             if (isResultsDomain)
@@ -346,15 +345,6 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     private GWTContainer convertToGWTContainer(Container c)
     {
         return new GWTContainer(c.getId(), c.getRowId(), c.getPath(), c.getName());
-    }
-
-    private GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
-    {
-        GWTPropertyDescriptor gwtProp = DomainUtil.getPropertyDescriptor(prop);
-        if (copy)
-            gwtProp.setPropertyId(0);
-
-        return gwtProp;
     }
 
     private void setPlateTemplateList(AssayProvider provider, GWTProtocol protocol)
