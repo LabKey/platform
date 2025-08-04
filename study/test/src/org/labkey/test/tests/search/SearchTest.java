@@ -229,13 +229,15 @@ public abstract class SearchTest extends StudyBaseTest
     protected void doVerifySteps()
     {
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
-        testAdvancedSearchUI();
+        testAdvancedSearchScope();
+        testAdvancedSearchCategoryFilters();
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
         deleteFolderAndVerifyNoResults();
     }
 
-    private void testAdvancedSearchUI()
+    @LogMethod
+    private void testAdvancedSearchScope()
     {
         final String searchTerm = "Sample";
 
@@ -298,6 +300,98 @@ public abstract class SearchTest extends StudyBaseTest
 
         _containerHelper.deleteFolder(getProjectName(), FOLDER_D);
         _containerHelper.deleteFolder(getProjectName(), FOLDER_E);
+    }
+
+    @LogMethod
+    private void testAdvancedSearchCategoryFilters()
+    {
+        final String searchTerm = "Search Categories";
+
+        goToProjectHome();
+        _searchHelper.searchFor(searchTerm, false);
+        expandAdvancedOptions();
+        waitAndClick(Locator.radioButtonByNameAndValue("scope", "Project"));
+
+        // filter by list category
+        checkCheckbox(Locator.checkboxByNameAndValue("category", "list"));
+        final String searchTerm2 = "OwlBear";
+        _searchHelper.searchFor(searchTerm2, false);
+        waitForElement(Locator.tagWithText("div", "Found 1 result"));
+        List<String> owlBearListResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().wrapAssertion(()-> Assertions.assertThat(owlBearListResults)
+                .as("'Project' scoped list search on owlBear")
+                .containsOnly("List List2 - Owlbear"));
+
+        // add a new dataset to the folder apple study
+        _studyHelper.defineDataset(searchTerm2, getProjectName() + "/Folder Apple")
+                .clickSave();
+
+        // navigate back to search page, expand advanced options and scope to project
+        goToProjectHome();
+        _searchHelper.searchFor(searchTerm2, true);
+        expandAdvancedOptions();
+        waitAndClick(Locator.radioButtonByNameAndValue("scope", "Project"));
+
+        // search for new dataset with the list filter but without the dataset filter applied
+        checkCheckbox(Locator.checkboxByNameAndValue("category", "list"));
+        _searchHelper.searchFor(searchTerm2, false);
+        waitForElement(Locator.tagWithText("div", "Found 1 result"));
+        List<String> noDatasetFilterOwl = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().withScreenshot("list-only-search")
+                .wrapAssertion(()-> Assertions.assertThat(noDatasetFilterOwl)
+                .as("expect lists but not dataset")
+                .containsOnly("List List2 - Owlbear"));
+
+        // now search with dataset filter applied
+        checkCheckbox(Locator.checkboxByNameAndValue("category", "dataset"));
+        _searchHelper.searchFor(searchTerm2, false);
+        waitForElement(Locator.tagWithText("div", "Found 2 results"));
+        List<String> unionFilterOwlResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().withScreenshot("list-and-dataset-search")
+                .wrapAssertion(()-> Assertions.assertThat(unionFilterOwlResults)
+                .as("search with list, dataset enabled")
+                .containsOnly("List List2 - Owlbear", "OwlBear"));
+        uncheckCheckbox(Locator.checkboxByNameAndValue("category", "list"));
+
+        // now search filtering on dataset only
+        _searchHelper.searchFor(searchTerm2, false);
+        waitForElement(Locator.tagWithText("div", "Found 1 result"));
+        List<String> datasetFilterOwlResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().withScreenshot("Dataset-filter-only")
+                .wrapAssertion(()-> Assertions.assertThat(datasetFilterOwlResults)
+                .as("search with dataset enabled")
+                .containsOnly("OwlBear"));
+
+        // search for a study subject, without the subjects filter applied
+        final String searchTerm3 = "999321033";
+        _searchHelper.searchFor(searchTerm3, false);
+        waitForElement(Locator.tagWithText("div", "Found 0 results"));
+        List<String> subjectResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().withScreenshot("subject-without-filter-search")
+                .wrapAssertion(()-> Assertions.assertThat(subjectResults)
+                .as("unfiltered subject search")
+                .isEmpty());
+
+        // now apply the study subjects filter and search again
+        checkCheckbox(Locator.checkboxByNameAndValue("category", "subject"));
+        _searchHelper.searchFor(searchTerm3, false);
+        waitForElement(Locator.tagWithText("div", "Found 1 result"));
+        List<String> subjectResultsWithSubjectFilter = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().withScreenshot("subject-with-filter-search")
+                .wrapAssertion(()-> Assertions.assertThat(subjectResultsWithSubjectFilter)
+                .as("Search with subject filter")
+                .containsOnly("Study Study 001 -- Mouse 999321033"));
+        uncheckCheckbox(Locator.checkboxByNameAndValue("category", "subject"));
+
+        // now search on projects and folders
+        final String searchTerm4 = "banana";
+        checkCheckbox(Locator.checkboxByNameAndValue("category", "navigation"));
+        _searchHelper.searchFor(searchTerm4, false);
+        waitForElement(Locator.tagWithText("div", "Found 1 result"));
+        List<String> unfilteredProjectResults = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        checker().wrapAssertion(()-> Assertions.assertThat(unfilteredProjectResults)
+                .as("unfiltered project results")
+                .containsOnly("Folder -- Folder Banana", "Folder -- Folder Banana"));
     }
 
     private void expandAdvancedOptions()

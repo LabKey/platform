@@ -15,7 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -25,6 +24,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.Tuple3;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,13 +36,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * User: kevink
- * Date: 4/30/13
- */
 public final class TableSorter
 {
-    private static final Logger LOG = LogManager.getLogger(TableSorter.class);
+    private static final Logger LOG = LogHelper.getLogger(TableSorter.class, "Warnings about foreign key traversal");
 
     /**
      * Get a topologically sorted list of TableInfos within this schema.
@@ -57,7 +53,7 @@ public final class TableSorter
         for (String tableName : tableNames)
             tables.put(tableName, schema.getTable(tableName));
 
-        return sort(schemaName, tables);
+        return sort(schemaName, tables, false);
     }
 
     /**
@@ -67,16 +63,26 @@ public final class TableSorter
      */
     public static List<TableInfo> sort(DbSchema schema)
     {
+        return sort(schema, false);
+    }
+
+    /**
+     * Get a topologically sorted list of TableInfos within this schema.
+     *
+     * @throws IllegalStateException if a loop is detected and tolerateLoops is false.
+     */
+    public static List<TableInfo> sort(DbSchema schema, boolean tolerateLoops)
+    {
         String schemaName = schema.getName();
         Set<String> tableNames = new HashSet<>(schema.getTableNames());
         Map<String, TableInfo> tables = new CaseInsensitiveHashMap<>();
         for (String tableName : tableNames)
             tables.put(tableName, schema.getTable(tableName));
 
-        return sort(schemaName, tables);
+        return sort(schemaName, tables, tolerateLoops);
     }
 
-    private static List<TableInfo> sort(String schemaName, Map<String, TableInfo> tables)
+    private static List<TableInfo> sort(String schemaName, Map<String, TableInfo> tables, boolean tolerateLoops)
     {
         if (tables.isEmpty())
             return Collections.emptyList();
@@ -99,6 +105,7 @@ public final class TableSorter
                 if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                     continue;
 
+                String lookupSchemaName = fk.getLookupSchemaName();
                 // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
                 TableInfo t = null;
                 try
@@ -109,12 +116,12 @@ public final class TableSorter
                 {
                     // ignore and try to continue
                     String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
-                            fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
+                            lookupSchemaName, fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
                     LOG.warn(msg, qpe);
                 }
 
                 // Skip lookups to other schemas
-                if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+                if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                     continue;
 
                 // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
@@ -123,7 +130,7 @@ public final class TableSorter
                     lookupTableName = t.getName();
 
                 // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+                if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
                     continue;
 
                 // Remove the lookup table from the set of tables with no incoming FK
@@ -145,21 +152,23 @@ public final class TableSorter
         Set<TableInfo> visited = new HashSet<>(tables.size());
         List<TableInfo> sorted = new ArrayList<>(tables.size());
         for (String tableName : startTables)
-            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<>(), sorted);
+            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<>(), sorted, tolerateLoops);
 
         return sorted;
     }
 
-    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
+    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted, boolean tolerateLoops)
     {
         if (hasLoop(visitingPath, table))
         {
             String msg = "Loop detected in schema '" + schemaName + "':\n" + formatPath(visitingPath);
-            if (anyHaveContainerColumn(visitingPath))
+            if (!tolerateLoops && anyHaveContainerColumn(visitingPath))
                 throw new IllegalStateException(msg);
 
             LOG.warn(msg);
-            return;
+
+            if (!tolerateLoops)
+                return;
         }
 
         if (visited.contains(table))
@@ -179,6 +188,7 @@ public final class TableSorter
             if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                 continue;
 
+            String lookupSchemaName = fk.getLookupSchemaName();
             // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
             TableInfo t = null;
             try
@@ -191,7 +201,7 @@ public final class TableSorter
             }
 
             // Skip lookups to other schemas
-            if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+            if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                 continue;
 
             // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
@@ -200,7 +210,7 @@ public final class TableSorter
                 lookupTableName = t.getName();
 
             // Skip self-referencing FKs
-            if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+            if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
                 continue;
 
             // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
@@ -208,7 +218,7 @@ public final class TableSorter
             if (lookupTable != null)
             {
                 visitingPath.addLast(Tuple3.of(table, column, lookupTable));
-                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted);
+                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted, tolerateLoops);
                 visitingPath.removeLast();
             }
         }

@@ -10,6 +10,7 @@ CREATE TABLE assay.PlateType
     CONSTRAINT UQ_PlateType_Rows_Cols UNIQUE (Rows, Columns)
 );
 
+-- @SkipOnEmptySchemasBegin
 INSERT INTO assay.PlateType (Rows, Columns, Description) VALUES (3, 4, '12 well (3x4)');
 INSERT INTO assay.PlateType (Rows, Columns, Description) VALUES (4, 6, '24 well (4x6)');
 INSERT INTO assay.PlateType (Rows, Columns, Description) VALUES (6, 8, '48 well (6x8)');
@@ -17,6 +18,7 @@ INSERT INTO assay.PlateType (Rows, Columns, Description) VALUES (8, 12, '96 well
 INSERT INTO assay.PlateType (Rows, Columns, Description) VALUES (16, 24, '384 well (16x24)');
 INSERT INTO assay.PlateType (Rows, Columns, Description, Archived) VALUES (32, 48, '1536 well (32x48)', TRUE);
 INSERT INTO assay.PlateType (Rows, Columns, Description, Archived) VALUES (0, 0, 'Invalid Plate Type (Plates which were created with non-valid row & column combinations)', TRUE);
+-- @SkipOnEmptySchemasEnd
 
 -- Rename type column to assayType
 ALTER TABLE assay.Plate RENAME COLUMN Type TO AssayType;

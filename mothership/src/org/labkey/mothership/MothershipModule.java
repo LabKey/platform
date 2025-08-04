@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.MothershipReport;
@@ -89,7 +90,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        if (moduleContext.isNewInstall())
+        if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())
             bootstrap(moduleContext);
     }
 
