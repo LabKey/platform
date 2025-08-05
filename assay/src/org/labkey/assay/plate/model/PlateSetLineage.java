@@ -10,7 +10,6 @@ import org.labkey.api.query.ValidationException;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,12 +50,12 @@ public class PlateSetLineage
         _plateSets = plateSets;
     }
 
-    public long getRoot()
+    public Long getRoot()
     {
         return _root;
     }
 
-    public void setRoot(long root)
+    public void setRoot(Long root)
     {
         _root = root;
     }
