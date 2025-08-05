@@ -4662,6 +4662,7 @@ public class QueryController extends SpringActionController
                     }
                 }
 
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
