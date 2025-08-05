@@ -42,6 +42,7 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.EnumTableInfo;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupResolutionType;
@@ -1871,7 +1872,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
             }
             else if (value instanceof String filePath)
-                return getFileRootSubstitutedFilePath(filePath, _fileRootPath);
+                return ExpDataFileConverter.convert(filePath);
             return value;
         }
     }

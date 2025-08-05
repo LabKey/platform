@@ -40,8 +40,10 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -548,7 +550,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         preImportDIBValidation(null, colNames);
-        return MapDataIterator.of(colNames, rows, debugName);
+
+        List<Map<String, Object>> convertedRows = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++)
+        {
+            Map<String, Object> row = rows.get(i);
+            row = coerceTypes(row);
+            convertedRows.add(row);
+        }
+        return MapDataIterator.of(colNames, convertedRows, debugName);
     }
 
 
@@ -706,7 +716,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
-                    value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()) && value instanceof String strVal)
+                        value = ExpDataFileConverter.convert(strVal);
+                    else
+                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                }
+                catch (ConvertHelper.FileConversionException e)
+                {
+                    throw e;
                 }
                 catch (ConversionException e)
                 {

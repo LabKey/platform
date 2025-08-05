@@ -55,6 +55,8 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     protected String _thumbnailWidth;
     protected String _popupWidth;
 
+    public static final String UNAVAILABLE_FILE_SUFFIX = " (unavailable)";
+
     public AbstractFileDisplayColumn(ColumnInfo col)
     {
         super(col);
@@ -75,16 +77,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(RenderContext ctx, Object value);
 
-    protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
-    {
-        return getFileName(ctx, value);
-    }
-
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
     {
-        renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
+        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail);
     }
 
     protected boolean isImage(String filename)
@@ -95,34 +92,35 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 || filename.toLowerCase().endsWith(".gif");
     }
 
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
     {
-        if (null != filename && !StringUtils.isEmpty(filename))
+        if (null != fileValue && !StringUtils.isEmpty(fileValue))
         {
             // equivalent of DisplayColumn.renderURL.
             // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
             StringExpression s = compileExpression(ctx.getViewContext());
-            String url = null == s ? null : s.eval(ctx);
-            String displayName = getFileName(ctx, filename, true);
-            boolean isImage = isImage(filename);
-            FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
+            String displayName = getFileName(ctx, fileValue);
+            boolean unavailable = displayName.endsWith(UNAVAILABLE_FILE_SUFFIX);
+            String url = null == s || unavailable ? null : s.eval(ctx);
+            boolean isImage = isImage(fileValue);
+            FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, fileValue, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
 
 
             if (link && null != url)
             {
                 A(
                     at(title, "Download attached file")
-                    .at(getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename), target, getLinkTarget())
+                    .at(getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(fileValue), target, getLinkTarget())
                     .at(href, url),
                     (Renderable) ret -> {
-                        renderPopup(renderHelper, url, fileIconUrl, displayName, filename, thumbnail, isImage, out);
+                        renderPopup(renderHelper, url, fileIconUrl, displayName, fileValue, thumbnail, isImage, out);
                         return ret;
                     }
                 ).appendTo(out);
             }
             else
             {
-                renderPopup(renderHelper, url, fileIconUrl, displayName, filename, thumbnail, isImage, out);
+                renderPopup(renderHelper, url, fileIconUrl, displayName, fileValue, thumbnail, isImage, out);
             }
         }
         else

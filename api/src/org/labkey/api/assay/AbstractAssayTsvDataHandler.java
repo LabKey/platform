@@ -22,19 +22,21 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AssayResultsFileConverter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
@@ -327,8 +329,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     column.errorValues = ERROR_VALUE;
 
-                if (run != null && column.clazz == File.class)
-                    column.converter = new AssayResultsFileConverter(run);
             }
             return loader;
 
@@ -918,9 +918,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         valueMissing = false;
                     }
 
-                    // If the column is a file link or attachment, resolve the value to a File object
+                    // If the column is a file link, resolve the value to a File object
                     String uri = pd.getType().getTypeURI();
-                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()) || uri.equals(PropertyType.ATTACHMENT.getTypeUri()))
+                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()))
                     {
                         if ("".equals(o))
                         {
@@ -933,16 +933,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             // File column values are stored as the absolute resolved path
                             try
                             {
-                                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                                File resolvedFile = ExpDataFileConverter.convert(o);
                                 if (resolvedFile != null)
                                 {
                                     o = resolvedFile;
                                     map.put(pd.getName(), o);
                                 }
                             }
-                            catch (ValidationException e)
+                            catch (ConvertHelper.FileConversionException e)
                             {
-                                throw new RuntimeValidationException(e);
+                                throw new ApiUsageException(e);
                             }
                         }
                     }

@@ -165,7 +165,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             }
 
             if (additionalFiles.containsKey(pd))
-                properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
+            {
+                if (additionalFiles.get(pd).equals(BLANK_FILE)) // file has been removed
+                    properties.put(pd, null);
+                else
+                    properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
+            }
             else
                 properties.put(pd, value);
         }

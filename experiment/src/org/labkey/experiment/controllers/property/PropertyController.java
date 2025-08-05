@@ -47,6 +47,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
@@ -1188,7 +1189,7 @@ public class PropertyController extends SpringActionController
         public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
             Map<String, MultipartFile> fileMap = getFileMap();
-            File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
+            File file = form.getFile() != null ? ExpDataFileConverter.convert(form.getFile()) : null;
             FileType guessFormat = form.isGuessFormatAsTSV() ? TabLoader.TSV_FILE_TYPE : null;
             DataLoader loader = null;
 

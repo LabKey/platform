@@ -319,7 +319,8 @@ public interface QueryService
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
         ACTION(JdbcType.OTHER),
-        FILEROOTPATH(JdbcType.VARCHAR);
+        FILEROOTPATH(JdbcType.VARCHAR),
+        ASSAYFILESPATH(JdbcType.OTHER);
 
         public final JdbcType type;
 

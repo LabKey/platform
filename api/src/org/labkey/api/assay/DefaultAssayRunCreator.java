@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -87,10 +88,12 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -409,6 +412,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
+            Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
+            if (null != assayResultsRunDir && !FileUtil.hasCloudScheme(assayResultsRunDir))
+            {
+                FileLike assayResultFileRoot = FileSystemLike.wrapFile(assayResultsRunDir);
+                if (assayResultFileRoot != null)
+                    QueryService.get().setEnvironment(QueryService.Environment.ASSAYFILESPATH, assayResultFileRoot);
+            }
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             var reRunId = context.getReRunId();
@@ -472,7 +482,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException e)
+        catch (ExperimentException | IOException | ConvertHelper.FileConversionException e)
         {
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
@@ -482,6 +492,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
+            else if (e instanceof ConvertHelper.FileConversionException)
+                throw new ApiUsageException(e.getMessage(), e);
             else
                 throw new ExperimentException(e);
         }
@@ -726,8 +738,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     // Resolve submitted values into ExpData objects
     protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved, @Nullable Logger log) throws ValidationException
     {
-        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
-
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
@@ -739,7 +749,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             else
             {
-                File file = (File) expDataFileConverter.convert(File.class, o);
+                File file = ExpDataFileConverter.convert(o);
                 if (file != null)
                 {
                     ExpData data = ExperimentService.get().getExpDataByURL(file, c);
@@ -1105,10 +1115,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 String value = entry.getValue();
 
                 // resolve any file links for batch or run properties
-                File resolvedFile = AssayUploadFileResolver.resolve(value, container, entry.getKey());
-                if (resolvedFile != null)
+                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
                 {
-                    value = resolvedFile.getAbsolutePath();
+                    File resolvedFile = ExpDataFileConverter.convert(value);
+                    if (resolvedFile != null)
+                        value = resolvedFile.getAbsolutePath();
                 }
 
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data
@@ -1202,7 +1213,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             try
             {
-                Object o = ConvertUtils.convert(value, type);
+                Object o;
+                if (type == File.class)
+                    o = ExpDataFileConverter.convert(value);
+                else
+                    o = ConvertUtils.convert(value, type);
                 ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
                 for (ColumnValidator validator : validators)
                 {
