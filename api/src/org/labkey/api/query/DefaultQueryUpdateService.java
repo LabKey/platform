@@ -844,7 +844,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
                     value = fl.toNioPathForRead().toString();
                 }
-                value = ExpDataFileConverter.convert(value);
+                return ExpDataFileConverter.convert(value);
             }
             return col.getConvertFn().apply(value);
         }
