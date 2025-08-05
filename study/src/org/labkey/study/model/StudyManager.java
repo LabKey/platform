@@ -198,7 +198,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;

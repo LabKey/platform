@@ -844,7 +844,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 default:
                     if (PropertyType.FILE_LINK == col.getPropertyType())
                     {
-                        if ((value instanceof MultipartFile || value instanceof AttachmentFile))//
+                        if ((value instanceof MultipartFile || value instanceof AttachmentFile))
                         {
                             FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
                             value = fl.toNioPathForRead().toString();
