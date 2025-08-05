@@ -702,7 +702,7 @@ public class OntologyManager
                 parameterMap.execute();
                 if (insert)
                 {
-                    int rowId = parameterMap.getRowId();
+                    long rowId = parameterMap.getRowId();
                     currentRow.put("rowId", rowId);
                 }
                 lsid = helper.afterImportObject(currentRow);
