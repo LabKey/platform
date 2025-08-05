@@ -1639,7 +1639,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                 // Re-select any hits that were present in the previous run, this works in conjunction with the code in
                 // mergeReRunData where previous hits are removed for any data unchanged by the new incoming data. At this
-                // point any remaining hits should represent selectioons we plan to move forward to the new run
+                // point any remaining hits should represent selections we plan to move forward to the new run
                 if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
