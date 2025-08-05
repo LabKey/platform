@@ -61,6 +61,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SimpleTime;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TimeOnlyDate;
@@ -178,7 +179,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new SimpleTimeConverter(), SimpleTime.class);
         _register(new ShowRowsConverter(), ShowRows.class);
         _register(new UserConverter(), User.class);
-        _register(new ExpDataFileConverter(), File.class);
+        _register(new NoOpConverter(), File.class); // let data iterator handle conversion
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
         _register(new DefaultScaleConverter(), DefaultScaleType.class);
         _register(new SchemaKey.Converter(), SchemaKey.class);
@@ -450,6 +451,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    public static class FileConversionException extends ConversionException implements SkipMothershipLogging
+    {
+        public FileConversionException(String msg)
+        {
+            super(msg);
+        }
+    }
 
     public static class ContainerConverter implements Converter
     {
@@ -875,6 +883,15 @@ public class ConvertHelper implements PropertyEditorRegistrar
             {
                 return UserManager.getUser(NumberUtils.toInt(value.toString(), -1));
             }
+        }
+    }
+
+    public static class NoOpConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            return value;
         }
     }
 
