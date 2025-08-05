@@ -182,9 +182,10 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     public boolean isLocalUri(ViewContext currentContext)
     {
         return getHost() == null
-                || currentContext == null
-                || currentContext.getActionURL() == null
-                || getHost().equalsIgnoreCase(currentContext.getActionURL().getHost());
+            || currentContext == null
+            || currentContext.getActionURL() == null
+                // Scheme check is here for test SAML redirect, which is to the same host ("localhost") but a different scheme
+            || getHost().equalsIgnoreCase(currentContext.getActionURL().getHost()) && getScheme().equalsIgnoreCase(currentContext.getActionURL().getScheme());
     }
 
     public String getURIString()
