@@ -21,6 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -65,10 +67,10 @@ import static org.labkey.api.util.HttpUtil.Method.POST;
 public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmForm> extends FormViewAction<FORM>
 {
     @Nullable protected String _targetStudyName;
-    protected Map<Object, String> _postedVisits;
-    protected Map<Object, String> _postedDates;
-    protected Map<Object, String> _postedPtids;
-    protected Map<Object, String> _postedTargetStudies;
+    protected Map<Long, String> _postedVisits;
+    protected Map<Long, String> _postedDates;
+    protected Map<Long, String> _postedPtids;
+    protected Map<Long, String> _postedTargetStudies;
     protected Set<Long> _selectedObjects;
     protected List<Long> _allObjects = Collections.emptyList();
     protected Container _targetStudy;
@@ -120,7 +122,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             _targetStudyName = study.getLabel();
         }
 
-        _selectedObjects = new HashSet<>(AbstractPublishStartAction.getCheckboxIds(getViewContext()));
+        _selectedObjects = new LongHashSet(AbstractPublishStartAction.getCheckboxIds(getViewContext()));
         _allObjects = form.getObjectIdValues();
 
         if (_allObjects == null) // On first post, this is empty, so use the current selection
@@ -135,10 +137,10 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     {
         if (form.isAttemptPublish() && form.getDefaultValueSource().equals(PublishConfirmForm.DefaultValueSource.UserSpecified.name()))
         {
-            _postedVisits = new HashMap<>();
-            _postedDates = new HashMap<>();
-            _postedPtids = new HashMap<>();
-            _postedTargetStudies = new HashMap<>();
+            _postedVisits = new LongHashMap<>();
+            _postedDates = new LongHashMap<>();
+            _postedPtids = new LongHashMap<>();
+            _postedTargetStudies = new LongHashMap<>();
 
             attemptLinkage(form, errors, _selectedObjects, _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids);
         }
@@ -311,10 +313,10 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     private void attemptLinkage(FORM form, BindException errors,
                             Set<Long> selectedObjects, List<Long> allObjects,
                             Container targetStudy,
-                            Map<Object, String> postedTargetStudies,
-                            Map<Object, String> postedVisits,
-                            Map<Object, String> postedDates,
-                            Map<Object, String> postedPtids)
+                            Map<Long, String> postedTargetStudies,
+                            Map<Long, String> postedVisits,
+                            Map<Long, String> postedDates,
+                            Map<Long, String> postedPtids)
             throws RedirectException
     {
         Map<Long, PublishKey> publishData = new LinkedHashMap<>();
