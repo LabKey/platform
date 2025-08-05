@@ -679,16 +679,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void purgeForContainer(@NotNull Container container)
     {
-        Predicate<Item> itemChecker = (i) -> container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete;
+        Predicate<Item> itemChecker = (i) -> {
+            boolean result = container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete;
+            if (result)
+            {
+                // Let the task know too, treating them as failures (since they were not successfully indexed)
+                i._task.completeItem(i, false);
+            }
+            return result;
+        };
         _runQueue.removeIf(itemChecker);
         _itemQueue.removeIf(itemChecker);
-
-        // Let the task know too, treating them as failures (since they were not successfully indexed)
-        for (_IndexTask task : _tasks)
-        {
-            List<Item> toRemove = task._subtasks.keySet().stream().filter(itemChecker).toList();
-            toRemove.forEach(i -> task.completeItem(i, false));
-        }
     }
 
     @Override
