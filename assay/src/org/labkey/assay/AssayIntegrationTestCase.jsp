@@ -708,4 +708,43 @@
 
         assertEquals(0, updatedRun.getMaterialInputs().size());
     }
+
+    @Test
+    public void testDomainFieldConfiguration() throws Exception
+    {
+        // Validates assay domain fields are configured as expected by DomainUtil and not overwritten
+        // Arrange
+        var sampleTypeName = "Does Not Exist";
+        var lookupName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
+        var assayPair = createAssay(context, true, true);
+        var domainService = new AssayDomainServiceImpl(context);
+        var gwtProtocol = domainService.getAssayDefinition(assayPair.second.getRowId(), false);
+
+        // Update the assay design to refer to a non-existent sample type
+        {
+            var resultDomain = getResultDomain(gwtProtocol);
+            var resultFields = resultDomain.getFields(true);
+
+            GWTPropertyDescriptor invalidSampleLookup = new GWTPropertyDescriptor("SampleTypeLookup", "string");
+            invalidSampleLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+            invalidSampleLookup.setLookupQuery(sampleTypeName);
+            invalidSampleLookup.setName(lookupName);
+            resultFields.add(invalidSampleLookup);
+            resultDomain.setFields(resultFields);
+            gwtProtocol = domainService.saveChanges(gwtProtocol, true);
+        }
+
+        // Act
+        var updatedResultsDomain = getResultDomain(gwtProtocol);
+
+        // Assert
+        var lookup = updatedResultsDomain.getFieldByName(lookupName);
+        assertFalse("Expected lookup to be marked as invalid since sample type does not exist by that name", lookup.getLookupIsValid());
+        assertEquals("Expected lookup query to point to non-existent sample type", sampleTypeName, lookup.getLookupQuery());
+    }
+
+    private GWTDomain<GWTPropertyDescriptor> getResultDomain(GWTProtocol protocol)
+    {
+        return protocol.getDomains().stream().filter(d -> "Data".equals(d.getQueryName())).findFirst().orElseThrow();
+    }
 %>
