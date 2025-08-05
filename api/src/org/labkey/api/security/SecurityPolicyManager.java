@@ -85,7 +85,7 @@ public class SecurityPolicyManager
                 Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
                 Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
 
-                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
+                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments.isEmpty() ? Collections.emptyList() : assignments, policyBean.getModified());
             }
 
             return null;

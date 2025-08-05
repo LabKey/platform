@@ -1237,16 +1237,25 @@ public class AuthenticationManager
 
     // Throws UnauthorizedException if credentials are incorrect, password is expired, password is not complex enough,
     // user doesn't exist, user is inactive, or secondary auth is enabled and an API key hasn't been used.
-    public static @Nullable User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
+    public static @NotNull User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
         PrimaryAuthenticationResult primaryResult = authenticate(request, id, password, null, true);
+        String message;
 
-        // If primary authentication is successful then look for secondary authentication. handleAuthentication() will
+        // If primary authentication is successful, then look for secondary authentication. handleAuthentication() will
         // always return a failure result (i.e., null user) if secondary authentication is enabled. #22944
         if (primaryResult.getStatus() == AuthenticationStatus.Success)
         {
             AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
-            return handleAuthentication(request, ContainerManager.getRoot()).getUser();
+            User user = handleAuthentication(request, ContainerManager.getRoot()).getUser();
+            if (user != null)
+                return user;
+
+            message = "Authentication failed because secondary authentication is enabled on this server. Consider using an API key instead.";
+        }
+        else
+        {
+            message = Objects.requireNonNullElse(primaryResult.getMessage(), primaryResult.getStatusErrorMessage(DisplayLocation.API));
         }
 
         // Basic auth has failed so send error response in a format that APIs can consume (JSON unless request specifies
@@ -1255,9 +1264,8 @@ public class AuthenticationManager
         // SpringActionController.handleRequest() will need to call this again since actions can specify the default
         // format.
         SpringActionController.setResponseFormat(request, Format.JSON);
-        String message = primaryResult.getMessage();
 
-        throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
+        throw new UnauthorizedException(message);
     }
 
     public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnUrl)

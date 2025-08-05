@@ -96,11 +96,11 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
                 if (null == attachmentValue)
                     continue;
-                else if (attachmentValue instanceof String)
+                else if (attachmentValue instanceof String str)
                 {
                     if (null == attachmentDir)
                     {
-                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
+                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload '" + str + "' to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
                         return false;
                     }
                     filename = (String) attachmentValue;
@@ -124,7 +124,13 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 }
                 else
                 {
-                    errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachament file."));
+                    errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachment file."));
+                    return false;
+                }
+
+                if (entityIdIndex == 0)
+                {
+                    errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachment file."));
                     return false;
                 }
 
@@ -139,7 +145,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
             if (null != attachmentFiles && !attachmentFiles.isEmpty())
             {
                 String entityId = String.valueOf(get(entityIdIndex));
-                AttachmentService.get().addAttachments(getAttachmentParent(entityId, container)   , attachmentFiles, user);
+                AttachmentService.get().addAttachments(getAttachmentParent(entityId, container), attachmentFiles, user);
             }
             return ret;
         }
@@ -217,7 +223,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 }
             }
 
-            if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
+            if (!attachmentColumns.isEmpty())
                 return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, context.getInsertOption(), container, parentFactory );
 
             return it;
