@@ -41,12 +41,6 @@ import org.labkey.api.util.TestContext;
 
 import java.util.Collection;
 
-
-/**
- * User: matthewb
- * Date: Apr 28, 2008
- * Time: 2:07:13 PM
- */
 public class WebdavResolverImpl extends AbstractWebdavResolver
 {
     static WebdavResolverImpl _instance = new WebdavResolverImpl(WebdavService.getPath());
@@ -142,7 +136,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
+    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
@@ -151,7 +145,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
-            documentId =  "dav:" + _resolver.getRootPath().append(_c.getId()).toString("/","/");
+            documentId =  "dav:" + _resolver.getRootPath().append(_containerId.toString()).toString("/","/");
         }
 
         @Override
@@ -197,7 +191,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             TestContext context = TestContext.get();
             User guest = UserManager.getGuestUser();
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
             
             Container junitContainer = JunitUtil.getTestContainer();
@@ -267,10 +261,10 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertNull(FileUtil.normalize(".."));
             assertNull(FileUtil.normalize("/.."));
             assertNull(FileUtil.normalize("/./.."));
-            assertEquals(FileUtil.normalize("/dir//down"), "/dir/down");
+            assertEquals("/dir/down", FileUtil.normalize("/dir//down"));
             assertNull(FileUtil.normalize("/dir/../down/../.."));
-            assertEquals(FileUtil.normalize("./dir/..//"), "/");
-            assertEquals(FileUtil.normalize("/dir/./../down/"), "/down");
+            assertEquals("/", FileUtil.normalize("./dir/..//"));
+            assertEquals("/down", FileUtil.normalize("/dir/./../down/"));
         }
 
 

@@ -5,7 +5,6 @@ import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.nio.file.Path;
-import java.util.function.BiConsumer;
 
 public interface CloudWatchService
 {

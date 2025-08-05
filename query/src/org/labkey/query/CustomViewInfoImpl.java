@@ -25,17 +25,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -253,7 +249,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         {
             URLHelper src = new URLHelper(_cstmView.getFilter());
             List<String> containerFilterNames = src.getParameterValues(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
-            if (containerFilterNames.size() > 0)
+            if (!containerFilterNames.isEmpty())
                 return containerFilterNames.get(containerFilterNames.size() - 1);
             return null;
         }

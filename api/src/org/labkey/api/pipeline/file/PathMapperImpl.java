@@ -76,7 +76,6 @@ public class PathMapperImpl implements PathMapper
 
     /**
      * Returns a copy of the path map as strings
-     * @return
      */
     @Override
     @Deprecated //Use getURIPathMap instead
@@ -338,7 +337,7 @@ public class PathMapperImpl implements PathMapper
             map.put(remoteURI, localURI);
         }
 
-        if (map.size() == 0)
+        if (map.isEmpty())
         {
             handleError("Paths", "No file shares enabled", errors);
             return new PathMapperImpl(errors);

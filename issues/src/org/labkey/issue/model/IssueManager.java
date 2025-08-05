@@ -78,6 +78,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -333,7 +334,7 @@ public class IssueManager
         for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
             IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt, false);
-            if (relatedIssue != null && relatedIssue.getCommentObjects().size() > 0)
+            if (relatedIssue != null && !relatedIssue.getCommentObjects().isEmpty())
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
                 if (hasReadPermission)
@@ -596,7 +597,7 @@ public class IssueManager
 
         public String getIndefiniteSingularArticle()
         {
-            if (singularName.length() == 0)
+            if (singularName.isEmpty())
                 return "";
             char first = Character.toLowerCase(singularName.charAt(0));
             if (first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u')
@@ -903,7 +904,6 @@ public class IssueManager
 
     /**
      *
-     * @param container
      * @return combined Required fields of "current" and "inherited from" container if admin settings are inherited
      */
     public static String getRequiredIssueFields(Container container)
@@ -1213,7 +1213,7 @@ public class IssueManager
 
                 if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
                 {
-                    d.getDomainKind().deleteDomain(user, d);
+                    d.getDomainKind().deleteDomain(user, d, null);
                 }
             }
             IssueListDefCache.uncache(c);
@@ -1342,7 +1342,7 @@ public class IssueManager
             // UNDONE: custom field names
             // UNDONE: user names
             m.remove("comments");
-            _containerId = issue.getContainerId();
+            _containerId = new GUID(issue.getContainerId());
             _properties = m;
             _comments = issue.getCommentObjects();
             _properties.put(categories.toString(), searchCategory.getName());
@@ -1353,7 +1353,7 @@ public class IssueManager
         {
             super(new Path("issue:"+ issueId));
             _issueId = issueId;
-            _containerId = (String)m.get("folder");
+            _containerId = new GUID((String)m.get("folder"));
             _properties = m;
             _comments = comments;
             _properties.put(categories.toString(), searchCategory.getName());
@@ -1398,7 +1398,7 @@ public class IssueManager
         @Override
         public void setLastIndexed(long ms, long modified)
         {
-            IssueManager.setLastIndexed(_containerId, _issueId, ms);
+            IssueManager.setLastIndexed(_containerId.toString(), _issueId, ms);
         }
 
         @Override
@@ -1418,7 +1418,7 @@ public class IssueManager
         public String getExecuteHref(ViewContext context)
         {
             ActionURL url = new ActionURL(IssuesController.DetailsAction.class, null).addParameter("issueId", String.valueOf(_properties.get("issueid")));
-            url.setExtraPath(_containerId);
+            url.setExtraPath(_containerId.toString());
             return url.getLocalURIString();
         }
 

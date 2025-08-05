@@ -23,10 +23,10 @@ import org.labkey.api.query.ValidationException;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
-import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * User: matthewb
@@ -61,7 +61,7 @@ public abstract class AbstractDataIterator implements DataIterator
     @Override
     public String getDebugName()
     {
-        return defaultString(_debugName, getClass().getSimpleName());
+        return Objects.toString(_debugName, getClass().getSimpleName());
     }
 
 

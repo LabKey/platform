@@ -144,15 +144,11 @@ import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
 public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefinition> implements Cloneable, Dataset, InitializingBean
 {
-    // DatasetQueryUpdateService
-
-
-    //    static final Object MANAGED_KEY_LOCK = new Object();
     private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLockWithName(DatasetDefinition.class, "_lock");
 
-    private Container _definitionContainer;
+    private GUID _definitionContainerId;
     private Boolean _isShared = null;
     private StudyImpl _study;
     private int _datasetId;
@@ -176,8 +172,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     private boolean _useTimeKeyField = false;
     private String _sourceQueryName;
     private String _sourceQuerySchema;
-    private Container _sourceQueryContainer;
-
+    private GUID _sourceQueryContainerId;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -259,7 +254,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
     }
 
-
     public DatasetDefinition(StudyImpl study, int datasetId)
     {
         _study = study;
@@ -271,7 +265,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         _showByDefault = true;
         _isShared = study.getShareDatasetDefinitions();
     }
-
 
     public DatasetDefinition(StudyImpl study, int datasetId, String name, String label, String category, String entityId, @Nullable String typeURI)
     {
@@ -297,7 +290,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         assert isShared();
         DatasetDefinition sub = createMutable();
         assert sub != this;
-        sub._definitionContainer = sub.getContainer();
+        sub._definitionContainerId = sub.getContainer().getEntityId();
         sub.setContainer(substudy.getContainer());
         sub._study = substudy;
 
@@ -332,9 +325,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
         if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
         {
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(getContainer(),
-                    getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription),
-                    getDatasetId());
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(
+                getContainer(),
+                getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription),
+                getDatasetId()
+            );
             AuditLogService.get().addEvent(user, event);
         }
         super.savePolicy(policy, user);
@@ -349,7 +344,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public boolean isInherited()
     {
-        return isShared() && null != _definitionContainer && !_definitionContainer.equals(getContainer());
+        return isShared() && null != _definitionContainerId && !_definitionContainerId.equals(getContainerId());
     }
 
     /**
@@ -359,7 +354,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
         return StudyManager.getInstance().getShadowedDatasets(getStudy(), Arrays.asList(this));
     }
-
 
     //TODO this should probably be driven off the DomainKind to avoid code duplication
     public static boolean isDefaultFieldName(String fieldName, Study study)
@@ -372,19 +366,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return true;
 
         return switch (study.getTimepointType())
-                {
-                    case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
-                    case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
-                    default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
-                };
+        {
+            case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
+            case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+            default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+        };
     }
-
 
     public static boolean showOnManageView(String fieldName, Study study)
     {
         return !HIDDEN_DEFAULT_FIELDS.contains(fieldName);
     }
-
 
     @Override
     public Set<String> getDefaultFieldNames()
@@ -397,7 +389,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         return Collections.unmodifiableSet(fieldNames);
     }
-
 
     @Override
     public String getName()
@@ -484,11 +475,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         _datasetId = datasetId;
     }
 
-    public String getDataSharing()
-    {
-        return getDataSharingEnum().name();
-    }
-
     public void setDataSharing(@NotNull String datasharing)
     {
         // datasharing can == null during server upgrade
@@ -502,6 +488,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             throw new IllegalStateException();
     }
 
+    @SuppressWarnings("unused") // Used via DB persistence reflection
+    public String getDataSharing()
+    {
+        return getDataSharingEnum().name();
+    }
+
     @Override
     public DataSharing getDataSharingEnum()
     {
@@ -509,7 +501,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return DataSharing.NONE;
         return _datasharing;
     }
-
 
     /**
      * We do not want to invalidate caches every time someone updates a dataset row
@@ -685,7 +676,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
 
     /** why do some datasets have a typeURI, but no domain? */
-    private Domain ensureDomain()
+    private Domain ensureDomain(boolean forUpdate)
     {
         assert _lock.isHeldByCurrentThread();
 
@@ -693,13 +684,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             StudyImpl shared = getDefinitionStudy();
             DatasetDefinition ds = shared.getDataset(getDatasetId());
-            return null == ds ? null : ds.ensureDomain();
+            return null == ds ? null : ds.ensureDomain(forUpdate);
         }
 
         if (null == getTypeURI())
             throw new IllegalStateException();
 
-        Domain d = getDomain();
+        Domain d = getDomain(forUpdate);
         if (null != d)
             return d;
 
@@ -716,7 +707,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
 
-    private TableInfo loadStorageTableInfo()
+    private TableInfo loadStorageTableInfo(boolean forDomainUpdate)
     {
         if (null == getTypeURI())
             return null;
@@ -725,7 +716,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         // consistent order to avoid deadlock
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            Domain d = ensureDomain();
+            Domain d = ensureDomain(forDomainUpdate);
 
             // create table may set storageTableName() so uncache _domain
             if (null == d.getStorageTableName())
@@ -742,28 +733,28 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     /**
      *  just a wrapper for StorageProvisioner.create()
      */
-    public void provisionTable()
+    public void provisionTable(boolean forDomainUpdate)
     {
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            ensureDomainDef();
-            loadStorageTableInfo();
+            ensureDomainDef(forDomainUpdate);
+            loadStorageTableInfo(false);
             StudyManager.getInstance().uncache(this);
             t.commit();
         }
     }
 
-    public void provisionQueryDataset()
+    public void provisionQueryDataset(boolean forDomainUpdate)
     {
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            ensureDomainDef();
+            ensureDomainDef(forDomainUpdate);
             StudyManager.getInstance().uncache(this);
             t.commit();
         }
     }
 
-    private void ensureDomainDef()
+    private void ensureDomainDef(boolean forUpdate)
     {
         _domain = null;
         if (null == getTypeURI())
@@ -772,11 +763,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
             d.save(null);
         }
-        ensureDomain();
+        ensureDomain(forUpdate);
     }
 
     @Transient
-    public TableInfo getStorageTableInfo() throws UnauthorizedException
+    public TableInfo getStorageTableInfo(boolean forDomainUpdate) throws UnauthorizedException
     {
         if (isQueryDataset())
             return null;
@@ -785,11 +776,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             StudyImpl shared = getDefinitionStudy();
             DatasetDefinition ds = shared.getDataset(getDatasetId());
-            return null == ds ? null : ds.getStorageTableInfo();
+            return null == ds ? null : ds.getStorageTableInfo(forDomainUpdate);
         }
         else
         {
-            return loadStorageTableInfo();
+            return loadStorageTableInfo(forDomainUpdate);
         }
     }
 
@@ -808,7 +799,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo());
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo(false));
             String and = "\nWHERE ";
 
             // only apply a container filter on delete when this is a shared dataset definition
@@ -917,14 +908,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public StudyImpl getDefinitionStudy()
     {
         if (isInherited())
-            return StudyManager.getInstance().getStudy(_definitionContainer);
+            return StudyManager.getInstance().getStudy(getDefinitionContainer());
         return getStudy();
     }
 
 
     public Container getDefinitionContainer()
     {
-        return null!=_definitionContainer ? _definitionContainer : getContainer();
+        return null != _definitionContainerId ? ContainerManager.getForId(_definitionContainerId) : getContainer();
     }
 
 
@@ -1152,20 +1143,25 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
     @Override
-    public void delete(User user)
+    public void delete(User user, @Nullable String auditUserComment)
     {
         if (!canDeleteDefinition(user))
         {
             throw new UnauthorizedException("No permission to delete dataset " + getName() + " for study in " + getContainer().getPath());
         }
-        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true);
+        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true, auditUserComment);
     }
 
+    @Override
+    public void delete(User user)
+    {
+        delete(user, null);
+    }
 
     @Override
     public void deleteAllRows(User user)
     {
-        TableInfo data = getStorageTableInfo();
+        TableInfo data = getStorageTableInfo(false);
         if (null == data)
             return;
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
@@ -1222,7 +1218,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public boolean isQueryDataset()
     {
-        return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainer != null;
+        return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainerId != null;
     }
 
     public boolean isQuerySnapshot()
@@ -1252,12 +1248,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public Container getSourceQueryContainer()
     {
-        return _sourceQueryContainer;
+        return _sourceQueryContainerId != null ? ContainerManager.getForId(_sourceQueryContainerId) : null;
     }
 
     public void setSourceQueryContainer(Container sourceQueryContainer)
     {
-        _sourceQueryContainer = sourceQueryContainer;
+        _sourceQueryContainerId = null != sourceQueryContainer ? sourceQueryContainer.getEntityId() : null;
     }
 
     @Override
@@ -1411,7 +1407,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             else
             {
-                _storage = def.getStorageTableInfo();
+                _storage = def.getStorageTableInfo(false);
             }
             _template = getTemplateTableInfo();
 
@@ -1669,7 +1665,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         @Override
         public Domain getDomain()
         {
-            return DatasetDefinition.this.getDomain();
+            return getDomain(false);
+        }
+
+        @Override
+        public Domain getDomain(boolean forUpdate)
+        {
+            return DatasetDefinition.this.getDomain(forUpdate);
         }
 
         @Override
@@ -1703,7 +1705,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // shouldn't getStorageTableInfo().getColumn("date").getPropertyURI() == getVisitDateURI()?
             if (!getStudy().getTimepointType().isVisitBased())
             {
-                m.put(getStorageTableInfo().getColumn("date").getPropertyURI(), getVisitDateURI());
+                m.put(getStorageTableInfo(false).getColumn("date").getPropertyURI(), getVisitDateURI());
             }
 
             return m;
@@ -1724,7 +1726,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public static class DatasetAuditHandler extends AbstractAuditHandler
     {
-        private Dataset _dataset;
+        private final Dataset _dataset;
 
         public DatasetAuditHandler(Dataset dataset)
         {
@@ -1765,7 +1767,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                             batch.clear();
                         }
                     }
-                    if (batch.size() > 0)
+                    if (!batch.isEmpty())
                     {
                         auditLog.addEvents(user, batch);
                         batch.clear();
@@ -1800,28 +1802,28 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
             if (action==DELETE || action==TRUNCATE)
             {
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
-            else if (existingRecord != null && existingRecord.size() > 0)
+            else if (existingRecord != null && !existingRecord.isEmpty())
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
-                if (rowPair.second.size() == 0 )
+                if (rowPair.second.isEmpty())
                 {
                     auditComment = "Dataset row was processed, but no changes detected";
                     // Record values that were processed
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(record);
                 }
                 else
                 {
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.second);
                 }
             }
             else
             {
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                newRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, auditComment, _dataset.getDatasetId());
@@ -1913,6 +1915,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Transient
     public Domain getDomain()
     {
+       return getDomain(false);
+    }
+
+    @Override
+    @Transient
+    public Domain getDomain(boolean forUpdate)
+    {
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
@@ -1924,15 +1933,16 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             if (null == getTypeURI())
                 return null;
-            if (null != _domain)
+            if (null != _domain && (!forUpdate || _domain.isMutable()))
                 return _domain;
         }
 
         Domain d=null;
+        // VERIFY: Transaction here is just for synchronization. No updates are happening.
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            if (null != getTypeURI() && null == _domain)
-                d = PropertyService.get().getDomain(getContainer(), getTypeURI());
+            if (null != getTypeURI() && null == _domain || forUpdate)
+                d = PropertyService.get().getDomain(getContainer(), getTypeURI(), forUpdate);
             t.commit();
         }
 
@@ -2072,6 +2082,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
+    @Override
     public Integer getPublishSourceId()
     {
         return _publishSourceId;
@@ -2104,7 +2115,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
         List<Collection<String>> rowLSIDSlices = slice(allLSIDs);
 
-        TableInfo data = getStorageTableInfo();
+        TableInfo data = getStorageTableInfo(false);
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -2184,15 +2195,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
                 errors, checkDuplicates);
 
-        if (null != failedReplaceMap && failedReplaceMap.size() > 0)
+        if (null != failedReplaceMap && !failedReplaceMap.isEmpty())
         {
-            StringBuilder error = new StringBuilder();
-            error.append("Only one row is allowed for each ");
-            error.append(getKeyTypeDescription());
-            error.append(".  ");
 
-            error.append("Duplicates were found in the ").append(checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ").append("imported data.");
-            errors.addRowError(new ValidationException(error.toString()));
+            String error = "Only one row is allowed for each " +
+                    getKeyTypeDescription() +
+                    ".  " +
+                    "Duplicates were found in the " + (checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ") + "imported data.";
+            errors.addRowError(new ValidationException(error));
 
             int errorCount = 0;
             for (Map.Entry<String, Object[]> e : failedReplaceMap.entrySet())
@@ -2378,7 +2388,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
-        DataIteratorBuilder persist = null;
+        DataIteratorBuilder persist;
 
         persist = ((UpdateableTableInfo)table).persistRows(existing, context);
 
@@ -2399,7 +2409,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      * */
     public SQLFragment generateLSIDSQL()
     {
-        if (null == getStorageTableInfo())
+        if (null == getStorageTableInfo(false))
             return new SQLFragment("''");
 
         List<SQLFragment> parts = new ArrayList<>();
@@ -2431,7 +2441,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             else if (getKeyPropertyName() != null)
             {
-                var key = getStorageTableInfo().getColumn(getKeyPropertyName());
+                var key = getStorageTableInfo(false).getColumn(getKeyPropertyName());
                 if (null != key)
                 {
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
@@ -2442,7 +2452,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
         }
 
-        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
+        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[0]));
     }
 
 
@@ -2500,7 +2510,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     if (uniq.contains(("'")))
                         uniq = uniq.replaceAll("'","''");
                     sbIn.append(sep).append("'").append(uniq).append("'");
-                    sep = ", ";
                 }
                 count++;
             }
@@ -2511,7 +2520,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // then we cannot proceed.
             if (checkDuplicates == CheckForDuplicates.sourceOnly)
             {
-                if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+                if (!noDeleteMap.isEmpty() && getKeyManagementType() == KeyManagementType.None)
                     return noDeleteMap;
                 else
                     return null;
@@ -2542,7 +2551,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
 
-        TableInfo tinfo = getStorageTableInfo();
+        TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
         if (isShared())
@@ -2571,10 +2580,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         // If we have duplicates, and we don't have an auto-keyed dataset,
         // then we cannot proceed.
-        if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+        if (!noDeleteMap.isEmpty() && getKeyManagementType() == KeyManagementType.None)
             return noDeleteMap;
 
-        if (deleteSet.size() == 0)
+        if (deleteSet.isEmpty())
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();
@@ -2599,7 +2608,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      */
     int getMaxKeyValue()
     {
-        TableInfo tInfo = getStorageTableInfo();
+        TableInfo tInfo = getStorageTableInfo(false);
         SQLFragment sqlf = new SQLFragment("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
         Integer newKey = new SqlSelector(tInfo.getSchema(),sqlf).getObject(Integer.class);
         return newKey.intValue();
@@ -2779,6 +2788,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
+        deleteDatasetRows(u, lsids, false);
+    }
+
+    public void deleteDatasetRows(User u, Collection<String> lsids, boolean isBulkLoad)
+    {
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
@@ -2787,7 +2801,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            if (!isBulkLoad)
+            {
+                new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            }
 
             transaction.commit();
         }
@@ -2819,6 +2836,30 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (!StringUtils.isEmpty(getKeyPropertyName()))
+            map.put("KeyPropertyName", getKeyPropertyName());
+        if (!StringUtils.isEmpty(getVisitDatePropertyName()))
+            map.put("VisitDateColumnName", getVisitDatePropertyName());
+        if (!StringUtils.isEmpty(getTag()))
+            map.put("Tag", getTag());
+        map.put("KeyPropertyManaged", getKeyManagementType() != Dataset.KeyManagementType.None);
+        map.put("IsDemographicData", isDemographicData());
+        map.put("IsUseTimeKeyField", getUseTimeKeyField());
+        if (getCohortId() != null)
+            map.put("CohortId", getCohortId());
+
+        return map;
+    }
     public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
     {
         private final String _name;

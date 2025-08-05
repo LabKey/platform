@@ -13,7 +13,7 @@ public class DataGeneratorRegistry
         WorkflowJobs,
         Notebooks,
         PlateSets,
-    };
+    }
 
     private static final Map<DataType, DataGenerator.DataGenerationDriver> _dataGeneratorMap = new HashMap<>();
 

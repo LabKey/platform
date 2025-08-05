@@ -29,7 +29,6 @@ public class DeleteViewForm extends QueryForm
     /**
      * Delete both the saved view and session view, if present.
      * Otherwise just the first view found (session or saved) will be deleted.
-     * @return
      */
     public boolean isComplete()
     {

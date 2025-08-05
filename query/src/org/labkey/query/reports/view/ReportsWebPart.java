@@ -31,15 +31,13 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Objects;
 
-/**
- * User: Karl Lum
- * Date: Mar 2, 2008
- */
-public class ReportsWebPart extends WebPartView
+public class ReportsWebPart extends WebPartView<Object>
 {
     Portal.WebPart _webPart;
     Report _report;
@@ -51,7 +49,7 @@ public class ReportsWebPart extends WebPartView
         _webPart = part;
         Map<String, String> properties = part.getPropertyMap();
 
-        String title = StringUtils.defaultString(properties.get("title"), "Reports");
+        String title = Objects.toString(properties.get("title"), "Reports");
         setTitle(title);
 
         try
@@ -70,7 +68,7 @@ public class ReportsWebPart extends WebPartView
 
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, HtmlWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();
 

@@ -968,13 +968,13 @@ public class ExcelLoader extends DataLoader
 
             assertEquals(18, columns.length);
 
-            assertEquals(columns[0].clazz, Date.class);
-            assertEquals(columns[1].clazz, Integer.class);
-            assertEquals(columns[2].clazz, Double.class);
+            assertEquals(Date.class, columns[0].clazz);
+            assertEquals(Integer.class, columns[1].clazz);
+            assertEquals(Double.class, columns[2].clazz);
 
-            assertEquals(columns[4].clazz, Boolean.class);
+            assertEquals(Boolean.class, columns[4].clazz);
 
-            assertEquals(columns[17].clazz, String.class);
+            assertEquals(String.class, columns[17].clazz);
         }
 
         private static void checkData(ExcelLoader loader)

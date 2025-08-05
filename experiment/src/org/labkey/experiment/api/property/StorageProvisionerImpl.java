@@ -34,13 +34,13 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.ParameterMapStatement;
@@ -136,7 +136,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         .expireAfterWrite(1, TimeUnit.DAYS)
         .build();
 
-    private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
+    private String _create(DbScope scope, DomainKind<?> kind, Domain domain, boolean useProvidedStorageName)
     {
         //noinspection AssertWithSideEffects
         assert create.start();
@@ -148,18 +148,29 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                log.warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                log.warn("Can't find domain descriptor: {} {}", domain.getTypeId(), domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
             String tableName = dd.getStorageTableName();
-            if (null != tableName)
-            {
-                transaction.commit();
-                return tableName;
-            }
 
-            tableName = makeTableName(kind, domain);
+            if (useProvidedStorageName)
+            {
+                if (null == tableName)
+                {
+                    throw new RuntimeException("Storage table name was null: " + domain.getTypeId() + " " + domain.getTypeURI());
+                }
+            }
+            else
+            {
+                if (null != tableName)
+                {
+                    transaction.commit();
+                    return tableName;
+                }
+
+                tableName = makeTableName(kind, domain);
+            }
             TableChange change = new TableChange(domain, ChangeType.CreateTable, tableName);
 
             Set<String> base = Sets.newCaseInsensitiveHashSet();
@@ -215,12 +226,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 throw re;
             }
 
-            DomainDescriptor editDD = dd.edit()
+            if (!useProvidedStorageName)
+            {
+                DomainDescriptor editDD = dd.edit()
                     .setStorageTableName(tableName)
                     .setStorageSchemaName(kind.getStorageSchemaName())
                     .build();
 
-            OntologyManager.ensureDomainDescriptor(editDD);
+                OntologyManager.ensureDomainDescriptor(editDD);
+            }
 
             kind.invalidate(domain);
 
@@ -346,7 +360,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         if (null == domain.getStorageTableName())
         {
-            _create(scope, kind, domain);
+            _create(scope, kind, domain, false);
             return;
         }
 
@@ -603,7 +617,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private static class _ProvisionedTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
     {
         private final SchemaTableInfo _inner;
-        private Domain _domain;
+        private final Domain _domain;
 
         _ProvisionedTable(DbSchema schema, String name, SchemaTableInfo inner, Domain domain)
         {
@@ -826,11 +840,17 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                tableName = _create(scope, kind, domain);
+                tableName = _create(scope, kind, domain, false);
             }
         }
 
         return tableName;
+    }
+
+    @Override
+    public void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope)
+    {
+        _create(scope, kind, domain, true);
     }
 
     enum RequiredIndicesAction
@@ -1575,7 +1595,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
             StorageProvisioner.createTableInfo(domain);
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), true);
         }
 
         @After
@@ -1619,7 +1639,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setName(newName);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             Assert.assertNull("renamed column is not present in old name", getJdbcColumnMetadata(domain, oldColumnName));
 
@@ -1649,7 +1669,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             ColumnInfo col = getJdbcColumnMetadata(domain, propBMvColumnName);
             Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned", col);
@@ -1663,13 +1683,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             propB = domain.getPropertyByName(propNameB);
             propB.setMvEnabled(false);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             Assert.assertNull("property with disabled mvindicator has no mvindicator column", getJdbcColumnMetadata(domain, propBMvColumnName));
         }
@@ -1806,15 +1826,15 @@ renaming a property AND toggling mvindicator on in the same change.
             DomainImpl d = null;
             try
             {
-                d = new DomainImpl(c, uri, "test")
+                d = new DomainImpl(c, uri, "test", true)
                 {
-                    @Override
+                    @Override @Nullable
                     public DomainKind<?> getDomainKind()
                     {
                         return k;
                     }
                 };
-                d.save(user, false);
+                d.save(user);
                 StorageProvisioner.get().ensureStorageTable(d, k, k.getScope());
 
                 // check that prop exists
@@ -1845,7 +1865,7 @@ renaming a property AND toggling mvindicator on in the same change.
             dp.setName(propNameB);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), true);
         }
 
         private @Nullable ColumnInfo getJdbcColumnMetadata(Domain domain, String columnName) throws Exception

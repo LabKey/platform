@@ -1785,7 +1785,6 @@ public class SpecimenImporter extends SpecimenTableManager
      * @param schema The dbschema.
      * @param idCol The computed column.
      * @return A pair of the columns actually found in the data values and a total row count.
-     * @throws org.labkey.api.query.ValidationException
      */
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
             DbSchema schema, String tableName, @Nullable TableInfo target,
@@ -1894,11 +1893,8 @@ public class SpecimenImporter extends SpecimenTableManager
      * @param file SpecimenImportFile
      * @param tableName Fully qualified table name, e.g., "study.Vials"
      * @param generateGlobaluniqueIds Generate globalUniqueIds if any needed
-     * @param hasContainerColumn
-     * @param drawDate DrawDate column or null
      * @param drawTime DrawTime column or null
      * @return A pair of the columns actually found in the data values and a total row count.
-     * @throws IOException
      */
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
             DbSchema schema, SpecimenImportFile file, String tableName, @Nullable TableInfo target,
@@ -2519,7 +2515,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 }
             }
 
-            if (duplicateGUIDs.size() == 0)
+            if (duplicateGUIDs.isEmpty())
             {
                 info("No conflicting specimens found");
             }
@@ -2529,9 +2525,9 @@ public class SpecimenImporter extends SpecimenTableManager
                 for (String guid : duplicateGUIDs)
                 {
                     List<Map<String, Object>> dups = rowsByGUID.get(guid);
-                    if (dups != null && dups.size() > 0)
+                    if (dups != null && !dups.isEmpty())
                     {
-                        if (sb.length() > 0)
+                        if (!sb.isEmpty())
                             sb.append("\n");
                         sb.append("Conflicting specimens found for GlobalUniqueId '").append(guid).append("':\n");
 

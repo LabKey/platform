@@ -251,7 +251,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             Integer rowId = (Integer)keys.get("rowId");
             String name = keys.get("label") != null ? nameFromLabel((String)keys.get("label")) : (String)keys.get("name");
 
-            IssueListDef def = null;
+            IssueListDef def;
             if (rowId != null)
                 def = IssueManager.getIssueListDef(c, rowId);
             else if (name != null)

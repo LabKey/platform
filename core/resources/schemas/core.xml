@@ -227,11 +227,11 @@
         <isReadOnly>true</isReadOnly>
         <isHidden>true</isHidden>
         <description>The user's unique entity id.</description>
-          <fk>
-              <fkTable>object</fkTable>
-              <fkColumnName>ObjectURI</fkColumnName>
-              <fkDbSchema>exp</fkDbSchema>
-          </fk>
+        <fk>
+          <fkTable>object</fkTable>
+          <fkColumnName>ObjectURI</fkColumnName>
+          <fkDbSchema>exp</fkDbSchema>
+        </fk>
       </column>
       <column columnName="CreatedBy">
         <columnTitle>Created By</columnTitle>
@@ -545,7 +545,7 @@
   <table tableName="ContainerAliases" tableDbType="TABLE">
     <columns>
       <column columnName="Path"/>
-      <column columnName="ContainerId"/>
+      <column columnName="ContainerRowId"/>
     </columns>
   </table>
 
@@ -773,6 +773,16 @@
       <column columnName="EmailOptionId"/>
       <column columnName="LastModifiedBy"/>
       <column columnName="SrcIdentifier"/>
+    </columns>
+  </table>
+  <table tableName="UpgradeSteps" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="ModuleName"/>
+      <column columnName="Script"/>
+      <column columnName="MethodName"/>
+      <column columnName="Created"/>
+      <column columnName="Executed"/>
     </columns>
   </table>
 </tables>

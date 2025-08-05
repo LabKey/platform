@@ -19,8 +19,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -39,7 +37,6 @@ import java.util.Set;
 public class StudyPropertiesWriter extends DefaultStudyDesignWriter
 {
     public static final String SCHEMA_FILENAME = "study_metadata.xml";
-    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     /**
      * Exports additional study related properties into the properties sub folder
@@ -49,13 +46,14 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         Set<String> studyTableNames = new HashSet<>();
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, ctx.getUser());
         StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
+        boolean studyDesignEnabled = isStudyDesignEnabled(ctx.getContainer());
 
-        if (_studyDesignEnabled)
+        if (studyDesignEnabled)
             studyTableNames.add(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);
         studyTableNames.add(StudyQuerySchema.PROPERTIES_TABLE_NAME);
         writeTableInfos(ctx, dir, studyTableNames, schema, projectSchema, SCHEMA_FILENAME);
 
-        if (_studyDesignEnabled)
+        if (studyDesignEnabled)
         {
             studyTableNames.add(StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME);
             studyTableNames.remove(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);

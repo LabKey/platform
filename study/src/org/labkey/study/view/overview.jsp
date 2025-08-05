@@ -94,7 +94,8 @@
         {
             selectedCohort = bean.cohortFilter.getCohort(container, user);
             // Get a cohort filter that includes the label, so we use the label (not the rowId) in the filter clause
-            cohortFilter = new SingleCohortFilter(bean.cohortFilter.getType(), selectedCohort);
+            if (selectedCohort != null)
+                cohortFilter = new SingleCohortFilter(bean.cohortFilter.getType(), selectedCohort);
         }
         cohorts = manager.getCohorts(container, user);
     }

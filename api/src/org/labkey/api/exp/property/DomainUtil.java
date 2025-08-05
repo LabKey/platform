@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -93,9 +94,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -683,21 +686,26 @@ public class DomainUtil
 
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
-        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
+        return createDomain(template, container, user, domainName, false);
+    }
+
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName, boolean forUpdate) throws ValidationException
+    {
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo(), forUpdate);
     }
 
     public static Domain createDomain(
         String kindName,
-        GWTDomain domain,
+        GWTDomain<?> domain,
         Map<String, Object> arguments,
         Container container,
         User user,
         @Nullable String domainName,
-        @Nullable TemplateInfo templateInfo
-    ) throws ValidationException
+        @Nullable TemplateInfo templateInfo,
+        boolean forUpdate) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
-        domain = new GWTDomain(domain);
+        domain = new GWTDomain<>(domain);
 
         DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
         if (kind == null)
@@ -731,7 +739,7 @@ public class DomainUtil
 
         arguments = kind.processArguments(container, user, arguments);
         Object options = JsonUtil.DEFAULT_MAPPER.convertValue(arguments, kind.getTypeClass());
-        Domain created = kind.createDomain(domain, options, container, user, templateInfo);
+        Domain created = kind.createDomain(domain, options, container, user, templateInfo, forUpdate);
 
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
@@ -744,14 +752,22 @@ public class DomainUtil
         return updateDomainDescriptor(orig, update, container, user, false, null);
     }
 
-    /** @return Errors encountered during the save attempt */
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment)
+    {
+        return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null, null, null);
+    }
+
+    /** @return Errors encountered during the save attempt */
+    @NotNull
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user,
+                                                             boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldProps, @Nullable Map<String, Object> newProps)
     {
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
-        Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a paritially updated state
+        Domain d = PropertyService.get().getDomain(container, update.getDomainURI(), true);
         if (null == d)
         {
             ValidationException validationException = new ValidationException();
@@ -773,9 +789,16 @@ public class DomainUtil
             return validationException;
         }
 
+        if (newProps == null)
+            newProps = new LinkedHashMap<>();
+        if (oldProps == null)
+            oldProps = new LinkedHashMap<>();
+
         String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
+            oldProps.put("Name", d.getName());
+            newProps.put("Name", updatedName);
             updatedName = StringUtils.trimToEmpty(updatedName);
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
@@ -787,7 +810,22 @@ public class DomainUtil
             d.setName(updatedName);
         }
 
-        d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
+        List<String> oldDisabledSystemFields = d.getDisabledSystemFields();
+        if (oldDisabledSystemFields != null && !oldDisabledSystemFields.isEmpty())
+            oldProps.put("DisabledSystemFields", oldDisabledSystemFields);
+        List<String> disabledSystemFieldsUpdate = kind.getDisabledSystemFields(update.getDisabledSystemFields());
+        if (disabledSystemFieldsUpdate != null && !disabledSystemFieldsUpdate.isEmpty())
+            newProps.put("DisabledSystemFields", disabledSystemFieldsUpdate);
+
+        d.setDisabledSystemFields(disabledSystemFieldsUpdate);
+
+        Set<PropertyStorageSpec.Index> baseIndices = kind.getPropertyIndices(d);
+        List<String> oldIndices = GWTIndex.toStringVals(orig.getIndices(), baseIndices);
+        if (oldIndices != null && !oldIndices.isEmpty())
+            oldProps.put("Indices", oldIndices);
+        List<String> newIndices = GWTIndex.toStringVals(update.getIndices(), baseIndices);
+        if (newIndices != null && !newIndices.isEmpty())
+            newProps.put("Indices", newIndices);
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -908,7 +946,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user, auditComment);
+                d.save(user, auditComment, auditUserComment, oldProps, newProps, orig.getCalculatedFields(), update.getCalculatedFields());
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -942,6 +980,14 @@ public class DomainUtil
         }
 
         return validationException;
+    }
+
+    // Issue 51321: check reserved domain name: First, All
+    public static @Nullable String validateReservedName(@NotNull String domainName, @NotNull String kindName)
+    {
+        if ("First".equalsIgnoreCase(domainName) || "All".equalsIgnoreCase(domainName))
+            return kindName + " name '" + domainName + "' is a reserved name.";
+        return null;
     }
 
     public static @Nullable String validateDomainName(@NotNull String domainName, String kindName, boolean supportsNamingPattern)
@@ -1185,11 +1231,13 @@ public class DomainUtil
             to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
-    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
+    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, @Nullable GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
         List<Map<String, Object>> valueUpdates = new ArrayList<>();
 
+        PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
+        boolean hasChange = false;
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
@@ -1201,6 +1249,7 @@ public class DomainUtil
 
                 _copyValidator(pv, v);
                 dp.addValidator(pv);
+                hasChange = true;
             }
 
             if (v.getExtraProperties() != null && v.getExtraProperties().containsKey("valueUpdates"))
@@ -1219,21 +1268,28 @@ public class DomainUtil
                 if (v.equals(prop))
                     newProps.remove(v.getRowId());
                 else if (prop == null)
+                {
                     deleted.add(v);
+                    hasChange = true;
+                }
             }
 
             // update any new or changed
             for (IPropertyValidator pv : dp.getValidators())
-                _copyValidator(pv, newProps.get(pv.getRowId()));
+            {
+                boolean change = _copyValidator(pv, newProps.get(pv.getRowId()));
+                hasChange = hasChange || change;
+            }
 
             // deal with removed validators
             for (GWTPropertyValidator gpv : deleted)
                 dp.removeValidator(gpv.getRowId());
-
-            return valueUpdates;
         }
 
-        return null;
+        if (hasChange)
+            dp.setOldPropertyDescriptor(oldPropertyDescriptor); // mark dirty as needed
+
+        return oldPd != null ? valueUpdates : null;
     }
 
     private static void updateTextChoiceValueRows(Domain domain, User user, String propName, Map<String, Object> valueUpdates, ValidationException errors)
@@ -1301,20 +1357,28 @@ public class DomainUtil
         }
     }
 
-    private static void _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
+    private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
+        boolean hasChange = false;
         if (pv != null && gpv != null)
         {
+            hasChange = !Objects.equals(pv.getName(), gpv.getName());
             pv.setName(gpv.getName());
+            hasChange = hasChange || !Objects.equals(pv.getDescription(), gpv.getDescription());
             pv.setDescription(gpv.getDescription());
+            hasChange = hasChange || !Objects.equals(pv.getExpressionValue(), gpv.getExpression());
             pv.setExpressionValue(gpv.getExpression());
+            hasChange = hasChange || !Objects.equals(pv.getErrorMessage(), gpv.getErrorMessage());
             pv.setErrorMessage(gpv.getErrorMessage());
 
+            hasChange = hasChange || !Objects.equals(PageFlowUtil.toQueryString(pv.getProperties().entrySet()), PageFlowUtil.toQueryString(gpv.getProperties().entrySet()));
             for (Map.Entry<String, String> entry : gpv.getProperties().entrySet())
             {
                 pv.setProperty(entry.getKey(), entry.getValue());
             }
         }
+
+        return hasChange;
     }
 
     private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
@@ -1356,6 +1420,13 @@ public class DomainUtil
             if (expMatcher.find())
             {
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The '${}' substitution token is reserved for system use."));
+                continue;
+            }
+
+            // Issue 52746: SM Import: Newlines in field names on import
+            if (StringUtils.containsAny(name, "\t\n\r"))
+            {
+                exception.addFieldError(name, getDomainErrorMessage(updates, "Field name may not contain 'tab', 'new line', or 'return' characters."));
                 continue;
             }
 

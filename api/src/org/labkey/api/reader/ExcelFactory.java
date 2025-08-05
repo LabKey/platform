@@ -834,12 +834,12 @@ public class ExcelFactory
                 cell = sheet.getRow(1).getCell(1);
                 Calendar cal = new GregorianCalendar();
                 cal.setTime(cell.getDateCellValue());
-                assertEquals(cal.get(Calendar.DATE), 5);
-                assertEquals(cal.get(Calendar.MONTH), Calendar.MARCH);
-                assertEquals(cal.get(Calendar.YEAR), 2009);
-                assertEquals(cal.get(Calendar.HOUR), 5);
-                assertEquals(cal.get(Calendar.MINUTE), 14);
-                assertEquals(cal.get(Calendar.SECOND), 17);
+                assertEquals(5, cal.get(Calendar.DATE));
+                assertEquals(Calendar.MARCH, cal.get(Calendar.MONTH));
+                assertEquals(2009, cal.get(Calendar.YEAR));
+                assertEquals(5, cal.get(Calendar.HOUR));
+                assertEquals(14, cal.get(Calendar.MINUTE));
+                assertEquals(17, cal.get(Calendar.SECOND));
 
                 // Now make sure that it round-trips back to JSON correctly
                 JSONArray array = convertExcelToJSON(wb, true);
@@ -992,7 +992,7 @@ public class ExcelFactory
             assertEquals("Sheet name", "Other Sheet", sheet2.getString("name"));
             JSONArray sheet2Rows = sheet2.getJSONArray("data");
             assertEquals("Number of rows", 8, sheet2Rows.length());
-            assertEquals("Number of columns - row 0", sheet2Rows.getJSONArray(0).length(), 1);
+            assertEquals("Number of columns - row 0", 1, sheet2Rows.getJSONArray(0).length());
 
             assertEquals("NumberColumn", sheet2Rows.getJSONArray(0).getJSONObject(0).getString("value"));
             assertEquals(55.44, sheet2Rows.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);

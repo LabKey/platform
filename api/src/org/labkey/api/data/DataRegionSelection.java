@@ -464,7 +464,7 @@ public class DataRegionSelection
     private static List<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues) throws IOException
     {
         // Issue 48657: no need to query the region result set if we have no selectedValues
-        if (selectedValues.size() == 0)
+        if (selectedValues.isEmpty())
             return new LinkedList<>();
 
         var dataRegionContext = getDataRegionContext(view);

@@ -20,7 +20,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
@@ -93,13 +92,12 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     }
 
     @Override
-    public HttpView renderReport(ViewContext context)
+    public HttpView<?> renderReport(ViewContext context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
 
-        if (reportDescriptor instanceof CrosstabReportDescriptor)
+        if (reportDescriptor instanceof CrosstabReportDescriptor descriptor)
         {
-            CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)reportDescriptor;
             try {
                 Crosstab crosstab = createCrosstab(context, true);
                 if (crosstab != null)
@@ -138,9 +136,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             rgn.setAllowAsync(allowAsyncQuery);
             RenderContext ctx = dataView.getRenderContext();
 
-            if (null == rgn.getResults(ctx))
-                return null;
-            return new ResultsImpl(ctx);
+            return rgn.getResults(ctx);
         }
         return null;
     }

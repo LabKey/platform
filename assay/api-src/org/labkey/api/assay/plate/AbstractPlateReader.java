@@ -58,8 +58,6 @@ public abstract class AbstractPlateReader implements PlateReader
 
     /**
      * Converts the string token value to a numeric well value.
-     * @param token
-     * @return
      * @throws ValidationException - if the value cannot be converted, will cause the entire upload to fail
      */
     @Override

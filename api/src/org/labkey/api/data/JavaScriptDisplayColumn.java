@@ -25,7 +25,6 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.LinkedHashSet;

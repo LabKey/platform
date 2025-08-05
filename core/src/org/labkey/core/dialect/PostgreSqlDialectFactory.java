@@ -28,7 +28,9 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.PostgreSqlServerType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
-import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
@@ -158,7 +160,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
             good("PostgreSQL", 16.0, 17.0, "", connectionUrl, null, PostgreSql_16_Dialect.class);
             good("PostgreSQL", 17.0, 18.0, "", connectionUrl, null, PostgreSql_17_Dialect.class);
-            good("PostgreSQL", 18.0, 19.0, "", connectionUrl, null, PostgreSql_17_Dialect.class);
+            good("PostgreSQL", 18.0, 19.0, "", connectionUrl, null, PostgreSql_18_Dialect.class);
+            good("PostgreSQL", 19.0, 20.0, "", connectionUrl, null, PostgreSql_18_Dialect.class);
         }
     }
 
@@ -186,13 +189,31 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
             SqlDialect dialect = getOldestSupportedDialect();
-            TestUpgradeCode good = new TestUpgradeCode();
-            dialect.runSql(null, goodSql, good, null, null);
-            assertEquals(5, good.getCounter());
+            ModuleContext coreContext = ModuleLoader.getInstance().getModuleContext(ModuleLoader.getInstance().getCoreModule());
+            String description = "PostgreSQL InlineProcedureTestCase";
 
-            TestUpgradeCode bad = new TestUpgradeCode();
-            dialect.runSql(null, badSql, bad, null, null);
-            assertEquals(0, bad.getCounter());
+            TestUpgradeCodeCounter.resetCounter();
+            dialect.runSql(description, null, goodSql, coreContext, null);
+            assertEquals(5, TestUpgradeCodeCounter.getCount());
+
+            TestUpgradeCodeCounter.resetCounter();
+            dialect.runSql(description, null, badSql, coreContext, null);
+            assertEquals(0, TestUpgradeCodeCounter.getCount());
+
+            // Verify that fallbackHandler() is called if upgrade method doesn't exist
+            String fallbackTestSql = goodSql.replace("'upgradeCode'", "'bogusUpgradeCode'");
+            TestUpgradeCodeCounter.resetCounter();
+            try
+            {
+                dialect.runSql(description, null, fallbackTestSql, coreContext, null);
+                fail("Expected fallthroughHandler() to throw a RuntimeException");
+            }
+            catch (RuntimeException e)
+            {
+                // Default fallthroughHandler() throws with the below message
+                assertEquals("Can't find method bogusUpgradeCode(ModuleContext moduleContext) on class org.labkey.core.CoreUpgradeCode", e.getMessage());
+                assertEquals(0, TestUpgradeCodeCounter.getCount());
+            }
         }
     }
 

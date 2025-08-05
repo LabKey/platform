@@ -16,6 +16,8 @@ export const SOURCE_TYPE_NAME_1 = 'SourceType1';
 export const SOURCE_TYPE_NAME_2 = 'SourceType2';
 export const ATTACHMENT_FIELD_1_NAME = 'SourceFile1';
 export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
+const SAMPLE_TYPE_DOMAIN_KIND = 'SampleSet';
+const DATA_CLASS_DOMAIN_KIND = 'DataClass';
 
 // TODO move getSourceDataByName to ExperimentCrudUtils
 export async function getSourceDataByName(server: IntegrationTestServer, sourceName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
@@ -305,11 +307,14 @@ export async function initProject(server: IntegrationTestServer, projectName: st
     }
 }
 
-async function verifyDomainCreateFailure(server: IntegrationTestServer, domainType: string, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
-    const field = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+async function verifyDomainCreateFailure(server: IntegrationTestServer, domainType: string, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
+    const field : Record<string, string> = domainType === SAMPLE_TYPE_DOMAIN_KIND ? { name: 'Name' } : { name: 'Prop' };
+    const fields = [field];
+    if (domainFields)
+        fields.push(...domainFields);
     const badDomainNameResp = await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: badDomainName, fields: [field] },
+        domainDesign: { name: badDomainName, fields },
         options: {
             name: badDomainName,
         }
@@ -319,15 +324,22 @@ async function verifyDomainCreateFailure(server: IntegrationTestServer, domainTy
     expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
 }
 
-async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
     const options = {
         name: badDomainName
     }
     if (dataTypeRowId)
         options['rowId'] = dataTypeRowId;
+    const domainDesign = {
+        name: badDomainName,
+        domainId,
+        domainURI
+    }
+    if (domainFields)
+        domainDesign['fields'] = domainFields;
     const updatedDomainPayload = {
         domainId,
-        domainDesign: {name: badDomainName, domainId, domainURI},
+        domainDesign,
         options
     };
 
@@ -339,7 +351,7 @@ async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId
 
 async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainType: string, domainName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
     let domainId, domainURI;
-    const field = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+    const field = domainType === SAMPLE_TYPE_DOMAIN_KIND ? { name: 'Name' } : { name: 'Prop' };
     await server.post('property', 'createDomain', {
         kind: domainType,
         domainDesign: { name: domainName, fields: [field] },
@@ -360,8 +372,8 @@ const LEGAL_CHARSET = [' ', '+', '-', '_', '.', ':', '', '&', '(', ')', '/'];
 const alphaNumeric = ['a', 'A', '1', '0'];
 export async function checkDomainName(server: IntegrationTestServer, domainType: string, supportNameExpression: boolean, folderOptions: RequestOptions, userOptions: RequestOptions) {
     const badNames = {
-        '': domainType === 'SampleSet' ? 'You must supply a name for the sample type.' : `${domainType} name must not be blank.`,
-        ' ': domainType === 'SampleSet' ? 'You must supply a name for the sample type.' : `${domainType} name must not be blank.`,
+        '': domainType === SAMPLE_TYPE_DOMAIN_KIND ? 'Sample Type name is required.' : `${domainType} name must not be blank.`,
+        ' ': domainType === SAMPLE_TYPE_DOMAIN_KIND ? 'Sample Type name is required.' : `${domainType} name must not be blank.`,
         'with\0nullCharacter': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must contain only valid unicode characters.`,
         'with\tnewLines': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain 'tab', 'new line', or 'return' characters.`,
         '.startWithDot': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must start with a letter or a number.`,
@@ -378,6 +390,12 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     for (let i = 0; i < badNameKeys.length; i++)
         await verifyDomainCreateFailure(server, domainType, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
 
+    const domainNameWithBadField = 'FieldNameNewLineInvalid';
+    const fieldNameError = " -- Field name may not contain 'tab', 'new line', or 'return' characters.";
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\nb'}]);
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\rb'}]);
+    await verifyDomainCreateFailure(server, domainType, domainNameWithBadField, domainNameWithBadField + fieldNameError, folderOptions, userOptions, [{'Name': 'a\tb'}]);
+
     if (!supportNameExpression)
     {
         await verifyDomainCreateSuccess(server, domainType, 'withCounter', folderOptions, userOptions);
@@ -390,15 +408,16 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     const { domainId, domainURI } = await verifyDomainCreateSuccess(server, domainType, domainName, folderOptions, userOptions);
 
     let dataTypeRowId = 0;
-    if (domainType !== 'SampleSet')
+    if (domainType !== SAMPLE_TYPE_DOMAIN_KIND)
         dataTypeRowId = await getDataClassRowIdByName(server, domainName, folderOptions);
-    const requireMsg = `${domainType} name must not be blank.`
+    const requireMsg = domainType == SAMPLE_TYPE_DOMAIN_KIND ? 'Sample Type name is required.' : `${domainType} name must not be blank.`;
     badNames[''] = requireMsg;
     badNames[' '] = requireMsg;
     for (let i = 0; i < badNameKeys.length; i++){
         await verifyDomainUpdateFailure(server, domainId, domainURI, dataTypeRowId, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
     }
 
+    await verifyDomainUpdateFailure(server, domainId, domainURI, dataTypeRowId, domainName, domainName + fieldNameError, folderOptions, userOptions, [{'Name': 'a\nb'}]);
 }
 
 export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServer, domainType: string, topFolderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, designerOptions: RequestOptions) {
@@ -430,7 +449,7 @@ export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServe
 export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestServer, isParentSample: boolean, isChildSample: boolean, topFolderOptions: RequestOptions, subfolder1Options: RequestOptions, designerReaderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, adminUserOptions: RequestOptions) {
     const parentDataType = isParentSample ? "ParentSampleType" : "ParentDataType";
     await server.post('property', 'createDomain', {
-        kind: isParentSample ? 'SampleSet' : 'DataClass',
+        kind: isParentSample ? SAMPLE_TYPE_DOMAIN_KIND : DATA_CLASS_DOMAIN_KIND,
         domainDesign: { name: parentDataType, fields: [{ name: isParentSample ? 'Name' : 'Prop' }] },
         options: {
             name: parentDataType,
@@ -453,7 +472,7 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     const parentInput = (isParentSample ? (useLowerCase ? 'materialInputs/' : 'MaterialInputs/') : (useLowerCase ? 'dataInputs/' : 'DataInputs/')) + parentDataType;
     console.log("Selected alias input type: " + parentInput);
     await server.post('property', 'createDomain', {
-        kind: isChildSample ? 'SampleSet' : 'DataClass',
+        kind: isChildSample ? SAMPLE_TYPE_DOMAIN_KIND : DATA_CLASS_DOMAIN_KIND,
         domainDesign: { name: dataType, fields: [{ name: isChildSample ? 'Name' : 'Prop' }]},
         options: {
             name: dataType,

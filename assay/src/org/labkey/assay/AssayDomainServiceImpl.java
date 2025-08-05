@@ -79,6 +79,7 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -416,20 +417,29 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
                     throw new ValidationException("Linked Dataset Category name must be shorter than 200 characters.");
 
+                Map<String, Object> newProps = assay.getAuditRecordMap();
+                Map<String, Object> oldProps = new LinkedHashMap<>();
+
+                StringBuilder changeDetails = new StringBuilder();
                 ExpProtocol protocol;
                 boolean isNew = assay.getProtocolId() == null;
                 boolean hasNameChange = false;
                 AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
                 String oldAssayName = null;
+
+                String reservedError = DomainUtil.validateReservedName(assay.getName(), "Assay Design");
+                if (reservedError != null)
+                    throw new ValidationException(reservedError);
+
+                String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                if (nameError != null)
+                    throw new ValidationException(nameError);
+
                 if (isNew)
                 {
                     // check for existing assay protocol with the given name before creating
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
                         throw new ValidationException("Assay protocol already exists for this name.");
-
-                    String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
-                    if (nameError != null)
-                        throw new ValidationException(nameError);
 
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
@@ -445,13 +455,13 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer(), true);
                         if (gwtDomain == null)
                         {
-                            Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
+                            Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null, false);
                             domainURIs.add(newDomain.getTypeURI());
                         }
                         else
                         {
                             GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                            updateDomainDescriptor(assayProvider, protocol, previous, domain, false);
+                            updateDomainDescriptor(assayProvider, protocol, previous, domain, false, null, assay.getAuditUserComment(), oldProps, newProps);
                             domainURIs.add(domain.getDomainURI());
                         }
                     }
@@ -464,6 +474,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (protocol == null)
                         throw new ValidationException("Assay design has been deleted");
 
+                    oldProps = protocol.getAuditRecordMap(AssayService.get().getProvider(protocol));
+
                     // ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())
                         throw new ValidationException("You do not have sufficient permissions to update this Assay");
@@ -471,13 +483,16 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (!protocol.getContainer().equals(getContainer()))
                         throw new ValidationException("Assays can only be edited in the folder where they were created.  " +
                                 "This assay was created in folder " + protocol.getContainer().getPath());
+
                     oldAssayName = protocol.getName();
                     hasNameChange = !assay.getName().equals(oldAssayName);
                     if (hasNameChange)
                     {
-                        String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
-                        if (nameError != null)
-                            throw new ValidationException(nameError);
+                        boolean casingOnlyChange = assay.getName().equalsIgnoreCase(oldAssayName);
+                        if (!casingOnlyChange && AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                            throw new ValidationException("Another assay protocol already exists for this name.");
+
+                        changeDetails.append("The name of the assay domain '" + oldAssayName + "' was changed to '" + assay.getName() + "'.");
                     }
                     protocol.setName(assay.getName());
                     protocol.setProtocolDescription(assay.getDescription());
@@ -505,16 +520,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
                 protocol.setProtocolParameters(newParams.values());
 
-                // Issue 51321: check reserved sample type name: First
-                if ("First".equalsIgnoreCase(assay.getName()) || "All".equalsIgnoreCase(assay.getName()))
-                    throw new ValidationException("Assay design name '" + assay.getName() + "' is reserved.");
-
                 if (hasNameChange)
-                {
-                    if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
-                        throw new ValidationException("Another assay protocol already exists for this name.");
                     ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
-                }
 
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider instanceof PlateBasedAssayProvider plateProvider && assay.getSelectedPlateTemplate() != null)
@@ -556,10 +563,27 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (detectionMethod == null)
                         throw new ValidationException("The selected detection method could not be found.");
 
+                    if (!isNew)
+                    {
+                        String oldDetectionMethod = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
+                        if (oldDetectionMethod != null && !StringUtils.isEmpty(oldDetectionMethod))
+                            oldProps.put("DetectionMethod", oldDetectionMethod);
+                    }
+                    if (!StringUtils.isEmpty(detectionMethod))
+                        newProps.put("DetectionMethod", detectionMethod);
                     dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
                 }
 
-                ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                Pair<ValidationException, Pair<String, String>> scriptValidationResult = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                ValidationException scriptValidation = scriptValidationResult.first;
+                Pair<String, String> transformChanges = scriptValidationResult.second;
+                if (transformChanges != null)
+                {
+                    if (!isNew && !StringUtils.isEmpty(transformChanges.first))
+                        oldProps.put("TransformScripts", transformChanges.first);
+                    if (!StringUtils.isEmpty(transformChanges.second))
+                        newProps.put("TransformScripts", transformChanges.second);
+                }
                 if (scriptValidation.hasErrors())
                 {
                     for (var error : scriptValidation.getErrors())
@@ -605,20 +629,24 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 protocol.save(getUser());
 
-                for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
-                {
-                    GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    updateDomainDescriptor(provider, protocol, previous, domain, hasNameChange);
-                    boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
-
-                    GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
-                }
-
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
+                {
+                    Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
+                    if (!isNew)
+                        oldProps.put("ContainerExclusions", exclusionChanges.first);
+                    newProps.put("ContainerExclusions", exclusionChanges.second);
+                }
                 else
                     ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.AssayDesign, protocol.getRowId(), getContainer(), getUser());
+
+                for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
+                {
+                    GWTDomain<GWTPropertyDescriptor> domainDescriptor = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    boolean hasExistingCalcFields = domainDescriptor != null && !domainDescriptor.getCalculatedFields().isEmpty();
+
+                    updateDomainDescriptor(provider, protocol, domainDescriptor, domain, hasNameChange, changeDetails.toString(), assay.getAuditUserComment(), oldProps, newProps);
+                    QueryService.get().saveCalculatedFieldsMetadata(domainDescriptor.getSchemaName(), domainDescriptor.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
+                }
 
                 QueryService.get().updateLastModified();
                 transaction.commit();
@@ -642,7 +670,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         ExpProtocol protocol,
         GWTDomain<GWTPropertyDescriptor> original,
         GWTDomain<GWTPropertyDescriptor> update,
-        boolean hasNameChange
+        boolean hasNameChange,
+        String auditComment,
+        @Nullable String auditUserComment,
+        @Nullable Map<String, Object> oldRecordMap,
+        @Nullable Map<String, Object> newRecordMap
     ) throws ValidationException
     {
         for (GWTPropertyDescriptor prop : update.getFields())
@@ -651,15 +683,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
         }
 
-        String auditComment = null;
-        if (hasNameChange)
-            auditComment = "The name of the assay domain '" + original.getName() + "' was changed to '" + update.getName() + "'.";
-
         // Before update
         provider.beforeDomainChange(getUser(), protocol, original, update);
 
         // Update
-        ValidationException validationErrors = DomainUtil.updateDomainDescriptor(original, update, getContainer(), getUser(), hasNameChange, auditComment);
+        ValidationException validationErrors = DomainUtil.updateDomainDescriptor(original, update, getContainer(), getUser(), hasNameChange, auditComment, auditUserComment, oldRecordMap, newRecordMap);
         if (validationErrors.hasErrors())
             throw validationErrors;
 

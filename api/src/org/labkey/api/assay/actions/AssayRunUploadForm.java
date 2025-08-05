@@ -155,7 +155,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             String propName = UploadWizardAction.getInputName(pd);
             String value = getRequest().getParameter(propName);
             if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
-                    (value == null || value.length() == 0))
+                    (value == null || value.isEmpty()))
                 value = Boolean.FALSE.toString();
             value = StringUtils.trimToNull(value);
 
@@ -165,7 +165,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             }
 
             if (additionalFiles.containsKey(pd))
-                properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
+            {
+                if (additionalFiles.get(pd).equals(BLANK_FILE)) // file has been removed
+                    properties.put(pd, null);
+                else
+                    properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
+            }
             else
                 properties.put(pd, value);
         }
@@ -459,7 +464,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(key.getName()))
         {
-            if (value == null || "".equals(value))
+            if (value == null || value.isEmpty())
             {
                 return "[None]";
             }
@@ -594,14 +599,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public void saveDefaultBatchValues() throws ExperimentException
     {
-        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getBatchProperties());
+        Map<DomainProperty, Object> objectMap = new HashMap<>(getBatchProperties());
         stripFileProperties(objectMap);
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 
     public void saveDefaultRunValues() throws ExperimentException
     {
-        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getRunProperties());
+        Map<DomainProperty, Object> objectMap = new HashMap<>(getRunProperties());
         stripFileProperties(objectMap);
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
@@ -611,7 +616,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (values.isEmpty())
             return;
 
-        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(values);
+        Map<DomainProperty, Object> objectMap = new HashMap<>(values);
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser(), scope);
     }
 

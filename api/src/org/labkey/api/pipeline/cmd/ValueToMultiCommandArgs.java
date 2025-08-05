@@ -51,7 +51,7 @@ public class ValueToMultiCommandArgs extends ValueToCommandArgs
     @Override
     public List<String> toArgs(String value)
     {
-        if (value != null && value.length() > 0)
+        if (value != null && !value.isEmpty())
         {
             String[] valueParts = value.split(_delimiter);
 

@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -62,7 +63,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
     @BeforeClass
     public static void setupProject() throws Exception
     {
-        LinkAssayToStudyTest initTest = (LinkAssayToStudyTest) getCurrentTest();
+        LinkAssayToStudyTest initTest = getCurrentTest();
         initTest.doSetup(); // Perform shared setup steps here
     }
 
@@ -168,7 +169,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         assertElementNotPresent(Locator.xpath("//option").withText(getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3)));
 
         //select Study2 as the target study (note that PI is not an Editor in this study so we can test for override case)
-        selectOptionByText(Locator.name("targetStudy"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
+        selectOptionByText(AssayConstants.TARGET_STUDY_FIELD_LOCATOR, getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));
 
         clickButton("Next");
 
@@ -186,51 +187,52 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         assertTextPresent(TEST_ASSAY_RUN_PROP_NAME + "0 is required and must be of type Text (String).");
         assertTextPresent(PROTOCOL_DOC.getName());
         waitAndClick(Locator.linkWithText("remove"));
-        setFormElement(Locator.name("name"), TEST_RUN1);
-        setFormElement(Locator.name("comments"), TEST_RUN1_COMMENTS);
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN1);
+        setFormElement(AssayConstants.COMMENTS_FIELD_LOCATOR, TEST_RUN1_COMMENTS);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "0"), TEST_ASSAY_RUN_PROP1);
         clickButton("Save and Finish");
 
-        assertFormElementEquals(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), "");
+        Locator loc4 = Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5");
+        assertEquals("", getFormElement(loc4));
         assertTextPresent("Data file contained zero data rows");
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA1);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN1_DATA1);
         clickButton("Save and Import Another Run");
 
-        setFormElement(Locator.name("name"), TEST_RUN2);
-        setFormElement(Locator.name("comments"), TEST_RUN2_COMMENTS);
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN2);
+        setFormElement(AssayConstants.COMMENTS_FIELD_LOCATOR, TEST_RUN2_COMMENTS);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "0"), TEST_ASSAY_RUN_PROP1);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC2);
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA1);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN2_DATA1);
         clickButton("Save and Finish");
 
         assertTextPresent(PROTOCOL_DOC2.getName());
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA2);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN2_DATA2);
         clickButton("Save and Finish");
 
         assertTextPresent("Could not convert value 'g' (String) for Double field 'VisitID'");
         assertTextPresent(PROTOCOL_DOC2.getName());
-        assertFormElementEquals(Locator.name("name"), TEST_RUN2);
-        assertFormElementEquals(Locator.name("comments"), TEST_RUN2_COMMENTS);
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA3);
+        assertEquals(TEST_RUN2, getFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR));
+        assertEquals(TEST_RUN2_COMMENTS, getFormElement(AssayConstants.COMMENTS_FIELD_LOCATOR));
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN2_DATA3);
         clickButton("Save and Import Another Run");
 
         assertTextPresent("Missing value for required property: " + TEST_ASSAY_DATA_PROP_NAME + "6");
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA4);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN2_DATA4);
         clickButton("Save and Import Another Run");
 
-        assertFormElementEquals(Locator.name("name"), "");
-        assertFormElementEquals(Locator.name("comments"), "");
-        setFormElement(Locator.name("name"), TEST_RUN3);
-        setFormElement(Locator.name("comments"), TEST_RUN3_COMMENTS);
+        assertEquals("", getFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR));
+        assertEquals("", getFormElement(AssayConstants.COMMENTS_FIELD_LOCATOR));
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN3);
+        setFormElement(AssayConstants.COMMENTS_FIELD_LOCATOR, TEST_RUN3_COMMENTS);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC2);
         clickButton("Save and Finish");
 
         assertTextPresent(PROTOCOL_DOC2.getName().substring(0, PROTOCOL_DOC2.getName().lastIndexOf(".")) + "-1");
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN3_DATA1);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, TEST_RUN3_DATA1);
         clickButton("Save and Finish");
 
         // Verify the first run did not have a file, the second run had the attached file and the third run had a file
@@ -267,9 +269,9 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
                     ALIASED_DATA);
 
             _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
-            _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
-            _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
+            _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId");
+            _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType");
+            _customizeViewsHelper.addColumn("SpecimenID/AssayMatch");
             _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
             _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
             _customizeViewsHelper.removeColumn("testAssayDataProp4");

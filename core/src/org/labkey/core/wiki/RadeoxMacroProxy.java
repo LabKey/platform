@@ -72,11 +72,7 @@ public class RadeoxMacroProxy extends BaseMacro
         {
             view.include(view, writer);
         }
-        catch (IOException x)
-        {
-            throw x;
-        }
-        catch (IllegalArgumentException x)
+        catch (IOException | IllegalArgumentException x)
         {
             throw x;
         }
@@ -97,7 +93,7 @@ public class RadeoxMacroProxy extends BaseMacro
      */
     private static class MacroParameterProxy implements Map<String, String>
     {
-        private Map baseMap;
+        private final Map baseMap;
 
         private MacroParameterProxy(MacroParameter params)
         {

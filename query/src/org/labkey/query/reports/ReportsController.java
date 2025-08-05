@@ -144,12 +144,12 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -200,13 +200,8 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
 import static org.labkey.api.util.DOM.DIV;
-import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: Karl Lum
- * Date: Apr 19, 2007
- */
 public class ReportsController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ReportsController.class);
@@ -1022,12 +1017,18 @@ public class ReportsController extends SpringActionController
             {
                 reportView = _report.getRunReportView(getViewContext());
             }
+            catch (RedirectException re)
+            {
+                // Link reports throw RedirectException... pass it on
+                throw re;
+            }
             catch (RuntimeException e)
             {
-                return new HtmlView(SPAN(cl("labkey-error"), e.getMessage(), ". Unable to create report."));
+                String message = Objects.requireNonNullElse(e.getMessage(), e.getClass().getSimpleName()) + ". Unable to create report.";
+                return HtmlView.err(message);
             }
 
-            if (!isPrint() && !(reportView instanceof HttpRedirectView) && DiscussionService.get() != null)
+            if (!isPrint() && DiscussionService.get() != null)
             {
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
@@ -1650,7 +1651,7 @@ public class ReportsController extends SpringActionController
         return url;
     }
 
-    protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport> extends FormViewAction<F>
+    protected abstract static class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport> extends FormViewAction<F>
     {
         protected void initialize(F form) throws Exception
         {

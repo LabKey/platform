@@ -21,10 +21,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a single list definition, as captured by a domain and some list-specific configuration, and defined
@@ -274,6 +277,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     Container getContainer();
     @Nullable Domain getDomain();
 
+    @Nullable Domain getDomain(boolean forUpdate);
+
     String getName();
     String getKeyName();
     void setKeyName(String name);
@@ -290,8 +295,9 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void save(User user, boolean ensureKey) throws Exception;
+    void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws Exception;
     void delete(User user) throws DomainNotFoundException;
+    void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException;
 
     ListItem createListItem();
     ListItem getListItem(Object key, User user);
@@ -299,8 +305,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId, User user);
 
     int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
-    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException;
-    int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, QueryUpdateService.InsertOption insertOption) throws IOException;
+    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType) throws IOException;
+    int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption) throws IOException;
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);

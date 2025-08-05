@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.HttpCookie;
+import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -46,7 +47,7 @@ public class LabKeyProxyServlet extends ProxyServlet
 
     protected String getSourcePath(HttpServletRequest request)
     {
-        return StringUtils.defaultString(sourcePath, request.getContextPath() + request.getServletPath());
+        return Objects.toString(sourcePath, request.getContextPath() + request.getServletPath());
     }
 
     private void appendPath(StringBuilder sb, CharSequence path) // LKS override
@@ -56,9 +57,9 @@ public class LabKeyProxyServlet extends ProxyServlet
 
     private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash) // LKS override
     {
-        if (sb.length() < 1 || '/' != sb.charAt(sb.length()-1))
+        if (sb.isEmpty() || '/' != sb.charAt(sb.length()-1))
             sb.append('/');
-        if (path.length() > 0)
+        if (!path.isEmpty())
             sb.append(path, '/'==path.charAt(0)?1:0 , path.length());
         // trim trailing slash (unless sb is "/")
         if (trimTrailingSlash && sb.length() > 1 && '/' == sb.charAt(sb.length()-1))

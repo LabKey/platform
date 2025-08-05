@@ -36,7 +36,7 @@ public interface ScriptService extends ScriptEngineFactory
         ServiceRegistry.get().registerService(ScriptService.class, impl);
     }
 
-    // marker class for server script logging (see log4j.xml)
+    // marker class for server script logging (see log4j2.xml)
     class Console {}
 
     /**

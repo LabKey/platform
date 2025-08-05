@@ -37,6 +37,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SortHelpers;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
@@ -49,6 +50,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -73,8 +75,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    static final String OPTIONAL_FEATURE_PREFIX = OPTIONAL_FEATURE + ".";
-    static final String EXTERNAL_HOST_DELIMITER = "\n";
+    static final String ALLOW_LIST_DELIMITER = "\n";
 
     private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_GUID = "serverGUID";
@@ -375,7 +376,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             }
         }
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
-        if (serverGUID.equals(SERVER_SESSION_GUID))
+        if (serverGUID.equals(SERVER_SESSION_GUID) && ModuleLoader.getInstance().shouldInsertData())
         {
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
@@ -664,24 +665,26 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        return getExternalHosts(externalRedirectHostURLs);
+        return getAllowList(externalRedirectHostURLs);
     }
 
     @Override
     @NotNull
     public List<String> getAllowedExtensions()
     {
-        return getExternalHosts(allowedFileExtensions);
+        return getAllowList(allowedFileExtensions);
     }
 
-    private List<String> getExternalHosts(RandomStartupProperties propName)
+    private List<String> getAllowList(RandomStartupProperties propName)
     {
         String urls = lookupStringValue(propName, "");
         if (StringUtils.isNotBlank(urls))
         {
-            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));
+            List<String> hosts = new ArrayList<>(Arrays.asList(urls.split(ALLOW_LIST_DELIMITER)));
+            hosts.sort(SortHelpers.getNaturalOrderStringComparator());
+            return Collections.unmodifiableList(hosts);
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     public static void populateSiteSettingsWithStartupProps()
@@ -734,7 +737,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         String urls = lookupStringValue("externalSourceHostURLs", "");
         if (StringUtils.isNotBlank(urls))
         {
-            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));
+            return new ArrayList<>(Arrays.asList(urls.split(ALLOW_LIST_DELIMITER)));
         }
         return new ArrayList<>();
     }
@@ -742,6 +745,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public @NotNull String getAllowedExternalResourceHosts()
     {
-        return lookupStringValue(ALLOWED_EXTERNAL_RESOURCES, "[]");
+        return lookupStringValue(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, "[]");
     }
 }

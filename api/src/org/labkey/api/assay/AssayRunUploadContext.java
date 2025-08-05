@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -104,7 +105,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     /**
      * Map of inputs to roles that will be attached to the assay run.
-     * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
+     * The map key will be converted into an ExpData object using {@link ExpDataFileConverter}
      * The map value is the role of the file.
      * Each input file will be attached as an input ExpData to the imported assay run.
      * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
@@ -149,6 +150,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     ProviderType getProvider();
 
     String getTargetStudy();
+
+    default Long getTransactionAuditId() { return null; }
+
+    default void setTransactionAuditId(Long transactionAuditId) { }
 
     default String getAuditUserComment() { return null; }
 
@@ -240,6 +245,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<String, FileLike> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
+        protected Long _transactionAuditId;
         protected String _auditUserComment;
 
         public Factory(
@@ -331,7 +337,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
         /**
          * Map of inputs to roles that will be attached to the assay run.
-         * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
+         * The map key will be converted into an ExpData object using {@link ExpDataFileConverter}
          * The map value is the role of the file.
          * Each input file will be attached as an input ExpData to the imported assay run.
          * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
@@ -407,6 +413,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setAuditUserComment(String auditUserComment)
         {
             _auditUserComment = auditUserComment;
+            return self();
+        }
+
+        public FACTORY setTransactionAuditId(Long transactionAuditId)
+        {
+            _transactionAuditId = transactionAuditId;
             return self();
         }
 

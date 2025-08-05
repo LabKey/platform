@@ -1,8 +1,11 @@
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.list.ListDefinition;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /* Java bean used in marshalling and unmarshalling*/
 public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
@@ -310,5 +313,36 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
     public void setFileAttachmentIndex(boolean fileAttachmentIndex)
     {
         this.fileAttachmentIndex = fileAttachmentIndex;
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getTitleColumn()))
+            map.put("TitleColumn", getTitleColumn());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        map.put("AllowDelete", isAllowDelete());
+        map.put("AllowUpload", isAllowUpload());
+        map.put("AllowExport", isAllowExport());
+        map.put("DiscussionSetting", getDiscussionSetting());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (!StringUtils.isEmpty(getEntireListTitleTemplate()))
+            map.put("EntireListTitleTemplate", getEntireListTitleTemplate());
+        if (!StringUtils.isEmpty(getEntireListBodyTemplate()))
+            map.put("EntireListBodyTemplate", getEntireListBodyTemplate());
+        if (!StringUtils.isEmpty(getEachItemTitleTemplate()))
+            map.put("EachItemTitleTemplate", getEachItemTitleTemplate());
+        if (!StringUtils.isEmpty(getEachItemBodyTemplate()))
+            map.put("EachItemBodyTemplate", getEachItemBodyTemplate());
+        map.put("EntireListIndexSetting", getEntireListIndexSetting());
+        map.put("EntireListBodySetting", getEntireListBodySetting());
+        map.put("EachItemBodySetting", getEachItemBodySetting());
+        map.put("EntireListIndex", isEntireListIndex());
+        map.put("EachItemIndex", isEachItemIndex());
+        map.put("FileAttachmentIndex", isFileAttachmentIndex());
+        return map;
     }
 }

@@ -483,7 +483,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
                     try
                     {
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+                        Object remappedValue = cache.remap(fk.getLookupSchemaKey(), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
                         if (remappedValue != null)
                         {
                             values.put(propName, remappedValue);
@@ -597,9 +597,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             }
 
             // Check if there was a file uploaded for the column's value
-            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
+            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest request)
             {
-                MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
                 MultipartFile f = request.getFile(getFormFieldName(column));
                 // Only set the parameter value if there was a form element that was posted
                 if (f != null)
@@ -785,7 +784,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return column.getPropertyName();
+        return column.getName();
     }
 
     public String getMultiPartFormFieldName(@NotNull ColumnInfo column)

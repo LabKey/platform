@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.view.ViewForm;
 import org.springframework.beans.PropertyValue;
@@ -28,9 +29,8 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
 
     private void convertStringArrayParam(PropertyValue pv)
     {
-        if (null != pv && pv.getValue() instanceof String)
+        if (null != pv && pv.getValue() instanceof String str)
         {
-            String str = (String) pv.getValue();
             if (str.contains("\t"))
                 pv.setConvertedValue(StringUtils.splitPreserveAllTokens(str, '\t'));
         }
@@ -41,7 +41,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     {
         // springBindParameters() almost works as-is, except for trimming leading/trailing '\t' chars
         // consider hooking spring's built-in converter for String[]? maybe use json encoding see ConvertType.parseParams()
-        convertStringArrayParam(pvs.getPropertyValue("targetStudy"));
+        convertStringArrayParam(pvs.getPropertyValue(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME));
         convertStringArrayParam(pvs.getPropertyValue("participantId"));
         convertStringArrayParam(pvs.getPropertyValue("visitId"));
         convertStringArrayParam(pvs.getPropertyValue("date"));

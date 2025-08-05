@@ -184,7 +184,7 @@ public class BlockListFilter
                     return true;
                 if (part.endsWith("-inf"))
                     return true;
-                if (part.equals("") || part.equals("etc") || part.equals("data") || part.equals("phpunit"))
+                if (part.isEmpty() || part.equals("etc") || part.equals("data") || part.equals("phpunit"))
                     return true;
             }
             // EXTENSIONS

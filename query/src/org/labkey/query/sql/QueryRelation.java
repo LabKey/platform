@@ -52,7 +52,6 @@ public interface QueryRelation
      * Return a list all the columns it is possible to select from this relation, NOT including lookup columns
      * These are the columns that will be returned by SELECT *
      *
-     * @return
      */
     Map<String, AbstractQueryRelation.RelationColumn> getAllColumns();
 

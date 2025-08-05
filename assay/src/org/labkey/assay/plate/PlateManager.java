@@ -172,7 +172,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
@@ -610,29 +609,39 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // get the runIds for each protocol, query against its assay results table
         List<SQLFragment> fragments = new ArrayList<>();
+        Set<FieldKey> requiredFields = Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"));
+
+        protocolLoop:
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
             TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
             if (assayDataTable != null)
             {
-                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
-                if (dataIdCol != null)
+                // Issue 53446: A misconfigured assay design could be missing required fields.
+                // This is not expected. Don't let that stop the run counting but do log an error with more context.
+                for (FieldKey requiredFieldKey : requiredFields)
                 {
-                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
-                            .append(assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"))))
-                            .append(" WHERE AD.Plate = ?")
-                            .add(plate.getRowId());
-
-                    SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
-                            .append(ExperimentService.get().getTinfoData(), "D")
-                            .append(" INNER JOIN ")
-                            .append(ExperimentService.get().getTinfoExperimentRun(), "R")
-                            .append(" ON D.RunId = R.RowId\n")
-                            .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
-
-                    fragments.add(sql);
+                    if (assayDataTable.getColumn(requiredFieldKey) == null)
+                    {
+                        LOG.error("Required field \"{}\" not found in plate-based assay results domain for protocol \"{}\" in {}.", requiredFieldKey.getName(), protocol.getName(), protocol.getContainer().getPath());
+                        continue protocolLoop;
+                    }
                 }
+
+                SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
+                        .append(assayDataTable.getFromSQL("AD", requiredFields))
+                        .append(" WHERE AD.Plate = ?")
+                        .add(plate.getRowId());
+
+                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
+                        .append(ExperimentService.get().getTinfoData(), "D")
+                        .append(" INNER JOIN ")
+                        .append(ExperimentService.get().getTinfoExperimentRun(), "R")
+                        .append(" ON D.RunId = R.RowId\n")
+                        .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
+
+                fragments.add(sql);
             }
         }
 
@@ -1436,7 +1445,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
-        OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
+        OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[0]));
         deleteWellGroupPositions(plate);
 
         // delete any plate metadata values from the provisioned table
@@ -2141,7 +2150,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         permittedIds.forEach(rowId -> {
             Plate plate = plates.get(rowId);
-            allowedRows.add(CaseInsensitiveHashMap.of("RowId", rowId, "Name", plate.getName(), "ContainerPath", plate.getContainer().getPath()));
+            Map<String, Object> allowedRow = new HashMap<>();
+            allowedRow.put("RowId", rowId);
+            if (plate.getContainer().hasPermission(user, ReadPermission.class))
+                allowedRow.put("ContainerPath", plate.getContainer().getPath());
+            allowedRows.add(allowedRow);
         });
 
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -2150,7 +2163,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
             rowMap.put("RowId", rowId);
 
-            if (plate != null)
+            if (plate != null && plate.getContainer().hasPermission(user, ReadPermission.class))
             {
                 rowMap.put("Name", plate.getName());
                 rowMap.put("ContainerPath", plate.getContainer().getPath());
@@ -2267,9 +2280,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public @Nullable Domain getPlateMetadataDomain(Container container, User user)
     {
+        return getPlateMetadataDomain(container, user, false);
+    }
+
+    /**
+     * Returns the domain attached to the Well table,
+     */
+    public @Nullable Domain getPlateMetadataDomain(Container container, User user, boolean forUpdate)
+    {
         // the domain is scoped at the project level (project and subfolder scoping)
         String domainURI = PlateMetadataDomainKind.generateDomainURI(getPlateMetadataDomainContainer(container));
-        return PropertyService.get().getDomain(container, domainURI);
+        return PropertyService.get().getDomain(container, domainURI, forUpdate);
     }
 
     public @Nullable TableInfo getPlateMetadataTable(Container container, User user)
@@ -2289,9 +2310,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
+    public @NotNull Domain ensurePlateMetadataDomain(Container container, User user, boolean forUpdate) throws ValidationException
     {
-        Domain metadataDomain = getPlateMetadataDomain(container, user);
+        Domain metadataDomain = getPlateMetadataDomain(container, user, forUpdate);
 
         if (metadataDomain == null)
         {
@@ -2301,7 +2322,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!domainKind.canCreateDefinition(user, domainContainer))
                 throw new IllegalArgumentException("Unable to create the plate well domain in folder: " + domainContainer.getPath() + "\". Insufficient permissions.");
 
-            metadataDomain = DomainUtil.createDomain(PlateMetadataDomainKind.KIND_NAME, new GWTDomain(), null, domainContainer, user, PlateMetadataDomainKind.DOMAiN_NAME, null);
+            metadataDomain = DomainUtil.createDomain(PlateMetadataDomainKind.KIND_NAME, new GWTDomain(), null, domainContainer, user, PlateMetadataDomainKind.DOMAiN_NAME, null, forUpdate);
         }
         return metadataDomain;
     }
@@ -2311,7 +2332,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public @NotNull List<PlateCustomField> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
     {
-        Domain metadataDomain = ensurePlateMetadataDomain(container, user);
+        Domain metadataDomain = ensurePlateMetadataDomain(container, user, true);
         DomainKind<?> domainKind = metadataDomain.getDomainKind();
 
         if (!domainKind.canEditDefinition(user, metadataDomain))
@@ -2338,7 +2359,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public @NotNull List<PlateCustomField> deletePlateMetadataFields(Container container, User user, List<PlateCustomField> fields) throws Exception
     {
-        Domain metadataDomain = getPlateMetadataDomain(container, user);
+        Domain metadataDomain = getPlateMetadataDomain(container, user, true);
 
         if (metadataDomain == null)
             throw new IllegalArgumentException("Unable to remove fields from the domain, the domain was not found.");
@@ -3380,17 +3401,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         TableInfo wellTable = dbSchema.getTableInfoWell();
 
         // Determines the set of primary plate sets that are being touched from the collection of well rowIds
-        SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
-                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
-                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
-
         // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
-        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, W.SampleId FROM ")
-                .append(wellTable, "W")
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("WITH PlateSetFilter AS (")
+                .append("SELECT DISTINCT PS.RowId FROM ").append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
+                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect)
+                .append(" )")
+                .append(" SELECT PS.Name AS PlateSetName, W.SampleId FROM ").append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" INNER JOIN PlateSetFilter PSF ON PSF.RowId = PS.RowId")
+                .append(" WHERE W.SampleId IS NOT NULL")
                 .append(" GROUP BY PS.RowId, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
@@ -3632,10 +3654,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return counter;
     }
 
-    public void getPlateSetExportFile(String fileName, ColumnDescriptor[] cols, List<Object[]> rows, PlateController.FileType fileType, HttpServletResponse response) throws IOException
+    public void getPlateSetExportFile(String fileName, List<ColumnDescriptor> cols, List<Object[]> rows, PlateController.FileType fileType, HttpServletResponse response) throws IOException
     {
-        boolean isCSV = fileType.equals(PlateController.FileType.CSV);
-        boolean isTSV = fileType.equals(PlateController.FileType.TSV);
+        boolean isCSV = PlateController.FileType.CSV.equals(fileType);
+        boolean isTSV = PlateController.FileType.TSV.equals(fileType);
         if (isCSV || isTSV)
         {
             try (TSVArrayWriter writer = new TSVArrayWriter(fileName, cols, rows))
@@ -3732,7 +3754,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Filter on isQueryColumn, so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream()
                 .filter(DisplayColumn::isQueryColumn)
-                .filter(col -> !col.getName().equals("sampleID"))
+                .filter(col -> !col.getName().equalsIgnoreCase(WellTable.Column.SampleID.name()))
                 .toList();
     }
 
@@ -3757,7 +3779,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap(sampleIdNameFieldKey.toString(), "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
-                    writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                    writer.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
                     writer.write(plateFileBytes.bytes);
                 }
 

@@ -166,7 +166,7 @@ public class ViewServiceImpl implements ViewService
     }
 
     @Deprecated // Please, do not add any more usages of this
-    private class FrameNavigation extends AbstractFrame
+    private static class FrameNavigation extends AbstractFrame
     {
         FrameNavigation(ViewContext context, FrameConfig config)
         {

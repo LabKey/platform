@@ -128,34 +128,48 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Nullable
     public DomainImpl getDomain(Container container, String domainURI)
     {
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
+        return getDomain(container, domainURI, false);
+    }
+
+    @Override
+    @Nullable
+    public DomainImpl getDomain(Container container, String domainURI, boolean forUpdate)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container, forUpdate);
         if (dd == null)
             return null;
-        return new DomainImpl(dd);
+        return new DomainImpl(dd, forUpdate);
     }
 
     @Override
     @Nullable
     public Domain getDomain(int domainId)
     {
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId);
+        return getDomain(domainId, false);
+    }
+
+    @Override
+    @Nullable
+    public Domain getDomain(int domainId, boolean forUpdate)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId, forUpdate);
         if (dd == null)
             return null;
-        return new DomainImpl(dd);
+        return new DomainImpl(dd, forUpdate);
     }
 
     @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name)
     {
-        return new DomainImpl(container, typeURI, name);
+        return new DomainImpl(container, typeURI, name, true);
     }
 
     @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo)
     {
-        return new DomainImpl(container, typeURI, name, templateInfo);
+        return new DomainImpl(container, typeURI, name, templateInfo, true);
     }
 
     @Override
@@ -176,7 +190,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             }
 
             // return created domain, will only be null in some sort of race condition
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), false);
             if (null == domain)
                 throw new OptimisticConflictException("Domain deleted: " + domainURI, "", Table.ERROR_DELETED);
             return domain;
@@ -203,9 +217,9 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public DomainKind getDomainKindByName(String name)
+    public DomainKind<?> getDomainKindByName(String name)
     {
-        for (DomainKind type : _domainTypes)
+        for (DomainKind<?> type : _domainTypes)
         {
             if (type.getKindName().equalsIgnoreCase(name))
                 return type;
@@ -214,13 +228,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public DomainKind getDomainKind(String typeURI)
+    public DomainKind<?> getDomainKind(String typeURI)
     {
         return Handler.Priority.findBestHandler(_domainTypes, typeURI);
     }
 
     @Override
-    public void registerDomainKind(DomainKind type)
+    public void registerDomainKind(DomainKind<?> type)
     {
         _domainTypes.add(type);
     }
@@ -400,7 +414,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         catch (XarFormatException e)
         {
             // shouldn't happen: XarFormatExceptions only thrown when resolving lsids with non-null XarContext
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 
@@ -459,12 +473,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         prop.setRangeURI(xProp.getRangeURI());
 
         String propertyURI = xProp.getPropertyURI();
-        // Deal with legacy property URIs that don't have % in the name part properly encoded
-        propertyURI = Lsid.fixupPropertyURI(propertyURI);
         if (context != null  && propertyURI != null && propertyURI.contains("${"))
         {
             propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, context);
         }
+        // Deal with legacy property URIs that don't have % in the name part properly encoded
+        // Issue 53482: move call to Lsid.fixupPropertyURI after we resolve substitutions
+        propertyURI = Lsid.fixupPropertyURI(propertyURI);
         prop.setPropertyURI(propertyURI);
         if (xProp.isSetRequired())
         {
@@ -476,7 +491,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             String uri = xProp.getOntologyURI().trim();
             if (context != null && uri.contains("${"))
             {
-                uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
+                LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
             }
         }
         
@@ -720,6 +735,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         return _conceptUriVocabularyProvider.get(conceptUri);
     }
 
+    @Override
     public Set<String> getDomainPropertyImportAliases(DomainProperty property)
     {
         if (property == null)

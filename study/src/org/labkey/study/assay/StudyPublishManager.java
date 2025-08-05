@@ -18,7 +18,6 @@ package org.labkey.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +49,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ILineageDisplayColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -81,7 +81,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -316,8 +315,8 @@ public class StudyPublishManager implements StudyPublishService
         for (Map<String, Object> dataMap : dataMaps)
         {
             Container targetStudy = targetContainer;
-            if (dataMap.containsKey("TargetStudy"))
-                targetStudy = (Container) dataMap.get("TargetStudy");
+            if (dataMap.containsKey(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME))
+                targetStudy = (Container) dataMap.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
             assert targetStudy != null;
 
             List<Map<String, Object>> maps = partitionedDataMaps.computeIfAbsent(targetStudy, k -> new ArrayList<>(dataMap.size()));
@@ -642,7 +641,7 @@ public class StudyPublishManager implements StudyPublishService
                     var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.PUBLISH;
                     Map<String, Object> eventMetadata = new HashMap<>();
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                     List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
@@ -720,7 +719,7 @@ public class StudyPublishManager implements StudyPublishService
             User user, DatasetDefinition dataset,
             List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws ChangePropertyDescriptorException
     {
-        Domain domain = dataset.getDomain();
+        Domain domain = dataset.getDomain(true);
         if (domain == null)
         {
             domain = PropertyService.get().createDomain(dataset.getContainer(), dataset.getTypeURI(), dataset.getName());
@@ -953,7 +952,7 @@ public class StudyPublishManager implements StudyPublishService
         Path file;
         do
         {
-            String extension = StringUtils.defaultString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
+            String extension = Objects.toString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
             String extra = id++ == 0 ? "" : String.valueOf(id);
             String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
@@ -984,7 +983,7 @@ public class StudyPublishManager implements StudyPublishService
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, LookupResolutionType lookupResolutionType, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 
@@ -1003,7 +1002,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
+                        defaultQCState, insertOption, null, lookupResolutionType, auditBehaviorType);
 
                 if (!errors.hasErrors())
                 {
@@ -1331,8 +1330,6 @@ public class StudyPublishManager implements StudyPublishService
     /**
      * @param row The data row
      * @param fieldKeyMap Map of link to study keys to the configured column field key
-     * @param isVisitBased
-     * @param translateMap Map of visit label to sequence numbers
      */
     private Object getTimepointValue(Map<FieldKey, Object> row, Map<LinkToStudyKeys, FieldKey> fieldKeyMap, boolean isVisitBased, Map<String, BigDecimal> translateMap)
     {
@@ -1597,7 +1594,7 @@ public class StudyPublishManager implements StudyPublishService
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                 List<Integer> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
                 List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);

@@ -18,6 +18,7 @@ package org.labkey.api.assay.pipeline;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
@@ -93,6 +94,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     // async fields
     protected String _jobDescription;
     protected String _jobNotificationProvider;
+    protected Long _transactionAuditId;
 
     // For serialization
     protected AssayRunAsyncContext()
@@ -128,6 +130,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
         _jobDescription = originalContext.getJobDescription();
         _jobNotificationProvider = originalContext.getJobNotificationProvider();
+        _transactionAuditId = originalContext.getTransactionAuditId();
     }
 
     /** Convert to a map that can be serialized - DomainProperty can't be */
@@ -206,7 +209,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         {
             if(entry.getValue() == null)
                 valueText = "[Blank]";
-            else if(entry.getKey().getName().equals("TargetStudy"))
+            else if(entry.getKey().getName().equals(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME))
                 valueText = ContainerManager.getForId(getTargetStudy()).getName();
             else
                 valueText = entry.getValue();
@@ -421,6 +424,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public String getJobDescription()
     {
         return _jobDescription;
+    }
+
+    @Override
+    public Long getTransactionAuditId()
+    {
+        return _transactionAuditId;
     }
 
     @Override

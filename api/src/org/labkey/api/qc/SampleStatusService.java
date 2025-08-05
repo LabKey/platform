@@ -3,7 +3,6 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;

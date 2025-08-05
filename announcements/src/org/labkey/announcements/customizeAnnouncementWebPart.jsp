@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.Objects" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     Portal.WebPart webPart = (Portal.WebPart)HttpView.currentModel();
     ViewContext context = getViewContext();
-    String selected = StringUtils.defaultString(webPart.getPropertyMap().get("style"), "full");
+    String selected = Objects.toString(webPart.getPropertyMap().get("style"), "full");
 %>
 
 <labkey:form name="frmCustomize" method="post" action="<%=webPart.getCustomizePostURL(context)%>">

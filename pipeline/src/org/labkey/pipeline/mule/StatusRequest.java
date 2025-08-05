@@ -25,5 +25,5 @@ import java.io.Serializable;
 public interface StatusRequest extends Serializable
 {
     /** Do the real work */
-    public void performRequest();
+    void performRequest();
 }

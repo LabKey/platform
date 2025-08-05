@@ -83,7 +83,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
@@ -2562,7 +2561,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
+    public static class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
     {
         @Override
         public ApiResponse execute(GetWikiTocForm form, BindException errors)

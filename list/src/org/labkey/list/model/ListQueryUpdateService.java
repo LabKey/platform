@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -204,7 +205,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, InsertOption insertOption)
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, LookupResolutionType lookupResolutionType)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -214,7 +215,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         context.setFailFast(false);
         context.setInsertOption(insertOption);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
-        context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
+        context.setLookupResolutionType(lookupResolutionType);
         setAttachmentDirectory(attachmentDir);
         TableInfo ti = _list.getTable(updatedUser);
 
@@ -278,7 +279,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new UnauthorizedException("You do not have permission to update data into this table.");
 
         List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
-        if (result.size() > 0)
+        if (!result.isEmpty())
             ListManager.get().indexList(_list);
         return result;
     }
@@ -337,9 +338,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     modifiedAttachmentColumns.add(column);
 
                     // setup any new attachments
-                    if (r.getValue() instanceof AttachmentFile)
+                    if (r.getValue() instanceof AttachmentFile file)
                     {
-                        AttachmentFile file = (AttachmentFile) r.getValue();
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
                     }
@@ -370,7 +370,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     // Remove prior attachment -- only includes columns which are modified in this update
                     for (ColumnInfo col : modifiedAttachmentColumns)
                     {
-                        Object value = oldRow.get(col.getPropertyName());
+                        Object value = oldRow.get(col.getName());
                         if (null != value)
                         {
                             AttachmentService.get().deleteAttachment(new ListItemAttachmentParent(entityId, _list.getContainer()), value.toString(), user);

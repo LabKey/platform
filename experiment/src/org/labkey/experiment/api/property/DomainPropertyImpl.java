@@ -26,6 +26,7 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
@@ -56,7 +57,9 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -576,6 +579,9 @@ public class DomainPropertyImpl implements DomainProperty
         if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
             return;
 
+        if (getDefaultValueType() == null && defaultValueTypeName == null)
+            return; // if both are null, don't call edit(), with marks property as dirty
+
         edit().setDefaultValueType(defaultValueTypeName);
     }
 
@@ -637,6 +643,15 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (scannable != isScannable())
             edit().setScannable(scannable);
+    }
+
+    @Override
+    public void setOldPropertyDescriptor(PropertyDescriptor oldPropertyDescriptor)
+    {
+        if (isEdited())
+            return;
+
+        _pdOld = oldPropertyDescriptor.clone();
     }
 
     @Override
@@ -825,6 +840,7 @@ public class DomainPropertyImpl implements DomainProperty
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
+            SqlDialect dialect = OntologyManager.getExpSchema().getSqlDialect();
 
             if (hasProvisioner)
             {
@@ -846,7 +862,7 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
-                                _pd.getStorageColumnName(), _pdOld.getFormat(), null);
+                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GH Issue 755
                     }
                 }
                 else if (propResized)
@@ -875,7 +891,6 @@ public class DomainPropertyImpl implements DomainProperty
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
                 {
-                    SqlDialect dialect = OntologyManager.getExpSchema().getSqlDialect();
                     String sqlTypeName = dialect.getSqlTypeName(newType.getJdbcType());
                     String update = String.format("CAST(DateTimeValue AS %s)", sqlTypeName);
                     if (newType.getJdbcType() == JdbcType.TIME)
@@ -901,7 +916,7 @@ public class DomainPropertyImpl implements DomainProperty
 
             if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
             {
-                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -929,17 +944,16 @@ public class DomainPropertyImpl implements DomainProperty
      * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
      * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
      */
-    private void updateBooleanValue(String schemaTable, String column, String formatString, @Nullable SQLFragment whereClause)
+    private void updateBooleanValue(String schemaTable, DatabaseIdentifier column, String formatString, @Nullable SQLFragment whereClause)
     {
-        column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);
         BooleanFormat f = BooleanFormat.getInstance(formatString);
         String trueValue = StringUtils.trimToNull(f.format(true));
         String falseValue = StringUtils.trimToNull(f.format(false));
         String nullValue = StringUtils.trimToNull(f.format(null));
         SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
-                append(column).append(" = CASE WHEN ").
-                append(column).append(" IN ('1', 'true') THEN ? WHEN ").
-                append(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+                appendIdentifier(column).append(" = CASE WHEN ").
+                appendIdentifier(column).append(" IN ('1', 'true') THEN ? WHEN ").
+                appendIdentifier(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
         sql.add(trueValue);
         sql.add(falseValue);
         sql.add(nullValue);
@@ -1056,6 +1070,12 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConditionalFormats(List<ConditionalFormat> formats)
     {
+        String newVal = ConditionalFormat.toStringVal(formats);
+        String oldVal = ConditionalFormat.toStringVal(getConditionalFormats());
+
+        if (!Objects.equals(newVal, oldVal))
+            edit();
+
         _formats = formats;
     }
 
@@ -1125,6 +1145,62 @@ public class DomainPropertyImpl implements DomainProperty
     public String toString()
     {
         return super.toString() + _pd.getPropertyURI();
+    }
+
+    public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (null != getPropertyType())
+        {
+            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
+                map.put("Type", "Flag");
+            else
+                map.put("Type", getPropertyType().getXarName());
+        }
+        if (getPropertyType().getJdbcType().isText())
+            map.put("Scale", getScale());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getFormat()))
+            map.put("Format", getFormat());
+        if (!StringUtils.isEmpty(getURL()))
+            map.put("URL", getURL());
+        if (getPHI() != null)
+            map.put("PHI", getPHI().getLabel());
+        if (getDefaultScale() != null)
+            map.put("DefaultScale", getDefaultScale().getLabel());
+        map.put("Required", isRequired());
+        map.put("Hidden", isHidden());
+        map.put("MvEnabled", isMvEnabled());
+        map.put("Measure", isMeasure());
+        map.put("Dimension", isDimension());
+        map.put("ShownInInsert", isShownInInsertView());
+        map.put("ShownInDetails", isShownInDetailsView());
+        map.put("ShownInUpdate", isShownInUpdateView());
+        map.put("ShownInLookupView", isShownInLookupView());
+        map.put("RecommendedVariable", isRecommendedVariable());
+        map.put("ExcludedFromShifting", isExcludeFromShifting());
+        map.put("Scannable", isScannable());
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
+            map.put("DerivationDataScope", getDerivationDataScope());
+        String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAliases", importAliasStr);
+        if (getDefaultValueTypeEnum() != null)
+            map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
+        if (getLookup() != null)
+            map.put("Lookup", getLookup().toJSONString());
+
+        if (!StringUtils.isEmpty(validatorStr))
+            map.put("Validator", validatorStr);
+        if (!StringUtils.isEmpty(conditionalFormatStr))
+            map.put("ConditionalFormat", conditionalFormatStr);
+
+        return map;
     }
 
     public static class TestCase extends Assert

@@ -1933,7 +1933,7 @@ public class QueryServiceImpl implements QueryService
 
         if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
-            LOG.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns.toString());
+            LOG.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns);
 
             for (FieldKey field : unresolvedColumns)
             {
@@ -2656,10 +2656,9 @@ public class QueryServiceImpl implements QueryService
             if (null == paramIndex)
                 throw new IllegalStateException("Unexpected null param index.");
             Object o = paramFragment.getParamsNoCTEs().get(paramIndex);
-            if (!(o instanceof ParameterDecl))
+            if (!(o instanceof ParameterDecl p))
                 continue;
 
-            ParameterDecl p = (ParameterDecl) o;
             String name = p.getName();
             Object value = p.getDefault();
             boolean required = p.isRequired();
@@ -2785,12 +2784,12 @@ public class QueryServiceImpl implements QueryService
         {
             this.query = query;
 
-            if (query.getParseErrors().size() > 0)
+            if (!query.getParseErrors().isEmpty())
                 throw query.getParseErrors().get(0);
 
             this.table = query.getTableInfo();
 
-            if (query.getParseErrors().size() > 0)
+            if (!query.getParseErrors().isEmpty())
                 throw query.getParseErrors().get(0);
         }
 
@@ -3130,9 +3129,6 @@ public class QueryServiceImpl implements QueryService
             private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
             {
                 QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c, comment);
-                DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
-                if (tx != null)
-                    event.setTransactionId(tx.getAuditId());
 
                 event.setSchemaName(tinfo.getPublicSchemaName());
                 event.setQueryName(tinfo.getPublicName());
@@ -3541,7 +3537,7 @@ public class QueryServiceImpl implements QueryService
 
                 try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).select())
                 {
-                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                    assertEquals(3, rs.getMetaData().getColumnCount());
                 }
             }
 
@@ -3554,7 +3550,7 @@ public class QueryServiceImpl implements QueryService
 
                 try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).sort(sort).select())
                 {
-                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                    assertEquals(3, rs.getMetaData().getColumnCount());
                 }
 	        }
 
@@ -3567,7 +3563,7 @@ public class QueryServiceImpl implements QueryService
 
                 try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).filter(f).select())
                 {
-                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                    assertEquals(3, rs.getMetaData().getColumnCount());
                 }
 	        }
 
@@ -3585,7 +3581,7 @@ public class QueryServiceImpl implements QueryService
                         .filter(f)
                         .sort(sort).select())
                 {
-                    assertEquals(rs.getMetaData().getColumnCount(), 4);
+                    assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
         }

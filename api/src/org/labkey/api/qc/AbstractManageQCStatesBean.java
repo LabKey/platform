@@ -19,7 +19,7 @@ import org.labkey.api.view.ActionURL;
 
 public class AbstractManageQCStatesBean
 {
-    private ActionURL _returnUrl;
+    private final ActionURL _returnUrl;
     protected DataStateHandler _qcStateHandler;
     protected AbstractManageQCStatesAction _manageAction;
     protected Class<? extends AbstractDeleteDataStateAction> _deleteAction;

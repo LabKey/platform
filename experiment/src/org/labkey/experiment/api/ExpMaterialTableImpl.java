@@ -20,6 +20,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
@@ -27,7 +28,28 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MaterializedQueryHelper;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -120,7 +142,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -613,7 +635,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
             @Override
             protected ContainerFilter getLookupContainerFilter()
@@ -780,9 +802,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
-        UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
         SQLFragment sql;
-        if (plateUserSchema != null)
+        UserSchema plateUserSchema;
+        // Issue 53194 : this would be the case for linked to study samples. The contextual role is set up from the study dataset
+        // for the source sample, we want to allow the plate schema to inherit any contextual roles to allow querying
+        // against tables in that schema.
+        if (_userSchema instanceof UserSchema.HasContextualRoles samplesSchema && !samplesSchema.getContextualRoles().isEmpty())
+            plateUserSchema = AssayPlateMetadataService.get().getPlateSchema(_userSchema, samplesSchema.getContextualRoles());
+        else
+            plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), "plate");
+
+        if (plateUserSchema != null && plateUserSchema.getTable("Well") != null)
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
@@ -866,8 +896,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Domain getDomain()
     {
-        return _ss == null ? null : _ss.getDomain();
+        return getDomain(false);
     }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _ss == null ? null : _ss.getDomain(forUpdate);
+    }
+
 
     public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {
@@ -934,9 +971,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 continue;
             }
 
+            var wrapped = wrapColumnFromJoinedTable(dbColumn.getName(), dbColumn);
+
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
+            var propColumn = copyColumnFromJoinedTable(null==dp ? dbColumn.getName() : dp.getName(), wrapped);
             if (propColumn.getName().equalsIgnoreCase("genid"))
             {
                 propColumn.setHidden(true);
@@ -983,6 +1022,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if (!mvColumns.contains(propColumn.getFieldKey()))
                 addColumn(propColumn);
+
         }
 
         setDefaultVisibleColumns(visibleColumns);
@@ -1453,7 +1493,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    private class IdColumnRenderer extends DataColumn
+    private static class IdColumnRenderer extends DataColumn
     {
         public IdColumnRenderer(ColumnInfo col)
         {
@@ -1604,7 +1644,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), this);
+                                    expMaterial.index(searchService.defaultTask(), null, this);
                             })
                         );
 
@@ -1612,7 +1652,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask(), this);
+                                        expMaterial.index(searchService.defaultTask(), null, this);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)
@@ -1620,7 +1660,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             DataIteratorBuilder builder = LoggingDataIterator.wrap(persist);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap(), _ss, true));
         }
         catch (IOException e)
         {

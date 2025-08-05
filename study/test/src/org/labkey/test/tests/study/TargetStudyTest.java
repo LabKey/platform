@@ -24,6 +24,7 @@ import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -163,21 +164,21 @@ public class TargetStudyTest extends AbstractAssayTest
         DataRegionTable drt = new DataRegionTable("AssayList", this);
         int idx = drt.getRowIndex("Name", ASSAY_NAME);
         log("Found \"Assay\" at index " + idx);
-        assertEquals(idx, 0);
+        assertEquals(0, idx);
         clickAndWait(drt.link(idx, 0));
 
         clickButton("Import Data");
 
-        setFormElement(Locator.name("name"), TEST_RUN1);
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, TEST_RUN1);
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
         String data1 = TEST_RUN1_DATA1
             .replace("${Study1ContainerID}", _study1ContainerId)
             .replace("${Study1Label}", _study1Label);
-        setFormElement(Locator.name("TextAreaDataCollector.textArea"), data1);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR, data1);
         clickButton("Save and Finish");
         assertTextPresent("Couldn't resolve TargetStudy 'StudyNotExist' to a study folder.");
 
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
         String data2 = data1.replace("StudyNotExist", "");
         setFormElement(Locator.name("TextAreaDataCollector.textArea"), data2);
         clickButton("Save and Finish");
@@ -224,12 +225,12 @@ public class TargetStudyTest extends AbstractAssayTest
         final String study1OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")";
         final String study2OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + " (" + _study2Label + ")";
         final String study3OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + " (" + _study3Label + ")";
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(0, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(1, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(2, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals("[None]", getSelectedOptionText(table.findCell(3, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study2OptionText, getSelectedOptionText(table.findCell(4, 0).findElement(By.xpath("select[@name='targetStudy']"))));
-        assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(0, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(1, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(2, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals("[None]", getSelectedOptionText(table.findCell(3, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study2OptionText, getSelectedOptionText(table.findCell(4, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
+        assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
 
         log("** Check ptid/visit matches for rows 0-2 and 4, no match for rows 3 and 5");
         assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("i")), "class", "fa fa-check");

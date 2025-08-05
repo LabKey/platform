@@ -40,13 +40,13 @@ public interface WikiRenderEngine {
    * @return result True if wiki page exists
    */
 
-  public boolean exists(String name);
+  boolean exists(String name);
 
-  public boolean showCreate();
+  boolean showCreate();
 
-  public void appendLink(StringBuffer buffer, String name, String view, String anchor);
+  void appendLink(StringBuffer buffer, String name, String view, String anchor);
 
-  public void appendLink(StringBuffer buffer, String name, String view);
+  void appendLink(StringBuffer buffer, String name, String view);
 
-  public void appendCreateLink(StringBuffer buffer, String name, String view);
+  void appendCreateLink(StringBuffer buffer, String name, String view);
 }

@@ -88,7 +88,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
-        return (perm == ReadPermission.class || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
+        return (perm == ReadPermission.class || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && !columns.isEmpty()));
     }
 
     public void setContainer(String containerId)
@@ -134,7 +134,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         TableInfo table = getRealTable();
         if (DatabaseTableType.TABLE != table.getTableType())
             return null;
-        if (null == table.getPkColumnNames() || table.getPkColumnNames().size() == 0)
+        if (null == table.getPkColumnNames() || table.getPkColumnNames().isEmpty())
             return null;
 
         return new SimpleQueryUpdateService(this, table);

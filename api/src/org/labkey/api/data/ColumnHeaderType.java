@@ -109,7 +109,7 @@ public enum ColumnHeaderType
         }
     },
 
-    // Use the ColumnInfo's FieldKey with FieldKey escaping. Useful for import/export round-tripping, but can lead to ugly names.
+    // Use the ColumnInfo's FieldKey with FieldKey escaping.
     FieldKey("Field Key", "The column name rendered with FieldKey encoding; unambiguous and canonical, useful for exporting and re-importing.") {
         @Override
         public String getText(DisplayColumn dc)
@@ -133,8 +133,8 @@ public enum ColumnHeaderType
         }
     };
 
-    private String _optionText;
-    private String _description;
+    private final String _optionText;
+    private final String _description;
 
     ColumnHeaderType(String optionText, String description)
     {
@@ -166,7 +166,7 @@ public enum ColumnHeaderType
 
     public abstract String getText(DisplayColumn dc);
 
-    private static Map<String, ColumnHeaderType> _map;
+    private static final Map<String, ColumnHeaderType> _map;
     static
     {
         _map = new CaseInsensitiveHashMap<>();

@@ -87,23 +87,23 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         TablesType tablesXml = tablesDoc.addNewTables();
         Map<String, TableInfo> specimenTables = new HashMap<>();
 
-        TableInfo eventTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+        TableInfo eventTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME);
         if (eventTable != null)
-            specimenTables.put(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME, eventTable);
+            specimenTables.put(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME, eventTable);
 
-        TableInfo specimenTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+        TableInfo specimenTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLE_NAME);
         if (specimenTable != null)
-            specimenTables.put(SpecimenTablesProvider.SPECIMEN_TABLENAME, specimenTable);
+            specimenTables.put(SpecimenTablesProvider.SPECIMEN_TABLE_NAME, specimenTable);
 
-        TableInfo vialTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLENAME);
+        TableInfo vialTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLE_NAME);
         if (vialTable != null)
-            specimenTables.put(SpecimenTablesProvider.VIAL_TABLENAME, vialTable);
+            specimenTables.put(SpecimenTablesProvider.VIAL_TABLE_NAME, vialTable);
 
         for (Map.Entry<String, TableInfo> entry : specimenTables.entrySet())
         {
             TableType tableXml = tablesXml.addNewTable();
 
-            Domain domain = tablesProvider.getDomain(entry.getKey(), false);
+            Domain domain = tablesProvider.getDomain(entry.getKey(), false, false);
             TableInfo table = entry.getValue();
             List<ColumnInfo> columns = new ArrayList<>();
 

@@ -46,6 +46,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
@@ -151,7 +152,7 @@ public class PropertyController extends SpringActionController
     }
 
     @RequiresNoPermission //Real permissions will be enforced by the DomainKind
-    public class EditDomainAction extends SimpleViewAction<DomainForm>
+    public static class EditDomainAction extends SimpleViewAction<DomainForm>
     {
         private Domain _domain;
 
@@ -185,7 +186,7 @@ public class PropertyController extends SpringActionController
                     throw new NotFoundException("Can't create domain without DomainURI or schemaName/queryName pair.");
                 }
 
-                DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+                DomainKind<?> kind = PropertyService.get().getDomainKind(domainURI);
                 if (kind == null)
                 {
                     throw new NotFoundException("Domain kind not found");
@@ -259,7 +260,7 @@ public class PropertyController extends SpringActionController
         @Override
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
-            GWTDomain newDomain = form.getDomainDesign();
+            GWTDomain<GWTPropertyDescriptor> newDomain = form.getDomainDesign();
             Domain domain = null;
             List<Domain> domains = null;
 
@@ -317,7 +318,7 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                domain = DomainUtil.createDomain(kindName, newDomain, form.getOptionsProperties(), getContainer(), getUser(), domainName, null);
+                domain = DomainUtil.createDomain(kindName, newDomain, form.getOptionsProperties(), getContainer(), getUser(), domainName, null, false);
             }
             else
             {
@@ -360,7 +361,7 @@ public class PropertyController extends SpringActionController
     @Deprecated (since = "20.3")
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
+    public static class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -396,7 +397,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainDetailsAction  extends ReadOnlyApiAction<DomainApiForm>
+    public static class GetDomainDetailsAction  extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -419,7 +420,7 @@ public class PropertyController extends SpringActionController
             // like getDomainKind().allowAttachmentProperties()
             if (form.getDomainKind() != null)
             {
-                DomainKind kind = PropertyService.get().getDomainKindByName(form.getDomainKind());
+                DomainKind<?> kind = PropertyService.get().getDomainKindByName(form.getDomainKind());
                 if (kind != null)
                 {
                     domainKindDesign.setDomainDesign(DomainUtil.getTemplateDomainForDomainKind(kind));
@@ -429,7 +430,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            GWTDomain<?> gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
             if (null != domain && null != domain.getDomainKind())
             {
@@ -444,7 +445,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainNamePreviewsAction  extends ReadOnlyApiAction<DomainApiForm>
+    public static class GetDomainNamePreviewsAction  extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -461,7 +462,7 @@ public class PropertyController extends SpringActionController
             String schemaName = form.getSchemaName();
             Integer domainId = form.getDomainId();
 
-            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            GWTDomain<?> gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -474,7 +475,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class ValidateNameExpressionsAction extends MutatingApiAction<DomainApiForm>
+    public static class ValidateNameExpressionsAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -502,8 +503,84 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class ValidateDomainAndFieldNamesAction extends MutatingApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            GWTDomain<GWTPropertyDescriptor> domainDesign = form.getDomainDesign();
+            String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
+            DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
+            if (kind == null)
+                throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
+
+            // try using the DomainKind to generate a domain URI, if it supports it. default to using a fake / representative URI
+            String typeURI = null;
+            try
+            {
+                typeURI = kind.generateDomainURI("schemaName", "queryName", getContainer(), getUser());
+            }
+            catch (AssertionError ignored) {} // no-op if the DomainKind does not support generateDomainURI()
+            if (typeURI == null)
+                typeURI = "urn:lsid:labkey.com:" + kindName + ".Folder-21085:Test+Domain+Name-115c61b7-4faa-103e-8e7f-a47ad552213c";
+
+            Domain domain = PropertyService.get().createDomain(getContainer(), typeURI, "queryName");
+
+            boolean checkFieldNames = !domainDesign.getFields().isEmpty();
+            boolean checkDomainName = domainDesign.getName() != null;
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            ValidationException results = new ValidationException();
+            if (checkFieldNames)
+            {
+                results = DomainUtil.validateProperties(null, domainDesign, kind, null, getUser());
+                for (GWTPropertyDescriptor field : domainDesign.getFields())
+                {
+                    try
+                    {
+                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
+                        OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
+                    }
+                    catch (ChangePropertyDescriptorException e)
+                    {
+                        results.addFieldError(field.getName(), e.getMessage());
+                    }
+                }
+            }
+            if (checkDomainName)
+            {
+                try
+                {
+                    kind.validateDomainName(getContainer(), getUser(), null, domainDesign.getName());
+                    String nameError = DomainUtil.validateDomainName(domainDesign.getName(), kindName, kind.supportsNamingPattern());
+                    if (nameError != null)
+                        results.addGlobalError(nameError);
+                }
+                catch (Exception e)
+                {
+                    results.addGlobalError(e.getMessage());
+                }
+            }
+
+            resp.put("success", !results.hasErrors());
+            if (results.hasErrors())
+                resp.put("errors", results.getErrors());
+            return resp;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
+    public static class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
         //Keeping both request and response object mappers to avoid serialization/deserialization issues
         //as not sure if request object mapper is needed
@@ -524,7 +601,7 @@ public class PropertyController extends SpringActionController
         @Override
         public void validateForm(DomainApiForm form, Errors errors)
         {
-            GWTDomain newDomain = form.getDomainDesign();
+            GWTDomain<?> newDomain = form.getDomainDesign();
             if (newDomain == null)
                 throw new NotFoundException("No domainDesign provided.");
 
@@ -537,13 +614,13 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
-            GWTDomain newDomain = form.getDomainDesign();
-            GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
+            GWTDomain<?> newDomain = form.getDomainDesign();
+            GWTDomain<?> originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings, form.getAuditUserComment());
 
             for (ValidationError ve : updateErrors.getErrors())
             {
@@ -640,7 +717,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class UpdateDomainAction extends MutatingApiAction<UpdateDomainApiForm>
+    public static class UpdateDomainAction extends MutatingApiAction<UpdateDomainApiForm>
     {
         Domain _domain;
 
@@ -760,7 +837,7 @@ public class PropertyController extends SpringActionController
             boolean includeWarnings = form.isIncludeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings, null);
             for (ValidationError ve : updateErrors.getErrors())
             {
                 if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
@@ -801,7 +878,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
+    public static class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
         public Object execute(DomainApiForm form, BindException errors)
@@ -809,7 +886,7 @@ public class PropertyController extends SpringActionController
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
 
-            deleteDomain(schemaName, queryName, getContainer(), getUser());
+            deleteDomain(schemaName, queryName, getContainer(), getUser(), form.getAuditUserComment());
             return success("Domain deleted");
         }
     }
@@ -825,13 +902,14 @@ public class PropertyController extends SpringActionController
         private String domainTemplate;
         private boolean createDomain = true;
         private boolean importData = true;
-        private GWTDomain domainDesign;
+        private GWTDomain<GWTPropertyDescriptor> domainDesign;
         private JSONObject options;
         private String containerPath;
         private String schemaName;
         private String queryName;
         private Integer domainId;
         private boolean includeWarnings;
+        private String auditUserComment;
 
         public Integer getDomainId()
         {
@@ -954,13 +1032,13 @@ public class PropertyController extends SpringActionController
             this.importData = importData;
         }
 
-        public GWTDomain getDomainDesign()
+        public GWTDomain<GWTPropertyDescriptor> getDomainDesign()
         {
             return domainDesign;
         }
 
         @SuppressWarnings("unused")
-        public void setDomainDesign(GWTDomain domainDesign)
+        public void setDomainDesign(GWTDomain<GWTPropertyDescriptor> domainDesign)
         {
             this.domainDesign = domainDesign;
         }
@@ -1001,6 +1079,16 @@ public class PropertyController extends SpringActionController
         @JsonIgnore
         private Map<String, Object> optionsProperties;
 
+        public String getAuditUserComment()
+        {
+            return auditUserComment;
+        }
+
+        public void setAuditUserComment(String auditUserComment)
+        {
+            this.auditUserComment = auditUserComment;
+        }
+
         /**
          * Convenience method to cache options map
          */
@@ -1025,7 +1113,7 @@ public class PropertyController extends SpringActionController
 
             String kindName = getKind() == null ? getDomainKind() : getKind();
             DomainKind kind = null;
-            GWTDomain design = getDomainDesign();
+            GWTDomain<?> design = getDomainDesign();
 
             if (kindName != null)
             {
@@ -1070,7 +1158,7 @@ public class PropertyController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @ActionNames("inferDomain, getFilePreview")
-    public class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
+    public static class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
     {
         @Override
         public void validateForm(InferDomainForm form, Errors errors)
@@ -1100,7 +1188,7 @@ public class PropertyController extends SpringActionController
         public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
             Map<String, MultipartFile> fileMap = getFileMap();
-            File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
+            File file = form.getFile() != null ? ExpDataFileConverter.convert(form.getFile()) : null;
             FileType guessFormat = form.isGuessFormatAsTSV() ? TabLoader.TSV_FILE_TYPE : null;
             DataLoader loader = null;
 
@@ -1138,7 +1226,7 @@ public class PropertyController extends SpringActionController
 
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
-            DomainKind domainKind = domainKindName == null ? null : PropertyService.get().getDomainKindByName(domainKindName);
+            DomainKind<?> domainKind = domainKindName == null ? null : PropertyService.get().getDomainKindByName(domainKindName);
             Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null, getUser());
 
             Set<String> reservedPrefixes = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNamePrefixes();
@@ -1240,7 +1328,7 @@ public class PropertyController extends SpringActionController
      * for later use by gwt services
      */
     @RequiresPermission(AdminPermission.class)
-    public class UploadFileForInferencingAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
+    public static class UploadFileForInferencingAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
@@ -1299,7 +1387,7 @@ public class PropertyController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class InferPropertiesAction extends ExportAction<InferForm>
+    public static class InferPropertiesAction extends ExportAction<InferForm>
     {
         @Override
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception
@@ -1343,13 +1431,11 @@ public class PropertyController extends SpringActionController
         {
             HttpServletRequest basicRequest = getViewContext().getRequest();
 
-            if (! (basicRequest instanceof MultipartHttpServletRequest))
+            if (! (basicRequest instanceof MultipartHttpServletRequest request))
             {
                 error(writer, "No file uploaded");
                 return null;
             }
-
-            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
 
             //noinspection unchecked
             Iterator<String> nameIterator = request.getFileNames();
@@ -1477,7 +1563,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1498,7 +1584,7 @@ public class PropertyController extends SpringActionController
 
         if (JSONObject.class == kind.getTypeClass())
         {
-            return kind.updateDomain(original, update, options, container, user, includeWarnings);
+            return kind.updateDomain(original, update, options, container, user, includeWarnings, auditUserComment);
         }
         else
         {
@@ -1508,17 +1594,17 @@ public class PropertyController extends SpringActionController
                 ObjectMapper mapper = JsonUtil.createDefaultMapper();
                 domainKindProps = mapper.convertValue(options, kind.getTypeClass());
             }
-            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings);
+            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings, auditUserComment);
         }
     }
 
-    private static void deleteDomain(String schemaName, String queryName, Container container, User user)
+    private static void deleteDomain(String schemaName, String queryName, Container container, User user, @Nullable String auditUserComment)
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
         if (domainURI == null)
             throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
 
-        DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+        DomainKind<?> kind = PropertyService.get().getDomainKind(domainURI);
         if (kind == null)
             throw new IllegalArgumentException("No domain kind matches URI '" + domainURI + "'");
 
@@ -1533,20 +1619,20 @@ public class PropertyController extends SpringActionController
             if (!kind.canDeleteDefinition(user, d))
                 throw new UnauthorizedException("You don't have permission to delete this domain");
 
-            kind.deleteDomain(user, d);
+            kind.deleteDomain(user, d, auditUserComment);
             return true;
         });
     }
 
     @NotNull
-    private static GWTDomain getDomain(String schemaName, String queryName, Integer domainId, @NotNull Container container, @NotNull User user) throws NotFoundException
+    private static GWTDomain<?> getDomain(String schemaName, String queryName, Integer domainId, @NotNull Container container, @NotNull User user) throws NotFoundException
     {
         if ((schemaName == null || queryName == null) && domainId == null)
         {
             throw new IllegalArgumentException("domainId or schemaName and queryName are required" );
         }
 
-        GWTDomain domain;
+        GWTDomain<?> domain;
         if (domainId != null)
         {
             Domain dom = PropertyService.get().getDomain(domainId);
@@ -1570,7 +1656,7 @@ public class PropertyController extends SpringActionController
         return domain;
     }
 
-    private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
+    private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain<?> domain)
     {
         ObjectMapper om = JsonUtil.createDefaultMapper();
         _propertyService.configureObjectMapper(om, null);
@@ -1584,7 +1670,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    public static JavaScriptFragment convertDomainToJson(@NotNull GWTDomain domain)
+    public static JavaScriptFragment convertDomainToJson(@NotNull GWTDomain<?> domain)
     {
         ObjectMapper om = JsonUtil.createDefaultMapper();
         _propertyService.configureObjectMapper(om, null);
@@ -1602,13 +1688,13 @@ public class PropertyController extends SpringActionController
     {
         public String queryName;
         public String schemaName;
-        public GWTDomain domain;
-        public GWTDomain template;
+        public GWTDomain<?> domain;
+        public GWTDomain<?> template;
         public TemplateInfo info;
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompareWithTemplateAction extends SimpleViewAction<DomainForm>
+    public static class CompareWithTemplateAction extends SimpleViewAction<DomainForm>
     {
         @Override
         public ModelAndView getView(DomainForm form, BindException errors)
@@ -1619,7 +1705,7 @@ public class PropertyController extends SpringActionController
             if (StringUtils.isBlank(schema) || StringUtils.isBlank(query))
                 throw new IllegalArgumentException("schemaName and queryName required");
 
-            GWTDomain gwt = getDomain(schema, query, null, getContainer(), getUser());
+            GWTDomain<?> gwt = getDomain(schema, query, null, getContainer(), getUser());
             Domain domain = form.getDomain();
 
             if (null == domain)
@@ -1627,7 +1713,7 @@ public class PropertyController extends SpringActionController
             if (!domain.getContainer().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException();
 
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             if (kind == null)
                 throw new NotFoundException("Domain kind not found for domain '" + domain.getName() + "': " + domain.getTypeURI());
 
@@ -1635,7 +1721,7 @@ public class PropertyController extends SpringActionController
             TemplateInfo info = domain.getTemplateInfo();
 
             DomainTemplate template = DomainTemplate.findTemplate(info, kindName);
-            GWTDomain gwtFromTemplate = null;
+            GWTDomain<?> gwtFromTemplate = null;
             if (template != null)
                 gwtFromTemplate = template.getDomain();
 
@@ -1699,7 +1785,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm form, boolean includeProjectAndShared)
+    private List<GWTDomain<?>> listDomains(Container c, User user, ContainerDomainForm form, boolean includeProjectAndShared)
     {
         Stream<? extends Domain> domains;
         Set<String> domainKinds = emptySet();
@@ -1793,7 +1879,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     @Marshal(Marshaller.Jackson)
-    public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
+    public static class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
     {
         @Override
         public void validateForm(GetPropertiesForm form, Errors errors)
@@ -1810,7 +1896,6 @@ public class PropertyController extends SpringActionController
                 if (form.getDomainIds() != null || form.getDomainKinds() != null || form.getFilters() != null || form.getSearch() != null)
                 {
                     errors.reject(ERROR_MSG, propType + " can't be specified with domainIds, domainKinds, search, filters");
-                    return;
                 }
             }
         }
@@ -1818,7 +1903,7 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(GetPropertiesForm form, BindException errors) throws Exception
         {
-            long totalCount = 0;  // totalCount of all rows with no maxRows or offset applied. Used for paging.
+            long totalCount;  // totalCount of all rows with no maxRows or offset applied. Used for paging.
             Set<Domain> domains = null;
 
             List<GWTPropertyDescriptor> gwtProps;
@@ -2024,7 +2109,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     @Marshal(Marshaller.Jackson)
-    public class PropertyUsagesAction extends ReadOnlyApiAction<PropertyUsagesForm>
+    public static class PropertyUsagesAction extends ReadOnlyApiAction<PropertyUsagesForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -2136,7 +2221,7 @@ public class PropertyController extends SpringActionController
 
             gwtDomain.setFields(gwtProps);
 
-            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null);
+            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
         }
 
         @Test

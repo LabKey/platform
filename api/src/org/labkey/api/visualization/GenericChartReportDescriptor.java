@@ -71,7 +71,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     {
         Map<String, Object> props = new HashMap<>();
         List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
-        if (propsList.size() > 0)
+        if (!propsList.isEmpty())
         {
             for (Pair<DomainProperty, Object> pair : propsList)
                 props.put(pair.getKey().getName(), pair.getValue());
@@ -255,7 +255,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
                         sb.append(delim).append(error.getMessage());
                         delim = "\n";
                     }
-                    throw new ValidationException("Unable to get table or query: " + sb.toString());
+                    throw new ValidationException("Unable to get table or query: " + sb);
                 }
             }
             else

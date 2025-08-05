@@ -34,7 +34,7 @@ import java.util.function.Function;
 /**
  * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}.
  */
-public interface ExpDataClass extends ExpObject
+public interface ExpDataClass extends ExpObject, ExpSearchable
 {
     String NEW_DATA_CLASS_ALIAS_VALUE = "{{this_data_class}}";
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.DataClass";
@@ -58,9 +58,11 @@ public interface ExpDataClass extends ExpObject
 
     void setSampleType(Integer sampleType);
 
+    @NotNull
     Domain getDomain();
 
-    void setDomain(Domain d);
+    @NotNull
+    Domain getDomain(boolean forUpdate);
 
     String getDescription();
 
@@ -117,6 +119,8 @@ public interface ExpDataClass extends ExpObject
     @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException;
 
     void setImportAliasMap(Map<String, Map<String, Object>> aliasMap);
+
+    String getImportAliasJson();
 
     boolean hasData();
 }

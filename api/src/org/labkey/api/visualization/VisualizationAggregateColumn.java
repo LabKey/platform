@@ -25,7 +25,7 @@ import org.labkey.api.view.ViewContext;
  */
 public class VisualizationAggregateColumn extends VisualizationSourceColumn
 {
-    private Aggregate.Type _aggregate;
+    private final Aggregate.Type _aggregate;
 
     public VisualizationAggregateColumn(ViewContext context, VisDataRequest.Measure measure)
     {

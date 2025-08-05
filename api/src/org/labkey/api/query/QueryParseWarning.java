@@ -31,6 +31,7 @@ public class QueryParseWarning extends QueryParseException
         _level = Level.WARN;
     }
 
+    @Override
     public QueryParseWarning setFieldName(String field)
     {
         _field = field;

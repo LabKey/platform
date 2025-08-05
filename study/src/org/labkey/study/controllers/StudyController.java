@@ -193,7 +193,9 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
@@ -205,7 +207,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -293,7 +294,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -407,22 +407,6 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields)
-        {
-            ActionURL url = new ActionURL(StudyDesignController.ManageAssayScheduleAction.class, container);
-            url.addParameter("useAlternateLookupFields", useAlternateLookupFields);
-            return url;
-        }
-
-        @Override
-        public ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor)
-        {
-            ActionURL url = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, container);
-            url.addParameter("singleTable", useSingleTableEditor);
-            return url;
-        }
-
-        @Override
         public ActionURL getManageFileWatchersURL(Container container)
         {
             return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
@@ -468,6 +452,30 @@ public class StudyController extends BaseStudyController
         public ActionURL getTypeNotFoundURL(Container container, int datasetId)
         {
             return new ActionURL(TypeNotFoundAction.class, container).addParameter("id", datasetId);
+        }
+
+        @Override
+        public ActionURL getManageLocationsURL(Container container)
+        {
+            return new ActionURL(ManageLocationsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageVisitsURL(Container container)
+        {
+            return new ActionURL(ManageVisitsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageCohortsURL(Container container)
+        {
+            return new ActionURL(CohortController.ManageCohortsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getVisitOrderURL(Container container)
+        {
+            return new ActionURL(VisitOrderAction.class, container);
         }
     }
 
@@ -1126,23 +1134,29 @@ public class StudyController extends BaseStudyController
             _bean = form;
             ActionURL previousParticipantURL = null;
             ActionURL nextParticipantURL = null;
+            Participant participant;
+            StringBuilder errorMsg = new StringBuilder();
 
             if (form.getParticipantId() == null)
             {
-                throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
+                errorMsg.append("No ").append(study.getSubjectNounSingular()).append(" specified");
+            }
+            else
+            {
+                try
+                {
+                    participant = findParticipant(study, form.getParticipantId());
+                    if (null == participant)
+                        errorMsg.append("Could not find ").append(study.getSubjectNounSingular()).append(" ").append(form.getParticipantId());
+                }
+                catch (StudyManager.ParticipantNotUniqueException x)
+                {
+                    errorMsg.append(x.getMessage());
+                }
             }
 
-            Participant participant;
-            try
-            {
-                participant = findParticipant(study, form.getParticipantId());
-                if (null == participant)
-                    throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
-            }
-            catch (StudyManager.ParticipantNotUniqueException x)
-            {
-                return HtmlView.of(x.getMessage());
-            }
+            if (!errorMsg.isEmpty())
+                return HtmlView.err(errorMsg.toString());
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
@@ -1245,7 +1259,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
             }
 
-            Participant participant = null;
+            Participant participant;
             try
             {
                 participant = findParticipant(study, form.getParticipantId());
@@ -1490,7 +1504,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
+    public static class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
     {
         @Override
         public Object execute(DeleteParticipantForm deleteParticipantForm, BindException errors) throws Exception
@@ -2528,6 +2542,57 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    /**
+     * Called from the vaccine design webpart for the study design module
+     */
+    @RequiresPermission(UpdatePermission.class)
+    public class CreateVisitForVaccineDesign extends MutatingApiAction<VisitForm>
+    {
+        @Override
+        public void validateForm(VisitForm form, Errors errors)
+        {
+            if (!StudyDesignManager.get().isModuleActive(getContainer()))
+            {
+                errors.reject(ERROR_MSG, "This action can only be called if the study design module is active");
+                return;
+            }
+
+            Study study = getStudy(getContainer());
+            boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
+
+            form.validate(errors, study);
+            if (errors.getErrorCount() > 0)
+                return;
+
+            //check for overlapping visits
+            VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
+            if (null != visitMgr)
+            {
+                String range = isDateBased ? "day range" : "sequence range";
+                if (visitMgr.isVisitOverlapping(form.getBean()))
+                    errors.reject(null, "The visit " + range + " provided overlaps with an existing visit in this study. Please enter a different " + range + ".");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(VisitForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            VisitImpl visit = form.getBean();
+            visit = StudyManager.getInstance().createVisit(getStudyThrowIfNull(), getUser(), visit);
+
+            response.put("RowId", visit.getRowId());
+            response.put("Label", visit.getDisplayString());
+            response.put("SequenceNumMin", visit.getSequenceNumMin());
+            response.put("DisplayOrder", visit.getDisplayOrder());
+            response.put("Included", true);
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
@@ -2694,7 +2759,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getOptionParamValue(Params.importLookupByAlternateKey), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getLookupResolutionType(), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -2839,10 +2904,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    LinkBuilder.labkeyLink("Download Data File", url).appendTo(oldWriter);
+                    out.write(LinkBuilder.labkeyLink("Download Data File", url));
                 }
             };
             dr.addDisplayColumn(dc);
@@ -4015,7 +4080,7 @@ public class StudyController extends BaseStudyController
     {
         // Issue 26030: we don't distinguish null vs empty string for url parameters.
         // Empty string will be converted to null for beans so "" shouldn't be used as the url param for Default Grid View.
-        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASET_KEY, id).addParameter("defaultView", viewName != null ? (viewName.equals("") ? "defaultGrid": viewName) : null);
+        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASET_KEY, id).addParameter("defaultView", viewName != null ? (viewName.isEmpty() ? "defaultGrid": viewName) : null);
     }
 
     public static class ViewPreferencesForm extends DatasetController.DatasetIdForm
@@ -4308,7 +4373,7 @@ public class StudyController extends BaseStudyController
         private Map<Integer, Integer> getVisitIdToOrderIndex(String orderedIds)
         {
             Map<Integer, Integer> order = null;
-            if (orderedIds != null && orderedIds.length() > 0)
+            if (orderedIds != null && !orderedIds.isEmpty())
             {
                 order = new HashMap<>();
                 String[] idArray = orderedIds.split(",");
@@ -4688,7 +4753,7 @@ public class StudyController extends BaseStudyController
         {
             String order = form.getOrder();
 
-            if (order != null && order.length() > 0 && !form.isResetOrder())
+            if (order != null && !order.isEmpty() && !form.isResetOrder())
             {
                 String[] ids = order.split(",");
                 List<Integer> orderedIds = new ArrayList<>(ids.length);
@@ -4743,11 +4808,11 @@ public class StudyController extends BaseStudyController
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 // performStudyResync==false so we can do this out of the transaction
-                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
+                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false, null);
                 transaction.commit();
             }
 
-            StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.emptySet());
             return true;
         }
 
@@ -5057,7 +5122,7 @@ public class StudyController extends BaseStudyController
                 DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
                 {
-                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true, null);
                     form.setSnapshotDatasetId(-1);
                 }
             }
@@ -5140,14 +5205,14 @@ public class StudyController extends BaseStudyController
                 // def may not be provisioned yet, create before we start adding properties
                 if (def.isQueryDataset())
                 {
-                    def.provisionQueryDataset();
+                    def.provisionQueryDataset(true);
                 }
                 else
                 {
-                    def.provisionTable();
+                    def.provisionTable(true);
                 }
 
-                Domain d = def.getDomain();
+                Domain d = def.getDomain(true);
 
                 for (ColumnInfo col : columnsToProvision)
                 {
@@ -6139,7 +6204,6 @@ public class StudyController extends BaseStudyController
 
         /**
          * Don't blow up when posting bad value
-         * @param datasetIdStr
          */
         public void setDatasetIdStr(String datasetIdStr)
         {
@@ -6417,7 +6481,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(DemoModeForm form, boolean reshow, BindException errors)
         {
-            return new JspView("/org/labkey/study/view/demoMode.jsp");
+            return new JspView<>("/org/labkey/study/view/demoMode.jsp");
         }
 
         @Override
@@ -6629,7 +6693,7 @@ public class StudyController extends BaseStudyController
                     Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), getUser().getUserId());
             }
 
-            return new JspView("/org/labkey/study/view/manageParticipantCategories.jsp");
+            return new JspView<>("/org/labkey/study/view/manageParticipantCategories.jsp");
         }
 
         @Override
@@ -7062,7 +7126,7 @@ public class StudyController extends BaseStudyController
                                 .setStudy(_study)
                                 .setDemographicData(false)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
@@ -7073,7 +7137,7 @@ public class StudyController extends BaseStudyController
                                 .setDemographicData(false)
                                 .setType(Dataset.TYPE_PLACEHOLDER)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
                         response.put("datasetId", def.getDatasetId());
                         break;
 

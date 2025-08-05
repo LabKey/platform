@@ -63,6 +63,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import javax.imageio.ImageIO;
@@ -71,7 +72,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 import java.sql.Time;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -754,7 +754,7 @@ public class ExcelColumn extends RenderColumn
 
     // CONSIDER: Change RenderColumn to NOT extend DisplayElement
     @Override
-    public void render(RenderContext ctx, Writer out)
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         throw new UnsupportedOperationException();
     }

@@ -15,15 +15,16 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheManager;
+import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -32,48 +33,45 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Executes a single module upgrade SQL script, including finding calls into Java code that are embedded using
  * stored-procedure style syntax.
- * User: adam
- * Date: Nov 24, 2008
  */
 public class SqlScriptExecutor
 {
     private static final Logger _log = LogManager.getLogger(SqlScriptExecutor.class);
 
+    private final String _scriptName;
     private final String _sql;
     private final Pattern _splitPattern;
     private final Pattern _procPattern;
     private final DbSchema _schema;
-    private final @Nullable UpgradeCode _upgradeCode;
     private final ModuleContext _moduleContext;
     private final @Nullable Connection _conn;
-    private final @NotNull String _literalTrue;
 
     /**
      * Splits a SQL string into blocks and executes each block, one at a time. Blocks are determined in a dialect-specific
      * way, using splitPattern and procPattern.
-     * @param sql The SQL string to split and execute
-     * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
-     * @param procPattern Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
-     * @param schema Current schema. Null is allowed for testing purposes.
-     * @param upgradeCode Implementation of UpgradeCode that provides methods for executeJavaCode to run
+     *
+     * @param scriptName    Name of the SQL script for logging purposes
+     * @param sql           The SQL string to split and execute
+     * @param splitPattern  Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
+     * @param procPattern   Dialect-specific regex pattern for finding executeJavaCode procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
+     * @param schema        Current schema. Null is allowed for testing purposes.
      * @param moduleContext Current ModuleContext
-     * @param conn Connection to use, if non-null
-     * @param literalTrue String value of boolean true for the sql dialect
+     * @param conn          Connection to use, if non-null
      */
-    public SqlScriptExecutor(String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn, @NotNull String literalTrue)
+    public SqlScriptExecutor(String scriptName, String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, ModuleContext moduleContext, @Nullable Connection conn)
     {
+        _scriptName = scriptName;
         _sql = sql;
         _splitPattern = splitPattern;
         _procPattern = procPattern;
         _schema = schema;
-        _upgradeCode = upgradeCode;
         _moduleContext = moduleContext;
         _conn = conn;
-        _literalTrue = literalTrue;
     }
 
     public void execute()
@@ -85,10 +83,51 @@ public class SqlScriptExecutor
         }
     }
 
+    private static final String START_ANNOTATION = "@SkipOnEmptySchemasBegin";
+    private static final String END_ANNOTATION = "@SkipOnEmptySchemasEnd";
+
     private Collection<Block> getBlocks()
     {
+        String sql;
+
+        if (ModuleLoader.getInstance().shouldInsertData())
+        {
+            sql = _sql;
+        }
+        else
+        {
+            // Strip all statements (typically inserts) between the empty-schema START and END annotations, inclusive
+            MutableBoolean skipping = new MutableBoolean(false);
+            MutableInt lineCount = new MutableInt(0);
+            sql = _sql.lines()
+                .filter(line -> {
+                    lineCount.increment();
+                    if (line.contains(START_ANNOTATION))
+                    {
+                        if (skipping.booleanValue())
+                            throw new IllegalStateException("Unexpected " + START_ANNOTATION + " at line " + lineCount.intValue());
+
+                        skipping.setValue(true);
+                    }
+
+                    boolean ret = !skipping.booleanValue();
+
+                    if (line.contains(END_ANNOTATION))
+                    {
+                        if (!skipping.booleanValue())
+                            throw new IllegalStateException("Unexpected " + END_ANNOTATION + " at line " + lineCount.intValue());
+
+                        skipping.setValue(false);
+                    }
+
+                    return ret;
+                }
+            )
+            .collect(Collectors.joining("\n"));
+        }
+
         // Strip all comments from the script -- PostgreSQL JDBC driver goes berserk if it sees ; or ? inside a comment
-        StringBuilder stripped = new SqlScanner(_sql).stripComments();
+        StringBuilder stripped = new SqlScanner(sql).stripComments();
 
         Collection<String> sqlBlocks;
 
@@ -161,54 +200,28 @@ public class SqlScriptExecutor
         {
             super.execute();
 
-            Method method;
+            UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _scriptName, _methodName);
 
             try
             {
-                if (_upgradeCode == null)
-                {
-                    throw new IllegalArgumentException("The " + _moduleContext.getName() + " module does not have an UpgradeCode implementation");
-                }
-                assert null != _methodName;
-
-                method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
-
-                String displayName = method.getDeclaringClass().getSimpleName() + "." + method.getName() + "(ModuleContext moduleContext)";
-
-                Runnable runnable = () -> {
-                    // Make sure cached database meta data reflects all previously executed SQL
-                    CacheManager.clearAllKnownCaches();
-
-                    try
-                    {
-                        method.invoke(_upgradeCode, _moduleContext);
-                    }
-                    catch (InvocationTargetException | IllegalAccessException e)
-                    {
-                        throw new RuntimeException("Can't invoke method " + method.getName() + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
-                    }
-                    finally
-                    {
-                        // Just to be safe
-                        CacheManager.clearAllKnownCaches();
-                    }
-                };
+                // Retrieve Method in all cases (even deferred upgrade) to proactively validate
+                Method method = upgradeMethod.getMethod();
 
                 if (method.isAnnotationPresent(DeferredUpgrade.class))
                 {
-                    _log.info("Adding deferred upgrade to execute " + displayName);
-                    _moduleContext.addDeferredUpgradeRunnable(displayName, runnable);
+                    _log.info("Adding deferred upgrade to execute {}", upgradeMethod.getDisplayName());
+                    _moduleContext.addDeferredUpgradeMethod(upgradeMethod);
                 }
                 else
                 {
-                    _log.info("Executing " + displayName);
-                    runnable.run();
+                    _log.info("Executing {}", upgradeMethod.getDisplayName());
+                    _moduleContext.invokeUpgradeMethod(upgradeMethod);
                 }
             }
             catch (NoSuchMethodException e)
             {
-                // Give the upgrade code a chance to recognize something that doesn't map to a Java method
-                _upgradeCode.fallthroughHandler(_methodName);
+                // Give the upgrade code a chance to recognize something that doesn't map to a Java method.
+                upgradeMethod.getUpgradeCode().fallthroughHandler(_methodName);
             }
         }
     }

@@ -37,7 +37,7 @@ import java.util.Collection;
  * @version $Id: ListFormatter.java,v 1.5 2004/03/01 11:02:13 leo Exp $
  */
 public interface ListFormatter {
-  public String getName();
+  String getName();
 
   /**
    * Display a simple vertical list.
@@ -49,11 +49,11 @@ public interface ListFormatter {
    * @param emptyText Text to display if collection is empty
    * @param showSize If showSize is true then the size of the collection is displayed
    */
-  public void format(Writer writer,
-                     Linkable current,
-                     String listComment,
-                     Collection c,
-                     String emptyText,
-                     boolean showSize)
+  void format(Writer writer,
+              Linkable current,
+              String listComment,
+              Collection c,
+              String emptyText,
+              boolean showSize)
       throws IOException;
 }

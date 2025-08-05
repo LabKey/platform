@@ -62,8 +62,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -394,13 +394,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
-        return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings);
+        return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings, auditUserComment);
     }
 
     @Override
-    public NameExpressionValidationResult validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain<?> domainDesign, Container container)
     {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -445,45 +445,29 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        SampleTypeService.get().validateSampleTypeName(container, user, name, domain != null);
+    }
+
+    @Override
+    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain<?> updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
 
-        // verify and NameExpression values
-        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
-
-        boolean isUpdate = domain != null;
-        if (!isUpdate)
-        {
-            if (name == null)
-            {
-                throw new IllegalArgumentException("You must supply a name for the sample type.");
-            }
-            else
-            {
-                ExpSampleType st = SampleTypeService.get().getSampleType(container, user, name);
-                if (st != null)
-                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
-            }
-        }
-
-        // verify the length of the Name
-        int nameMax = materialSourceTI.getColumn("Name").getScale();
-        if (name != null && name.length() >= nameMax)
-            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+        validateDomainName(container, user, domain, name);
 
         if (options == null)
-        {
             return;
-        }
 
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
         int nameExpMax = materialSourceTI.getColumn("NameExpression").getScale();
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
         int aliquotNameExpMax = materialSourceTI.getColumn("AliquotNameExpression").getScale();
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()) && options.getAliquotNameExpression().length() > aliquotNameExpMax)
-            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + nameExpMax + " characters.");
+            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + aliquotNameExpMax + " characters.");
 
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
@@ -513,7 +497,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                throw UnexpectedException.wrap(e);
             }
 
             final Set<String> finalExistingAliases = existingAliases;
@@ -542,15 +526,15 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         String name = StringUtils.trimToNull(domain.getName());
         if (name == null)
             throw new IllegalArgumentException("SampleSet name required");
 
         String description = domain.getDescription();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields(true);
-        List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+        List<GWTPropertyDescriptor> properties = domain.getFields(true);
+        List<GWTIndex> indices = domain.getIndices();
 
         int idCol1 = -1;
         int idCol2 = -1;
@@ -571,7 +555,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             //These are outdated but some clients still use them, or have existing sample types that do.
             List<Integer> idCols = (arguments.getIdCols() != null) ? arguments.getIdCols() : Collections.emptyList();
-            idCol1 = idCols.size() > 0 ? idCols.get(0) : -1;
+            idCol1 = !idCols.isEmpty() ? idCols.get(0) : -1;
             idCol2 = idCols.size() > 1 ? idCols.get(1) : -1;
             idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
@@ -592,7 +576,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         try
         {
             st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression,
-                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds);
+                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds, arguments != null ? arguments.getAuditRecordMap() : null);
         }
         catch (SQLException e)
         {
@@ -602,17 +586,17 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             throw new RuntimeException(e);
         }
-        return st.getDomain();
+        return st.getDomain(forUpdate);
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
         if (st == null)
             throw new NotFoundException("Sample Type not found: " + domain);
 
-        st.delete(user);
+        st.delete(user, auditUserComment);
     }
 
     @Override
@@ -641,7 +625,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public SampleTypeDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public SampleTypeDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         ExpSampleType sampleType = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
         return new SampleTypeDomainKindProperties(sampleType);

@@ -74,7 +74,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             }
 
             @Override
-            protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl,  boolean link, boolean thumbnail)
+            protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
             {
                 renderDetailsCellContents(ctx, out);
             }
@@ -118,7 +118,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
                 {
                     if (value != null)
                     {
-                        Integer userId = Integer.parseInt(value.toString());
+                        int userId = Integer.parseInt(value.toString());
                         user = UserManager.getUser(userId);
                     }
                 }

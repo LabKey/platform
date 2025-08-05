@@ -159,7 +159,7 @@ public class LocationManager
             containerColumn = "Container" + containerColumn;
         }
         return new SqlSelector(table.getSchema(), new SQLFragment("SELECT * FROM " +
-                table + " WHERE " + containerColumn + cols.toString(), params)).exists();
+                table + " WHERE " + containerColumn + cols, params)).exists();
     }
 
     public boolean isLocationInUse(LocationImpl loc)

@@ -54,7 +54,7 @@
     QueryForm form = (QueryForm) HttpView.currentModel();
     User user = getUser();
     Container c = getContainer();
-    String schemaName = form.getSchemaName().equals("") ? null : form.getSchemaName();
+    String schemaName = form.getSchemaName().isEmpty() ? null : form.getSchemaName();
     String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<>();
@@ -70,7 +70,7 @@
     }
 
     // UNDONE: Requires queryName and schemaName for now.  We need a method to get all session views in a container.
-    if (queryName != null && schemaName != null && schemaName.length() > 0)
+    if (queryName != null && schemaName != null && !schemaName.isEmpty())
     {
         views.addAll(CustomViewSetKey.getCustomViewsFromSession(getViewContext().getRequest(), c, queryName, SchemaKey.fromString(schemaName)).values());
     }

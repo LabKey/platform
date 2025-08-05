@@ -29,6 +29,7 @@
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.LookupResolutionType" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final static String tableName = "testGetSelectSqlSort";
@@ -43,7 +44,7 @@
         ListDefinition list = s.getList(c, tableName);
 
         var data = new ReaderInputStream(new StringReader("A,B,C\n6,4,3\n1,8,6\n7,1,9\n2,5,1\n8,9,4\n3,2,7\n9,6,10\n4,10,2\n10,3,5\n5,7,8\n"));
-        list.insertListItems(user, c, new TabLoader.CsvFactory().createLoader(data,true), new BatchValidationException(), null, null, false, false);
+        list.insertListItems(user, c, new TabLoader.CsvFactory().createLoader(data,true), new BatchValidationException(), null, null, false, LookupResolutionType.primaryKey);
 
         // wrap this list so we can mangle the sort properties
         UserSchema schema = (UserSchema)DefaultSchema.get(user,c,"lists");
@@ -68,7 +69,6 @@
                 null, 1000, 0, true);
         assertTrue(test1.toDebugString().contains("ORDER BY A ASC"));
         assertTrue(isSorted(test1,3));
-        test1=null;
 
         // test choose non-PK
         SQLFragment test2 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -76,7 +76,6 @@
                 null, 1000, 0, true);
         assertTrue(test2.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test2,1));
-        test2 = null;
 
         // test explicit in select list
         SQLFragment test3 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -84,7 +83,6 @@
                 new Sort("C"), 1000, 0, true);
         assertTrue(test3.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test3,2));
-        test3 = null;
 
         // test explicit not in select list
         SQLFragment test4 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -92,7 +90,6 @@
                 new Sort("C"), 1000, 0, true);
         assertTrue(test4.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test4,3));
-        test4 = null;
 
         // test sortFieldKeys
         SQLFragment test5 = QueryServiceImpl.get().getSelectSQL(wrapped,
@@ -101,7 +98,6 @@
         assertFalse(test5.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(test5.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test5,3));
-        test5 = null;
 
         /* broken sortFieldsKey */
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
@@ -113,7 +109,6 @@
         assertFalse(test6.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test6.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test6,1));
-        test6 = null;
 
         // explicit sort, sort by B because D not found
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
@@ -123,7 +118,6 @@
         assertFalse(test7.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test7.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test7,2));
-        test7 = null;
     }
 
     @BeforeClass
@@ -142,7 +136,7 @@
         d.addProperty(new PropertyStorageSpec("A", JdbcType.INTEGER));
         d.addProperty(new PropertyStorageSpec("B", JdbcType.INTEGER));
         d.addProperty(new PropertyStorageSpec("C", JdbcType.INTEGER));
-        list.save(user,true);
+        list.save(user,true, null, null);
     }
 
 

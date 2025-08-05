@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.query.QueryKey;
 
 import java.sql.Time;
 import java.text.DecimalFormat;
@@ -373,7 +372,7 @@ public class SubstitutionFormat
             else
             {
                 String s = String.valueOf(value);
-                if (s.length() == 0)
+                if (s.isEmpty())
                     return "";
 
                 ss = Stream.of(s);

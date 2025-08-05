@@ -197,8 +197,8 @@ public class StatsServiceImpl implements StatsService
 
         private static class CurveValidation
         {
-            private double[] _data;
-            private Map<CurveFitType, CurveResults> _curveResultsMap = new HashMap<>();
+            private final double[] _data;
+            private final Map<CurveFitType, CurveResults> _curveResultsMap = new HashMap<>();
 
             public CurveValidation(double[] data)
             {
@@ -231,9 +231,9 @@ public class StatsServiceImpl implements StatsService
 
         private static class CurveResults
         {
-            private double _fitError;
-            private double _auc;
-            private double _positiveAuc;
+            private final double _fitError;
+            private final double _auc;
+            private final double _positiveAuc;
 
             public CurveResults(double fitError, double auc, double positiveAuc)
             {

@@ -90,11 +90,14 @@ public class HtmlOutput extends AbstractParamReplacement
             setLabel(label);
         }
 
+        /**
+         * Loads an HTML file and adds nonces to any embedded &lt;script> tags. Don't call this with files that aren't HTML.
+         */
         @Override
         protected String renderInternalAsString(File file) throws Exception
         {
             if (exists(file))
-                return PageFlowUtil.getFileContentsAsString(file);
+                return PageFlowUtil.addScriptNonces(PageFlowUtil.getFileContentsAsString(file));
 
             return null;
         }

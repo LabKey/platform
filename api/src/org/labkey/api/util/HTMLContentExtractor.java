@@ -27,9 +27,9 @@ import java.io.StringReader;
 // Warning: This is not an efficient parser. See Issue 42948.
 public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
 {
-    private StringBuilder _text = new StringBuilder();
-    private StringBuilder _title = new StringBuilder();
-    private Reader _reader;
+    private final StringBuilder _text = new StringBuilder();
+    private final StringBuilder _title = new StringBuilder();
+    private final Reader _reader;
     protected boolean _isBody = false;
     protected boolean _isTitle = false;
 
@@ -83,7 +83,7 @@ public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
 
     public String getTitle()
     {
-        if (_title.length() == 0)
+        if (_title.isEmpty())
             return null;
         else
             return _title.toString();

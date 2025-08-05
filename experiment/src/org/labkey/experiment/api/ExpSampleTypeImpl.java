@@ -16,12 +16,10 @@
 
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -36,6 +34,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -70,6 +69,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -80,6 +80,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -805,9 +806,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @NotNull
     public Domain getDomain()
     {
-        if (_domain == null)
+        return getDomain(false);
+    }
+
+    @Override
+    @NotNull
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (_domain == null || (forUpdate && !_domain.isMutable()))
         {
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
             if (_domain == null)
             {
                 _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
@@ -921,7 +929,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public void delete(User user, String auditUserComment)
+    public void delete(User user, @Nullable String auditUserComment)
     {
         try
         {
@@ -957,7 +965,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public DbSequence getSampleLsidDbSeq(int batchSize, Container container)
     {
-        return ExperimentServiceImpl.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
+        return LsidManager.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
     }
 
     @Override
@@ -966,39 +974,25 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return "SampleType " + getName() + " in " + getContainer().getPath();
     }
 
-    public void index(SearchService.IndexTask task)
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table)
     {
         // Big hack to prevent study specimens from being indexed as part of sample types
         // Check needed on restart, as all documents are enumerated.
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
-        {
-            return;
-        }
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+            return null;
 
-        final SearchService.IndexTask indexTask = task;
-        final ExpSampleTypeImpl me = this;
-        indexTask.addRunnable(
-                () -> me.indexSampleType(indexTask)
-                , SearchService.PRIORITY.bulk
-        );
-    }
+        var container = getContainer();
+        if (container == null)
+            return null;
 
-    private void indexSampleType(SearchService.IndexTask indexTask)
-    {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
         if (urlProvider != null)
         {
             url = urlProvider.getShowSampleTypeURL(this);
-            url.setExtraPath(getContainer().getId());
+            url.setExtraPath(container.getId());
         }
 
         Map<String, Object> props = new HashMap<>();
@@ -1018,8 +1012,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
-        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+
+        return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                container.getEntityId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),
@@ -1031,8 +1026,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
             }
         };
-
-        indexTask.addResource(sdr, SearchService.PRIORITY.item);
     }
 
     public String getDocumentId()
@@ -1111,5 +1104,38 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public boolean isMedia()
     {
         return ExpSchema.SampleTypeCategoryType.media.name().equalsIgnoreCase(getCategory());
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("NameExpression", getNameExpression());
+        if (!StringUtils.isEmpty(getAliquotNameExpression()))
+            map.put("AliquotNameExpression", getAliquotNameExpression());
+        if (!StringUtils.isEmpty(getLabelColor()))
+            map.put("LabelColor", getLabelColor());
+        if (!StringUtils.isEmpty(getMetricUnit()))
+            map.put("MetricUnit", getMetricUnit());
+        String importAliasStr = null;
+        try
+        {
+            importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliasMap());
+        }
+        catch (IOException ignore)
+        {
+        }
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (getAutoLinkTargetContainer() != null)
+            map.put("AutoLinkTargetContainerId", getAutoLinkTargetContainer().getId());
+        if (!StringUtils.isEmpty(getAutoLinkCategory()))
+            map.put("AutoLinkCategory", getAutoLinkCategory());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+
+        return map;
     }
 }

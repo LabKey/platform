@@ -15,6 +15,8 @@
  */
 package org.labkey.api.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -28,8 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -179,9 +179,8 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             // Parameter name (String) -> File on disk/original file name Pair
             Map<String, Pair<File, String>> savedFiles = new HashMap<>();
 
-            if (basicRequest instanceof MultipartHttpServletRequest)
+            if (basicRequest instanceof MultipartHttpServletRequest request)
             {
-                MultipartHttpServletRequest request = (MultipartHttpServletRequest) basicRequest;
 
                 Iterator<String> nameIterator = request.getFileNames();
                 while (nameIterator.hasNext())
@@ -273,7 +272,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
 
     public static class UploadException extends IOException
     {
-        private int _statusCode;
+        private final int _statusCode;
 
         public UploadException(String message, int statusCode)
         {

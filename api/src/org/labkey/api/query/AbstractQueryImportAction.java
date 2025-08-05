@@ -28,12 +28,12 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -304,13 +304,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         saveToPipeline,
         useAsync,
         importIdentity,
-        importLookupByAlternateKey,
         format,
         insertOption,
         crossTypeImport,
         allowCreateStorage,
+        importLookupByAlternateKey, // deprecated. Prefer lookupResolutionType
         crossFolderImport,
-        useTransactionAuditCache
+        useTransactionAuditCache,
+        lookupResolutionType,
     }
 
     @Nullable
@@ -325,7 +326,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             _optionParamsMap = new HashMap<>();
             _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
-            _optionParamsMap.put(Params.importLookupByAlternateKey, Boolean.valueOf(getParam(Params.importLookupByAlternateKey)));
             _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
             _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
             _optionParamsMap.put(Params.crossFolderImport, Boolean.valueOf(getParam(Params.crossFolderImport)));
@@ -337,6 +337,26 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean getOptionParamValue(Params p)
     {
         return getOptionParamsMap().getOrDefault(p, false);
+    }
+
+    @NotNull
+    protected LookupResolutionType getLookupResolutionType()
+    {
+        String paramValue = getParam(Params.lookupResolutionType);
+        if (paramValue == null)
+        {
+            paramValue = getParam(Params.importLookupByAlternateKey);
+            if (paramValue == null)
+                return LookupResolutionType.primaryKey;
+            else
+            {
+                if (Boolean.valueOf(paramValue))
+                    return LookupResolutionType.alternateThenPrimaryKey;
+                else
+                    return LookupResolutionType.primaryKey;
+            }
+        }
+        return LookupResolutionType.valueOf(paramValue);
     }
 
     protected boolean skipInsertOptionValidation()
@@ -533,7 +553,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         FileLike dataFileDir = root.getRootFileLike().resolveChild("QueryImportFiles");
                         if (dataFileDir.isFile())
                         {
-                            dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootFileLike());
+                            dataFileDir = FileUtil.findUniqueFileName("QueryImportFiles", root.getRootFileLike());
                             if (!FileUtil.mkdir(dataFileDir))
                                 throw new RuntimeException("Error attempting to create directory " + dataFileDir.toNioPathForRead()
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
@@ -545,7 +565,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
 
-                        dataFile = AssayFileWriter.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
+                        dataFile = FileUtil.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
 
                     }
                     multipartfile.transferTo(dataFile.toNioPathForWrite());
@@ -575,6 +595,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setAuditBehaviorType(behaviorType)
                                 .setAuditUserComment(_auditUserComment)
                                 .setOptionParamsMap(getOptionParamsMap())
+                                .setLookupResolutionType(getLookupResolutionType())
                                 .setAllowLineageColumns(allowLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
@@ -582,6 +603,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
+                            if (_target != null)
+                                SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
                             JSONObject response = new JSONObject();
                             response.put("success", true);
                             response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
@@ -613,7 +636,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
 
             if (ve.hasErrors())
+            {
+                addImportValidationErrorMetric(_insertOption, _target, (form instanceof QueryForm qf) ? qf.getQueryName() : null);
                 throw ve;
+            }
 
             JSONObject response = createSuccessResponse(rowCount);
             if (auditEvent != null)
@@ -789,17 +815,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
+        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), getLookupResolutionType(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
     {
-        return createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container, null);
+        return createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container, null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container, QueryImportPipelineJob importJob)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container, QueryImportPipelineJob importJob)
     {
-        boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
         boolean allowCreateStorage = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
@@ -809,7 +834,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setBackgroundJob(importJob);
         context.setInsertOption(insertOption);
-        context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        if (lookupResolutionType != null)
+            context.setLookupResolutionType(lookupResolutionType);
         if (auditBehaviorType != null)
         {
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
@@ -831,9 +857,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return context;
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
@@ -857,9 +883,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (auditEvent != null)
                     auditEvent.addComment(auditAction, count);
 
-                String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
-                metricPrefix = metricPrefix.replace("exp.", "");
-                incrementRowCountMetric(count, context.getInsertOption(), metricPrefix);
+                incrementRowCountMetric(count, context.getInsertOption(), getMetricPrefix(target));
                 transaction.commit();
 
                 return count;
@@ -879,6 +903,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
 
         return 0;
+    }
+
+    public static void addImportValidationErrorMetric(QueryUpdateService.InsertOption insertOption, @Nullable TableInfo target, @Nullable String queryName)
+    {
+        String featureArea =  insertOption.toString().toLowerCase() + "FailWithValidationError";
+        String targetType = null;
+        if (target != null)
+            targetType = getMetricPrefix(target);
+        else if (queryName != null)
+            targetType = queryName.equalsIgnoreCase("materials") ? "samples" : queryName;
+        if (targetType != null)
+            SimpleMetricsService.get().increment("query", featureArea, targetType);
+    }
+
+    private static String getMetricPrefix(@NotNull TableInfo target)
+    {
+        String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
+        return metricPrefix.replace("exp.", "");
     }
 
     public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)

@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -52,7 +53,6 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TransactionFilter;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -536,6 +536,40 @@ public abstract class SqlDialect
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }
 
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix, char escapeChar)
+    {
+        String prefix = wildcardPrefix != null ? wildcardPrefix : "";
+        String suffix = wildcardSuffix != null ? wildcardSuffix : "";
+        String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
+        String escapeToken = " ESCAPE '" + escapeChar + "'";
+        sql.append(" ")
+                .append(getCaseInsensitiveLikeOperator())
+                .append(" ")
+                .appendValue(prefixLike)
+                .append(escapeToken);
+        return sql;
+    }
+
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, wildcardPrefix, wildcardSuffix, '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, "%", "%", '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveStartsWith(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, null, "%", '!');
+    }
+
+    public SQLFragment appendCaseInsensitiveEndsWith(SQLFragment sql, @NotNull String matchStr)
+    {
+        return appendCaseInsensitiveLikeClause(sql, matchStr, "%", null, '!');
+    }
+
     public abstract boolean requiresStatementMaxRows();
 
     /**
@@ -665,9 +699,9 @@ public abstract class SqlDialect
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
 
-    public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    public final void runSql(String script, DbSchema schema, String sql, ModuleContext moduleContext, @Nullable Connection conn)
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn, getBooleanLiteral(true));
+        SqlScriptExecutor parser = new SqlScriptExecutor(script, sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, moduleContext, conn);
         parser.execute();
     }
 
@@ -837,7 +871,7 @@ public abstract class SqlDialect
             return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
-    private Map<String,Boolean> _validatedIds = new HashMap<>();
+    private final Map<String,Boolean> _validatedIds = new HashMap<>();
 
     private boolean validateIdentifier(DatabaseIdentifier id)
     {
@@ -1988,35 +2022,20 @@ public abstract class SqlDialect
 
     /**
      * Queries the database in a dialect-specific way to determine the procedure's parameter names, datatypes, and directions.
-     * @param scope
-     * @param procSchema
-     * @param procName
      * @return A map of parameter name / ParameterInfo pairs
-     * @throws SQLException
      */
     public abstract Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
 
     /**
      * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
      *
-     * @param procSchema
-     * @param procName
-     * @param paramCount   The total number of parameters to include in the invocation string
-     * @param hasReturn    true if the procedure has a return code/status, false if not
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
-     * @param procScope
-     * @return
      */
     public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
      * the output parameters.
-     * @param scope
-     * @param stmt
-     * @param parameters
-     * @param registerOutputAssignment true if the assigned result (see buildProcedureCall) of the proc also needs to be registered as an output parameter
-     * @throws SQLException
      */
     public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException;
 
@@ -2126,6 +2145,7 @@ public abstract class SqlDialect
                 this.s = scope;
                 this.d = scope.getSqlDialect();
                 testDialectStringHandler();
+                testLikeOperator();
             });
         }
 
@@ -2151,6 +2171,18 @@ public abstract class SqlDialect
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
             for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
                 testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
+        }
+
+        void testLikeOperator()
+        {
+            String stringLiteralPrefix = d.isSqlServer() ? " N" : " ";
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a!%bc%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "a%bc").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%ab!_C' ESCAPE '!'", d.appendCaseInsensitiveEndsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ab_C").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%a![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString());
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString());
         }
     }
 }

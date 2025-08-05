@@ -48,14 +48,14 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,10 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/17/13
- */
 public class GroupAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String COLUMN_NAME_RESOURCE_ENTITY_ID = "ResourceEntityId";
@@ -77,8 +73,8 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
-
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
@@ -361,7 +357,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Integer id = (Integer)getBoundColumn().getValue(ctx);
             if (id != null)
@@ -375,23 +371,18 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                         if (g == null)
                             return;
                         Container groupContainer = g.isProjectGroup() ? ContainerManager.getForId(g.getContainer()) : ContainerManager.getRoot();
-                        String displayText = PageFlowUtil.filter(g.getName());
+                        String displayText = g.getName();
 
                         // Link to security-group action ONLY for standard security groups (not module groups, like actors). See #26351.
                         if (g.getPrincipalType() == PrincipalType.GROUP)
                         {
                             String groupName = g.isProjectGroup() && groupContainer != null ? groupContainer.getPath() + "/" + g.getName() : g.getName();
                             ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-
-                            oldWriter.write("<a href=\"");
-                            oldWriter.write(PageFlowUtil.filter(url));
-                            oldWriter.write("\">");
-                            oldWriter.write(displayText);
-                            oldWriter.write("</a>");
+                            out.write(LinkBuilder.simpleLink(displayText, url));
                         }
                         else
                         {
-                            oldWriter.write(displayText);
+                            out.write(displayText);
                         }
                         return;
                     }
@@ -405,27 +396,23 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                             if (u.isGuest())
                                 return;
 
-                            String displayText = PageFlowUtil.filter(u.getDisplayName(loggedInUser));
+                            String displayText = u.getDisplayName(loggedInUser);
                             ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, id);
                             if (url != null)
                             {
-                                oldWriter.write("<a href=\"");
-                                oldWriter.write(PageFlowUtil.filter(url));
-                                oldWriter.write("\">");
-                                oldWriter.write(displayText);
-                                oldWriter.write("</a>");
+                                out.write(LinkBuilder.simpleLink(displayText, url));
                             }
                             else
-                                oldWriter.write(displayText);
+                                out.write(displayText);
                         }
                         else
                         {
-                            oldWriter.write(p.getName());
+                            out.write(p.getName());
                         }
                     }
                 }
             }
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
         }
 
         @Override

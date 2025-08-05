@@ -20,13 +20,11 @@ import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.assay.sample.MaterialInputRoleComparator;
@@ -59,6 +57,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JsonTest;
 import org.labkey.api.data.MaterializedQueryHelper;
@@ -138,16 +137,14 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
-import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
-import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
@@ -167,11 +164,11 @@ import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.NumberUtilsLabKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -200,6 +197,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static java.util.EnumSet.allOf;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
@@ -231,10 +229,20 @@ public class ApiModule extends CodeOnlyModule
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
             "Stage file uploads and downloads to temporary local file",
             "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage",
             false, false, FeatureType.Optional));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(MothershipReport.FEATURE_FLAG_EXTENDED_METRICS,
+            "Send extended metrics information to LabKey",
+            "Send additional usage information to https://www.labkey.org along with standard usage metrics. This " +
+            "information includes a list of unique, active users registered on the server. Providing this information " +
+            "is not necessary in most cases. Clients with multi-server contracts and user-based pricing may be asked to " +
+            "enable this feature to help comply with their licensing terms.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Optional
+        ));
     }
 
     @NotNull
@@ -252,9 +260,7 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
-        // Handle optional feature and system maintenance startup properties as late as possible; we want all optional
-        // features and system maintenance tasks to be registered first
-        ContextListener.addStartupListener(new OptionalFeatureStartupListener());
+        // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
@@ -384,6 +390,7 @@ public class ApiModule extends CodeOnlyModule
             EntropyPasswordValidator.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
+            ExcelWriter.TestCase.class,
             ExistingRecordDataIterator.TestCase.class,
             ExperimentJSONConverter.TestCase.class,
             ExtUtil.TestCase.class,
@@ -437,15 +444,14 @@ public class ApiModule extends CodeOnlyModule
             Table.IsSelectTestCase.class,
             ValidEmail.TestCase.class,
             URIUtil.TestCase.class,
-            AssayFileWriter.TestCase.class,
             AssayResultsFileWriter.TestCase.class
         );
     }
 
     @Override
-    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         list.add(new JspTestCase("/org/labkey/vfs/vfsTestCase.jsp"));

@@ -2,21 +2,16 @@ package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.settings.StandardStartupPropertyHandler;
-import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.MaintenanceTask
 {

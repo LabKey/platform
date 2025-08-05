@@ -109,14 +109,14 @@ public class PropertyUtil
     public static String getRelativeURL(String action, String pageFlow)
     {
         String[] pathParts = PropertyUtil.getContainerPath().split("/");
-        String encodedPath = "/";
+        StringBuilder encodedPath = new StringBuilder("/");
         for (String pathPart : pathParts)
         {
-            if (pathPart.length() > 0)
+            if (!pathPart.isEmpty())
             {
                 //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
                 String part = URL.encodePathSegment(pathPart);
-                encodedPath += part + "/";
+                encodedPath.append(part).append("/");
             }
         }
         if (!action.contains("."))

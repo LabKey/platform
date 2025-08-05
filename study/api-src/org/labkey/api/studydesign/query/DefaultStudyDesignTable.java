@@ -52,7 +52,7 @@ import java.util.Set;
 public class DefaultStudyDesignTable<SchemaType extends StudyDesignQuerySchema> extends FilteredTable<SchemaType>
 {
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
-    private Domain _domain;
+    private final Domain _domain;
 
 
     protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo, SchemaType schema)
@@ -185,8 +185,6 @@ public class DefaultStudyDesignTable<SchemaType extends StudyDesignQuerySchema> 
 
     /**
      * Deletes all data for the specified container.
-     * @param c
-     * @param user
      */
     public void deleteData(Container c, User user)
     {

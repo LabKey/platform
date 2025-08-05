@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
@@ -48,6 +49,7 @@ import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.beans.Introspector;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -103,10 +105,10 @@ public class PageConfig
 
     private record EventHandler(String id, String selector, @NotNull String event, @NotNull String handler) {
         public EventHandler {
-            assert (null==id) != (null==selector) : "exactly one of id or selector must be non-null";
-            assert !StringUtils.containsWhitespace(id) : "id should not contain any whitespace";
-            assert !StringUtils.containsWhitespace(event) : "event name should not contain any whitespace";
-            assert !event.startsWith("on") : "event name should not include the 'on' prefix";
+            assert (null==id) != (null==selector) : "exactly one of id or selector must be non-null '" + id + "', '" + selector + "'";
+            assert !StringUtils.containsWhitespace(id) : "id should not contain any whitespace. '" + id + "'";
+            assert !StringUtils.containsWhitespace(event) : "event name should not contain any whitespace. '" + event + "'";
+            assert !event.startsWith("on") : "event name should not include the 'on' prefix. '" + event + "'";
         }
 
         public String getKey()
@@ -154,7 +156,7 @@ public class PageConfig
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
     private boolean _includePermissions = false;
-    private boolean _includeInheritableFormats = false;
+    private final boolean _includeInheritableFormats = false;
 
     public PageConfig(HttpServletRequest request)
     {
@@ -602,6 +604,19 @@ public class PageConfig
         return prefix + _sid + _uid.incrementAndGet(); // we can concatenate without a separator because _sid is fixed width
     }
 
+    /** @return a version of the supplied name that conforms to Java's local variable naming convention, which ensures
+     * it can serve as a valid DOM id attribute value. This does not ensure that the ID is unique across properties.
+     * See issue 53306 for more context. */
+    public static String makeIdFromName(String name)
+    {
+        if (name == null)
+            return null;
+
+        if (name.isEmpty())
+            return null;
+
+        return Introspector.decapitalize(ColumnInfo.legalNameFromName(name));
+    }
 
     @NotNull
     public static String getScriptNonceHeader(HttpServletRequest request)

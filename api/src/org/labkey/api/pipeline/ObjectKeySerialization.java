@@ -29,7 +29,7 @@ public class ObjectKeySerialization
 {
     public static class Serializer extends StdKeySerializer
     {
-        private ObjectMapper mapper = PipelineJob.createObjectMapper();
+        private final ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         @Override
         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException
@@ -48,7 +48,9 @@ public class ObjectKeySerialization
             ObjectMapper mapper = PipelineJob.createObjectMapper();
             try
             {
-                TypeReference<T> typeRef = new TypeReference<T>() {};
+                TypeReference<T> typeRef = new TypeReference<>()
+                {
+                };
                 T prop = mapper.readValue(key, typeRef);
                 return prop;
             }

@@ -12,12 +12,12 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "6.40.1"
+    "@labkey/components": "6.58.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.5.0",
-    "@types/jest": "29.5.14",
-    "@types/react": "18.3.20",
-    "@types/react-dom": "18.3.6"
+    "@labkey/build": "8.6.0",
+    "@types/jest": "30.0.0",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7"
   }
 }

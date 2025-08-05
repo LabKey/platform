@@ -565,7 +565,7 @@ public class SpecimenApiController extends SpringActionController
             Set<String> hashes = new HashSet<>();
             Collections.addAll(hashes, addSpecimensToRequestForm.getSpecimenHashes());
             RequestedSpecimens requested = SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), hashes, addSpecimensToRequestForm.getPreferredLocation());
-            if (requested.getVials().size() > 0)
+            if (!requested.getVials().isEmpty())
             {
                 List<Vial> vials = new ArrayList<>(requested.getVials());
                 try
@@ -663,7 +663,7 @@ public class SpecimenApiController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(13.1)
-    public class GetSpecimenWebPartGroupsAction extends ReadOnlyApiAction<SpecimenApiForm>
+    public static class GetSpecimenWebPartGroupsAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
         @Override
         public ApiResponse execute(SpecimenApiForm form, BindException errors)

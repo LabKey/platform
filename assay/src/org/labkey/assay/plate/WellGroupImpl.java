@@ -142,7 +142,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     @Override
     public String getPositionDescription()
     {
-        if (_positions == null || _positions.size() == 0)
+        if (_positions == null || _positions.isEmpty())
             return "";
         if (_positions.size() == 1)
             return _positions.get(0).getDescription();
@@ -407,7 +407,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
                 continue;
             values.add(data.getMean());
         }
-        computeStats(values.toArray(new Double[values.size()]));
+        computeStats(values.toArray(new Double[0]));
     }
 
     private synchronized void computeStats(Double[] data)

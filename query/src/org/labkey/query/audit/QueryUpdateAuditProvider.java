@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -31,7 +32,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
@@ -140,11 +140,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
                 }
             }
         };
-        appendValueMapColumns(table);
-
-        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + QUERY_UPDATE_AUDIT_EVENT);
-        url.setStrictContainerContextEval(true);
-        table.setDetailsURL(url);
+        appendValueMapColumns(table, QUERY_UPDATE_AUDIT_EVENT);
 
         return table;
     }
@@ -215,11 +211,16 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
         /** Important for reflection-based instantiation */
         @SuppressWarnings("unused")
-        public QueryUpdateAuditEvent() {}
+        public QueryUpdateAuditEvent()
+        {
+            super();
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+        }
 
         public QueryUpdateAuditEvent(Container container, String comment)
         {
             super(QUERY_UPDATE_AUDIT_EVENT, container, comment);
+            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public String getRowPk()

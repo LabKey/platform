@@ -29,10 +29,9 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -370,7 +369,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         if (!shouldRender(ctx))
             return;

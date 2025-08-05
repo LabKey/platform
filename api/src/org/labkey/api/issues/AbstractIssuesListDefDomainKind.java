@@ -212,13 +212,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public abstract void beforeDeleteDomain(User user, Domain domain);
 
     @Override
-    public final void deleteDomain(User user, Domain domain)
+    public final void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             IssuesListDefService.get().deleteIssueDefsForDomain(user, domain);
             beforeDeleteDomain(user, domain);
-            domain.delete(user);
+            domain.delete(user, auditUserComment);
 
             transaction.commit();
         }
@@ -281,14 +281,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public @Nullable IssuesDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable IssuesDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         return IssuesListDefService.get().getIssueDomainKindProperties(container, domain != null ? domain.getName() : null);
     }
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
+                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         if (options != null && StringUtils.isBlank(options.getIssueDefName()))
             return new ValidationException("Issue name must not be null.");
@@ -297,7 +297,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
@@ -315,10 +315,10 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
             issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
 
-            List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
-            List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+            List<GWTPropertyDescriptor> properties = domain.getFields();
+            List<GWTIndex> indices = domain.getIndices();
 
-            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user, true);
             if (newDomain != null)
             {
                 Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
@@ -339,10 +339,10 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                 newDomain.setPropertyIndices(indices, lowerReservedNames);
 
                 // set default values on the base properties
-                DomainKind domainKind = newDomain.getDomainKind();
-                if (domainKind instanceof AbstractIssuesListDefDomainKind)
+                DomainKind<?> domainKind = newDomain.getDomainKind();
+                if (domainKind instanceof AbstractIssuesListDefDomainKind listDK)
                 {
-                    setDefaultValues(newDomain, ((AbstractIssuesListDefDomainKind)domainKind).getRequiredProperties());
+                    setDefaultValues(newDomain, listDK.getRequiredProperties());
                 }
                 newDomain.save(user);
             }
@@ -353,7 +353,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         {
             throw new RuntimeException(e);
         }
-        return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+        return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user, forUpdate);
     }
 
     public static void setDefaultValues(Domain domain, Collection<PropertyStorageSpec> requiredProps)

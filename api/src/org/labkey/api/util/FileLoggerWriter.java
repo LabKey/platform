@@ -15,9 +15,9 @@ import java.io.IOException;
 public class FileLoggerWriter implements LoggerWriter, AutoCloseable
 {
     private final String LINE_SEP = System.getProperty("line.separator");
-    private static Logger LOG = LogManager.getLogger(FileLoggerWriter.class);
+    private static final Logger LOG = LogManager.getLogger(FileLoggerWriter.class);
 
-    private File _file;
+    private final File _file;
     private BufferedWriter _writer;
 
     public FileLoggerWriter(File file)

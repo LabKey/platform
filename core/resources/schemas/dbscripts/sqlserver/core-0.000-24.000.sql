@@ -919,6 +919,4 @@ END;
 
 GO
 
-EXEC core.executeJavaInitializationCode 'setDefaultExcludedProjects';
-
 ALTER TABLE core.UsersData ADD LastActivity DATETIME NULL;

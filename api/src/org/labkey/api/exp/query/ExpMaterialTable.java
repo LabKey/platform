@@ -37,6 +37,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Folder,
         Inputs,
         IsAliquot,
+        IsPlated,
         LSID,
         MaterialExpDate,
         MaterialSourceId,
@@ -60,8 +61,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceProtocolApplication,
         SourceProtocolLSID,
         StoredAmount,
-        Units,
-        IsPlated;
+        Units;
 
         public FieldKey fieldKey()
         {

@@ -29,7 +29,7 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class XMLStreamReaderWrapper implements XMLStreamReader
 {
-    private XMLStreamReader streamReader;
+    private final XMLStreamReader streamReader;
 
     public XMLStreamReaderWrapper(XMLStreamReader streamReader)
     {

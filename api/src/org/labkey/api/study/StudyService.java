@@ -28,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -233,4 +234,7 @@ public interface StudyService
     ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly);
 
     Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping);
+
+    // Methods created to support Vaccine study designs
+    ValidationException updateAssayPlan(User user, Study study, String assayPlan);
 }

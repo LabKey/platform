@@ -113,7 +113,6 @@ public class SampleDatasetTable extends LinkedDatasetTable
             _sampleType = sampleType;
 
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
-
             // Hide 'linked' column for Sample Type Datasets
             if (userSchema instanceof SamplesSchema samplesSchema)
             {

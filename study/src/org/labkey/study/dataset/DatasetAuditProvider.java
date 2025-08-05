@@ -38,7 +38,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -122,7 +121,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                 }
             }
         };
-        appendValueMapColumns(table);
+        appendValueMapColumns(table, null, true);
 
         DetailsURL url = DetailsURL.fromString("dataset/datasetAuditHistory.view?auditRowId=${rowId}");
         url.setStrictContainerContextEval(true);

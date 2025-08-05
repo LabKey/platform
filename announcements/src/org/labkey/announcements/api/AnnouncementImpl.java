@@ -20,7 +20,6 @@ import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;

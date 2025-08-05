@@ -44,11 +44,9 @@ import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.query.QueryMetadataEditorPage;
 import org.labkey.test.pages.search.SearchResultsPage;
 import org.labkey.test.params.FieldDefinition;
-import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
 import org.labkey.test.util.StudyHelper;
@@ -165,7 +163,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String SUB_FOLDER_NAME = "PublishedSubStudy";
     private static final String PUBLISH_FOLDER_ADMIN = "publish_admin@study.test";
     private static final String PUBLISH_SUB_FOLDER_ADMIN = "publishsub_admin@study.test";
-    private Boolean _studyDesignPreviouslyEnabled;
+    private boolean _studyDesignModulePresent;
 
     // enum to help determine the study publish location
     public enum PublishLocation
@@ -182,17 +180,16 @@ public class StudyPublishTest extends StudyPHIExportTest
         _containerHelper.deleteProject(PUB2_NAME, afterTest, 1000000);
 
         _userHelper.deleteUsers(false, PUBLISH_FOLDER_ADMIN, PUBLISH_SUB_FOLDER_ADMIN);
-        if (_studyDesignPreviouslyEnabled != null)
-            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
     }
 
     @Override
     protected void doCreateSteps()
     {
+        _studyDesignModulePresent =  _studyHelper.isModulePresent("StudyDesign");
+
         // fail fast if R is not configured
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
-        _studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
 
         importStudy();
         if (_studyHelper.isSpecimenModulePresent())
@@ -272,7 +269,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         ArrayList<String> group2and3ptids = new ArrayList<>();
         group2and3ptids.addAll(Arrays.asList(GROUP2_PTIDS));
         group2and3ptids.addAll(Arrays.asList(GROUP3_PTIDS));
-        verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[group2and3ptids.size()]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
+        verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[0]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
 
         if (_studyHelper.isSpecimenModulePresent())
         {
@@ -889,8 +886,12 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View",
-                "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents", "Treatment Data");
+        if (_studyDesignModulePresent)
+            verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View",
+                    "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents", "Treatment Data");
+        else
+            verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Cohort Settings", "Custom Participant View",
+                    "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents");
         clickButton("Next", 0);
 
         // Lists
@@ -1048,7 +1049,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         String filterStr = "";
         for (String val : values)
         {
-            if (!filterStr.equals(""))
+            if (!filterStr.isEmpty())
                 filterStr = filterStr + ";";
 
             filterStr = filterStr + val;
@@ -1064,7 +1065,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         clickAndWait(Locator.linkWithText(dataset));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addFilter("MouseId", "Mouse Id", "Equals One Of", ptidFilter);
+        _customizeViewsHelper.addFilter("MouseId", "Equals One Of", ptidFilter);
         _customizeViewsHelper.saveCustomView(name, shared);
     }
 

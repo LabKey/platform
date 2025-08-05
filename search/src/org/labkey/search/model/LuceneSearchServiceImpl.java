@@ -143,7 +143,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -737,11 +736,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // === Index without analyzing, store ===
 
             doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
-            doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
+            doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId().toString(), StringField.TYPE_STORED));
 
             // See: https://stackoverflow.com/questions/29695307/sortiing-string-field-alphabetically-in-lucene-5-0
             // But note that Lucene 9.0.0 changed to require BinaryDocValuesField instead
-            doc.add(new BinaryDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
+            doc.add(new BinaryDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId().toString())));
 
             // === Index and analyze, don't store ===
 
@@ -784,7 +783,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             String securityContext = r.getContainerId()
                     + "|" + props.get(PROPERTY.categories.toString()) // multiple categories are separated by spaces, but we shouldn't need to distinguish here
-                    + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+                    + (null != resourceId && !resourceId.equals(r.getContainerId().toString()) ? "|" + resourceId : "");
             doc.add(new BinaryDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
@@ -1539,7 +1538,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         for (Map.Entry<FIELD_NAME, Float> entry : enumMap.entrySet())
             boosts.put(entry.getKey().toString(), entry.getValue());
 
-        standardFields = boosts.keySet().toArray(new String[boosts.size()]);
+        standardFields = boosts.keySet().toArray(new String[0]);
     }
 
     @Override
@@ -2035,7 +2034,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
-
+            add(map, "targz_sample.tar.gz", 74, "targz_sample/._hello.txt", "targz_sample/hello.txt");
             return map;
         }
 
@@ -2220,7 +2219,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             props.put(PROPERTY.categories.toString(), _category.getName());
             props.put(PROPERTY.title.toString(), title);
 
-            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getId(), "text/plain", body, _url, props) {
+            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getEntityId(), "text/plain", body, _url, props) {
                 @Override
                 public void setLastIndexed(long ms, long modified)
                 {

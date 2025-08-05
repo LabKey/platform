@@ -61,7 +61,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         if (batchJsonObject == null && batchesJsonArray == null)
             throw new IllegalArgumentException("No batch object or batches array found");
 
-        if ((null != batchesJsonArray) && (batchesJsonArray.length() == 0))
+        if ((null != batchesJsonArray) && (batchesJsonArray.isEmpty()))
             throw new IllegalArgumentException("You must provide at least one batch in your batches array");
 
         if ((null != batchJsonObject) && (null != batchesJsonArray))

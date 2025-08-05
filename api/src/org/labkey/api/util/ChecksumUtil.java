@@ -25,8 +25,8 @@ import org.labkey.api.test.TestWhen;
  */
 public class ChecksumUtil
 {
-    private String _validInputChars;
-    private Integer _n;
+    private final String _validInputChars;
+    private final Integer _n;
 
     public ChecksumUtil(String chars)
     {

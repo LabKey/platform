@@ -40,6 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FieldKeyRowMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -153,10 +154,6 @@ import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInp
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.RowId;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
-/**
- * User: kevink
- * Date: 9/29/15
- */
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private final @NotNull ExpDataClassImpl _dataClass;
@@ -194,7 +191,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Domain getDomain()
     {
-        return _dataClass.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dataClass.getDomain(forUpdate);
     }
 
     @Override
@@ -535,7 +538,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         ActionURL url = new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getUserSchema().getContainer())
                 .addParameter("lsid", "${LSID}")
-                .addParameter("name", "${" + col.getName() + "}");
+                .addParameter("name", "${" + PageFlowUtil.encode(col.getName()) + "}");
         if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
         {
             url.addParameter("inline", "false");
@@ -620,7 +623,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     columnInfo.setURL(StringExpressionFactory.createURL(
                             new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getContainer())
                                     .addParameter("lsid", "${LSID}")
-                                    .addParameter("name", "${" + columnInfo.getFieldKey() + "}")));
+                                    .addParameter("name", "${" + PageFlowUtil.encode(columnInfo.getName()) + "}")));
 
                 }
 
@@ -935,7 +938,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
-                                            expData.index(searchService.defaultTask(), this);
+                                            expData.index(searchService.defaultTask(), null, this);
                                         return (Void) null;
                                     }))
                     );
@@ -945,7 +948,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
-                                            expData.index(searchService.defaultTask(), this);
+                                            expData.index(searchService.defaultTask(), null, this);
                                         return (Void) null;
                                     }))
                     );
@@ -953,7 +956,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }, DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
         }
         catch (IOException e)
         {
@@ -1077,7 +1080,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
-
+                context.setWithLookupRemapping(false);
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
                 if (c.hasProductFolders() && !c.isProject())
                 {
@@ -1239,18 +1242,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, SQLException
         {
             return getRow(user, container, keys, false);
         }
 
         /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException, SQLException
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
+            Integer rowId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
@@ -1258,22 +1261,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (classId == null)
                 classId = _dataClass.getRowId();
 
-            if (null==rowid && null==lsid && null == name)
+            if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
-
-            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
-            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
-            if (null != row)
-            {
-                if (row instanceof ArrayListMap arrayListMap)
-                    arrayListMap.getFindMap().remove("_row");
-                else
-                    row.remove("_row");
-            }
-
-            return row;
+            return _select(container, rowId, lsid, name, classId, allowCrossContainer);
         }
 
         @Override
@@ -1282,31 +1273,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowId, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
         {
-            if (null == rowid && null == lsid && (null == name || null == classId))
+            if (null == rowId && null == lsid && (null == name || null == classId))
                 return null;
 
-            TableInfo d = getDbTable();
-            TableInfo t = _dataClassDataTableSupplier.get();
-
-            SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                    .append(" FROM ").append(d, "d")
-                    .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid WHERE ");
-
-            if (null != rowid)
-                sql.append("d.rowid=?").add(rowid);
+            // Issue 52886: Use queryTable here, not raw database table, so the rows are from the user schema with names
+            // as expected to match row inserts and other querySchema data
+            SimpleFilter filter = new SimpleFilter();
+            if (null != rowId)
+                filter.addCondition(Column.RowId.fieldKey(), rowId);
             else if (null != lsid)
-                sql.append("d.lsid=?").add(lsid);
+                filter.addCondition(Column.LSID.fieldKey(), lsid);
             else
-                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
-
+                filter.addCondition(Column.ClassId.fieldKey(), classId)
+                        .addCondition(Column.Name.fieldKey(), name);
             if (!allowCrossContainer)
-                sql.append(" AND d.Container=?").add(container.getEntityId());
+                filter.addCondition(Column.Folder.fieldKey(), container.getEntityId());
 
-            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
+            TableInfo queryTable = getQueryTable();
+            TableSelector selector = new TableSelector(queryTable, filter, null);
+
+            try (var results = selector.getResults()) {
+                if (results.next())
+                {
+                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                }
+            }
+            return null;
         }
 
         @Override
@@ -1372,7 +1366,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (data == null)
                     data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.setComment(user, flag);
+                if (data != null)
+                    data.setComment(user, flag);
             }
 
             // update aliases
@@ -1431,7 +1426,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
-                                        expData.index(null, _expDataClassDataTableImpl);
+                                        expData.index(null, null, _expDataClassDataTableImpl);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1604,6 +1599,5 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
-
     }
 }

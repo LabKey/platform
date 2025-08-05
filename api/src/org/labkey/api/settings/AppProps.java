@@ -41,13 +41,14 @@ public interface AppProps
 
     String SCOPE_SITE_SETTINGS = "SiteSettings";
 
-    String OPTIONAL_FEATURE = "experimentalFeature"; // Used for all optional features; "experimental" for historical reasons.
+    // Used for all optional features; "experimental" for historical reasons.
+    String OPTIONAL_FEATURE_PREFIX = "experimentalFeature.";
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
-    String ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
+    String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 

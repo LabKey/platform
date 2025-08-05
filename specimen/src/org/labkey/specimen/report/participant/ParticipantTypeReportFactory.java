@@ -147,7 +147,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     private String getLabel(SpecimenTypeSummary.TypeCount type)
     {
-        if (type.getLabel() == null || type.getLabel().length() == 0)
+        if (type.getLabel() == null || type.getLabel().isEmpty())
             return "[unknown]";
         else
             return type.getLabel();
@@ -159,7 +159,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         boolean unknown = "[unknown]".equals(label);
         for (SpecimenTypeSummary.TypeCount count : counts)
         {
-            if (getLabel(count).equals(label) || (unknown && (count.getLabel() == null || count.getLabel().length() == 0)))
+            if (getLabel(count).equals(label) || (unknown && (count.getLabel() == null || count.getLabel().isEmpty())))
                 return count;
         }
         return null;

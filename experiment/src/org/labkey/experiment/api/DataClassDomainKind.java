@@ -312,7 +312,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain<?> domainDesign, Container container)
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
@@ -334,7 +334,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain<?> updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
@@ -369,7 +369,14 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        // will skipExisting here, that check will be made again during createDataClass / updateDataClass
+        ExperimentService.get().validateDataClassName(container, user, name, true);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
         if (options.getDescription() == null && domain.getDescription() != null)
@@ -387,7 +394,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 templateInfo,
                 domain.getDisabledSystemFields()
             );
-            return dataClass.getDomain();
+            return dataClass.getDomain(forUpdate);
         }
         catch (ExperimentException e)
         {
@@ -402,23 +409,24 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         @Nullable DataClassDomainKindProperties options,
         Container container,
         User user,
-        boolean includeWarnings
+        boolean includeWarnings,
+        String auditUserComment
     )
     {
         ExpDataClass dc = ExperimentService.get().getDataClass(original.getDomainURI());
         if (dc == null)
             return new ValidationException(String.format("Could not resolve data class from LSID \"%s\".", original.getDomainURI()));
-        return ExperimentService.get().updateDataClass(container, user, dc, options, original, update);
+        return ExperimentService.get().updateDataClass(container, user, dc, options, original, update, auditUserComment);
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         ExpDataClass dc = getDataClass(domain);
         if (dc == null)
             throw new NotFoundException("DataClass not found: " + domain.getTypeURI());
 
-        dc.delete(user);
+        dc.delete(user, auditUserComment);
     }
 
     @Override
@@ -449,7 +457,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     @Nullable
     @Override
-    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
         return new DataClassDomainKindProperties(dc);

@@ -25,7 +25,7 @@ public class Measurement
     {
         Mass,
         Volume,
-        Count;
+        Count
     }
 
     public enum Unit
@@ -453,11 +453,11 @@ public class Measurement
         {
             Measurement measurement = new Measurement("43.2", "g", "milligrams");
             assertNotEquals("non-unit object", "43.2 g", measurement);
-            assertNotEquals("different amounts",  measurement, new Measurement("23.4", "g", "milligrams"));
-            assertEquals("same units", measurement, new Measurement("43.2", "g", "mg"));
-            assertEquals("different units", measurement, new Measurement("43200", "mg", "mg"));
-            assertEquals("no normalizing unit", measurement, new Measurement("43200", "mg", null));
-            assertEquals("case-insensitive", measurement, new Measurement("43200", "MilliGRAMS", null));
+            assertNotEquals("different amounts", new Measurement("23.4", "g", "milligrams"), measurement);
+            assertEquals("same units", new Measurement("43.2", "g", "mg"), measurement);
+            assertEquals("different units", new Measurement("43200", "mg", "mg"), measurement);
+            assertEquals("no normalizing unit", new Measurement("43200", "mg", null), measurement);
+            assertEquals("case-insensitive", new Measurement("43200", "MilliGRAMS", null), measurement);
         }
 
         @Test

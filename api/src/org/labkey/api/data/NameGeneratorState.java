@@ -57,12 +57,12 @@ public class NameGeneratorState implements AutoCloseable
 {
     private final @NotNull NameGenerator _nameGenerator;
     private final boolean _incrementSampleCounts;
-    private final User _user;
+    protected final User _user;
     private final Map<String, Object> _batchExpressionContext;
     private Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction;
     private final Map<String, Integer> _newNames = new CaseInsensitiveHashMap<>();
 
-    private int _rowNumber = 0;
+    protected int _rowNumber = 0;
     private final Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
     private final Map<String, ArrayList<Object>> _ancestorCache;
     private final Map<String, ArrayList<Object>> _ancestorSearchCache;
@@ -70,11 +70,11 @@ public class NameGeneratorState implements AutoCloseable
 
     private final NameGenerator.ProjectSampleCounters _sampleCounters;
     private boolean _counterSequencesCleaned = false;
-    private final Container _container;
+    protected final Container _container;
 
-    private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-    private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache;
+    protected final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+    protected final Map<Integer, ExpData> dataCache = new HashMap<>();
+    protected final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     public NameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, NameGenerator.SampleNameExpressionSummary expressionSummary)
@@ -89,7 +89,7 @@ public class NameGeneratorState implements AutoCloseable
         if (incrementSampleCounts) // determine if need to incrementRootSampleCount
         {
             DbSequence sampleCountSeq = SampleTypeService.get().getSampleCountSequence(_container, false);
-            if (expressionSummary.hasProjectSampleCounter() || sampleCountSeq.current() > 0) // if ${sampleCount} is present, or if ${sampleCount} was previously evaluated
+            if ((expressionSummary != null && expressionSummary.hasProjectSampleCounter()) || sampleCountSeq.current() > 0) // if ${sampleCount} is present, or if ${sampleCount} was previously evaluated
             {
                 sampleCounterSequence = sampleCountSeq;
                 if (sampleCounterSequence != null)
@@ -105,7 +105,7 @@ public class NameGeneratorState implements AutoCloseable
                 sampleCounterSequence = null;
 
             DbSequence rootCountSeq = SampleTypeService.get().getSampleCountSequence(_container, true);
-            if (expressionSummary.hasProjectSampleRootCounter() || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
+            if ((expressionSummary != null && expressionSummary.hasProjectSampleRootCounter()) || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
             {
                 rootCounterSequence = rootCountSeq;
                 if (rootCounterSequence != null)
@@ -228,7 +228,7 @@ public class NameGeneratorState implements AutoCloseable
         Map<String, Long> sampleCounts = null;
         if (_incrementSampleCounts)
         {
-            if (!_nameGenerator.getExpressionSummary().hasDateBasedSampleCounter())
+            if (!(_nameGenerator.getExpressionSummary() != null && _nameGenerator.getExpressionSummary().hasDateBasedSampleCounter()))
             {
                 if (null == getSampleCountsFunction)
                 {
@@ -281,18 +281,22 @@ public class NameGeneratorState implements AutoCloseable
                 return currName.trim();
         }
 
+        // allow using alternative expression for evaluation.
+        // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
+        NameGenerator activeNameGenerator = getActiveNameGenerator(altNameGenerator);
+        if (!activeNameGenerator.getSyntaxErrors().isEmpty())
+            throw new IllegalArgumentException("Invalid naming expression. " + StringUtils.join(activeNameGenerator.getSyntaxErrors(), "\n"));
+
         // Add extra context variables
         Map<FieldKey, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps, altNameGenerator);
 
-        // allow using alternative expression for evaluation.
-        // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
-        StringExpressionFactory.FieldKeyStringExpression expression = getActiveNameGenerator(altNameGenerator).getParsedNameExpression();
-        String name = null;
-        if (expression instanceof NameGenerator.NameGenerationExpression)
-            name = ((NameGenerator.NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
+        StringExpressionFactory.FieldKeyStringExpression expression = activeNameGenerator.getParsedNameExpression();
+        String name;
+        if (expression instanceof NameGenerator.NameGenerationExpression nge)
+            name = nge.eval(ctx, _prefixCounterSequences);
         else
             name = expression.eval(ctx);
-        if (name == null || name.length() == 0)
+        if (name == null || name.isEmpty())
             throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
         return name;
@@ -413,14 +417,14 @@ public class NameGeneratorState implements AutoCloseable
                 String parentType = ancestorOptions.parentType();
                 if (!StringUtils.isEmpty(parentType))
                 {
-                    if (parentObject instanceof ExpMaterial)
+                    if (parentObject instanceof ExpMaterial expMaterial)
                     {
-                        if (!((ExpMaterial) parentObject).getSampleType().getName().equalsIgnoreCase(parentType))
+                        if (!expMaterial.getSampleType().getName().equalsIgnoreCase(parentType))
                             continue;
                     }
-                    else if (parentObject instanceof ExpData)
+                    else if (parentObject instanceof ExpData expData)
                     {
-                        if (!((ExpData) parentObject).getDataClass(_user).getName().equalsIgnoreCase(parentType))
+                        if (!expData.getDataClass(_user).getName().equalsIgnoreCase(parentType))
                             continue;
                     }
                 }
@@ -486,7 +490,6 @@ public class NameGeneratorState implements AutoCloseable
                 }
             }
         }
-
     }
 
     private void addParentLookupContext(String parentTypeName/* already decoded */,

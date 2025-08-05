@@ -25,7 +25,6 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.xar.XarExportSelection;
 
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;

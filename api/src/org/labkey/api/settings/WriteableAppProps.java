@@ -229,22 +229,27 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setExternalRedirectHosts(@NotNull Collection<String> externalRedirectHosts)
     {
-        setExternalHosts(externalRedirectHostURLs, externalRedirectHosts);
+        setAllowList(externalRedirectHostURLs, externalRedirectHosts);
     }
 
-    private void setExternalHosts(RandomStartupProperties propName, @NotNull Collection<String> externalSourceHosts)
+    private void setAllowList(RandomStartupProperties propName, @NotNull Collection<String> externalSourceHosts)
     {
-        storeStringValue(propName, String.join(EXTERNAL_HOST_DELIMITER, externalSourceHosts));
+        storeStringValue(propName, String.join(ALLOW_LIST_DELIMITER, externalSourceHosts));
     }
 
     public void setAllowedFileExtensions(Collection<String> allowedFileExtensions)
     {
-        setExternalHosts(RandomStartupProperties.allowedFileExtensions, allowedFileExtensions);
+        setAllowList(RandomStartupProperties.allowedFileExtensions, allowedFileExtensions);
         FileUtil.clearExtensionChecker();
     }
 
     public void setAllowedExternalResourceHosts(String jsonArray)
     {
-        storeStringValue(ALLOWED_EXTERNAL_RESOURCES, jsonArray);
+        storeStringValue(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, jsonArray);
+    }
+
+    public void setFeatureEnabled(String feature, boolean enabled)
+    {
+        storeBooleanValue(OPTIONAL_FEATURE_PREFIX + feature, enabled);
     }
 }

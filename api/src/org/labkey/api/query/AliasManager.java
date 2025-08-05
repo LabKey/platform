@@ -67,7 +67,7 @@ public class AliasManager
         return makeLegalName(str, dialect, truncate, 0);
     }
 
-    private static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
+    public static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
     {
         return dialect.makeLegalName(str, truncate, reserveCount);
     }
@@ -109,7 +109,7 @@ public class AliasManager
             if (null != (name = _aliases.get(column.getAlias().getId())))
             {
                 if (!name.equals(column.getName()))
-                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias().getId() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
+                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias().getId() + ".  The full set of aliases are: " + _aliases); // SEE BUG 13682 and 15475
             }
             else
                 claimAlias(column.getAlias().getId(), column.getName());

@@ -25,8 +25,30 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -66,6 +88,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -75,8 +99,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,6 +112,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
@@ -667,20 +694,18 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     sb.append(separator);
                     if (addLinks)
                     {
-                        sb.append("<a href=\"");
+                        LinkBuilder lb = LinkBuilder.simpleLink(exp.getName());
                         ctx.put("experimentId", exp.getRowId());
                         String url = renderURL(ctx);
-                        if (url == null)
-                        {
-                            url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(exp.getContainer(), exp).getLocalURIString();
-                        }
-                        sb.append(url);
-                        sb.append("\">");
+                        if (url != null)
+                            lb.href(url);
+                        else
+                            lb.href(ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(exp.getContainer(), exp));
+                        lb.appendTo(sb);
                     }
-                    PageFlowUtil.filter(sb.append(exp.getName()));
-                    if (addLinks)
+                    else
                     {
-                        sb.append("</a>");
+                        sb.append(PageFlowUtil.filter(exp.getName()));
                     }
                     separator = ", ";
                 }
@@ -723,9 +748,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            oldWriter.write(buildString(ctx, true));
+            out.write(HtmlString.unsafe(buildString(ctx, true)));
         }
 
         @Override
@@ -761,13 +786,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object rowId = getColumnInfo().getValue(ctx);
             if (rowId != null)
             {
                 ActionURL graphURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(ctx.getContainer(), ((Number)rowId).intValue());
-                oldWriter.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
+                out.write(LinkBuilder.simpleLink(IMG(at(src, AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif", height, 18, width, 18)), graphURL).title("Experiment run graph"));
             }
         }
     }
@@ -1007,9 +1032,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         PropertyDescriptor propertyDescriptor = col.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
+                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK)
                         {
-                            value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            if (value instanceof MultipartFile || value instanceof SpringAttachmentFile)
+                                value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            value = ExpDataFileConverter.convert(value);
                         }
 
                         ForeignKey fk = col.getFk();
@@ -1022,7 +1049,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             catch (ConversionException e)
                             {
                                 Container remapContainer = fk.getLookupContainer() != null ? fk.getLookupContainer() : container;
-                                Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, remapContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                                Object remappedValue = _cache.remap(fk.getLookupSchemaKey(), fk.getLookupTableName(), user, remapContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
                                 if (remappedValue != null)
                                     value = remappedValue;
                             }
@@ -1139,7 +1166,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         Map<String, Integer> response = ExperimentService.get().moveAssayRuns(expRuns.get(c), c, targetContainer, user, auditUserComment, auditType);
                         incrementCounts(allContainerResponse, response);
                     }
-                    catch (IllegalArgumentException e)
+                    catch (IllegalArgumentException | ExperimentException e)
                     {
                         throw new BatchValidationException(new ValidationException(e.getMessage()));
                     }

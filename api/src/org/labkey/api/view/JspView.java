@@ -62,7 +62,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _page = page;
     }
 
-    public JspView(@NotNull HttpJspPage page, ModelClass model, Errors errors)
+    public JspView(@NotNull HttpJspPage page, ModelClass model, @Nullable Errors errors)
     {
         super(model);
         setFrame(FrameType.DIV);
@@ -114,7 +114,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     }
 
 
-    public Errors getErrors()
+    public @Nullable Errors getErrors()
     {
         return _errors;
     }
@@ -146,10 +146,10 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             StringBuilder sb = new StringBuilder();
             try
             {
-                sb.append("request: " + request.getClass().getName() + "\n");
+                sb.append("request: ").append(request.getClass().getName()).append("\n");
                 HttpSession s = request.getSession(false);
-                sb.append("session: " + (null == s ? "null" : s.getClass().getName()) + "\n");
-                sb.append("user: " + (null == request.getUserPrincipal() ? "null" : request.getUserPrincipal().getName()));
+                sb.append("session: ").append(null == s ? "null" : s.getClass().getName()).append("\n");
+                sb.append("user: ").append(null == request.getUserPrincipal() ? "null" : request.getUserPrincipal().getName());
             }
             catch (Exception extra)
             {/* */}

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +50,7 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -431,9 +433,8 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         super.copyTo(to);
-        if (to instanceof PropertyDescriptor)
+        if (to instanceof PropertyDescriptor toPD)
         {
-            PropertyDescriptor toPD = (PropertyDescriptor)to;
             toPD._containerId = _containerId; // ?
             toPD._lookupContainer = _lookupContainer;
             toPD._lookupSchema = _lookupSchema;
@@ -533,6 +534,62 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     {
         _databaseDefaultValue = databaseDefaultValue;
     }
+
+    public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (null != getPropertyType())
+        {
+            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
+                map.put("Type", "Flag");
+            else
+                map.put("Type", getPropertyType().getXarName());
+        }
+        if (getPropertyType().getJdbcType().isText())
+            map.put("Scale", getScale());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getFormat()))
+            map.put("Format", getFormat());
+        if (null !=getURL())
+            map.put("URL", getURL().toString());
+        if (null != getPHI())
+            map.put("PHI", getPHI().getLabel());
+        if (null !=getDefaultScale())
+            map.put("DefaultScale", getDefaultScale().getLabel());
+        map.put("Required", isRequired());
+        map.put("Hidden", isHidden());
+        map.put("MvEnabled", isMvEnabled());
+        map.put("Measure", isMeasure());
+        map.put("Dimension", isDimension());
+        map.put("ShownInInsert", isShownInInsertView());
+        map.put("ShownInDetails", isShownInDetailsView());
+        map.put("ShownInUpdate", isShownInUpdateView());
+        map.put("ShownInLookupView", isShownInLookupView());
+        map.put("RecommendedVariable", isRecommendedVariable());
+        map.put("ExcludedFromShifting", isExcludeFromShifting());
+        map.put("Scannable", isScannable());
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
+            map.put("DerivationDataScope", getDerivationDataScope());
+        String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAliases", importAliasStr);
+        if (null != getDefaultValueTypeEnum())
+            map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
+        if (getLookup() != null)
+            map.put("Lookup", getLookup().toJSONString());
+        if (!StringUtils.isEmpty(validatorStr))
+            map.put("Validator", validatorStr);
+        if (!StringUtils.isEmpty(conditionalFormatStr))
+            map.put("ConditionalFormat", conditionalFormatStr);
+
+        return map;
+    }
+
 }
 
 

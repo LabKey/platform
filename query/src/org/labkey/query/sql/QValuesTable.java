@@ -34,7 +34,7 @@ public class QValuesTable extends QTable
         this.values = values;
         setAlias(alias);
         var rows = values.childList();
-        countOfColumns = 0==rows.size() ? 0 : rows.get(0).childList().size();
+        countOfColumns = rows.isEmpty() ? 0 : rows.get(0).childList().size();
         relation = new _QueryRelation();
     }
 

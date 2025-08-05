@@ -47,12 +47,12 @@ public class ResizableWidgetCollection implements WindowResizeListener,
     /**
      * The current clientHeight.
      */
-    private int curHeight = 0;
+    private int curHeight;
 
     /**
      * The current clientWidth.
      */
-    private int curWidth = 0;
+    private int curWidth;
 
     /**
      * Constructor.
@@ -109,7 +109,7 @@ public class ResizableWidgetCollection implements WindowResizeListener,
    * The timer used to periodically compare the dimensions of elements to their
    * old dimensions.
    */
-  private Timer resizeCheckTimer = new Timer() {
+  private final Timer resizeCheckTimer = new Timer() {
     @Override
     public void run() {
       // Ignore changes that result from window resize events
@@ -134,7 +134,7 @@ public class ResizableWidgetCollection implements WindowResizeListener,
   /**
    * A hash map of the resizable widgets this collection is checking.
    */
-  private Map<ResizableWidget, ResizableWidgetInfo> widgets = new HashMap<ResizableWidget, ResizableWidgetInfo>();
+  private final Map<ResizableWidget, ResizableWidgetInfo> widgets = new HashMap<>();
 
   /**
    * The current window height.

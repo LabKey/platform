@@ -114,7 +114,7 @@ public abstract class AbstractPipelineStartup
                 _log.info("Loading Spring configuration for the " + module.getName() + " module from " + springConfigPaths);
 
                 // Initialize the Spring context
-                BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[springConfigPaths.size()]))
+                BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[0]))
                 {
                     @Override
                     public String getDisplayName()

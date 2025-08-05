@@ -45,6 +45,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             parser.getXMLReader().setFeature("http://xml.org/sax/features/validation", false);
             parser.getXMLReader().setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            parser.getXMLReader().setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             parser.parse(stream, createSAXHandler(handler));
         }
         catch (ParserConfigurationException e)
@@ -68,7 +69,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
         private final boolean _includeText;
         private final long _maxIndexableSize;
 
-        private Set<String> _stopElements = new HashSet<>();
+        private final Set<String> _stopElements = new HashSet<>();
 
         /** How many characters have been included in document to be indexed so far */
         private long _indexedSize = 0;

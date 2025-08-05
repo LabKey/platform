@@ -88,7 +88,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     @BeforeClass
     public static void doSetup()
     {
-        QuerySnapshotTest test = (QuerySnapshotTest)getCurrentTest();
+        QuerySnapshotTest test = getCurrentTest();
 
         // create two study folders (054 and 065) and start importing a study in each
         test.setFolderName(FOLDER_1);
@@ -194,7 +194,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
         _customizeViewsHelper.openCustomizeViewPanel();
 
-        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMraco", "DEM-1: Demographics Screening 4f.Other specify");
+        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMraco");
         _customizeViewsHelper.saveCustomView("APX Joined View");
 
         createQuerySnapshot(APX_SNAPSHOT, true, false);

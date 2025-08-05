@@ -61,7 +61,7 @@ public class SelectRowsStreamHack
                 try
                 {
                     final InputStream is = response.getInputStream();
-                    final JSONDataLoader loader = new JSONDataLoader(is, false, targetContainer);
+                    final JSONDataLoader loader = new JSONDataLoader(is, targetContainer);
                     WrapperDataIterator wrapper = new WrapperDataIterator(loader.getDataIterator(context))
                     {
                         @Override

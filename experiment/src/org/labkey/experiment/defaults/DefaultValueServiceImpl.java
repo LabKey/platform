@@ -28,6 +28,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.ValidationException;
@@ -59,13 +60,28 @@ public class DefaultValueServiceImpl implements DefaultValueService
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
         String suffix = "Folder-" + container.getRowId();
-        return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+        DomainKind<?> kind = domain.getDomainKind();
+        if (kind != null && kind.isUserCreatedType())
+        {
+            Lsid domainLsid = new Lsid(domain.getTypeURI());
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        }
+        else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+
     }
 
     private String getUserDefaultsParentLSID(Container container, User user, Domain domain)
     {
         String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
-        return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
+        DomainKind<?> kind = domain.getDomainKind();
+        if (kind != null && kind.isUserCreatedType())
+        {
+            Lsid domainLsid = new Lsid(domain.getTypeURI());
+            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+        }
+        else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
+            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
     }
 
     private static final String WILD_CARD_PLACEHOLDER = "WILDCARD";
@@ -161,7 +177,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
                     }
                 }
             }
-            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
+            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[0]));
             t.commit();
         }
         catch (ValidationException e)

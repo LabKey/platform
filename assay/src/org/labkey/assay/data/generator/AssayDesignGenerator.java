@@ -114,7 +114,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         public static final String ASSAY_DESIGN_SAMPLE_TYPES = "assayDesignSampleTypes";
         public static final String ASSAY_DESIGN_PLATE_SUPPORT = "assayDesignPlateSupport";
 
-        int _numAssayDesigns = 0;
+        int _numAssayDesigns;
         List<String> _assayDesignSampleTypes;
         boolean _assayDesignPlateSupport;
 

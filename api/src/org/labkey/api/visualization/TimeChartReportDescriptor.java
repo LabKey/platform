@@ -57,7 +57,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     {
         Map<String, Object> props = new HashMap<>();
         List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
-        if (propsList.size() > 0)
+        if (!propsList.isEmpty())
         {
             for (Pair<DomainProperty, Object> pair : propsList)
                 props.put(pair.getKey().getName(), pair.getValue());
@@ -308,7 +308,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                         {
                             fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), nameChangeMap.get(filterTable.getName())), fieldKey.getName());
                             filterUrl.deleteParameter(filterKey);
-                            filterUrl.addParameter(dataRegionName + "." + fieldKey.toString() + "~" + op, value);
+                            filterUrl.addParameter(dataRegionName + "." + fieldKey + "~" + op, value);
                             filterUrlChanges = true;
                         }
                     }

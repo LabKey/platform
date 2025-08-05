@@ -61,7 +61,7 @@ import java.util.Set;
  */
 public class ThawListListResolver extends AbstractParticipantVisitResolver
 {
-    private TableInfo _tableInfo;
+    private final TableInfo _tableInfo;
     private final ParticipantVisitResolver _childResolver;
 
     public ThawListListResolver(Container runContainer, @Nullable Container targetStudyContainer,
@@ -158,7 +158,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
             }
 
             Container childTargetStudy = null;
-            Object childTargetStudyObject = dataRow.get("TargetStudy");
+            Object childTargetStudyObject = dataRow.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
             if (childTargetStudyObject != null)
             {
                 Set<Study> studies = StudyService.get().findStudy(childTargetStudyObject, null);

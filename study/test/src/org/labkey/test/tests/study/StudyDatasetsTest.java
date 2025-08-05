@@ -33,15 +33,22 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldInfo;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
+import org.labkey.test.util.data.TestDataUtils;
 import org.openqa.selenium.WebElement;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +89,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         a6\t6\tx6\ty6\tz6
         """;
     private static final String DATASET_B_MERGE = "a4\t4\tx4_merged\ty4_merged\tz4_merged\n";
+    private final AuditLogHelper _auditLogHelper = new AuditLogHelper(this);
 
     @Override
     protected BrowserType bestBrowser()
@@ -110,7 +118,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetsTest init = (StudyDatasetsTest)getCurrentTest();
+        StudyDatasetsTest init = getCurrentTest();
         init.doCreateSteps();
     }
 
@@ -209,6 +217,46 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickTab("Overview");
     }
 
+    @Test
+    public void testDatasetRoundTripWithSpecialChars() // Issue 53431
+    {
+        goToManageStudy();
+        String datasetName = "Issue 53431";
+        FieldInfo fieldInfo = FieldInfo.random("test,./field", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.StudyDatasetVisit);
+        DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName(datasetName);
+        DomainFormPanel panel = definitionPage.getFieldsPanel();
+        panel.manuallyDefineFields(fieldInfo.getFieldDefinition());
+        definitionPage.clickSave();
+        importDatasetData(datasetName, "", TestDataUtils.tsvStringFromRowMaps(
+                List.of(Map.of(
+                        "mouseId", "a1",
+                        "sequenceNum", "1",
+                        fieldInfo.getName(), "test123"
+                )), List.of("mouseId", "sequenceNum", fieldInfo.getName()), true
+        ), "All data");
+
+        File exportedFolder = exportFolderAsZip(null, false, false, false, false);
+        deleteStudy();
+        importFolderFromZip(exportedFolder, false, 2, false);
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData();
+        DataRegionTable drt = new DataRegionTable("Dataset", getDriver());
+        checker().verifyEquals("Field data didn't import as expected", "test123",
+                drt.getDataAsText(0, fieldInfo));
+    }
+
+    private void deleteStudy()
+    {
+        clickTab("Manage");
+        clickButton("Delete Study");
+        checkCheckbox(Locator.checkboxByName("confirm"));
+        clickButton("Delete", WAIT_FOR_PAGE * 2);
+    }
+
+
     @LogMethod
     protected void createDataset(@LoggedParam String name, @Nullable String error)
     {
@@ -250,7 +298,16 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         }
 
         if (error == null)
+        {
             editDatasetPage.clickSave();
+            String changeDetails = "Name: " + orgName + " > " + newName.trim();
+            changeDetails += "\nLabel: " + orgLabel + " > " + newLabel.trim();
+            AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, orgName, null,
+                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'. The descriptor of domain " + orgName + " was updated.",
+                    "", null, null, changeDetails);
+            boolean pass = _auditLogHelper.validateLastDomainAuditEvents(orgName, getProjectName(), expectedDomainEvent, Collections.emptyMap());
+            checker().verifyTrue("The comment logged for the dataset renaming was not as expected", pass);
+        }
         else
         {
             editDatasetPage.saveExpectFail(error);
@@ -309,6 +366,15 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals(Arrays.asList("XTest"), remainingFields);
 
         editDatasetPage.clickSave();
+
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, name, null,
+                "The column(s) of domain " + name + " were modified.",
+                "", null, null, null);
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(name, getProjectName(), expectedDomainEvent,
+                Map.of("YTest", new AuditLogHelper.DetailedAuditEventRow(null, "YTest", "Deleted",null,null, null, null, null),
+                        "ZTest", new AuditLogHelper.DetailedAuditEventRow(null, "ZTest", "Deleted",null,null, null, null, null)
+                ));
+        checker().verifyTrue("Domain audit log not as expected after removing fields", pass);
     }
 
     @LogMethod
@@ -491,7 +557,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifyExpectedReportsAndViewsExist()
     {
-        if (EXPECTED_REPORTS.size() == 0)
+        if (EXPECTED_REPORTS.isEmpty())
         {
             EXPECTED_REPORTS.put("Chart View: Systolic vs Diastolic", "APX-1: Abbreviated Physical Exam");
             EXPECTED_REPORTS.put("Crosstab: MouseId Counts", "APX-1: Abbreviated Physical Exam");
@@ -501,7 +567,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             EXPECTED_REPORTS.put(PTID_REPORT_NAME, "Stand-alone views");
         }
 
-        if (EXPECTED_CUSTOM_VIEWS.size() == 0)
+        if (EXPECTED_CUSTOM_VIEWS.isEmpty())
         {
             EXPECTED_CUSTOM_VIEWS.put(CUSTOM_VIEW_WITH_DATASET_JOINS, "CPS-1: Screening Chemistry Panel");
             EXPECTED_CUSTOM_VIEWS.put("Abbreviated Demographics", "DEM-1: Demographics");

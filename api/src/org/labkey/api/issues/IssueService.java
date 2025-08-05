@@ -39,7 +39,6 @@ public interface IssueService
      * in this interface.
      * @param issueId - The id of the issue to fetch
      * @param updates - The map which represents the changes to the existing issue that should be applied.
-     * @return
      */
     @Nullable
     Issue getIssueForUpdate(Container container, User user, Integer issueId, Map<String, Object> updates);

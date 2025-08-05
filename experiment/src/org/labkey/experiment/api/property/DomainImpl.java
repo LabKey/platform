@@ -24,6 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -57,12 +60,11 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataColumnJSON;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -71,11 +73,14 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -89,6 +94,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -106,6 +112,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
+    private final boolean _isMutable;
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
@@ -113,7 +120,13 @@ public class DomainImpl implements Domain
 
     public DomainImpl(DomainDescriptor dd)
     {
+        this(dd, false);
+    }
+
+    public DomainImpl(DomainDescriptor dd, boolean isMutable)
+    {
         _dd = dd;
+        _isMutable = isMutable;
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
 
         List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
@@ -136,14 +149,15 @@ public class DomainImpl implements Domain
         }
     }
 
-    public DomainImpl(Container container, String uri, String name)
+    public DomainImpl(Container container, String uri, String name, boolean isMutable)
     {
-        this(container, uri, name, null);
+        this(container, uri, name, null, isMutable);
     }
 
-    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo)
+    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo, boolean isMutable)
     {
         _new = true;
+        _isMutable = isMutable;
         _dd = new DomainDescriptor.Builder(uri, container)
                 .setName(name)
                 .setTemplateInfoObject(templateInfo)
@@ -163,7 +177,7 @@ public class DomainImpl implements Domain
         return _dd.getContainer();
     }
 
-    @Override
+    @Override @Nullable
     public DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
@@ -206,6 +220,11 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
+    public boolean isMutable()
+    {
+        return _isMutable;
+    }
 
     @Override
     @Nullable   // null if not provisioned
@@ -355,17 +374,18 @@ public class DomainImpl implements Domain
     {
         delete(user, null);
     }
+
     @Override
     public void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
-        Lock domainLock = getLock(_dd);
-        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
+        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction())
         {
+            lockForDelete(exp.getSchema());
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
-            addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()), auditUserComment);
+            addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()), auditUserComment, getContainer(), null, null);
             DomainPropertyManager.clearCaches();
             transaction.commit();
         }
@@ -380,13 +400,30 @@ public class DomainImpl implements Domain
     @Override
     public void save(User user) throws ChangePropertyDescriptorException
     {
-        save(user, false);
+        save(user, null, null);
     }
 
     @Override
     public Lock getDatabaseLock()
     {
         return getLock(_dd);
+    }
+
+    @Override
+    public void lockForDelete(DbSchema expSchema)
+    {
+        // NOTE code relies on the lock returned from Domain.getLock() does not require unlock().
+        var lock = getDatabaseLock();
+        assert lock instanceof DbScope.ServerLock;
+        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
+        lock.lock();
+
+        // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
+        if (null != getStorageTableName() && expSchema.getSqlDialect().isPostgreSQL())
+        {
+            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
+            new SqlExecutor(expSchema).execute(lockSQL);
+        }
     }
 
     static Lock getLock(DomainDescriptor dd)
@@ -526,23 +563,30 @@ public class DomainImpl implements Domain
 
     public void saveIfNotExists(User user) throws ChangePropertyDescriptorException
     {
-        save(user, false, true, null);
+        save(user, false, true, null, null, null, null, null, null);
     }
 
     @Override
-    public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
+    public void save(User user, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, null);
+        save(user, false, false, null, null, null, newRecordMap, null, calculatedFields);
     }
 
     @Override
-    public void save(User user, @Nullable String auditComment) throws ChangePropertyDescriptorException
+    public void save(User user, @Nullable String auditComment, @Nullable String auditUserComment,
+                     @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
+                     @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, auditComment);
+        save(user, false, false, auditComment, auditUserComment, oldRecordMap, newRecordMap, oldCalculatedFields, newCalculatedFields);
     }
 
-    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment) throws ChangePropertyDescriptorException
+    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment, @Nullable String auditUserComment,
+                     @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
+                     @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
+        if (!_isMutable)
+            throw new ChangePropertyDescriptorException("Cannot save a domain that is immutable");
+
         ExperimentService exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
@@ -654,11 +698,12 @@ public class DomainImpl implements Domain
             {
                 if (!impl._deleted)
                 {
+                    String newPropName = impl._pd.getName(); // remember the actual name before being substituted with tmpName
                     // make sure all properties have storageColumnName
                     if (null == impl._pd.getStorageColumnName())
                     {
-                        if (!allowAddBaseProperty && baseProperties.contains(impl._pd.getName()))
-                            impl._pd.setStorageColumnName(impl._pd.getName()); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
+                        if (!allowAddBaseProperty && baseProperties.contains(newPropName))
+                            impl._pd.setStorageColumnName(newPropName); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
                         else
                             generateStorageColumnName(impl._pd);
                     }
@@ -700,7 +745,7 @@ public class DomainImpl implements Domain
 
                         if (impl.isDirty())
                         {
-                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
+                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(newPropName))
                             {
                                 finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
                                 // Issue 17020: Save any fields whose name changed with a temp, guaranteed unique name.
@@ -735,7 +780,7 @@ public class DomainImpl implements Domain
                     boolean isImplNew = impl.isNew();
                     PropertyDescriptor pdOld = impl._pdOld;
                     String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
-                    String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
+                    String oldConditionalFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
                     String defaultValue = impl.getDefaultValue();
@@ -746,7 +791,7 @@ public class DomainImpl implements Domain
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
                     {
-                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats);
+                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, newPropName, pdOld, oldValidators, oldConditionalFormats);
                         if (auditInfo.isChanged())
                             propertyAuditInfo.add(auditInfo);
                     }
@@ -814,23 +859,33 @@ public class DomainImpl implements Domain
                 }
             }
 
+            CalculatedFieldsUpdate calculatedFieldsUpdate = determineCalculatedFieldsUpdates(oldCalculatedFields, newCalculatedFields);
+            if (calculatedFieldsUpdate.hasChange())
+                propChanged = true;
+
             final boolean finalPropChanged = propChanged;
-            final String extraAuditComment = auditComment == null ? "" : auditComment + ' ';
+            final String extraAuditComment = StringUtils.isEmpty(auditComment) ? "" : auditComment + ' ';
 
             // Move audit event creation to outside the transaction to avoid deadlocks involving audit storage table creation
             Runnable afterDomainCommit = () ->
             {
+                Long newDomainEventId = null;
+                String columnModifiedMsg = String.format("The column(s) of domain %s were modified.", _dd.getName());
                 if (isDomainNew)
-                    addAuditEvent(user, extraAuditComment + String.format("The domain %s was created", _dd.getName()), null);
+                {
+                    String columnMsg_ = finalPropChanged ? " " + columnModifiedMsg : "";
+                    newDomainEventId = addAuditEvent(user, extraAuditComment + String.format("The domain %s was created.", _dd.getName()) + columnMsg_, auditUserComment, getContainer(), oldRecordMap, newRecordMap);
+                }
 
                 if (finalPropChanged)
                 {
-                    final Long domainEventId = addAuditEvent(user, extraAuditComment + String.format("The column(s) of domain %s were modified", _dd.getName()), null);
-                    propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
+                    final Long domainEventId = newDomainEventId != null ? newDomainEventId : addAuditEvent(user, extraAuditComment + columnModifiedMsg, auditUserComment, getContainer(), oldRecordMap, newRecordMap);
+                    propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, getContainer(), auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
+                    calculatedFieldsUpdate.addAuditEvent(user, getContainer(), domainEventId, getName());
                 }
                 else if (!isDomainNew)
                 {
-                    addAuditEvent(user, extraAuditComment + String.format("The descriptor of domain %s was updated", _dd.getName()), null);
+                    addAuditEvent(user, extraAuditComment + String.format("The descriptor of domain %s was updated.", _dd.getName()), auditUserComment, getContainer(), oldRecordMap, newRecordMap);
                 }
             };
             transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -848,6 +903,123 @@ public class DomainImpl implements Domain
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+    }
+
+    record CalculatedFieldsUpdate(@Nullable List<MetadataColumnJSON> added, @Nullable List<MetadataColumnJSON> removed, @Nullable List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updated)
+    {
+        public boolean hasChange()
+        {
+            return (added != null && !added.isEmpty()) || (removed != null && !removed.isEmpty()) || (updated != null && !updated.isEmpty());
+        }
+
+        public void addAuditEvent(@Nullable User user, Container container, Long domainEventId, String domainName)
+        {
+            if (added != null)
+            {
+                for (MetadataColumnJSON field : added)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, field.getName(),
+                                    "Created", domainEventId, domainName, "Calculated field created.");
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(field.getAuditRecordMap()));
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+
+            if (removed != null)
+            {
+                for (MetadataColumnJSON field : removed)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, field.getName(),
+                                    "Deleted", domainEventId, domainName, "Calculated field removed.");
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+
+            if (updated != null)
+            {
+                for (Pair<MetadataColumnJSON, MetadataColumnJSON> oldNew : updated)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, oldNew.first.getName(),
+                                    "Modified", domainEventId, domainName, "Calculated field updated.");
+                    event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldNew.first.getAuditRecordMap()));
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldNew.second.getAuditRecordMap()));
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+        }
+    }
+
+    private CalculatedFieldsUpdate determineCalculatedFieldsUpdates(@Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields)
+    {
+        Map<String, GWTPropertyDescriptor> oldFieldsMap = new HashMap<>();
+        if (oldCalculatedFields != null)
+            oldCalculatedFields.forEach(field -> oldFieldsMap.put(field.getName(), field));
+        Map<String, GWTPropertyDescriptor> newFieldsMap = new HashMap<>();
+        if (newCalculatedFields != null)
+            newCalculatedFields.forEach(field -> newFieldsMap.put(field.getName(), field));
+
+        Set<String> oldFields = oldFieldsMap.keySet();
+        Set<String> newFields = newFieldsMap.keySet();
+
+        List<String> added = new ArrayList<>(newFields);
+        added.removeAll(oldFields);
+        List<MetadataColumnJSON> addedFields = new ArrayList<>();
+        for (String field : added)
+        {
+            GWTPropertyDescriptor descriptor = newFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSON;
+            if (descriptor instanceof MetadataColumnJSON)
+                metadataColumnJSON = (MetadataColumnJSON) descriptor;
+            else
+                metadataColumnJSON = new MetadataColumnJSON(descriptor);
+            addedFields.add(metadataColumnJSON);
+        }
+
+        List<String> deleted = new ArrayList<>(oldFields);
+        deleted.removeAll(newFields);
+        List<MetadataColumnJSON> removedFields = new ArrayList<>();
+        for (String field : deleted)
+        {
+            GWTPropertyDescriptor descriptor = oldFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSON;
+            if (descriptor instanceof MetadataColumnJSON)
+                metadataColumnJSON = (MetadataColumnJSON) descriptor;
+            else
+                metadataColumnJSON = new MetadataColumnJSON(descriptor);
+            removedFields.add(metadataColumnJSON);
+        }
+
+        List<String> retained = new ArrayList<>(oldFields);
+        retained.retainAll(newFields);
+        List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updatedFields = new ArrayList<>();
+        for (String field : retained)
+        {
+            GWTPropertyDescriptor oldDescriptor = oldFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSONOld;
+            if (oldDescriptor instanceof MetadataColumnJSON)
+                metadataColumnJSONOld = (MetadataColumnJSON) oldDescriptor;
+            else
+                metadataColumnJSONOld = new MetadataColumnJSON(oldDescriptor);
+
+            GWTPropertyDescriptor newDescriptor = newFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSONNew;
+            if (newDescriptor instanceof MetadataColumnJSON)
+                metadataColumnJSONNew = (MetadataColumnJSON) newDescriptor;
+            else
+                metadataColumnJSONNew = new MetadataColumnJSON(newDescriptor);
+
+            Map<String, Object> oldDetails = metadataColumnJSONOld.getAuditRecordMap();
+            Map<String, Object> newDetails = metadataColumnJSONNew.getAuditRecordMap();
+            if (oldDetails.equals(newDetails))
+                continue;
+
+            updatedFields.add(new Pair<>(metadataColumnJSONOld, metadataColumnJSONNew));
+        }
+
+        return new CalculatedFieldsUpdate(addedFields, removedFields, updatedFields);
     }
 
     private void ensureUniqueIdValues(List<DomainProperty> propsAdded) throws SQLException, BatchValidationException
@@ -941,11 +1113,14 @@ public class DomainImpl implements Domain
         }
     }
 
-    private Long addAuditEvent(@Nullable User user, String comment, @Nullable String auditUserComment)
+    private Long addAuditEvent(@Nullable User user, String comment, @Nullable String auditUserComment, @Nullable Container container,
+                               @Nullable Map<String, Object> oldProps, @Nullable Map<String, Object> newProps)
     {
         if (user != null)
         {
             DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), comment);
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldProps));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newProps));
             event.setUserComment(auditUserComment);
 
             event.setDomainUri(getTypeURI());
@@ -957,33 +1132,42 @@ public class DomainImpl implements Domain
         return null;
     }
 
-    private void addPropertyAuditEvent(@Nullable User user, DomainProperty prop, String action, Long domainEventId, String domainName, String comment)
+    private void addPropertyAuditEvent(@Nullable User user, Container container, DomainProperty prop, String action, Long domainEventId, String domainName, PropertyChangeAuditInfoDetail changeDetail)
     {
+        String changeSummary = changeDetail == null ? null : changeDetail.changeSummary;
+        Map<String, Object> oldProps = changeDetail == null ? null : changeDetail.oldRecordMap;
+        Map<String, Object> newProps = changeDetail == null ? null : changeDetail.newRecordMap;
         DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
                 new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer(), prop.getPropertyURI(), prop.getName(),
-                                                                         action, domainEventId, domainName, comment);
+                                                                         action, domainEventId, domainName, changeSummary);
+        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldProps));
+        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newProps));
         AuditLogService.get().addEvent(user, event);
+    }
+
+    record PropertyChangeAuditInfoDetail(String changeSummary, Map<String, Object> oldRecordMap, Map<String, Object> newRecordMap)
+    {
     }
 
     private static class PropertyChangeAuditInfo
     {
         private final DomainProperty _prop;
         private final String _action;
-        private final String _details;    // to go in comments
+        private final PropertyChangeAuditInfoDetail _details;    // to go in comments
 
         public PropertyChangeAuditInfo(DomainPropertyImpl prop, boolean isCreated)
         {
             _prop = prop;
             _action = isCreated ? "Created" : "Deleted";
-            _details = isCreated ? makeNewPropAuditComment(prop) : "";
+            _details = isCreated ? makeNewPropAuditComment(prop) : null;
         }
 
-        public PropertyChangeAuditInfo(DomainPropertyImpl prop, PropertyDescriptor pdOld,
-                                       String oldValidators, String oldFormats)
+        public PropertyChangeAuditInfo(DomainPropertyImpl prop, String newPropName, PropertyDescriptor pdOld,
+                                       String oldValidators, String oldConditionalFormats)
         {
             _prop = prop;
             _action = "Modified";
-            _details = makeModifiedPropAuditComment(prop, pdOld, oldValidators, oldFormats);
+            _details = makeModifiedPropAuditComment(prop, newPropName, pdOld, oldValidators, oldConditionalFormats);
         }
 
         public DomainProperty getProp()
@@ -996,225 +1180,72 @@ public class DomainImpl implements Domain
             return _action;
         }
 
-        public String getDetails()
+        public PropertyChangeAuditInfoDetail getDetails()
         {
             return _details;
         }
 
-        public boolean isChanged() { return !_details.isEmpty(); }
-
-        private String makeNewPropAuditComment(DomainProperty prop)
+        public boolean isChanged()
         {
-            StringBuilder str = new StringBuilder();
-            str.append("Name: ").append(prop.getName()).append("; ");
-            str.append("Label: ").append(renderCheckingBlank(prop.getLabel())).append("; ");
-            str.append("Type: ").append(prop.getPropertyType().getXarName()).append("; ");
-            if (prop.getPropertyType().getJdbcType().isText())
-                str.append("Scale: ").append(prop.getScale()).append("; ");
-
-            Lookup lookup = prop.getLookup();
-            if (null != lookup)
-            {
-                str.append("Lookup: [");
-                if (null != lookup.getContainer())
-                    str.append("Container: ").append(lookup.getContainer().getName()).append(", ");
-                str.append("Schema: ").append(lookup.getSchemaKey()).append(", ")
-                   .append("Query: ").append(lookup.getQueryName()).append("]; ");
-            }
-
-            str.append("Description: ").append(renderCheckingBlank(prop.getDescription())).append("; ");
-            str.append("Format: ").append(renderCheckingBlank(prop.getFormat())).append("; ");
-            str.append("URL: ").append(renderCheckingBlank(prop.getURL())).append("; ");
-            str.append("PHI: ").append(prop.getPHI().toString()).append("; ");
-            str.append("ImportAliases: ").append(renderImportAliases(prop.getPropertyDescriptor())).append("; ");
-            str.append("Validators: ").append(renderValidators(prop.getPropertyDescriptor())).append("; ");
-            str.append("ConditionalFormats: ").append(renderConditionalFormats(prop.getPropertyDescriptor())).append("; ");
-            str.append("DefaultValueType: ").append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
-            str.append("DefaultScale: ").append(prop.getDefaultScale().getLabel()).append("; ");
-            str.append("Required: ").append(renderBool(prop.isRequired())).append("; ");
-            str.append("Hidden: ").append(renderBool(prop.isHidden())).append("; ");
-            str.append("MvEnabled: ").append(renderBool(prop.isMvEnabled())).append("; ");
-            str.append("Measure: ").append(renderBool(prop.isMeasure())).append("; ");
-            str.append("Dimension: ").append(renderBool(prop.isDimension())).append("; ");
-            str.append("ShownInInsert: ").append(renderBool(prop.isShownInInsertView())).append("; ");
-            str.append("ShownInDetails: ").append(renderBool(prop.isShownInDetailsView())).append("; ");
-            str.append("ShownInUpdate: ").append(renderBool(prop.isShownInUpdateView())).append("; ");
-            str.append("RecommendedVariable: ").append(renderBool(prop.isRecommendedVariable())).append("; ");
-            str.append("ExcludedFromShifting: ").append(renderBool(prop.isExcludeFromShifting())).append("; ");
-            str.append("Scannable: ").append(renderBool(prop.isScannable())).append("; ");
-            return str.toString();
+            return !StringUtils.isEmpty(_details.changeSummary);
         }
 
-        private String makeModifiedPropAuditComment(DomainPropertyImpl prop, PropertyDescriptor pdOld, String oldValidators, String oldFormats)
+        private PropertyChangeAuditInfoDetail makeNewPropAuditComment(DomainPropertyImpl prop)
         {
-            StringBuilder str = new StringBuilder();
-            if (!pdOld.getName().equals(prop.getName()))
-                str.append("Name: ").append(renderOldVsNew(pdOld.getName(), prop.getName())).append("; ");
-            if (!StringUtils.equals(pdOld.getLabel(), prop.getLabel()))
-                str.append("Label: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getLabel()), renderCheckingBlank(prop.getLabel()))).append("; ");
-            if (null != pdOld.getPropertyType() && !pdOld.getPropertyType().equals(prop.getPropertyType()))
-                str.append("Type: ").append(renderOldVsNew(pdOld.getPropertyType().getXarName(), prop.getPropertyType().getXarName())).append("; ");
-            if (prop.getPropertyType().getJdbcType().isText())
-                if (pdOld.getScale() != prop.getScale())
-                    str.append("Scale: ").append(renderOldVsNew(Integer.toString(pdOld.getScale()), Integer.toString(prop.getScale()))).append("; ");
+            String newValidators = PropertyChangeAuditInfo.renderValidators(prop.getPropertyDescriptor());
+            String newConditionalFormats = PropertyChangeAuditInfo.renderConditionalFormats(prop.getPropertyDescriptor());
+            Map<String, Object> newProps = prop.getAuditRecordMap(newValidators, newConditionalFormats);
 
-            if (!StringUtils.equals(pdOld.getLookupSchema(), prop.getPropertyDescriptor().getLookupSchema()) ||
-                !StringUtils.equals(pdOld.getLookupQuery(), prop.getPropertyDescriptor().getLookupQuery()) ||
-                !StringUtils.equals(pdOld.getLookupContainer(), prop.getPropertyDescriptor().getLookupContainer()))
-            {
-                renderLookupDiff(prop.getPropertyDescriptor(), pdOld, str);
-            }
-
-            if (!StringUtils.equals(pdOld.getDescription(), prop.getDescription()))
-                str.append("Description: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDescription()), renderCheckingBlank(prop.getDescription()))).append("; ");
-            if (!StringUtils.equals(prop.getFormat(), prop.getFormat()))
-                str.append("Format: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getFormat()), renderCheckingBlank(prop.getFormat()))).append("; ");
-            if (!StringUtils.equals((null != pdOld.getURL() ? pdOld.getURL().toString() : null), prop.getURL()))
-                str.append("URL: ").append(renderOldVsNew(renderCheckingBlank(null != pdOld.getURL() ? pdOld.getURL().toString() : null), renderCheckingBlank(prop.getURL()))).append("; ");
-            if (!pdOld.getPHI().equals(prop.getPHI()))
-                str.append("PHI: ").append(renderOldVsNew(pdOld.getPHI().getLabel(), prop.getPHI().getLabel())).append("; ");
-
-            renderImportAliasesDiff(prop, pdOld, str);
-            renderValidatorsDiff(prop, oldValidators, str);
-            renderConditionalFormatsDiff(prop, oldFormats, str);
-            renderDefaultValueTypeDiff(prop, pdOld, str);
-
-            if (!pdOld.getDefaultScale().getLabel().equals(prop.getDefaultScale().getLabel()))
-                str.append("DefaultScale: ").append(renderOldVsNew(pdOld.getDefaultScale().getLabel(), prop.getDefaultScale().getLabel())).append("; ");
-            if (pdOld.isRequired() != prop.isRequired())
-                str.append("Required: ").append(renderOldVsNew(renderBool(pdOld.isRequired()), renderBool(prop.isRequired()))).append("; ");
-            if (pdOld.isHidden() != prop.isHidden())
-                str.append("Hidden: ").append(renderOldVsNew(renderBool(pdOld.isHidden()), renderBool(prop.isHidden()))).append("; ");
-            if (pdOld.isMvEnabled() != prop.isMvEnabled())
-                str.append("MvEnabled: ").append(renderOldVsNew(renderBool(pdOld.isMvEnabled()), renderBool(prop.isMvEnabled()))).append("; ");
-            if (pdOld.isMeasure() != prop.isMeasure())
-                str.append("Measure: ").append(renderOldVsNew(renderBool(pdOld.isMeasure()), renderBool(prop.isMeasure()))).append("; ");
-            if (pdOld.isDimension() != prop.isDimension())
-                str.append("Dimension: ").append(renderOldVsNew(renderBool(pdOld.isDimension()), renderBool(prop.isDimension()))).append("; ");
-            if (pdOld.isShownInInsertView() != prop.isShownInInsertView())
-                str.append("ShownInInsert: ").append(renderOldVsNew(renderBool(pdOld.isShownInInsertView()), renderBool(prop.isShownInInsertView()))).append("; ");
-            if (pdOld.isShownInDetailsView() != prop.isShownInDetailsView())
-                str.append("ShownInDetails: ").append(renderOldVsNew(renderBool(pdOld.isShownInDetailsView()), renderBool(prop.isShownInDetailsView()))).append("; ");
-            if (pdOld.isShownInUpdateView() != prop.isShownInUpdateView())
-                str.append("ShownInUpdate: ").append(renderOldVsNew(renderBool(pdOld.isShownInUpdateView()), renderBool(prop.isShownInUpdateView()))).append("; ");
-            if (pdOld.isShownInLookupView() != prop.isShownInLookupView())
-                str.append("ShownInLookupView: ").append(renderOldVsNew(renderBool(pdOld.isShownInLookupView()), renderBool(prop.isShownInLookupView()))).append("; ");
-            if (pdOld.isRecommendedVariable() != prop.isRecommendedVariable())
-                str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
-            if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
-                str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
-            if (pdOld.isScannable() != prop.isScannable())
-                str.append("Scannable: ").append(renderOldVsNew(renderBool(pdOld.isScannable()), renderBool(prop.isScannable()))).append("; ");
-            if (!StringUtils.equals(pdOld.getDerivationDataScope(), prop.getDerivationDataScope()))
-                str.append("DerivationDataScope: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDerivationDataScope()), renderCheckingBlank(prop.getDerivationDataScope()))).append("; ");
-            return str.toString();
+            return new PropertyChangeAuditInfoDetail(null, null, newProps);
         }
 
-        private String renderCheckingBlank(String value)
+        private PropertyChangeAuditInfoDetail makeModifiedPropAuditComment(DomainPropertyImpl prop, String newPropName, PropertyDescriptor pdOld, String oldValidators, String oldConditionalFormats)
         {
-            return StringUtils.isNotBlank(value) ? value : "<none>";
+            Map<String, Object> oldProps = pdOld.getAuditRecordMap(oldValidators, oldConditionalFormats);
+
+            String newValidators = PropertyChangeAuditInfo.renderValidators(prop.getPropertyDescriptor());
+            String newConditionalFormats = PropertyChangeAuditInfo.renderConditionalFormats(prop.getPropertyDescriptor());
+            Map<String, Object> newProps = prop.getAuditRecordMap(newValidators, newConditionalFormats);
+            newProps.put("Name", newPropName);
+
+            List<String> changed = new ArrayList<>();
+            for (String oldKey : oldProps.keySet())
+            {
+                if (!Objects.equals(oldProps.get(oldKey), newProps.get(oldKey)))
+                    changed.add(oldKey);
+            }
+            for (String newKey : newProps.keySet())
+            {
+                if (!Objects.equals(oldProps.get(newKey), newProps.get(newKey)) && !changed.contains(newKey))
+                    changed.add(newKey);
+            }
+
+            String changeSummary = changed.isEmpty() ? null :
+                    "The following " + (changed.size() > 1 ? "properties were" : "property was") + " updated: " + StringUtils.join(changed, ", ");
+            return new PropertyChangeAuditInfoDetail(changeSummary, oldProps, newProps);
         }
 
         private static String renderValidators(PropertyDescriptor prop)
         {
             Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
-            if (validators.isEmpty())
-                return "<none>";
-            List<String> strings = new ArrayList<>();
-            validators.forEach(validator -> strings.add(validator.getName() + " [" +
-                StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
-            );
-            return StringUtils.join(strings, ", ");
+            return getPropertyValidatorStringVal(validators);
         }
 
         private static String renderConditionalFormats(PropertyDescriptor prop)
         {
             List<ConditionalFormat> formats = DomainPropertyManager.get().getConditionalFormats(prop);
-            if (formats.isEmpty())
-                return "<none>";
-            return Integer.toString(formats.size());
+            return ConditionalFormat.toStringVal(formats);
         }
 
-        private void renderValidatorsDiff(DomainProperty prop, String oldValidators, StringBuilder str)
-        {
-            String validators = renderValidators(prop.getPropertyDescriptor());
-            if (!StringUtils.equals(oldValidators, validators))
-                str.append("Validators: ").append("old: ").append(oldValidators).append(", new: ").append(validators).append("; ");
-        }
+    }
 
-        private void renderConditionalFormatsDiff(DomainProperty prop, String oldFormats, StringBuilder str)
-        {
-            String formats = renderConditionalFormats(prop.getPropertyDescriptor());
-            if (!StringUtils.equals(oldFormats, formats))
-                str.append("ConditionalFormats: ").append("old: ").append(oldFormats).append(", new: ").append(formats).append("; ");
-        }
-
-        private String renderImportAliases(PropertyDescriptor prop)
-        {
-            Set<String> aliases = prop.getImportAliasSet();
-            if (aliases.isEmpty())
-                return "<none>";
-            return StringUtils.join(aliases, ",");
-        }
-
-        private void renderImportAliasesDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
-        {
-            String oldAliases = renderImportAliases(pdOld);
-            String aliases = renderImportAliases(prop.getPropertyDescriptor());
-            if (!StringUtils.equals(oldAliases, aliases))
-                str.append("ImportAliases: ").append("old: ").append(oldAliases).append(", new: ").append(aliases).append("; ");
-        }
-
-        private String renderDefaultValueType(PropertyDescriptor prop)
-        {
-            DefaultValueType type = prop.getDefaultValueTypeEnum();
-            if (null == type)
-                return "<none>";
-            return type.getLabel();
-        }
-
-        private void renderDefaultValueTypeDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
-        {
-            if (pdOld.getDefaultValueTypeEnum() != prop.getDefaultValueTypeEnum())
-                str.append("DefaultValueType: ").append("old: ").append(renderDefaultValueType(pdOld)).append(", new: ")
-                   .append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
-        }
-
-        private String renderBool(boolean value)
-        {
-            return value ? "true" : "false";
-        }
-
-        private String renderOldVsNew(String oldVal, String newVal)
-        {
-            return oldVal + " -> " + newVal;
-        }
-
-        private void renderLookupDiff(PropertyDescriptor pdNew, PropertyDescriptor pdOld, StringBuilder str)
-        {
-            str.append("Lookup: [");
-            if (!StringUtils.equals(pdOld.getLookupContainer(), pdNew.getLookupContainer()))
-                str.append("Container: ").append("old: ").append(getContainerName(pdOld.getLookupContainer())).append(", new: ")
-                   .append(getContainerName(pdNew.getLookupContainer())).append(", ");
-            if (!StringUtils.equals(pdOld.getLookupSchema(), pdNew.getLookupSchema()))
-                str.append("Schema: ").append("old: ").append(pdOld.getLookupSchema()).append(", new: ")
-                   .append(pdNew.getLookupSchema()).append(", ");
-            if (!StringUtils.equals(pdOld.getLookupQuery(), pdNew.getLookupQuery()))
-                str.append("Query: ").append("old: ").append(pdOld.getLookupQuery()).append(", new: ")
-                   .append(pdNew.getLookupQuery());
-            str.append("]; ");
-        }
-
-        private String getContainerName(String containerId)
-        {
-            if (null != containerId)
-            {
-                Container container = ContainerManager.getForId(containerId);
-                if (null != container)
-                    return container.getName();
-            }
+    public static String getPropertyValidatorStringVal(Collection<PropertyValidator> validators)
+    {
+        if (validators == null || validators.isEmpty())
             return null;
-        }
+        List<String> strings = new ArrayList<>();
+        validators.forEach(validator -> strings.add(validator.getStringVal()));
+        return StringUtils.join(strings, ", ");
     }
 
     @Override
@@ -1524,5 +1555,27 @@ public class DomainImpl implements Domain
     public DomainTemplate getTemplate()
     {
         return DomainTemplate.findTemplate(getTemplateInfo(), getDomainKind().getKindName());
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void saveAfterGetReadOnlyDomain()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String uri = "StorageProvisionImpl/" + GUID.makeGUID();
+            DomainImpl d = new DomainImpl(c, uri, "test", false);
+            User user = TestContext.get().getUser();
+            try
+            {
+                d.save(user);
+                fail("Save of read-only domain should fail.");
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                // expected exception
+            }
+        }
     }
 }

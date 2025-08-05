@@ -57,7 +57,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
         for (SummaryByVisitParticipant count : countSummary)
         {
             String cohort = _showCohorts ? count.getCohort() : "[cohort blinded]";
-            if (cohort == null || cohort.length() == 0)
+            if (cohort == null || cohort.isEmpty())
                 cohort = "[No cohort assigned]";
             String key = cohort + "/" + count.getParticipantId();
             Row row = rows.get(key);
@@ -96,7 +96,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
             summaryString.append(summary.getVialCount());
         if (isViewVolume())
         {
-            if (summaryString.length() > 0)
+            if (!summaryString.isEmpty())
                 summaryString.append("/");
             summaryString.append(summary.getTotalVolume());
         }
@@ -115,7 +115,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
         if (_filter != null)
         {
             String filterQueryString = getFilterQueryString(visit, summary);
-            if (filterQueryString != null && filterQueryString.length() > 0)
+            if (filterQueryString != null && !filterQueryString.isEmpty())
                 linkHtml += "&" + filterQueryString;
         }
         return buildCellHtml(visit, summary, linkHtml);

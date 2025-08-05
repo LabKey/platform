@@ -446,11 +446,17 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     Domain getDomain();
 
     /**
+     * Get Domain associated with this TableInfo if any.
+     */
+    @Nullable
+    Domain getDomain(boolean forUpdate);
+
+    /**
      * Get DomainKind associated with this TableInfo if any.
      * Domain may or may not exist even if DomainKind is available.
      */
     @Nullable
-    DomainKind getDomainKind();
+    DomainKind<?> getDomainKind();
 
     /**
      * Returns a QueryUpdateService implementation for this TableInfo,
@@ -642,8 +648,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      *
      * @return FieldKey of the Container column.
      */
-    @Nullable
-    public FieldKey getContainerFieldKey();
+    @Nullable FieldKey getContainerFieldKey();
 
     /**
      * Returns whether this table supports audit tracking of insert, updates and deletes by implementing the
@@ -755,7 +760,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     default boolean allowQueryTableURLOverrides()
     {
         return false;
-    };
+    }
 
     /**
      * Max PHI across all columns in the table.

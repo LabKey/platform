@@ -51,7 +51,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -71,6 +70,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -367,7 +367,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
     private void configureAttachmentURL(MutableColumnInfo col)
     {
-        ActionURL url = ListController.getDownloadURL(_list, "${EntityId}", "${" + col.getName() + "}");
+        ActionURL url = ListController.getDownloadURL(_list, "${EntityId}", "${" + PageFlowUtil.encode(col.getName()) + "}");
         if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
         {
             url.addParameter("inline", "false");
@@ -391,8 +391,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
         if (null != _list)
-            return _list.getDomain();
+            return _list.getDomain(forUpdate);
         return null;
     }
 

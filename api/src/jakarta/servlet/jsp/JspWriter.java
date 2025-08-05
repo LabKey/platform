@@ -16,8 +16,6 @@
  */
 package jakarta.servlet.jsp;
 
-import org.labkey.api.util.SafeToRender;
-
 import java.io.IOException;
 
 /*

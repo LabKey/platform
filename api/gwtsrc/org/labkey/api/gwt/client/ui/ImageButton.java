@@ -32,8 +32,8 @@ import java.util.List;
 
 public class ImageButton extends ButtonBase implements ClickListener
 {
-    private ClickListenerCollection _clickListeners = new ClickListenerCollection();
-    private List<ClickHandler> _clickHandlers = new ArrayList<ClickHandler>();
+    private final ClickListenerCollection _clickListeners = new ClickListenerCollection();
+    private final List<ClickHandler> _clickHandlers = new ArrayList<>();
     private String _text;
 
     public ImageButton(String text, ClickListener listener)

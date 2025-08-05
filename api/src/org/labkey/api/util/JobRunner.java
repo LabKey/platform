@@ -133,9 +133,8 @@ public class JobRunner implements Executor
         synchronized (_jobs)
         {
             Future task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
-            if (command instanceof Job)
+            if (command instanceof Job job)
             {
-                Job job = (Job) command;
                 job._task = task;
                 _jobs.put(task, job);
             }
@@ -182,7 +181,7 @@ public class JobRunner implements Executor
             }
             if (null != job)
             {
-                _logDebug("beforeExecute: " + job.toString());
+                _logDebug("beforeExecute: " + job);
                 job.starting(t);
                 job._startTime = System.currentTimeMillis();
             }
@@ -202,7 +201,7 @@ public class JobRunner implements Executor
                 if (null != job)
                 {
                     job._finishTime = System.currentTimeMillis();
-                    _logDebug("afterExecute: " + job.toString());
+                    _logDebug("afterExecute: " + job);
                     if (null == t)
                     {
                         try

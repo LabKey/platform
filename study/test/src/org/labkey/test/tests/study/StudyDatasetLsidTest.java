@@ -8,15 +8,14 @@ import org.junit.experimental.categories.Category;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.domain.CreateDomainCommand;
-import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
-import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.RowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.study.DatasetDefinition;
 import org.labkey.test.tests.MissingValueIndicatorsTest;
 import org.labkey.test.util.StudyHelper;
 
@@ -89,53 +88,44 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         log("Creating visit study datasets");
 
         final String containerPath = String.format("%s/%s", getProjectName(), VISIT_STUDY);
-        final String kindName = "StudyDatasetVisit";
         Connection conn = createDefaultConnection();
 
-        createDataset(conn,
-                kindName,
-                DEMOGRAPHICS_DATASET,
-                containerPath,
-                List.of(
+        DatasetDefinition.create(DEMOGRAPHICS_DATASET)
+                .setKindName(DatasetDefinition.VISIT_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("Name", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of("demographics", true)
-        );
-        createDataset(conn,
-                kindName,
-                NON_DEMOGRAPHICS_DATASET,
-                containerPath,
-                List.of(
+                ))
+                .setDemographics(true)
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(NON_DEMOGRAPHICS_DATASET)
+                .setKindName(DatasetDefinition.VISIT_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Collections.emptyMap()
-        );
-        createDataset(conn,
-                kindName,
-                ADDITIONAL_KEY_FIELD,
-                containerPath,
-                List.of(
+                ))
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(ADDITIONAL_KEY_FIELD)
+                .setKindName(DatasetDefinition.VISIT_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer),
                         new FieldDefinition("AdditionalField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of("keyPropertyName", "AdditionalField")
-        );
-        createDataset(conn,
-                kindName,
-                MANAGED_KEY_FIELD,
-                containerPath,
-                List.of(
+                ))
+                .setKeyPropertyName("AdditionalField")
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(MANAGED_KEY_FIELD)
+                .setKindName(DatasetDefinition.VISIT_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("ManagedField", FieldDefinition.ColumnType.Integer),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of(
-                        "keyPropertyName", "ManagedField",
-                        "keyPropertyManaged", true)
-        );
+                ))
+                .setKeyPropertyName("ManagedField", true)
+                .create(conn, containerPath);
 
         log("Validate inserting rows into the demographics dataset");
         expectSuccess(conn, DEMOGRAPHICS_DATASET, containerPath,
@@ -201,22 +191,18 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         log("Testing inserting and updating MV indicator fields");
 
         final String containerPath = String.format("%s/%s", getProjectName(), VISIT_STUDY);
-        final String kindName = "StudyDatasetVisit";
         Connection conn = createDefaultConnection();
 
-        createDataset(conn,
-                kindName,
-                MV_INDICATOR_DATASET,
-                containerPath,
-                List.of(
+        DatasetDefinition.create(MV_INDICATOR_DATASET)
+                .setKindName(DatasetDefinition.VISIT_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer).setMvEnabled(true),
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String).setMvEnabled(true)
-                ),
-                Collections.emptyMap()
-        );
+                ))
+                .create(conn, containerPath);
 
         log("Validate inserting into the MV indicator dataset");
-        SaveRowsResponse response = expectSuccess(conn, MV_INDICATOR_DATASET, containerPath,
+        RowsResponse response = expectSuccess(conn, MV_INDICATOR_DATASET, containerPath,
                 List.of(
                         Map.of("Ptid", "111", "Visit", 1, "IntField", "N", "StringField", "Q"),
                         Map.of("Ptid", "222", "Visit", 2, "IntField", 1, "StringField", "StringValue"),
@@ -238,7 +224,7 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         cmd.setRows(updated);
         try
         {
-            SaveRowsResponse resp = cmd.execute(conn, containerPath);
+            RowsResponse resp = cmd.execute(conn, containerPath);
             List<Map<String, Object>> updatedRows = resp.getRows();
             validateValuesPresent(updatedRows.get(0), Map.of("IntFieldMvIndicator", "Z", "StringFieldMvIndicator", "Q"));
             validateValuesPresent(updatedRows.get(1), Map.of("IntField", 1, "StringFieldMvIndicator", "Q"));
@@ -264,63 +250,53 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         log("Creating date study datasets");
 
         final String containerPath = String.format("%s/%s", getProjectName(), DATE_STUDY);
-        final String kindName = "StudyDatasetDate";
         Connection conn = createDefaultConnection();
 
-        createDataset(conn,
-                kindName,
-                DEMOGRAPHICS_DATASET,
-                containerPath,
-                List.of(
+        DatasetDefinition.create(DEMOGRAPHICS_DATASET)
+                .setKindName(DatasetDefinition.DATE_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("Name", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of("demographics", true)
-        );
-        createDataset(conn,
-                kindName,
-                NON_DEMOGRAPHICS_DATASET,
-                containerPath,
-                List.of(
+                ))
+                .setDemographics(true)
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(NON_DEMOGRAPHICS_DATASET)
+                .setKindName(DatasetDefinition.DATE_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Collections.emptyMap()
-        );
-        createDataset(conn,
-                kindName,
-                ADDITIONAL_KEY_FIELD,
-                containerPath,
-                List.of(
+                ))
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(ADDITIONAL_KEY_FIELD)
+                .setKindName(DatasetDefinition.DATE_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer),
                         new FieldDefinition("AdditionalField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of("keyPropertyName", "AdditionalField")
-        );
-        createDataset(conn,
-                kindName,
-                MANAGED_KEY_FIELD,
-                containerPath,
-                List.of(
+                ))
+                .setKeyPropertyName("AdditionalField")
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(MANAGED_KEY_FIELD)
+                .setKindName(DatasetDefinition.DATE_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("ManagedField", FieldDefinition.ColumnType.Integer),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of(
-                        "keyPropertyName", "ManagedField",
-                        "keyPropertyManaged", true)
-        );
-        createDataset(conn,
-                kindName,
-                TIME_PORTION_OF_DATE,
-                containerPath,
-                List.of(
+                ))
+                .setKeyPropertyName("ManagedField", true)
+                .create(conn, containerPath);
+
+        DatasetDefinition.create(TIME_PORTION_OF_DATE)
+                .setKindName(DatasetDefinition.DATE_BASED_STUDY)
+                .setFields(List.of(
                         new FieldDefinition("StringField", FieldDefinition.ColumnType.String),
                         new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer)
-                ),
-                Map.of("useTimeKeyField", true)
-        );
+                ))
+                .setTimeKeyField(true)
+                .create(conn, containerPath);
 
         log("Validate inserting rows into the demographics dataset");
         expectSuccess(conn, DEMOGRAPHICS_DATASET, containerPath,
@@ -389,28 +365,19 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         validateUpdateOfGeneratedColumns(conn, containerPath, TIME_PORTION_OF_DATE);
     }
 
-    // Create datasets via the java api
-    private void createDataset(Connection conn, String kindName, String datasetName, String folderName, List<PropertyDescriptor> fields, Map<String, Object> options) throws Exception
-    {
-        CreateDomainCommand cmd = new CreateDomainCommand(kindName, datasetName);
-        cmd.getDomainDesign().setFields(fields);
-        cmd.setOptions(options);
-        cmd.execute(conn, folderName);
-    }
-
-    private SaveRowsResponse expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private RowsResponse expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
         return validateInsertRows(conn, datasetName, containerPath, rows, false);
     }
 
-    private SaveRowsResponse expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private RowsResponse expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
         return validateInsertRows(conn, datasetName, containerPath, rows, true);
     }
 
-    private SaveRowsResponse validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
+    private RowsResponse validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
     {
-        SaveRowsResponse resp = null;
+        RowsResponse resp = null;
         InsertRowsCommand cmd = new InsertRowsCommand("Study", datasetName);
         cmd.setRows(rows);
         try
@@ -420,9 +387,11 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         catch (CommandException e)
         {
             if (fail)
-                // error message may vary depending on single or multi row inserts
+                // error message may vary depending on single or multi row inserts, postgres or sql server
                 assertTrue(String.format("Expected a duplicate key error but was : %s", e.getMessage()),
-                        e.getMessage().contains("Only one row is allowed for each Participant") || e.getMessage().contains("duplicate key value violates unique constraint"));
+                        e.getMessage().contains("Only one row is allowed for each Participant") ||
+                        e.getMessage().contains("duplicate key value violates unique constraint") ||
+                        e.getMessage().contains("Cannot insert duplicate key row"));
             else
                 Assert.fail(String.format("Expected the insert to succeed but instead it failed : %s", e.getMessage()));
             return resp;

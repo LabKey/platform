@@ -24,8 +24,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -50,7 +48,6 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     private final Map<Object, Object> _objectiveIdMap = new HashMap<>();
     private final SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
     private final SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
-    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     private String getDataType()
     {
@@ -76,6 +73,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
                     boolean isDataspaceProject = ctx.isDataspaceProject();
+                    boolean studyDesignEnabled = isStudyDesignEnabled(ctx.getContainer());
 
                     // import any custom study design table properties
                     importTableinfo(ctx, vf, StudyPropertiesWriter.SCHEMA_FILENAME);
@@ -84,7 +82,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser());
                     StudyQuerySchema projectSchema = isDataspaceProject ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
-                    if (!isDataspaceProject && _studyDesignEnabled)
+                    if (!isDataspaceProject && studyDesignEnabled)
                     {
                         // objective is cross-container and thus not supported for dataspace import
                         StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME, null);
@@ -95,7 +93,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME, null);
                     importTableData(ctx, vf, propertiesTablePackage, null, new StudyPropertiesTransform());
 
-                    if (_studyDesignEnabled)
+                    if (studyDesignEnabled)
                     {
                         StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.PERSONNEL_TABLE_NAME, null);
                         importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
@@ -113,7 +111,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
         }
     }
 
-    private class PersonnelTableTransform extends PreserveExistingProjectData
+    private static class PersonnelTableTransform extends PreserveExistingProjectData
     {
         public PersonnelTableTransform(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
         {
@@ -167,7 +165,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
         }
     }
 
-    private class StudyPropertiesTransform implements TransformHelper
+    private static class StudyPropertiesTransform implements TransformHelper
     {
         Set PROPS_TO_SKIP = new CaseInsensitiveHashSet("Label", "StartDate", "EndDate", "SubjectNounSingular",
             "SubjectNounPlural", "SubjectColumnName", "Grant", "Investigator", "Species", "AssayPlan",

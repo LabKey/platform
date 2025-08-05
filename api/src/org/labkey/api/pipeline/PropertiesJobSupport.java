@@ -29,5 +29,5 @@ public interface PropertiesJobSupport
     /**
      * @return custom properties from this job
      */
-    public Map<PropertyDescriptor, Object> getProps();
+    Map<PropertyDescriptor, Object> getProps();
 }

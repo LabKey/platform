@@ -27,8 +27,8 @@ import java.util.Map;
 */
 public class BeanIterator<T> implements CloseableIterator<T>
 {
-    private CloseableIterator<Map<String, Object>> _mapIter;
-    private ObjectFactory<T> _factory;
+    private final CloseableIterator<Map<String, Object>> _mapIter;
+    private final ObjectFactory<T> _factory;
 
     public BeanIterator(CloseableIterator<Map<String, Object>> mapIter, Class<T> clazz)
     {

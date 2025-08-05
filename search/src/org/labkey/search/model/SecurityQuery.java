@@ -33,6 +33,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -159,7 +160,8 @@ class SecurityQuery extends Query
 
     private boolean canReadResource(String resourceId, String containerId)
     {
-        assert !resourceId.equals(containerId);
+        if (resourceId.equalsIgnoreCase(containerId))
+            throw new IllegalStateException("ResourceId was specified when it equals ContainerId: " + resourceId);
 
         if (_containerIds.containsKey(resourceId))
             return true;
@@ -168,7 +170,12 @@ class SecurityQuery extends Query
 
         if (null == canRead)
         {
-            SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
+            // If resourceId represents a Container, then check permissions on it; this is important to ensure that
+            // permission inheritance is respected. If it's not a Container, then just fake up a SecurableResource.
+            // This is likely specific to Data Finder, which wants search to check permissions on both the cube
+            // container and the study container, not a resource that lives within a container. Issue 53420.
+            Container container = ContainerManager.getForId(resourceId);
+            SecurableResource sr = null != container ? container : new _SecurableResource(resourceId, _containerIds.get(containerId));
             canRead = sr.hasPermission(_user, ReadPermission.class);
             _securableResourceIds.put(resourceId, canRead);
         }

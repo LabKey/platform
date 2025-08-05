@@ -13,11 +13,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.model.FieldKey', {
             mapping: 'fieldKey',
             convert : function(fieldKey, rec) {
                 if (Ext4.isString(fieldKey)) {
-                    return fieldKey.toUpperCase();
+                    return encodeURI(fieldKey.toUpperCase()); // Issue 53197
                 }
 
                 if (rec && rec.raw && Ext4.isString(rec.raw.fieldKey)) {
-                    return rec.raw.fieldKey.toUpperCase();
+                    return encodeURI(rec.raw.fieldKey.toUpperCase()); // Issue 53197
                 }
 
                 throw new Error('LABKEY.internal.ViewDesigner.model.FieldKey: unable to generate id due to missing fieldKey.');
@@ -30,7 +30,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.model.FieldKey', {
         getById: function(id) {
             var _id;
             if (Ext4.isString(id)) {
-                _id = id.toUpperCase();
+                _id = encodeURI(id.toUpperCase()); // Issue 53197
             }
             else {
                 _id = id;
@@ -51,7 +51,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.store.FieldKey', {
     getById: function(id) {
         var _id;
         if (Ext4.isString(id)) {
-            _id = id.toUpperCase();
+            _id = encodeURI(id.toUpperCase()); // Issue 53197
         }
         else {
             _id = id;

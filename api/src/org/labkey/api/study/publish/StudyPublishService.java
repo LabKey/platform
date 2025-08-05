@@ -18,6 +18,7 @@ package org.labkey.api.study.publish;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
@@ -57,7 +58,7 @@ public interface StudyPublishService
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
     String LSID_PROPERTY_NAME = "LSID";
     String ROWID_PROPERTY_NAME = "RowId";
-    String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
+    String TARGET_STUDY_PROPERTY_NAME = AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME;
 
     String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
     String AUTO_LINK_CATEGORY_PROPERTY_URI = "terms.labkey.org#AutoLinkCategory";

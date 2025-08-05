@@ -34,7 +34,7 @@ public class QueryBrowserWebPartFactory extends BaseWebPartFactory
     @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        JspView view = new JspView("/org/labkey/query/view/browse.jsp");
+        JspView view = new JspView<>("/org/labkey/query/view/browse.jsp");
         view.setTitle(NAME);
         view.setFrame(WebPartView.FrameType.PORTAL);
         return view;

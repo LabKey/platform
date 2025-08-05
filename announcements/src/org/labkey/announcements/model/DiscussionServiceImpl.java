@@ -60,7 +60,7 @@ import java.util.Map;
 public class DiscussionServiceImpl implements DiscussionService
 {
     @Override
-    public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
+    public WebPartView<?> startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
     {
         if (!allowMultipleDiscussions)
         {
@@ -110,7 +110,7 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
-    public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
+    public WebPartView<?> getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
     {
         // NOTE: don't pass in AnnouncementModel, it came from getBareAnnouncements()
         return new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
@@ -147,7 +147,7 @@ public class DiscussionServiceImpl implements DiscussionService
             {
                 discussionId = Integer.parseInt(id);
             }
-            else if (displayFirstDiscussionByDefault && params.isEmpty() && discussions.size() > 0)
+            else if (displayFirstDiscussionByDefault && params.isEmpty() && !discussions.isEmpty())
             {
                 discussionId = discussions.get(0).getRowId();
             }
@@ -168,7 +168,7 @@ public class DiscussionServiceImpl implements DiscussionService
             // clean up discussion parameters (in case caller didn't)
             pageURL.deleteScopeParameters("discussion");
 
-            WebPartView start = startDiscussion(c, user, objectId, pageURL, adjustedCurrentURL, newDiscussionTitle, "", allowMultipleDiscussions);
+            WebPartView<?> start = startDiscussion(c, user, objectId, pageURL, adjustedCurrentURL, newDiscussionTitle, "", allowMultipleDiscussions);
             String title;
 
             if (start instanceof AnnouncementsController.ThreadView)
@@ -188,8 +188,8 @@ public class DiscussionServiceImpl implements DiscussionService
         {
             AnnouncementModel selected = null;
 
-            WebPartView discussionView = null;
-            HttpView respondView = null;
+            WebPartView<?> discussionView = null;
+            HttpView<?> respondView = null;
 
             if (discussionId != 0)
             {
@@ -246,7 +246,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Override
     public void deleteDiscussions(Container container, User user, Collection<String> identifiers)
     {
-        Collection<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
+        Collection<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(container, identifiers.toArray(new String[0]));
         for (AnnouncementModel ann : discussions)
         {
             AnnouncementManager.deleteAnnouncement(container, ann.getRowId());
@@ -328,17 +328,17 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
-    public static class ThreadWrapper extends WebPartView
+    public static class ThreadWrapper extends WebPartView<Object>
     {
         String _id;
         String _class = "labkey-hidden";
         VBox _vbox;
 
-        ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
+        ThreadWrapper(URLHelper currentURL, String caption, HttpView<?>... views)
         {
             super(FrameType.NONE);
             _vbox = new VBox();
-            for (HttpView v : views)
+            for (HttpView<?> v : views)
             {
                 if (v != null)
                 {
@@ -354,7 +354,7 @@ public class DiscussionServiceImpl implements DiscussionService
 
             _id = "discussionBox" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 
-            for (HttpView view : views)
+            for (HttpView<?> view : views)
             {
                 if (view != null)
                     addClientDependencies(view.getClientDependencies());
@@ -399,7 +399,7 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
-    public static class PickerView extends JspView
+    public static class PickerView extends JspView<Object>
     {
         final public String discussionAreaId;
         final public URLHelper pageURL;

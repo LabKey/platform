@@ -144,7 +144,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
                 String modifiedStr = Objects.toString(modified, null);
                 try
                 {
-                    policy._modified = (modifiedStr == null || modifiedStr.length() == 0) ? null : new Date(DateUtil.parseDateTime(modifiedStr));
+                    policy._modified = (modifiedStr == null || modifiedStr.isEmpty()) ? null : new Date(DateUtil.parseDateTime(modifiedStr));
                 }
                 catch (ConversionException x)
                 {

@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.view.ShortURLRecord" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors/>
@@ -24,19 +25,38 @@
     ShortURLRecord exampleRecord = new ShortURLRecord();
     exampleRecord.setShortURL("SHORT_URL");
     String exampleURL = exampleRecord.renderShortURL();
+    boolean isAppAdmin = getUser().hasRootPermission(ApplicationAdminPermission.class);
 %>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _form;
+
+    LABKEY.Utils.onReady(function() {
+        _form = new LABKEY.Form({formElement: 'form-shortUrls'});
+    });
+</script>
 <div style="width: 700px">
     <p>
         Short URLs allow you to create convenient, memorable links to specific content on your server.
         They are similar to TinyURL or bit.ly links. Users can access a short URL using a link like <%= h(exampleURL) %>
     </p>
+<%
+    if (isAppAdmin)
+    {
+%>
     <p>
         If the server or port number are incorrect, you can correct the Base Server URL in <a href="<%= h(urlProvider(AdminUrls.class).getCustomizeSiteURL()) %>">Site Settings</a>
     </p>
+<%
+    }
+%>
 </div>
 
-<labkey:form method="post">
+<labkey:form id="form-shortUrls" method="post">
     <table>
+<%
+    if (isAppAdmin)
+    {
+%>
         <tr>
             <td class="labkey-form-label"><label for="shortURLTextField">Short URL</label><%= helpPopup("Short URL", "The unique name for this short URL")%></td>
             <td><input name="shortURL" id="shortURLTextField" size="40" /></td>
@@ -45,9 +65,16 @@
             <td class="labkey-form-label"><label for="targetURLTextField">Target URL</label><%= helpPopup("Target URL", "The URL on this server that will be the redirect target. The server portion of the URL will be stripped off - only the path portion will be retained")%></td>
             <td><input name="fullURL" id="targetURLTextField" size="40" /></td>
         </tr>
+        <tr><td>&nbsp;</td></tr>
+<%
+    }
+%>
         <tr>
-            <td></td>
-            <td><%= button("Submit").submit(true) %></td>
+            <td colspan="2"><%=isAppAdmin ?
+                button("Submit").submit(true).onClick("_form.setClean();") :
+                button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())
+            %>
+            </td>
         </tr>
     </table>
 </labkey:form>

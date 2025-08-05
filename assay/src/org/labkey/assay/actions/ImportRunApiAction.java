@@ -177,7 +177,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             targetStudy = form.getTargetStudy();
             reRunId = form.getReRunId();
             reImportOption = form.getReImportOption();
-            runFilePath = form.getRunFilePath();
+            runFilePath = PageFlowUtil.decode(form.getRunFilePath()); // GitHub Issue 794
             moduleName = form.getModule();
             JSONArray dataRows = form.getDataRows();
             if (dataRows != null)
@@ -279,7 +279,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
-                    tsvWriter.setAdditionalQuotedChars("#"); //Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
+                    tsvWriter.setAdditionalQuotedChars(","); // Issue 52272: ensure values with commas in column headers and data are quoted
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
@@ -634,8 +634,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // Issue 52119: account for leading/trailing single quotes and decode double quotes and %
             if (key.startsWith("'") && key.endsWith("'"))
                 key = key.substring(1, key.length()-1);
-            key = key.replaceAll("%22", "\"");
-            key = key.replaceAll("%25", "%");
+            key = PageFlowUtil.decodeQuoteEncodedFormDataKey(key);
 
             return key;
         }

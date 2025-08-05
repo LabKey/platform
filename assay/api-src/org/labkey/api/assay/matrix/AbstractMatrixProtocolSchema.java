@@ -33,6 +33,7 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +63,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         return _dataBySampleTableName;
     }
 
-    public abstract List<Map> getDistinctSampleIds();
+    public abstract Collection<Map<String, Object>> getDistinctSampleIds();
 
     public abstract TableInfo getDataTableInfo(ContainerFilter cf);
 
@@ -87,9 +88,9 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         List<FieldKey> defaultCols = new ArrayList<>();
         ArrayList<CrosstabMember> members = new ArrayList<>();
 
-        List<Map> distinctSampleIds = getDistinctSampleIds();
+        Collection<Map<String, Object>> distinctSampleIds = getDistinctSampleIds();
 
-        for (Map sample : distinctSampleIds)
+        for (Map<String, Object> sample : distinctSampleIds)
         {
             members.add(new CrosstabMember(sample.get(colAxisId), colDim, (String) sample.get("Name")));
         }

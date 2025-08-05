@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.lineage;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
@@ -45,10 +44,10 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.StringUtils.defaultString;
 
 public class LineageForeignKey extends AbstractForeignKey
 {
@@ -335,7 +334,7 @@ public class LineageForeignKey extends AbstractForeignKey
                 {
                     if (null == _table)
                     {
-                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), expType != null ? expType.name(): "-", defaultString(cpasType,"-"));
+                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), expType != null ? expType.name(): "-", Objects.toString(cpasType,"-"));
                         _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                         {
                             SQLFragment objectids;
@@ -386,7 +385,7 @@ public class LineageForeignKey extends AbstractForeignKey
         {
             if (_useLineageDisplayColumn)
             {
-                FieldKey aliasFieldKey = new FieldKey(parent.getFieldKey(), StringUtils.defaultString(displayField,"Name"));
+                FieldKey aliasFieldKey = new FieldKey(parent.getFieldKey(), Objects.toString(displayField,"Name"));
                 var alias = new _AliasedParentColumn(parent, aliasFieldKey, depth, expType, cpasType, aliasFieldKey.getName());
                 alias.clearFk();
                 return alias;

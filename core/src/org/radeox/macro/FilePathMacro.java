@@ -44,9 +44,9 @@ import java.io.Writer;
  */
 
 public class FilePathMacro extends LocalePreserved {
-  private static Logger log = LogManager.getLogger(FilePathMacro.class);
+  private static final Logger log = LogManager.getLogger(FilePathMacro.class);
 
-  private String[] paramDescription = {"1: file path"};
+  private final String[] paramDescription = {"1: file path"};
 
    @Override
    public String getLocaleKey() {

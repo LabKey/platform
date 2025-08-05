@@ -81,10 +81,9 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     @Override
     public String getLongRecipientDescription()
     {
-        StringBuilder emailList = new StringBuilder(getShortRecipientDescription());
-        emailList.append(": ");
-        emailList.append(getEmailAddressesAsString(", "));
-        return emailList.toString();
+        String emailList = getShortRecipientDescription() + ": " +
+                getEmailAddressesAsString(", ");
+        return emailList;
     }
 
     public String getFormValue()

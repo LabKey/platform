@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -37,7 +38,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -59,6 +59,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.HtmlView;
@@ -75,7 +76,6 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.CrawlerRunningState;
 import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneDirectoryType;
-import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -89,12 +89,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class SearchController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SearchController.class);
+
+    private static final Logger LOG = LogHelper.getLogger(SearchController.class, "Search UI and admin");
 
     public SearchController()
     {
@@ -256,7 +257,7 @@ public class SearchController extends SpringActionController
     
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class AdminAction extends FormViewAction<AdminForm>
+    public static class AdminAction extends FormViewAction<AdminForm>
     {
         @SuppressWarnings("UnusedDeclaration")
         public AdminAction()
@@ -427,7 +428,7 @@ public class SearchController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ExportIndexContentsAction extends ExportAction<ExportForm>
+    public static class ExportIndexContentsAction extends ExportAction<ExportForm>
     {
         @Override
         public void export(ExportForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -683,7 +684,7 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class TestJson extends SimpleViewAction<Object>
+    public static class TestJson extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -855,13 +856,16 @@ public class SearchController extends SpringActionController
     // does not guarantee that all indexed content has been committed... but that may not be required in practice.
 
     @RequiresPermission(ApplicationAdminPermission.class)
-    public class WaitForIndexerAction extends ExportAction<PriorityForm>
+    public static class WaitForIndexerAction extends ExportAction<PriorityForm>
     {
         @Override
         public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();
+            long startTime = System.currentTimeMillis();
             boolean success = ss.drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
+
+            LOG.info("Spent {}ms draining the search indexer queue. Success: {}", System.currentTimeMillis() - startTime, success);
 
             // Return an error if we time out
             if (!success)

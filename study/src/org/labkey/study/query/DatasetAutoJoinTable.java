@@ -55,18 +55,18 @@ import java.util.Set;
  */
 public class DatasetAutoJoinTable extends VirtualTable
 {
-    private StudyQuerySchema _schema;
-    private DatasetDefinition _source;
-    private String _keyPropertyName;
+    private final StudyQuerySchema _schema;
+    private final DatasetDefinition _source;
+    private final String _keyPropertyName;
 
     // The resolved "ParticipantId" column handed through the ForeignKey.createLookupColumn().
-    private ColumnInfo _participantIdColumn;
+    private final ColumnInfo _participantIdColumn;
 
     // The "SequenceNum" FieldKey that has possibly been remapped.
-    private FieldKey _sequenceNumFieldKey;
+    private final FieldKey _sequenceNumFieldKey;
 
     // The "_Key" FieldKey that has possibly been remapped.
-    private FieldKey _keyFieldKey;
+    private final FieldKey _keyFieldKey;
 
     private ColumnInfo _sequenceNumColumn;
 

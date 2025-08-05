@@ -28,8 +28,6 @@ public class StudyUtils
     public static final String SUBMISSION_WARNING = "Once a request is submitted, its specimen list may no longer be modified. Continue?";
     public static final String CANCELLATION_WARNING = "Canceling will permanently delete this pending request. Continue?";
 
-    public static final String STUDY_DESIGN_FEATURE_FLAG = "studyDesignFlag";
-
     //Create a fixed point number encoding the date.
     public static double sequenceNumFromDate(Date d)
     {

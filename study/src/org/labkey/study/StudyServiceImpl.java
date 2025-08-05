@@ -55,6 +55,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
@@ -76,6 +77,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantInfo;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -706,9 +708,8 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                                                   DomainKind kind, Class<? extends BaseStudyTable> tableClass,
                                                   boolean dontAliasColumns, boolean useParticipantIdName)
     {
-        if (!(qsDefault instanceof StudyQuerySchema))
+        if (!(qsDefault instanceof StudyQuerySchema schemaDefault))
             throw new IllegalArgumentException("expected study schema");
-        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
         String publicName = null;
 
@@ -785,7 +786,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                             }
                         };
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
-                        ((BaseColumnInfo)unionCol).setFk(fk);
+                        unionCol.setFk(fk);
                     }
                     else if ("derivativetype".equalsIgnoreCase(name) || "derivativetype2".equalsIgnoreCase(name))
                     {
@@ -895,9 +896,8 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns)
     {
         assert BaseStudyTable.class.isAssignableFrom(tableClass);      // BaseStudyTable could not be in declaration because not visible to interface
-        if (!(qsDefault instanceof StudyQuerySchema))
+        if (!(qsDefault instanceof StudyQuerySchema schemaDefault))
             throw new IllegalArgumentException("expected study schema");
-        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
         String publicName = null;
 
@@ -1086,7 +1086,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public boolean isLocationInUse(Location loc)
     {
         return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
-            LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
+            LocationManager.get().isLocationInUse(loc, StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
     }
 
     @Override
@@ -1103,7 +1103,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
             .append(locationTableAlias)
             .append(".Container = p.Container) OR\n")
             .append(exists)
-            .append(StudySchema.getInstance().getTableInfoAssaySpecimen(), "a")
+            .append(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), "a")
             .append(" WHERE ")
             .append(locationTableAlias)
             .append(".RowId = a.LocationId AND ")
@@ -1196,5 +1196,17 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         return StudyManager.getInstance().getVisitImportMap(study, includeStandardMapping);
+    }
+
+    @Override
+    public ValidationException updateAssayPlan(User user, Study study, String assayPlan)
+    {
+        if (study instanceof StudyImpl studyImpl)
+        {
+            studyImpl = studyImpl.createMutable();
+            studyImpl.setAssayPlan(assayPlan);
+            return StudyManager.getInstance().updateStudy(user, studyImpl);
+        }
+        return null;
     }
 }

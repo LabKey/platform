@@ -76,7 +76,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
 
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         ValidationException validation = checkFieldNameLength(domain);
         if (validation != null)
@@ -84,15 +84,15 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
             throw UnexpectedException.wrap(validation);
         }
 
-        return super.createDomain(domain, arguments, container, user, templateInfo);
+        return super.createDomain(domain, arguments, container, user, templateInfo, forUpdate);
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException validation = checkFieldNameLength(update);
         if (validation != null) return validation;
-        return super.updateDomain(original, update, options, container, user, includeWarnings);
+        return super.updateDomain(original, update, options, container, user, includeWarnings, auditUserComment);
     }
 
     // Issue 52666: Don't allow property names that might cause problems due to a storage vs user-facing name
@@ -190,7 +190,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         {
             if (foreignKey.isProvisioned())
             {
-                Domain domain = provider.getDomain(foreignKey.getTableName(), true);
+                Domain domain = provider.getDomain(foreignKey.getTableName(), true, false);
                 if (null == domain)
                     throw new IllegalStateException("Expected domain to be created if it didn't already exist.");
 
@@ -218,9 +218,9 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
             boolean addWarnings)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
-        Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
-        Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false);
+        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false, true);
+        Domain vialDomain = specimenTablesProvider.getDomain("vial", false, true);
+        Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false, false);
 
         boolean editingSpecimen = null != specimenProps;
         boolean editingVial = null != vialProps;

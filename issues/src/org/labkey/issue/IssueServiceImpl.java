@@ -200,7 +200,7 @@ public class IssueServiceImpl implements IssueService
             return;
         }
 
-        IssueObject prevIssue = null;
+        IssueObject prevIssue;
         if (action != Issue.action.insert)
         {
             prevIssue = IssueManager.getIssue(container, user, issueObject.getIssueId());

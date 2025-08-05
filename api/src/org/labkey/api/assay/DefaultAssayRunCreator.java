@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -30,6 +31,7 @@ import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -67,8 +69,10 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -83,10 +87,12 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -145,33 +151,43 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayProvider provider = context.getProvider();
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
-        context.init();
 
-        // Check if assay protocol is configured to import in the background.
-        // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-        boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
-        if (!importInBackground)
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
-            if ((Object)context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+            if (transaction.getAuditId() == null)
             {
-                throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
-            FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null==primaryFile ? null : primaryFile.toNioPathForRead().toFile());
-            run.setComments(context.getComments());
-            run.setWorkflowTaskId(context.getWorkflowTask());
+            context.init();
+            // Check if assay protocol is configured to import in the background.
+            // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
+            boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
+            if (!importInBackground)
+            {
+                if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+                {
+                    throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+                }
+                FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+                run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
+                run.setComments(context.getComments());
+                run.setWorkflowTaskId(context.getWorkflowTask());
 
-            exp = saveExperimentRun(context, exp, run, false);
+                exp = saveExperimentRun(context, exp, run, false);
 
-            // re-fetch the run after it has been fully constructed
-            run = ExperimentService.get().getExpRun(run.getRowId());
+                // re-fetch the run after it has been fully constructed
+                run = ExperimentService.get().getExpRun(run.getRowId());
 
-            context.uploadComplete(run);
-        }
-        else
-        {
-            context.uploadComplete(null);
-            exp = saveExperimentRunAsync(context, exp);
+                context.uploadComplete(run);
+            }
+            else
+            {
+                context.uploadComplete(null);
+                context.setTransactionAuditId(transaction.getAuditId());
+                exp = saveExperimentRunAsync(context, exp);
+            }
+            transaction.commit();
         }
 
         return Pair.of(exp, run);
@@ -298,6 +314,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
+            if (transaction.getAuditId() == null)
+            {
+                var auditAction = context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT;
+                if (context.getTransactionAuditId() != null)
+                {
+                    var auditEvent = new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, context.getTransactionAuditId());
+                    transaction.setAuditEvent(auditEvent);
+                }
+                else
+                {
+                    var auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction);
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
+                }
+            }
             boolean saveBatchProps = forceSaveBatchProps;
 
             // Add any material/data inputs related to the specimen IDs, etc in the incoming data.
@@ -381,6 +411,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
+            Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
+            if (null != assayResultsRunDir && !FileUtil.hasCloudScheme(assayResultsRunDir))
+            {
+                FileLike assayResultFileRoot = FileSystemLike.wrapFile(assayResultsRunDir);
+                if (assayResultFileRoot != null)
+                    QueryService.get().setEnvironment(QueryService.Environment.ASSAYFILESPATH, assayResultFileRoot);
+            }
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             Integer reRunId = context.getReRunId();
@@ -444,7 +481,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException e)
+        catch (ExperimentException | IOException | ConvertHelper.FileConversionException e)
         {
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
@@ -454,6 +491,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
+            else if (e instanceof ConvertHelper.FileConversionException)
+                throw new ApiUsageException(e.getMessage(), e);
             else
                 throw new ExperimentException(e);
         }
@@ -698,8 +737,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     // Resolve submitted values into ExpData objects
     protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved, @Nullable Logger log) throws ValidationException
     {
-        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
-
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
@@ -711,7 +748,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             else
             {
-                File file = (File) expDataFileConverter.convert(File.class, o);
+                File file = ExpDataFileConverter.convert(o);
                 if (file != null)
                 {
                     ExpData data = ExperimentService.get().getExpDataByURL(file, c);
@@ -1021,11 +1058,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (roleName == null)
         {
             roleName = relatedFile.getName().substring(baseName.length());
-            while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
+            while (!roleName.isEmpty() && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
             {
                 roleName = roleName.substring(1);
             }
-            if ("".equals(roleName))
+            if (roleName.isEmpty())
             {
                 roleName = null;
             }
@@ -1077,10 +1114,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 String value = entry.getValue();
 
                 // resolve any file links for batch or run properties
-                File resolvedFile = AssayUploadFileResolver.resolve(value, container, entry.getKey());
-                if (resolvedFile != null)
+                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
                 {
-                    value = resolvedFile.getAbsolutePath();
+                    File resolvedFile = ExpDataFileConverter.convert(value);
+                    if (resolvedFile != null)
+                        value = resolvedFile.getAbsolutePath();
                 }
 
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data
@@ -1174,7 +1212,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             try
             {
-                Object o = ConvertUtils.convert(value, type);
+                Object o;
+                if (type == File.class)
+                    o = ExpDataFileConverter.convert(value);
+                else
+                    o = ConvertUtils.convert(value, type);
                 ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
                 for (ColumnValidator validator : validators)
                 {

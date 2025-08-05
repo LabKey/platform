@@ -244,6 +244,8 @@ public interface Dataset extends StudyEntity
      */
     @Nullable
     Domain getDomain();
+    @Nullable
+    Domain getDomain(boolean forUpdate);
     boolean isShared();
 
     String getName();
@@ -363,6 +365,8 @@ public interface Dataset extends StudyEntity
     boolean hasMatchingExtraKey(Dataset pkDataset);
 
     void delete(User user);
+
+    void delete(User user, @Nullable String auditUserComment);
 
     void deleteAllRows(User user);
 

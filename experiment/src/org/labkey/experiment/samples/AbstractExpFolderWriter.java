@@ -96,7 +96,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
-            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
             PrintWriter out = dir.getPrintWriter(baseName + ".tsv");
             tsvWriter.write(out);
         }
@@ -127,9 +127,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             Collection<ColumnInfo> exportColumns = getExportColumns(tinfo, col, ctx);
             if (exportColumns != null)
             {
-                exportColumns.forEach(exportCol -> {
-                    columns.put(exportCol.getFieldKey(), exportCol);
-                });
+                exportColumns.forEach(exportCol -> columns.put(exportCol.getFieldKey(), exportCol));
             }
         }
         return columns.values();
@@ -386,13 +384,11 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         public Object getValue(RenderContext ctx)
         {
             Object o = super.getValue(ctx);
-            if (o instanceof String)
+            if (o instanceof String s)
             {
-                String s = (String)o;
                 assert Lsid.isLsid(s);
                 // UNDONE: This always generates the ${AutoFileLSID} when using FOLDER_RELATIVE!! why do we do that!?!
-                String lsid = relativizedLSIDs.relativize(s);
-                return lsid;
+                return relativizedLSIDs.relativize(s);
             }
 
             return o;

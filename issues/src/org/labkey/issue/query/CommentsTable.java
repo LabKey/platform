@@ -129,8 +129,8 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
      */
     static class IssueIdDisplayColumn extends DataColumn
     {
-        private Container _container;
-        private User _user;
+        private final Container _container;
+        private final User _user;
 
         public IssueIdDisplayColumn(ColumnInfo col, Container container, User user)
         {

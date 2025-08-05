@@ -42,7 +42,8 @@ public class WikiVersionCache
 
     static WikiVersion getVersion(Container c, final int version)
     {
-        return CACHE.get(getCacheKey(c, version), c, new WikiCacheLoader<WikiVersion>() {
+        return CACHE.get(getCacheKey(c, version), c, new WikiCacheLoader<>()
+        {
             @Override
             WikiVersion load(String key, Container c)
             {

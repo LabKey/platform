@@ -23,8 +23,8 @@ import org.labkey.api.assay.AbstractAssayProvider;
  */
 public class AssayDomainType implements IAssayDomainType
 {
-    private String name;
-    private String prefix;
+    private final String name;
+    private final String prefix;
 
     AssayDomainType(String name)
     {

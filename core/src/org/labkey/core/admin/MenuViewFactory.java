@@ -15,7 +15,9 @@
  */
 package org.labkey.core.admin;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
@@ -25,8 +27,8 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -35,25 +37,32 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
+import java.io.IOException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-/**
- * User: davebradlee
- * Date: 10/17/12
- * Time: 3:18 PM
- */
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+
 public class MenuViewFactory
 {
     private static final int MAX_PER_COLUMN = 20;
@@ -90,67 +99,90 @@ public class MenuViewFactory
             QueryView view = new QueryView(schema, settings, null)
             {
                 @Override
-                protected void renderDataRegion(PrintWriter out) throws Exception
+                protected void renderDataRegion(HtmlWriter out)
                 {
-                    boolean seenAtLeastOne = false;
-                    out.write("<div style=\"max-width: 40vw; overflow-x: auto;\">");
-                    out.write("<table>");
-                    TableInfo tableInfo = getTable();
-                    if (null != tableInfo)
-                    {
-                        var columnInfo = (BaseColumnInfo)tableInfo.getColumn(form.getColumnName());
-                        String urlBase = form.getUrl();
-                        DataColumn dataColumn = new DataColumn(columnInfo, false)
-                        {
-                            @Override           // so we can use DetailsURL if no other URL can be used
-                            protected String renderURLorValueURL(RenderContext renderContext)
-                            {
-                                String url = super.renderURLorValueURL(renderContext);
-                                if (null == url)
+                    DIV(
+                        at(style, "max-width: 40vw; overflow-x: auto;"),
+                        TABLE(
+                            (Renderable) ret -> {
+                                ArrayList<Renderable> renderables = new ArrayList<>();
+                                TableInfo tableInfo = getTable();
+                                if (null != tableInfo)
                                 {
-                                    StringExpression expr = getColumnInfo().getParentTable().getDetailsURL(null, renderContext.getContainer());
-                                    if (null != expr)
-                                        url = expr.eval(renderContext);
+                                    var columnInfo = (BaseColumnInfo)tableInfo.getColumn(form.getColumnName());
+                                    String urlBase = form.getUrl();
+                                    DataColumn dataColumn = new DataColumn(columnInfo, false)
+                                    {
+                                        @Override           // so we can use DetailsURL if no other URL can be used
+                                        protected String renderURLorValueURL(RenderContext renderContext)
+                                        {
+                                            String url = super.renderURLorValueURL(renderContext);
+                                            if (null == url)
+                                            {
+                                                StringExpression expr = getColumnInfo().getParentTable().getDetailsURL(null, renderContext.getContainer());
+                                                if (null != expr)
+                                                    url = expr.eval(renderContext);
+                                            }
+                                            return url;
+                                        }
+                                    };
+
+                                    if (urlBase != null && !urlBase.contentEquals(""))
+                                        dataColumn.setURLExpression(StringExpressionFactory.createURL(form.getUrl()));
+
+                                    RenderContext renderContext = new RenderContext(actualContext);
+
+                                    try (Results results = getResults(ShowRows.PAGINATED))
+                                    {
+                                        renderContext.setResults(results);
+                                        ResultSet rs = results.getResultSet();
+                                        if (null != rs)
+                                        {
+                                            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
+                                            // Enumerate the ResultSet and build a list of Renderables that can be rendered in any order
+                                            while (rs.next())
+                                            {
+                                                Map<String, Object> map = factory.getRowMap(rs);
+                                                renderables.add(ret2 -> {
+                                                    renderContext.setRow(map);
+                                                    dataColumn.renderGridCellContents(renderContext, out);
+                                                    return ret2;
+                                                });
+                                            }
+                                        }
+                                    }
+                                    catch (SQLException e)
+                                    {
+                                        throw new RuntimeSQLException(e);
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        throw UnexpectedException.wrap(e);
+                                    }
                                 }
-                                return url;
-                            }
-                        };
-                        if (urlBase != null && !urlBase.contentEquals(""))
-                            dataColumn.setURLExpression(StringExpressionFactory.createURL(form.getUrl()));
 
-                        RenderContext renderContext = new RenderContext(actualContext);
-
-                        try (Results results = getResults(ShowRows.PAGINATED))
-                        {
-                            renderContext.setResults(results);
-                            ResultSet rs = results.getResultSet();
-                            if (null != rs)
-                            {
-                                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-
-                                // To do columns, we'll write each cell into a StringBuilder, then we have the count and can go from there
-                                ArrayList<StringBuilder> cellStrings = new ArrayList<>();
-                                while (rs.next())
+                                if (renderables.isEmpty())
                                 {
-                                    StringBuilder stringBuilder = new StringBuilder();
-                                    cellStrings.add(stringBuilder);
-                                    StringBuilderWriter writer = new StringBuilderWriter(stringBuilder);
-                                    renderContext.setRow(factory.getRowMap(rs));
-                                    dataColumn.renderGridCellContents(renderContext, HtmlWriter.of(writer));
-                                    seenAtLeastOne = true;
+                                    TR(
+                                        TD(
+                                            "No query results."
+                                        )
+                                    ).appendTo(out);
+                                }
+                                else
+                                {
+                                    writeCells(renderables, out);
                                 }
 
-                                writeCells(cellStrings, out);
+                                return ret;
                             }
-                        }
-                    }
-                    if (!seenAtLeastOne)
-                        out.write("<tr><td>No query results.</td></tr>");
-                    out.write("</table></div>");
+                        )
+                    ).appendTo(out);
                 }
             };
-            view.setTitle(title);
 
+            view.setTitle(title);
             view.setShowBorders(false);
             view.setShowConfiguredButtons(false);
             view.setShowDeleteButton(false);
@@ -164,17 +196,19 @@ public class MenuViewFactory
             view.setShowSurroundingBorder(false);
             view.setShowPaginationCount(false);
             view.setShowPagination(false);
+
             return view;
         }
         else
         {
             return new WebPartView<>(title) {
                 @Override
-                protected void renderView(Object model, PrintWriter out)
+                protected void renderView(Object model, HtmlWriter out)
                 {
-                    out.write("<table><tr><td style='vertical-align:top;padding:4px;white-space:pre;'>");
-                    out.write("No schema or query selected.");
-                    out.write("</td></tr></table>");
+                    TABLE(TR(TD(
+                        at(style, "vertical-align:top;padding:4px;white-space:pre;"),
+                        "No schema or query selected."
+                    ))).appendTo(out);
                 }
             };
         }
@@ -223,60 +257,79 @@ public class MenuViewFactory
 
         WebPartView<?> view = new WebPartView<>(title) {
             @Override
-            protected void renderView(Object model, PrintWriter out)
+            protected void renderView(Object model, HtmlWriter out)
             {
                 final String filterFolderName = form.getFolderTypes();
-                StringExpression expr = null;
+                StringExpression expr;
                 String urlBase = form.getUrl();
+
                 if (null != StringUtils.trimToNull(urlBase))
                 {
                     expr = StringExpressionFactory.createURL(form.getUrl());
                 }
-
-                boolean seenAtLeastOne = false;
-                out.write("<div style=\"max-width: 40vw; overflow-x: auto;\">");
-                out.write("<table>");
-                ArrayList<StringBuilder> cells = new ArrayList<>();
-                for (Container container : containers)
+                else
                 {
-                    if (null == StringUtils.trimToNull(filterFolderName) ||
-                            "[all]".equals(filterFolderName) ||
-                            container.getFolderType().getName().equals(filterFolderName))
-                    {
-                        ActionURL actionURL;
-                        if (null != expr)
-                        {
-                            try
-                            {
-                                actionURL = new ActionURL(expr.getSource());
-                                actionURL.setContainer(container);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                throw new ApiUsageException("Invalid source URL", e);
-                            }
-                        }
-                        else
-                        {
-                            actionURL = container.getStartURL(user);
-                        }
-
-                        String uri = actionURL.getLocalURIString();
-                        if (null != StringUtils.trimToNull(uri))
-                        {
-                            String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
-                            StringBuilder cell = new StringBuilder("<a href=\"" + uri + "\">" + name + "</a>");
-                            cells.add(cell);
-                            seenAtLeastOne = true;
-                        }
-                    }
+                    expr = null;
                 }
 
-                writeCells(cells, out);
+                MutableBoolean seenAtLeastOne = new MutableBoolean(false);
+                DIV(
+                    at(style, "max-width: 40vw; overflow-x: auto;"),
+                    TABLE(
+                        (Renderable) ret -> {
+                            ArrayList<Renderable> renderables = new ArrayList<>();
+                            for (Container container : containers)
+                            {
+                                if (null == StringUtils.trimToNull(filterFolderName) ||
+                                    "[all]".equals(filterFolderName) ||
+                                    container.getFolderType().getName().equals(filterFolderName))
+                                {
+                                    ActionURL actionURL;
+                                    if (null != expr)
+                                    {
+                                        try
+                                        {
+                                            actionURL = new ActionURL(expr.getSource());
+                                            actionURL.setContainer(container);
+                                        }
+                                        catch (IllegalArgumentException e)
+                                        {
+                                            throw new ApiUsageException("Invalid source URL", e);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        actionURL = container.getStartURL(user);
+                                    }
 
-                if (!seenAtLeastOne)
-                    out.write("<tr><td style='vertical-align:top;padding:4px;white-space:pre;'>No folders selected.</td></tr>");
-                out.write("</table></div>");
+                                    String uri = actionURL.getLocalURIString();
+                                    if (null != StringUtils.trimToNull(uri))
+                                    {
+                                        String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
+                                        renderables.add(LinkBuilder.simpleLink(name, uri));
+                                        seenAtLeastOne.setTrue();
+                                    }
+                                }
+                            }
+
+                            if (renderables.isEmpty())
+                            {
+                                TR(
+                                    TD(
+                                        at(style, "vertical-align:top;padding:4px;white-space:pre;"),
+                                        "No folders selected."
+                                    )
+                                ).appendTo(out);
+                            }
+                            else
+                            {
+                                writeCells(renderables, out);
+                            }
+
+                            return ret;
+                        }
+                    )
+                ).appendTo(out);
             }
         };
 
@@ -284,30 +337,31 @@ public class MenuViewFactory
         return view;
     }
 
-    private static void writeCells(ArrayList<StringBuilder> cells, PrintWriter out)
+    // Renders renderables in columns of max length MAX_PER_COLUMN. renderables must be non-empty and renderable in any order.
+    private static void writeCells(ArrayList<Renderable> renderables, HtmlWriter out)
     {
-        int countContainers = cells.size();
-        int countColumns = (int)Math.ceil((double)countContainers/MAX_PER_COLUMN);
-        int countRows =  (int)Math.ceil((double)countContainers/countColumns);
-
-        for (int i = 0; i < countRows; i += 1)
+        List<List<Renderable>> lists = Lists.partition(renderables, MAX_PER_COLUMN);
+        int columns = lists.size();
+        int rows = lists.get(0).size();
+        for (int i = 0; i < rows; i++)
         {
-            out.write("<tr>");
+            int idx = i;
+            TR(
+                (Renderable) ret -> {
+                    for (int j = 0; j < columns; j++)
+                    {
+                        List<Renderable> list = lists.get(j);
+                        if (list.size() <= idx)
+                            break;
 
-            for (int k = 0; k < countColumns; k += 1)
-            {
-                int index = k * countRows + i;
-                if (index < cells.size())
-                {
-                    StringBuilder cell = cells.get(index);
-                    out.write("<td style='vertical-align:top;padding:0px 4px;white-space:pre;'>");
-                    out.write(cell.toString());
-                    out.write("</td>");
+                        TD(
+                            at(style, "vertical-align:top;padding:0px 4px;white-space:pre;"),
+                            list.get(idx)
+                        ).appendTo(out);
+                    }
+                    return ret;
                 }
-            }
-            out.write("</tr>");
+            ).appendTo(out);
         }
     }
-
-
 }

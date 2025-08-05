@@ -39,5 +39,5 @@ public class HtmlRemoveFilter extends RegexReplaceFilter implements CacheFilter 
 
   public HtmlRemoveFilter() {
     super("<[^>\"]*(\"[^\"]*\"[^>\"]*)*>", "");
-  };
+  }
 }

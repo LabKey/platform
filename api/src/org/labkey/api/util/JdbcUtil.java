@@ -21,7 +21,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.StandardDialectStringHandler;
 
 import java.util.Date;
 

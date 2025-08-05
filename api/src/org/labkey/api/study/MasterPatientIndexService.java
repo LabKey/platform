@@ -75,7 +75,6 @@ public interface MasterPatientIndexService
 
     /**
      * Utility to purge records matching the specified attribute key value pairs
-     * @param attributes
      * @return the number of records removed
      */
     default int deleteMatchingRecords(List<Pair<String, String>> attributes)

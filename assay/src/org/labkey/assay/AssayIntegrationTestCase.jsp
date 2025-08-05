@@ -479,13 +479,13 @@
         var dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(assayOutputData, dataList.get(0));
         assertEquals(firstData, dataList.get(1));
-        assertEquals(dataList.size(), 2);
+        assertEquals(2, dataList.size());
 
         log.info("delete the run and verify the duplicate exp.data was also deleted");
         assayRun.delete(user);
         dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(firstData, dataList.get(0));
-        assertEquals(dataList.size(), 1);
+        assertEquals(1, dataList.size());
     }
 
     private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, int resultRowId)
@@ -620,7 +620,7 @@
         );
 
         // create a run
-        var run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, Map.of("runExpMaterialsLookup", runSample1.getName()));
+        var run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, Map.of("RunExpMaterialsLookup", runSample1.getName()));
 
         // Verify pre-conditions
         assertEquals(4, run.getMaterialInputs().size());
@@ -636,8 +636,8 @@
         // Act
         // Replace "RunExpMaterialsLookup" lookup runSample1 -> runSample2
         var errors = new BatchValidationException();
-        var updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
-        runsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedRunRow), null, errors, null, null);
+        Map<String, Object> updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
+        runsTable.getUpdateService().updateRows(user, c, List.of(updatedRunRow), null, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 

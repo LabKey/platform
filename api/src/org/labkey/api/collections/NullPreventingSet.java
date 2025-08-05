@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public class NullPreventingSet<T> implements Set<T>
 {
-    private Set<T> _set;
+    private final Set<T> _set;
 
     public NullPreventingSet(Set<T> set)
     {
@@ -64,14 +64,14 @@ public class NullPreventingSet<T> implements Set<T>
 
     @Override
     @NotNull
-    public Object[] toArray()
+    public Object @NotNull [] toArray()
     {
         return _set.toArray();
     }
 
     @Override
     @NotNull
-    public <T> T[] toArray(T[] a)
+    public <T> T @NotNull [] toArray(T @NotNull [] a)
     {
         return _set.toArray(a);
     }
@@ -93,25 +93,25 @@ public class NullPreventingSet<T> implements Set<T>
     }
 
     @Override
-    public boolean containsAll(Collection<?> c)
+    public boolean containsAll(@NotNull Collection<?> c)
     {
         return _set.containsAll(c);
     }
 
     @Override
-    public boolean addAll(Collection<? extends T> c)
+    public boolean addAll(@NotNull Collection<? extends T> c)
     {
         return _set.addAll(c);
     }
 
     @Override
-    public boolean retainAll(Collection<?> c)
+    public boolean retainAll(@NotNull Collection<?> c)
     {
         return _set.retainAll(c);
     }
 
     @Override
-    public boolean removeAll(Collection<?> c)
+    public boolean removeAll(@NotNull Collection<?> c)
     {
         return _set.removeAll(c);
     }

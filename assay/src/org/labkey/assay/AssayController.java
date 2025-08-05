@@ -66,6 +66,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -509,7 +510,7 @@ public class AssayController extends SpringActionController
                         {
                             String key = null;
                             List<String> pks = table.getPkColumnNames();
-                            if (null != pks && pks.size() > 0)
+                            if (null != pks && !pks.isEmpty())
                                 key = pks.get(0);
                             if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
                                 key = pks.get(1);
@@ -751,7 +752,7 @@ public class AssayController extends SpringActionController
             {
                 FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
-                if (fileNames != null && fileNames.length() > 0)
+                if (fileNames != null && !fileNames.isEmpty())
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
@@ -760,7 +761,7 @@ public class AssayController extends SpringActionController
                         if (f.exists())
                         {
                             duplicate = true;
-                            FileLike newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            FileLike newFile = FileUtil.findUniqueFileName(fileName, targetDirectory);
                             newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
                             ExpData expData = ExperimentService.get().getExpDataByURL(f.toNioPathForRead().toFile(), null);
                             List<String> runNames = new ArrayList<>();
@@ -822,7 +823,7 @@ public class AssayController extends SpringActionController
             try
             {
                 FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
+                return FileUtil.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
             }
             catch (ExperimentException e)
             {
@@ -848,6 +849,11 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(getContainer(), "Assay file uploaded.");
+                event.setProvidedFileName(originalName);
+                event.setFile(file.getName());
+                event.setDirectory(file.getParent());
+                AuditLogService.get().addEvent(getUser(), event);
                 JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
@@ -1406,11 +1412,10 @@ public class AssayController extends SpringActionController
             String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
             AssaySchema schema = form.getProvider().createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo table = schema.getTable(tableName);
-            if (!(table instanceof AssayResultTable))
+            if (!(table instanceof AssayResultTable assayResultTable))
                 throw new NotFoundException();
             if (null == form.getColumnName())
                 throw new NotFoundException();
-            AssayResultTable assayResultTable = (AssayResultTable) table;
             TableInfo ti = assayResultTable.getSchemaTableInfo();
             String comment = StringUtils.trimToNull(form.getComment());
 
@@ -1630,9 +1635,8 @@ public class AssayController extends SpringActionController
             _protocol = form.getProtocol();
 
             AssayProvider ap = form.getProvider();
-            if (!(ap instanceof ModuleAssayProvider))
+            if (!(ap instanceof ModuleAssayProvider provider))
                 throw new NotFoundException("Assay must be a ModuleAssayProvider, but assay design " + _protocol.getName() + " was of type '" + ap.getName() + "', implemented by " + ap.getClass().getName());
-            ModuleAssayProvider provider = (ModuleAssayProvider) ap;
             return provider.createUploadView(form);
         }
 
@@ -1708,7 +1712,8 @@ public class AssayController extends SpringActionController
             for (ExpRun expRun : allRuns)
             {
                 Container c = expRun.getContainer();
-                containers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    containers.add(c);
                 if (permClass != null && !c.hasPermission(getUser(), permClass))
                     notPermittedIds.add(expRun.getRowId());
             }
@@ -1731,7 +1736,10 @@ public class AssayController extends SpringActionController
                 List<Map<String, Object>> notAllowedRows = new ArrayList<>();
 
                 allRuns.forEach((dataObject) -> {
-                    Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "ContainerPath", dataObject.getContainer().getPath());
+                    Map<String, Object> rowMap = new HashMap<>();
+                    rowMap.put("RowId", dataObject.getRowId());
+                    if (dataObject.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        rowMap.put("ContainerPath", dataObject.getContainer().getPath());
                     if (allowedIds.contains(dataObject.getRowId()))
                         allowedRows.add(rowMap);
                     else
@@ -1761,6 +1769,8 @@ public class AssayController extends SpringActionController
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
             AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                throw new NotFoundException("No provider found for protocol " + form.getProtocolId());
             AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo tableInfo = schema.getTableOrThrow(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
 
@@ -1776,7 +1786,8 @@ public class AssayController extends SpringActionController
                 if (data == null || data.getRun() == null) continue;
 
                 Container c = data.getRun().getContainer();
-                uniqueContainers.add(c);
+                if (c.hasPermission(getUser(), ReadPermission.class))
+                    uniqueContainers.add(c);
                 if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
                     permittedRowIds.add(rowId);
             }

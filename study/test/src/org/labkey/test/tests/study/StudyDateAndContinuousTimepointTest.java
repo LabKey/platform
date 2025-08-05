@@ -11,6 +11,7 @@ import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldKey;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PortalHelper;
@@ -31,7 +32,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-        StudyDateAndContinuousTimepointTest init = (StudyDateAndContinuousTimepointTest) getCurrentTest();
+        StudyDateAndContinuousTimepointTest init = getCurrentTest();
         init.doCreateSteps();
     }
 
@@ -100,7 +101,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         CustomizeView tableCustomizeView = table.getCustomizeView();
         tableCustomizeView.openCustomizeViewPanel();
         waitForText("Available Fields");
-        tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
+        tableCustomizeView.addColumn(FieldKey.fromParts("ParticipantVisit", "Visit"));
         tableCustomizeView.saveDefaultView();
         checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList("Day 0"),
                 table.getColumnDataAsText("ParticipantVisit/Visit"));
@@ -180,7 +181,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         CustomizeView tableCustomizeView = table.getCustomizeView();
         tableCustomizeView.openCustomizeViewPanel();
         waitForText("Available Fields");
-        tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
+        tableCustomizeView.addColumn(FieldKey.fromParts("ParticipantVisit", "Visit"));
         tableCustomizeView.saveDefaultView();
         checker().verifyEquals("Visit field is not Day 0 when study is changed to date", Arrays.asList("Day 0"),
                 table.getColumnDataAsText("ParticipantVisit/Visit")); //Needs to be updated when related bug is fixed.

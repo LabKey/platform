@@ -37,7 +37,7 @@ import java.util.Objects;
  */
 public class GroupedResultSet extends ResultSetImpl
 {
-    private int _columnIndex = 0;
+    private int _columnIndex;
     private int _rowOffset = 0;
     private int _lastRow = 0;
     private int _groupCount = 0;

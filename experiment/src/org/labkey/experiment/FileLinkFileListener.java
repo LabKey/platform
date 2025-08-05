@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -180,7 +181,7 @@ public class FileLinkFileListener implements FileListener
     private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
-        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
+        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name, pd.StorageColumnName FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         sql.append(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
@@ -203,10 +204,15 @@ public class FileLinkFileListener implements FileListener
                 if (tableInfo != null)
                 {
                     String containerId = row.get("Container").toString();
-                    ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
-                    if (pathCol != null && containerId != null)
+                    if (containerId != null)
                     {
-                        block.exec(schema, tableInfo, pathCol, containerId, domain.getTypeURI());
+                        ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
+                        // Issue 53502: also try to get tableInfo column by StorageColumnName if not found by Name
+                        if (pathCol == null)
+                            pathCol = tableInfo.getColumn(row.get("StorageColumnName").toString());
+
+                        if (pathCol != null)
+                            block.exec(schema, tableInfo, pathCol, containerId, domain.getTypeURI());
                     }
                 }
             }
@@ -266,6 +272,11 @@ public class FileLinkFileListener implements FileListener
 
     public SQLFragment listFilesQuery(boolean skipCreatedModified)
     {
+        return listFilesQuery(skipCreatedModified, null);
+    }
+
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    {
         final SQLFragment frag = new SQLFragment();
 
         // Object property files
@@ -285,7 +296,10 @@ public class FileLinkFileListener implements FileListener
         frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
         frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
         frag.append("WHERE\n");
-        frag.append("  op.StringValue IS NOT NULL AND\n");
+        if (StringUtils.isEmpty(filePath))
+            frag.append("  op.StringValue IS NOT NULL AND\n");
+        else
+            frag.append("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).append(" AND\n");
         frag.append("  o.ObjectId = op.ObjectId AND\n");
         frag.append("  PropertyId IN (\n");
         frag.append("    SELECT PropertyId\n");
@@ -296,8 +310,8 @@ public class FileLinkFileListener implements FileListener
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
-            frag.append("UNION\n");
-            frag.append(updater.listFilesQuery(skipCreatedModified));
+            frag.append("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).append("\n");
+            frag.append(updater.listFilesQuery(skipCreatedModified, filePath));
         });
 
         return frag;

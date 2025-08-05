@@ -26,7 +26,7 @@ import org.labkey.api.util.StringExpressionFactory;
  */
 public class DimensionColumnInfo extends BaseColumnInfo
 {
-    private CrosstabDimension _crosstabDimension = null;
+    private CrosstabDimension _crosstabDimension;
 
     public DimensionColumnInfo(CrosstabTableInfo table, CrosstabDimension dimension)
     {

@@ -65,7 +65,6 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     void setComment(User user, String comment) throws ValidationException;
     /** @param index only a suggestion as not all implementations handle indexing - primarily used to suppress duplicate indexing with a false value */
     default void setComment(User user, String comment, boolean index) throws ValidationException
-
     {
         setComment(user, comment);
     }
@@ -77,7 +76,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
 
     void save(User user) throws BatchValidationException;
     void delete(User user);
-    default void delete(User user, String auditUserComment)
+    default void delete(User user, @Nullable String auditUserComment)
     {
         delete(user);
     }

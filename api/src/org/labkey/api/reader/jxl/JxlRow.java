@@ -197,7 +197,7 @@ public class JxlRow implements Row
     protected class JxlCellIterator implements Iterator<Cell>
     {
         private int _current;
-        private int _last;
+        private final int _last;
 
         public JxlCellIterator()
         {

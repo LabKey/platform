@@ -252,6 +252,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
@@ -1374,6 +1375,7 @@ public class QueryController extends SpringActionController
                                             {
                                                 try
                                                 {
+                                                    validateForeignKey(fk, column, errors);
                                                     validateLookupFilter(AbstractTableInfo.parseXMLLookupFilters(fk.getFilters()), errors);
                                                 }
                                                 catch (ValidationException e)
@@ -1397,6 +1399,19 @@ public class QueryController extends SpringActionController
             for (XmlError xmle : xmlErrors)
             {
                 errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
+            }
+        }
+
+        private void validateForeignKey(ColumnType.Fk fk, ColumnType column, Errors errors)
+        {
+            if (fk.isSetFkMultiValued())
+            {
+                // issue 51695 : don't let users create unsupported MVFK types
+                String type = fk.getFkMultiValued();
+                if (!AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
+                {
+                    errors.reject(ERROR_MSG, String.format("Column : \"%s\" has an invalid fkMultiValued value : \"%s\" is not supported.", column.getColumnName(), type));
+                }
             }
         }
 
@@ -1854,35 +1869,31 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderView(Object model, HtmlWriter out)
         {
-            StringBuilder sb = new StringBuilder("<table>\n");
+            TABLE(
+                null != _schemaName ? getLabelAndContents("Schema", _url == null ? _schemaName : LinkBuilder.simpleLink(_schemaName, _url)) : null,
+                null != _tableName ? getLabelAndContents("Table", _tableName) : null,
+                getLabelAndContents("Scope", _scope.getDisplayName()),
+                getLabelAndContents("Dialect", _scope.getSqlDialect().getClass().getSimpleName()),
+                getLabelAndContents("URL", _scope.getDatabaseUrl())
+            ).appendTo(out);
+        }
 
-            if (null != _schemaName)
-            {
-                sb.append("<tr><td class=\"labkey-form-label\">Schema</td><td>");
-                if (_url == null)
-                {
-                    sb.append(PageFlowUtil.filter(_schemaName));
-                }
-                else
-                {
-                    sb.append("<a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a>");
-                }
-                sb.append("</td></tr>\n");
-            }
-            if (null != _tableName)
-                sb.append("<tr><td class=\"labkey-form-label\">Table</td><td>").append(PageFlowUtil.filter(_tableName)).append("</td></tr>\n");
-
-            sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
-            sb.append("</table>\n");
-
-            out.print(sb);
+        // Return a single row (TR) with styled label and contents in separate TDs
+        private Renderable getLabelAndContents(String label, Object contents)
+        {
+            return TR(
+                TD(
+                    cl("labkey-form-label"),
+                    label
+                ),
+                TD(
+                    contents
+                )
+            );
         }
     }
-
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermission(ReadPermission.class)
@@ -2641,7 +2652,7 @@ public class QueryController extends SpringActionController
             {
                 returnUrl.replaceParameter(regionName + "." + QueryParam.viewName, name);
             }
-            returnUrl.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+            returnUrl.deleteParameter(regionName + "." + QueryParam.ignoreFilter);
             if (saveFilter)
             {
                 for (String key : returnUrl.getKeysByPrefix(regionName + "."))
@@ -4031,9 +4042,8 @@ public class QueryController extends SpringActionController
                 Set<Aggregate> colAggregates = new HashSet<>();
                 for (ColumnAnalyticsProvider analyticsProvider : displayColumn.getAnalyticsProviders())
                 {
-                    if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
+                    if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider baseAggProvider)
                     {
-                        BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
                         Map<String, Object> props = new HashMap<>();
                         props.put("label", baseAggProvider.getLabel());
 
@@ -4112,8 +4122,6 @@ public class QueryController extends SpringActionController
 
             _insertOption = form.getInsertOption();
             QueryDefinition query = form.getQueryDef();
-            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
-            query.setContainerFilter(QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
@@ -4227,7 +4235,7 @@ public class QueryController extends SpringActionController
             settings.setShowRows(ShowRows.ALL);
 
             //add container filter if supplied
-            if (form.getContainerFilter() != null && form.getContainerFilter().length() > 0)
+            if (form.getContainerFilter() != null && !form.getContainerFilter().isEmpty())
             {
                 ContainerFilter.Type containerFilterType =
                     ContainerFilter.Type.valueOf(form.getContainerFilter());
@@ -4654,6 +4662,7 @@ public class QueryController extends SpringActionController
                     }
                 }
 
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
@@ -5044,7 +5053,7 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("Empty request");
 
             JSONArray commands = json.optJSONArray("commands");
-            if (commands == null || commands.length() == 0)
+            if (commands == null || commands.isEmpty())
             {
                 throw new NotFoundException("Empty request");
             }
@@ -6390,7 +6399,6 @@ public class QueryController extends SpringActionController
             CstmView view;
             if (!existing.isEmpty())
             {
-                view = existing.get(0);
             }
             else
             {
@@ -7012,7 +7020,7 @@ public class QueryController extends SpringActionController
                                 }
                             }
 
-                            if (columns.size() > 0)
+                            if (!columns.isEmpty())
                                 qinfo.put("columns", columns);
                         }
 
@@ -8140,6 +8148,7 @@ public class QueryController extends SpringActionController
     {
         private String schemaName;
         private String queryName;
+        private String auditUserComment;
         private List<String> templateLabels;
         private List<String> templateUrls;
         private Long _lastKnownModified;
@@ -8195,13 +8204,23 @@ public class QueryController extends SpringActionController
             _lastKnownModified = lastKnownModified;
         }
 
+        public String getAuditUserComment()
+        {
+            return auditUserComment;
+        }
+
+        public void setAuditUserComment(String auditUserComment)
+        {
+            this.auditUserComment = auditUserComment;
+        }
+
     }
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class UpdateQueryImportTemplateAction extends MutatingApiAction<QueryImportTemplateForm>
+    public static class UpdateQueryImportTemplateAction extends MutatingApiAction<QueryImportTemplateForm>
     {
-        private DomainKind _kind;
+        private DomainKind<?> _kind;
         private UserSchema _schema;
         private TableInfo _tInfo;
         private QueryDefinition _queryDef;
@@ -8353,7 +8372,7 @@ public class QueryController extends SpringActionController
             {
                 TablesDocument doc = null;
                 TableType xmlTable = null;
-                TableType.ImportTemplates xmlImportTemplates = null;
+                TableType.ImportTemplates xmlImportTemplates;
 
                 if (queryDef != null)
                 {
@@ -8429,6 +8448,7 @@ public class QueryController extends SpringActionController
                 }
 
                 DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), "Import templates updated.");
+                event.setUserComment(form.getAuditUserComment());
                 event.setDomainUri(_domain.getTypeURI());
                 event.setDomainName(_domain.getName());
                 AuditLogService.get().addEvent(user, event);

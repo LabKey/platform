@@ -32,13 +32,14 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  * Date: Feb 8, 2007
  * Time: 1:23:51 PM
  */
+@SuppressWarnings("Convert2Diamond")
 public abstract class PropertyPanel extends DockPanel
 {
-    private TemplateView _view;
-    private FlexTable _propertyTable;
+    private final TemplateView _view;
+    private final FlexTable _propertyTable;
     private Map<String, Object> _propertyTextBoxes;
 
-    private ChangeListener _changeListener = new ChangeListener()
+    private final ChangeListener _changeListener = new ChangeListener()
     {
         @Override
         public void onChange(Widget sender)
@@ -47,7 +48,7 @@ public abstract class PropertyPanel extends DockPanel
         }
     };
 
-    private KeyboardListener _keyboardListener = new KeyboardListenerAdapter()
+    private final KeyboardListener _keyboardListener = new KeyboardListenerAdapter()
     {
         @Override
         public void onKeyPress(Widget sender, char keyCode, int modifiers)
@@ -56,9 +57,9 @@ public abstract class PropertyPanel extends DockPanel
         }
     };
 
-    private MouseListenerAdapter _tooltipListener = new MouseListenerAdapter()
+    private final MouseListenerAdapter _tooltipListener = new MouseListenerAdapter()
     {
-        private PopupPanel _tooltip = new PopupPanel(true);
+        private final PopupPanel _tooltip = new PopupPanel(true);
         {
             _tooltip.add(new Label("Delete"));
             _tooltip.setStyleName("labkey-form-label");
@@ -78,7 +79,7 @@ public abstract class PropertyPanel extends DockPanel
             _tooltip.hide();
         }
     };
-    private ImageButton _addPropertyButton;
+    private final ImageButton _addPropertyButton;
 
     public PropertyPanel(TemplateView view)
     {

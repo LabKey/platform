@@ -31,6 +31,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
+import java.beans.Introspector;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -119,9 +120,10 @@ public interface ColumnInfo extends ColumnRenderProperties
         }
     }
 
-    @Override
+    @Override @NotNull
     String getName();
 
+    @NotNull
     FieldKey getFieldKey();
 
     // use only for debugging, will change after call to getAlias()
@@ -133,7 +135,7 @@ public interface ColumnInfo extends ColumnRenderProperties
      * new SQLFragment().append(col.getValueSql("R")).append(" AS ").appendIdentifier(col.getAlias())
      * The returned ResultSet will contain a column named col.getAlias()
      *
-     * NOTE: if you directly bind your results using BeanObjectFactory (e.g. TableSelector.getArrayList(MyClass.class))
+     * NOTE: if you directly bind your results using BeanObjectFactory (e.g., TableSelector.getArrayList(MyClass.class))
      * you should
      *  a) match your column aliases to the bean properties you want to populate
      *  b) prefer using TableSelector vs SqlSelector.  TableSelector will use ColumnInfo.getAlias().
@@ -169,8 +171,6 @@ public interface ColumnInfo extends ColumnRenderProperties
      *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
-     * @param tableAliasName
-     * @return
      */
     SQLFragment getValueSql(String tableAliasName);
 
@@ -216,12 +216,6 @@ public interface ColumnInfo extends ColumnRenderProperties
     DisplayColumnFactory getDisplayColumnFactory();
 
     boolean isShouldLog();
-
-    String getLegalName();
-
-    String getPropertyName();
-
-    String getJdbcRsName();
 
     /**
      * Version column can be used for optimistic concurrency.
@@ -388,18 +382,13 @@ public interface ColumnInfo extends ColumnRenderProperties
     {
         return BaseColumnInfo.labelFromName(name);
     }
-
-    static String propNameFromName(String name)
-    {
-        return BaseColumnInfo.propNameFromName(name);
-    }
-
+    
     static String legalNameFromName(String name)
     {
         return BaseColumnInfo.legalNameFromName(name);
     }
 
-    static String getFriendlyTypeName(Class javaClass)
+    static String getFriendlyTypeName(Class<?> javaClass)
     {
         return ColumnRenderProperties.getFriendlyTypeName(javaClass);
     }

@@ -436,7 +436,7 @@ public class XarExporter
             String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user, _fileRootPath);
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
-                if (url != null && !"".equals(url))
+                if (url != null && !url.isEmpty())
                 {
                     dataLSID.setDataFileUrl(url);
                 }
@@ -1143,7 +1143,7 @@ public class XarExporter
         {
             List<? extends ExpProtocolAction> protocolActions = protocol.getSteps();
 
-            if (protocolActions.size() > 0)
+            if (!protocolActions.isEmpty())
             {
                 ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _archive.getProtocolActionDefinitions();
                 if (actionDefs == null)
@@ -1627,11 +1627,10 @@ public class XarExporter
     {
         Map<String, Object> parentProperties = getProperties(parentContainer, parentLSID);
         Object contactLSIDObject = parentProperties.get(XarReader.CONTACT_PROPERTY);
-        if (!(contactLSIDObject instanceof String))
+        if (!(contactLSIDObject instanceof String contactLSID))
         {
             return null;
         }
-        String contactLSID = (String)contactLSIDObject;
         Map<String, Object> contactProperties = getProperties(parentContainer, contactLSID);
 
         Object contactIdObject = contactProperties.get(XarReader.CONTACT_ID_PROPERTY);

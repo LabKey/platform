@@ -21,6 +21,9 @@
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
+<%@ page import="org.labkey.api.audit.AuditLogService" %>
+<%@ page import="org.labkey.api.audit.AuditTypeEvent" %>
+<%@ page import="org.labkey.api.audit.DetailedAuditTypeEvent" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
@@ -37,6 +40,7 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
+<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.ObjectProperty" %>
@@ -59,6 +63,7 @@
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.exp.query.ExpDataTable" %>
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
+<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTIndex" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
@@ -94,13 +99,14 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="static java.util.Collections.emptyList" %>
-<%@ page import="static org.junit.Assert.*" %>
+<%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -145,7 +151,7 @@ public void nameNotNull() throws Exception
     }
 }
 
-    @Test // Issue 51321
+@Test // Issue 51321
 public void reservedNameFirst() throws Exception
 {
     final User user = TestContext.get().getUser();
@@ -159,7 +165,7 @@ public void reservedNameFirst() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("Invalid DataClass name 'First'. 'First' is a reserved name.", e.getMessage());
+        assertEquals("Data Class name 'First' is a reserved name.", e.getMessage());
     }
 }
 
@@ -177,7 +183,7 @@ public void reservedNameAll() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("Invalid DataClass name 'All'. 'All' is a reserved name.", e.getMessage());
+        assertEquals("Data Class name 'All' is a reserved name.", e.getMessage());
     }
 }
 
@@ -295,6 +301,8 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
     row.put("aa", 30);
     row.put("bb", "bye");
+    String expectedComment = "waving in the wind";
+    row.put("flag", expectedComment);
     rows.add(row);
 
     List<Map<String, Object>> ret;
@@ -311,6 +319,7 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     assertNotNull(data);
     assertEquals(sub, data.getContainer());
     assertEquals(2, dataClass.getDatas().size());
+    assertEquals(expectedComment, data.getComment());
 }
 
 private void testInsertDuplicate(ExpDataClassImpl dataClass, TableInfo table) throws Exception
@@ -418,7 +427,7 @@ private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) thro
     row.put("alias", "aa,bb");
     rows.add(row);
 
-    int insertedRowId = -1;
+    int insertedRowId;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
         List<Map<String, Object>> ret = helper.insertRows(c, rows, table.getName());
@@ -433,8 +442,8 @@ private void verifyAliases(TableInfo table, int expDataRowId, Set<String> expect
 {
     for (String name : expectedAliases)
     {
-        assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
-                new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount(), 1);
+        assertEquals(1, new TableSelector(ExperimentService.get().getTinfoAlias(),
+                new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount());
     }
 
     ExpData data = ExperimentService.get().getExpData(expDataRowId);
@@ -982,7 +991,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     domain.setDescription(domainDescription);
     domain.setFields(List.of(prop1));
 
-    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
+    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null, false);
 
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(lookUpDomain);
     final String locationPropertyURI = vocabularyPropertyURIs.get(locationPropertyName);
@@ -1035,9 +1044,9 @@ public void testInsertOptionUpdate() throws Exception
 
     ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b", longFieldName, "Field"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very", "alias", "Much", "flag", "c100"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long", "alias", "Extended", "flag", "c200"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b", longFieldName, "Field", "alias", "Paddock"));
 
     TableInfo table = getDataClassTable(dataClassName);
     QueryUpdateService qus = table.getUpdateService();
@@ -1060,10 +1069,11 @@ public void testInsertOptionUpdate() throws Exception
 
     // update regular properties as well as datainputs
     List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
-    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a1", "DataInputs/DataClassWithImportOption", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a1", "DataInputs/DataClassWithImportOption", null, "alias", "A lot"));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c1", "DataInputs/DataClassWithImportOption", "D-1"));
-    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null, "alias", "Grassland"));
 
+    context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
@@ -1071,21 +1081,98 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(3, count);
 
     Set<String> columnNames = new HashSet<>();
+    columnNames.add("rowId");
+    columnNames.add("lsid");
     columnNames.add("Name");
     columnNames.add("prop");
     columnNames.add(longFieldName);
+    columnNames.add("alias");
+    columnNames.add("flag");
 
-    List<Map<String,Object>> rows = Arrays.asList(new TableSelector(table, columnNames, null, new Sort("Name")).getMapArray());
+    ts = new TableSelector(table, columnNames, null, new Sort("Name"));
+    ts.setForDisplay(true);
+    String aliasAlias = "alias$alias$name";
+    String flagAlias = "flag$";
+
+    List<Map<String,Object>> rows = Arrays.asList(ts.getMapArray());
+
+    assertEquals("D-1", rows.get(0).get("Name"));
+    assertEquals("D-1-d", rows.get(1).get("Name"));
+    assertEquals("D-2", rows.get(2).get("Name"));
+    int d2RowId = (Integer) rows.get(2).get("RowId");
+
+    // prop
     assertEquals("a1", rows.get(0).get("prop"));
     assertEquals("c1", rows.get(1).get("prop"));
     assertEquals("b1", rows.get(2).get("prop"));
+
+    // long field
     assertEquals("Very", rows.get(0).get(longFieldAlias));
     assertEquals("Long", rows.get(1).get(longFieldAlias));
     assertEquals("Field", rows.get(2).get(longFieldAlias));
 
+    // alias
+    assertEquals("A lot", rows.get(0).get(aliasAlias));
+    assertNull(rows.get(1).get(aliasAlias));
+    assertEquals("Grassland", rows.get(2).get(aliasAlias));
+
+    // flag
+    assertEquals("c100", rows.get(0).get(flagAlias));
+    assertEquals("c200", rows.get(1).get(flagAlias));
+    assertNull(rows.get(2).get(flagAlias));
+
     ts = new TableSelector(dataInputTInfo, filter, null);
-    int newInputCount =  (int) ts.getRowCount();
+    int newInputCount = (int) ts.getRowCount();
     assertEquals(inputCount + 1, newInputCount);
+
+    List<Map<String, Object>> rowsToMerge = new ArrayList<>();
+    rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "gene", longFieldName, "Pasture", "alias", "Exceedingly", "flag", "cOne"));
+    rowsToMerge.add(CaseInsensitiveHashMap.of("name", "D-22", "prop", null, longFieldName, "Goal", "alias", "Immensely", "flag", "cEight"));
+
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+    count = qus.loadRows(user, c, MapDataIterator.of(rowsToMerge), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(2, count);
+
+    ts = new TableSelector(table, columnNames, null, new Sort("Name"));
+    ts.setForDisplay(true);
+
+    rows = Arrays.asList(ts.getMapArray());
+    assertEquals(4, rows.size());
+
+    assertEquals("D-1", rows.get(0).get("Name"));
+    assertEquals("D-1-d", rows.get(1).get("Name"));
+    assertEquals("D-2", rows.get(2).get("Name"));
+    assertEquals("D-22", rows.get(3).get("Name"));
+
+    // verify merge retained existing row
+    assertEquals(d2RowId, rows.get(2).get("RowId"));
+
+    // prop
+    assertEquals("a1", rows.get(0).get("prop"));
+    assertEquals("c1", rows.get(1).get("prop"));
+    assertEquals("gene", rows.get(2).get("prop"));
+    assertNull(rows.get(3).get("prop"));
+
+    // long field
+    assertEquals("Very", rows.get(0).get(longFieldAlias));
+    assertEquals("Long", rows.get(1).get(longFieldAlias));
+    assertEquals("Pasture", rows.get(2).get(longFieldAlias));
+    assertEquals("Goal", rows.get(3).get(longFieldAlias));
+
+    // alias
+    assertEquals("A lot", rows.get(0).get(aliasAlias));
+    assertNull(rows.get(1).get(aliasAlias));
+    assertEquals("Exceedingly", rows.get(2).get(aliasAlias));
+    assertEquals("Immensely", rows.get(3).get(aliasAlias));
+
+    // flag
+    assertEquals("c100", rows.get(0).get(flagAlias));
+    assertEquals("c200", rows.get(1).get(flagAlias));
+    assertEquals("cOne", rows.get(2).get(flagAlias));
+    assertEquals("cEight", rows.get(3).get(flagAlias));
 }
 
 private @NotNull TableInfo getDataClassTable(String dataClassName)
@@ -1094,4 +1181,67 @@ private @NotNull TableInfo getDataClassTable(String dataClassName)
     return schema.getTableOrThrow(dataClassName);
 }
 
+@Test // Issue 52886
+public void testUpdateAuditForLongField() throws Exception
+{
+    User user = TestContext.get().getUser();
+
+    String dataClassName = "DataClassesWithLongFields";
+    String fieldName = "longField " + StringUtils.repeat("AB CD", 20);
+
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
+            List.of(new GWTPropertyDescriptor(fieldName, "string")), emptyList(), null, null);
+    assertNotNull(dataClass);
+
+    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "A-1", "prop", "a", fieldName, "Initial"));
+    TableInfo table = getDataClassTable(dataClassName);
+    QueryUpdateService qus = table.getUpdateService();
+    assertNotNull(qus);
+    DataIteratorContext context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+    context.getConfigParameters().put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    var count = qus.loadRows(user, c, MapDataIterator.of(rowsToAdd), context, null);
+    assertFalse("Unexpected errors from import", context.getErrors().hasErrors());
+    assertEquals("Number of rows inserted not as expected", 1, count);
+    for (Map<String, Object> row : rowsToAdd)
+    {
+        TableSelector ts = new TableSelector(table, Collections.singleton("RowId"), new SimpleFilter(FieldKey.fromParts("Name"), row.get("name")), null);
+        int rowId;
+        try (var results = ts.getResults())
+        {
+            if (results.next())
+            {
+                rowId = results.getInt(FieldKey.fromParts("RowId"));
+                row.put("RowId", rowId); // intentional side-effect to help in retrieving update events as well
+
+                SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+                filter.addCondition(FieldKey.fromParts("rowPk"), String.valueOf(rowId));
+                filter.addCondition(FieldKey.fromParts("queryName"), dataClassName);
+                List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, null);
+                assertEquals("Number of audit events not as expected", 1, events.size());
+            }
+        }
+    }
+
+    List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "A-1", fieldName, "Updated"));
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
+    context.getConfigParameters().put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
+    assertFalse("Unexpected errors from update", context.getErrors().hasErrors());
+    assertEquals("Number of rows updated not as expected", 1, count);
+
+    for (Map<String, Object> row : rowsToAdd)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("rowPk"), String.valueOf(row.get("rowId")));
+        filter.addCondition(FieldKey.fromParts("queryName"), dataClassName);
+        List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, new Sort("-RowId"));
+        assertEquals("Number of audit events not as expected", 2, events.size()); // should have one for insert and one for update
+        String oldRecordMap = ((DetailedAuditTypeEvent) events.get(0)).getOldRecordMap();
+        assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName.toLowerCase()) + "=Initial"));
+    }
+}
 %>

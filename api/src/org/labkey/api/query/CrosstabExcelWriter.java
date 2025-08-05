@@ -39,9 +39,9 @@ import java.util.List;
  */
 public class CrosstabExcelWriter extends ExcelWriter
 {
-    private boolean _includeDimensionHeader = false;
+    private final boolean _includeDimensionHeader = false;
     private final CrosstabTableInfo _table;
-    private int _numRowAxisCols = 0;
+    private int _numRowAxisCols;
     private final List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
 
     public CrosstabExcelWriter(CrosstabTableInfo table, @NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)

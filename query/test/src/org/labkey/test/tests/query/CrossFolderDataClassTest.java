@@ -8,7 +8,9 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldInfo;
 import org.labkey.test.params.experiment.DataClassDefinition;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.exp.DataClassAPIHelper;
 
 import java.util.Arrays;
@@ -38,7 +40,7 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        CrossFolderDataClassTest init = (CrossFolderDataClassTest) getCurrentTest();
+        CrossFolderDataClassTest init = getCurrentTest();
 
         init.doSetup();
     }
@@ -54,15 +56,16 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
      * Issue 45664: addresses the problem where DataClass metadata wasn't available in query when querying cross-folder
      */
     @Test
-    public void testIssue454644() throws Exception
+    public void testIssue45664() throws Exception
     {
         String dataClass = "TopFolderDataClass";
         var fields = Arrays.asList(
-                new FieldDefinition("intColumn", FieldDefinition.ColumnType.Integer),
-                new FieldDefinition("decimalColumn", FieldDefinition.ColumnType.Decimal),
-                new FieldDefinition("stringColumn", FieldDefinition.ColumnType.String),
-                new FieldDefinition("sampleDate", FieldDefinition.ColumnType.DateAndTime),
-                new FieldDefinition("boolColumn", FieldDefinition.ColumnType.Boolean));
+                FieldInfo.random("intColumn", FieldDefinition.ColumnType.Integer, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("decimalColumn", FieldDefinition.ColumnType.Decimal, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("stringColumn", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("sampleDate", FieldDefinition.ColumnType.DateAndTime, DomainUtils.DomainKind.DataClass).getFieldDefinition(),
+                FieldInfo.random("boolColumn", FieldDefinition.ColumnType.Boolean, DomainUtils.DomainKind.DataClass).getFieldDefinition()
+        );
         // make a dataclass in the top folder, give it some data
         DataClassDefinition testType = new DataClassDefinition(dataClass).setFields(fields);
         var dGen = DataClassAPIHelper.createEmptyDataClass(getProjectName(), testType);
@@ -81,9 +84,9 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
         // now insert a record into the dataclass, in the subfolder
         subfolderQueryPage.getDataRegion().clickInsertNewRow()
                 .setField("Name", "Jeff")
-                .setField("intColumn", "5")
-                .setField("decimalColumn", "6.7")
-                .setField("stringColumn", "hey")
+                .setField(testType.getFieldByNamePart("intColumn").getName(), "5")
+                .setField(testType.getFieldByNamePart("decimalColumn").getName(), "6.7")
+                .setField(testType.getFieldByNamePart("stringColumn").getName(), "hey")
                 .submit();
 
         // gather the data from the view; should only see Jeff

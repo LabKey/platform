@@ -1,11 +1,11 @@
 package org.labkey.api.audit;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -36,11 +36,11 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_ROW_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_TRANSACTION_TYPE));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_START_TIME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_START_TIME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
@@ -81,8 +81,6 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                     col.setLabel("Start Time");
                 else if (COLUMN_NAME_TRANSACTION_TYPE.equalsIgnoreCase(col.getName()))
                     col.setLabel("Transaction Type");
-                else if (COLUMN_NAME_CREATED.equalsIgnoreCase(col.getName()))
-                    col.setLabel("End Time");
             }
         };
     }
@@ -97,6 +95,13 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    public static Long getCurrentTransactionAuditId()
+    {
+        if (null == DbScope.getLabKeyScope().getCurrentTransaction())
+            return null;
+        return DbScope.getLabKeyScope().getCurrentTransaction().getAuditId();
     }
 
     public static class TransactionAuditEvent extends AuditTypeEvent

@@ -43,7 +43,7 @@ public class SingleCohortFilter extends BaseCohortFilter
 
 
     @Deprecated  // Should use CohortFilterFactory instead
-    public SingleCohortFilter(Type type, Cohort cohort)
+    public SingleCohortFilter(Type type, @NotNull Cohort cohort)
     {
         super(type);
         _cohortId = -1;

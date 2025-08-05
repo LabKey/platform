@@ -53,6 +53,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
@@ -61,16 +62,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * User: kevink
- * Date: 9/21/15
- */
 public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> implements ExpDataClass
 {
     public static final String NAMESPACE_PREFIX = "DataClass";
@@ -189,7 +187,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(getCategory());
     }
 
-
     @Nullable
     @Override
     public ExpSampleType getSampleType()
@@ -217,7 +214,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ExpDataImpl getData(Container c, String name)
     {
-        return ExperimentServiceImpl.get().getExpData(this, /*c, */ name);
+        return ExperimentServiceImpl.get().getExpData(this, name);
     }
 
     @Override
@@ -233,19 +230,39 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
+    @NotNull
     public Domain getDomain()
     {
-        if (_domain == null)
-        {
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
-        }
-        return _domain;
+        return getDomain(false);
     }
 
     @Override
-    public void setDomain(Domain d)
+    @NotNull
+    public Domain getDomain(boolean forUpdate)
     {
-        _domain = d;
+        if (_domain == null || (forUpdate && !_domain.isMutable()))
+        {
+            assert getContainer() != null : "Container cannot be null when attempting to fetch data class domain.";
+
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
+            if (_domain == null)
+            {
+                _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
+                try
+                {
+                    _domain.save(null);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+            if (_domain != null && !forUpdate && _domain.isMutable())
+                _domain = PropertyService.get().getDomain(getContainer(), getLSID(), false);
+            if (_domain == null) // this should really never be true
+                throw new IllegalStateException("Domain does not exist.");
+        }
+        return _domain;
     }
 
     @Nullable
@@ -254,7 +271,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     {
         return urlFor(ExperimentController.ShowDataClassAction.class, getContainer());
     }
-
 
     @Override
     public void save(User user)
@@ -273,7 +289,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -314,12 +330,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
-    public TableInfo getTinfo()
+    public @NotNull TableInfo getTinfo()
     {
-        Domain d = getDomain();
-        if (null == d)
-            throw new NullPointerException("domain is null");
-        return StorageProvisioner.createTableInfo(d);
+        return StorageProvisioner.createTableInfo(getDomain());
     }
 
     @Override
@@ -355,7 +368,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ActionURL urlShowHistory()
     {
-        //return urlFor(ExperimentController.HistoryDataClassAction.class, c);
         return null;
     }
 
@@ -373,33 +385,23 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return ret;
     }
 
-    public void index(SearchService.IndexTask task)
+    /**
+     * @return null if the parent container is no longer available
+     */
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table)
     {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+        var container = getContainer();
+        if (container == null)
+            return null;
 
-        final SearchService.IndexTask indexTask = task;
-        final ExpDataClassImpl me = this;
-        indexTask.addRunnable(
-                () -> me.indexDataClass(indexTask)
-                , SearchService.PRIORITY.bulk
-        );
-    }
-
-    private void indexDataClass(SearchService.IndexTask indexTask)
-    {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
         if (urlProvider != null)
         {
-            url = urlProvider.getShowDataClassURL(getContainer(), getRowId());
-            url.setExtraPath(getContainer().getId());
+            url = urlProvider.getShowDataClassURL(container, getRowId());
+            url.setExtraPath(container.getId());
         }
 
         Map<String, Object> props = new HashMap<>();
@@ -419,8 +421,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
-        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+
+        return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                container.getEntityId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),
@@ -432,8 +435,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 ExperimentServiceImpl.get().setDataClassLastIndexed(getRowId(), ms);
             }
         };
-
-        indexTask.addResource(sdr, SearchService.PRIORITY.item);
     }
 
     public String getDocumentTitle()
@@ -511,6 +512,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
+    @Override
     public String getImportAliasJson()
     {
         return _object.getDataParentImportAliasMap();
@@ -561,6 +563,29 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public void setImportAliasMapJson(String aliasJson)
     {
         _object.setDataParentImportAliasMap(aliasJson);
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("NameExpression", getNameExpression());
+        String importAliasStr = null;
+        try
+        {
+            importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliasMap());
+        }
+        catch (IOException ignore)
+        {
+        }
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (getSampleType() != null)
+            map.put("SampleType", getSampleType().getRowId());
+
+        return map;
     }
 
 }

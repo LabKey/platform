@@ -61,6 +61,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SimpleTime;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TimeOnlyDate;
@@ -178,7 +179,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new SimpleTimeConverter(), SimpleTime.class);
         _register(new ShowRowsConverter(), ShowRows.class);
         _register(new UserConverter(), User.class);
-        _register(new ExpDataFileConverter(), File.class);
+        _register(new NoOpConverter(), File.class); // let data iterator handle conversion
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
         _register(new DefaultScaleConverter(), DefaultScaleType.class);
         _register(new SchemaKey.Converter(), SchemaKey.class);
@@ -358,7 +359,15 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof java.util.Date)
                 return o;
 
-            return new Date(DateUtil.parseDateTime(o.toString()));
+            String signedDurationCandidate = StringUtils.trimToNull(o instanceof String s ? s : null);
+            if (signedDurationCandidate != null && DateUtil.isSignedDuration(signedDurationCandidate))
+            {
+                return new Date(DateUtil.applySignedDuration(new Date().getTime(), signedDurationCandidate));
+            }
+            else
+            {
+                return new Date(DateUtil.parseDateTime(o.toString()));
+            }
         }
     }
 
@@ -442,6 +451,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    public static class FileConversionException extends ConversionException implements SkipMothershipLogging
+    {
+        public FileConversionException(String msg)
+        {
+            super(msg);
+        }
+    }
 
     public static class ContainerConverter implements Converter
     {
@@ -870,6 +886,15 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    public static class NoOpConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            return value;
+        }
+    }
+
     public static class FacetingBehaviorTypeConverter implements Converter
     {
         @Override
@@ -1003,7 +1028,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     public static class TestCase extends Assert
     {
         @Test
-        public void testConvertDate()
+        public void testConvertTimestamp()
         {
             Object convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "+1d");
             Calendar cal = Calendar.getInstance();
@@ -1021,6 +1046,56 @@ public class ConvertHelper implements PropertyEditorRegistrar
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,0,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "+212F");
+                fail("Should have failed to parse temperature");
+            }
+            catch (ConversionException ignored) {}
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "-");
+                fail("Should have failed to parse just a sign");
+            }
+            catch (ConversionException ignored) {}
+        }
+
+        @Test
+        public void testConvertDate()
+        {
+            Object convertedDate = new LenientDateConverter().convert(Date.class, "+1d");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.add(Calendar.DATE, 1);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                    DateUtil.getDateOnly((Date)convertedDate));
+
+            convertedDate = new LenientDateConverter().convert(Date.class, "-2m0d");
+            cal.setTime(new Date());
+            cal.add(Calendar.MONTH, -2);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                    DateUtil.getDateOnly((Date)convertedDate));
+
+            convertedDate = new LenientDateConverter().convert(Date.class, "Thu Jun 10 08:00:00 PDT 1999");
+            cal.set(1999, Calendar.JUNE,10,8,0,0);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Date)convertedDate));
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "-80C");
+                fail("Should have failed to parse temperature");
+            }
+            catch (ConversionException ignored) {}
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "+");
+                fail("Should have failed to parse just a sign");
+            }
+            catch (ConversionException ignored) {}
+
         }
 
         @Test

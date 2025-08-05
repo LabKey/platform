@@ -299,7 +299,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public HttpView getDataDescriptionView(AssayRunUploadForm form)
+    public HttpView<?> getDataDescriptionView(AssayRunUploadForm form)
     {
         return new JspView<>("/org/labkey/assay/view/tsvDataDescription.jsp", form);
     }
@@ -778,7 +778,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         private Mockery _context;
 
-        private Container _container = ContainerManager.createMockContainer();
+        private final Container _container = ContainerManager.createMockContainer();
         private HttpServletRequest _request;
         private HttpSession _session;
         private ExpProtocol _protocol;

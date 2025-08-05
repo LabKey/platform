@@ -148,7 +148,7 @@ public class DbSchema
         }
     }
 
-    Module getModule()
+    public Module getModule()
     {
         return _module;
     }
@@ -705,7 +705,7 @@ public class DbSchema
         {
             assertNotNull(test);
             assertTrue(test.getTableNames().size() > 20);
-            assertSame("\"" + requestedName + "\" schema does not match \"" + expected.getDisplayName() + "\" schema", test, expected);
+            assertSame("\"" + requestedName + "\" schema does not match \"" + expected.getDisplayName() + "\" schema", expected, test);
         }
     }
 

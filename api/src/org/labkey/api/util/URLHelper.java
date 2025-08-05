@@ -28,7 +28,6 @@ import org.json.JSONObject;
 import org.json.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
@@ -916,7 +915,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         return false;
     }
 
-    // Issue 35896 - Disallow external redirects to URLs not on the allow list
+    // Issue 35896 - Disallow external redirects to URLs not on the allowlist
     public boolean isAllowableHost()
     {
         String host = StringUtils.trimToNull(this.getHost());

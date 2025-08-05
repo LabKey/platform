@@ -44,7 +44,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
     {
         _provider = provider;
         _protocol = protocol;
-        _qcStateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(provider.getResultsDomain(_protocol));
+        _qcStateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(provider.getResultsDomain(_protocol, false));
     }
 
     @Override

@@ -195,7 +195,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
             return new SQLFragment("NULL");
-        TableInfo ti = def.getStorageTableInfo();
+        TableInfo ti = def.getStorageTableInfo(false);
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT O.ObjectId FROM ").append(ti).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
@@ -391,15 +391,15 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Nullable
     @Override
-    public DatasetDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public DatasetDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         Dataset ds = domain != null ? getDatasetDefinition(domain.getDomainURI()) : null;
         return DatasetManager.get().getDatasetDomainKindProperties(container, ds != null ? ds.getDatasetId() : null);
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
-                               @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DatasetDomainKindProperties arguments, Container container, User user,
+                               @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         arguments.setName(StringUtils.trimToNull(domain.getName()));
         String name = arguments.getName();
@@ -442,7 +442,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (isManagedField)
             {
                 String rangeUri = "";
-                for (GWTPropertyDescriptor a : (List<GWTPropertyDescriptor>)domain.getFields())
+                for (GWTPropertyDescriptor a : domain.getFields())
                 {
                     if (keyPropertyName.equalsIgnoreCase(a.getName()))
                     {
@@ -492,9 +492,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             if (def.getDomain() != null)
             {
-                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+                List<GWTPropertyDescriptor> properties = domain.getFields();
 
-                Domain newDomain = def.getDomain();
+                Domain newDomain = def.getDomain(true);
                 if (newDomain != null)
                 {
                     Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
@@ -514,9 +514,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
-                    newDomain.save(user);
+                    newDomain.save(user, arguments.getAuditRecordMap(), domain.getCalculatedFields());
 
-                    List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+                    List<GWTIndex> indices = domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
 
@@ -527,7 +527,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             transaction.commit();
-            return study.getDataset(def.getDatasetId()).getDomain();
+            return study.getDataset(def.getDatasetId()).getDomain(forUpdate);
         }
         catch (Exception e)
         {
@@ -536,7 +536,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain, DatasetDefinition def)
+    private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain<?> domain, DatasetDefinition def)
     {
         String name = StringUtils.trimToEmpty(datasetProperties.getName());
         String keyPropertyName = datasetProperties.getKeyPropertyName();
@@ -646,11 +646,27 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                       Container container, User user)
+    private @NotNull ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                       @Nullable DatasetDefinition oldDef, @Nullable DatasetDomainKindProperties datasetPropertiesUpdate, Container container, User user, String userComment)
     {
+        StringBuilder changeDetails = new StringBuilder();
+        boolean hasNameChange = false;
+        Map<String, Object> oldProps = null;
+        Map<String, Object> newProps = datasetPropertiesUpdate != null ? datasetPropertiesUpdate.getAuditRecordMap() : null;
+
+        if (oldDef != null)
+        {
+            oldProps = oldDef.getAuditRecordMap();
+            if (newProps == null)
+                newProps = oldProps; // no update
+
+            hasNameChange = !datasetPropertiesUpdate.getName().equals(oldDef.getName());
+            if (hasNameChange)
+                changeDetails.append("The name of the dataset '" + oldDef.getName() + "' was changed to '" + datasetPropertiesUpdate.getName() + "'.");
+        }
+
         ValidationException exception = new ValidationException();
-        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), userComment, oldProps, newProps));
         return exception;
     }
 
@@ -715,7 +731,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
+                                                     @Nullable DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings, String userComment)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
         StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -736,7 +752,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         Lock[] locks = def == null ? new Lock[0] : new Lock[] { def.getDomainLoadingLock() };
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction(locks))
         {
-            ValidationException exception = updateDomainDescriptor(original, update, container, user);
+            ValidationException exception = updateDomainDescriptor(original, update, def, datasetProperties, container, user, userComment);
 
             QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), hasNameChange ? datasetProperties.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
 
@@ -760,7 +776,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(domain.getTypeURI());
         if (def == null)
@@ -772,7 +788,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            StudyManager.getInstance().deleteDataset(study, user, def, false);
+            StudyManager.getInstance().deleteDataset(study, user, def, false, auditUserComment);
             transaction.commit();
         }
     }

@@ -39,7 +39,7 @@ public class RequestedSpecimens
     {
         if (_providingLocations == null)
         {
-            if (_vials == null || _vials.size() == 0)
+            if (_vials == null || _vials.isEmpty())
                 _providingLocations = Collections.emptyList();
             else
             {

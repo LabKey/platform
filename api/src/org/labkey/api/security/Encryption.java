@@ -76,13 +76,22 @@ public class Encryption
     private static final Logger LOG = LogHelper.getLogger(Encryption.class, "Encryption operations");
     private static final String CATEGORY = "Encryption";
     private static final String SALT_KEY = "Salt";
-    private static final SecureRandom SR = new SecureRandom();
+    public static final SecureRandom SR;
     private static final String ENCRYPTION_PASS_PHRASE;
     private static final String KEY_CHANGE_GUIDANCE = "An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.";
 
     static
     {
         ENCRYPTION_PASS_PHRASE = loadEncryptionPassPhrase();
+
+        try
+        {
+            SR = SecureRandom.getInstanceStrong();
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new ConfigurationException("Could not initialize SecureRandom", e);
+        }
 
         WarningService.get().register(new WarningProvider() {
             @Override

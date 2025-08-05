@@ -83,7 +83,7 @@ if (comment != null)
     <strong><span class="labkey-error">Vial is flagged for quality control.</span></strong>
 <%
     }
-    if (comment.getQualityControlComments() != null && comment.getQualityControlComments().length() > 0)
+    if (comment.getQualityControlComments() != null && !comment.getQualityControlComments().isEmpty())
     {
 %>
      <%= h(comment.getQualityControlComments()) %><br>

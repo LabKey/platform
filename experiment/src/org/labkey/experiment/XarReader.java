@@ -428,7 +428,7 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            if (_runWorkflowTaskMap.size() > 0)
+            if (!_runWorkflowTaskMap.isEmpty())
             {
                 saveRunWorkflowTaskIds();
             }
@@ -1910,19 +1910,19 @@ public class XarReader extends AbstractXarImporter
 
         Map<String, ObjectProperty> childProps = new HashMap<>();
 
-        if (null != contact.getContactId() && !contact.getContactId().equals(""))
+        if (null != contact.getContactId() && !contact.getContactId().isEmpty())
         {
             childProps.put(CONTACT_ID_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_ID_PROPERTY, trimString(contact.getContactId()), "Contact Id"));
         }
-        if (null != contact.getEmail() && !contact.getEmail().equals(""))
+        if (null != contact.getEmail() && !contact.getEmail().isEmpty())
         {
             childProps.put(CONTACT_EMAIL_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_EMAIL_PROPERTY, trimString(contact.getEmail()), "Contact Email"));
         }
-        if (null != contact.getFirstName() && !contact.getFirstName().equals(""))
+        if (null != contact.getFirstName() && !contact.getFirstName().isEmpty())
         {
             childProps.put(CONTACT_FIRST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_FIRST_NAME_PROPERTY, trimString(contact.getFirstName()), "Contact First Name"));
         }
-        if (null != contact.getLastName() && !contact.getLastName().equals(""))
+        if (null != contact.getLastName() && !contact.getLastName().isEmpty())
         {
             childProps.put(CONTACT_LAST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_LAST_NAME_PROPERTY, trimString(contact.getLastName()), "Contact Last Name"));
         }
@@ -2213,7 +2213,7 @@ public class XarReader extends AbstractXarImporter
         ProtocolActionType[] xActions = actionSet.getProtocolActionArray();
 
         List<ProtocolAction> existingActions = ExperimentServiceImpl.get().getProtocolActions(parentProtocol.getRowId());
-        boolean alreadyLoaded = existingActions.size() != 0;
+        boolean alreadyLoaded = !existingActions.isEmpty();
         if (alreadyLoaded && existingActions.size() != xActions.length)
         {
             throw new XarFormatException("Protocol actions for protocol " + parentLSID + " do not match those that have " +

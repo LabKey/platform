@@ -31,15 +31,14 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
-import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.params.FieldKey;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -99,7 +98,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        SharedStudyTest initTest = (SharedStudyTest)getCurrentTest();
+        SharedStudyTest initTest = getCurrentTest();
 
         initTest.doSetup();
     }
@@ -170,7 +169,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt("/" + getProjectName() + "/" + STUDY1 + "/query-executeQuery.view?schemaName=study&query.queryName=PVString_Two");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addColumn(new String[]{"PandaVisit", "Visit", "Folder"});
+        _customizeViewsHelper.addColumn(FieldKey.fromParts("PandaVisit", "Visit", "Folder"));
         _customizeViewsHelper.saveCustomView("withfolder");
 
         log("Verify visit folder is project");
@@ -309,28 +308,6 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         String description = getText(Locator.xpath("//td[text() = 'Visit 1']/../td[7]"));
         assertEquals("This is the first visit", description);
-    }
-
-    @Test
-    public void testCreateVisitViaAssaySchedule()
-    {
-        Boolean studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
-        clickFolder(STUDY1);
-        goToManageStudy();
-        clickAndWait(Locator.linkWithText("manage assay schedule"));
-
-        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this, true);
-        assaySchedulePage.addNewVisitColumn("Visit 4", 4.0, 4.99);
-        click(Locator.linkWithText("manage visits"));
-        String url = getCurrentRelativeURL();
-        Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY1));
-
-        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
-        manageVisitPage.goToEditVisit("Visit 4");
-        clickButton("Delete Visit");
-        clickButton("Delete");
-        if (studyDesignPreviouslyEnabled != null)
-            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", studyDesignPreviouslyEnabled);
     }
 
     @Test

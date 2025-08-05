@@ -299,12 +299,12 @@ public class CPUTimer
 		synchronized(timers)
         {
 			Set<CPUTimer> set = timers.keySet();
-			CPUTimer[] a = set.toArray(new CPUTimer[set.size()]);
+			CPUTimer[] a = set.toArray(new CPUTimer[0]);
 
 			Arrays.sort(a, Comparator.comparing(o -> o._name));
 
             StringBuilder sb = new StringBuilder();
-            sb.append("TIMER SUMMARY: ").append(new Date().toString()).append("\n");
+            sb.append("TIMER SUMMARY: ").append(new Date()).append("\n");
             sb.append(header());
             sb.append("\n");
             for (CPUTimer cpuTimer : a)

@@ -90,10 +90,8 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
         List<TaskFactorySettings> listSettings = new ArrayList<>();
         for (Object spec : factories)
         {
-            if (spec instanceof TaskFactorySettings.Provider)
+            if (spec instanceof TaskFactorySettings.Provider provider)
             {
-                TaskFactorySettings.Provider provider =
-                        (TaskFactorySettings.Provider) spec;
                 for (TaskFactorySettings settings : provider.getSettings())
                 {
                     if (!_factories.contains(settings) && !listSettings.contains(settings))
@@ -125,16 +123,13 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
 
                 if (spec instanceof Class)
                     progression[i] = new TaskId((Class) spec);
-                else if (spec instanceof TaskFactory)
+                else if (spec instanceof TaskFactory factory)
                 {
-                    TaskFactory factory = (TaskFactory) spec;
                     _factoryImpls.add(factory);
                     progression[i] = factory.getId();
                 }
-                else if (spec instanceof TaskFactorySettings)
+                else if (spec instanceof TaskFactorySettings settings)
                 {
-                    TaskFactorySettings settings =
-                            (TaskFactorySettings) spec;
                     if (!_factories.contains(settings))
                         _factories.add(settings);
                     progression[i] = settings.getId();

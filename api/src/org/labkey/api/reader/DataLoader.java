@@ -31,6 +31,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
@@ -43,6 +44,7 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.BatchValidationException;
@@ -185,7 +187,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         for (ColumnDescriptor column : getColumns())
             if (column.load)
                 active.add(column);
-        return active.toArray(new ColumnDescriptor[active.size()]);
+        return active.toArray(new ColumnDescriptor[0]);
     }
 
     protected void ensureInitialized(@NotNull Map<String, String> renamedColumns) throws IOException
@@ -212,7 +214,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // where incoming data looks numeric.
     public void setKnownColumns(List<ColumnInfo> cols)
     {
-        if (cols == null || cols.size() == 0)
+        if (cols == null || cols.isEmpty())
             throw new IllegalArgumentException("List of columns cannot be null or empty");
 
         boolean useMv = _mvIndicatorContainer != null && !MvUtil.getIndicatorsAndLabels(_mvIndicatorContainer).isEmpty();
@@ -293,7 +295,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * Most useful if maps are being returned, otherwise use inferColumnInfo(reader, clazz) to
      * use properties of a bean instead.
      *
-     * @throws java.io.IOException
      * @param renamedColumns map from the name used during the data load and the original column name (e.g., SampleId -> Name)
      */
     @SuppressWarnings({"ConstantConditions"})
@@ -328,7 +329,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             for (int f = 0; f < nCols; f++)
             {
                 List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
-                Class knownColumnClass = null;
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -338,25 +338,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     {
                         String name = lineFields[0][f];
                         name = StringUtilsLabKey.sanitizeSeparatorsAndTrim(name);
-                        if (_columnInfoMap.containsKey(name))
+
+                        ColumnInfo knownColumn = getKnownColumn(name, renamedColumns);
+
+                        if (knownColumn != null)
                         {
-                            //preferentially use this class if it matches
-                            knownColumnClass = _columnInfoMap.get(name).getJavaClass();
-                            classesToTest.add(0, knownColumnClass);
-                        }
-                        else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
-                        {
-                            knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
+                            Class knownColumnClass = knownColumn.getJavaClass();
                             classesToTest.add(0, knownColumnClass);
                         }
                     }
-                }
-
-                // Issue 49830: if we know the column class is File based on the columnInfoMap, use it instead of trying to infer the class based on the data
-                if (File.class.equals(knownColumnClass))
-                {
-                    colDescs[f].clazz = knownColumnClass;
-                    continue;
                 }
 
                 for (int line = inferStartLine; line < numLines; line++)
@@ -472,6 +462,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
 
         _columns = colDescs;
+    }
+
+    private ColumnInfo getKnownColumn(String name, @NotNull Map<String, String> renamedColumns)
+    {
+        ColumnInfo knownColumn = null;
+        if (_columnInfoMap.containsKey(name))
+            knownColumn = _columnInfoMap.get(name);
+        else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
+            knownColumn = _columnInfoMap.get(renamedColumns.get(name));
+        return knownColumn;
     }
 
     protected String getDefaultColumnName(int col)

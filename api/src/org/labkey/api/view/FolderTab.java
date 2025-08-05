@@ -139,11 +139,11 @@ public abstract class FolderTab
             // Initialize the portal pages for each of the tabs
             List<Portal.WebPart> webParts = Portal.getParts(container, getDbName());
 
-            if (webParts.size() == 0)
+            if (webParts.isEmpty())
             {
                 List<Portal.WebPart> parts = createWebParts();
 
-                if (parts.size() > 0)
+                if (!parts.isEmpty())
                 {
                     // When portal page first loads a folder tab it populates FolderType webparts into the database. We can't switch
                     // project-begin.view to POST, but this ensure pattern is not a viable CSRF attack vector.
@@ -187,10 +187,9 @@ public abstract class FolderTab
             return true;
         }
         
-        if (controller instanceof SpringActionController)
+        if (controller instanceof SpringActionController springController)
         {
             // Map the current URL to an action in the already resolved controller
-            SpringActionController springController = (SpringActionController)controller;
             Controller action = springController.getActionResolver().resolveActionName(springController, viewContext.getActionURL().getAction());
             if (action != null && _controllersAndActions.contains(action.getClass()))
             {

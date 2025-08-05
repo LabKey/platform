@@ -79,7 +79,7 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
                 return new ListCategoryColumn(colInfo);
             }
 
-            class ListCategoryColumn extends DataColumn
+            static class ListCategoryColumn extends DataColumn
             {
                 public ListCategoryColumn(ColumnInfo col) { super(col, false); }
 

@@ -108,10 +108,10 @@ public class FastaDataLoader extends DataLoader
                 // add the internally generated column header
                 Set<String> strings = row.keySet();
                 if (count == 0)
-                    lineFields.add(strings.toArray(new String[strings.size()]));
+                    lineFields.add(strings.toArray(new String[0]));
 
                 Collection<Object> values = row.values();
-                lineFields.add(values.toArray(new String[values.size()]));
+                lineFields.add(values.toArray(new String[0]));
 
                 count++;
             }
@@ -161,8 +161,6 @@ public class FastaDataLoader extends DataLoader
                  * Attempt to parse out any information from the header, some fasta formats may
                  * contain key/value pairs in the header that we can use to create field/value pairs.
                  * Otherwise the default is to return the entire header.
-                 * @param header
-                 * @param rowMap
                  */
                 private void parseHeader(String header, Map<String, Object> rowMap)
                 {
@@ -190,7 +188,7 @@ public class FastaDataLoader extends DataLoader
                             }
                         }
 
-                        if (sb.length() > 0)
+                        if (!sb.isEmpty())
                             rowMap.put("header", sb.toString());
                     }
                 }

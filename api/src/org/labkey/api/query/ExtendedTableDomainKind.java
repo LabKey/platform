@@ -59,7 +59,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
-        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false);
+        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false, null);
         if (errors.hasErrors())
         {
             throw new RuntimeException(errors);
@@ -69,7 +69,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo, boolean forUpdate)
     {
         if (StringUtils.trimToNull(gwtDomain.getName()) == null)
             throw new IllegalArgumentException("table name is required");
@@ -113,7 +113,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
                 throw new RuntimeException(e);
             }
         }
-        return PropertyService.get().getDomain(container, domainURI);
+        return PropertyService.get().getDomain(container, domainURI, forUpdate);
     }
 
     @Override

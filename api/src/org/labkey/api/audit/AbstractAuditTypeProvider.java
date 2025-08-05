@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
@@ -48,6 +49,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -71,10 +73,6 @@ import static org.labkey.api.audit.query.AbstractAuditDomainKind.AUDIT_RECORD_DA
 import static org.labkey.api.audit.query.AbstractAuditDomainKind.NEW_RECORD_PROP_NAME;
 import static org.labkey.api.audit.query.AbstractAuditDomainKind.OLD_RECORD_PROP_NAME;
 
-/**
- * User: klum
- * Date: 7/11/13
- */
 public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_SCHEMA_NAME = "auditLog";
@@ -121,7 +119,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public void initializeProvider(User user)
     {
         AbstractAuditDomainKind domainKind = getDomainKind();
-        Domain domain = getDomain();
+        Domain domain = getDomain(true);
 
         // if the domain doesn't exist, create it
         if (domain == null)
@@ -135,7 +133,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.addPropertyOfPropertyDescriptor(pd);
                 }
                 domain.save(user);
-                domain = getDomain();
+                domain = getDomain(true);
             }
             catch (ChangePropertyDescriptorException e)
             {
@@ -297,11 +295,17 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public final Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public final Domain getDomain(boolean forUpdate)
+    {
         DomainKind domainKind = getDomainKind();
 
         String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
 
-        return PropertyService.get().getDomain(getDomainContainer(), domainURI);
+        return PropertyService.get().getDomain(getDomainContainer(), domainURI, forUpdate);
     }
 
 
@@ -346,6 +350,16 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     protected void appendValueMapColumns(AbstractTableInfo table)
     {
+        appendValueMapColumns(table, null);
+    }
+
+    protected void appendValueMapColumns(AbstractTableInfo table, String eventName)
+    {
+        appendValueMapColumns(table, eventName, false);
+    }
+
+    protected void appendValueMapColumns(AbstractTableInfo table, String eventName, boolean noUrl)
+    {
         MutableColumnInfo oldCol = table.getMutableColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
         MutableColumnInfo newCol = table.getMutableColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
 
@@ -370,6 +384,17 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         // add a column to show the differences between old and new values
         if (oldCol != null && newCol != null)
             table.addColumn(new DataMapDiffColumn(table, COLUMN_NAME_DATA_CHANGES, oldCol, newCol));
+
+        if (!noUrl)
+        {
+            String urlStr = "audit-detailedAuditChanges.view?auditRowId=${rowId}";
+            if (!StringUtils.isEmpty(eventName))
+                urlStr = urlStr + "&auditEventType=" + eventName;
+            DetailsURL url = DetailsURL.fromString(urlStr);
+            url.setStrictContainerContextEval(true);
+            table.setDetailsURL(url);
+        }
+
     }
 
     @Override
@@ -394,7 +419,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    public static String encodeForDataMap(Container c, Map<String, ?> properties)
+    public static String encodeForDataMap(Map<String, ?> properties)
     {
         if (properties == null) return null;
 

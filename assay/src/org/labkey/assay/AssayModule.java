@@ -17,7 +17,6 @@
 package org.labkey.assay;
 
 import jakarta.servlet.ServletContext;
-import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
@@ -101,6 +100,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_ID_REPLACEMENT;
@@ -323,9 +323,9 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/assay/AssayIntegrationTestCase.jsp"));
         return list;
     }

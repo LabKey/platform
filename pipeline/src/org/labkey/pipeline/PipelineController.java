@@ -18,8 +18,8 @@ package org.labkey.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -28,7 +28,6 @@ import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -53,7 +52,6 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
@@ -211,7 +209,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    enum SetupField { path, email }
+    protected enum SetupField { path, email }
 
     private static URI validatePath(String path, BindException errors)
     {
@@ -1777,16 +1775,6 @@ public class PipelineController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    public static class PipelineConfigurationAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new PipelineGWTServiceImpl(getViewContext());
-        }
-    }
-
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -1805,8 +1793,7 @@ public class PipelineController extends SpringActionController
                 controller.new GetPipelineActionConfigAction(),
                 controller.new GetPipelineFilePropertiesAction(),
                 controller.new DownloadAction(),
-                    new GetPipelineContainerAction(),
-                    new PipelineConfigurationAction()
+                    new GetPipelineContainerAction()
             );
 
             // @RequiresPermission(DeletePermission.class)

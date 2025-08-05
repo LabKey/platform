@@ -27,6 +27,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -39,6 +40,7 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -193,8 +195,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     /**
      * Returns the List's primary key as a field to get special treatment elsewhere, despite being property driven.
-     * @param domain
-     * @return
      */
     @Override
     public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)
@@ -270,20 +270,18 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return Collections.emptySet(); // TODO: Allow this to return the Key Column
     }
 
-    public static Lsid generateDomainURI(String name, Container c, KeyType keyType, @Nullable ListDefinition.Category category)
+    public static Lsid generateDomainURI(Container c, KeyType keyType, @Nullable ListDefinition.Category category)
     {
         String type = getType(keyType, category);
-        StringBuilder typeURI = getBaseURI(name, type, c);
-
-        // Issue 13131: uniqueify the lsid for situations where a preexisting list was renamed
-        int i = 1;
-        String sTypeURI = typeURI.toString();
-        String uniqueURI = sTypeURI;
-        while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
+        Lsid lsid;
+        // assure LSID does not collide with previous lsids that may have had number names
+        do
         {
-            uniqueURI = sTypeURI + '-' + (i++);
-        }
-        return new Lsid(uniqueURI);
+            String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(type, 1).next());
+            lsid = new Lsid(type, "Folder-" + c.getRowId(), dbSeqStr);
+        } while (OntologyManager.getDomainDescriptor(lsid.toString(), c) != null);
+
+        return lsid;
     }
 
     public static Lsid createPropertyURI(String listName, String columnName, Container c, ListDefinition.KeyType keyType)
@@ -360,17 +358,23 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public void validateDomainName(Container container, User user, @Nullable Domain domain, String name)
+    {
+        if (StringUtils.isEmpty(name))
+            throw new ApiUsageException("List name is required.");
+        if (name.length() > MAX_NAME_LENGTH)
+            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
+        if (ListService.get().getList(container, name, domain == null) != null)
+            throw new ApiUsageException("The name '" + name + "' is already in use.");
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         String name = StringUtils.trimToEmpty(domain.getName());
-        String keyName = listProperties.getKeyName();
+        validateDomainName(container, user, null, name);
 
-        if (StringUtils.isEmpty(name))
-            throw new ApiUsageException("List name is required");
-        if (name.length() > MAX_NAME_LENGTH)
-            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name, true) != null)
-            throw new ApiUsageException("The name '" + name + "' is already in use.");
+        String keyName = listProperties.getKeyName();
         if (StringUtils.isEmpty(keyName))
             throw new ApiUsageException("List keyName is required");
 
@@ -411,7 +415,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
-            Domain d = list.getDomain();
+            Domain d = list.getDomain(forUpdate);
 
             Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
@@ -436,7 +440,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             // TODO: This looks like the wrong order to me -- we should updateListProperties() (persist the indexing
             // settings and handle potential transitions) before calling save() (which indexes the list). Since this is
             // the create case there's no data to index, but there is meta data...
-            list.save(user);
+            list.save(user, true, listProperties.getAuditRecordMap(), domain.getCalculatedFields());
             updateListProperties(container, user, list.getListId(), listProperties);
 
             QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, null, domain.getCalculatedFields(), false, user, container);
@@ -450,18 +454,19 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new RuntimeException(e);
         }
 
-        return list.getDomain();
+        return list.getDomain(forUpdate);
     }
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings)
+                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException exception;
 
         try (DbScope.Transaction transaction = ListManager.get().getListMetadataSchema().getScope().ensureTransaction())
         {
             exception = new ValidationException();
+            StringBuilder changeDetails = new StringBuilder();
 
             Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
             if (null == domain)
@@ -496,18 +501,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //handle name change
             String updatedName = StringUtils.trim(update.getName());
             boolean hasNameChange = !original.getName().equals(updatedName);
-            String auditComment = null;
             if (hasNameChange)
             {
-                if (updatedName.length() > MAX_NAME_LENGTH)
-                {
-                    return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
-                }
-                else if (ListService.get().getList(container, updatedName, false) != null)
-                {
-                    return exception.addGlobalError("The name '" + updatedName + "' is already in use.");
-                }
-                auditComment = "The name of the list domain '" + original.getName() + "' was changed to '" + updatedName + "'.";
+                validateDomainName(container, user, domain, updatedName);
+                changeDetails.append("The name of the list domain '" + original.getName() + "' was changed to '" + updatedName + "'.");
             }
 
             //return if there are errors before moving forward with the save
@@ -517,6 +514,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
 
             //update list properties
+            Map<String, Object> oldProps = null;
+            Map<String, Object> newProps = null;
             if (null != listProperties)
             {
                 if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId())
@@ -524,14 +523,18 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 if (!original.getDomainURI().equals(update.getDomainURI()))
                     return exception.addGlobalError("domainURI mismatch between old and new domain");
 
-                updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                Pair<Map<String, Object>, Map<String, Object>> updatedProps = updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                oldProps = updatedProps.first;
+                newProps = updatedProps.second;
             }
             // Issue 45042: Allow for the list description to be set via the save domain API calls
             else if (update.getDescription() != null)
             {
                 listProperties = getListProperties(container, user, listDefinition.getListId());
                 listProperties.setDescription(update.getDescription());
-                updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                Pair<Map<String, Object>, Map<String, Object>> updatedProps = updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                oldProps = updatedProps.first;
+                newProps = updatedProps.second;
             }
 
             //update domain design properties
@@ -576,7 +579,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
 
                 //update domain properties
-                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment));
+                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps));
 
                 QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
             }
@@ -611,21 +614,25 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
     }
 
-    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    private Pair<Map<String, Object>, Map<String, Object>> updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
     {
         ListDomainKindProperties existingListProps = getListProperties(container, user, listId);
 
+        Map<String, Object> oldProps = existingListProps == null ? null : existingListProps.getAuditRecordMap();
+        Map<String, Object> newProps = listProperties == null ? oldProps : listProperties.getAuditRecordMap();
         //merge existing and new properties
         ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
 
         ListManager.get().update(user, container, updatedListProps);
+
+        return new Pair<>(oldProps, newProps);
     }
 
     //updates list properties except listId, domainId, keyName, keyType, and lastIndexed
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
-        ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
 
+        ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
         if (null != newListProps.getName())
             updatedListProps.setName(newListProps.getName().trim());
 
@@ -681,7 +688,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String userComment)
     {
         ListDefinition list = ListService.get().getList(domain);
         if (list == null)
@@ -689,7 +696,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         try
         {
-            list.delete(user);
+            list.delete(user, userComment);
         }
         catch (DomainNotFoundException e)
         {

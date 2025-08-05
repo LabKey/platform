@@ -582,12 +582,12 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setFieldKey(FieldKey fieldKey)
+        public void setFieldKey(@NotNull FieldKey fieldKey)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                @Override
+                @Override @NotNull
                 public FieldKey getFieldKey()
                 {
                     return fieldKey;

@@ -110,7 +110,7 @@ public class DatasetImportRunnable implements Runnable
             errors.add("Dataset not defined");
         else if (_datasetDefinition.getTypeURI() == null)
             errors.add("Dataset " + (null != _datasetDefinition.getName() ? _datasetDefinition.getName() + ": " : "") + "type is not defined");
-        else if (null == _datasetDefinition.getStorageTableInfo())
+        else if (null == _datasetDefinition.getStorageTableInfo(false))
             errors.add("No database table found for dataset " + _datasetDefinition.getName());
 
         if (_action == AbstractDatasetImportTask.Action.DELETE)
@@ -272,7 +272,7 @@ public class DatasetImportRunnable implements Runnable
                         }
                         if (0 < b.getUpdated())
                         {
-                            count += b.getUpdated();
+                            b.getUpdated();
                             importMessages.add(_datasetDefinition.getLabel() + ": Updated " + b.getUpdated() + " rows");
                         }
                     }

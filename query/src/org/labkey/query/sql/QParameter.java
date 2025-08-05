@@ -28,12 +28,12 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
 {
     private final QNode _decl;
     private final String _name;
-    private final ParameterType _type;
+    private final QType _type;
     private final boolean _required;
     private final Object _defaultValue;
 
 
-    QParameter(QNode decl, String name, ParameterType type, boolean required, Object def)
+    QParameter(QNode decl, String name, QType type, boolean required, Object def)
     {
         super();
         setLineAndColumn(decl);
@@ -61,7 +61,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     @Override
     public JdbcType getJdbcType()
     {
-        return _type.type;
+        return _type.getJdbcType();
     }
 
     @Override
@@ -84,8 +84,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
             _decl.childList().get(0).appendSource(builder);
         if (count > 1)
         {
-            builder.append(" ");
-            _decl.childList().get(1).appendSource(builder);
+            _type.appendSource(builder);
         }
         if (count > 2)
         {
@@ -97,10 +96,9 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        String sqlTypeName = builder.getDialect().getSqlTypeName(_type.type);
-        if ("NVARCHAR".equalsIgnoreCase(sqlTypeName))
-            sqlTypeName += "(4000)";
-        builder.append("CAST(? AS ").append(sqlTypeName).append(")");
+        builder.append("CAST(? AS ");
+        _type.appendSql(builder, query);
+        builder.append(")");
         builder.add(this);
     }
 

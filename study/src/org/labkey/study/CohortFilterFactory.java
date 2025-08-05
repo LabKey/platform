@@ -330,7 +330,7 @@ public class CohortFilterFactory
             return null; // Don't choke on malformed URL parameter
         }
         List<String> parts = fk.getParts();
-        if (parts.size() > 0)
+        if (!parts.isEmpty())
         {
             String first = parts.get(0);
             if (StringUtils.equalsIgnoreCase(first, subject))

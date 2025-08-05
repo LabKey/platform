@@ -18,7 +18,9 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.util.GUID;
 
 import java.io.File;
 import java.util.Collections;
@@ -27,15 +29,13 @@ import java.util.Map;
 
 /**
  * A single object-property-value triple.
- * User: migra
- * Date: Oct 25, 2005
  */
 public class ObjectProperty extends OntologyManager.PropertyRow
 {
     private int hashCode = 0;
 
     // Object fields
-    private Container container;
+    private GUID containerId;
     private String objectURI;
     private Integer objectOwnerId;
 
@@ -122,7 +122,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private void init(String objectURI, Container container, String propertyURI, PropertyType propertyType)
     {
         this.objectURI = objectURI;
-        this.container = container;
+        this.containerId = container.getEntityId();
         this.propertyURI = propertyURI;
         this.typeTag = propertyType.getStorageType();
         //TODO: For resource, need to override with known type
@@ -134,14 +134,13 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private void init(String objectURI, Container container, String propertyURI, PropertyType propertyType, Object value)
     {
         this.objectURI = objectURI;
-        this.container = container;
+        this.containerId = container.getEntityId();
         this.propertyURI = propertyURI;
         this.typeTag = propertyType.getStorageType();
         //TODO: For resource, need to override with known type
         this.rangeURI = propertyType.getTypeUri();
-        if (value instanceof MvFieldWrapper)
+        if (value instanceof MvFieldWrapper wrapper)
         {
-            MvFieldWrapper wrapper = (MvFieldWrapper)value;
             this.mvIndicator = wrapper.getMvIndicator();
             value = wrapper.getValue();
         }
@@ -154,7 +153,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         Object value = value();
         if (mvIndicator == null)
             return value;
-        return new MvFieldWrapper(MvUtil.getMvIndicators(container), value, mvIndicator);
+        return new MvFieldWrapper(MvUtil.getMvIndicators(getContainer()), value, mvIndicator);
     }
 
     public Object value()
@@ -169,12 +168,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
 
     public Container getContainer()
     {
-        return container;
+        return ContainerManager.getForId(containerId);
     }
 
     public void setContainer(Container container)
     {
-        this.container = container;
+        this.containerId = container.getEntityId();
     }
 
     public String getObjectURI()
@@ -242,10 +241,9 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         if (null == o)
             return false;
 
-        if (!(o instanceof ObjectProperty))
+        if (!(o instanceof ObjectProperty pv))
             return false;
 
-        ObjectProperty pv = (ObjectProperty) o;
         if (pv.getObjectId() != objectId || !pv.getPropertyURI().equals(propertyURI))
             return false;
 

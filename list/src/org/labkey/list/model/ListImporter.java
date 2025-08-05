@@ -27,6 +27,7 @@ import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -258,7 +259,7 @@ public class ListImporter
                             }
                         }
 
-                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, false, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
+                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, LookupResolutionType.primaryKey, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
                     }
 
                     for (ValidationException v : batchErrors.getRowErrors())
@@ -391,7 +392,7 @@ public class ListImporter
         {
             log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
-        if (fileTypeMap.size() > 0)
+        if (!fileTypeMap.isEmpty())
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
             for (String s : fileTypeMap.keySet())
@@ -638,7 +639,7 @@ public class ListImporter
         public void process() throws Exception
         {
             boolean hasValidator = false;
-            Domain domain = PropertyService.get().getDomain(_typeId);
+            Domain domain = PropertyService.get().getDomain(_typeId, true);
 
             if (null != domain)
             {
@@ -672,7 +673,7 @@ public class ListImporter
 
         if (allowUpdates)
         {
-            Domain domain = listDef.getDomain();
+            Domain domain = listDef.getDomain(true);
             boolean isDirty = false;
             if (domain != null)
             {

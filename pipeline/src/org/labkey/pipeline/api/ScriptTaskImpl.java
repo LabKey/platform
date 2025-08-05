@@ -216,9 +216,8 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // If we got this far, we were successful in running the script.
             // Delete the rewritten script and output files from the work directory
             // so they won't be attached as related outputs of the task.
-            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
+            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File rewrittenScriptFile)
             {
-                File rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
                 _wd.discardFile(rewrittenScriptFile);
             }
 
@@ -319,7 +318,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     @Override
     protected String rewritePath(String path)
     {
-        if (_engine instanceof RScriptEngine)
+        if (_engine instanceof RScriptEngine rengine)
         {
             // Ensure local path is absolute before converting to remote path
             File f = new File(path);
@@ -329,7 +328,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 path = f.getAbsolutePath();
             }
 
-            RScriptEngine rengine = (RScriptEngine) _engine;
             String remotePath = rengine.getRemotePath(path);
             if (null == remotePath)
                 return path;

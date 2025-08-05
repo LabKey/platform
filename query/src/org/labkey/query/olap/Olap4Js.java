@@ -248,7 +248,7 @@ public class Olap4Js
             indent(out);
             out.write("\"axisOrdinal\":" + valueToString(amd.getAxisOrdinal()));
             indent(",", out);
-            String comma="";
+            String comma;
 //            out.write("\"properties\"":[");
 //            for (Property p : amd.getProperties())
 //            {
@@ -396,7 +396,7 @@ public class Olap4Js
 
             if (_includeLevelMembers && (_memberExclusionFields == null || !_memberExclusionFields.contains(l.getUniqueName())))
             {
-                List<Member> members = null;
+                List<Member> members;
                 try
                 {
                     members = l.getMembers();
@@ -415,7 +415,6 @@ public class Olap4Js
                 }
                 catch (OlapException x)
                 {
-                    ;
                 }
             }
             out.write("}");

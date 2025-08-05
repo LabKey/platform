@@ -95,6 +95,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -243,6 +244,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionReportingLevel;
@@ -317,6 +319,7 @@ import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationJob;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
@@ -344,9 +347,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -404,11 +405,13 @@ import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
@@ -461,7 +464,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "look and feel settings", new ActionURL(LookAndFeelSettingsAction.class, root));
         AdminConsole.addLink(Configuration, "missing value indicators", new AdminUrlsImpl().getMissingValuesURL(root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
@@ -493,8 +496,9 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class, root));
         AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminOperationsPermission.class);
-        AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
+        AdminConsole.addLink(Diagnostics, "view csp report log file", new ActionURL(ShowCspReportLogAction.class, root));
         AdminConsole.addLink(Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
     }
 
@@ -1115,7 +1119,7 @@ public class AdminController extends SpringActionController
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
-            addCreditsViews(views, modules, "jars.txt", "JAR", null);
+            addCreditsViews(views, modules, "jars.txt", "JAR");
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
             addCreditsViews(views, modules, "source.txt", "Java Source Code");
             addCreditsViews(views, modules, "executables.txt", "Executable");
@@ -1132,19 +1136,13 @@ public class AdminController extends SpringActionController
 
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null);
-    }
-
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String customTitle) throws IOException
-    {
         for (Module module : modules)
         {
             String wikiSource = getCreditsFile(module, creditsFile);
 
             if (null != wikiSource)
             {
-                String component = "the " + module.getName() + " Module";
-                String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
+                String title = fileType + " Files Distributed with the " + module.getName() + " Module";
                 CreditsView credits = new CreditsView(wikiSource, title);
                 views.addView(credits);
             }
@@ -1153,7 +1151,7 @@ public class AdminController extends SpringActionController
 
     private static class CreditsView extends WebPartView<Object>
     {
-        private HtmlString _html;
+        private Renderable _html;
 
         CreditsView(@Nullable String wikiSource, String title)
         {
@@ -1165,14 +1163,14 @@ public class AdminController extends SpringActionController
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
                 HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource, "Credits page");
-                _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
+                _html = DOM.createHtmlFragment(STYLE(at(type, "text/css"), "tr.table-odd td { background-color: #EEEEEE; }"), html);
             }
         }
 
         @Override
-        public void renderView(Object model, PrintWriter out)
+        public void renderView(Object model, HtmlWriter out)
         {
-            out.print(_html);
+            out.write(_html);
         }
     }
 
@@ -2824,28 +2822,37 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    @AdminConsoleAction
-    public class ShowErrorsSinceMarkAction extends ExportAction<Object>
+    abstract public static class ShowLogAction extends ExportAction<Object>
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public final void export(Object o, HttpServletResponse response, BindException errors) throws IOException
+        {
+            getPageConfig().setNoIndex();
+            export(response);
+        }
+
+        protected abstract void export(HttpServletResponse response) throws IOException;
+    }
+
+    @AdminConsoleAction
+    public class ShowErrorsSinceMarkAction extends ShowLogAction
+    {
+        @Override
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, _errorMark, getErrorLogFile());
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowAllErrorsAction extends ExportAction<Object>
+    public class ShowAllErrorsAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, 0, getErrorLogFile());
         }
     }
-
 
     @AdminConsoleAction(ApplicationAdminPermission.class)
     public class ResetPrimaryLogMarkAction extends MutatingApiAction<Object>
@@ -2859,26 +2866,33 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowPrimaryLogSinceMarkAction extends ExportAction<Object>
+    public class ShowPrimaryLogSinceMarkAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected void export(HttpServletResponse response) throws IOException
         {
             PageFlowUtil.streamLogFile(response, _primaryLogMark, getPrimaryLogFile());
         }
     }
 
-
     @AdminConsoleAction
-    public class ShowPrimaryLogAction extends ExportAction<Object>
+    public class ShowPrimaryLogAction extends ShowLogAction
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected void export(HttpServletResponse response) throws IOException
         {
-            getPageConfig().setNoIndex();
             PageFlowUtil.streamLogFile(response, 0, getPrimaryLogFile());
+        }
+    }
+
+    @AdminConsoleAction
+    public class ShowCspReportLogAction extends ShowLogAction
+    {
+        @Override
+        protected void export(HttpServletResponse response) throws IOException
+        {
+            PageFlowUtil.streamLogFile(response, 0, getCspReportLogFile());
         }
     }
 
@@ -2890,6 +2904,11 @@ public class AdminController extends SpringActionController
     private File getPrimaryLogFile()
     {
         return new File(getLabKeyLogDir(), "labkey.log");
+    }
+
+    private File getCspReportLogFile()
+    {
+        return new File(getLabKeyLogDir(), "csp-report.log");
     }
 
     private static ActionURL getActionsURL()
@@ -6787,25 +6806,16 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
 
             if (value != null)
             {
-                StringBuilder sb = new StringBuilder();
-                String delim = "";
-
-                for (String name : value.split(VALUE_DELIMITER_REGEX))
-                {
-                    if (_assignmentSet.contains(name))
-                    {
-                        sb.append(delim);
-                        sb.append(name);
-                        delim = ",<br>";
-                    }
-                }
-                oldWriter.write(sb.toString());
+                out.write(Arrays.stream(value.split(VALUE_DELIMITER_REGEX))
+                    .filter(_assignmentSet::contains)
+                    .map(HtmlString::of)
+                    .collect(LabKeyCollectors.joining(HtmlString.unsafe(",<br>"))));
             }
         }
     }
@@ -6908,7 +6918,7 @@ public class AdminController extends SpringActionController
             }
             if (form.getQueryName() == null)
                 missingRequired += sep + "queryName";
-            if (missingRequired.length() > 0)
+            if (!missingRequired.isEmpty())
                 errors.reject(SpringActionController.ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
 
             // validate that, if provided, the containerId matches an existing container
@@ -7993,9 +8003,8 @@ public class AdminController extends SpringActionController
                         UserPrincipal p = SecurityManager.getPrincipal(userId);
                         Role r = assignment.getRole();
 
-                        if (p instanceof Group)
+                        if (p instanceof Group g)
                         {
-                            Group g = (Group) p;
                             if (!g.isProjectGroup())
                             {
                                 np.addRoleAssignment(p, r, false);
@@ -8516,7 +8525,7 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
-            if(null == form.getTo() || form.getTo().equals(""))
+            if(null == form.getTo() || form.getTo().isEmpty())
             {
                 errors.reject(ERROR_MSG, "To field cannot be blank.");
                 form.setException(new ConfigurationException("To field cannot be blank"));
@@ -9088,7 +9097,7 @@ public class AdminController extends SpringActionController
             }
 
             @Override
-            protected void renderView(Object model, PrintWriter out)
+            protected void renderView(Object model, HtmlWriter out)
             {
                 boolean isDevMode = AppProps.getInstance().isDevMode();
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
@@ -9100,7 +9109,7 @@ public class AdminController extends SpringActionController
 
                 if (_contexts.isEmpty())
                 {
-                    out.println(_noModulesDescriptionHtml);
+                    out.write(_noModulesDescriptionHtml);
                 }
                 else
                 {
@@ -10299,8 +10308,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public abstract class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
+    public abstract static class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
         public void validateCommand(ShortURLForm target, Errors errors) {}
@@ -10383,19 +10391,23 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
     public class ShortURLAdminAction extends AbstractShortURLAdminAction
     {
         @Override
         public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
         {
             JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
-            newView.setTitle("Create New Short URL");
+            boolean isAppAdmin = getUser().hasRootPermission(ApplicationAdminPermission.class);
+            newView.setTitle(isAppAdmin ? "Create New Short URL" : "Short URLs");
             newView.setFrame(WebPartView.FrameType.PORTAL);
 
-            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", "ShortURL");
+            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", CoreQuerySchema.SHORT_URL_TABLE_NAME);
             qSettings.setBaseSort(new Sort("-Created"));
-            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, errors);
+            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, null);
+            if (!isAppAdmin)
+            {
+                existingView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            }
             existingView.setTitle("Existing Short URLs");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
@@ -10416,7 +10428,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public class UpdateShortURLAction extends AbstractShortURLAdminAction
     {
         @Override
@@ -10587,7 +10599,7 @@ public class AdminController extends SpringActionController
     /** generate URLS to seed web-site scanner */
     @SuppressWarnings("UnusedDeclaration")
     @RequiresSiteAdmin
-    public static class SpiderAction extends SimpleViewAction
+    public static class SpiderAction extends SimpleViewAction<Object>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -10922,7 +10934,7 @@ public class AdminController extends SpringActionController
             if (form.isDelete())
             {
                 String urlToDelete = form.getExistingValue();
-                List<String> values = allowListType.getValues();
+                List<String> values = new ArrayList<>(allowListType.getValues());
                 for (String value : values)
                 {
                     if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
@@ -11228,10 +11240,12 @@ public class AdminController extends SpringActionController
             _existingValue = existingValue;
         }
 
-        public String getExistingValues()
+        public List<String> getExistingValues()
         {
-            // The JSP JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
-            return _existingValues.replace("\r", "");
+            return Arrays.stream(StringUtils.trimToEmpty(_existingValues).split("\n"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
         }
 
         @SuppressWarnings("unused")
@@ -11258,7 +11272,7 @@ public class AdminController extends SpringActionController
 
         private List<AllowedHost> getExistingAllowedHosts(BindException errors)
         {
-            List<AllowedHost> existing = Arrays.stream(getExistingValues().split("\n"))
+            List<AllowedHost> existing = getExistingValues().stream()
                 .map(value-> getAllowedHost(value, errors))
                 .toList();
 
@@ -11366,46 +11380,52 @@ public class AdminController extends SpringActionController
             return new VBox(newView, existingView);
         }
 
+        private static final Object HOST_LOCK = new Object();
+
         @Override
         public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
         {
             List<AllowedHost> allowedHosts = null;
 
-            //handle delete of existing value
-            if (form.isDelete())
+            // Multiple requests could access this in parallel, so synchronize access, Issue 53457
+            synchronized (HOST_LOCK)
             {
-                AllowedHost subToDelete = form.getExistingAllowedHost(errors);
-                if (errors.hasErrors())
-                    return false;
-                allowedHosts = form.getSavedAllowedHosts();
-                var iter = allowedHosts.listIterator();
-                while (iter.hasNext())
+                //handle delete of an existing value
+                if (form.isDelete())
                 {
-                    AllowedHost sub = iter.next();
-                    if (sub.equals(subToDelete))
+                    AllowedHost subToDelete = form.getExistingAllowedHost(errors);
+                    if (errors.hasErrors())
+                        return false;
+                    allowedHosts = form.getSavedAllowedHosts();
+                    var iter = allowedHosts.listIterator();
+                    while (iter.hasNext())
                     {
-                        iter.remove();
-                        break;
+                        AllowedHost sub = iter.next();
+                        if (sub.equals(subToDelete))
+                        {
+                            iter.remove();
+                            break;
+                        }
                     }
                 }
-            }
-            //handle updates - clicking on Save button under Existing will save the updated urls
-            else if (form.isSaveAll())
-            {
-                allowedHosts = form.getExistingAllowedHosts(errors);
+                //handle updates - clicking on Save button under Existing will save the updated hosts
+                else if (form.isSaveAll())
+                {
+                    allowedHosts = form.getExistingAllowedHosts(errors);
+                    if (errors.hasErrors())
+                        return false;
+                }
+                //save new external value
+                else if (form.isSaveNew())
+                {
+                    allowedHosts = form.validateNewAllowedHost(errors);
+                }
+
                 if (errors.hasErrors())
                     return false;
-            }
-            //save new external value
-            else if (form.isSaveNew())
-            {
-                allowedHosts = form.validateNewAllowedHost(errors);
-            }
 
-            if (errors.hasErrors())
-                return false;
-
-            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
+                AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
+            }
 
             return true;
         }
@@ -11670,7 +11690,7 @@ public class AdminController extends SpringActionController
     public static class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
     {
         @Override
-        protected HttpView getTabView(FilesForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(FilesForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
 
@@ -11709,7 +11729,7 @@ public class AdminController extends SpringActionController
                     for (String errorMessage : pipeRoot.validate())
                         errors.addError(new LabKeyError(errorMessage));
                 }
-                JspView pipelineView = (JspView) PipelineService.get().getSetupView(setupForm);
+                JspView<?> pipelineView = (JspView<?>) PipelineService.get().getSetupView(setupForm);
                 pipelineView.setTitle("Configure Data Processing Pipeline");
                 box.addView(pipelineView);
             }
@@ -11945,7 +11965,7 @@ public class AdminController extends SpringActionController
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User may be "guest", and will always be guest if being relayed to labkey.org
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
@@ -11973,7 +11993,14 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
-                                jsonObj.put("user", getUser().getEmail());
+                                User user = getUser();
+                                String email = null;
+                                // If the user is not logged in, we may still be able to snag the email address from our cookie
+                                if (user.isGuest())
+                                    email = LoginController.getEmailFromCookie(getViewContext().getRequest());
+                                if (null == email)
+                                    email = user.getEmail();
+                                jsonObj.put("user", email);
                                 String ipAddress = request.getHeader("X-FORWARDED-FOR");
                                 if (ipAddress == null)
                                     ipAddress = request.getRemoteAddr();
@@ -12120,6 +12147,7 @@ public class AdminController extends SpringActionController
                 controller.new ShowAllErrorsAction(),
                 controller.new ShowErrorsSinceMarkAction(),
                 controller.new ShowPrimaryLogAction(),
+                controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
                 new ExportQueriesAction(),

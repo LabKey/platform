@@ -179,6 +179,7 @@ public abstract class SqlScriptManager
         DbSchema schema = script.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
         String contents = script.getContents();
+        String description = script.getDescription();
 
         if (!contents.isEmpty() && (contents.charAt(0) == 0xfffe || contents.charAt(0) == 0xfeff))
             contents = contents.substring(1);
@@ -188,7 +189,7 @@ public abstract class SqlScriptManager
             String error = script.getErrorMessage();
 
             if (null != error)
-                throw new SqlScriptException(error, script.getDescription());
+                throw new SqlScriptException(error, description);
 
             return;
         }
@@ -196,20 +197,20 @@ public abstract class SqlScriptManager
         try
         {
             dialect.checkSqlScript(contents);
-            LOG.info("Starting to run script: {}", script.getDescription());
+            LOG.info("Starting to run script: {}", description);
             if (contents.contains(SKIP_SCRIPT_ANNOTATION) && schema.existsInDatabase())
             {
-                LOG.info("Script specified " + SKIP_SCRIPT_ANNOTATION + " and schema exists; skipping script: {}", script.getDescription());
+                LOG.info("Script specified " + SKIP_SCRIPT_ANNOTATION + " and schema exists; skipping script: {}", description);
             }
             else
             {
-                dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
-                LOG.info("Finished running script: {}", script.getDescription());
+                dialect.runSql(description, schema, contents, moduleContext, conn);
+                LOG.info("Finished running script: {}", description);
             }
         }
         catch(Throwable t)
         {
-            throw new SqlScriptException(t, script.getDescription());
+            throw new SqlScriptException(t, description);
         }
 
         if (script.isValidName())

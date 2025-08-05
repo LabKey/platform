@@ -351,7 +351,7 @@ public class ParticipantGroupManager
         script.append(DataRegion.getJavaScriptObjectReference(dataRegionName)).append("._removeCohortGroupFilters(");
         script.append(PageFlowUtil.jsString(study.getSubjectColumnName()));
 
-        if (categories.size() > 0)
+        if (!categories.isEmpty())
         {
             script.append(",[");
             String sep = "";
@@ -481,7 +481,7 @@ public class ParticipantGroupManager
             else
                 errors = fireUpdateCategory(user, ret);
 
-            if (errors.size() != 0)
+            if (!errors.isEmpty())
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
@@ -519,7 +519,7 @@ public class ParticipantGroupManager
             else
                 errors = fireUpdateCategory(user, ret);
 
-            if (errors.size() != 0)
+            if (!errors.isEmpty())
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
@@ -635,7 +635,6 @@ public class ParticipantGroupManager
      * <p>
      * TODO: Really need to pass in containers for each participant rather than rely on uniqueness of ids
      *
-     * @return
      */
     private Map<String, String> getParticipantIdMap(Container c, User user, ParticipantGroup group)
     {
@@ -799,7 +798,7 @@ public class ParticipantGroupManager
 
             errors = fireUpdateCategory(user, ret);
 
-            if (errors.size() != 0)
+            if (!errors.isEmpty())
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
@@ -1013,7 +1012,7 @@ public class ParticipantGroupManager
             transaction.commit();
 
             List<Throwable> errors = fireDeleteCategory(user, def);
-            if (errors.size() != 0)
+            if (!errors.isEmpty())
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)

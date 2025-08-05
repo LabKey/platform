@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DebugInfoDumper;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;

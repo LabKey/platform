@@ -22,18 +22,20 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AssayResultsFileConverter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
@@ -303,7 +305,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
-                        if (!(settings.isAllowLookupByAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
+                        if (!(settings.getLookupResolutionType().useAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
@@ -326,8 +328,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     column.errorValues = ERROR_VALUE;
 
-                if (run != null && column.clazz == File.class)
-                    column.converter = new AssayResultsFileConverter(run);
             }
             return loader;
 
@@ -395,7 +395,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // results/data domain for TSV-style assays
                 try
                 {
-                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA) ;
+                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA, false) ;
                 }
                 catch (IllegalStateException ignored)
                 {
@@ -439,9 +439,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (domain != null && domain.getStorageTableName() != null)
             {
                 SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
-                deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
-                deleteSQL.append(".");
-                deleteSQL.append(domain.getStorageTableName());
+                deleteSQL.appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(),domain.getStorageTableName());
                 deleteSQL.append(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
 
                 try
@@ -771,7 +769,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            if (dataTable != null && settings.isAllowLookupByAlternateKey())
+            if (dataTable != null && settings.getLookupResolutionType().useAlternateKey())
             {
                 ColumnInfo column = dataTable.getColumn(pd.getName());
                 ForeignKey fk = column != null ? column.getFk() : null;
@@ -919,9 +917,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         valueMissing = false;
                     }
 
-                    // If the column is a file link or attachment, resolve the value to a File object
+                    // If the column is a file link, resolve the value to a File object
                     String uri = pd.getType().getTypeURI();
-                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()) || uri.equals(PropertyType.ATTACHMENT.getTypeUri()))
+                    if (uri.equals(PropertyType.FILE_LINK.getTypeUri()))
                     {
                         if ("".equals(o))
                         {
@@ -934,16 +932,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             // File column values are stored as the absolute resolved path
                             try
                             {
-                                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                                File resolvedFile = ExpDataFileConverter.convert(o);
                                 if (resolvedFile != null)
                                 {
                                     o = resolvedFile;
                                     map.put(pd.getName(), o);
                                 }
                             }
-                            catch (ValidationException e)
+                            catch (ConvertHelper.FileConversionException e)
                             {
-                                throw new RuntimeValidationException(e);
+                                throw new ApiUsageException(e);
                             }
                         }
                     }
@@ -993,7 +991,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
                         // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
                         ExpMaterial material = null;
-                        if (settings.isAllowLookupByAlternateKey() || isSampleLookupByName)
+                        if (settings.getLookupResolutionType().useAlternateKey() || isSampleLookupByName)
                         {
                             String materialName = o.toString();
                             if (inputMaterials.containsKey(materialName))

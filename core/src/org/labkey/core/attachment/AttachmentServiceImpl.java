@@ -78,6 +78,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
@@ -245,6 +246,30 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return null;
     }
 
+    private void validateAttachmentSize(AttachmentFile file) throws IOException
+    {
+        int maxSize = AppProps.getInstance().getMaxBLOBSize();
+        if (file.getSize() > maxSize)
+        {
+            throw new AttachmentService.FileTooLargeException(file, maxSize);
+        }
+    }
+
+    @Override
+    public void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException
+    {
+        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+
+        // Only validate if we're putting the file in the database
+        if (null == fileLocation)
+        {
+            for (AttachmentFile file : files)
+            {
+                validateAttachmentSize(file);
+            }
+        }
+    }
+
 
     @Override
     public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
@@ -275,12 +300,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             HashMap<String, Object> hm = new HashMap<>();
             if (null == fileLocation)
             {
-                int maxSize = AppProps.getInstance().getMaxBLOBSize();
-                if (file.getSize() > maxSize)
-                {
-                    throw new AttachmentService.FileTooLargeException(file, maxSize);
-                }
-
+                validateAttachmentSize(file);
                 hm.put("Document", file);
             }
             else
@@ -1223,7 +1243,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private static class ResponseWriter implements DocumentWriter
     {
-        private HttpServletResponse _response;
+        private final HttpServletResponse _response;
 
         public ResponseWriter(HttpServletResponse response)
         {
@@ -1369,7 +1389,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             super(path);
 
             Container c = ContainerManager.getForId(parent.getContainerId());
-            _containerId = parent.getContainerId();
+            _containerId = new GUID(parent.getContainerId());
             if (null != c)
                 setSecurableResource(c);
             _downloadUrl = downloadURL;
@@ -1395,7 +1415,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null == cat)
                 setSearchCategory(SearchService.fileCategory);
             else
-                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + StringUtils.capitalize(cat.toString()));
+                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory + StringUtils.capitalize(cat.toString()));
         }
 
         AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
@@ -1411,7 +1431,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull String name)
         {
             super(folder.getPath(), name);
-            _containerId = parent.getContainerId();
+            _containerId = new GUID(parent.getContainerId());
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
             if (c != null)
@@ -1505,9 +1525,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         @Override
         public void moveFrom(User user, WebdavResource r) throws IOException, DavException
         {
-            if (r instanceof AttachmentResource)
+            if (r instanceof AttachmentResource from)
             {
-                AttachmentResource from = (AttachmentResource) r;
                 if (from._parent == _parent)
                 {
                     renameAttachment(_parent, from.getName(), getName(), user);
@@ -1754,7 +1773,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             svc.addAttachments(attachParent, files, user);
             List<Attachment> att = svc.getAttachments(attachParent);
-            assertEquals(att.size(), 1);
+            assertEquals(1, att.size());
             assertTrue(att.get(0).getFile().exists());
 
             // test rename
@@ -1779,7 +1798,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             svc.addAttachments(namedParent, files, user);
             att = svc.getAttachments(namedParent);
-            assertEquals(att.size(), 1);
+            assertEquals(1, att.size());
             assertTrue(att.get(0).getFile().exists());
             assertSameFile(new File(otherDir, "file.txt"), att.get(0).getFile());
             assertTrue(new File(otherDir, UPLOAD_LOG).exists());
@@ -1798,7 +1817,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             svc.addAttachments(relativeParent, files, user);
             att = svc.getAttachments(relativeParent);
-            assertEquals(att.size(), 1);
+            assertEquals(1, att.size());
 
             File expectedFile1 = att.get(0).getFile();
             File expectedFile2 = new File(relativeDir, UPLOAD_LOG);

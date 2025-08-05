@@ -94,7 +94,6 @@ public interface IssuesListDefService
      * Get the set of registered issue list definition providers that are enabled based on the given container (most likely
      * based on the set of active modules for that container).
      * @param container the container to check for enabled providers
-     * @return
      */
     List<IssuesListDefProvider> getEnabledIssuesListDefProviders(Container container);
 
@@ -107,21 +106,25 @@ public interface IssuesListDefService
 
     /**
      * Get the Domain for a specific issue list definition based on the issue list definition name.
+     *
      * @param issueDefName the name of the issue list definition to look for
-     * @param container the container to look in
-     * @param user the user who made the request
+     * @param container    the container to look in
+     * @param user         the user who made the request
+     * @param forUpdate    whether the domain returned should be mutable or not
      * @return Domain
      */
-    Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
+    Domain getDomainFromIssueDefName(String issueDefName, Container container, User user, boolean forUpdate);
 
     /**
      * Get the Domain for a specific issue list definition based on the issue list definition id.
+     *
      * @param issueDefId the issue definition row id
-     * @param container the container to look in
-     * @param user the user who made the request
+     * @param container  the container to look in
+     * @param user       the user who made the request
+     * @param forUpdate  whether the domain returned should be mutable or not
      * @return Domain
      */
-    Domain getDomainFromIssueDefId(int issueDefId, Container container, User user);
+    Domain getDomainFromIssueDefId(int issueDefId, Container container, User user, boolean forUpdate);
 
     /**
      * Register a provider that will add text links to the issue details header link display.
@@ -176,7 +179,6 @@ public interface IssuesListDefService
 
     /**
      * Clears the issue list definition cache
-     * @param container
      */
     void uncache(Container container);
 

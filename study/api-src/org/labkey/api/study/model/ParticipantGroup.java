@@ -99,6 +99,6 @@ public class ParticipantGroup extends AbstractParticipantGroup<String>
     @Override
     public String[] getParticipantIds()
     {
-        return _participantIds.toArray(new String[_participantIds.size()]);
+        return _participantIds.toArray(new String[0]);
     }
 }

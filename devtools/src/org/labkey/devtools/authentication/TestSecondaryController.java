@@ -98,7 +98,7 @@ public class TestSecondaryController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
+    public static class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override
         public void validateCommand(TestSecondaryForm form, Errors errors)
@@ -109,7 +109,7 @@ public class TestSecondaryController extends SpringActionController
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors)
         {
             if (!getUser().isGuest())
-                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
+                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()), false);
 
             PrimaryAuthenticationResult result = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession());
 

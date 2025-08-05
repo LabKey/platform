@@ -25,13 +25,13 @@ public class MenuItem
     private String _url; // the URL on the server side
     private Integer _orderNum; // ordinal for producing the primary sort order of the items
     private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
-    private String _productId = null; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
+    private String _productId; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
 
     private boolean _hasActiveJob; // if there is an active pipeline job associated with this item
 
     private boolean _fromSharedContainer; // if the item comes from the /Shared container
 
-    private Boolean _hidden = false; // if the item should be hidden
+    private Boolean _hidden; // if the item should be hidden
 
     public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer, boolean hidden)
     {

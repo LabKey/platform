@@ -37,10 +37,10 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,7 +139,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             }
             catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
             {
-                LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
+                LOG.warn("Failed in renderToApiResponse() - {} for URL {}", e.getMessage(), getViewContext().getActionURL());
                 throw e;
             }
 
@@ -486,12 +486,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     protected void renderView(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        renderView(model, response.getWriter());
+        renderView(model, HtmlWriter.of(response));
     }
 
-    protected void renderView(ModelBean model, PrintWriter out) throws Exception
+    protected void renderView(ModelBean model, HtmlWriter out) throws Exception
     {
-        throw new IllegalStateException("override renderView");
+        throw new IllegalStateException("Must override one of the renderView() variants!");
     }
 
     public boolean isEmbedded()

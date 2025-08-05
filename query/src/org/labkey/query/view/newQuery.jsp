@@ -32,7 +32,7 @@
         namesAndLabels = form.getSchema().getTableAndQueryNamesAndLabels(false, false);
 %>
 <labkey:errors />
-<% if (namesAndLabels.size() == 0) { %>
+<% if (namesAndLabels.isEmpty()) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
 <labkey:form id="createQueryForm" className="col-md-6 col-lg-5" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">

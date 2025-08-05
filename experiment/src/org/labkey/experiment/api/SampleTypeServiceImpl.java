@@ -30,9 +30,28 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
@@ -118,6 +137,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -250,15 +270,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-
             indexSampleType(sampleType, task);
             indexSampleTypeMaterials(sampleType, task);
-
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
-
 
     private void indexSampleType(ExpSampleType sampleType, SearchService.IndexTask task)
     {
@@ -295,7 +312,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Material m : batch)
             {
                 ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(task, null /* null tableInfo since samples may belong to multiple containers*/);
+                impl.index(task, null, null /* null tableInfo since samples may belong to multiple containers*/);
             }
         });
     }
@@ -596,7 +613,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
                 {
-                    dataset.delete(user);
+                    dataset.delete(user, auditUserComment);
                 }
             }
             else
@@ -605,7 +622,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             Domain d = source.getDomain();
-            d.delete(user);
+            d.delete(user, auditUserComment);
 
             ExperimentServiceImpl.get().deleteDomainObjects(source.getContainer(), source.getLSID());
 
@@ -614,7 +631,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+            addSampleTypeDeletedAuditEvent(user, c, source, auditUserComment);
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
@@ -646,18 +663,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, @Nullable String auditUserComment)
     {
-        addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
+        addSampleTypeAuditEvent(user, c, sampleType, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
-
-        if (txAuditId != null)
-            event.setTransactionId(txAuditId);
 
         if (sampleType != null)
         {
@@ -699,7 +713,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null);
     }
 
     @NotNull
@@ -707,7 +721,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
         throws ExperimentException
     {
         validateSampleTypeName(c, u, name, false);
@@ -880,7 +894,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u);
+                    domain.save(u, changeDetails, calculatedFields);
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
@@ -977,7 +991,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
-    private void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
+    @Override
+    public void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
     {
         if (name == null || StringUtils.isBlank(name))
             throw new ApiUsageException("Sample Type name is required.");
@@ -993,34 +1008,50 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
         }
 
-        // Issue 51321: check reserved sample type name: First
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid sample type name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Sample Type");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     @Override
-    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException errors;
 
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
+        StringBuilder changeDetails = new StringBuilder();
+
+        Map<String, Object> oldProps = new LinkedHashMap<>();
+        Map<String, Object> newProps = new LinkedHashMap<>();
+
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
+        oldProps.put("Name", oldSampleTypeName);
+        newProps.put("Name", newName);
+
         boolean hasNameChange = false;
         if (!oldSampleTypeName.equals(newName))
         {
             validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
+            changeDetails.append("The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.");
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
+        if (StringUtils.isNotBlank(description))
+            oldProps.put("Description", description);
+        if (StringUtils.isNotBlank(newDescription))
+            newProps.put("Description", newDescription);
         if (description == null || !description.equals(newDescription))
-        {
             st.setDescription(newDescription);
-        }
+
+        Map<String, Object> oldProps_ = st.getAuditRecordMap();
+        Map<String, Object> newProps_ = options != null ? options.getAuditRecordMap() : st.getAuditRecordMap() /* no update */;
+        newProps.putAll(newProps_);
+        oldProps.putAll(oldProps_);
 
         boolean hasMetricUnitChanged = false;
 
@@ -1038,14 +1069,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
             String oldAliquotPattern = st.getAliquotNameExpression();
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
-            {
                 st.setAliquotNameExpression(aliquotIdPattern);
-            }
 
             st.setLabelColor(options.getLabelColor());
             String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
             String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
-
             if (!Objects.equals(oldMetricUnit, newMetricUnit))
                 hasMetricUnitChanged = true;
 
@@ -1079,14 +1107,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            String auditComment = null;
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
-                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
+
+            if (options != null && options.getExcludedContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
+            }
+            if (options != null && options.getExcludedDashboardContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
+                oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
+                newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             if (!errors.hasErrors())
             {
@@ -1095,10 +1132,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                if (options != null && options.getExcludedContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
-                if (options != null && options.getExcludedDashboardContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
 
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
@@ -1178,9 +1211,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
-        var tx = getExpSchema().getScope().getCurrentTransaction();
-        if (tx != null)
-            event.setTransactionId(tx.getAuditId());
 
         var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
@@ -1231,7 +1261,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
             if (timelineEventType != null)
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
-            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(c, eventMetadata));
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
         }
 
         return event;
@@ -1240,8 +1270,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, comment);
-        if (getExpSchema().getScope().getCurrentTransaction() != null)
-            event.setTransactionId(getExpSchema().getScope().getCurrentTransaction().getAuditId());
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
         event.setSampleId(sample.getRowId());
@@ -1252,7 +1280,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSampleTypeId(type.getRowId());
         }
         event.setUserComment(userComment);
-        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(metadata));
         return event;
     }
 
@@ -1294,7 +1322,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     max = id;
             }
             catch (NumberFormatException ignored) {
-                ;
             }
         }
 
@@ -1685,7 +1712,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
@@ -1746,7 +1773,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         dialect.appendInClauseSql(sql, sampleIds);
 
-        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order by rowId to reduce deadlock with search indexer
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
@@ -1829,7 +1856,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(samples.size());
@@ -1869,9 +1896,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 // create summary audit entries for the source and target containers
                 String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
-                addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, sourceContainer, sampleType,
                         "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved from project");
-                addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                addSampleTypeAuditEvent(user, targetContainer, sampleType,
                         "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved to project");
 
                 // move the events associated with the samples that have moved
@@ -1899,8 +1926,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                newRecordMap.put(fileUpdateData.fieldName, fileUpdateData.targetFile.getAbsolutePath());
                             });
                         }
-                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, oldRecordMap));
-                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, newRecordMap));
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldRecordMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newRecordMap));
                         AuditLogService.get().addEvent(user, event);
                     }
                 }
@@ -1926,7 +1953,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        moveFile(renameData);
+                        moveFile(renameData, sourceContainer, user, transaction.getAuditId());
                 }
             }, POSTCOMMIT);
 
@@ -2037,8 +2064,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return runCount;
     }
 
+    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName, String fieldName) {}
+
     // return the map of file renames
-    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
+    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
     {
         Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
 
@@ -2062,6 +2091,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return sampleFileRenames;
 
         Map<Container, Boolean> hasFileRoot = new HashMap<>();
+        Map<String, Integer> fileMoveCounts = new HashMap<>();
+        Map<String, SampleFileMoveReference> fileMoveReferences = new HashMap<>();
         for (ExpMaterial sample : samples)
         {
             boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
@@ -2071,10 +2102,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (DomainProperty fileProp : fileDomainProps )
                 {
                     String sourceFileName = (String) sample.getProperty(fileProp);
+                    if (StringUtils.isBlank(sourceFileName))
+                        continue;
                     File updatedFile = FileContentService.get().getMoveTargetFile(sourceFileName, sample.getContainer(), targetContainer);
                     if (updatedFile != null)
                     {
-                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+
+                        if (!fileMoveReferences.containsKey(sourceFileName))
+                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName(), fileProp.getName()));
+                        if (!fileMoveCounts.containsKey(sourceFileName))
+                            fileMoveCounts.put(sourceFileName, 0);
+                        fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
+
+                        File sourceFile = new File(sourceFileName);
+                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), sourceFile, updatedFile);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
                         fieldRenameData.add(renameData);
@@ -2082,18 +2123,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
         }
 
-        // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
-        for (int sampleId: sampleFileRenames.keySet())
+        for (String filePath : fileMoveReferences.keySet())
         {
-            List<FileFieldRenameData> fieldRenameRecords = sampleFileRenames.get(sampleId);
-            for (FileFieldRenameData renameData : fieldRenameRecords)
-                fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
+            SampleFileMoveReference ref = fileMoveReferences.get(filePath);
+            File sourceFile = new File(filePath);
+            if (!ExperimentServiceImpl.get().canMoveFileReference(user, ref.sourceContainer, sourceFile, fileMoveCounts.get(filePath)))
+                throw new ExperimentException("Sample " + ref.sampleName + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
+            // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
+            fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
+            event.setProvidedFileName(sourceFile.getName());
+            event.setFile(ref.targetFile.getName());
+            event.setDirectory(ref.targetFile.getParent());
+            event.setFieldName(ref.fieldName);
+            AuditLogService.get().addEvent(user, event);
         }
 
         return sampleFileRenames;
     }
 
-    private boolean moveFile(FileFieldRenameData renameData)
+    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user, Long txAuditId)
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
@@ -2116,18 +2166,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 LOG.warn(errorMsg + e.getMessage());
             }
         }
-        if (!renameData.sourceFile.renameTo(renameData.targetFile))
-        {
-            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
-                    renameData.sourceFile.getAbsolutePath(),
-                    renameData.targetFile.getAbsolutePath(),
-                    renameData.sampleType.getName(),
-                    renameData.sampleName,
-                    renameData.fieldName));
-            return false;
-        }
 
-        return true;
+        String changeDetail = String.format("sample type '%s' sample '%s'", renameData.sampleType.getName(), renameData.sampleName);
+        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail, txAuditId, renameData.fieldName);
     }
 
     @Override

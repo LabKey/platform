@@ -244,7 +244,7 @@ public class ScriptReorderer
             // If we recognize the current statement then append previously parsed unknown statements to the end
             if (recognized)
             {
-                if (unrecognized.length() > 0)
+                if (!unrecognized.isEmpty())
                 {
                     _endingStatements.add(unrecognized.toString());
                     unrecognized = new StringBuilder();
@@ -254,7 +254,7 @@ public class ScriptReorderer
             {
                 unrecognized.append(comments);
 
-                if (_contents.length() > 0)
+                if (!_contents.isEmpty())
                 {
                     unrecognized.append(_contents.charAt(0));
                     _contents = _contents.substring(1);    // Advance a single character and we'll try again
@@ -266,7 +266,7 @@ public class ScriptReorderer
         }
 
         // Add any remaining unrecognized statements
-        if (unrecognized.length() > 0)
+        if (!unrecognized.isEmpty())
             _endingStatements.add(unrecognized.toString());
 
         // Uncomment this code to list all the detected table names, which can help debug the table/schema parsing patterns

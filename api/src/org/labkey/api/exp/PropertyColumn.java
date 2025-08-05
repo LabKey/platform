@@ -35,6 +35,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
@@ -42,6 +43,7 @@ import org.labkey.api.util.CachingSupplier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 
@@ -182,7 +184,19 @@ public class PropertyColumn extends LookupColumn
         }
 
         if (user != null && ((pd.getLookupSchema() != null && pd.getLookupQuery() != null) || pd.getConceptURI() != null))
-            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, cf));
+        {
+            var lookupCf = cf;
+
+            // Issue 52504: Use proper container filter for lookups
+            if (pd.isLookup())
+            {
+                var _cf = QueryService.get().getContainerFilterForLookups(container, user);
+                if (_cf != null)
+                    lookupCf = _cf;
+            }
+
+            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, lookupCf));
+        }
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));

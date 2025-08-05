@@ -75,7 +75,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
     }
 
-    private class DefaultStudyPickerColumn extends StudyPickerColumn implements DefaultableDisplayColumn
+    private static class DefaultStudyPickerColumn extends StudyPickerColumn implements DefaultableDisplayColumn
     {
         public DefaultStudyPickerColumn(ColumnInfo col)
         {
@@ -95,15 +95,15 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
 
         @Override
-        public Class getJavaType()
+        public Class<?> getJavaType()
         {
             return getColumnInfo().getJavaClass();
         }
     }
 
-    private class DefaultParticipantVisitResolverChooser extends ParticipantVisitResolverChooser implements DefaultableDisplayColumn
+    private static class DefaultParticipantVisitResolverChooser extends ParticipantVisitResolverChooser implements DefaultableDisplayColumn
     {
-        private ColumnInfo _boundColumn;
+        private final ColumnInfo _boundColumn;
 
         public DefaultParticipantVisitResolverChooser(String typeInputName, List<ParticipantVisitResolverType> resolvers, ColumnInfo boundColumn)
         {
@@ -130,15 +130,15 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
 
         @Override
-        public Class getJavaType()
+        public Class<?> getJavaType()
         {
             return _boundColumn.getJavaClass();
         }
     }
 
-    protected class AssayDefaultValueDataRegion extends SetDefaultValuesAction.DefaultValueDataRegion
+    protected static class AssayDefaultValueDataRegion extends SetDefaultValuesAction.DefaultValueDataRegion
     {
-        private AssayProvider _provider;
+        private final AssayProvider _provider;
 
         public AssayDefaultValueDataRegion(AssayProvider provider)
         {
@@ -165,14 +165,14 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     }
 
     @Override
-    public HttpView getView(AssayDomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
+    public HttpView<?> getView(AssayDomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
     {
         _provider = AssayService.get().getProvider(domainIdForm.getProviderName());
         if (_provider == null)
         {
             throw new NotFoundException("Could not find assay provider with name " + domainIdForm.getProviderName());
         }
-        HttpView result = super.getView(domainIdForm, reshow, errors);
+        HttpView<?> result = super.getView(domainIdForm, reshow, errors);
         // Needed for thaw list participant visit resolvers
         result.addClientDependency(ClientDependency.fromPath("sqv"));
         return result;
@@ -225,7 +225,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     @Override
     public void validateCommand(AssayDomainIdForm target, Errors errors)
     {
-        if (ThawListResolverType.NAME.equals(target.getRequest().getParameter("participantVisitResolver")))
+        if (ThawListResolverType.NAME.equals(target.getRequest().getParameter(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME)))
             ThawListResolverType.validationHelper(target, errors);
     }
 }

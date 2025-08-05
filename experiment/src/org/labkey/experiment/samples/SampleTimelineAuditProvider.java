@@ -13,7 +13,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
@@ -129,11 +128,8 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
-        appendValueMapColumns(table);
+        appendValueMapColumns(table, SampleTimelineAuditEvent.EVENT_TYPE);
 
-        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + SampleTimelineAuditEvent.EVENT_TYPE);
-        url.setStrictContainerContextEval(true);
-        table.setDetailsURL(url);
         return table;
     }
 
@@ -177,7 +173,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING, -1));
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
-            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));        // varchar max
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

@@ -33,5 +33,5 @@ package org.radeox.util;
  */
 
 public interface Nameable {
-  public String getName();
+  String getName();
 }

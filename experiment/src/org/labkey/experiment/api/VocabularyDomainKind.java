@@ -107,12 +107,12 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         try
         {
             if (domain.getContainer().hasPermission(user, DesignVocabularyPermission.class))
-                domain.delete(user);
+                domain.delete(user, auditUserComment);
         }
         catch (DomainNotFoundException e)
         {
@@ -144,7 +144,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         String name = StringUtils.trimToNull(domain.getName());
         if (name == null)
@@ -174,6 +174,6 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
             throw new RuntimeException(e);
         }
 
-        return PropertyService.get().getDomain(container, domainURI);
+        return PropertyService.get().getDomain(container, domainURI, forUpdate);
     }
 }

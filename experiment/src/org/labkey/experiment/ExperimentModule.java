@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,10 +28,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -46,6 +48,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -54,7 +57,6 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
-import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -72,6 +74,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
@@ -82,11 +85,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -112,8 +116,6 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.property.StorageNameGenerator;
-import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
@@ -125,18 +127,21 @@ import org.labkey.experiment.api.data.ChildOfMethod;
 import org.labkey.experiment.api.data.LineageCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.data.ParentOfMethod;
+import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.LengthValidator;
 import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
 import org.labkey.experiment.api.property.TextChoiceValidator;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.lineage.ExpLineageServiceImpl;
+import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
@@ -160,6 +165,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI;
@@ -182,7 +188,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.002;
+        return 25.004;
     }
 
     @Nullable
@@ -238,17 +244,17 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
-                "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
+            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
-            AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
-                    "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", true);
+            OptionalFeatureService.get().addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
+                "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", true);
         }
         else
         {
-            AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER, "Allow gap with withCounter and rootSampleCount expression",
-                    "Check this option if gaps in the count generated by withCounter or rootSampleCount name expression are allowed.", true);
+            OptionalFeatureService.get().addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER, "Allow gap with withCounter and rootSampleCount expression",
+                "Check this option if gaps in the count generated by withCounter or rootSampleCount name expression are allowed.", true);
 
         }
 
@@ -356,7 +362,7 @@ public class ExperimentModule extends SpringModule
                 if (data == null)
                     return null;
 
-                return data.createDocument();
+                return data.createIndexDocument(null);
             }
 
             @Override
@@ -556,7 +562,8 @@ public class ExperimentModule extends SpringModule
                 // but it should be before the CoreContainerListener
                 ContainerManager.ContainerListener.Order.Last);
 
-        SystemProperty.registerProperties();
+        if (ModuleLoader.getInstance().shouldInsertData())
+            SystemProperty.registerProperties();
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
@@ -718,7 +725,35 @@ public class ExperimentModule extends SpringModule
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
                 results.put("sampleNullAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount IS NULL").getObject(Long.class));
                 results.put("sampleNegativeAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount < 0").getObject(Long.class));
-                results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit\n").getObject(Long.class));
+                results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit").getObject(Long.class));
+                results.put("sampleTypesWithoutUnitsCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IS NULL").getObject(Long.class));
+
+                results.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
+                        "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
+                results.put("duplicateSpecimenMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
+                        "(SELECT name, cpastype FROM exp.material WHERE cpastype = 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
+                String duplicateCaseInsensitiveSampleNameCountSql = """
+                        SELECT COUNT(*) FROM
+                            (
+                                SELECT 1 AS found
+                                FROM exp.material
+                                WHERE materialsourceid IS NOT NULL
+                                GROUP BY LOWER(name), materialsourceid
+                                HAVING COUNT(*) > 1
+                            ) AS duplicates
+                        """;
+                String duplicateCaseInsensitiveDataNameCountSql = """
+                        SELECT COUNT(*) FROM
+                            (
+                                SELECT 1 AS found
+                                FROM exp.data
+                                WHERE classid IS NOT NULL
+                                GROUP BY LOWER(name), classid
+                                HAVING COUNT(*) > 1
+                            ) AS duplicates
+                        """;
+                results.put("duplicateCaseInsensitiveSampleNameCount", new SqlSelector(schema, duplicateCaseInsensitiveSampleNameCountSql).getObject(Long.class));
+                results.put("duplicateCaseInsensitiveDataNameCount", new SqlSelector(schema, duplicateCaseInsensitiveDataNameCountSql).getObject(Long.class));
 
                 results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
@@ -819,6 +854,23 @@ public class ExperimentModule extends SpringModule
                 return results;
             });
         }
+
+        // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
+        DatabaseMigrationService.get().registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
+        {
+            @Override
+            public void beforeSchema(DbSchema targetSchema)
+            {
+                // Yes, the FK name is misspelled
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+            }
+
+            @Override
+            public void afterSchema(DbSchema targetSchema)
+            {
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+            }
+        });
     }
 
     @Override
@@ -828,7 +880,7 @@ public class ExperimentModule extends SpringModule
         Collection<String> list = new LinkedList<>();
         int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).size();
         if (runGroupCount > 0)
-            list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
+            list.add(StringUtilsLabKey.pluralize(runGroupCount, "Run Group"));
 
         User user = HttpView.currentContext().getUser();
 
@@ -942,6 +994,7 @@ public class ExperimentModule extends SpringModule
     public Set<Class> getIntegrationTests()
     {
         return Set.of(
+            DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
@@ -959,9 +1012,9 @@ public class ExperimentModule extends SpringModule
     }
 
     @Override
-    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
         return list;

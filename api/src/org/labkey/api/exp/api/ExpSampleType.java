@@ -40,7 +40,7 @@ import java.util.function.Function;
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
  * Material version of {@link ExpDataClass}
  */
-public interface ExpSampleType extends ExpObject
+public interface ExpSampleType extends ExpObject, ExpSearchable
 {
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
     String ALIQUOTED_FROM_EXPRESSION = "${AliquotedFrom}";
@@ -55,7 +55,7 @@ public interface ExpSampleType extends ExpObject
     List<? extends ExpMaterial> getSamples(Container c, @Nullable ContainerFilter cf);
 
     /** number of samples in the given container **/
-    public long getSamplesCount(Container c, @Nullable ContainerFilter cf);
+    long getSamplesCount(Container c, @Nullable ContainerFilter cf);
 
     /** Returns the sample in the given container with the given name */
     ExpMaterial getSample(Container c, String name);
@@ -65,6 +65,9 @@ public interface ExpSampleType extends ExpObject
 
     @NotNull
     Domain getDomain();
+
+    @NotNull
+    Domain getDomain(boolean forUpdate);
 
     String getDescription();
 

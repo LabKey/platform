@@ -260,12 +260,11 @@ public class ValidationException extends Exception implements Iterable<Validatio
             if (value == null)
                 continue;
 
-            List<String> messages = null;
+            List<String> messages;
             if (value instanceof List)
                 messages = (List<String>) value;
-            else if (value instanceof Object[])
+            else if (value instanceof Object[] values)
             {
-                Object[] values = (Object[]) value;
                 messages = new ArrayList<>(values.length);
                 for (Object v : values)
                     messages.add(String.valueOf(v));
@@ -391,7 +390,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
             _fieldErrors.put(name, list = new ArrayList<>());
 
         final List<PropertyValidationError> wrapped = list;
-        return new AbstractList<String>()
+        return new AbstractList<>()
         {
             @Override
             public String get(int i)
@@ -447,7 +446,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
      */
     public List<String> getGlobalErrorStrings()
     {
-        return new AbstractList<String>()
+        return new AbstractList<>()
         {
             @Override
             public String get(int i)
@@ -499,13 +498,13 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public boolean hasGlobalErrors()
     {
-        return _globalErrors.size() > 0;
+        return !_globalErrors.isEmpty();
     }
 
     public boolean hasFieldErrors()
     {
         for (List<PropertyValidationError> list : _fieldErrors.values())
-            if (list.size() > 0)
+            if (!list.isEmpty())
                 return true;
 
         return false;
@@ -513,10 +512,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public boolean hasFieldErrors(String name)
     {
-        if (_fieldErrors.containsKey(name) && _fieldErrors.get(name).size() > 0)
-            return true;
-
-        return false;
+        var fieldErrors = _fieldErrors.get(name);
+        return null != fieldErrors && !fieldErrors.isEmpty();
     }
 
     public boolean hasErrors()
@@ -534,7 +531,6 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     /**
      * Returns all errors in this ValidationException.
-     * @return
      */
     public List<ValidationError> getErrors()
     {
@@ -565,9 +561,6 @@ public class ValidationException extends Exception implements Iterable<Validatio
      * field2: field errors
      *
      * </pre>
-     * @param separator
-     * @param fieldErrorsSeparator
-     * @return
      */
     public String toString(String separator, String fieldErrorsSeparator)
     {
@@ -576,7 +569,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
         if (_schemaName != null && _queryName != null)
             msg.append(_schemaName).append(":").append(_queryName).append(":");
 
-        if (msg.length() > 0)
+        if (!msg.isEmpty())
             msg.append(" ");
 
         int prefixLen = msg.length();

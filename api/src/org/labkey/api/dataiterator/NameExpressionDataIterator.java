@@ -35,17 +35,17 @@ import java.util.function.Supplier;
 public class NameExpressionDataIterator extends WrapperDataIterator
 {
     private final DataIteratorContext _context;
-    private Map<String, Pair<NameGenerator, NameGeneratorState>> _nameGeneratorMap = new HashMap<>();
-    private Map<String, String> _newNames = new HashMap<>();
+    private final Map<String, Pair<NameGenerator, NameGeneratorState>> _nameGeneratorMap = new HashMap<>();
+    private final Map<String, String> _newNames = new HashMap<>();
     private final Integer _nameCol;
-    private Integer _expressionCol;
-    private TableInfo _parentTable;
-    private Container _container;
-    private Function<String, Long> _getNonConflictCountFn;
-    private String _counterSeqPrefix;
+    private final Integer _expressionCol;
+    private final TableInfo _parentTable;
+    private final Container _container;
+    private final Function<String, Long> _getNonConflictCountFn;
+    private final String _counterSeqPrefix;
     private boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
-    private List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
-    private Map<String, String> _importAliases = null;
+    private final List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
+    private Map<String, String> _importAliases;
 
     public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, @Nullable Map<String, String> importAliases)
     {
@@ -63,7 +63,6 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         _container = container;
         _getNonConflictCountFn = getNonConflictCountFn;
         _counterSeqPrefix = counterSeqPrefix;
-
     }
 
     public NameExpressionDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
@@ -80,7 +79,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
     MapDataIterator getInput()
     {
-        return (MapDataIterator)_delegate;
+        return (MapDataIterator) _delegate;
     }
 
     private BatchValidationException getErrors()

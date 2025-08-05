@@ -37,10 +37,10 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -51,9 +51,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.text.DecimalFormat;
@@ -148,33 +146,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
     };
 
-    /*
-        Note: DataRegion plus its subclasses and the vast majority of DisplayColumn (and subclasses) have been rewritten
-        to use HtmlWriter, DOM, and builders instead of String-based HTML generation. They also no longer throw
-        IOException. The deprecated renderGridCellContents() variant below that takes both Writer and HtmlWriter is
-        temporary, present only until its overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to
-        override the corresponding non-Writer variant. Once migrated, the deprecated method will be removed and the
-        non-deprecated variant will be made abstract.
-     */
-
-    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
-    {
-        try
-        {
-            renderGridCellContents(ctx, out.unwrap(), out);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // No callers (other than just above)
-    @Deprecated
-    protected void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
-    {
-        throw new IllegalStateException("Must override renderGridCellContents()");
-    }
+    public abstract void renderGridCellContents(RenderContext ctx, HtmlWriter out);
 
     public abstract void renderDetailsCellContents(RenderContext ctx, HtmlWriter out);
 
@@ -362,7 +334,7 @@ public abstract class DisplayColumn extends RenderColumn
     public String getName()
     {
         if (null != getColumnInfo())
-            return getColumnInfo().getPropertyName();
+            return getColumnInfo().getName();
         else
             return super.getName();
     }
@@ -507,7 +479,7 @@ public abstract class DisplayColumn extends RenderColumn
      * Format the display value as text <i>only</i> if there is a text expression or format configured for
      * the display column (which includes any project date and number format settings),
      * otherwise return null.
-     * <b>No html encoding should be performed</b>
+     * <b>No HTML encoding should be performed</b>
      * @see #getFormattedHtml(RenderContext)
      */
     @Nullable

@@ -22,7 +22,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.remoteapi.CommandException;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -86,7 +85,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @BeforeClass
     public static void setupProject()
     {
-        MothershipTest init = (MothershipTest) getCurrentTest();
+        MothershipTest init = getCurrentTest();
 
         init.doSetup();
     }

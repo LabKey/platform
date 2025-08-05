@@ -144,7 +144,7 @@ public class PolynomialCurveFit extends DefaultCurveFit<PolynomialCurveFit.Polyn
         {
             double[] params = curveParameters.getCoefficients();
             double y = 0;
-            double xValue = 0;
+            double xValue;
 
             for (int i=0; i < params.length; i++)
             {

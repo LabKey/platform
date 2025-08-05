@@ -22,7 +22,7 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.ContainerFilter;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.InsertRowsCommand;
-import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.RowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
@@ -43,6 +43,7 @@ import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
@@ -78,6 +79,7 @@ public class StudyTest extends StudyBaseTest
     protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";
+    protected static final String DEMOGRAPHICS_DOMAIN_NAME = "DEM-1";
 
     protected String _tsv = "participantid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\taliasedColumn\n" +
         "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t1.2\ttext\t\taliasedData\n" +
@@ -149,7 +151,7 @@ public class StudyTest extends StudyBaseTest
 
         try
         {
-            SaveRowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
+            RowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check return values for inserted values and user defined and built-in columns in response
             assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().get(0).get("MouseId"));
@@ -168,7 +170,7 @@ public class StudyTest extends StudyBaseTest
         selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
         selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
         selectCmd.setColumns(Collections.singletonList("*"));
-        SelectRowsResponse selectResp = null;
+        SelectRowsResponse selectResp;
         try
         {
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
@@ -190,7 +192,7 @@ public class StudyTest extends StudyBaseTest
 
         try
         {
-            SaveRowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
+            RowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
             assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().get(0).get("MouseId"));
@@ -252,7 +254,7 @@ public class StudyTest extends StudyBaseTest
     protected void emptyParticipantPickerList()
     {
         goToManageParticipantClassificationPage(PROJECT_NAME, STUDY_NAME, SUBJECT_NOUN);
-        while(persistingLists.size()!=0)
+        while(!persistingLists.isEmpty())
         {
             deleteListTest(persistingLists.pop());
         }
@@ -652,7 +654,7 @@ public class StudyTest extends StudyBaseTest
         _extHelper.waitForExtDialog("Define Mouse Group");
         waitForElement(Locators.pageSignal(DataRegionTable.UPDATE_SIGNAL));
         String dataset = getFormElement(Locator.name("infoCombo"));
-        if (dataset.length() > 0)
+        if (!dataset.isEmpty())
         {
             DataRegion(getDriver()).withName("demoDataRegion").waitFor();
         }
@@ -775,7 +777,7 @@ public class StudyTest extends StudyBaseTest
                 clickAndWait(Locator.linkWithText("verifyAssay"));
                 BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
                 _customizeViewsHelper.openCustomizeViewPanel();
-                _customizeViewsHelper.addColumn("QCState", "QC State");
+                _customizeViewsHelper.addColumn("QCState");
                 _customizeViewsHelper.addSort("SampleId", SortDirection.ASC);
                 _customizeViewsHelper.applyCustomView();
                 DataRegionTable table = new DataRegionTable("Dataset", this);
@@ -808,7 +810,7 @@ public class StudyTest extends StudyBaseTest
             new DatasetPropertiesPage(getDriver())
                 .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.addColumn("Bad Name", "Bad Name");
+            _customizeViewsHelper.addColumn("Bad Name");
             _customizeViewsHelper.applyCustomView();
             BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
@@ -816,7 +818,8 @@ public class StudyTest extends StudyBaseTest
             clickButton("Submit");
             assertTextPresent("Updatable Value");
             clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
-            assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
+            Locator loc = Locator.input("quf_Bad Name");
+            assertEquals("Updatable Value", getFormElement(loc));
             setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
             clickButton("Submit");
             assertTextPresent("Updatable Value11");
@@ -1004,7 +1007,7 @@ public class StudyTest extends StudyBaseTest
         selectCmd.setColumns(Collections.singletonList("*"));
         selectCmd.setSorts(Collections.singletonList(new Sort("Date", Sort.Direction.ASCENDING)));
         Connection cn = new Connection(getBaseURL(), getUsername(), PasswordUtil.getPassword());
-        SelectRowsResponse selectResp = null;
+        SelectRowsResponse selectResp;
         try
         {
             selectResp = selectCmd.execute(cn,  "/" +  getProjectName());
@@ -1133,6 +1136,13 @@ public class StudyTest extends StudyBaseTest
         // "Demographics Data" bit needs to be false for the rest of the test
         setDemographicsBit(DEMOGRAPHICS_TITLE, false)
                 .clickViewData();
+
+        String changeDetails = "IsDemographicData: true > false" ;
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
+                "The descriptor of domain DEM-1 was updated.",
+                "", null, null, changeDetails);
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent, Collections.emptyMap());
+        checker().verifyTrue("Domain audit comment not as expected after changing demographic bit", pass);
 
         log("verify ");
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -1292,6 +1302,14 @@ public class StudyTest extends StudyBaseTest
                 .selectVisitDateColumn("DEMdt")
                 .clickApply()
                 .clickSave();
+
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
+                "The column(s) of domain DEM-1 were modified.",
+                "", null, null,  "VisitDateColumnName:  > DEMdt");
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent,
+                Map.of("VisitDay", new AuditLogHelper.DetailedAuditEventRow(null, "VisitDay", null, null, null, null, null, null)));
+        checker().verifyTrue("Domain audit comment not as expected after changing visit date column", pass);
+
         new DatasetPropertiesPage(getDriver())
             .clickViewData();
 

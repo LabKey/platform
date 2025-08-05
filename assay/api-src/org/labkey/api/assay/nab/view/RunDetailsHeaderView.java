@@ -43,6 +43,7 @@ import org.labkey.api.view.NavTree;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: klum
@@ -50,12 +51,12 @@ import java.util.Map;
  */
 public class RunDetailsHeaderView extends AssayHeaderView
 {
-    private ExpRun _run;
-    private Container _container;
+    private final ExpRun _run;
+    private final Container _container;
     private final boolean _showGraphLayoutOptions;
-    private List<DilutionAssayRun.SampleResult> _samples;
-    private Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
-    private User _user;
+    private final List<DilutionAssayRun.SampleResult> _samples;
+    private final Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
+    private final User _user;
 
     public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, ExpRun run, List<DilutionAssayRun.SampleResult> samples, User user)
     {
@@ -245,7 +246,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
 
     private NavTree getDataIdentifiersMenu()
     {
-        String currentIdentifier = StringUtils.defaultString(getViewContext().getActionURL().getParameter(RunDetailOptions.DATA_IDENTIFIER_PARAM), "");
+        String currentIdentifier = Objects.toString(getViewContext().getActionURL().getParameter(RunDetailOptions.DATA_IDENTIFIER_PARAM), "");
         NavTree menu = new NavTree("Data Identifiers");
 
         for (RunDetailOptions.DataIdentifier identifier : RunDetailOptions.DataIdentifier.values())

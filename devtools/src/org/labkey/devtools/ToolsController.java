@@ -10,12 +10,14 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -109,7 +111,7 @@ public class ToolsController extends SpringActionController
             );
         }
 
-        private class GitAttributesView extends HttpView
+        private class GitAttributesView extends HttpView<Object>
         {
             private final String _moduleName;
 
@@ -318,7 +320,7 @@ public class ToolsController extends SpringActionController
             return new JspFinderView(ModuleLoader.getInstance().getModules());
         }
 
-        private class JspFinderView extends HttpView
+        private static class JspFinderView extends HttpView<Object>
         {
             private final Collection<Module> _modules;
 
@@ -420,7 +422,7 @@ public class ToolsController extends SpringActionController
                         Files.walkFileTree(root, new SimpleFileVisitor<>()
                         {
                             @Override
-                            public @NotNull FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs)
+                            public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs)
                             {
                                 String filePath = file.toString();
                                 if (filePath.endsWith(".java"))
@@ -467,25 +469,25 @@ public class ToolsController extends SpringActionController
                         Files.walkFileTree(root, new SimpleFileVisitor<>()
                         {
                             @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs)
                             {
-                            String filePath = file.toString().replaceAll("\\\\", "/");
-                            if (filePath.endsWith(".jsp") && !JSPS_TO_IGNORE.contains(filePath))
-                            {
-                                // Accommodates /org/labkey, /org/scharp, and /com/hphc
-                                int idx = StringUtils.indexOfAny(filePath, "/org/", "/com/");
-
-                                if (-1 != idx)
+                                String filePath = file.toString().replaceAll("\\\\", "/");
+                                if (filePath.endsWith(".jsp") && !JSPS_TO_IGNORE.contains(filePath))
                                 {
-                                    ret.add(filePath.substring(idx));
-                                }
-                                else
-                                {
-                                    out.println(filter("Can't find \"/org/\" or \"/com/\": " + filePath));
-                                }
-                            }
+                                    // Accommodates /org/labkey, /org/scharp, and /com/hphc
+                                    int idx = StringUtils.indexOfAny(filePath, "/org/", "/com/");
 
-                            return FileVisitResult.CONTINUE;
+                                    if (-1 != idx)
+                                    {
+                                        ret.add(filePath.substring(idx));
+                                    }
+                                    else
+                                    {
+                                        out.println(filter("Can't find \"/org/\" or \"/com/\": " + filePath));
+                                    }
+                                }
+
+                                return FileVisitResult.CONTINUE;
                             }
                         });
                     }
@@ -508,7 +510,7 @@ public class ToolsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CheckCrawlerActionsAction extends SimpleViewAction
+    public class CheckCrawlerActionsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws IOException
@@ -623,7 +625,7 @@ public class ToolsController extends SpringActionController
             root.addChild("Check Crawler Actions");
         }
 
-        private class ControllerActionId implements Comparable<ControllerActionId>
+        private static class ControllerActionId implements Comparable<ControllerActionId>
         {
             private final String _controller;
             private final String _action;
@@ -670,6 +672,30 @@ public class ToolsController extends SpringActionController
             {
                 return toString().compareTo(o.toString());
             }
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class PostgreSqlOnlyModulesThatHaveSqlServerScriptsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            List<String> names = ModuleLoader.getInstance().getModules().stream()
+                .filter(m -> !m.getSupportedDatabasesSet().contains(SupportedDatabase.mssql))
+                .filter(m -> !StringUtils.isBlank(m.getSourcePath()))
+                .filter(m -> new File(m.getSourcePath(), "resources/schemas/dbscripts/sqlserver").exists())
+                .map(Module::getName)
+                .toList();
+
+            return new HtmlView(HtmlString.of(names.toString()));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("PostgreSQL-Only Modules That Still Have SQL Server Scripts");
         }
     }
 }

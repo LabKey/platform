@@ -15,17 +15,12 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static org.labkey.api.settings.AppPropsImpl.OPTIONAL_FEATURE_PREFIX;
+import java.util.Collection;
 
 /**
  * Manages the optional features that can be enabled or disabled within a given deployment, and their current state.
@@ -34,15 +29,35 @@ import static org.labkey.api.settings.AppPropsImpl.OPTIONAL_FEATURE_PREFIX;
  */
 public interface OptionalFeatureService
 {
-    static OptionalFeatureService get()
+    static @NotNull OptionalFeatureService get()
     {
-        return ServiceRegistry.get().getService(OptionalFeatureService.class);
+        OptionalFeatureService svc = ServiceRegistry.get().getService(OptionalFeatureService.class);
+        if (null == svc)
+            throw new IllegalStateException("OptionalFeatureService not found");
+        return svc;
     }
 
     static void setInstance(OptionalFeatureService impl)
     {
         ServiceRegistry.get().registerService(OptionalFeatureService.class, impl);
     }
+
+    /**
+     * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
+     *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
+     */
+    default void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
+    {
+        addFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental));
+    }
+
+    void addFeatureFlag(OptionalFeatureFlag optionalFeatureFlag);
+
+    // Return all optional features, regardless of type
+    Collection<OptionalFeatureFlag> getOptionalFeatureFlags();
+
+    // Return all optional features having the specified type
+    Collection<OptionalFeatureFlag> getOptionalFeatureFlags(FeatureType type);
 
     void addFeatureListener(String feature, OptionalFeatureListener listener);
 
@@ -57,10 +72,10 @@ public interface OptionalFeatureService
         void featureChanged(String feature, boolean enabled);
     }
 
-    // FeatureType is an optional feature flag property that determines the admin page on which the feature appears.
-    // The property is used at run-time registration only; it is not persisted. All optional properties are persisted
-    // and retrieved the same way, and can be populated using the "ExperimentalFeature" startup property prefix. This
-    // means features can be switched to a different FeatureType at any time.
+    // FeatureType determines the admin page on which an optional feature appears. The property is used at run-time
+    // registration only; it is not persisted. All optional properties are persisted and retrieved the same way, and can
+    // be populated using the "ExperimentalFeature" startup property prefix. This means features can be switched to a
+    // different FeatureType at any time.
     enum FeatureType
     {
         Deprecated
@@ -106,62 +121,5 @@ public interface OptionalFeatureService
         };
 
         public abstract HtmlString getAdminGuidance();
-    }
-
-    class OptionalFeatureServiceImpl implements OptionalFeatureService
-    {
-        private Map<String, List<OptionalFeatureListener>> _listeners;
-
-        public OptionalFeatureServiceImpl()
-        {
-        }
-
-        @Override
-        public void addFeatureListener(String feature, OptionalFeatureListener listener)
-        {
-            if (_listeners == null)
-                _listeners = Collections.synchronizedMap(new HashMap<>());
-
-            if (!_listeners.containsKey(feature))
-                _listeners.put(feature, new CopyOnWriteArrayList<>());
-
-            _listeners.get(feature).add(listener);
-        }
-
-        @Override
-        public boolean isFeatureEnabled(String feature)
-        {
-            return AppProps.getInstance().isOptionalFeatureEnabled(feature);
-        }
-
-        @Override
-        public void removeFeatureListener(String feature, OptionalFeatureListener listener)
-        {
-            if (_listeners != null && _listeners.containsKey(feature))
-            {
-                _listeners.get(feature).remove(listener);
-            }
-        }
-
-        @Override
-        public void setFeatureEnabled(String feature, boolean enabled, User user)
-        {
-            WriteableAppProps props = AppProps.getWriteableInstance();
-            setFeatureEnabled(feature, enabled, props);
-            props.save(user);
-        }
-
-        private void setFeatureEnabled(String feature, boolean enabled, WriteableAppProps props)
-        {
-            props.storeBooleanValue(OPTIONAL_FEATURE_PREFIX + feature, enabled);
-
-            if (_listeners != null && _listeners.containsKey(feature))
-            {
-                for (OptionalFeatureListener listener : _listeners.get(feature))
-                {
-                    listener.featureChanged(feature, enabled);
-                }
-            }
-        }
     }
 }

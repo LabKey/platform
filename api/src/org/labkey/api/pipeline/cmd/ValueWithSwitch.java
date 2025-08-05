@@ -26,7 +26,7 @@ public class ValueWithSwitch extends AbstractValueToNamedSwitch
     @Override
     public List<String> toArgs(String value)
     {
-        if (value != null && value.length() > 0)
+        if (value != null && !value.isEmpty())
             return getSwitchFormat().format(getSwitchName(), value);
 
         return Collections.emptyList();

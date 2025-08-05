@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -43,6 +44,7 @@ public interface WebdavResource extends Resource
 
     // TODO move more functionality into interface and remove this method
     @Nullable File getFile();
+
     default @Nullable java.nio.file.Path getNioPath()
     {
         File file = getFile();
@@ -214,7 +216,7 @@ public interface WebdavResource extends Resource
     /**
      * required for fast permission filtering by SearchService, only non-indexable resources may return null
      */
-    String getContainerId();
+    GUID getContainerId();
 
     /**
      * For a collection, this indicates whether this resource should be scanned for children to index

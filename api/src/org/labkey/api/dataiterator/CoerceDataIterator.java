@@ -68,7 +68,7 @@ public class CoerceDataIterator extends SimpleTranslator
                 else if (to.getFk() instanceof MultiValuedForeignKey)
                     addColumn(to.getName(), i); // pass-through multi-value columns -- converting will stringify a collection
                 else
-                    addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
+                    addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.Error, true);
             }
             else
             {
@@ -89,8 +89,9 @@ public class CoerceDataIterator extends SimpleTranslator
         }
     }
 
+    // Ignore conversion exceptions during coercion and just pass back the original value.
     @Override
-    protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
+    protected Object handleConversionException(String fieldName, Object value, JdbcType target, Exception x)
     {
         return value;
     }

@@ -87,7 +87,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
     private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
 
-    private Container _container;
+    private final Container _container;
     private Set<FieldKey> _columns;
     private Domain _domain;
 
@@ -280,7 +280,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return _container.hasPermission(user, acl);
     }

@@ -52,6 +52,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -70,7 +71,6 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -210,6 +210,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -258,6 +259,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -982,7 +984,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         task.addRunnable(() -> {
             for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
             {
-                sampleType.index(task);
+                sampleType.index(task, SearchService.PRIORITY.bulk);
             }
         }, SearchService.PRIORITY.bulk);
 
@@ -991,7 +993,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         task.addRunnable(() -> {
             for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
             {
-                dataClass.index(task);
+                dataClass.index(task, SearchService.PRIORITY.bulk);
             }
         }, SearchService.PRIORITY.bulk);
 
@@ -1040,11 +1042,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            var doc = expMaterial.createIndexDocument(null);
-            if (doc != null)
-            {
-                task.addResource(doc, SearchService.PRIORITY.bulk);
-            }
+            expMaterial.index(task, SearchService.PRIORITY.bulk);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
@@ -1081,7 +1079,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Data> data = selector.getArrayList(Data.class);
         data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
-            task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+            expData.index(task, SearchService.PRIORITY.bulk);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
@@ -1221,18 +1219,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-
-            Domain d = dataClass.getDomain();
-            if (d == null)
-                return; // Domain may be null if the DataClass has been deleted
-
-            TableInfo table = dataClass.getTinfo();
-            if (table == null)
-                return;
+            if (dataClass.getContainer() == null)
+                return; // Issue 53253: container may be deleted
 
             indexDataClass(dataClass, task);
             indexDataClassData(dataClass, task);
-
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
@@ -1257,7 +1248,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         scope.executeWithRetryReadOnly(tx ->
             new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
                     task.addRunnable(() -> batch.forEach(data ->
-                        new ExpDataImpl(data).index(task, null)),
+                        new ExpDataImpl(data).index(task)),
                     SearchService.PRIORITY.bulk)
         ));
     }
@@ -1636,18 +1627,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
-        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
         String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
         return new Pair<>(lsid, dbSeqStr);
-    }
-
-    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
-    {
-        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
-        if (!container.isProject() && container.getProject() != null)
-            projectContainer = container.getProject();
-
-        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -1843,13 +1825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<? extends ExpData> getExpDatas(ExpDataClass dataClass)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1861,7 +1837,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
-
 
     public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
     {
@@ -1875,13 +1850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, String name)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -1899,13 +1868,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, int rowId)
     {
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
-
         TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -4510,7 +4473,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, String auditUserComment, int... selectedProtocolIds) throws ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, @Nullable String auditUserComment, int... selectedProtocolIds) throws ExperimentException
     {
         if (selectedProtocolIds.length == 0)
             return;
@@ -4535,6 +4498,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            // To increase the chances of getting through this w/o a deadlock, lets lock tables now that we plan on deleting
+            // There are other tables/rows we could lock, but this is a start
+            // CONSIDER similar behavior for Domain.delete()
+            _lockDomainsAndProvisionedTables(assayService, expProtocols);
+
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -4552,7 +4520,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
-                        dataset.delete(user);
+                        dataset.delete(user, auditUserComment);
                     }
                 }
                 else
@@ -4636,6 +4604,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
+    private static void _lockDomainsAndProvisionedTables(AssayService assayService, List<ExpProtocolImpl> expProtocols)
+    {
+        if (null == assayService)
+            return;
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        for (var expProtocol : expProtocols)
+        {
+            AssayProvider provider = assayService.getProvider(expProtocol);
+            if (provider != null)
+            {
+                for (var domain : provider.getDomains(expProtocol))
+                {
+                    domain.lockForDelete(expSchema);
+                }
+            }
+        }
+    }
+
     private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
     {
         OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c);
@@ -4666,14 +4652,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
     {
         List<Integer> allowedIds = new ArrayList<>(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
-            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName(), "ContainerPath", dataObject.getContainer().getPath());
+            Map<String, Object> rowMap = new HashMap<>();
+            rowMap.put("RowId", dataObject.getRowId());
+            if (dataObject.getContainer().hasPermission(user, ReadPermission.class))
+                rowMap.put("ContainerPath", dataObject.getContainer().getPath());
             if (allowedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else
@@ -4699,6 +4688,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpSampleType sampleType = allMaterials.get(0).getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+            if (tableInfo == null)
+                return associatedDatasets;
 
             // collect up columns of name 'dataset<N>'
             Set<String> linkedColumnNames = new LinkedHashSet<>();
@@ -5676,6 +5667,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getRunsUsingDataIds(ids);
     }
 
+    @Override
     public List<ExpRunImpl> getRunsUsingDataIds(List<Integer> ids)
     {
         SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
@@ -7220,16 +7212,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             List<List<?>> expObjectParams = params.stream().map(
                     runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
             ).collect(toList());
-            StringBuilder expObjectSql = new StringBuilder("INSERT INTO ").append(OntologyManager.getTinfoObject())
-                    .append(" (ObjectUri, Container) VALUES (?, ?)");
-            Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
+            String expObjectSql = "INSERT INTO " + OntologyManager.getTinfoObject() +
+                    " (ObjectUri, Container) VALUES (?, ?)";
+            Table.batchExecute(getExpSchema(), expObjectSql, expObjectParams);
 
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(getTinfoExperimentRun().toString()).
-                    append(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
-                            "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '").
-                    append(c.getId()).append("')");
+            String sql = "INSERT INTO " + getTinfoExperimentRun().toString() +
+                    " (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
+                    "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '" +
+                    c.getId() + "')";
 
-            Table.batchExecute(getExpSchema(), sql.toString(), params);
+            Table.batchExecute(getExpSchema(), sql, params);
 
             List<String> runLsids = params.stream().map(p -> (String) p.get(0)).toList();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.LSID.name()), runLsids, IN);
@@ -7939,7 +7931,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (kind != null)
                 domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
-            domain.save(u);
+            domain.save(u, options == null ? null : options.getAuditRecordMap(), calculatedFields);
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
@@ -7966,28 +7958,44 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dc,
                                         @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
-                                        GWTDomain<? extends GWTPropertyDescriptor> update)
+                                        GWTDomain<? extends GWTPropertyDescriptor> update,
+                                        @Nullable String auditUserComment)
     {
+        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+
+        Map<String, Object> oldProps = dataClass.getAuditRecordMap();
+        Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
+
         ValidationException errors;
+        StringBuilder changeDetails = new StringBuilder();
 
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
         String oldDataClassName = dataClass.getName();
         String newName = null;
+
+        oldProps.put("Name", oldDataClassName);
+        newProps.put("Name", oldDataClassName); // to be updated by options
+        oldProps.put("Description", dataClass.getDescription());
+        newProps.put("Description", dataClass.getDescription()); // to be updated by options
+
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
             newName = StringUtils.trimToNull(options.getName());
+            newProps.put("Name", newName);
             if (!oldDataClassName.equals(newName))
             {
                 validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
                 hasNameChange = true;
                 dataClass.setName(newName);
+                changeDetails.append("The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.");
             }
+            newProps.put("Description", options.getDescription());
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
@@ -8018,23 +8026,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             LOG.debug("Saving data class " +  dataClass.getName());
             dataClass.save(u);
 
-            String auditComment = null;
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
-                auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
+
+            if (options != null && options.getExcludedContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
-
-            if (options != null && options.getExcludedContainerIds() != null)
-                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
 
             if (!errors.hasErrors())
             {
@@ -8052,7 +8060,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
+    @Override
+    public void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting)
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
@@ -8069,9 +8078,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
         }
 
-        // Issue 51321: check reserved data class name: First, All
-        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("Invalid DataClass name '" + name + "'. '" + name + "' is a reserved name.");
+        String reservedError = DomainUtil.validateReservedName(name, "Data Class");
+        if (reservedError != null)
+            throw new ApiUsageException(reservedError);
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
@@ -8860,12 +8869,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    @NotNull
+    public Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
     {
-        if (excludedContainerIds == null)
-            return;
-
         Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
+
+        if (excludedContainerIds == null)
+            return new Pair<>(previousExclusions, null);
+
         Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
 
         Set<String> toAdd = new HashSet<>(updatedExclusions);
@@ -8891,6 +8902,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
             }
         }
+
+        return new Pair<>(new TreeSet<>(previousExclusions), new TreeSet<>(updatedExclusions));
     }
 
     @Override
@@ -9512,7 +9525,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(dataObjects.size());
@@ -9592,7 +9605,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return updateCounts;
     }
 
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
+    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
@@ -9747,7 +9760,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException
     {
         if (assayRuns.isEmpty())
             throw new IllegalArgumentException("No assayRuns provided to move operation.");
@@ -9763,7 +9776,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && transaction.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(assayRuns.size());
@@ -9802,7 +9815,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                        moveFile(renameData);
+                        moveFile(renameData, container, user, transaction.getAuditId());
                 }
             }, POSTCOMMIT);
 
@@ -9812,7 +9825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return assayMoveData.counts();
     }
 
-    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user, Long txAuditId)
     {
         String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
         File targetFile = renameData.targetFile();
@@ -9832,18 +9845,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return false;
             }
         }
-        if (!sourceFile.renameTo(targetFile))
-        {
-            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' assay run '%s' (field: '%s') failed.",
-                    sourceFile.getAbsolutePath(),
-                    targetFile.getAbsolutePath(),
-                    assayName,
-                    runName,
-                    fieldName));
-            return false;
-        }
 
-        return true;
+
+        String changeDetail = String.format("assay '%s' run '%s'", assayName, runName);
+        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail, txAuditId, fieldName);
     }
 
     @Override
@@ -10019,6 +10024,72 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return type.isText() || type.isInteger();
     }
 
+    /**
+     *
+     * Move file (post-commit) after moving sample/assay data
+     */
+    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment, Long txAuditId, String fieldName)
+    {
+        if (!sourceFile.exists())
+            return false;
+
+        // if not otherwise referenced, move the file. Otherwise, copy the file
+        boolean isMove = getFileReferenceCount(user, sourceFileContainer, sourceFile) == 0; // source record already moved to target folder
+        FileSystemAuditProvider.FileSystemAuditEvent event;
+        if (isMove)
+        {
+            boolean success = sourceFile.renameTo(targetFile);
+            if (!success)
+            {
+                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
+                return false;
+            }
+
+            event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File moved to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+        }
+        else
+        {
+            try
+            {
+                Files.copy(sourceFile.toPath(), targetFile.toPath());
+                event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File copied to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+            }
+            catch (IOException e)
+            {
+                LOG.warn(String.format("Copy of '%s' to '%s' failed for " + actionComment, sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
+                return false;
+            }
+        }
+        if (txAuditId != null && event.getTransactionId() == null)
+            event.setTransactionId(txAuditId);
+        event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
+        event.setFile(targetFile.getName());
+        event.setProvidedFileName(sourceFile.getName());
+        event.setResourcePath(sourceFile.getAbsolutePath());
+        if (!"datafileurl".equals(fieldName)) // don't want to show this as a field name
+            event.setFieldName(fieldName);
+
+        AuditLogService.get().addEvent(user, event);
+        return true;
+    }
+
+    public long getFileReferenceCount(User user, Container container, File file)
+    {
+        if (!container.hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You don't have the required permission to perform this action");
+
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+        SQLFragment unionSql = fileListener.listFilesQuery(true, file.getAbsolutePath());
+
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+    }
+
+    @Override
+    public boolean canMoveFileReference(User user, Container container, File file, int moveCount)
+    {
+        return getFileReferenceCount(user, container, file) <= moveCount;
+    }
+
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
     {
         if (container == null)
@@ -10141,6 +10212,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
@@ -10212,7 +10284,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
             assertEquals(sampleIn, materialRunInput.getMaterial());
             assertEquals("Sample Goo", materialRunInput.getRole());
-            assertEquals(materialRunInput.getLSIDNamespacePrefix(), MaterialInput.NAMESPACE);
+            assertEquals(MaterialInput.NAMESPACE, materialRunInput.getLSIDNamespacePrefix());
             assertTrue(materialRunInput.getLSID().contains(":MaterialInput:" + sampleIn.getRowId() + "." + pa.getRowId()));
 
             ExpMaterialRunInputImpl x = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());
@@ -10304,6 +10376,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class LineageQueryTestCase extends Assert
     {
         TempTableTracker tt;
@@ -10331,7 +10404,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         static public final int AZ = startId+9;
         static public final int Z21 = startId+10;
 
-        static edge e(int a,int b) {return new edge(a,b);};
+        static edge e(int a,int b) {return new edge(a,b);}
+
         static public final List<edge> edges = List.of(
                 e(Q,QQ),
                 e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),
@@ -10501,6 +10575,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class ParseInputOutputAliasTestCase extends Assert
     {
         @Test

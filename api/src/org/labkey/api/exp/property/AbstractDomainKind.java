@@ -108,13 +108,13 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         return null;
     }
 
     @Override
-    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable T getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
         return null;
     }
@@ -123,13 +123,13 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable T options, Container container, User user, boolean includeWarnings)
+                                            @Nullable T options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
     }
 

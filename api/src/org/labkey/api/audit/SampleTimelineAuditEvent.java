@@ -11,12 +11,15 @@ import org.labkey.api.query.QueryService;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 {
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
+
+    public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of("AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit");
 
     public enum SampleTimelineEventType
     {
@@ -89,11 +92,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private String _inventoryUpdateType;
 
     /** Important for reflection-based instantiation */
-    public SampleTimelineAuditEvent() {}
+    public SampleTimelineAuditEvent()
+    {
+        super();
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+    }
 
     public SampleTimelineAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
+        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
     }
 
     public String getSampleLsid()
@@ -196,7 +204,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 
     /**
      * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
-     * audit log timeline event even if the DataState row is later deleted.
+     * audit log timeline event even if the DataState row is later deleted.  Also, remove the aliquot rollup calculated
+     * fields from the data.
      */
     @Override
     public void setOldRecordMap(String oldRecordMap, Container container)
@@ -204,11 +213,12 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         if (oldRecordMap != null)
         {
             Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(oldRecordMap));
+            EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
             String label = getStatusLabel(row, container);
             if (label != null)
             {
                 row.put("samplestatelabel", label);
-                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
+                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
             }
         }
         super.setOldRecordMap(oldRecordMap);
@@ -216,7 +226,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 
     /**
      * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
-     * audit log timeline event even if the DataState row is later deleted.
+     * audit log timeline event even if the DataState row is later deleted. Also, remove the aliquot rollup calculated
+     * fields from the data.
      */
     @Override
     public void setNewRecordMap(String newRecordMap, Container container)
@@ -224,12 +235,11 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         if (newRecordMap != null)
         {
             Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(newRecordMap));
+            EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
             String label = getStatusLabel(row, container);
             if (label != null)
-            {
                 row.put("samplestatelabel", label);
-                newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
-            }
+            newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
         }
         super.setNewRecordMap(newRecordMap, container);
     }

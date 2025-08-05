@@ -45,7 +45,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 
     public StudyPickerColumn(ColumnInfo col)
     {
-        this(col, "targetStudy");
+        this(col, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
     }
 
     public StudyPickerColumn(ColumnInfo col, String inputName)

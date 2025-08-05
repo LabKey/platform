@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -39,8 +40,10 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -101,7 +104,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -126,7 +128,8 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    private TableInfo _queryTable = null;
+    private final TableInfo _queryTable;
+
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
@@ -160,7 +163,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
@@ -202,7 +205,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
             Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
-            if (row != null)
+            if (row != null && !row.isEmpty())
             {
                 result.put(key.getKey(), row);
                 if (verifyNoCrossFolderData)
@@ -262,8 +265,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     * if QUS want to use something other than PKs to select existing rows for merge it can override this method
-     * Used only for generating  ExistingRecordDataIterator at the moment
+     * If QUS wants to use something other than PKs to select existing rows for merge, it can override this method.
+     * Used only for generating ExistingRecordDataIterator at the moment.
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
     {
@@ -296,7 +299,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * Implementation to use insertRows() while we migrate to using DIB for all code paths
      * <p>
-     * DataIterator should/must use same error collection as passed in
+     * DataIterator should/must use the same error collection as passed in
      */
     @Deprecated
     protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
@@ -534,7 +537,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO optimize ArrayListMap?
         Set<String> colNames;
 
-        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
         {
             colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
         }
@@ -547,7 +550,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         preImportDIBValidation(null, colNames);
-        return MapDataIterator.of(colNames, rows, debugName);
+
+        List<Map<String, Object>> convertedRows = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++)
+        {
+            Map<String, Object> row = rows.get(i);
+            row = coerceTypes(row);
+            convertedRows.add(row);
+        }
+        return MapDataIterator.of(colNames, convertedRows, debugName);
     }
 
 
@@ -705,7 +716,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
-                    value = col.getConvertFn().apply(value);
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()) && value instanceof String strVal)
+                        value = ExpDataFileConverter.convert(strVal);
+                    else
+                        value = col.getConvertFn().apply(value);
+                }
+                catch (ConvertHelper.FileConversionException e)
+                {
+                    throw e;
                 }
                 catch (ConversionException e)
                 {
@@ -1004,30 +1022,38 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
+        String auditMessageFormat = "Saved file '%s' for field '%s' in folder %s.";
         FileLike file = null;
         try
         {
             FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
-            if (value instanceof MultipartFile)
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(container, null);
+            if (value instanceof MultipartFile multipartFile)
             {
                 // Once we've found one, write it to disk and replace the row's value with just the File reference to it
-                MultipartFile multipartFile = (MultipartFile)value;
                 if (multipartFile.isEmpty())
                 {
                     throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
                 }
-                file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
-                file = checkFileUnderRoot(container, file);
+                file = FileUtil.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
+                checkFileUnderRoot(container, file);
                 multipartFile.transferTo(toFileForWrite(file));
+                event.setComment(String.format(auditMessageFormat, multipartFile.getOriginalFilename(), name, container.getPath()));
+                event.setProvidedFileName(multipartFile.getOriginalFilename());
             }
-            else if (value instanceof SpringAttachmentFile)
+            else if (value instanceof SpringAttachmentFile saf)
             {
-                SpringAttachmentFile saf = (SpringAttachmentFile)value;
-                file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-                file = checkFileUnderRoot(container, file);
+                file = FileUtil.findUniqueFileName(saf.getFilename(), dir);
+                checkFileUnderRoot(container, file);
                 saf.saveTo(file);
+                event.setComment(String.format(auditMessageFormat, saf.getFilename(), name, container.getPath()));
+                event.setProvidedFileName(saf.getFilename());
             }
+            event.setFile(file.getName());
+            event.setFieldName(name);
+            event.setDirectory(file.getParent().toURI().getPath());
+            AuditLogService.get().addEvent(user, event);
         }
         catch (IOException | ExperimentException e)
         {
@@ -1223,7 +1249,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         void validateDefaultData(List<Map<String,Object>> rows)
         {
-            assertEquals(rows.size(), 3);
+            assertEquals(3, rows.size());
 
             assertEquals(0, rows.get(0).get("pk"));
             assertEquals(1, rows.get(1).get("pk"));
@@ -1246,7 +1272,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
-            assert(getRows().size()==0);
+            assert(getRows().isEmpty());
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             BatchValidationException errors = new BatchValidationException();
             var rows = qus.insertRows(user, c, getTestData().load(), errors, null, null);
@@ -1276,7 +1302,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
-            assert(getRows().size()==0);
+            assert(getRows().isEmpty());
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             BatchValidationException errors = new BatchValidationException();
             var count = qus.importRows(user, c, getTestData(), errors, null, null);
@@ -1325,7 +1351,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
             }
             assertFalse("mergeRows error(s): " + errors.getMessage(), errors.hasErrors());
-            assertEquals(count,2);
+            assertEquals(2, count);
             var rows = getRows();
             // test existing row value is updated
             assertEquals("TWO", rows.get(2).get("s"));
@@ -1337,7 +1363,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
             // merge should fail if duplicate keys are provided
             errors = new BatchValidationException();
-            mergeRows = new ArrayList<Map<String,Object>>();
+            mergeRows = new ArrayList<>();
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
             qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
@@ -1367,7 +1393,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setInsertOption(InsertOption.UPDATE);
             var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertFalse(context.getErrors().hasErrors());
-            assertEquals(count,1);
+            assertEquals(1, count);
             var rows = getRows();
             // test existing row value is updated
             assertEquals("TWO-UP", rows.get(2).get("s"));
@@ -1375,14 +1401,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             assertEquals(2, rows.get(2).get("i"));
 
             // update should fail if a new record is provided
-            updateRows = new ArrayList<Map<String,Object>>();
+            updateRows = new ArrayList<>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
-            count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
 
             // Issue 52728: update should fail if duplicate key is provide
-            updateRows = new ArrayList<Map<String,Object>>();
+            updateRows = new ArrayList<>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
 
@@ -1416,7 +1442,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             if (null == ListService.get())
                 return;
-            assert(getRows().size()==0);
+            assert(getRows().isEmpty());
             INSERT();
 
             User user = TestContext.get().getUser();
@@ -1432,7 +1458,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setInsertOption(InsertOption.REPLACE);
             var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), context, null);
             assertFalse(context.getErrors().hasErrors());
-            assertEquals(count,2);
+            assertEquals(2, count);
             var rows = getRows();
             // test existing row value is updated
             assertEquals("TWO", rows.get(2).get("s"));

@@ -63,13 +63,13 @@ import java.util.Map;
 
 public class ParamParserImpl implements ParamParser
 {
-    private static Logger _log = LogManager.getLogger(ParamParserImpl.class);
+    private static final Logger _log = LogManager.getLogger(ParamParserImpl.class);
 
-    private static String TAG_BIOML = "bioml";
-    private static String TAG_NOTE = "note";
-    private static String ATTR_LABEL = "label";
-    private static String ATTR_TYPE = "type";
-    private static String VAL_INPUT = "input";
+    private static final String TAG_BIOML = "bioml";
+    private static final String TAG_NOTE = "note";
+    private static final String ATTR_LABEL = "label";
+    private static final String ATTR_TYPE = "type";
+    private static final String VAL_INPUT = "input";
 
     private Document _doc;
     private Validator _validator;
@@ -169,9 +169,9 @@ public class ParamParserImpl implements ParamParser
     @Override
     public Error[] getErrors()
     {
-        if (_errors == null || _errors.size() == 0)
+        if (_errors == null || _errors.isEmpty())
             return null;
-        return _errors.toArray(new ErrorImpl[_errors.size()]);
+        return _errors.toArray(new ErrorImpl[0]);
     }
 
     @Override
@@ -227,7 +227,7 @@ public class ParamParserImpl implements ParamParser
             }
 
             String type = elNote.getAttribute(ATTR_TYPE);
-            if (type == null || type.length() == 0 || "description".equals(type))
+            if (type == null || type.isEmpty() || "description".equals(type))
                 continue;
 
             if (!VAL_INPUT.equals(type))
@@ -332,7 +332,7 @@ public class ParamParserImpl implements ParamParser
                 names.add(elNote.getAttribute(ATTR_LABEL));
             }
         }
-        return names.toArray(new String[names.size()]);
+        return names.toArray(new String[0]);
     }
 
     @Override
@@ -369,7 +369,7 @@ public class ParamParserImpl implements ParamParser
                 "<bioml>\n" +
                 "</bioml>";
         parse(new ByteArrayInputStream(xmlEmpty.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
-        String[] keys = params.keySet().toArray(new String[params.size()]);
+        String[] keys = params.keySet().toArray(new String[0]);
         Arrays.sort(keys);
         for (String key : keys)
             setInputParameter(key, params.get(key));

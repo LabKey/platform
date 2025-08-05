@@ -36,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
  */
 
 public class MinFunction implements Function {
-  private static Logger log = LogManager.getLogger(MinFunction.class);
+  private static final Logger log = LogManager.getLogger(MinFunction.class);
 
 
   @Override

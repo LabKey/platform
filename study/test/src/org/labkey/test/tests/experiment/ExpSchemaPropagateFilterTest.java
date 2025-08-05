@@ -74,7 +74,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ExpSchemaPropagateFilterTest init = (ExpSchemaPropagateFilterTest) getCurrentTest();
+        ExpSchemaPropagateFilterTest init = getCurrentTest();
 
         init.doSetup();
     }
@@ -231,22 +231,21 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 
     private void createAssays()
     {
-
         File assayFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT + ".xar.xml");
         File assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT +".tsv");
-        createAssayAndPopulate(null, ASSAY_NAME_PARENT, assayFile, Map.of("name", ASSAY_RUN_PARENT), assayRunFile);
+        createAssayAndPopulate(null, ASSAY_NAME_PARENT, assayFile, Map.of("Name", ASSAY_RUN_PARENT), assayRunFile);
 
         // Re-import the assay.
         assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_PARENT +"_Reimport.tsv");
-        reImportAssayRun(null, ASSAY_NAME_PARENT, ASSAY_RUN_PARENT, Map.of("name", ASSAY_REIMPORT_RUN_PARENT), assayRunFile);
+        reImportAssayRun(null, ASSAY_NAME_PARENT, ASSAY_RUN_PARENT, Map.of("Name", ASSAY_REIMPORT_RUN_PARENT), assayRunFile);
 
         assayFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_SUBFOLDER + ".xar.xml");
         assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_SUBFOLDER + ".tsv");
-        createAssayAndPopulate(SUB_FOLDER_A, ASSAY_NAME_SUBFOLDER, assayFile, Map.of("name", ASSAY_RUN_SUBFOLDER), assayRunFile);
+        createAssayAndPopulate(SUB_FOLDER_A, ASSAY_NAME_SUBFOLDER, assayFile, Map.of("Name", ASSAY_RUN_SUBFOLDER), assayRunFile);
 
         // Re-import the assay.
         assayRunFile = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME_SUBFOLDER +"_Reimport.tsv");
-        reImportAssayRun(SUB_FOLDER_A, ASSAY_NAME_SUBFOLDER, ASSAY_RUN_SUBFOLDER, Map.of("name", ASSAY_REIMPORT_RUN_SUBFOLDER), assayRunFile);
+        reImportAssayRun(SUB_FOLDER_A, ASSAY_NAME_SUBFOLDER, ASSAY_RUN_SUBFOLDER, Map.of("Name", ASSAY_REIMPORT_RUN_SUBFOLDER), assayRunFile);
 
     }
 

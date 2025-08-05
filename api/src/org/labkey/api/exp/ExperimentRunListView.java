@@ -188,7 +188,7 @@ public class ExperimentRunListView extends QueryView
             addToExperimentButton.addMenuItem("Create new run group...", javascript);
 
             List<? extends ExpExperiment> experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
-            if (experiments.size() > 0)
+            if (!experiments.isEmpty())
             {
                 addToExperimentButton.addSeparator();
             }
@@ -265,10 +265,10 @@ public class ExperimentRunListView extends QueryView
         PanelButton result = super.createExportButton(recordSelectorColumns);
         String defaultFilenamePrefix = "Exported" + (getTitle() == null ? "Runs" : getTitle());
 
-        HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), getUser(), defaultFilenamePrefix);
+        HttpView<?> filesView = ExperimentService.get().createFileExportView(getContainer(), getUser(), defaultFilenamePrefix);
         result.addSubPanel("Files", filesView);
 
-        HttpView xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);
+        HttpView<?> xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);
         result.addSubPanel("XAR", xarView);
 
         return result;

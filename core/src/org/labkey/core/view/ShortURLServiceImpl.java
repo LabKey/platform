@@ -32,6 +32,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
@@ -85,7 +86,7 @@ public class ShortURLServiceImpl implements ShortURLService
     @Override
     public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException
     {
-        if (!record.hasPermission(user, DeletePermission.class))
+        if (!record.hasPermission(user, DeletePermission.class) && !user.hasRootPermission(ApplicationAdminPermission.class))
         {
             throw new UnauthorizedException("You are not authorized to delete the short URL '" + record.getShortURL() + "'");
         }
@@ -148,7 +149,7 @@ public class ShortURLServiceImpl implements ShortURLService
         }
         else
         {
-            if (!existingRecord.hasPermission(user, UpdatePermission.class))
+            if (!existingRecord.hasPermission(user, UpdatePermission.class) && !user.hasRootPermission(ApplicationAdminPermission.class))
             {
                 throw new UnauthorizedException("You are not authorized to edit the short URL '" + shortURL + "'");
             }

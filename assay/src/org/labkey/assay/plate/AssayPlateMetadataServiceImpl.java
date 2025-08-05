@@ -78,12 +78,15 @@ import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -93,6 +96,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
+import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
@@ -438,7 +442,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // replace the contents of the uploaded data file with the new combined data
                 FileLike dir = dataFile.getParent() != null ? dataFile.getParent() : AssayFileWriter.ensureUploadDirectory(container);
                 String newName = FileUtil.getBaseName(dataFile.toNioPathForRead().toFile()) + ".tsv";
-                FileLike newPath = AssayFileWriter.findUniqueFileName(newName, dir);
+                FileLike newPath = FileUtil.findUniqueFileName(newName, dir);
                 try (TSVMapWriter writer = new TSVMapWriter(newRows))
                 {
                     writer.write(newPath.toNioPathForWrite().toFile());
@@ -1085,13 +1089,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Override
     public @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
+        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName(), false);
     }
 
-    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName)
+    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName, boolean forUpdate)
     {
         String uri = getPlateReplicateStatsDomainUri(container, protocolName);
-        return PropertyService.get().getDomain(container, uri);
+        return PropertyService.get().getDomain(container, uri, forUpdate);
     }
 
     private String getPlateReplicateStatsDomainUri(Container container, String protocolName)
@@ -1107,7 +1111,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName)
     {
-        Domain domain = getPlateReplicateStatsDomain(container, protocolName);
+        Domain domain = getPlateReplicateStatsDomain(container, protocolName, true);
         if (domain == null)
             domain = PropertyService.get().createDomain(container, getPlateReplicateStatsDomainUri(container, protocolName), PlateReplicateStatsDomainKind.NAME);
 
@@ -1483,6 +1487,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         return StringUtils.join(parts, " and ");
+    }
+
+    @Override
+    public UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
+    {
+        return new PlateSchema(querySchema, contextualRoles);
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

@@ -75,6 +75,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -106,7 +107,7 @@
 
     for (DatasetDefinition def : allDatasets)
     {
-        if (!def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
+        if (!def.isShowByDefault() || null == def.getStorageTableInfo(false) || def.isDemographicData())
             continue;
         TableInfo t = querySchema.getDatasetTableForLookup(def, null);
         if (null==t || !t.hasPermission(user, ReadPermission.class))
@@ -556,7 +557,7 @@
                     {
                         Integer id = (Integer) e.getValue().get("QCState");
                         DataState state = getQCState(study, id);
-                        boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
+                        boolean hasDescription = state != null && state.getDescription() != null && !state.getDescription().isEmpty();
     %>
     <td>
         <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : HtmlString.EMPTY_STRING %>
@@ -591,7 +592,7 @@
         
         row++;
         className = getShadeRowClass(row);
-        String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
+        String labelName = Objects.toString(col.getLabel(), col.getName());
 %>
 <tr class="<%=className%> labkey-participant-view-row" style="<%=unsafe(expanded ? "" : "display:none")%>">
     <td align="left" nowrap><%=h(labelName)%></td>
@@ -735,7 +736,7 @@
 
         // This add chart text link will show a dropdown of saved charts for this dataset. User will be able to select
         // saved chart and click on submit to render the chart inline into the participant view.
-        if (updateAccess && reportIdWithNames.size() > 0)
+        if (updateAccess && !reportIdWithNames.isEmpty())
         {
             String anchorId = makeId("a_");
 %>

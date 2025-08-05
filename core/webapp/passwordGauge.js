@@ -10,6 +10,7 @@ LABKEY.PasswordGauge = new function() {
     let _emailId;               // the element ID for the email text box
     let _emailAddress;          // optional email address (for the AJAX request)
     let _renderBarFunction;
+    let _pendingScoreRequest;   // The most recent request made to score the proposed password
 
     // private methods
     function _drawOutline(canvas, ctx, ratio) {
@@ -68,14 +69,23 @@ LABKEY.PasswordGauge = new function() {
 
         _renderBarFunction = function() {
             const showPlaceholderText = !password.value;
-            LABKEY.Ajax.request({
+            if (_pendingScoreRequest) {
+                // We no longer care about any previous score requests as they're now stale relative to the current value
+                _pendingScoreRequest.abort();
+                _pendingScoreRequest = null;
+            }
+            const passwordAtTimeOfRequest = password.value;
+            _pendingScoreRequest = LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
                 method: 'POST',
                 params: {
-                    password: password.value,
+                    password: passwordAtTimeOfRequest,
                     email: email || emailField?.value
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function(responseText) {
+                    // Check that password input still matches what we had at the time of the request for the score
+                    if (password.value !== passwordAtTimeOfRequest)
+                        return;
                     // Clear everything inside the border. You might think I could clear using the same coordinates as
                     // I fill below (that's what I thought, anyway), but this tended to leave single-pixel trails of
                     // color behind. I clear a larger rectangle than what I filled to erase these trails.

@@ -142,7 +142,6 @@ public class SimpleUserSchema extends UserSchema
      * Create the wrapped TableInfo over the source TableInfo.
      *
      * @param name The table name
-     * @param sourceTable
      * @return The wrapped TableInfo.
      */
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
@@ -365,6 +364,7 @@ public class SimpleUserSchema extends UserSchema
 
                     if (_objectUriCol == null && isObjectUriLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
                     {
+                        wrap.setFk((ForeignKey) null);
                         _objectUriCol = wrap;
                         wrap.setShownInInsertView(false);
                         wrap.setShownInUpdateView(false);
@@ -373,6 +373,7 @@ public class SimpleUserSchema extends UserSchema
                     }
                     if (null == _objectIdCol && colName.equalsIgnoreCase("objectId") && isObjectIdLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
                     {
+                        wrap.setFk((ForeignKey) null);
                         _objectIdCol = wrap;
                         wrap.setShownInInsertView(false);
                         wrap.setShownInUpdateView(false);
@@ -456,14 +457,20 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public Domain getDomain()
         {
+            return getDomain(false);
+        }
+
+        @Override
+        public Domain getDomain(boolean forUpdate)
+        {
             if (_objectUriCol == null)
                 return null;
 
-            if (_domain == null)
-            {
-                String domainURI = getDomainURI();
-                _domain = PropertyService.get().getDomain(getDomainContainer(), domainURI);
-            }
+            if (_domain == null || (forUpdate && !_domain.isMutable()))
+                _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
+
+            if (_domain != null && !forUpdate && _domain.isMutable())
+                _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
 
             return _domain;
         }

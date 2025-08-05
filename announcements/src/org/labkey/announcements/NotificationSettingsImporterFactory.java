@@ -15,7 +15,6 @@
  */
 package org.labkey.announcements;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -26,12 +25,8 @@ import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.NotificationsType;
-
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * User: cnathe

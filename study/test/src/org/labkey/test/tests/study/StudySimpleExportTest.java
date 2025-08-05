@@ -21,7 +21,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.api.data.DataRegion;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -40,10 +39,10 @@ import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.pages.study.QCStateTableRow;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldKey;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
@@ -76,6 +75,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";
     private final String PROJECT_SCOPE = "project";
+    private boolean _studyDesignModulePresent;
 
     @Override
     protected BrowserType bestBrowser()
@@ -101,9 +101,8 @@ public class StudySimpleExportTest extends StudyBaseTest
     @BeforeClass
     public static void doSetup()
     {
-        StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
+        StudySimpleExportTest initTest = getCurrentTest();
 
-        OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
         initTest.initializeFolder();
         initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
@@ -126,9 +125,12 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         super.initializeFolder();
 
+        _studyDesignModulePresent =  _studyHelper.isModulePresent("StudyDesign");
         clickProject(getProjectName());
         goToFolderManagement().goToFolderTypeTab();
         checkCheckbox(Locator.radioButtonByNameAndValue("folderType", "Study"));
+        if (_studyDesignModulePresent)
+            checkCheckbox(Locator.checkboxByNameAndValue("activeModules", "StudyDesign"));
         clickButton("Update Folder");
 
         // click button to create manual study
@@ -136,6 +138,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         // use all of the default study settings
         clickButton("Create Study");
         clickFolder(getFolderName());
+        if (_studyDesignModulePresent)
+            _containerHelper.enableModule("StudyDesign");
     }
 
     private void createSimpleDataset()
@@ -172,7 +176,6 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         super.doCleanup(afterTest);
         TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Test
@@ -520,7 +523,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn(new String[]{"ParticipantVisit", "Visit"});
+        _customizeViewsHelper.addColumn(FieldKey.fromParts("ParticipantVisit", "Visit"));
         _customizeViewsHelper.saveDefaultView();
         mouseOver(Locator.tagWithText("td", visitLabel));
         waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
@@ -693,6 +696,12 @@ public class StudySimpleExportTest extends StudyBaseTest
         final String FOLDER_NAME_2 = "Study Design Data2";
 
         log("StudyDesign Tables");
+
+        if (!_studyDesignModulePresent)
+        {
+            log("StudyDesignModule not present, skipping verifyStudyDesignTables test");
+            return;
+        }
         goToProjectHome();
         clickFolder(getFolderName());
 
@@ -959,6 +968,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         final String FOLDER_NAME = "Study Design ExData";
 
         log("StudyDesign Extensible Tables");
+        if (!_studyDesignModulePresent)
+        {
+            log("StudyDesignModule not present, skipping verifyStudyDesignExtensibleTables test");
+            return;
+        }
         goToProjectHome();
         clickFolder(getFolderName());
 
@@ -1248,9 +1262,9 @@ public class StudySimpleExportTest extends StudyBaseTest
             log("verifying form element: " + name);
 
             if (isElementPresent(Locator.tagWithName("input", name)))
-                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("input", name)));
+                assertEquals(formData.get(key), getFormElement(Locator.tagWithName("input", name)));
             else if (isElementPresent(Locator.tagWithName("textarea", name)))
-                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("textarea", name)));
+                assertEquals(formData.get(key), getFormElement(Locator.tagWithName("textarea", name)));
             else
                 fail("Unable to locate form element: " + name);
         }

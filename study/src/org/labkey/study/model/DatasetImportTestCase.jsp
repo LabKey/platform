@@ -197,7 +197,7 @@ Dataset createDataset(Study study, String name, DatasetType type) throws Excepti
     pvLessThan100.setExpressionValue("~lte=100.0");
 
     // define columns
-    Domain domain = dd.getDomain();
+    Domain domain = dd.getDomain(true);
 
     DomainProperty measure = domain.addProperty();
     measure.setName("Measure");
@@ -683,7 +683,7 @@ private void importRows(Dataset def, List<Map<String, Object>> rows, @Nullable L
     StudyManager.getInstance().importDatasetData(
             _context.getUser(),
             (DatasetDefinition) def, dl, columnMap,
-            errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, logger, false, null);
+            errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, logger, null, null);
 
     if (expectedErrors == null)
     {
