@@ -25,7 +25,7 @@ public class PlateSetEdge
         return _fromPlateSetId;
     }
 
-    public void setFromPlateSetId(int fromPlateSetId)
+    public void setFromPlateSetId(long fromPlateSetId)
     {
         _fromPlateSetId = fromPlateSetId;
     }
@@ -35,7 +35,7 @@ public class PlateSetEdge
         return _rootPlateSetId;
     }
 
-    public void setRootPlateSetId(int rootPlateSetId)
+    public void setRootPlateSetId(long rootPlateSetId)
     {
         _rootPlateSetId = rootPlateSetId;
     }
@@ -45,7 +45,7 @@ public class PlateSetEdge
         return _toPlateSetId;
     }
 
-    public void setToPlateSetId(int toPlateSetId)
+    public void setToPlateSetId(long toPlateSetId)
     {
         _toPlateSetId = toPlateSetId;
     }
