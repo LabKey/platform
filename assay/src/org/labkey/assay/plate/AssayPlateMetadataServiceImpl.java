@@ -607,12 +607,17 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 var plateRowId = plateIdentifiers.computeIfAbsent(plateId, (k) -> {
                     for (var plate : plates)
                     {
-                        if (plate.getRowId().equals(k))
-                            return plate.getRowId();
-                        else if (k instanceof String s && (plate.getPlateId().equalsIgnoreCase(s) || plate.getName().equalsIgnoreCase(s)))
-                            return plate.getRowId();
+                        if (k instanceof Number numberKey)
+                        {
+                            if (null != plate.getRowId() && plate.getRowId().longValue() == numberKey.longValue())
+                                return plate.getRowId();
+                        }
+                        else if (k instanceof String stringKey)
+                        {
+                            if (plate.getPlateId().equalsIgnoreCase(stringKey) || plate.getName().equalsIgnoreCase(stringKey))
+                                return plate.getRowId();
+                        }
                     }
-
                     return null;
                 });
 
