@@ -279,6 +279,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
+                    tsvWriter.setAdditionalQuotedChars(","); // Issue 52272: ensure values with commas in column headers and data are quoted
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));

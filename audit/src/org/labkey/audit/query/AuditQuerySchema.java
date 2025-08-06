@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.labkey.audit.AuditModule.LEGACY_UNION_AUDIT_TABLE;
+import static org.labkey.api.audit.query.DefaultAuditTypeTable.LEGACY_UNION_AUDIT_TABLE;
 
 public class AuditQuerySchema extends UserSchema
 {

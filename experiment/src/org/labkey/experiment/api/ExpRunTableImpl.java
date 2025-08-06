@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -1031,9 +1032,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         PropertyDescriptor propertyDescriptor = col.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
+                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK)
                         {
-                            value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            if (value instanceof MultipartFile || value instanceof SpringAttachmentFile)
+                                value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            value = ExpDataFileConverter.convert(value);
                         }
 
                         ForeignKey fk = col.getFk();

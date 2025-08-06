@@ -32,6 +32,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -2099,6 +2100,9 @@ public class ExpDataIterators
                                 value = null;
                             }
                         }
+
+                        if (value instanceof String filePath)
+                            return ExpDataFileConverter.convert(filePath);
                         return value;
                     };
                 }
@@ -2475,6 +2479,7 @@ public class ExpDataIterators
                 configureLoader(loader, dataTable, null, true, aliasNames);
                 if (loader instanceof TabLoader tabLoader)
                     tabLoader.setIncludeComments(true); // don't skip lines that starts with "#" (if the original file is Excel)
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, dataContainer);
                 return updateService.loadRows(_user, dataContainer, loader, _context, null);
             }
             catch (SQLException | IOException e)

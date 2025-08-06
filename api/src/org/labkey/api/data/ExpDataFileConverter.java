@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -42,12 +43,14 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 
@@ -55,9 +58,9 @@ import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitute
  * User: jeckels
  * Date: Sep 30, 2011
  */
-public class ExpDataFileConverter implements Converter
+public class ExpDataFileConverter
 {
-    private static final Converter FILE_CONVERTER = new FileConverter();
+    public static final Converter FILE_CONVERTER = new FileConverter();
 
     public static ExpData resolveExpData(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes)
     {
@@ -206,61 +209,124 @@ public class ExpDataFileConverter implements Converter
         return AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
     }
 
-    @Override
-    public Object convert(Class type, Object value)
+    public static File convert(Object value)
     {
         if (value == null)
-        {
             return null;
-        }
 
         Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
         User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
         Object fileRootPathObj = QueryService.get().getEnvironment(QueryService.Environment.FILEROOTPATH);
         String fileRootPath = fileRootPathObj == null ? null : (String) fileRootPathObj;
+        Object assayResultFileRootObj = QueryService.get().getEnvironment(QueryService.Environment.ASSAYFILESPATH);
+        FileLike assayResultFileRoot = assayResultFileRootObj == null ? null : (FileLike) assayResultFileRootObj;
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
-        if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
+        if (container != null && user != null && container.hasPermission(user, ReadPermission.class))
         {
-            File f = convertToFile(value, container, user, fileRootPath);
-
-            // If we have a file path, make sure it's supposed to be visible in the current container
-            if (f != null)
+            try
             {
-                // Strip out ".." and "."
-                f = FileUtil.resolveFile(f);
-
-                PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-                if (root != null)
-                {
-                    if (!f.isAbsolute())
-                    {
-                        // Interpret relative paths based on the file root
-                        f = new File(root.getRootPath(), f.getPath());
-                    }
-
-                    if (root.isUnderRoot(f))
-                    {
-                        return f;
-                    }
-                }
-
-                // It's possible to have the file root and pipeline root pointed at different paths
-                FileContentService fileContent = FileContentService.get();
-                if (fileContent != null)
-                {
-                    File fileRoot = fileContent.getFileRoot(container);
-                    if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
-                    {
-                        return f;
-                    }
-                }
+                return convert(value, fileRootPath, assayResultFileRoot, container, user);
+            }
+            catch (ConvertHelper.FileConversionException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
             }
         }
+
         return null;
     }
 
-    private File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath)
+    // TODO, refactor more usages to call this method directly without using needing to set/getEnvironment
+    public static File convert(Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user)
+    {
+        if (value == null)
+            return null;
+
+        File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
+
+        // If we have a file path, make sure it's supposed to be visible in the current container
+        if (f != null)
+        {
+            if (f.isDirectory())
+            {
+                if (value instanceof String)
+                    throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
+                else
+                    throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
+            }
+
+            // Strip out ".." and "."
+            f = FileUtil.resolveFile(f);
+
+            PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+            if (root != null)
+            {
+                File fileUnderRoot = f;
+                if (!f.isAbsolute())
+                {
+                    try
+                    {
+                        // Interpret relative paths based on the file root
+                        fileUnderRoot = new File(root.getRootPath(), f.getPath());
+                        // TODO: use appendPath when it no longer breaks "../@files/test.txt"
+                        // fileUnderRoot = FileUtil.appendPath(root.getRootPath(), Path.parse(f.getPath()));
+                    }
+                    catch (IllegalArgumentException ignore)
+                    {
+                    }
+                }
+
+                if (root.isUnderRoot(fileUnderRoot) && fileUnderRoot.isFile())
+                {
+                    return fileUnderRoot;
+                }
+            }
+
+            FileContentService fileContent = FileContentService.get();
+
+            // It's possible to have the file root and pipeline root pointed at different paths
+            if (fileContent != null)
+            {
+                List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+                for (FileContentService.ContentType fileRootType : fileRootTypes)
+                {
+                    File fileRoot = fileContent.getFileRoot(container, fileRootType);
+                    if (fileRoot != null)
+                    {
+                        if (f.isFile() && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                            return f;
+
+                        if (!f.isAbsolute())
+                        {
+                            try
+                            {
+                                File fileWithRoot = FileUtil.appendPath(fileRoot, Path.parse(f.getPath()));
+                                if (fileWithRoot.isFile() && URIUtil.isDescendant(fileRoot.toURI(), fileWithRoot.toURI()))
+                                    return fileWithRoot;
+                            }
+                            catch (IllegalArgumentException ignore)
+                            {
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (value instanceof String)
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + value);
+            else
+                throw new ConvertHelper.FileConversionException("Invalid file path: " + f.getPath());
+        }
+
+        return null;
+    }
+
+    public static File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
     {
         if (value instanceof File f)
         {
@@ -270,7 +336,7 @@ public class ExpDataFileConverter implements Converter
         if (value instanceof JSONObject json)
         {
             // Assume the same structure as the saveBatch and getBatch APIs work with
-            ExpData data = resolveExpData(json, container, user, Collections.emptyList());
+            ExpData data = ExpDataFileConverter.resolveExpData(json, container, user, Collections.emptyList());
             if (data != null && data.getFile() != null)
             {
                 return data.getFile();
@@ -301,6 +367,29 @@ public class ExpDataFileConverter implements Converter
         String webdav = value.toString();
         if (null != StringUtils.trimToNull(webdav))
         {
+            if (assayResultFileRoot != null)
+            {
+                try
+                {
+                    for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
+                    {
+                        String resultsFileName = FileUtil.getAppendedFileName(webdav, i);
+                        FileLike assayResultFile = assayResultFileRoot.resolveChild(resultsFileName);
+
+                        if (!assayResultFile.isFile())
+                            break;
+
+                        File resultsFile = FileUtil.toFileForRead(assayResultFile);
+                        if (isCaseSensitiveFileNameMatch(resultsFileName, resultsFile))
+                            return resultsFile;
+                    }
+                }
+                catch (Exception ignore)
+                {
+                }
+
+            }
+
             webdav = getFileRootSubstitutedFilePath(webdav, fileRootPath);
             Path path = Path.decode(FileUtil.encodeForURL(webdav, true /*Issue 51207*/).replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
@@ -341,7 +430,26 @@ public class ExpDataFileConverter implements Converter
                 return result;
             }
         }
-        // Otherwise, treat it as a plain path
+
+        String filePath = value.toString();
+        if (filePath.startsWith("file:"))
+        {
+            URI uri = FileUtil.createUri(filePath);
+            if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
+                return new File(uri);
+        }
+
+        // Otherwise, treat it as a plain path (processed by getFileRootSubstitutedFilePath)
         return FILE_CONVERTER.convert(File.class, webdav);
+    }
+
+    // if two files were uploaded with the same name but different casing, then the file system will uniquify the names
+    // when saved (i.e. test.txt and Test-1.txt) on a case-sensitive file system, so we have to check here to see if
+    // the resolved results file name matches the canonical file name
+    private static boolean isCaseSensitiveFileNameMatch(String value, File resultsFile)
+    {
+        String caseSensitivePath = FileUtil.getAbsoluteCaseSensitiveFile(resultsFile).getAbsolutePath();
+        String caseSensitiveName = AssayResultsFileWriter.getFileNameWithoutPath(caseSensitivePath);
+        return value.equals(caseSensitiveName);
     }
 }

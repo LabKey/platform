@@ -108,7 +108,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), entityId);
             ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
-            return Collections.unmodifiableList(ownLists);
+            return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
         }
     }
 
