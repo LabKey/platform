@@ -41,6 +41,7 @@ import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
+import org.labkey.test.pages.compliance.FolderManagementComplianceTab;
 import org.labkey.test.pages.query.QueryMetadataEditorPage;
 import org.labkey.test.pages.search.SearchResultsPage;
 import org.labkey.test.params.FieldDefinition;
@@ -50,6 +51,7 @@ import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.compliance.ComplianceUtils;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -192,6 +194,15 @@ public class StudyPublishTest extends StudyPHIExportTest
         _rReportHelper.ensureRConfig();
 
         importStudy();
+
+        if (_studyHelper.isModulePresent("Compliance"))
+        {
+            // enable all compliance logging
+            var complianceTab = FolderManagementComplianceTab.beginAt(this, getProjectName())
+                    .setQueryLoggingBehavior(ComplianceUtils.QueryLoggingBehavior.ALL);
+            complianceTab.save();
+        }
+
         if (_studyHelper.isSpecimenModulePresent())
         {
             startSpecimenImport(++_pipelineJobs);
