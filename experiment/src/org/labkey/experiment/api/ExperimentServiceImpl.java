@@ -1226,7 +1226,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (table == null)
                 return;
 
-            indexDataClass(dataClass, q);
+            // Index the data class if it has never been indexed OR it has changed since it was last indexed
+            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                    .append(getTinfoDataClass(), "dc")
+                    .append(" WHERE dc.LSID = ?").add(dataClass.getLSID())
+                    .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
+                    .add(dataClass.getModified());
+
+            DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
+            if (dClass != null)
+            {
+                ExpDataClassImpl impl = new ExpDataClassImpl(dClass);
+                impl.index(q, table);
+            }
+
             indexDataClassData(dataClass, q);
         });
     }
