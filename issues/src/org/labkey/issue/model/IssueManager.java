@@ -122,6 +122,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 
@@ -384,8 +385,8 @@ public class IssueManager
                     if (!batchErrors.hasErrors())
                     {
                         assert results.size() == 1;
-                        issue.setIssueId((int) results.get(0).get("IssueId"));
-                        issue.setIssueDefId((Integer) results.get(0).get("issueDefId"));
+                        issue.setIssueId(asInteger(results.get(0).get("IssueId")));
+                        issue.setIssueDefId(asInteger(results.get(0).get("issueDefId")));
                     }
                     else
                         throw batchErrors;
@@ -1371,7 +1372,7 @@ public class IssueManager
         @Override
         public User getCreatedBy()
         {
-            Integer userId = (Integer)_properties.get("createdBy");
+            Integer userId = asInteger(_properties.get("createdBy"));
             if (userId != null)
                 return UserManager.getUser(userId);
             return null;
@@ -1380,7 +1381,7 @@ public class IssueManager
         @Override
         public User getModifiedBy()
         {
-            Integer userId = (Integer)_properties.get("modifiedBy");
+            Integer userId = asInteger(_properties.get("modifiedBy"));
             if (userId != null)
                 return UserManager.getUser(userId);
             return null;

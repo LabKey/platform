@@ -1965,7 +1965,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         if (sampleIdentifier instanceof Number rowId)
-            return materialCache.computeIfAbsent(rowId.longValue(), id -> getExpMaterial(container, user, id, sampleType));
+            return materialCache.computeIfAbsent(asLong(rowId), id -> getExpMaterial(container, user, id, sampleType));
 
         if (sampleIdentifier instanceof ExpMaterial m)
         {

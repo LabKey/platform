@@ -275,7 +275,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         if (o instanceof Boolean)
             return (Boolean) o;
         if (o instanceof Number)
-            return ((Number) o).intValue() != 0;
+            return ((Number) o).longValue() != 0;
         throwConversionError("Can't convert '" + o.getClass() + "' to boolean");
         return false;
     }

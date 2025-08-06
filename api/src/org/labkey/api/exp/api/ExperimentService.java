@@ -1280,6 +1280,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     static Long asLong(Object o)
     {
-        return null==o ? null : ((Number)o).longValue();
+        return null==o ? null : o.getClass() == Long.class ? (Long)o : ((Number)o).longValue();
+    }
+    static Integer asInteger(Object o)
+    {
+        // TODO BIGINT after merge we can change this to throw if o.getClass() == Long.class and update those cases
+        if (null == o)
+            return null;
+        if (o.getClass() == Integer.class)
+            return (Integer)o;
+        long l = ((Number)o).longValue();
+        if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE)
+            throw new IllegalArgumentException("Invalid int value: " + l);
+        return (int)l;
     }
 }
