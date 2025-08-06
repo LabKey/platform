@@ -185,6 +185,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
@@ -1784,7 +1786,7 @@ public class AssayController extends SpringActionController
             for (Map<String, Object> dataRow : dataRows)
             {
                 Long rowId = MapUtils.getLong(dataRow,"rowid");
-                ExpData data = ExperimentService.get().getExpData((Integer) dataRow.get("dataid"));
+                ExpData data = ExperimentService.get().getExpData(asLong(dataRow.get("dataid")));
                 if (data == null || data.getRun() == null) continue;
 
                 Container c = data.getRun().getContainer();

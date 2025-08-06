@@ -40,6 +40,8 @@ import org.labkey.api.util.HtmlString;
 import java.util.Arrays;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Created by Joe on 8/19/2014.
  */
@@ -137,7 +139,7 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
                 @Override
                 public Object getValue(RenderContext ctx)
                 {
-                    Integer listId = (Integer) ctx.get("ListID");
+                    Integer listId = asInteger(ctx.get("ListID"));
                     String listContainerId = (String) ctx.get("Container");
                     Container listContainer = ContainerManager.getForId(listContainerId);
                     if (listId == null || listContainer == null)

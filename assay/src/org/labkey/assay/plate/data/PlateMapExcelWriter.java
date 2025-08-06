@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class PlateMapExcelWriter extends ExcelWriter
 {
     private static final Logger logger = LogHelper.getLogger(PlateMapExcelWriter.class, "Plate map export");
@@ -67,8 +69,8 @@ public class PlateMapExcelWriter extends ExcelWriter
             while (results.next())
             {
                 RowMap<Object> well = factory.getRowMap(results);
-                Integer row = (Integer) well.get(Column.Row.name());
-                Integer col = (Integer) well.get(Column.Col.name());
+                Integer row = asInteger(well.get(Column.Row.name()));
+                Integer col = asInteger(well.get(Column.Col.name()));
 
                 Map<Integer, RowMap<Object>> rowMap = _wellData.computeIfAbsent(row, k -> new IntHashMap<>());
 

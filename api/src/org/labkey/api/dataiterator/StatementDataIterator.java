@@ -64,6 +64,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 
 public class StatementDataIterator extends AbstractDataIterator
 {
@@ -217,7 +219,7 @@ public class StatementDataIterator extends AbstractDataIterator
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
         {
-            contextTxSize = (Integer) _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize);
+            contextTxSize = asInteger(_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize));
             _log = (Logger)_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger); // may still be null
         }
         if (contextTxSize != null && contextTxSize > 1)
@@ -356,7 +358,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
             if (hasNextRow)
             {
-                int n = (Integer)_data.get(0);
+                int n = asInteger(_data.get(0));
                 assert( n > _currentRowNumber);
                 _currentRowNumber = n;
 

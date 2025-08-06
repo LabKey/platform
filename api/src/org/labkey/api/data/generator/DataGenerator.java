@@ -69,6 +69,9 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 public class DataGenerator<T extends DataGenerator.Config> implements ContainerUser
 {
     private static final String SEARCH_FIELD_NAME = "Search";
@@ -120,7 +123,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
 
     // Map from rowId to # of aliquots. TODO remove
-    private final IntHashMap<Integer> _numAliquotsPerParent = new IntHashMap<>();
+    private final HashMap<Long,Integer> _numAliquotsPerParent = new LongHashMap<>();
 
     record FieldPrefix(String uri, String namePrefix) { }
 
@@ -473,7 +476,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
                 continue;
 
             Map<String, Object> parent = parents.get(p);
-            Integer parentId = (Integer) parent.get("rowId");
+            Long parentId = asLong(parent.get("rowId"));
 
             // choose a number of aliquots to create
             int currentAliquots = _numAliquotsPerParent.getOrDefault(parentId, 0);
@@ -615,8 +618,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 //        List<Map<String, Object>> rows = new ArrayList<>();
 //        List<Map<String, Object>> oldKeys = new ArrayList<>();
 //        // choose a random set of child samples to.
-//        List<Integer> possibleParents = new ArrayList<>(samples.stream().map(sample -> (Integer) sample.get("RowId")).toList());
-//        List<Integer> possibleChildren = new ArrayList<>(getRandomSamples(sampleType, numPooled).stream().map(sample -> (Integer) sample.get("RowId")).toList());
+//        List<Integer> possibleParents = new ArrayList<>(samples.stream().map(sample -> asInteger( sample.get("RowId")).toList()));
+//        List<Integer> possibleChildren = new ArrayList<>(getRandomSamples(sampleType, numPooled).stream().map(sample -> asInteger( sample.get("RowId")).toList()));
 //        for (int i = 0;  i < possibleChildren.size() ; i++)
 //        {
 //            Map<String, Object> row = new CaseInsensitiveHashMap<>();

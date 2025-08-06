@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 abstract public class AppPipelineJobNotificationProvider implements PipelineJobNotificationProvider
 {
     public enum ImportType {
@@ -170,7 +172,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             Integer count = null;
             if (info != null)
             {
-                count = (Integer) info.get("rowCount");
+                count = asInteger(info.get("rowCount"));
                 if (info.containsKey("terminalStorageCreated"))
                     successMsg.append(" created ").append(info.get("terminalStorageCreated")).append(" terminal storage unit(s) and");
             }

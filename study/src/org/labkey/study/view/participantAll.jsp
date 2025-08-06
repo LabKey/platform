@@ -76,6 +76,7 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -555,7 +556,7 @@
                 {
                     for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
-                        Integer id = (Integer) e.getValue().get("QCState");
+                        Integer id = asInteger(e.getValue().get("QCState"));
                         DataState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && !state.getDescription().isEmpty();
     %>

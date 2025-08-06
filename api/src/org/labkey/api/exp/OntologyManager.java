@@ -93,6 +93,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
@@ -2895,7 +2896,7 @@ public class OntologyManager
             for (int i = 0; i < maxUsageCount && r.next(); i++)
             {
                 var row = r.getFieldKeyRowMap();
-                int oid = (Integer) row.get(objectId);
+                int oid = asInteger(row.get(objectId));
                 String objectURI = (String) row.get(objectId_objectURI);
                 String container = (String) row.get(objectId_container);
 

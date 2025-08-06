@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 public abstract class ExistingRecordDataIterator extends WrapperDataIterator
@@ -143,7 +144,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         if (i<existingColIndex)
             return _delegate.get(i);
-        Integer rowNumber = (Integer)_delegate.get(0);
+        Integer rowNumber = asInteger(_delegate.get(0));
         Map<String,Object> existingRow = existingRecords.get(rowNumber);
         assert null != existingRow;
         return existingRow;
@@ -260,7 +261,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             do
             {
                 container = null;
-                lastPrefetchRowNumber = (Integer) _delegate.get(0);
+                lastPrefetchRowNumber = asInteger(_delegate.get(0));
                 if (containerCol != null)
                 {
                     Object containerObj = _delegate.get(containerCol);
@@ -315,7 +316,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         @Override
         protected void prefetchExisting() throws BatchValidationException
         {
-            Integer rowNumber = (Integer)_delegate.get(0);
+            Integer rowNumber = asInteger(_delegate.get(0));
             if (rowNumber <= lastPrefetchRowNumber)
                 return;
 
@@ -331,7 +332,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             for (Map map : list)
             {
-                Integer r = (Integer)map.get("_row_number_");
+                Integer r = asInteger(map.get("_row_number_"));
 
                 if (_verifyExisting)
                 {
@@ -387,7 +388,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         {
             try
             {
-                Integer rowNumber = (Integer)_delegate.get(0);
+                Integer rowNumber = asInteger(_delegate.get(0));
                 if (rowNumber <= lastPrefetchRowNumber)
                     return;
 
@@ -397,7 +398,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 Map<Integer, Map<String,Object>> keysMap = new LinkedHashMap<>();
                 do
                 {
-                    lastPrefetchRowNumber = (Integer) _delegate.get(0);
+                    lastPrefetchRowNumber = asInteger(_delegate.get(0));
                     Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
                     List<String> pkKeys = new ArrayList<>();
                     for (int p=0 ; p<pkColumns.size() ; p++)

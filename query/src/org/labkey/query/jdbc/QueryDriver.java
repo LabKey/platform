@@ -33,6 +33,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: matthewb
  * Date: 4/25/12
@@ -89,7 +91,7 @@ public class QueryDriver implements Driver
         user.setEmail("internaljdbc@labkey.org");
 
         // CONTAINER
-        Integer containerId = (Integer)JdbcType.INTEGER.convert(properties.get("container"));
+        Integer containerId = asInteger(properties.get("container"));
 
         // SCHEMA
         String schemaName = null == properties.get("schema") ? null : String.valueOf(properties.get("schema"));

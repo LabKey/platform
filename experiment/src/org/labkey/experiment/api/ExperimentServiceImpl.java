@@ -309,11 +309,12 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
@@ -3051,8 +3052,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (List<Object> e : paramEdgesNotInDb)
                     {
-                        Integer fromObjectId = (Integer) e.get(0);
-                        Integer toObjectId = (Integer) e.get(1);
+                        // TODO BIGINT
+                        Integer fromObjectId = asInteger(e.get(0));
+                        Integer toObjectId = asInteger(e.get(1));
 
                         StringBuilder sb = new StringBuilder("  ");
                         appendIdent(sb, identifiableMap, runObjectId, fromObjectId);
@@ -3070,8 +3072,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (List<Object> e : dbEdgesNotInParams)
                     {
-                        Integer fromObjectId = (Integer) e.get(0);
-                        Integer toObjectId = (Integer) e.get(1);
+                        Integer fromObjectId = asInteger( e.get(0));
+                        Integer toObjectId = asInteger( e.get(1));
 
                         StringBuilder sb = new StringBuilder("  ");
                         appendIdent(sb, identifiableMap, runObjectId, fromObjectId);

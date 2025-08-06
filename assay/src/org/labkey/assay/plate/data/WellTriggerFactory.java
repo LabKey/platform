@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 public final class WellTriggerFactory implements TriggerFactory
 {
     @Override
@@ -79,13 +82,13 @@ public final class WellTriggerFactory implements TriggerFactory
             if (oldRow == null)
                 return false;
 
-            var wellRowId = (Integer) oldRow.get(WellTable.Column.RowId.name());
+            Long wellRowId = asLong(oldRow.get(WellTable.Column.RowId.name()));
             if (wellRowId == null)
                 return false;
 
             if (!wellTypeMap.containsKey(wellRowId))
             {
-                var plateRowId = (Integer) oldRow.get(WellTable.Column.PlateId.name());
+                var plateRowId = asInteger(oldRow.get(WellTable.Column.PlateId.name()));
                 if (plateRowId == null)
                     return false;
 

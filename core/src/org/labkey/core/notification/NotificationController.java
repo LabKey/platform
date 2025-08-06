@@ -51,6 +51,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Created by matthew on 5/11/2016.
  */
@@ -308,7 +310,7 @@ public class NotificationController extends SpringActionController
                 if (form.getMaxRows() == null || i < form.getMaxRows())
                 {
                     Map<String, Object> notifPropMap = notification.asPropMap();
-                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer) notifPropMap.get("CreatedBy"), getUser()));
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), getUser()));
                     notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
                     notificationList.add(notifPropMap);
@@ -407,7 +409,7 @@ public class NotificationController extends SpringActionController
                     }
 
                     Map<String, Object> notifPropMap = notification.asPropMap();
-                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), user));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
                     notificationsPropMap.put(notification.getRowId(), notifPropMap);
 

@@ -97,6 +97,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.DOM.Attribute.id;
@@ -353,7 +354,7 @@ public class PublishResultsQueryView extends QueryView
         {
             if (_linkedColumnMap.containsKey(LinkToStudyKeys.SourceId))
             {
-                Integer sourceId = (Integer)_linkedColumnMap.get(LinkToStudyKeys.SourceId).getValue(ctx);
+                Integer sourceId = asInteger(_linkedColumnMap.get(LinkToStudyKeys.SourceId).getValue(ctx));
                 if (sourceId != null && !_resolvers.containsKey(sourceId))
                 {
                     // resolving ptid/timepoint by specimen or sample ID is only supported for Assays

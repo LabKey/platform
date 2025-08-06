@@ -50,6 +50,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -178,6 +179,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
@@ -1017,8 +1020,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Integer, Set<Integer>> wellToWellGroups = new IntHashMap<>();
         for (Map<String, Object> groupPosition : allGroupPositions)
         {
-            Integer wellId = (Integer) groupPosition.get("wellId");
-            Integer wellGroupId = (Integer) groupPosition.get("wellGroupId");
+            Integer wellId = asInteger(groupPosition.get("wellId"));
+            Integer wellGroupId = asInteger(groupPosition.get("wellGroupId"));
             Set<Integer> wellGroupIds = wellToWellGroups.computeIfAbsent(wellId, k -> new HashSet<>());
             wellGroupIds.add(wellGroupId);
         }
@@ -2035,7 +2038,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         for (Map<String, Object> data : plateData)
         {
-            Integer rowId = (Integer) data.get("rowId");
+            Long rowId = asLong(data.get("rowId"));
             String containerId = (String) data.get("container");
             if (StringUtils.trimToNull(containerId) == null)
             {
@@ -2832,7 +2835,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (errors.hasErrors())
                 throw errors;
 
-            Integer plateSetId = (Integer) rows.get(0).get("RowId");
+            Integer plateSetId = asInteger(rows.get(0).get("RowId"));
 
             savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
@@ -3197,12 +3200,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     Map<Integer, Pair<GUID, String>> cache = new IntHashMap<>();
                     for (var row : selector.getMapCollection())
                     {
-                        Integer resultId = (Integer) row.get("RowId");
+                        Integer resultId = asInteger(row.get("RowId"));
                         String wellLsid = (String) row.get("WellLsid");
                         if (wellLsid == null)
                             throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate well. Only plate well related results can be marked as hits.", protocol.getName(), resultId));
 
-                        Integer plateId = (Integer) row.get("Plate");
+                        Integer plateId = asInteger(row.get("Plate"));
                         if (plateId == null)
                             throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate. Only plate related results can be marked as hits.", protocol.getName(), resultId));
 
@@ -3422,12 +3425,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (!duplicates.isEmpty())
         {
-            Map<String, Set<Integer>> duplicateMap = new HashMap<>();
+            Map<String, Set<Long>> duplicateMap = new HashMap<>();
 
             for (var duplicate : duplicates)
             {
                 var plateSetName = (String) duplicate.get("PlateSetName");
-                duplicateMap.computeIfAbsent(plateSetName, (n) -> new HashSet<>()).add((Integer) duplicate.get("SampleId"));
+                duplicateMap.computeIfAbsent(plateSetName, (n) -> new LongHashSet()).add(asLong(duplicate.get("SampleId")));
             }
 
             for (var entry : duplicateMap.entrySet())

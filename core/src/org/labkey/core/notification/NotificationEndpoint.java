@@ -42,6 +42,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * WebSocket endpoint for simple browser notification/alerting
  */
@@ -69,7 +71,7 @@ public class NotificationEndpoint extends Endpoint
     {
         this.session = session;
 
-        Integer id = (Integer)endpointConfig.getUserProperties().get("userId");
+        Integer id = asInteger(endpointConfig.getUserProperties().get("userId"));
         this.userId = null==id ? 0 : id;
 
         LOG.debug(this + " onOpen");

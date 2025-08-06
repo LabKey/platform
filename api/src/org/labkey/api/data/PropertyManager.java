@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class PropertyManager
 {
     public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
@@ -536,7 +538,7 @@ public class PropertyManager
                         insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
                     }
 
-                    _set = (Integer) insertMap.get("Set");
+                    _set = asInteger(insertMap.get("Set"));
                 }
                 else
                 {

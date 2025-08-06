@@ -99,6 +99,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
@@ -1428,7 +1429,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 columnNames.add(lookupColumnName);
                 columnNames.add(lookupTablePkColumnName);
                 new TableSelector(tableInfo, columnNames).forEachMap(row -> {
-                    Integer rowId = (Integer)row.get(lookupTablePkColumnName);
+                    Integer rowId = asInteger(row.get(lookupTablePkColumnName));
                     String name = (String)row.get(lookupColumnName);
                     lookupStringToRowIdMap.put(name, rowId);
                 });

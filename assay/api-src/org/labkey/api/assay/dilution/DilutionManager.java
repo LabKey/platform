@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: klum
  * Date: 5/8/13
@@ -123,7 +125,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
     public void insertCutoffValueRow(User user, Map<String, Object> fields)
@@ -136,7 +138,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(DILUTION_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
     public static List<DilutionDataRow> getDilutionDataRows(long runId, long plateNumber, String name, Container container, boolean filterReplicate)
@@ -155,7 +157,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(WELL_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
     public static List<WellDataRow> getWellDataRows(ExpRun run)

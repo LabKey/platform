@@ -18,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 {
     public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
@@ -78,7 +80,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     @Override
     public Object get(int i)
     {
-        Integer rowNumber = (Integer)_delegate.get(0);
+        Integer rowNumber = asInteger(_delegate.get(0));
 
         if (i == _aliquotedFromColIndex)
             return aliquotParents.get(rowNumber);
@@ -108,7 +110,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     protected void prefetchExisting() throws BatchValidationException
     {
-        Integer rowNumber = (Integer)_delegate.get(0);
+        Integer rowNumber = asInteger(_delegate.get(0));
         if (rowNumber <= lastPrefetchRowNumber)
             return;
 
@@ -121,7 +123,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         Map<String, Integer> keyRowMap = new LinkedHashMap<>();
         do
         {
-            lastPrefetchRowNumber = (Integer) _delegate.get(0);
+            lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
 
             String key = null;

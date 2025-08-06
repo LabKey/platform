@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 
 public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 {
@@ -223,7 +225,7 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
             int mn=1000000, mx=0;
             while (generate.next())
             {
-                Integer I = (Integer)value.get();
+                Integer I = asInteger(value.get());
                 if (I < mn) mn = I;
                 if (I > mx) mx = I;
                 setGenerated.add(I);

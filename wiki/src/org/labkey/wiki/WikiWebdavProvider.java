@@ -72,6 +72,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * WikiWebdavProvider is NOT used. It was previously registered to provide a WebDAV @wiki node but was unregistered in
  * 2019 since clients didn't seem to be using it.
@@ -525,7 +527,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             // Properties contains the user when search is indexing the wiki
             User user = null;
             if (_properties.get("createdby") instanceof Integer)
-                user = UserManager.getUser((Integer)_properties.get("createdby"));
+                user = UserManager.getUser(asInteger(_properties.get("createdby")));
 
             return user;
         }
@@ -545,7 +547,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             // Properties contains the user when search is indexing the wiki
             User user = null;
             if (_properties.get("modifiedBy") instanceof Integer)
-                user = UserManager.getUser((Integer)_properties.get("modifiedBy"));
+                user = UserManager.getUser(asInteger(_properties.get("modifiedBy")));
 
             return user;
         }

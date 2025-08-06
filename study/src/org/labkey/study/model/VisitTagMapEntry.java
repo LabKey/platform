@@ -22,6 +22,8 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class VisitTagMapEntry
 {
     private final String _visitTag;
@@ -40,7 +42,7 @@ public class VisitTagMapEntry
     private VisitTagMapEntry(Map m)
     {
         _visitTag = (String)m.get("visitTag");
-        _visitId = (Integer)m.get("visitId");
+        _visitId = asInteger(m.get("visitId"));
         _cohortId = (Integer)m.get("cohortId");
         _rowId = (Integer)m.get("rowId");
     }

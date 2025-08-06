@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.assay.plate.AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.assay.plate.PlateMetadataDomainKind.Column;
 
 public class AssayUpgradeCode implements UpgradeCode
@@ -325,8 +326,8 @@ public class AssayUpgradeCode implements UpgradeCode
 
             for (Map<String, Object> row : rows)
             {
-                Integer plateSetRowId = (Integer) row.get("PlateSetRowId");
-                Integer hitRowId = (Integer) row.get("HitRowId");
+                Integer plateSetRowId = asInteger(row.get("PlateSetRowId"));
+                Integer hitRowId = asInteger(row.get("HitRowId"));
 
                 if (!plateSetsToHits.containsKey(plateSetRowId))
                 {
