@@ -857,12 +857,11 @@ public class AnnouncementManager
     }
 
 
-    // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
     public static void indexMessages(SearchService.TaskIndexingQueue queue, Date modifiedSince, @Nullable String threadId)
     {
         if ((null != modifiedSince && null != threadId))
             throw new IllegalArgumentException();
-        // make sure container still exists
+        // make sure the container still exists
         Container c = queue.getContainer();
         if (null == c || isSecure(c))
             return;
