@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,8 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
 
 /**
  * Selector that is driven by SQL, which subclasses can control how it's interpreted (LabKey SQL, raw DB SQL, etc)
@@ -536,7 +539,16 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         @Override
         public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
-            Table.logException(_sql, conn, e, getLogLevel());
+            Level logLevel = getLogLevel();
+
+            // Reduce the logging for calculated expression column SQL errors
+            if (_sql != null && _sql.toString().contains(CALCULATED_COLUMN_SQL_TAG))
+            {
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                logLevel = Level.OFF;
+            }
+
+            Table.logException(_sql, conn, e, logLevel);
 
             if (null != _sql)
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toDebugString(), false);
