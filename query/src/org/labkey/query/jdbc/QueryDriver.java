@@ -91,7 +91,7 @@ public class QueryDriver implements Driver
         user.setEmail("internaljdbc@labkey.org");
 
         // CONTAINER
-        Integer containerId = asInteger(properties.get("container"));
+        Integer containerId = (Integer)JdbcType.INTEGER.convert(properties.get("container"));
 
         // SCHEMA
         String schemaName = null == properties.get("schema") ? null : String.valueOf(properties.get("schema"));
