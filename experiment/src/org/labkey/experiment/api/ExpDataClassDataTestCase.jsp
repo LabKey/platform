@@ -107,6 +107,8 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -286,7 +288,7 @@ private void testNameExpressionGeneration(ExpDataClassImpl dataClass, TableInfo 
     assertEquals(1, ret.get(0).get("genId"));
     assertEquals(expectedName, ret.get(0).get("name"));
 
-    Integer rowId = (Integer) ret.get(0).get("RowId");
+    Long rowId = asLong(ret.get(0).get("RowId"));
     ExpData data = ExperimentService.get().getExpData(rowId);
     ExpData data1 = ExperimentService.get().getExpData(dataClass, expectedName);
     assertEquals(data, data1);
@@ -427,18 +429,18 @@ private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) thro
     row.put("alias", "aa,bb");
     rows.add(row);
 
-    int insertedRowId;
+    long insertedRowId;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
         List<Map<String, Object>> ret = helper.insertRows(c, rows, table.getName());
-        insertedRowId = (Integer)ret.get(0).get("rowId");
+        insertedRowId = asLong(ret.get(0).get("rowId"));
         tx.commit();
     }
 
     verifyAliases(table, insertedRowId, Set.of("aa","bb"));
 }
 
-private void verifyAliases(TableInfo table, int expDataRowId, Set<String> expectedAliases) throws Exception
+private void verifyAliases(TableInfo table, long expDataRowId, Set<String> expectedAliases) throws Exception
 {
     for (String name : expectedAliases)
     {
@@ -454,7 +456,7 @@ private void verifyAliases(TableInfo table, int expDataRowId, Set<String> expect
     verifyAliasesViaSelectRows("exp.data", table.getPublicName(), expDataRowId, expectedAliases);
 }
 
-private void verifyAliasesViaSelectRows(String schemaName, String queryName, int expDataRowId, Set<String> expectedAliases)
+private void verifyAliasesViaSelectRows(String schemaName, String queryName, long expDataRowId, Set<String> expectedAliases)
         throws Exception
 {
     try (var session = SecurityManager.createTransformSession(TestContext.get().getRequest(), TestContext.get().getRequest().getSession()))
@@ -642,7 +644,7 @@ public void testDomainTemplate() throws Exception
         }
 
         assertEquals(1, ret.size());
-        assertEquals(5, ((Integer) ret.get(0).get("pri")).longValue());
+        assertEquals(5, asInteger(ret.get(0).get("pri")).intValue());
         assertEquals("p5", ret.get(0).get("title"));
     }
 
@@ -670,7 +672,7 @@ public void testDomainTemplate() throws Exception
         }
 
         assertEquals(1, ret.size());
-        assertEquals(3, ((Integer)ret.get(0).get("m")).longValue());
+        assertEquals(3, asInteger(ret.get(0).get("m")).intValue());
         assertEquals("Milestone 3", ret.get(0).get("title"));
     }
 
@@ -709,7 +711,7 @@ public void testContainerDelete() throws Exception
     TableInfo table = getDataClassTable(dataClassName);
 
     // setup: insert into junit container
-    int dataRowId1;
+    long dataRowId1;
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -725,11 +727,11 @@ public void testContainerDelete() throws Exception
         }
 
         assertEquals(1, ret.size());
-        dataRowId1 = ((Integer)ret.get(0).get("RowId")).intValue();
+        dataRowId1 = asLong(ret.get(0).get("RowId"));
     }
 
     // setup: insert into sub container
-    int dataRowId2;
+    long dataRowId2;
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -745,7 +747,7 @@ public void testContainerDelete() throws Exception
         }
 
         assertEquals(1, ret.size());
-        dataRowId2 = ((Integer)ret.get(0).get("RowId")).intValue();
+        dataRowId2 = asLong(ret.get(0).get("RowId"));
     }
 
     // test: delete container, ensure everything is removed
@@ -909,7 +911,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     assertEquals(1, insertedDataClassRows.size());
 
     var insertedDataClass = insertedDataClassRows.get(0);
-    Integer insertedRowId = (Integer)insertedDataClass.get("RowId");
+    Long insertedRowId = asLong(insertedDataClass.get("RowId"));
     String insertedLsid = (String)insertedDataClass.get("LSID");
 
     Map<String, ObjectProperty> insertedProps = OntologyManager.getPropertyObjects(c, insertedLsid);
@@ -972,7 +974,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     var insertedSampleRows = helper.insertRows(c, rows ,sampleName, schema);
 
     var insertedSample = insertedSampleRows.get(0);
-    Integer insertedSampleRowId = (Integer)insertedSample.get("RowId");
+    Long insertedSampleRowId = asLong(insertedSample.get("RowId"));
 
     // Create a vocab domain with lookup prop to the sample type
     String domainName = "LookUpVocabularyDomain";
@@ -1099,7 +1101,7 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals("D-1", rows.get(0).get("Name"));
     assertEquals("D-1-d", rows.get(1).get("Name"));
     assertEquals("D-2", rows.get(2).get("Name"));
-    int d2RowId = (Integer) rows.get(2).get("RowId");
+    long d2RowId = asLong(rows.get(2).get("RowId"));
 
     // prop
     assertEquals("a1", rows.get(0).get("prop"));
@@ -1148,7 +1150,7 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals("D-22", rows.get(3).get("Name"));
 
     // verify merge retained existing row
-    assertEquals(d2RowId, rows.get(2).get("RowId"));
+    assertEquals(d2RowId, asLong(rows.get(2).get("RowId")).longValue());
 
     // prop
     assertEquals("a1", rows.get(0).get("prop"));
