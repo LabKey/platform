@@ -159,18 +159,17 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomain.setProvisioned(domain.isProvisioned());
 
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
             Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(domain.getDomainKind().getMandatoryPropertyNames(domain));
 
-            Map<String, GWTPropertyDescriptor> fieldMap = new HashMap<>();
+            Map<String, GWTPropertyDescriptor> domainFields = new HashMap<>();
             for (GWTPropertyDescriptor field : gwtDomain.getFields())
-                fieldMap.put(field.getName(), field);
+                domainFields.put(field.getName(), field);
 
             for (DomainProperty prop : domain.getProperties())
             {
-                GWTPropertyDescriptor gwtProp = fieldMap.get(prop.getName());
-
-                if (copy)
-                    gwtProp.setPropertyId(0);
+                GWTPropertyDescriptor domainField = domainFields.get(prop.getName());
+                GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor(domainField, copy);
 
                 if (gwtProp.getDefaultValueType() == null)
                 {
@@ -183,6 +182,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     {
                         prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
                     }
+                    else
+                        gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
                 }
 
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()))
@@ -210,8 +211,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                     gwtProp.setFilterCriteria(FilterCriteria.toGWTFilterCriteria(fieldFilterCriteria));
                 }
+
+                fields.add(gwtProp);
             }
 
+            fields.addAll(gwtDomain.getCalculatedFields());
+            gwtDomain.setFields(fields);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
 
             if (isResultsDomain)
