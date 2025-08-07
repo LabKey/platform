@@ -18,12 +18,12 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
-import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -171,7 +171,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
         var objectLsids = new HashSet<String>();
 
         var sql = ExperimentServiceImpl.get().generateExperimentTreeSQLObjectIdsSeeds(seedIdentifiers.objectIds(), options);
-        new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).forEachMap((m)->
+        new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql).forEachMap((m)->
         {
             Integer depth = (Integer) m.get("depth");
             String parentLSID = (String) m.get("parent_lsid");
