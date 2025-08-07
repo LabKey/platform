@@ -347,7 +347,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         sql.append("(");
         bound.appendSql(sql, new _Query(tableAliasName));
         sql.append(")");
-        sql.append(CALCULATED_COLUMN_SQL_TAG);
+        sql.append(SQLFragment.unsafe(CALCULATED_COLUMN_SQL_TAG));
         return sql;
     }
 

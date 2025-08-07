@@ -545,7 +545,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (_sql != null && _sql.toString().contains(CALCULATED_COLUMN_SQL_TAG))
             {
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                logLevel = Level.OFF;
+                logLevel = Level.DEBUG;
             }
 
             Table.logException(_sql, conn, e, logLevel);
