@@ -1083,7 +1083,7 @@ public class DomainUtil
         LOG.debug("Adding property for " + pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
-            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + Lsid.encodePart(pd.getName()), propertyUrisInUse);
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), pd.getName(), propertyUrisInUse);
             assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
             pd.setPropertyURI(newPropertyURI);
             propertyUrisInUse.add(newPropertyURI);
@@ -1100,8 +1100,13 @@ public class DomainUtil
         return p;
     }
 
-    private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
+    private static String createUniquePropertyURI(String typeURI, String propName, Set<String> propertyUrisInUse)
     {
+        // replace all non-alphanumeric characters in the propName with underscores as they can lead to generated
+        // URIs that are longer than the DB column length (Issue 53586)
+        String name = propName.replaceAll("[^a-zA-Z0-9]", "_");
+
+        String base = typeURI + "#" + Lsid.encodePart(name);
         String candidateURI = base;
         int i = 0;
 
