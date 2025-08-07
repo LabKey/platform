@@ -45,6 +45,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -1083,7 +1084,7 @@ public class DomainUtil
         LOG.debug("Adding property for " + pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
-            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), pd.getName(), propertyUrisInUse);
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), propertyUrisInUse);
             assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
             pd.setPropertyURI(newPropertyURI);
             propertyUrisInUse.add(newPropertyURI);
@@ -1100,13 +1101,12 @@ public class DomainUtil
         return p;
     }
 
-    private static String createUniquePropertyURI(String typeURI, String propName, Set<String> propertyUrisInUse)
+    private static String createUniquePropertyURI(String typeURI, Set<String> propertyUrisInUse)
     {
-        // replace all non-alphanumeric characters in the propName with underscores as they can lead to generated
-        // URIs that are longer than the DB column length (Issue 53586)
-        String name = propName.replaceAll("[^a-zA-Z0-9]", "_");
+        // Don't use property name in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
+        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
 
-        String base = typeURI + "#" + Lsid.encodePart(name);
+        String base = typeURI + "#" + dbSeqStr;
         String candidateURI = base;
         int i = 0;
 
