@@ -332,7 +332,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         {
             sql.append(" INNER JOIN ").append(wellProperties, "p").append(" ON d.lsid = p.lsid");
         }
-        String subAlias = getSqlDialect().truncate(alias + "_wp_sub", 0);
+        String subAlias = alias + "_wp_sub";
         sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 
