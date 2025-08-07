@@ -541,7 +541,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             Level logLevel = getLogLevel();
 
-            // Reduce the logging for calculated expression column SQL errors
+            // Reduce the logging for calculated expression column SQL errors (Issue 52026 and 51862)
             if (_sql != null && _sql.toString().contains(CALCULATED_COLUMN_SQL_TAG))
             {
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
