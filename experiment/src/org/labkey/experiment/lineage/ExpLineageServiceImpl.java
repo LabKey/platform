@@ -71,7 +71,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
         }
     }
 
-    private record SeedIdentifiers(Set<Integer> objectIds, Set<String> lsids)
+    private record SeedIdentifiers(Set<Long> objectIds, Set<String> lsids)
     {
         public boolean isEmpty()
         {
@@ -82,7 +82,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
     private SeedIdentifiers getLineageSeedIdentifiers(Container c, User user, @NotNull Set<Identifiable> seeds)
     {
         // validate seeds
-        Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
+        Set<Long> seedObjectIds = new HashSet<>(seeds.size());
         Set<String> seedLsids = new HashSet<>(seeds.size());
 
         for (Identifiable seed : seeds)
@@ -91,10 +91,9 @@ public class ExpLineageServiceImpl implements ExpLineageService
                 throw new RuntimeException("Lineage not available for unknown object");
 
             // CONSIDER: add objectId to Identifiable?
-            // TODO BIGINT
-            int objectId = -1;
+            long objectId = -1;
             if (seed instanceof ExpObject expObjectSeed)
-                objectId = expObjectSeed.getObjectId().intValue();
+                objectId = expObjectSeed.getObjectId();
             else if (seed instanceof IdentifiableBase identifiableSeed)
                 objectId = identifiableSeed.getObjectId().intValue();
 
@@ -249,7 +248,6 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         LsidManager lsidManager = LsidManager.get();
         ExperimentServiceImpl expSvc = ExperimentServiceImpl.get();
-        // TODO BIGINT
         Set<ExpData> data = expSvc.getExpDatas(_toLongSet(result.dataIds)).stream().filter(lineageItemFilter).collect(toSet());
         Set<ExpMaterial> materials = expSvc.getExpMaterials(_toLongSet(result.materialIds)).stream().filter(lineageItemFilter).collect(toSet());
         Set<ExpRun> runs = expSvc.getExpRuns(_toLongSet(result.runIds)).stream().filter(lineageItemFilter).collect(toSet());

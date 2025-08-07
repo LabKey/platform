@@ -309,7 +309,6 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
@@ -2636,12 +2635,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Long> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
         String comma = "";
         SQLFragment sqlf = new SQLFragment("VALUES ");
-        for (Integer objectId : objectIds)
+        for (Long objectId : objectIds)
         {
             sqlf.append(comma).append("(").appendValue(objectId).append(")");
             comma = ",";
@@ -3019,9 +3018,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         List<List<Object>> edges = new ArrayList<>(params.size());
         ts.forEach(r -> {
-            int fromObjectId = r.getInt("fromObjectId");
-            int toObjectId = r.getInt("toObjectId");
-            int edgeRunId = r.getInt("runId");
+            long fromObjectId = r.getLong("fromObjectId");
+            long toObjectId = r.getLong("toObjectId");
+            long edgeRunId = r.getLong("runId");
             edges.add(List.of(fromObjectId, toObjectId, edgeRunId));
         });
 
@@ -3052,9 +3051,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (List<Object> e : paramEdgesNotInDb)
                     {
-                        // TODO BIGINT
-                        Integer fromObjectId = asInteger(e.get(0));
-                        Integer toObjectId = asInteger(e.get(1));
+                        Long fromObjectId = asLong(e.get(0));
+                        Long toObjectId = asLong(e.get(1));
 
                         StringBuilder sb = new StringBuilder("  ");
                         appendIdent(sb, identifiableMap, runObjectId, fromObjectId);
@@ -3072,8 +3070,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (List<Object> e : dbEdgesNotInParams)
                     {
-                        Integer fromObjectId = asInteger( e.get(0));
-                        Integer toObjectId = asInteger( e.get(1));
+                        Long fromObjectId = asLong(e.get(0));
+                        Long toObjectId = asLong(e.get(1));
 
                         StringBuilder sb = new StringBuilder("  ");
                         appendIdent(sb, identifiableMap, runObjectId, fromObjectId);
@@ -6310,7 +6308,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.add(runId);
 
             new SqlSelector(getExpSchema(), sql).forEach(materialOutputRS -> {
-                int successorRunId = materialOutputRS.getInt("RunId");
+                long successorRunId = materialOutputRS.getLong("RunId");
                 Long matId = materialOutputRS.getLong("MaterialId");
                 ExpMaterialImpl mat = outputMaterialMap.get(matId);
                 mat.addSuccessorRunId(successorRunId);

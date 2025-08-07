@@ -1,67 +1,59 @@
 package org.labkey.api.exp.api;
 
+import org.labkey.api.collections.LongHashSet;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
 public class ExpLineageEdge
 {
-    private int _fromObjectId; // not nullable
-    private Integer _runId;
-    private Integer _sourceId;
+    private long _fromObjectId; // not nullable
+    private Long _runId;
+    private Long _sourceId;
     private String _sourceKey;
-    private int _toObjectId; // not nullable
+    private long _toObjectId; // not nullable
 
     // Necessary for database serialization
     public ExpLineageEdge()
     {
     }
 
-    public ExpLineageEdge(int fromObjectId, int toObjectId, Integer runId, Integer sourceId, String sourceKey)
-    {
-        _fromObjectId = fromObjectId;
-        _toObjectId = toObjectId;
-        _runId = runId;
-        _sourceId = sourceId;
-        _sourceKey = sourceKey;
-    }
-
     public ExpLineageEdge(long fromObjectId, long toObjectId, Long runId, Long sourceId, String sourceKey)
     {
-        // TODO BIGINT conversion
         _fromObjectId = (int)fromObjectId;
         _toObjectId = (int)toObjectId;
-        _runId = runId == null ? null : runId.intValue();
-        _sourceId = sourceId == null ? null : sourceId.intValue();
+        _runId = runId == null ? null : runId.longValue();
+        _sourceId = sourceId == null ? null : sourceId.longValue();
         _sourceKey = sourceKey;
     }
 
-    public int getFromObjectId()
+    public long getFromObjectId()
     {
         return _fromObjectId;
     }
 
-    public void setFromObjectId(int fromObjectId)
+    public void setFromObjectId(long fromObjectId)
     {
         _fromObjectId = fromObjectId;
     }
 
-    public Integer getRunId()
+    public Long getRunId()
     {
         return _runId;
     }
 
-    public void setRunId(Integer runId)
+    public void setRunId(Long runId)
     {
         _runId = runId;
     }
 
-    public Integer getSourceId()
+    public Long getSourceId()
     {
         return _sourceId;
     }
 
-    public void setSourceId(Integer sourceId)
+    public void setSourceId(Long sourceId)
     {
         _sourceId = sourceId;
     }
@@ -76,12 +68,12 @@ public class ExpLineageEdge
         _sourceKey = sourceKey;
     }
 
-    public int getToObjectId()
+    public long getToObjectId()
     {
         return _toObjectId;
     }
 
-    public void setToObjectId(int toObjectId)
+    public void setToObjectId(long toObjectId)
     {
         _toObjectId = toObjectId;
     }
@@ -118,36 +110,34 @@ public class ExpLineageEdge
 
     public static class FilterOptions
     {
-        public Integer fromObjectId;
-        public Integer runId;
-        public Set<Integer> sourceIds;
+        public Long fromObjectId;
+        public Long runId;
+        public Set<Long> sourceIds;
         public String sourceKey;
-        public Integer toObjectId;
+        public Long toObjectId;
 
         public FilterOptions fromObjectId(Long fromObjectId)
         {
             // TODO BIGINT
-            this.fromObjectId = fromObjectId.intValue();
+            this.fromObjectId = fromObjectId;
             return this;
         }
 
         public FilterOptions runId(Long runId)
         {
-            // TODO BIGINT conversion
-            this.runId = runId.intValue();
+            this.runId = runId;
             return this;
         }
 
         public FilterOptions sourceId(Long sourceId)
         {
-            // TODO BIGINT conversion
-            this.sourceIds = Set.of(sourceId.intValue());
+            this.sourceIds = Set.of(sourceId);
             return this;
         }
 
-        public FilterOptions sourceIds(Set<Integer> sourceIds)
+        public FilterOptions sourceIds(Set<Long> sourceIds)
         {
-            this.sourceIds = new HashSet<>(sourceIds);
+            this.sourceIds = new LongHashSet(sourceIds);
             return this;
         }
 
@@ -157,7 +147,7 @@ public class ExpLineageEdge
             return this;
         }
 
-        public FilterOptions toObjectId(Integer toObjectId)
+        public FilterOptions toObjectId(Long toObjectId)
         {
             this.toObjectId = toObjectId;
             return this;
