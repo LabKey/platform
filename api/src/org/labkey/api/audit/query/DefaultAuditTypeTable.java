@@ -169,8 +169,19 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         if (col != null)
             return col;
 
-        // Handle the old style 'intKey1' and 'key1' columns
-        String newName = _legacyNameMap.get(FieldKey.fromParts(name));
+        String newName = null;
+
+        if (_legacyNameMap.isEmpty())
+        {
+            // Backward compatibility with widely used legacy name
+            if ("Date".equalsIgnoreCase(name))
+                newName = "Created";
+        }
+        else
+        {
+            // Handle the old style 'intKey1' and 'key1' columns
+            newName = _legacyNameMap.get(FieldKey.fromParts(name));
+        }
         col = super.resolveColumn(newName);
         if (col != null)
         {
