@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 // NOTE DataColumn perhaps does more than we need, consider extending DisplayColumn instead?
@@ -107,7 +108,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         return innerBoundColumn;
     }
 
-    private int innerCtxObjectId = -1;
+    private long innerCtxObjectId = -1;
 
     /*
      * NOTE DisplayColumn is very stateless, we don't know when we advance a row, or when we are at end-of-resultset
@@ -117,7 +118,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     {
         if (null == innerCtx)
             innerCtx = new ReexecutableRenderContext(outerCtx);
-        int currentObjectId = requireNonNullElse((Integer) getValue(outerCtx), -1);
+        long currentObjectId = requireNonNullElse(asLong(getValue(outerCtx)), -1L);
         if (innerCtxObjectId == currentObjectId)
             return;
 
