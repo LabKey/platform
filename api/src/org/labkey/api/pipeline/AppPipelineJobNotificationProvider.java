@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 
 abstract public class AppPipelineJobNotificationProvider implements PipelineJobNotificationProvider
 {
@@ -274,7 +275,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             {
                 String provider = (String) info.get("provider");
                 String assayName = (String) info.get("assayName");
-                int runId = (int) info.get("runId");
+                long runId = asLong(info.get("runId"));
                 urlFragment = urlFragment + "/" + provider + "/" + assayName + "/runs/" + runId;
             }
         }
