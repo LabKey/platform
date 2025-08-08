@@ -191,7 +191,7 @@ public class LocationTable extends BaseStudyTable
             List<ValidationException> validationExceptions = new ArrayList<>();
             for (Map<String, Object> map : keys)
             {
-                Integer locId = (Integer)map.get("RowId");
+                Integer locId = asInteger(map.get("RowId"));
                 if (null == locId)
                     throw new InvalidKeyException("Invalid location ID");
 

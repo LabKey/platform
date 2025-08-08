@@ -103,6 +103,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 import static org.labkey.api.gwt.client.AuditBehaviorType.NONE;
 
@@ -678,7 +679,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         Object inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(row, managedKeyColumn);
         if (inputManagedKey == null)
             inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(oldRow, managedKeyColumn);
-        Integer inputQCState = (Integer)DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
+        Integer inputQCState = asInteger(DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME)));
 
         SequenceNumImportHelper snih = new SequenceNumImportHelper(_dataset.getStudy(), _dataset);
         Double sequenceNum = snih.translateSequenceNum(inputSeqNum, inputDate);

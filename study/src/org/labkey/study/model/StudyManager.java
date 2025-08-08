@@ -224,6 +224,7 @@ import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_TABLE_NAME;
@@ -1488,7 +1489,7 @@ public class StudyManager
         map.put("cohortId", cohortId);
         map.put("containerId", container.getId());
         map = Table.insert(user, tinfo, map);
-        return (Integer) map.get("RowId");
+        return asInteger(map.get("RowId"));
     }
 
     @Nullable
@@ -2337,7 +2338,7 @@ public class StudyManager
         if (null == map)
             return null;
         else
-            return new Pair<>((String)map.get("Container"), (Integer)map.get("DatasetId"));
+            return new Pair<>((String)map.get("Container"), asInteger(map.get("DatasetId")));
     };
 
 
@@ -3222,7 +3223,7 @@ public class StudyManager
                     }
 
                     String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
-                    Integer dateOffset = (null != row.get(DATEOFFSET_COLUMN_NAME)) ? (Integer)row.get(DATEOFFSET_COLUMN_NAME) : null;
+                    Integer dateOffset = (null != row.get(DATEOFFSET_COLUMN_NAME)) ? asInteger(row.get(DATEOFFSET_COLUMN_NAME)) : null;
 
                     if (null == alternateId && null == dateOffset)
                     {

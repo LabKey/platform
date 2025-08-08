@@ -43,8 +43,8 @@ public class VisitTagMapEntry
     {
         _visitTag = (String)m.get("visitTag");
         _visitId = asInteger(m.get("visitId"));
-        _cohortId = (Integer)m.get("cohortId");
-        _rowId = (Integer)m.get("rowId");
+        _cohortId = asInteger(m.get("cohortId"));
+        _rowId = asInteger(m.get("rowId"));
     }
 
     public String getVisitTag()

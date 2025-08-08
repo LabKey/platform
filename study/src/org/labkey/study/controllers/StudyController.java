@@ -317,6 +317,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
@@ -7267,8 +7268,8 @@ public class StudyController extends BaseStudyController
             if (null != type)
                 _type = Type.valueOf(type);
 
-            _expectationDataset = (Integer)json.opt("expectationDataset");
-            _targetDataset = (Integer)json.opt("targetDataset");
+            _expectationDataset = asInteger(json.opt("expectationDataset"));
+            _targetDataset = asInteger(json.opt("targetDataset"));
         }
 
         @Override

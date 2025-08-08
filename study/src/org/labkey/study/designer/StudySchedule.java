@@ -38,6 +38,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule UI.
  */
@@ -193,7 +195,7 @@ public class StudySchedule implements ApiJsonForm
                     }
                     else if (value != null)
                     {
-                        Integer id = (Integer) value.opt("id");
+                        Integer id = asInteger(value.opt("id"));
                         Boolean required = (Boolean) value.opt("required");
 
                         if (id != null)
