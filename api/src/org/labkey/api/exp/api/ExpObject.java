@@ -37,7 +37,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     String DEFAULT_CPAS_TYPE = "Object";
 
     /** Prevent edits to this object. Subsequent calls to setters will throw an IllegalStateException */
-    void lock();
+    ExpObject lock();
 
     int getRowId();
     /** Get the exp.object objectId */
