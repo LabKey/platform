@@ -129,7 +129,7 @@ public interface ProvenanceService
     /**
      * Get protocol applications for the lsid
      */
-    Set<Integer> getProtocolApplications(String lsid);
+    Set<Long> getProtocolApplications(String lsid);
 
     /**
      * Get the ExpRun referenced by the set of LSIDs

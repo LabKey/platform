@@ -96,7 +96,7 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public Set<Integer> getProtocolApplications(String lsid)
+    public Set<Long> getProtocolApplications(String lsid)
     {
         return Collections.emptySet();
     }

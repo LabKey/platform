@@ -2508,7 +2508,7 @@ public class StudyManager
             Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(user, ds);
 
             allDatasetLsids.forEach(lsid -> {
-                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+                Set<Long> protocolApplications = pvs.getProtocolApplications(lsid);
 
                 OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
                 if (null != expObject)
