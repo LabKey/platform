@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
@@ -35,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 /*
@@ -131,13 +133,15 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
         if (name.contains("/"))
             name = name.replace('/', '.');
 
+        String  propertyURI = DomainUtil.createUniquePropertyURI(domain.getTypeURI(), new HashSet<>());
+
         if (pd != null)
         {
             PropertyDescriptor newProp = pd.clone();
 
             // initialize so the domain doesn't get upset
             newProp.setContainer(domain.getContainer());
-            newProp.setPropertyURI(getPropertyURI(domain, column));
+            newProp.setPropertyURI(propertyURI);
             newProp.setPropertyId(0);
             newProp.setName(name);
             newProp.setLabel(column.getLabel());
@@ -161,14 +165,9 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
             prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
             prop.setDescription(column.getDescription());
             prop.setFormat(column.getFormat());
-            prop.setPropertyURI(getPropertyURI(domain, column));
+            prop.setPropertyURI(propertyURI);
         }
         return prop;
-    }
-
-    public static String getPropertyURI(Domain domain, ColumnInfo column)
-    {
-        return domain.getTypeURI() + "." + column.getName();
     }
 
     @Override
