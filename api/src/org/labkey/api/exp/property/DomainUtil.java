@@ -1101,7 +1101,7 @@ public class DomainUtil
         return p;
     }
 
-    private static String createUniquePropertyURI(String typeURI, Set<String> propertyUrisInUse)
+    public static String createUniquePropertyURI(String typeURI, Set<String> propertyUrisInUse)
     {
         // Don't use property name in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
         String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
