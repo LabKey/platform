@@ -17,6 +17,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -153,7 +154,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
             DomainProperty prop = domain.addProperty();
 
             prop.setName(spec.getName());
-            prop.setPropertyURI(getUniqueURI(typeUri + "#" + spec.getName(), propertyURIs));
+            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri, propertyURIs));
             prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
@@ -166,19 +167,6 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
                 prop.setLookup(lookup);
             }
         }
-    }
-
-    private String getUniqueURI(String uri, Set<String> propertyURIs)
-    {
-        String result = uri;
-        int ordinal = 1;
-
-        while (propertyURIs.contains(result))
-        {
-            result = String.format("%s-%d", uri, ordinal++);
-        }
-        propertyURIs.add(result);
-        return result;
     }
 
     @Override

@@ -40,6 +40,7 @@ import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -64,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -446,7 +448,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
 
         DomainProperty prop = domain.addProperty();
-        prop.setPropertyURI(domain.getTypeURI() + "#" + getKeyName());
+        prop.setPropertyURI(DomainUtil.createUniquePropertyURI(domain.getTypeURI(), new HashSet<>()));
         prop.setName(getKeyName());
         prop.setType(PropertyService.get().getType(domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
 

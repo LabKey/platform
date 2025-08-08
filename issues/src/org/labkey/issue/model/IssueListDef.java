@@ -31,6 +31,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
@@ -45,6 +46,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -286,7 +288,7 @@ public class IssueListDef extends Entity
             DomainProperty prop = domain.addProperty();
 
             prop.setName(spec.getName());
-            prop.setPropertyURI(typeUri + "#" + spec.getName());
+            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri, new HashSet<>()));
             prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
