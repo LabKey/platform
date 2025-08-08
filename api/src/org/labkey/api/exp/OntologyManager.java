@@ -94,6 +94,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
@@ -1174,11 +1175,11 @@ public class OntologyManager
                     " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PD.PropertyId = PDM.PropertyId) " +
                     " WHERE DD.DomainId = " + dd.getDomainId() +
                     " AND PD.Container = DD.Container";
-            Integer[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Integer.class);
+            Long[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Long.class);
 
             String sep;
             StringBuilder sqlIN = null;
-            Integer[] ownerObjIds = null;
+            Long[] ownerObjIds = null;
 
             if (objIdsToDelete.length > 0)
             {
@@ -1186,7 +1187,7 @@ public class OntologyManager
                 // Seems cheaper but less correct to delete the subobjects then cleanup any owner objects with no children
                 sep = "";
                 sqlIN = new StringBuilder();
-                for (Integer id : objIdsToDelete)
+                for (Long id : objIdsToDelete)
                 {
                     sqlIN.append(sep).append(id);
                     sep = ", ";
@@ -1197,7 +1198,7 @@ public class OntologyManager
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
                         " WHERE SUBO.ObjectId IN ( " + sqlIN + " ) )";
 
-                ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Integer.class);
+                ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Long.class);
             }
 
             String deleteTypePropsSql = "DELETE FROM " + getTinfoObjectProperty() +
@@ -1224,7 +1225,7 @@ public class OntologyManager
                 {
                     sep = "";
                     sqlIN = new StringBuilder();
-                    for (Integer id : ownerObjIds)
+                    for (Long id : ownerObjIds)
                     {
                         sqlIN.append(sep).append(id);
                         sep = ", ";
@@ -2896,7 +2897,7 @@ public class OntologyManager
             for (int i = 0; i < maxUsageCount && r.next(); i++)
             {
                 var row = r.getFieldKeyRowMap();
-                int oid = asInteger(row.get(objectId));
+                long oid = asLong(row.get(objectId));
                 String objectURI = (String) row.get(objectId_objectURI);
                 String container = (String) row.get(objectId_container);
 

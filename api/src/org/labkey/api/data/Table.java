@@ -913,7 +913,7 @@ public class Table
                 if (autoIncColumn.getJavaClass().isAssignableFrom(Long.TYPE))
                     _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
                 else
-                    _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
+                    _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
             }
 
             _copyInsertSpecialFields(returnObject, fields);

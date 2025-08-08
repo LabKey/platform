@@ -1030,7 +1030,7 @@ public class StatementUtils
             if (null != sqlfSelectIds)
             {
                 call.insert(0, "SELECT * FROM ");
-                call.append("As x(");
+                call.append(" AS x(");
                 String sep = "";
 
                 if (_selectIds)
