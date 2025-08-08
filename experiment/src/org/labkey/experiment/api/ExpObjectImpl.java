@@ -43,9 +43,10 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     protected ExpObjectImpl() {}
 
     @Override
-    public void lock()
+    public ExpObjectImpl lock()
     {
         _locked = true;
+        return this;
     }
 
     protected void ensureUnlocked()

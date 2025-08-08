@@ -75,10 +75,10 @@ public class DatabaseReportCache
                 }
             });
 
-            _rowIdMap = Collections.unmodifiableMap(rowIdMap);
-            _entityIdMap = Collections.unmodifiableMap(entityIdMap);
-            _reportKeyMap = MultiMapUtils.unmodifiableMultiValuedMap(reportKeyMap);
-            _inheritableReports = Collections.unmodifiableList(inheritableReports);
+            _rowIdMap = rowIdMap.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(rowIdMap);
+            _entityIdMap = entityIdMap.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(entityIdMap);
+            _reportKeyMap = reportKeyMap.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(reportKeyMap);
+            _inheritableReports = inheritableReports.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(inheritableReports);
         }
 
         private @Nullable Report getForRowId(int rowId)

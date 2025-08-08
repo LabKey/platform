@@ -87,7 +87,8 @@ public interface AssayService
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
     /**
-     * @return all the assay protocols that are in scope in the given container
+     * @return all the assay protocols that are in scope in the given container, which may include those
+     * defined in other containers
      */
     @NotNull List<ExpProtocol> getAssayProtocols(Container container);
 
