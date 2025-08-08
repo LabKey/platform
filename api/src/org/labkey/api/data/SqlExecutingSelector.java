@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -539,16 +538,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         @Override
         public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
-            Level logLevel = getLogLevel();
-
             // Reduce the logging for calculated expression column SQL errors (Issue 52026 and 51862)
             if (_sql != null && _sql.toString().contains(CALCULATED_COLUMN_SQL_TAG))
             {
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                logLevel = Level.DEBUG;
+                Table.debugException(_sql, conn, e);
             }
-
-            Table.logException(_sql, conn, e, logLevel);
+            else
+                Table.logException(_sql, conn, e, getLogLevel());
 
             if (null != _sql)
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toDebugString(), false);
