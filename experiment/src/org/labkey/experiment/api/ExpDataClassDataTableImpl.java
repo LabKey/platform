@@ -26,7 +26,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -47,7 +46,6 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -722,7 +720,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
             sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
-        String subAlias = alias + "_dc_sub";
+        String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
         sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 

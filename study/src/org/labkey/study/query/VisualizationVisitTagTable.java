@@ -63,7 +63,7 @@ public class VisualizationVisitTagTable extends VirtualTable
         checkReadBeforeExecute();
         if (_altQueryName == null)
         {
-            String innerAlias = alias + "_SP";
+            String innerAlias = getSqlDialect().truncate(alias + "_SP", 0);
             String joinString;
             if (_useProtocolDay)
             {
