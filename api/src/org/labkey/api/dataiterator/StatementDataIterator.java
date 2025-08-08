@@ -427,7 +427,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 sqlx = sqlx.getNextException();
             if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
             {
-                getRowError().addGlobalError(sqlx);
+                getGlobalError().addGlobalError(sqlx);
 //              see bug21719
 //              Sometimes (always?) Postgres leaves the connection unusable after a constraint exception, so we can't continue even if we want to
                 throw _errors;
@@ -436,7 +436,7 @@ public class StatementDataIterator extends AbstractDataIterator
             else if (SqlDialect.isObjectNotFoundException(sqlx))
             {
                 OptimisticConflictException opt = OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
-                getRowError().addGlobalError(opt);
+                getGlobalError().addGlobalError(opt);
                 throw _errors;
             }
             throw new RuntimeSQLException(sqlx);
