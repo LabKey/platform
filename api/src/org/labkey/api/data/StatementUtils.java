@@ -576,7 +576,7 @@ public class StatementUtils
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT").appendEOS();
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" BIGINT").appendEOS();
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
                 sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();
                 useVariables = _dialect.isPostgreSQL();
@@ -809,7 +809,7 @@ public class StatementUtils
                     rowIdVar = "_rowid_";
                 rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn, rowIdVar);
                 if (useVariables)
-                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT").appendEOS();  // CONSIDER: Move this into addReselect()?
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" BIGINT").appendEOS();  // CONSIDER: Move this into addReselect()?
             }
 
             if (_selectObjectUri && hasObjectURIColumn)
@@ -1027,7 +1027,6 @@ public class StatementUtils
             fn.append(" AS ").append(quoteToken).append("\n");
             call.append("))");
 
-
             if (null != sqlfSelectIds)
             {
                 call.insert(0, "SELECT * FROM ");
@@ -1038,13 +1037,13 @@ public class StatementUtils
                 {
                     if (null != rowIdVar)
                     {
-                        call.append("A int");
+                        call.append("A BIGINT");
                         sep = ", ";
                     }
                     if (null != objectIdVar)
                     {
                         call.append(sep);
-                        call.append("B int");
+                        call.append("B BIGINT");
                         sep = ", ";
                     }
                 }
@@ -1052,7 +1051,7 @@ public class StatementUtils
                 if (_selectObjectUri && null != objectURIVar)
                 {
                     call.append(sep);
-                    call.append("C varchar");
+                    call.append("C VARCHAR");
                 }
 
                 call.append(")").appendEOS();
@@ -1082,6 +1081,7 @@ public class StatementUtils
             }
             fn.append("END").appendEOS().append(" ").append(quoteToken).append(" LANGUAGE plpgsql").appendEOS();
             _log.debug(fn.toDebugString());
+            _log.debug(call.toDebugString());
             final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE").appendEOS();
             _log.debug(drop.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);

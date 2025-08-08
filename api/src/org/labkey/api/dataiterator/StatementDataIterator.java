@@ -377,7 +377,7 @@ public class StatementDataIterator extends AbstractDataIterator
                     }
                     else
                     {
-                        binding.to.setValue(value);
+                            binding.to.setValue(value);
                     }
                 }
                 log("</clear and set parameters on " + _currentStmt + ">");

@@ -95,7 +95,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
             if (seed instanceof ExpObject expObjectSeed)
                 objectId = expObjectSeed.getObjectId();
             else if (seed instanceof IdentifiableBase identifiableSeed)
-                objectId = identifiableSeed.getObjectId().intValue();
+                objectId = identifiableSeed.getObjectId();
 
             if (objectId == -1)
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());

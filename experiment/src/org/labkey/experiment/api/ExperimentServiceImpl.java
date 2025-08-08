@@ -4899,7 +4899,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         .append(getSchema().getSqlDialect().getTempTableKeyword())
                         .append(" TABLE ")
                         .append(objectTempTableName)
-                        .append("(ObjectId INT NOT NULL PRIMARY KEY)"));
+                        .append("(ObjectId BIGINT NOT NULL PRIMARY KEY)"));
 
                 executor.execute(new SQLFragment("INSERT INTO ")
                         .append(objectTempTableName)

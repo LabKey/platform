@@ -21,8 +21,8 @@ public class ExpLineageEdge
 
     public ExpLineageEdge(long fromObjectId, long toObjectId, Long runId, Long sourceId, String sourceKey)
     {
-        _fromObjectId = (int)fromObjectId;
-        _toObjectId = (int)toObjectId;
+        _fromObjectId = fromObjectId;
+        _toObjectId = toObjectId;
         _runId = runId == null ? null : runId.longValue();
         _sourceId = sourceId == null ? null : sourceId.longValue();
         _sourceKey = sourceKey;
