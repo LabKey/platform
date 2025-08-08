@@ -144,7 +144,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             return _delegate.get(i);
         Integer rowNumber = (Integer)_delegate.get(0);
         Map<String,Object> existingRow = existingRecords.get(rowNumber);
-        assert null != existingRow;
+        assert null != existingRow : (_context.getErrors().hasErrors() ? _context.getErrors().getRowErrors() : "ExistingRecordDataIterator is out of sync");
         return existingRow;
     }
 
