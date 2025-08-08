@@ -396,42 +396,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
-    /**
-     * Create a column map for parsing the generated tsv from the query view. We only want to map
-     * non-default columns, and need to build a map that goes from TSV header to PropertyURI
-     */
-    private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> fieldKeys, Map<FieldKey, ColumnInfo> fieldMap)
-    {
-        Map<String, String> columnMap = new CaseInsensitiveHashMap<>();
-        Study study = StudyManager.getInstance().getStudy(view.getContainer());
-
-        if (fieldMap != null)
-        {
-            if (fieldKeys.isEmpty())
-            {
-                fieldKeys = new ArrayList<>();
-                for (DisplayColumn dc : view.getDisplayColumns())
-                {
-                    ColumnInfo colInfo = dc.getColumnInfo();
-                    if (colInfo != null)
-                        fieldKeys.add(colInfo.getFieldKey());
-                }
-            }
-
-            for (FieldKey fieldKey : fieldKeys)
-            {
-                ColumnInfo col = fieldMap.get(fieldKey);
-                if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
-                {
-                    // The key of the entry is the same code that generates the TSV header lines for
-                    // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
-                    columnMap.put(FieldKey.fromString(col.getName()).toDisplayString(), getPropertyURI(d, col));
-                }
-            }
-        }
-        return columnMap;
-    }
-
     @Override
     public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
     {
