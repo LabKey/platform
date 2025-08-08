@@ -2262,7 +2262,7 @@ public class OntologyManager
     }
 
 
-    public static PropertyDescriptor getPropertyDescriptor(int propertyId)
+    public static PropertyDescriptor getPropertyDescriptor(long propertyId)
     {
         return new TableSelector(getTinfoPropertyDescriptor()).getObject(propertyId, PropertyDescriptor.class);
     }
