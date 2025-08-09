@@ -27,6 +27,7 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,12 +52,7 @@ import java.util.WeakHashMap;
 
 /**
  * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
- * them via the file system.
- *
- * Writes thread dumps via Log4J, and heap dumps to a .hprof file.
- *
- * Created by: jeckels
- * Date: 1/16/16
+ * them via the file system. Writes thread dumps via Log4J, and heap dumps to a .hprof file.
  */
 public class DebugInfoDumper
 {
@@ -70,11 +66,10 @@ public class DebugInfoDumper
 
     private static final int THREAD_DUMP_INTERVAL = 10000;
 
-    public DebugInfoDumper(File modulesDir)
+    public DebugInfoDumper(FileLike labkeyRoot)
     {
         // Ensure there's a thread dump request file
-        File labkeyRoot = modulesDir.getParentFile();
-        _threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
+        _threadDumpFile = FileUtil.toFileForWrite(labkeyRoot.resolveChild("threadDumpRequest"));
         if (!_threadDumpFile.exists())
         {
             try (PrintWriter writer = PrintWriters.getPrintWriter(_threadDumpFile))
@@ -91,7 +86,7 @@ public class DebugInfoDumper
         }
 
         // Ensure there's a heap dump request file
-        _heapDumpFile = new File(labkeyRoot, "heapDumpRequest");
+        _heapDumpFile = FileUtil.toFileForWrite(labkeyRoot.resolveChild("heapDumpRequest"));
         if (!_heapDumpFile.exists())
         {
             try (PrintWriter writer = PrintWriters.getPrintWriter(_heapDumpFile))
@@ -114,7 +109,7 @@ public class DebugInfoDumper
         try
         {
             //noinspection unchecked
-            FileSystemWatchers.get().addListener(labkeyRoot.toPath(), new FileSystemDirectoryListener()
+            FileSystemWatchers.get().addListener(FileUtil.toFileForRead(labkeyRoot).toPath(), new FileSystemDirectoryListener()
             {
                 @Override
                 public void entryCreated(Path directory, Path entry) {}

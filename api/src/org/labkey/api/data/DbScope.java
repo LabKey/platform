@@ -1477,7 +1477,7 @@ public class DbScope
     // Load metadata from database and overlay schema.xml, if DbSchemaType requires it
     protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
     {
-        LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
+        LOG.debug("Loading DbSchema \"{}.{}\" ({})", getDisplayName(), schemaName, type.name());
 
         DbSchema schema = DbSchema.createFromMetaData(this, schemaName, type);
         // Consider:  Logging the cases where loadSchema is called in a transaction, because this causes a JDBC call that is vulnerable to deadlocking
@@ -1496,12 +1496,12 @@ public class DbScope
         if (null == tablesDoc)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
-            LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
+            LOG.info("no schema metadata xml file found for schema \"{}\"", displayName);
 
             DbSchemaType type = ModuleLoader.getInstance().getSchemaType(schema.getScope(), schemaName);
 
             if (null != type && !type.applyXmlMetaData())
-                LOG.info("Shouldn't be loading metadata for " + type.name() + " schema \"" + displayName + "\"");
+                LOG.info("Shouldn't be loading metadata for {} schema \"{}\"", type.name(), displayName);
         }
         else
         {
@@ -1526,13 +1526,13 @@ public class DbScope
     private static List<String> getSchemaNames(Module module, boolean useCache)
     {
         return
-                (
-                        useCache ?
-                                SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream() :
-                                SchemaXmlCacheHandler.getSchemaFilenames(module)
-                )
-                        .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-                        .toList();
+        (
+            useCache ?
+                SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream() :
+                SchemaXmlCacheHandler.getSchemaFilenames(module)
+        )
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .toList();
     }
 
     // Verify that the two ways for determining schema names yield identical results
@@ -1647,10 +1647,11 @@ public class DbScope
         }
     }
 
-    // Enumerate each jdbc DataSource and initialize them
+    // Enumerate each jdbc DataSource and save them. Ensure primary database is correctly configured, created, and
+    // accessible. Connections to other databases are attempted later, on demand.
     public static void initializeDataSources()
     {
-        LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
+        LOG.debug("Loading data source configurations from application.properties and ensuring that primary data source is accessible");
 
         Map<String, LabKeyDataSource> dataSources = new TreeMap<>(String::compareTo);
 
@@ -2075,8 +2076,8 @@ public class DbScope
     public static @NotNull Set<String> getDataSourceNames()
     {
         return getLoaders().stream()
-                .map(DbScopeLoader::getDsName)
-                .collect(Collectors.toCollection(LinkedHashSet::new)); // Keep them in labkey.xml order for schema browser, etc.
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toCollection(LinkedHashSet::new)); // Keep them in application.properties order for schema browser, etc.
     }
 
     /**

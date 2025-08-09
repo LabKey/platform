@@ -31,6 +31,7 @@ import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.mule.LabKeySpringContainerContext;
 import org.labkey.pipeline.mule.LoggerUtil;
+import org.labkey.vfs.FileSystemLike;
 import org.mule.config.ConfigurationException;
 import org.mule.config.builders.MuleXmlConfigurationBuilder;
 import org.mule.umo.manager.UMOManager;
@@ -43,10 +44,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Aug 7, 2008
- */
 public abstract class AbstractPipelineStartup
 {
     private static final Logger _log = LogManager.getLogger(AbstractPipelineStartup.class);
@@ -140,7 +137,7 @@ public abstract class AbstractPipelineStartup
             {
                 BreakpointThread thread = new BreakpointThread();
                 thread.start();
-                new DebugInfoDumper(moduleFile.getParentFile());
+                new DebugInfoDumper(new FileSystemLike.Builder(moduleFile).readwrite().noMemCheck().root().getParent());
                 break;
             }
         }
@@ -186,5 +183,4 @@ public abstract class AbstractPipelineStartup
         }
         return null;
     }
-
 }
