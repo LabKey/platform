@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -26,6 +25,7 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
 
@@ -56,7 +56,7 @@ import java.util.WeakHashMap;
  */
 public class DebugInfoDumper
 {
-    private static final Logger LOG = LogManager.getLogger(DebugInfoDumper.class);
+    private static final Logger LOG = LogHelper.getLogger(DebugInfoDumper.class, "Thread and heap dump errors");
 
     private final File _threadDumpFile;
     private final File _heapDumpFile;
@@ -80,7 +80,7 @@ public class DebugInfoDumper
             }
             catch (IOException e)
             {
-                LOG.error("Failed to create file " + _threadDumpFile.getAbsolutePath(), e);
+                LOG.error("Failed to create file {}", _threadDumpFile.getAbsolutePath(), e);
             }
             _threadDumpFile.deleteOnExit();
         }
@@ -98,7 +98,7 @@ public class DebugInfoDumper
             }
             catch (IOException e)
             {
-                LOG.error("Failed to create file " + _heapDumpFile.getAbsolutePath(), e);
+                LOG.error("Failed to create file {}", _heapDumpFile.getAbsolutePath(), e);
             }
             _heapDumpFile.deleteOnExit();
         }
@@ -202,7 +202,7 @@ public class DebugInfoDumper
             try
             {
                 File destination = dumpHeap();
-                LOG.info("Dumped server heap to " + destination);
+                LOG.info("Dumped server heap to {}", destination);
             }
             catch (Exception e)
             {

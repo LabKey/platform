@@ -521,7 +521,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         setTomcatVersion();
 
         File root = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath(""))).getParentFile();
-        _labkeyRoot = new FileSystemLike.Builder(root).readonly().noMemCheck().root();
+        _labkeyRoot = new FileSystemLike.Builder(root).readwrite().noMemCheck().root();
         _webappDir = _labkeyRoot.resolveChild("labkeyWebapp");
 
         String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
