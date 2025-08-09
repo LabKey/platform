@@ -284,8 +284,6 @@ public class DebugInfoDumper
         return destination;
     }
 
-
-
     static boolean justWaiting(StackTraceElement[] stack)
     {
         if (stack.length > 20)
@@ -304,7 +302,6 @@ public class DebugInfoDumper
         return "park".equals(topMethod) || "wait".equals(topMethod) || "poll".equals(topMethod) || "accept".equals(topMethod) || "sleep".equals(topMethod) || "waitForReferencePendingList".equals(topMethod);
         // OK probably just waiting for work.  We could check for common tomcat/labkey patterns here to be more conservative.
     }
-
 
     /**
      * Writes the thread dump into threads.txt

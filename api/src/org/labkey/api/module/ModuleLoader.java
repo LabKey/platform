@@ -2186,7 +2186,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-
     public @Nullable Module getModule(DbScope scope, String schemaName)
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
@@ -2618,17 +2617,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private static class SchemaDetails
+    private record SchemaDetails(Module _module, DbSchemaType _type)
     {
-        private final Module _module;
-        private final DbSchemaType _type;
-
-        private SchemaDetails(Module module, DbSchemaType type)
-        {
-            _module = module;
-            _type = type;
-        }
-
         public Module getModule()
         {
             return _module;
