@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
@@ -31,6 +32,7 @@ import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.mule.LabKeySpringContainerContext;
 import org.labkey.pipeline.mule.LoggerUtil;
+import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.mule.config.ConfigurationException;
 import org.mule.config.builders.MuleXmlConfigurationBuilder;
@@ -108,13 +110,13 @@ public abstract class AbstractPipelineStartup
 
             if (!springConfigPaths.isEmpty())
             {
-                _log.info("Loading Spring configuration for the " + module.getName() + " module from " + springConfigPaths);
+                _log.info("Loading Spring configuration for the {} module from {}", module.getName(), springConfigPaths);
 
                 // Initialize the Spring context
                 BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[0]))
                 {
                     @Override
-                    public String getDisplayName()
+                    public @NotNull String getDisplayName()
                     {
                         return module.getName();
                     }
@@ -137,7 +139,8 @@ public abstract class AbstractPipelineStartup
             {
                 BreakpointThread thread = new BreakpointThread();
                 thread.start();
-                new DebugInfoDumper(new FileSystemLike.Builder(moduleFile).readwrite().noMemCheck().root().getParent());
+                FileLike labkeyRoot = new FileSystemLike.Builder(moduleFile.getParentFile().getParentFile()).readwrite().noMemCheck().root();
+                new DebugInfoDumper(labkeyRoot);
                 break;
             }
         }
