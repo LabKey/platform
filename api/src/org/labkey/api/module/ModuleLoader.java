@@ -2190,14 +2190,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
 
-        return null != details ? details.getModule() : null;
+        return null != details ? details.module() : null;
     }
 
     public @Nullable DbSchemaType getSchemaType(DbScope scope, String schemaName)
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
 
-        return null != details ? details.getType() : null;
+        return null != details ? details.type() : null;
     }
 
     private @Nullable SchemaDetails getSchemaDetails(DbScope scope, String schemaName)
@@ -2617,18 +2617,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private record SchemaDetails(Module _module, DbSchemaType _type)
-    {
-        public Module getModule()
-        {
-            return _module;
-        }
-
-        public DbSchemaType getType()
-        {
-            return _type;
-        }
-    }
+    private record SchemaDetails(Module module, DbSchemaType type) {}
 
     @Override
     public void beforeReport(Set<Object> set)
