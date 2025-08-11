@@ -74,7 +74,7 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
                 {
                     if (file.startsWith(SampleTypeFolderWriter.SAMPLE_STATUS_PREFIX))
                     {
-                        sampleStatusDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeFolderWriter.SAMPLE_STATUS_PREFIX.length())), file);
+                        sampleStatusDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeFolderWriter.SAMPLE_STATUS_PREFIX.length()) + ".tsv"), file);
                     }
                 }
             }
