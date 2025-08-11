@@ -371,6 +371,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (var row : rows)
         {
             var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
+            if (plateId instanceof Number)
+                plateId = asLong(plateId);
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
