@@ -272,11 +272,14 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
             for (ExpObject expObject : expObjects)
             {
                 String tableName = expObject.getName();
-                // tsv file name will have been generated from a sanitized table name
+                // tsv file name might have been generated from a sanitized table name
                 String fileName = FileUtil.makeLegalName(tableName);
-                if (dataFileMap.containsKey(fileName))
+                if (dataFileMap.containsKey(fileName) || dataFileMap.containsKey(tableName))
                 {
                     String dataFileName = dataFileMap.get(fileName);
+                    if (dataFileName == null)
+                        dataFileName = dataFileMap.get(tableName);
+
                     TableInfo tinfo = userSchema.getTable(tableName);
                     if (tinfo != null)
                     {
