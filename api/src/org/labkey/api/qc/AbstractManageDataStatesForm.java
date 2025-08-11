@@ -22,7 +22,7 @@ public class AbstractManageDataStatesForm extends ReturnUrlForm
     private int[] _ids;
     private String[] _labels;
     private String[] _descriptions;
-    private int[] _publicData;
+    private long[] _publicData;
     private int[] _newIds;
     private String[] _newLabels;
     private String[] _newDescriptions;
@@ -60,12 +60,12 @@ public class AbstractManageDataStatesForm extends ReturnUrlForm
         _descriptions = descriptions;
     }
 
-    public int[] getPublicData()
+    public long[] getPublicData()
     {
         return _publicData;
     }
 
-    public void setPublicData(int[] publicData)
+    public void setPublicData(long[] publicData)
     {
         _publicData = publicData;
     }
