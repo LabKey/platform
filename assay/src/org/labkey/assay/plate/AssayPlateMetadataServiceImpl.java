@@ -412,6 +412,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 while (results.next())
                 {
                     Object plate = results.getObject(plateFieldKey);
+                    // plateMap contains Strings and Longs
+                    if (plate instanceof Number)
+                        plate = asLong(plate);
                     if (plateMap.containsKey(plate) && !incomingPlates.contains(plate))
                     {
                         Map<String, Object> row = new HashMap<>();
