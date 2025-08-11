@@ -991,7 +991,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
         }
 
-        private boolean equalsTo(Object a, Object b)
+        private static boolean equalsTo(Object a, Object b)
         {
             if (Objects.equals(a,b))
                 return true;
