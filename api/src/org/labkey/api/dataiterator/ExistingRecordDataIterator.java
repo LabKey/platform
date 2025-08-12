@@ -144,7 +144,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             return _delegate.get(i);
         Integer rowNumber = (Integer)_delegate.get(0);
         Map<String,Object> existingRow = existingRecords.get(rowNumber);
-        assert null != existingRow : (_context.getErrors().hasErrors() ? _context.getErrors().getRowErrors() : "ExistingRecordDataIterator is out of sync");
+        assert null != existingRow;
         return existingRow;
     }
 
@@ -170,11 +170,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        if (_context.getErrors().hasErrors())
+            return false;
+
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         if (useMark)
             _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
+        if (ret && !pkColumns.isEmpty())
         {
             prefetchExisting();
             if (_context.shouldCancel())
