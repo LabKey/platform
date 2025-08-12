@@ -822,16 +822,16 @@ public class PageFlowUtil
     }
 
 
-    // Cookie helper function -- loops through Cookie array and returns matching value (or defaultValue if not found)
+    // Cookie helper function -- loops through Cookie array and returns first matching value (or defaultValue if not found)
     public static String getCookieValue(Cookie[] cookies, String cookieName, @Nullable String defaultValue)
     {
         if (null != cookies)
             for (Cookie cookie : cookies)
             {
                 if (cookieName.equals(cookie.getName()))
-                    return (cookie.getValue());
+                    return cookie.getValue();
             }
-        return (defaultValue);
+        return defaultValue;
     }
 
     public static int[] toInts(Collection<String> strings)

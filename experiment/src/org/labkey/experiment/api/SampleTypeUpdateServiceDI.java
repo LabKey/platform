@@ -516,31 +516,28 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-            SearchService searchService = SearchService.get();
-            if (searchService != null)
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
+            scope.addCommitTask(() ->
             {
-                scope.addCommitTask(() ->
+                List<Long> orderedRowIds = new ArrayList<>();
+                for (Map<String, Object> result : results)
                 {
-                    List<Long> orderedRowIds = new ArrayList<>();
-                    for (Map<String, Object> result : results)
-                    {
-                        Long rowId = MapUtils.getLong(result,RowId.name());
-                        if (rowId != null)
-                            orderedRowIds.add(rowId);
-                    }
-                    // Issue 51263: order by RowId to reduce deadlock
-                    Collections.sort(orderedRowIds);
+                    Long rowId = MapUtils.getLong(result, RowId.name());
+                    if (rowId != null)
+                        orderedRowIds.add(rowId);
+                }
+                // Issue 51263: order by RowId to reduce deadlock
+                Collections.sort(orderedRowIds);
 
-                    ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
-                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                            {
-                                for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), null, tableInfo);
-                            })
-                    );
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
-            }
+                ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
+                ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                        queue.addRunnable((q) ->
+                        {
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
+                                expMaterial.index(q, tableInfo);
+                        })
+                );
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());

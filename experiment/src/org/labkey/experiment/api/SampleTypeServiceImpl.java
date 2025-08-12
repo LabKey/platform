@@ -261,44 +261,32 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void indexSampleType(ExpSampleType sampleType)
+    public void indexSampleType(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue)
     {
         if (sampleType == null)
             return;
 
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
+        queue.addRunnable((q) -> {
+            // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
+            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                    .append(getTinfoMaterialSource(), "ms")
+                    .append(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
+                    .append(" AND ms.LSID = ?").add(sampleType.getLSID())
+                    .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
+                    .add(sampleType.getModified());
 
-        SearchService.IndexTask task = ss.defaultTask();
+            MaterialSource materialSource = new SqlSelector(getExpSchema().getScope(), sql).getObject(MaterialSource.class);
+            if (materialSource != null)
+            {
+                ExpSampleTypeImpl impl = new ExpSampleTypeImpl(materialSource);
+                impl.index(q, null);
+            }
 
-        Runnable r = () -> {
-            indexSampleType(sampleType, task);
-            indexSampleTypeMaterials(sampleType, task);
-        };
-
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+            indexSampleTypeMaterials(sampleType, q);
+        });
     }
 
-    private void indexSampleType(ExpSampleType sampleType, SearchService.IndexTask task)
-    {
-        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-        SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                .append(getTinfoMaterialSource(), "ms")
-                .append(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
-                .append(" AND ms.LSID = ?").add(sampleType.getLSID())
-                .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
-                .add(sampleType.getModified());
-
-        MaterialSource materialSource = new SqlSelector(getExpSchema().getScope(), sql).getObject(MaterialSource.class);
-        if (materialSource != null)
-        {
-            ExpSampleTypeImpl impl = new ExpSampleTypeImpl(materialSource);
-            impl.index(task);
-        }
-    }
-
-    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.IndexTask task)
+    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
@@ -315,7 +303,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Material m : batch)
             {
                 ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(task, null, null /* null tableInfo since samples may belong to multiple containers*/);
+                impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
             }
         });
     }
@@ -654,13 +642,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
 
         // Remove SampleType from search index
-        SearchService ss = SearchService.get();
-        if (null != ss)
+        try (Timing ignored = MiniProfiler.step("search docs"))
         {
-            try (Timing ignored = MiniProfiler.step("search docs"))
-            {
-                ss.deleteResource(source.getDocumentId());
-            }
+            SearchService.get().deleteResource(source.getDocumentId());
         }
 
         timer.stop();
@@ -912,7 +896,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     transaction.addCommitTask(() -> {
-                        indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()));
+                        indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified));
                     }, POSTCOMMIT);
 
                     return st;
@@ -1153,7 +1137,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         }
                     }
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st), POSTCOMMIT);
+                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
@@ -1946,7 +1930,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update);
                     // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                     // based on the modified date
-                    SampleTypeServiceImpl.get().indexSampleType(sampleType);
+                    SampleTypeServiceImpl.get().indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 

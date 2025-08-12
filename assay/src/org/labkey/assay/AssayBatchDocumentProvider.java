@@ -27,10 +27,9 @@ import static org.labkey.api.util.StringUtilsLabKey.append;
 public class AssayBatchDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
-    public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> AssayManager.get().indexAssayBatches(task, c, modifiedSince);
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+        queue.addRunnable((q) -> AssayManager.get().indexAssayBatches(q, modifiedSince));
     }
 
     private static SearchService.SearchCategory getSearchCategory()

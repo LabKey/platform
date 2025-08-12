@@ -63,6 +63,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityLogger;
@@ -1908,6 +1909,13 @@ public class ContainerManager
         }
 
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+
+        SearchService ss = SearchService.get();
+        if (ss != null)
+        {
+            // Tell the search indexer to drop work for the container that's about to be deleted
+            ss.purgeForContainer(c);
+        }
 
         DbScope.RetryFn<Boolean> tryDeleteContainer = (tx) ->
         {

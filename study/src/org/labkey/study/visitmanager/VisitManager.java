@@ -485,26 +485,21 @@ public abstract class VisitManager
         //
         // tell the search service about potential new ptids
         //
-        final SearchService ss = SearchService.get();
-        if (null != ss)
+        SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified);
+        if (null != potentiallyInsertedParticipants)
         {
-            if (null != potentiallyInsertedParticipants)
+            final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
+            queue.addRunnable((q) -> StudyManager.indexParticipants(q, ptids, null));
+        }
+        else
+        {
+            queue.addRunnable((q) ->
             {
-                final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
-                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
-                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
-            }
-            else
-            {
-                Runnable r = () ->
-                {
-                    SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-                    filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
-                    List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
-                    StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
-                };
-                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
-            }
+                SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+                filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
+                List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
+                StudyManager.indexParticipants(q, ptids, null);
+            });
         }
     }
 
