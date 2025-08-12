@@ -26,6 +26,8 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -263,20 +265,23 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     default Unit getDisplayUnit()
     {
-        if (!getJdbcType().isNumeric())
-            return null;
-        String name = getName();
-        var index = name.lastIndexOf("__");
-        if (index < 0)
-            return null;
-        var unitPart = name.substring(index+2);
-        try
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
         {
-            return Unit.valueOf(unitPart);
-        }
-        catch (IllegalArgumentException x)
-        {
-            // pass
+            if (!getJdbcType().isNumeric())
+                return null;
+            String name = getName();
+            var index = name.lastIndexOf("__");
+            if (index < 0)
+                return null;
+            var unitPart = name.substring(index + 2);
+            try
+            {
+                return Unit.valueOf(unitPart);
+            }
+            catch (IllegalArgumentException x)
+            {
+                // pass
+            }
         }
         return null;
     }

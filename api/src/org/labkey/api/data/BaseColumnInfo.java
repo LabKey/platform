@@ -46,6 +46,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1356,15 +1358,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (StringUtils.isBlank(name))
             return name;
 
-        //UNDONE This is just for testing the idea (let the DataRegion/DataColumn do this)
-        var index = name.indexOf("__");
-        if (index > 0)
+        // NOTE: This is just for testing (let the DataRegion/DataColumn do this)
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
         {
-            String unit = name.substring(index + 2);
-            if (null != org.labkey.api.ontology.Unit.fromName(unit))
-                name = name.substring(0, index);
+            var index = name.indexOf("__");
+            if (index > 0)
+            {
+                String unit = name.substring(index + 2);
+                if (null != org.labkey.api.ontology.Unit.fromName(unit))
+                    name = name.substring(0, index);
+            }
         }
-        //UNDONE
 
         StringBuilder buf = new StringBuilder(name.length() + 10);
         char[] chars = new char[name.length()];
