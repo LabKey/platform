@@ -140,37 +140,28 @@
         assayTemplate.setEditableResults(true);
         List<GWTDomain<GWTPropertyDescriptor>> domains = assayTemplate.getDomains();
 
-        // clear the batch domain fields
-        GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
-        batchDomain.getFields(true).clear();
-
-        // clear the run domain fields
-        GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
-        runDomain.getFields(true).clear();
-
-        // clear the result domain fields and add a sample lookup
-        GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
-        resultDomain.getFields(true).clear();
+        List<GWTPropertyDescriptor> runFields = new ArrayList<>();
+        List<GWTPropertyDescriptor> resultFields = new ArrayList<>();
 
         if (editableRunsAndResults)
         {
             GWTPropertyDescriptor runProp = new GWTPropertyDescriptor("runProp", "int");
-            runDomain.getFields(true).add(runProp);
+            runFields.add(runProp);
             GWTPropertyDescriptor resultProp = new GWTPropertyDescriptor("resultProp", "int");
-            resultDomain.getFields(true).add(resultProp);
+            resultFields.add(resultProp);
         }
 
         // Lookup to exp.Materials on run domain
         GWTPropertyDescriptor runExpMaterialLookup = new GWTPropertyDescriptor("RunExpMaterialsLookup", "int");
         runExpMaterialLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
         runExpMaterialLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
-        runDomain.getFields(true).add(runExpMaterialLookup);
+        runFields.add(runExpMaterialLookup);
 
         // Lookup to exp.Materials on results domain
         GWTPropertyDescriptor resultExpMaterialLookup = new GWTPropertyDescriptor("ResultExpMaterialsLookup", "int");
         resultExpMaterialLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
         resultExpMaterialLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
-        resultDomain.getFields(true).add(resultExpMaterialLookup);
+        resultFields.add(resultExpMaterialLookup);
 
         if (includeSampleTypeLookups)
         {
@@ -180,14 +171,26 @@
             GWTPropertyDescriptor sampleTypeLookup = new GWTPropertyDescriptor("SampleTypeLookup", "string");
             sampleTypeLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
             sampleTypeLookup.setLookupQuery(sampleType.getName());
-            resultDomain.getFields(true).add(sampleTypeLookup);
+            resultFields.add(sampleTypeLookup);
 
             // Lookup to exp.materials.<sample type name>
             GWTPropertyDescriptor expMaterialsSampleTypeLookup = new GWTPropertyDescriptor("ExpMaterialSampleTypeLookup", "int");
             expMaterialsSampleTypeLookup.setLookupSchema(ExpSchema.SCHEMA_EXP_MATERIALS.toString());
             expMaterialsSampleTypeLookup.setLookupQuery(sampleType.getName());
-            resultDomain.getFields(true).add(expMaterialsSampleTypeLookup);
+            resultFields.add(expMaterialsSampleTypeLookup);
         }
+
+        // clear the batch domain fields
+        GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
+        batchDomain.setFields(Collections.emptyList());
+
+        // set the run domain fields
+        GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
+        runDomain.setFields(runFields);
+
+        // set the result domain fields
+        GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
+        resultDomain.setFields(resultFields);
 
         // create the assay
         log.info("creating assay");
@@ -704,5 +707,44 @@
         assertNotNull(updatedRun);
 
         assertEquals(0, updatedRun.getMaterialInputs().size());
+    }
+
+    @Test
+    public void testDomainFieldConfiguration() throws Exception
+    {
+        // Validates assay domain fields are configured as expected by DomainUtil and not overwritten
+        // Arrange
+        var sampleTypeName = "Does Not Exist";
+        var lookupName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
+        var assayPair = createAssay(context, true, true);
+        var domainService = new AssayDomainServiceImpl(context);
+        var gwtProtocol = domainService.getAssayDefinition(assayPair.second.getRowId(), false);
+
+        // Update the assay design to refer to a non-existent sample type
+        {
+            var resultDomain = getResultDomain(gwtProtocol);
+            var resultFields = resultDomain.getFields(true);
+
+            GWTPropertyDescriptor invalidSampleLookup = new GWTPropertyDescriptor("SampleTypeLookup", "string");
+            invalidSampleLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+            invalidSampleLookup.setLookupQuery(sampleTypeName);
+            invalidSampleLookup.setName(lookupName);
+            resultFields.add(invalidSampleLookup);
+            resultDomain.setFields(resultFields);
+            gwtProtocol = domainService.saveChanges(gwtProtocol, true);
+        }
+
+        // Act
+        var updatedResultsDomain = getResultDomain(gwtProtocol);
+
+        // Assert
+        var lookup = updatedResultsDomain.getFieldByName(lookupName);
+        assertFalse("Expected lookup to be marked as invalid since sample type does not exist by that name", lookup.getLookupIsValid());
+        assertEquals("Expected lookup query to point to non-existent sample type", sampleTypeName, lookup.getLookupQuery());
+    }
+
+    private GWTDomain<GWTPropertyDescriptor> getResultDomain(GWTProtocol protocol)
+    {
+        return protocol.getDomains().stream().filter(d -> "Data".equals(d.getQueryName())).findFirst().orElseThrow();
     }
 %>
