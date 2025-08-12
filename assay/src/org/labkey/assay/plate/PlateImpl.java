@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
@@ -42,6 +43,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
@@ -58,7 +61,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -160,9 +166,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         Container container = ContainerManager.getForId(bean.getContainerId());
         plate.setContainer(container);
         plate.setCreated(bean.getCreated());
-        plate.setCreatedBy(UserManager.getUser(bean.getCreatedBy()));
+        plate.setCreatedBy(bean.getCreatedBy());
         plate.setModified(bean.getModified());
-        plate.setModifiedBy(UserManager.getUser(bean.getModifiedBy()));
+        plate.setModifiedBy(bean.getModifiedBy());
 
         // plate type and plate set objects
         PlateType plateType = PlateManager.get().getPlateType(bean.getPlateType());
@@ -436,9 +442,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return user != null ? user.getUserProps() : null;
     }
 
-    public void setCreatedBy(User createdBy)
+    public void setCreatedBy(int createdBy)
     {
-        _createdBy = createdBy.getUserId();
+        _createdBy = createdBy;
     }
 
     public Date getModified()
@@ -458,9 +464,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return user != null ? user.getUserProps() : null;
     }
 
-    public void setModifiedBy(User modifiedBy)
+    public void setModifiedBy(int modifiedBy)
     {
-        _modifiedBy = modifiedBy.getUserId();
+        _modifiedBy = modifiedBy;
     }
 
     public String getDataFileId()
@@ -760,6 +766,15 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     public static final class TestCase
     {
+        private static PlateSetImpl _plateSet;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            PlateSetImpl plateSet = new PlateSetImpl();
+            _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null);
+        }
+
         @Test
         public void testIdentifierMatch()
         {
@@ -780,6 +795,55 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
             assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch("TestName"));
             assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch(""));
             assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch(null));
+        }
+
+        @Test
+        public void testFromInitializer()
+        {
+            String testContainerId = JunitUtil.getTestContainer().getId();
+            int testUserId = TestContext.get().getUser().getUserId();
+            int plateTypeId = PlateManager.get().getPlateTypes().stream().findFirst().orElseThrow().getRowId();
+            int plateSetId = _plateSet.getRowId();
+
+            PlateBean bean = new PlateBean();
+            Integer expectedRowId = 1;
+            String expectedName = "Test Name";
+            Boolean archived = null;
+            bean.setPlateType(plateTypeId);
+            bean.setPlateSet(plateSetId);
+            bean.setContainerId(testContainerId);
+            bean.setCreatedBy(testUserId);
+            bean.setModifiedBy(testUserId);
+            bean.setRowId(expectedRowId);
+            bean.setPlateId("test-id");
+            bean.setName(expectedName);
+            bean.setArchived(archived);
+
+            PlateImpl plate = PlateImpl.from(bean);
+            assertNotNull(plate.getCreatedBy());
+            assertEquals(testUserId, plate.getCreatedBy().getInt("id"));
+            assertNotNull(plate.getModifiedBy());
+            assertEquals(testUserId, plate.getModifiedBy().getInt("id"));
+            assertEquals(expectedName, plate.getName());
+            assertEquals(expectedRowId, plate.getRowId());
+            assertFalse(plate.isArchived());
+            assertFalse(plate.isNew());
+
+            // Issue 53633: Verify an invalid user does not cause an error initializing from bean
+            {
+                bean = new PlateBean();
+                bean.setPlateType(plateTypeId);
+                bean.setPlateSet(plateSetId);
+                bean.setContainerId(testContainerId);
+                bean.setCreatedBy(-1);
+                bean.setModifiedBy(-1);
+
+                plate = PlateImpl.from(bean);
+                assertNull(plate.getCreatedBy());
+                assertNull(plate.getModifiedBy());
+                assertFalse(plate.isArchived());
+                assertTrue(plate.isNew());
+            }
         }
     }
 }
