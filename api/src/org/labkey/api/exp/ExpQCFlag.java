@@ -19,8 +19,6 @@ import org.labkey.api.data.Entity;
 
 /**
  * Quality control flag bean class, attached to an {@link org.labkey.api.exp.api.ExpRun}.
- * User: cnathe
- * Date: Dec 16, 2011
  */
 public class ExpQCFlag extends Entity
 {
@@ -59,7 +57,7 @@ public class ExpQCFlag extends Entity
         return _runId;
     }
 
-    public void setRunId(int runId)
+    public void setRunId(long runId)
     {
         _runId = runId;
     }
