@@ -949,7 +949,7 @@ public class UserManager
         }
         catch (Exception e)
         {
-            LOG.error("deleteUser: " + e);
+            LOG.error("deleteUser", e);
             throw new UserManagementException(deletUser.getEmail(), e);
         }
 
