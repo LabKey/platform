@@ -1281,8 +1281,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
                 indexPlate(container, plateRowId, false);
-                if (plate.getPlateSet() != null && SearchService.get() != null)
-                    indexPlateSet(SearchService.get().defaultTask(), plate.getPlateSet());
+                if (plate.getPlateSet() != null)
+                    indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plate.getPlateSet());
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
 
@@ -2177,14 +2177,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void deindexPlates(Collection<Lsid> plateLsids)
     {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
         Set<String> documentIds = new HashSet<>();
         for (Lsid lsid : plateLsids)
             documentIds.add(PlateDocumentProvider.getDocumentId(lsid));
-        ss.deleteResources(documentIds);
+        SearchService.get().deleteResources(documentIds);
     }
 
     private void pausePlateIndexing()
@@ -2216,63 +2212,61 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         else
         {
             Plate plate = getPlate(c, plateRowId);
-            SearchService ss = SearchService.get();
 
-            if (ss == null || plate == null)
+            if (plate == null)
                 return;
 
-            indexPlate(ss.defaultTask(), plate);
+            indexPlate(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), plate);
         }
     }
 
-    private void indexPlate(SearchService.IndexTask task, @NotNull Plate plate)
+    private void indexPlate(SearchService.TaskIndexingQueue queue, @NotNull Plate plate)
     {
         WebdavResource resource = PlateDocumentProvider.createDocument(plate);
-        task.addResource(resource, SearchService.PRIORITY.item);
+        queue.addResource(resource);
     }
 
-    public void indexPlates(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    public void indexPlates(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
+        Container c = queue.getContainer();
         for (Plate plate : getPlates(c))
         {
             if (modifiedSince == null || modifiedSince.before(((PlateImpl) plate).getModified()))
-                indexPlate(task, plate);
+                indexPlate(queue, plate);
         }
     }
 
     public void indexPlateSet(Container container, Integer plateSetRowId)
     {
         PlateSet plateSet = getPlateSet(container, plateSetRowId);
-        SearchService ss = SearchService.get();
 
-        if (ss == null || plateSet == null)
+        if (plateSet == null)
             return;
 
-        indexPlateSet(ss.defaultTask(), plateSet);
+        indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plateSet);
     }
 
-    private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
+    private void indexPlateSet(SearchService.TaskIndexingQueue queue, @NotNull PlateSet plateSet)
     {
         WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
-        task.addResource(resource, SearchService.PRIORITY.item);
+        queue.addResource(resource);
     }
 
-    public void indexPlateSets(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    public void indexPlateSets(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        for (PlateSet plateset : getPlateSets(c))
+        for (PlateSet plateset : getPlateSets(queue.getContainer()))
         {
             if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateset).getModified()))
-                indexPlateSet(task, plateset);
+                indexPlateSet(queue, plateset);
         }
     }
 
     public static void deindexPlateSet(Container container, Integer plateSetRowId)
     {
-        SearchService ss = SearchService.get();
-        if (ss == null || plateSetRowId == null)
+        if (plateSetRowId == null)
             return;
 
-        ss.deleteResources(Set.of(PlateSetDocumentProvider.getDocumentId(container, plateSetRowId)));
+        SearchService.get().deleteResources(Set.of(PlateSetDocumentProvider.getDocumentId(container, plateSetRowId)));
     }
 
     /**
@@ -2840,8 +2834,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             tx.commit();
         }
 
-        if (plateSet != null && SearchService.get() != null)
-            indexPlateSet(SearchService.get().defaultTask(), plateSet);
+        if (plateSet != null)
+            indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plateSet);
 
         return plateSet;
     }

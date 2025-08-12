@@ -672,9 +672,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     public void attachProtocolDocument(List<AttachmentFile> files, User user) throws IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            StudyManager._enumerateProtocolDocuments(ss.defaultTask(), this);
+        StudyManager._enumerateProtocolDocuments(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), this);
     }
 
     @Override
@@ -766,9 +764,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     public void removeProtocolDocument(String name, User user)
     {
         AttachmentService.get().deleteAttachment(getProtocolDocumentAttachmentParent(), name, user);
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            ss.deleteResource("attachment:/" + _protocolDocumentEntityId + "/" + PageFlowUtil.encode(name));
+        SearchService.get().deleteResource("attachment:/" + _protocolDocumentEntityId + "/" + PageFlowUtil.encode(name));
     }
 
     @Override

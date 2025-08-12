@@ -64,7 +64,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MemberType;
@@ -121,6 +120,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
@@ -401,7 +401,7 @@ public class IssueManager
                 saveComments(user, issue);
                 saveRelatedIssues(user, issue);
 
-                indexIssue(container, user, null, issue);
+                indexIssue(container, user, issue);
 
                 transaction.commit();
             }
@@ -919,12 +919,9 @@ public class IssueManager
     }
 
 
-    public static void indexIssues(IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexIssues(SearchService.TaskIndexingQueue queue, Date modifiedSince)
     {
-        SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
-
+        Container c = queue.getContainer();
         SimpleFilter f = SimpleFilter.createContainerFilter(c);
         SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
         if (!incremental.isEmpty())
@@ -934,35 +931,34 @@ public class IssueManager
 
         // Index issues in batches of 100
         new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
-                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group));
+                .forEachBatch(Integer.class, 100, batch -> queue.addRunnable(new IndexGroup(batch)));
     }
 
-    private static class IndexGroup implements Runnable
+    private static class IndexGroup implements Consumer<SearchService.TaskIndexingQueue>
     {
         private final List<Integer> _ids;
-        private final IndexTask _task;
 
-        IndexGroup(IndexTask task, List<Integer> ids)
+        IndexGroup(List<Integer> ids)
         {
             _ids = ids;
-            _task = task;
         }
 
         @Override
-        public void run()
+        public void accept(SearchService.TaskIndexingQueue a)
         {
             User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-            indexIssues(null, user, _task, _ids);
+            indexIssues(a, user, _ids);
         }
     }
 
 
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(@Nullable Container container, User user, IndexTask task, Collection<Integer> ids)
+    public static void indexIssues(SearchService.TaskIndexingQueue queue, User user, Collection<Integer> ids)
     {
         if (ids.isEmpty())
             return;
 
+        Container container = queue.getContainer();
         SQLFragment f = new SQLFragment();
         f.append("SELECT I.issueId, I.container, I.entityid, I.duplicate, ")
                 .append("C.comment\n");
@@ -975,7 +971,7 @@ public class IssueManager
             {
                 IssueObject issue = IssueManager.getIssue(container, user, id);
                 if (issue != null)
-                    queueIssue(task, id, issue.getProperties(), issue.getCommentObjects());
+                    queueIssue(queue, id, issue.getProperties(), issue.getCommentObjects());
             }
             catch (UnauthorizedException e)
             {
@@ -985,33 +981,22 @@ public class IssueManager
     }
 
 
-    static void indexIssue(Container container, User user, @Nullable IndexTask task, IssueObject issue)
+    static void indexIssue(Container container, User user, IssueObject issue)
     {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
-
-        // UNDONE: broken ??
-        // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
-
         // try requery instead
-        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()));
+        indexIssues(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), user, Collections.singleton(issue.getIssueId()));
     }
 
 
-    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<IssueObject.CommentObject> comments)
+    static void queueIssue(SearchService.TaskIndexingQueue queue, int id, Map<String,Object> m, Collection<IssueObject.CommentObject> comments)
     {
-        if (null == task || null == m)
+        if (null == m)
             return;
         String title = String.valueOf(m.get("title"));
         m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
         m.put("comment", null);
         m.put("_row", null);
-        task.addResource(new IssueResource(id, m, comments), SearchService.PRIORITY.item);
+        queue.addResource(new IssueResource(id, m, comments));
     }
 
 
