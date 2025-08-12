@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -269,7 +270,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (outputRows == null || outputRows.isEmpty())
             return null;
 
-        Set<Long> rootRowIds = new HashSet<>();
+        Set<Long> rootRowIds = new LongHashSet();
         Set<String> parentNames = new HashSet<>();
         if (outputRows.size() == 1 && outputRows.get(0).containsKey(ROOT_RECOMPUTE_ROWID_SET))
         {
@@ -311,7 +312,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
 
                 boolean hasRollUpColumns = parenRowIdToRecomputeCol != null && parentNameToRecomputeCol != null;
-                Set<Integer> rowIdsToRecompute = new HashSet<>();
+                Set<Long> rowIdsToRecompute = new LongHashSet();
                 Set<String> nameToRecompute = new HashSet<>();
 
                 if (hasRollUpColumns)
@@ -339,7 +340,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                 {
                                     Object rowIdObj = (_delegate).get(parenRowIdToRecomputeCol);
                                     if (rowIdObj != null)
-                                        rowIdsToRecompute.add((Integer) rowIdObj);
+                                        rowIdsToRecompute.add(asLong(rowIdObj));
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
                                     {
@@ -1611,7 +1612,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final RemapCache _cache;
         final Container _container;
         final List<Supplier<Map<String, Object>>> _extraPropsFns;
-        final Map<Integer, ExpMaterial> _materialCache;
         final SampleNameGeneratorState _nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
@@ -1635,7 +1635,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _cache = new RemapCache(!context.getConfigParameterBoolean(SkipBulkRemapCache));
             _container = container;
             _extraPropsFns = new ArrayList<>();
-            _materialCache = new HashMap<>();
             _sampleType = sampleType;
             _user = user;
 
