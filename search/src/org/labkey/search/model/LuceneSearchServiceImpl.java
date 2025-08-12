@@ -115,6 +115,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -132,6 +133,7 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -144,6 +146,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -2052,7 +2055,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         private final TestContext _context = TestContext.get();
         private final ActionURL _url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_c).setExtraPath(_c.getId());
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
-        private final SearchService _ss = SearchService.get();
+        private final AbstractSearchService _ss = (AbstractSearchService) SearchService.get();
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
 
         /**
@@ -2080,6 +2083,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             rootResource.list().stream()
                 .filter(Resource::isCollection)
                 .forEach(dir -> traverse(dir, fileFilter));
+        }
+
+        @Test
+        public void testSort()
+        {
+            Consumer<TaskIndexingQueue> r = (q) -> {};
+
+            // Create crawl/Runnable items to ensure they get ordered based on creation order
+            Item crawlRunnable1 = new Item(_ss.defaultTask(), r, PRIORITY.crawl, null);
+            Item crawlRunnable2 = new Item(_ss.defaultTask(), r, PRIORITY.crawl, null);
+            Item modifiedRunnable = new Item(_ss.defaultTask(), r, PRIORITY.modified, null);
+            Item deleteRunnable = new Item(_ss.defaultTask(), r, PRIORITY.delete, null);
+            Item crawlResource = new Item(_ss.defaultTask(), OPERATION.add, "fakeId1", WebdavService.get().lookup("/"), PRIORITY.crawl);
+            Item modifiedResource = new Item(_ss.defaultTask(), OPERATION.add, "fakeId2", WebdavService.get().lookup("/"), PRIORITY.modified);
+            Item deleteResource = new Item(_ss.defaultTask(), OPERATION.add, "fakeId3", WebdavService.get().lookup("/"), PRIORITY.delete);
+
+            List<Item> items = new ArrayList<>(Arrays.asList(crawlRunnable2, crawlRunnable1, modifiedRunnable, deleteRunnable, crawlResource, modifiedResource, deleteResource));
+            items.sort(null);
+            assertEquals(Arrays.asList(deleteResource, deleteRunnable, modifiedResource, modifiedRunnable, crawlResource, crawlRunnable1, crawlRunnable2), items);
         }
 
         @Test
@@ -2226,7 +2248,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     _latch.countDown();
                 }
             };
-            _ss.defaultTask().addResource(resource1, PRIORITY.item);
+            _ss.defaultTask().addResource(resource1, PRIORITY.modified);
         }
 
         private List<SearchHit> search(String query) throws IOException

@@ -446,10 +446,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                         delim = ",";
                     }
                 }
-                SearchService ss = SearchService.get();
-
-                if (null != ss)
-                    ss.defaultTask().addResource(resource, SearchService.PRIORITY.item);
+                SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified).addResource(resource);
 
                 resource.notify(ContainerUser.create(container, user), sb.toString());
             }
