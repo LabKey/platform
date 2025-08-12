@@ -1629,35 +1629,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
                     .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
-            SearchService searchService = SearchService.get();
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);
 
-            if (null != searchService)
-            {
-                persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
-                    {
-                        List<String> lsids = searchIndexDataKeys.lsids();
-                        List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+            persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
+                {
+                    List<String> lsids = searchIndexDataKeys.lsids();
+                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
 
-                        // Issue 51263: order by RowId to reduce deadlock
-                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                    // Issue 51263: order by RowId to reduce deadlock
+                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                        queue.addRunnable((q) ->
+                        {
+                            for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
+                                expMaterial.index(q, this);
+                        })
+                    );
+
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                            queue.addRunnable((q) ->
                             {
-                                for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), null, this);
+                                for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
+                                    expMaterial.index(q, this);
                             })
-                        );
-
-                        ListUtils.partition(lsids, 100).forEach(sublist ->
-                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask(), null, this);
-                                })
-                        );
-                    }, DbScope.CommitTaskOption.POSTCOMMIT)
-                );
-            }
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT)
+            );
 
             DataIteratorBuilder builder = LoggingDataIterator.wrap(persist);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap(), _ss, true));

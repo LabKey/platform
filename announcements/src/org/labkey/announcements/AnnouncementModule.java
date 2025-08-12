@@ -242,10 +242,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
 
     @Override
-    public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
     {
-        Runnable r = () -> AnnouncementManager.indexMessages(task, c, modifiedSince);
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
+        queue.addRunnable((q) -> AnnouncementManager.indexMessages(q, modifiedSince));
     }
 
     @Override
