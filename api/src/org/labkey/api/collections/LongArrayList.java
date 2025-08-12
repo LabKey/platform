@@ -32,6 +32,18 @@ public class LongArrayList extends ArrayList<Long>
     }
 
     @Override
+    public int indexOf(Object o)
+    {
+        return super.indexOf(_long(o));
+    }
+
+    @Override
+    public int lastIndexOf(Object o)
+    {
+        return super.lastIndexOf(_long(o));
+    }
+
+    @Override
     public boolean remove(Object o)
     {
         return super.remove(_long(o));

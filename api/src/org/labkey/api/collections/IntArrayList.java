@@ -19,6 +19,18 @@ public class IntArrayList extends ArrayList<Integer>
     }
 
     @Override
+    public int indexOf(Object o)
+    {
+        return super.indexOf(_int(o));
+    }
+
+    @Override
+    public int lastIndexOf(Object o)
+    {
+        return super.lastIndexOf(_int(o));
+    }
+
+    @Override
     public boolean remove(Object o)
     {
         return super.remove(_int(o));
