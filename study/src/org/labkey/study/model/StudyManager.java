@@ -129,7 +129,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.search.SearchService.LastIndexedClause;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
@@ -219,6 +218,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -670,7 +670,7 @@ public class StudyManager
             QueryService.get().updateLastModified();
             transaction.commit();
         }
-        indexDataset(null, datasetDefinition);
+        indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
     }
 
     /**
@@ -845,7 +845,7 @@ public class StudyManager
                     QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                             QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
                 }
-                indexDataset(null, datasetDefinition);
+                indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT);
 
             // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
@@ -4212,12 +4212,9 @@ public class StudyManager
             ss.deleteResource(docid);
     }
 
-    public static void indexDatasets(IndexTask task, Container c, Date modifiedSince)
+    public static void indexDatasets(SearchService.TaskIndexingQueue queue, Date modifiedSince)
     {
-        SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
-
+        Container c = queue.getContainer();
         SimpleFilter filter = (null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter());
         if (null != modifiedSince)
             filter.addCondition(FieldKey.fromParts("Modified"), modifiedSince, CompareType.DATE_GT);
@@ -4238,26 +4235,18 @@ public class StudyManager
                 {
                     DatasetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(study, id);
                     if (null != dsd)
-                        indexDataset(task, dsd);
+                        indexDataset(queue, dsd);
                 }
             }
         });
     }
 
-    private static void indexDataset(@Nullable IndexTask task, DatasetDefinition dsd)
+    private static void indexDataset(SearchService.TaskIndexingQueue queue, DatasetDefinition dsd)
     {
         if (dsd.getType().equals(Dataset.TYPE_PLACEHOLDER))
             return;
         if (null == dsd.getTypeURI() || null == dsd.getDomain())
             return;
-        if (null == task)
-        {
-            // TODO: Workaround for 30614: Search module doesn't work on TeamCity
-            final SearchService ss = SearchService.get();
-            if (ss == null)
-                return;
-            task = ss.defaultTask();
-        }
         String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId()));
 
         StringBuilder body = new StringBuilder();
@@ -4295,14 +4284,15 @@ public class StudyManager
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
                 "text/plain", body.toString(),
                 view, props);
-        task.addResource(r, SearchService.PRIORITY.item);
+        queue.addResource(r);
     }
 
-    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
+    public static void indexParticipants(SearchService.TaskIndexingQueue queue, @Nullable List<String> ptids, @Nullable Date modifiedSince)
     {
         if (null != ptids && ptids.isEmpty())
             return;
 
+        Container c = queue.getContainer();
         final StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (null == study)
             return;
@@ -4345,7 +4335,7 @@ public class StudyManager
         List<List<String>> batches = ptids != null ? ListUtils.partition(ptids, BATCH_SIZE) : Collections.singletonList(null);
 
         batches.forEach(batch -> {
-            Runnable runnable = () -> {
+            Consumer<SearchService.TaskIndexingQueue> runnable = (q) -> {
                 SQLFragment sql;
 
                 if (null != batch)
@@ -4404,11 +4394,11 @@ public class StudyManager
                             new SqlExecutor(ss.getSchema()).execute(update);
                         }
                     };
-                    task.addResource(r, SearchService.PRIORITY.item);
+                    queue.addResource(r);
                 });
             };
 
-            task.addRunnable(runnable, SearchService.PRIORITY.bulk);
+            queue.addRunnable(runnable);
         });
     }
 
@@ -4418,60 +4408,45 @@ public class StudyManager
     // CONSIDER: add some facility like this to SearchService??
     // NOTE: this needs to be reviewed if we use modifiedSince
 
-    final static WeakHashMap<Container, Runnable> _lastEnumerate = new WeakHashMap<>();
+    final static WeakHashMap<Container, Consumer<SearchService.TaskIndexingQueue>> _lastEnumerate = new WeakHashMap<>();
 
-    public static void _enumerateDocuments(IndexTask t, final Container c, @Nullable Date modifiedSince)
+    public static void _enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        if (null == c)
-            return;
-
-        final SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-        final IndexTask defaultTask = ss.defaultTask();
-        final IndexTask task = null==t ? defaultTask : t;
-
-        Runnable runEnumerate = new Runnable()
+        Container c = queue.getContainer();
+        Consumer<SearchService.TaskIndexingQueue> runEnumerate = new Consumer<>()
         {
-            @Override
-            public void run()
+            public void accept(SearchService.TaskIndexingQueue a)
             {
-                if (task == defaultTask)
+                synchronized (_lastEnumerate)
                 {
-                    synchronized (_lastEnumerate)
-                    {
-                        Runnable r = _lastEnumerate.get(c);
-                        if (this != r)
-                            return;
-                        _lastEnumerate.remove(c);
-                    }
+                    Consumer<SearchService.TaskIndexingQueue> r = _lastEnumerate.get(c);
+                    if (this != r)
+                        return;
+                    _lastEnumerate.remove(c);
                 }
 
                 Study study = StudyManager.getInstance().getStudy(c);
 
                 if (null != study)
                 {
-                    StudyManager.indexDatasets(task, c, modifiedSince);
-                    StudyManager.indexParticipants(task, c, null, modifiedSince);
+                    StudyManager.indexDatasets(a, modifiedSince);
+                    StudyManager.indexParticipants(a, null, modifiedSince);
                     // study protocol document
-                    _enumerateProtocolDocuments(task, study);
+                    _enumerateProtocolDocuments(queue, study);
                 }
             }
         };
 
-        if (task == defaultTask)
+        synchronized (_lastEnumerate)
         {
-            synchronized (_lastEnumerate)
-            {
-                _lastEnumerate.put(c, runEnumerate);
-            }
+            _lastEnumerate.put(c, runEnumerate);
         }
-        
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.crawl);
+
+        queue.addRunnable(runEnumerate);
     }
 
 
-    public static void _enumerateProtocolDocuments(IndexTask task, @NotNull Study study)
+    public static void _enumerateProtocolDocuments(SearchService.TaskIndexingQueue queue, @NotNull Study study)
     {
         AttachmentParent parent = ((StudyImpl)study).getProtocolDocumentAttachmentParent();
         if (null == parent)
@@ -4494,7 +4469,7 @@ public class StudyManager
                 parent, att.getName(), SearchService.fileCategory
             );
             r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-            task.addResource(r, SearchService.PRIORITY.item);
+            queue.addResource(r);
         }
     }
 
