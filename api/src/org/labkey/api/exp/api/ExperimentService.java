@@ -1284,7 +1284,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
     static Integer asInteger(Object o)
     {
-        // TODO BIGINT after merge we can change this to throw if o.getClass() == Long.class and update those cases
         if (null == o)
             return null;
         if (o.getClass() == Integer.class)
