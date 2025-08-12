@@ -45,4 +45,10 @@ public class LongHashMap<V> extends HashMap<Long, V>
     {
         return super.containsKey(_long(key));
     }
+
+    @Override
+    public V remove(Object key)
+    {
+        return super.remove(_long(key));
+    }
 }

@@ -30,4 +30,17 @@ public class LongArrayList extends ArrayList<Long>
     {
         return super.contains(_long(o));
     }
+
+    @Override
+    public boolean remove(Object o)
+    {
+        return super.remove(_long(o));
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c)
+    {
+        assert c.stream().allMatch(o -> null == o || o.getClass() == Long.class);
+        return super.removeAll(c);
+    }
 }

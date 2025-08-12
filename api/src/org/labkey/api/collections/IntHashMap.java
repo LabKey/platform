@@ -39,4 +39,10 @@ public class IntHashMap<V> extends HashMap<Integer, V>
     {
         return super.containsKey(_int(key));
     }
+
+    @Override
+    public V remove(Object key)
+    {
+        return super.remove(_int(key));
+    }
 }

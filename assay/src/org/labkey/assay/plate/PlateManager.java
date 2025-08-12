@@ -49,6 +49,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.ArrayExcelWriter;
@@ -3117,7 +3118,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private Collection<Long> getResultRowsIds(@Nullable List<Long> resultRowIds, @Nullable String resultSelectionKey)
     {
         if (resultRowIds != null && !resultRowIds.isEmpty())
-            return new ArrayList<>(new HashSet<>(resultRowIds));
+            return new LongArrayList(new HashSet<>(resultRowIds));
         if (StringUtils.trimToNull(resultSelectionKey) != null)
             return getSelection(resultSelectionKey);
 
@@ -4804,10 +4805,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     .append(" WHERE PS.RowId = ?").add(targetPlateSet.getRowId())
                     .append(" AND W.SampleID ").appendInClause(sampleIds, schema.getScope().getSqlDialect());
 
-            List<Integer> overlap = new SqlSelector(schema.getSchema(), sql).getArrayList(Integer.class);
+            List<Long> overlap = new SqlSelector(schema.getSchema(), sql).getArrayList(Long.class);
             if (!overlap.isEmpty())
             {
-                sampleIds = new ArrayList<>(sampleIds);
+                sampleIds = new LongArrayList(sampleIds);
                 sampleIds.removeAll(overlap);
 
                 if (sampleIds.isEmpty())

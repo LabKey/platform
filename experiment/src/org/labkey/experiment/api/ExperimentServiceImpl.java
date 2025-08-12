@@ -58,6 +58,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BeanObjectFactory;
@@ -4445,7 +4446,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getExpRunsForProtocolIds(boolean includeRelated, long... protocolIds)
     {
-        List<Long> ids = new ArrayList<>(protocolIds.length);
+        List<Long> ids = new LongArrayList(protocolIds.length);
         for (var id : protocolIds)
             ids.add(id);
         return getExpRunsForProtocolIds(includeRelated, ids);
@@ -4658,7 +4659,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Long> requestIds, Collection<Long> notAllowedIds, List<? extends ExpRunItem> allData)
     {
-        List<Long> allowedIds = new ArrayList<>(requestIds);
+        List<Long> allowedIds = new LongArrayList(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -6318,7 +6319,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (!outputDataMap.isEmpty())
         {
-            List<Long> dataIds = new ArrayList<>(outputDataMap.keySet());
+            List<Long> dataIds = new LongArrayList(outputDataMap.keySet());
             int batchSize = 200;
 
             for (int i = 0; i < dataIds.size(); i += batchSize)
