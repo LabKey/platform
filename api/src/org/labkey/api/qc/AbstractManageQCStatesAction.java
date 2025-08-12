@@ -18,6 +18,7 @@ package org.labkey.api.qc;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -107,7 +108,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
             // omitted from the request entirely if they aren't checked, we use a different
             // method for keeping track of the checked values (by posting the rowid of the item as the
             // checkbox value).
-            Set<Integer> set = new HashSet<>();
+            Set<Long> set = new LongHashSet();
             if (form.getPublicData() != null)
             {
                 for (int i = 0; i < form.getPublicData().length; i++)

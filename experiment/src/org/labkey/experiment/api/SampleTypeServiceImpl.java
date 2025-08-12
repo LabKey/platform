@@ -33,6 +33,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
@@ -1399,7 +1400,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
         DbScope scope = materialTable.getSchema().getScope();
 
-        List<Long> availableSampleStates = new ArrayList<>();
+        List<Long> availableSampleStates = new LongArrayList();
 
         if (SampleStatusService.get().supportsSampleStatus())
         {
@@ -1816,7 +1817,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 long parentId = rs.getLong(1);
                 Double volume = rs.getDouble(2);
                 String unit = rs.getString(3);
-                int sampleState = rs.getInt(4);
+                long sampleState = rs.getLong(4);
 
                 if (!sampleAliquotAmounts.containsKey(parentId))
                     sampleAliquotAmounts.put(parentId, new ArrayList<>());

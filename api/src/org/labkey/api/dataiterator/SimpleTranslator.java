@@ -974,7 +974,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object value =  _convertCol.convert(o);
                 ForeignKey fk = _toCol.getFk();
                 // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
+                if (fk != null && _toCol.getJdbcType().isText() && equalsTo(o, value))
                 {
                     if (_remapper.getPkColumn().getJdbcType().isText())
                     {
@@ -989,6 +989,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 return null;
             }
+        }
+
+        private static boolean equalsTo(Object a, Object b)
+        {
+            if (Objects.equals(a,b))
+                return true;
+            if ((a instanceof Integer || a instanceof Long) && (b instanceof Integer || b instanceof Long))
+                return ((Number) a).longValue() == ((Number) b).longValue();
+            return false;
         }
 
         private Object convertWithRemapper(Object o)

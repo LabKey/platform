@@ -77,6 +77,8 @@
 <%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="org.labkey.api.collections.LongHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -556,7 +558,7 @@
                 {
                     for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
-                        Integer id = asInteger(e.getValue().get("QCState"));
+                        Long id = asLong(e.getValue().get("QCState"));
                         DataState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && !state.getDescription().isEmpty();
     %>
@@ -765,12 +767,12 @@
 
     Map<Long, DataState> qcstates = null;
 
-    DataState getQCState(Study study, Integer id)
+    DataState getQCState(Study study, Long id)
     {
         if (null == qcstates)
         {
             List<DataState> states = QCStateManager.getInstance().getStates(study.getContainer());
-            qcstates = new HashMap<>(2 * states.size());
+            qcstates = new LongHashMap<>(2 * states.size());
             for (DataState state : states)
                 qcstates.put(state.getRowId(), state);
         }

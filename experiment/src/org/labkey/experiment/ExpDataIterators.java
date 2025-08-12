@@ -3182,11 +3182,11 @@ public class ExpDataIterators
             if (_oldSampleStateCol == null && getExistingRecord() == null)
                 return true;
 
-            Integer oldState;
+            Long oldState;
             if (_oldSampleStateCol != null)
-                oldState = (Integer) get(_oldSampleStateCol);
+                oldState = asLong(get(_oldSampleStateCol));
             else
-                oldState = (Integer) getExistingRecord().get(SampleState.name());
+                oldState = asLong(getExistingRecord().get(SampleState.name()));
 
             if (oldState == null)
                 return true;
@@ -3202,7 +3202,7 @@ public class ExpDataIterators
                 return true;
             }
 
-            Integer newState = (Integer) get(_sampleStateCol);
+            Long newState = asLong(get(_sampleStateCol));
             DataState newStatus = _allStates.get(newState);
             boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 

@@ -371,6 +371,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (var row : rows)
         {
             var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
+            if (plateId instanceof Number)
+                plateId = asLong(plateId);
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
@@ -412,6 +414,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 while (results.next())
                 {
                     Object plate = results.getObject(plateFieldKey);
+                    // plateMap contains Strings and Longs
+                    if (plate instanceof Number)
+                        plate = asLong(plate);
                     if (plateMap.containsKey(plate) && !incomingPlates.contains(plate))
                     {
                         Map<String, Object> row = new HashMap<>();
