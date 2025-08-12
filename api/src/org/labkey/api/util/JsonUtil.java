@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.JsonWriteFeature;
 import com.fasterxml.jackson.databind.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,6 +32,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -202,15 +204,20 @@ public class JsonUtil
         return result;
     }
 
-    // The new JSONObject.toMap() translates all JSONObjects into Maps and JSONArrays into Lists. In many cases, this is
-    // fine, but some existing code paths want to maintain the contained JSONObjects and JSONArrays. This method does
-    // that, acting more like the old JSONObject.toMap().
-    public static void fillMapShallow(JSONObject json, Map<String, Object> map)
+    /**
+     * The new JSONObject.toMap() translates all JSONObjects into Maps and JSONArrays into Lists. In many cases, this is
+     * fine, but some existing code paths want to maintain the contained JSONObjects and JSONArrays. This method does
+     * that, acting more like the old JSONObject.toMap().
+     * @return whether there were duplicate values in the map (useful when filling a case-insensitive map)
+      */
+    public static boolean fillMapShallow(JSONObject json, Map<String, Object> map)
     {
+        MutableBoolean hadDuplicates = new MutableBoolean(false);
         json.keySet().forEach(key -> {
             Object value = json.get(key);
-            map.put(key, JSONObject.NULL == value ? null : value);
+            hadDuplicates.setValue(map.put(key, JSONObject.NULL == value ? null : value) != null || hadDuplicates.booleanValue());
         });
+        return hadDuplicates.booleanValue();
     }
 
     // New JSONObject discards all properties with null values. This returns a JSONObject containing all Map values,
@@ -459,6 +466,20 @@ public class JsonUtil
             assertEquals(url.toString(), roundTripJson.get("actionUrl"));
             assertEquals(html.toString(), roundTripJson.get("htmlString"));
             assertEquals(u.getUserId(), roundTripJson.get("user"));
+        }
+
+        @Test
+        public void testConflictingCase()
+        {
+            JSONObject json = new JSONObject();
+            json.put("foo", "bar");
+            json.put("x", "y");
+            assertFalse(fillMapShallow(json, new HashMap<>()));
+            assertFalse(fillMapShallow(json, new CaseInsensitiveHashMap<>()));
+
+            json.put("FOO", "BAR");
+            assertFalse(fillMapShallow(json, new HashMap<>()));
+            assertTrue(fillMapShallow(json, new CaseInsensitiveHashMap<>()));
         }
 
         @Test

@@ -80,6 +80,8 @@ public class StudyPHIExportTest extends StudyExportTest
         // not in any group only appears if there are participants not in any of the groups in a category
         assertTextPresent("Group 1", "Group 2");
         assertTextNotPresent("Not in any cohort");
+        sleep(1500);    // give grid-row checkboxes a moment to become interactable
+                            // it might be nice for ext4Helper to do this
 
         _ext4Helper.uncheckGridRowCheckbox("Group 1");
         _ext4Helper.uncheckGridRowCheckbox("Group 2");

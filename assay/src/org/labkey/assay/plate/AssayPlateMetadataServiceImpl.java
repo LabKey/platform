@@ -1421,6 +1421,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // Filter out result rows that are excluded
         filterOutExcludedRows(container, table, filter);
 
+        // Apply filter only for the specified runs
+        filter.addInClause(FieldKey.fromParts("Run"), runIds);
+
         // Remove previous hits against the runs that have been modified
         PlateManager.get().deleteHitsForRuns(runIds);
 
@@ -1634,7 +1637,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
                 TableInfo resultsTable = schema.createDataTable(null, false);
 
-                // re-select any hits that were present in the previous run
+                // Re-select any hits that were present in the previous run, this works in conjunction with the code in
+                // mergeReRunData where previous hits are removed for any data unchanged by the new incoming data. At this
+                // point any remaining hits should represent selections we plan to move forward to the new run
                 if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
