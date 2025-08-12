@@ -100,8 +100,17 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public GWTPropertyDescriptor(GWTPropertyDescriptor s)
     {
-        setPropertyId(s.getPropertyId());
-        setPropertyURI(s.getPropertyURI());
+        this(s, false);
+    }
+
+    public GWTPropertyDescriptor(GWTPropertyDescriptor s, boolean isNew)
+    {
+        if (!isNew)
+        {
+            setPropertyId(s.getPropertyId());
+            setPropertyURI(s.getPropertyURI());
+        }
+
         setContainer(s.getContainer());
         setName(s.getName());
         setDescription(s.getDescription());
@@ -148,7 +157,13 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
-            propertyValidators.add(new GWTPropertyValidator(v));
+            GWTPropertyValidator gpv = new GWTPropertyValidator(v);
+            if (isNew)
+            {
+                gpv.setRowId(0);
+                gpv.setNew(true);
+            }
+            propertyValidators.add(gpv);
         }
 
         for (GWTConditionalFormat f : s.getConditionalFormats())

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -29,10 +28,9 @@ import static org.labkey.api.util.StringUtilsLabKey.append;
 public class PlateDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
-    public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> PlateManager.get().indexPlates(task, c, modifiedSince);
-        task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+        queue.addRunnable((q) -> PlateManager.get().indexPlates(q, modifiedSince));
     }
 
     private static SearchService.SearchCategory getSearchCategory()

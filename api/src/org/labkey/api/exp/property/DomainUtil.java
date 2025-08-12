@@ -476,12 +476,17 @@ public class DomainUtil
 
     public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
     {
-        return getPropertyDescriptor(prop.getPropertyDescriptor());
+        return getPropertyDescriptor(prop, false);
     }
 
     public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
     {
         return getPropertyDescriptor(prop, false);
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
+    {
+        return getPropertyDescriptor(prop.getPropertyDescriptor(), copy);
     }
 
     public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop, boolean copy)
@@ -543,7 +548,7 @@ public class DomainUtil
 
             Map<String, String> properties = new HashMap<>(pv.getProperties());
             // add in the TextChoice validValues here so that the client side code doesn't have to do the same
-            // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
+            // parsing of the validator expression (i.e., sorting, trimming, removing duplicates, etc.)
             if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
             {
                 List<String> validValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
