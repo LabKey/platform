@@ -137,6 +137,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -679,7 +680,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
-    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Integer oldStatus, Integer newStatus)
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
     {
         if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
@@ -749,8 +750,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!availableSampleStatuses.isEmpty())
                 {
-                    Integer oldState = (Integer) oldRow.get(SampleState.name());
-                    Integer newState = (Integer) row.get(SampleState.name());
+                    Long oldState = asLong(oldRow.get(SampleState.name()));
+                    Long newState = asLong(row.get(SampleState.name()));
                     if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
                         aliquotRollupRoot = aliquotRoot;
                 }
@@ -1190,7 +1191,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                Integer rowId = (Integer) row.get("rowid");
+                Long rowId = asLong(row.get("rowid"));
                 Integer rowNum = rowIdRowNumMap.get(rowId);
                 String sampleLsid = (String) row.get("lsid");
 
