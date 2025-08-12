@@ -11,6 +11,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
@@ -1115,7 +1116,7 @@ public class SpecimenRequestManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             List<Vial> vials = request.getVials();
-            List<Long> specimenIds = new ArrayList<>(vials.size());
+            List<Long> specimenIds = new LongArrayList(vials.size());
             for (Vial vial : vials)
                 specimenIds.add(vial.getRowId());
 

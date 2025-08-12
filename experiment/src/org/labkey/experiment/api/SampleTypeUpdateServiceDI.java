@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -137,6 +138,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -268,7 +270,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (outputRows == null || outputRows.isEmpty())
             return null;
 
-        Set<Long> rootRowIds = new HashSet<>();
+        Set<Long> rootRowIds = new LongHashSet();
         Set<String> parentNames = new HashSet<>();
         if (outputRows.size() == 1 && outputRows.get(0).containsKey(ROOT_RECOMPUTE_ROWID_SET))
         {
@@ -310,7 +312,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
 
                 boolean hasRollUpColumns = parenRowIdToRecomputeCol != null && parentNameToRecomputeCol != null;
-                Set<Integer> rowIdsToRecompute = new HashSet<>();
+                Set<Long> rowIdsToRecompute = new LongHashSet();
                 Set<String> nameToRecompute = new HashSet<>();
 
                 if (hasRollUpColumns)
@@ -338,7 +340,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                 {
                                     Object rowIdObj = (_delegate).get(parenRowIdToRecomputeCol);
                                     if (rowIdObj != null)
-                                        rowIdsToRecompute.add((Integer) rowIdObj);
+                                        rowIdsToRecompute.add(asLong(rowIdObj));
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
                                     {
@@ -679,7 +681,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
-    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Integer oldStatus, Integer newStatus)
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
     {
         if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
@@ -749,8 +751,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!availableSampleStatuses.isEmpty())
                 {
-                    Integer oldState = (Integer) oldRow.get(SampleState.name());
-                    Integer newState = (Integer) row.get(SampleState.name());
+                    Long oldState = asLong(oldRow.get(SampleState.name()));
+                    Long newState = asLong(row.get(SampleState.name()));
                     if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
                         aliquotRollupRoot = aliquotRoot;
                 }
@@ -1190,7 +1192,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                Integer rowId = (Integer) row.get("rowid");
+                Long rowId = asLong(row.get("rowid"));
                 Integer rowNum = rowIdRowNumMap.get(rowId);
                 String sampleLsid = (String) row.get("lsid");
 
@@ -1610,7 +1612,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final RemapCache _cache;
         final Container _container;
         final List<Supplier<Map<String, Object>>> _extraPropsFns;
-        final Map<Integer, ExpMaterial> _materialCache;
         final SampleNameGeneratorState _nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
@@ -1634,7 +1635,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _cache = new RemapCache(!context.getConfigParameterBoolean(SkipBulkRemapCache));
             _container = container;
             _extraPropsFns = new ArrayList<>();
-            _materialCache = new HashMap<>();
             _sampleType = sampleType;
             _user = user;
 

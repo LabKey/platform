@@ -35,6 +35,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -1530,7 +1531,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws SQLException
     {
-        Set<Long> rootSamplesToRecalc = new HashSet<>();
+        Set<Long> rootSamplesToRecalc = new LongHashSet();
         if (rootRowIds != null)
             rootSamplesToRecalc.addAll(rootRowIds);
         if (parentNames != null)
@@ -1692,7 +1693,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql.append(" AND parent.container = ?");
         sql.add(container.getId());
 
-        Set<Long> parentIds = new HashSet<>();
+        Set<Long> parentIds = new LongHashSet();
         try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())

@@ -24,7 +24,9 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntArrayList;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
@@ -236,7 +238,7 @@ public class ExpDataIterators
                 skipColumns.addAll(attachedColumnNames);
 
                 // validate we have all the paired columns
-                List<Integer> pairedIndexes = new ArrayList<>();
+                List<Integer> pairedIndexes = new IntArrayList();
                 for (String pairedColumnName : counterDefinition.getPairedColumnNames())
                 {
                     Integer i = columnNameMap.get(pairedColumnName);
@@ -373,7 +375,7 @@ public class ExpDataIterators
         private final Integer _parentNameToRecomputeCol;
         private final boolean _isInsert;
         private final boolean _isUpdate;
-        private final List<Long> availableSampleStatuses = new ArrayList<>();
+        private final List<Long> availableSampleStatuses = new LongArrayList();
         private final TSVWriter _tsvWriter;
 
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, Container container)
@@ -420,11 +422,11 @@ public class ExpDataIterators
             Integer rootAliquot = (Integer) existingMap.get(RootMaterialRowId.name());
             Double existingAmount = (Double) existingMap.get(StoredAmount.name());
             String existingUnits = (String) existingMap.get(Units.name());
-            Integer existingState = (Integer) existingMap.get(SampleState.name());
+            Long existingState = asLong(existingMap.get(SampleState.name()));
 
             if (!availableSampleStatuses.isEmpty())
             {
-                Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
+                Long newState = _sampleStateCol == null ? null : asLong(get(_sampleStateCol));
                 if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
                     return new Pair<>(true, rootAliquot);
             }
@@ -634,11 +636,11 @@ public class ExpDataIterators
         final ExpSampleType _sampleType;
         final MapDataIterator _data;
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
-        final List<Long> _derivativeKeys = new ArrayList<>();
+        final List<Long> _derivativeKeys = new LongArrayList();
         final UserSchema _schema;
         final boolean _hasParentInput;
         final Integer _rowIdCol;
-        final List<Integer> _parentCols = new ArrayList<>();
+        final List<Integer> _parentCols = new IntArrayList();
 
         protected AutoLinkToStudyDataIterator(DataIterator di, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
@@ -1996,7 +1998,7 @@ public class ExpDataIterators
             _lsidCol = map.get("lsid");
             _rowIdCol = map.get("rowId");
             _lsids = new ArrayList<>(100);
-            _rowIds = new ArrayList<>(100);
+            _rowIds = new LongArrayList(100);
 
             _isInsert = !context.getInsertOption().allowUpdate; // only useRowIdCol for INSERT. For UPDATE, rowId usually is not available. For MERGE, rowId is a new DBSequence value for existing data
         }
@@ -2048,7 +2050,7 @@ public class ExpDataIterators
                 if (null != ss)
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
-                    final ArrayList<Long> rowIds = new ArrayList<>(_rowIds);
+                    final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
                     Collections.sort(rowIds);
                     final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
@@ -2784,7 +2786,7 @@ public class ExpDataIterators
                 return null;
             }
 
-            List<Integer> fieldIndexes = new ArrayList<>();
+            List<Integer> fieldIndexes = new IntArrayList();
             List<String> header = new ArrayList<>();
 
             for (int i = 1; i <= getColumnCount(); i++)
@@ -2831,7 +2833,7 @@ public class ExpDataIterators
             validFields.add("Storage Unit Label");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
-            List<Integer> fieldIndexes = new ArrayList<>();
+            List<Integer> fieldIndexes = new IntArrayList();
             Map<Integer, String> dependencyIndexes = new IntHashMap<>();
             List<String> header = new ArrayList<>();
             // index is 1-based; column 0 is the rowNumber

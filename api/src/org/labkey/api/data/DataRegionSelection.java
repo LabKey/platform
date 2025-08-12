@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -236,7 +237,7 @@ public class DataRegionSelection
 
     public static @NotNull ArrayList<Long> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
     {
-        return new ArrayList<>(asLongs(getSnapshotSelected(context, key)));
+        return new LongArrayList(asLongs(getSnapshotSelected(context, key)));
     }
 
     private static @NotNull Set<Long> asLongs(Collection<String> ids)

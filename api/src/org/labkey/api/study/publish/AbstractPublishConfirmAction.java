@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.ActionButton;
@@ -126,7 +127,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         _allObjects = form.getObjectIdValues();
 
         if (_allObjects == null) // On first post, this is empty, so use the current selection
-            _allObjects = new ArrayList<>(_selectedObjects);
+            _allObjects = new LongArrayList(_selectedObjects);
 
         if (form.getReturnUrlHelper() == null)
             errors.reject(SpringActionController.ERROR_MSG, "No return URL configured for this form");

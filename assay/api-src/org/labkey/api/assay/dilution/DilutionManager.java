@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -280,7 +281,7 @@ public class DilutionManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             // Get dataIds that match the ObjectUri and make filter on NabSpecimen
-            List<Long> dataIDs = new ArrayList<>(datas.size());
+            List<Long> dataIDs = new LongArrayList(datas.size());
             Set<Long> runIds = new HashSet<>();
             for (ExpData data : datas)
             {
