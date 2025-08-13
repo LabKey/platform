@@ -179,7 +179,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private ServletContext _servletContext = null;
     private boolean _terminateAfterStartup;
-    private FileLike _labkeyRoot;
     private FileLike _webappDir;
     private FileLike _extraWebappDir;
     private FileLike _startupPropertiesDir;
@@ -521,15 +520,15 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         setTomcatVersion();
 
         File root = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath(""))).getParentFile();
-        _labkeyRoot = new FileSystemLike.Builder(root).readwrite().noMemCheck().root();
-        _webappDir = _labkeyRoot.resolveChild("labkeyWebapp");
+        FileLike labkeyRoot = new FileSystemLike.Builder(root).readwrite().noMemCheck().root();
+        _webappDir = labkeyRoot.resolveChild("labkeyWebapp");
 
         String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
         FileLike extraWebappDir;
 
         if (extraWebappPath == null)
         {
-            extraWebappDir = _labkeyRoot.resolveChild("extraWebapp");
+            extraWebappDir = labkeyRoot.resolveChild("extraWebapp");
         }
         else
         {
@@ -539,7 +538,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         if (extraWebappDir.isDirectory())
             _extraWebappDir = extraWebappDir;
 
-        FileLike startup = _labkeyRoot.resolveChild("startup");
+        FileLike startup = labkeyRoot.resolveChild("startup");
         if (startup.isDirectory())
             _startupPropertiesDir = startup;
 
@@ -583,7 +582,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // Do this after we've checked to see if we can find the core module. See issue 22797.
         verifyProductionModeMatchesBuild();
 
-        boolean fakeStartup = _labkeyRoot.resolveChild("fake.txt").exists();
+        boolean fakeStartup = labkeyRoot.resolveChild("fake.txt").exists();
         if (fakeStartup)
         {
             _log.info("fake.txt file is present, so a connection to the primary data source will be attempted and then the server will terminate");
@@ -601,9 +600,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         new BreakpointThread().start();
 
         // Start listening for requests for thread and heap dumps
-        new DebugInfoDumper(_labkeyRoot);
+        new DebugInfoDumper(labkeyRoot);
 
-        final File lockFile = createLockFile(_labkeyRoot);
+        final File lockFile = createLockFile(labkeyRoot);
 
         // Prune modules before upgrading core module, see Issue 42150
         synchronized (_modulesLock)
@@ -1333,11 +1332,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         return enlistmentId;
-    }
-
-    public FileLike getLabkeyRoot()
-    {
-        return _labkeyRoot;
     }
 
     public FileLike getWebappDir()
