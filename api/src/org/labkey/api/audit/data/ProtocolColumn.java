@@ -29,6 +29,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 /**
  * User: klum
  * Date: Mar 15, 2012
@@ -53,8 +55,8 @@ public class ProtocolColumn extends ExperimentAuditColumn<ExpProtocol>
             {
                 ExpProtocol protocol;
 
-                if (protocolId instanceof Integer)
-                    protocol = ExperimentService.get().getExpProtocol((Integer) protocolId);
+                if (protocolId instanceof Integer || protocolId instanceof Long)
+                    protocol = ExperimentService.get().getExpProtocol(asLong(protocolId));
                 else
                     protocol = ExperimentService.get().getExpProtocol(protocolId.toString());
 

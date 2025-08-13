@@ -68,6 +68,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: klum
  * Date: 5/15/13
@@ -150,9 +152,9 @@ public class RenderAssayBean extends RenderAssayForm
     public Object formatValue(PropertyDescriptor pd, Object value, User user)
     {
         // issue 47093 - special handling for created by field
-        if ("CreatedBy".equalsIgnoreCase(pd.getName()) && value instanceof Integer userId)
+        if ("CreatedBy".equalsIgnoreCase(pd.getName()) && value instanceof Number userId)
         {
-            value = UserManager.getDisplayName(userId, user);
+            value = UserManager.getDisplayName(asInteger(userId), user);
         }
         else if (pd.getFormat() != null)
         {

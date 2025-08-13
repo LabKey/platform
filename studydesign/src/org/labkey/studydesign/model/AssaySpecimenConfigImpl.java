@@ -251,11 +251,11 @@ public class AssaySpecimenConfigImpl implements AssaySpecimenConfig
 
         if (o.has("RowId"))
             assay.setRowId(o.getInt("RowId"));
-        if (o.has("DataSet") && o.get("DataSet") instanceof Integer && o.getInt("DataSet") > 0)
+        if (o.has("DataSet") && (o.get("DataSet") instanceof Integer || o.get("DataSet") instanceof Long) && o.getInt("DataSet") > 0)
             assay.setDataset(o.getInt("DataSet"));
         if (o.has("Source") && !StringUtils.isEmpty(o.getString("Source")))
             assay.setSource(o.getString("Source"));
-        if (o.has("LocationId") && o.get("LocationId") instanceof Integer && o.getInt("LocationId") > 0)
+        if (o.has("LocationId") && (o.get("LocationId") instanceof Integer || o.get("LocationId") instanceof Long) && o.getInt("LocationId") > 0)
             assay.setLocationId(o.getInt("LocationId"));
         if (o.has("TubeType") && !StringUtils.isEmpty(o.getString("TubeType")))
             assay.setTubeType(o.getString("TubeType"));
@@ -267,9 +267,9 @@ public class AssaySpecimenConfigImpl implements AssaySpecimenConfig
             assay.setSampleQuantity(o.getDouble("SampleQuantity"));
         if (o.has("SampleUnits") && !StringUtils.isEmpty(o.getString("SampleUnits")))
             assay.setSampleUnits(o.getString("SampleUnits"));
-        if (o.has("PrimaryTypeId") && o.get("PrimaryTypeId") instanceof Integer)
+        if (o.has("PrimaryTypeId") && (o.get("PrimaryTypeId") instanceof Integer || o.get("PrimaryTypeId") instanceof Long))
             assay.setPrimaryTypeId(o.getInt("PrimaryTypeId"));
-        if (o.has("DerivativeTypeId") && o.get("DerivativeTypeId") instanceof Integer)
+        if (o.has("DerivativeTypeId") && (o.get("DerivativeTypeId") instanceof Integer || o.get("DerivativeTypeId") instanceof Long))
             assay.setDerivativeTypeId(o.getInt("DerivativeTypeId"));
 
         JSONArray visitMapJSON = o.optJSONArray("VisitMap");

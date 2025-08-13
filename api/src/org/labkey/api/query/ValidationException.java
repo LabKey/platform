@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * This class is thrown if there were validation errors during a save.
  * This class is essentially a container for objects that implement
@@ -673,8 +675,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
         if (rowErrors.containsKey(ERROR_ROW_NUMBER_KEY))
         {
             Object _rowNumber = rowErrors.get(ERROR_ROW_NUMBER_KEY);
-            if (_rowNumber instanceof Integer)
-                return (Integer)_rowNumber;
+            if (_rowNumber instanceof Integer || _rowNumber instanceof Long)
+                return asInteger(_rowNumber);
             try
             {
                 return Integer.parseInt(String.valueOf(_rowNumber));

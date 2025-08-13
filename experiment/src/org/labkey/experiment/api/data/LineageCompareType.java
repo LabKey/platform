@@ -10,6 +10,8 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import java.util.Collection;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * <code>
  * Filter.create('lsid', '{json:["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1,"sourceKey"]}', Filter.Types.EXP_LINEAGE_OF)
@@ -49,8 +51,8 @@ public class LineageCompareType extends CompareType
             Object depthObj = values[1];
             if (depthObj instanceof String depthObjStr)
                 depth = Integer.parseInt(depthObjStr);
-            else if (depthObj instanceof Integer depthObjInt)
-                depth = depthObjInt;
+            else if (depthObj instanceof Integer || depthObj instanceof Long)
+                depth = asInteger(depthObj);
         }
 
         String sourceKey = null;

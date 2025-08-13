@@ -394,7 +394,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                     // Issue 52961: DataClass: Integer fields are not index for data class
                     if (o instanceof String)
                         s = (String)o;
-                    else if (o instanceof Integer)
+                    else if (o instanceof Integer || o instanceof Long)
                         s = String.valueOf(o);
                     else
                         continue;

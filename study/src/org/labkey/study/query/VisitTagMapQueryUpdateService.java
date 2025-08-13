@@ -83,8 +83,9 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     {
         String visitTagName = (String)row.get("VisitTag");
         Object cohortObj = row.get("Cohort");
-        if (!(cohortObj instanceof Integer cohortId))
+        if (!(cohortObj instanceof Integer || cohortObj instanceof Long))
             return;                 // skip check
+        Integer cohortId = asInteger(cohortObj);
 
         StudyManager studyManager = StudyManager.getInstance();
         Study study = studyManager.getStudy(container);

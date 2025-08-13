@@ -4721,9 +4721,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         String key = entry.getKey();
                         Object value = entry.getValue();
-                        if (value instanceof Integer && linkedColumnNames.contains(key))
+                        if ((value instanceof Integer || value instanceof Long) && linkedColumnNames.contains(key))
                         {
-                            linkedDatasetsBySelectedRow.add((Integer) value);
+                            linkedDatasetsBySelectedRow.add(ExperimentService.asInteger(value));
                         }
                     }
                 }

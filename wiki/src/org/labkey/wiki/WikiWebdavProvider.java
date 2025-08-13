@@ -526,7 +526,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
             // Properties contains the user when search is indexing the wiki
             User user = null;
-            if (_properties.get("createdby") instanceof Integer)
+            if (_properties.get("createdby") instanceof Number)
                 user = UserManager.getUser(asInteger(_properties.get("createdby")));
 
             return user;
@@ -546,7 +546,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
             // Properties contains the user when search is indexing the wiki
             User user = null;
-            if (_properties.get("modifiedBy") instanceof Integer)
+            if (_properties.get("modifiedBy") instanceof Number)
                 user = UserManager.getUser(asInteger(_properties.get("modifiedBy")));
 
             return user;

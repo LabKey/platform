@@ -319,9 +319,9 @@ public class Measurement
     {
         if (amountObj == null)
             return null;
-        else if (amountObj instanceof Integer)
+        else if (amountObj instanceof Integer || amountObj instanceof Long)
         {
-            return Double.valueOf((int) amountObj);
+            return Double.valueOf(((Number) amountObj).longValue());
         }
         else if (amountObj instanceof Double)
         {
