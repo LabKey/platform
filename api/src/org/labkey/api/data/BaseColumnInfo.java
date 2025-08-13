@@ -2095,7 +2095,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public long getLongValue(ResultSet rs) throws SQLException
     {
-        // UNDONE
         return rs.getLong(getAlias().getId());
     }
 
