@@ -15,7 +15,6 @@
  */
 package org.labkey.api.search;
 
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -63,11 +62,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public interface SearchService extends SearchMXBean
 {
@@ -99,9 +97,12 @@ public interface SearchService extends SearchMXBean
     // marker value for documents with indexing errors
     Date failDate = new Timestamp(DateUtil.parseISODateTime("1899-12-30"));
 
-    static @Nullable SearchService get()
+    static final SearchService NO_OP = new NoopSearchService();
+
+    static @NotNull SearchService get()
     {
-        return ServiceRegistry.get().getService(SearchService.class);
+        SearchService service = ServiceRegistry.get().getService(SearchService.class);
+        return service == null ? NO_OP : service;
     }
 
     static void setInstance(SearchService impl)
@@ -115,24 +116,32 @@ public interface SearchService extends SearchMXBean
     void reindexContainerFiles(Container c);
 
     /**
+     * Removes all non-delete work from the queue associated with the target container
+     */
+    void purgeForContainer(@NotNull Container container);
+
+    /**
      * Puts work in the indexer queue at the specified priority and waits up to the timeout for it to complete
      * @return true if the task in the queue completed before the timeout
      */
-    boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException;
+    boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException;
 
-    /** From lowest to highest priority */
+    /**
+     * From lowest to highest priority
+     */
     enum PRIORITY
     {
+        /** Lowest priority. Used for internal bookkeeping to commit the search index to disk and other upkeep */
         commit,
-        
-        idle,       // only used to detect when there is no other work to do
-        crawl,      // lowest work priority
-        background, // crawler item
+        /** Only used by the no-op task to detect when there is no other work in the queue */
+        idle,
 
-        bulk,       // all wikis
-        group,      // one container
-        item,       // one page/attachment
-        delete
+        /** Lower priority indexing work. Intended for work placed in the queue as part of a call to DocumentProvider.enumerateDocuments() */
+        crawl,
+        /** Intended for content that needed indexing or reindexing because it was modified or created */
+        modified,
+        /** Highest priority. Used for removing documents from the index, which is generally faster than adding */
+        delete;
     }
 
 
@@ -179,8 +188,6 @@ public interface SearchService extends SearchMXBean
     {
         String getDescription();
 
-        int getDocumentCountEstimate();
-
         int getIndexedCount();
 
         int getFailedCount();
@@ -193,37 +200,29 @@ public interface SearchService extends SearchMXBean
 
         Reader getLog();
 
-        void addToEstimate(int i);// indicates that caller is done adding Resources to this task
-
         /**
          * indicates that we're done adding the initial set of resources/runnables to this task
          * the task be considered done after calling setReady() and there is no more work to do.
          */
         void setReady();
 
-        default void addRunnable(@NotNull SearchService.PRIORITY pri, @NotNull Runnable r)
-        {
-            addRunnable(r, pri);
-        }
+        TaskIndexingQueue getQueue(@Nullable Container container, @NotNull SearchService.PRIORITY pri);
+    }
 
-        void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
+    interface TaskIndexingQueue
+    {
+        /**
+         * Runnables are used to queue up search work that will often involve adding many individual resources.
+         * This lets us avoid holding lots of to-be-index resources in memory all at once.
+         */
+        void addRunnable(@NotNull Consumer<TaskIndexingQueue> r);
 
-        void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
+        /**
+         * Resources represent individual documents that should be added to the index
+         */
+        void addResource(@NotNull WebdavResource r);
 
-        void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
-
-        default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
-        {
-            ListUtils.partition(list, batchSize).forEach(sublist ->
-            {
-                addRunnable(() ->
-                    sublist.stream()
-                        .map(mapper)
-                        .filter(Objects::nonNull)
-                        .forEach(doc -> addResource(doc, PRIORITY.item))
-                    , PRIORITY.group);
-            });
-        }
+        Container getContainer();
     }
 
 
@@ -434,8 +433,6 @@ public interface SearchService extends SearchMXBean
     void addPathToCrawl(Path path, @Nullable Date nextCrawl);
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
-    // TODO: Remove? This is never called
-    IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
     void indexFull(boolean force, String reason);
 
     void waitForIdle() throws InterruptedException;
@@ -469,12 +466,14 @@ public interface SearchService extends SearchMXBean
     interface DocumentProvider
     {
         /**
-         * enumerate documents for full text search
+         * Enumerate documents for full-text search. Unless it's known there will be a small number of documents
+         * added to the queue, add Runnable to the IndexTask that adds the Resources from the container to the queue.
+         * If there are potentially many documents for a container, add resources in batches of 1,000 or so to avoid
+         * a huge memory footprint.
          *
-         * modifiedSince == null -> full reindex
-         * else incremental (either modified > modifiedSince, or modified > lastIndexed)
+         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
-        void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince);
+        void enumerateDocuments(TaskIndexingQueue adder, @Nullable Date modifiedSince);
 
         /**
          * if the full-text search index is deleted, providers may need to clear stored lastIndexed values.
