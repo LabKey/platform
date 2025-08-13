@@ -1612,7 +1612,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Long sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)
     {
-        // TODO BIGITN
+        // TODO BIGINT
         if (null != sequenceId && sequenceId > Integer.MAX_VALUE)
             throw new UnsupportedOperationException("sequenceId is too large");
         return addSequenceColumn(col, sequenceContainer, sequenceName, null==sequenceId?null:sequenceId.intValue(), batchSize, minValue);
