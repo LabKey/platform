@@ -142,7 +142,7 @@ public class DebugInfoDumper
     }
 
 
-    record ThreadExtraContext(String context, StackTraceElement[] stack) {}
+    record ThreadExtraContext(String context, StackTraceElement[] stack, long startTime) {}
 
     /* Can't use class ThreadLocal, which is frustrating */
     static final Map<Thread,List<ThreadExtraContext>> _threadDumpExtraContext = Collections.synchronizedMap(new WeakHashMap<>());
@@ -158,7 +158,7 @@ public class DebugInfoDumper
     {
         final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (p1) -> Collections.synchronizedList(new ArrayList<>()));
         int size = arr.size();
-        arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace()));
+        arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace(), System.currentTimeMillis()));
         return new _PopAutoCloseable(size);
     }
 
@@ -439,7 +439,7 @@ public class DebugInfoDumper
             var messages = extraInfo.toArray(new ThreadExtraContext[0]);
             for (var i = messages.length-1 ; i>= 0 ; i--)
             {
-                logWriter.debug("\t" + messages[i].context.replace('\n',' '));
+                logWriter.debug("\t" + messages[i].context.replace('\n',' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
                 var messageStack = messages[i].stack();
                 if (null != messageStack)
                 {
