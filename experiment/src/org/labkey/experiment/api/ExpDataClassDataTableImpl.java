@@ -925,36 +925,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         try
         {
             PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliases(), null);
-            SearchService searchService = SearchService.get();
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
-            if (null != searchService)
+            final var scope = propertiesTable.getSchema().getScope();
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);
+            step0.setIndexFunction(searchIndexDataKeys -> scope.addCommitTask(() ->
             {
-                final var scope = propertiesTable.getSchema().getScope();
-                step0.setIndexFunction(searchIndexDataKeys -> scope.addCommitTask(() ->
-                {
-                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
-                    // Issue 51263: order by RowId to reduce deadlock
-                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                    scope.executeWithRetryReadOnly(tx -> {
-                                        for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
-                                            expData.index(searchService.defaultTask(), null, this);
-                                        return (Void) null;
-                                    }))
-                    );
+                List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+                // Issue 51263: order by RowId to reduce deadlock
+                ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                        queue.addRunnable((q) ->
+                                scope.executeWithRetryReadOnly(tx -> {
+                                    for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
+                                        expData.index(q, this);
+                                    return (Void) null;
+                                }))
+                );
 
-                    List<String> lsids = searchIndexDataKeys.lsids();
-                    ListUtils.partition(lsids, 100).forEach(sublist ->
-                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                    scope.executeWithRetryReadOnly(tx -> {
-                                        for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
-                                            expData.index(searchService.defaultTask(), null, this);
-                                        return (Void) null;
-                                    }))
-                    );
+                List<String> lsids = searchIndexDataKeys.lsids();
+                ListUtils.partition(lsids, 100).forEach(sublist ->
+                        queue.addRunnable((q) ->
+                                scope.executeWithRetryReadOnly(tx -> {
+                                    for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
+                                        expData.index(q, this);
+                                    return (Void) null;
+                                }))
+                );
 
-                }, DbScope.CommitTaskOption.POSTCOMMIT));
-            }
+            }, DbScope.CommitTaskOption.POSTCOMMIT));
+
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
         }
@@ -1406,31 +1404,27 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-                SearchService searchService = SearchService.get();
-                if (searchService != null)
+                DbScope scope = getUserSchema().getDbSchema().getScope();
+                scope.addCommitTask(() ->
                 {
-                    DbScope scope = getUserSchema().getDbSchema().getScope();
-                    scope.addCommitTask(() ->
+                    List<Integer> orderedRowIds = new ArrayList<>();
+                    for (Map<String, Object> result : results)
                     {
-                        List<Integer> orderedRowIds = new ArrayList<>();
-                        for (Map<String, Object> result : results)
-                        {
-                            Integer rowId = (Integer) result.get(RowId.name());
-                            if (rowId != null)
-                                orderedRowIds.add(rowId);
-                        }
-                        Collections.sort(orderedRowIds);
+                        Integer rowId = (Integer) result.get(RowId.name());
+                        if (rowId != null)
+                            orderedRowIds.add(rowId);
+                    }
+                    Collections.sort(orderedRowIds);
 
-                        // Issue 51263: order by RowId to reduce deadlock
-                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                {
-                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
-                                        expData.index(null, null, _expDataClassDataTableImpl);
-                                })
-                        );
-                    }, DbScope.CommitTaskOption.POSTCOMMIT);
-                }
+                    // Issue 51263: order by RowId to reduce deadlock
+                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                            SearchService.get().defaultTask().getQueue(_dataClass.getContainer(), SearchService.PRIORITY.modified).addRunnable((q) ->
+                            {
+                                for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
+                                    expData.index(q, null);
+                            })
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
 
                 /* setup mini dataiterator pipeline to process lineage */
                 DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());

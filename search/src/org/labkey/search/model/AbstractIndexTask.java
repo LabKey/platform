@@ -37,10 +37,9 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     protected long _complete = 0;
     protected boolean _cancelled = false;
     protected boolean _isReady = false;
-    final private AtomicInteger _estimate = new AtomicInteger();
     final private AtomicInteger _indexed = new AtomicInteger();
     final private AtomicInteger _failed = new AtomicInteger();
-    final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<>());
+    final protected Map<AbstractSearchService.Item,AbstractSearchService.Item> _subtasks = Collections.synchronizedMap(new IdentityHashMap<>());
     final StringWriter _sw = new StringWriter();
     final PrintWriter _out = new PrintWriter(_sw);
 
@@ -59,13 +58,6 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     public String getDescription()
     {
         return _description;
-    }
-
-
-    @Override
-    public int getDocumentCountEstimate()
-    {
-        return _estimate.get();
     }
 
 
@@ -97,11 +89,10 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    protected void addItem(Object item)
+    protected void addItem(AbstractSearchService.Item item)
     {
-        _subtasks.put(item,item);
+        _subtasks.put(item, item);
     }
-
 
     @Override
     public void log(String message)
@@ -123,14 +114,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    @Override
-    public void addToEstimate(int i)
-    {
-        _estimate.addAndGet(i);
-    }
-
-
-    // indicates that caller is done adding Resources to this task
+    /** indicates that the caller is done adding Resources to this task and it can start executing */
     @Override
     public void setReady()
     {

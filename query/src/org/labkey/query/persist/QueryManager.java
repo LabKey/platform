@@ -59,6 +59,7 @@ import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
@@ -386,7 +387,7 @@ public class QueryManager
         if (null != c)
         {
             ExternalSchemaDefCache.uncache(c);
-            ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, c, null);
+            ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
         }
     }
 

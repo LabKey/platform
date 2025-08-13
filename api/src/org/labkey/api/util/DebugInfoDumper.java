@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -26,7 +25,9 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,16 +52,11 @@ import java.util.WeakHashMap;
 
 /**
  * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
- * them via the file system.
- *
- * Writes thread dumps via Log4J, and heap dumps to a .hprof file.
- *
- * Created by: jeckels
- * Date: 1/16/16
+ * them via the file system. Writes thread dumps via Log4J, and heap dumps to a .hprof file.
  */
 public class DebugInfoDumper
 {
-    private static final Logger LOG = LogManager.getLogger(DebugInfoDumper.class);
+    private static final Logger LOG = LogHelper.getLogger(DebugInfoDumper.class, "Thread and heap dump errors");
 
     private final File _threadDumpFile;
     private final File _heapDumpFile;
@@ -70,11 +66,10 @@ public class DebugInfoDumper
 
     private static final int THREAD_DUMP_INTERVAL = 10000;
 
-    public DebugInfoDumper(File modulesDir)
+    public DebugInfoDumper(FileLike labkeyRoot)
     {
         // Ensure there's a thread dump request file
-        File labkeyRoot = modulesDir.getParentFile();
-        _threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
+        _threadDumpFile = FileUtil.toFileForWrite(labkeyRoot.resolveChild("threadDumpRequest"));
         if (!_threadDumpFile.exists())
         {
             try (PrintWriter writer = PrintWriters.getPrintWriter(_threadDumpFile))
@@ -85,13 +80,13 @@ public class DebugInfoDumper
             }
             catch (IOException e)
             {
-                LOG.error("Failed to create file " + _threadDumpFile.getAbsolutePath(), e);
+                LOG.error("Failed to create file {}", _threadDumpFile.getAbsolutePath(), e);
             }
             _threadDumpFile.deleteOnExit();
         }
 
         // Ensure there's a heap dump request file
-        _heapDumpFile = new File(labkeyRoot, "heapDumpRequest");
+        _heapDumpFile = FileUtil.toFileForWrite(labkeyRoot.resolveChild("heapDumpRequest"));
         if (!_heapDumpFile.exists())
         {
             try (PrintWriter writer = PrintWriters.getPrintWriter(_heapDumpFile))
@@ -103,7 +98,7 @@ public class DebugInfoDumper
             }
             catch (IOException e)
             {
-                LOG.error("Failed to create file " + _heapDumpFile.getAbsolutePath(), e);
+                LOG.error("Failed to create file {}", _heapDumpFile.getAbsolutePath(), e);
             }
             _heapDumpFile.deleteOnExit();
         }
@@ -114,7 +109,7 @@ public class DebugInfoDumper
         try
         {
             //noinspection unchecked
-            FileSystemWatchers.get().addListener(labkeyRoot.toPath(), new FileSystemDirectoryListener()
+            FileSystemWatchers.get().addListener(FileUtil.toFileForRead(labkeyRoot).toPath(), new FileSystemDirectoryListener()
             {
                 @Override
                 public void entryCreated(Path directory, Path entry) {}
@@ -142,7 +137,7 @@ public class DebugInfoDumper
     }
 
 
-    record ThreadExtraContext(String context, StackTraceElement[] stack) {}
+    record ThreadExtraContext(String context, StackTraceElement[] stack, long startTime) {}
 
     /* Can't use class ThreadLocal, which is frustrating */
     static final Map<Thread,List<ThreadExtraContext>> _threadDumpExtraContext = Collections.synchronizedMap(new WeakHashMap<>());
@@ -158,7 +153,7 @@ public class DebugInfoDumper
     {
         final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (p1) -> Collections.synchronizedList(new ArrayList<>()));
         int size = arr.size();
-        arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace()));
+        arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace(), System.currentTimeMillis()));
         return new _PopAutoCloseable(size);
     }
 
@@ -207,7 +202,7 @@ public class DebugInfoDumper
             try
             {
                 File destination = dumpHeap();
-                LOG.info("Dumped server heap to " + destination);
+                LOG.info("Dumped server heap to {}", destination);
             }
             catch (Exception e)
             {
@@ -289,8 +284,6 @@ public class DebugInfoDumper
         return destination;
     }
 
-
-
     static boolean justWaiting(StackTraceElement[] stack)
     {
         if (stack.length > 20)
@@ -309,7 +302,6 @@ public class DebugInfoDumper
         return "park".equals(topMethod) || "wait".equals(topMethod) || "poll".equals(topMethod) || "accept".equals(topMethod) || "sleep".equals(topMethod) || "waitForReferencePendingList".equals(topMethod);
         // OK probably just waiting for work.  We could check for common tomcat/labkey patterns here to be more conservative.
     }
-
 
     /**
      * Writes the thread dump into threads.txt
@@ -439,7 +431,7 @@ public class DebugInfoDumper
             var messages = extraInfo.toArray(new ThreadExtraContext[0]);
             for (var i = messages.length-1 ; i>= 0 ; i--)
             {
-                logWriter.debug("\t" + messages[i].context.replace('\n',' '));
+                logWriter.debug("\t" + messages[i].context.replace('\n',' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
                 var messageStack = messages[i].stack();
                 if (null != messageStack)
                 {

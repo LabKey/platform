@@ -31,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.Portal;
 
@@ -53,7 +54,9 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         String message = auditMsg == null ? c.getContainerNoun(true) + " " + c.getName() + " was created" : auditMsg;
         addAuditEvent(user, c, message);
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
+        SearchService ss = SearchService.get();
+        if (ss != null)
+            ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(ss.defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
     }
 
     @Override
@@ -105,7 +108,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
         Container c = evt.container;
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
+        ((CoreModule) ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
 
         switch (evt.property)
         {

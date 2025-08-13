@@ -138,7 +138,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
@@ -179,6 +178,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                               /                 \s""".indent(2);
 
     private ServletContext _servletContext = null;
+    private boolean _terminateAfterStartup;
     private FileLike _webappDir;
     private FileLike _extraWebappDir;
     private FileLike _startupPropertiesDir;
@@ -254,11 +254,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // terminateAfterStartup flag allows "headless" install/upgrade where Tomcat terminates after all modules are upgraded,
         // started, and initialized. This flag implies synchronousStartup=true.
-        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
+        _terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
         // synchronousStartup=true ensures that all modules are upgraded, started, and initialized before Tomcat startup is
         // complete. No webapp requests will be processed until startup is complete, unlike the usual asynchronous upgrade mode.
         boolean synchronousStartup = Boolean.valueOf(System.getProperty("synchronousStartup"));
-        Execution execution = terminateAfterStartup || synchronousStartup ? Execution.Synchronous : Execution.Asynchronous;
+        Execution execution = _terminateAfterStartup || synchronousStartup ? Execution.Synchronous : Execution.Asynchronous;
 
         try
         {
@@ -278,7 +278,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
         finally
         {
-            if (terminateAfterStartup)
+            if (_terminateAfterStartup)
                 System.exit(0);
         }
     }
@@ -432,7 +432,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     moduleExisting = module;
 
             // This should have been verified way before we get here, but just to be safe
-            if (null != moduleExisting && !equalsIgnoreCase(moduleCreated.getName(), moduleExisting.getName()))
+            if (null != moduleExisting && !moduleExisting.getName().equalsIgnoreCase(moduleCreated.getName()))
                 throw new IllegalStateException("Module name should not have changed. Found '" + moduleCreated.getName() + "' and '" + moduleExisting.getName() + "'");
 
             _moduleContextMap.put(context.getName(), context);
@@ -504,7 +504,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         @Override
-        public String toString()
+        public @NotNull String toString()
         {
             return moduleName + " (from schema version " + ModuleContext.formatVersion(installedVersion) + ")";
         }
@@ -519,27 +519,30 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         setTomcatVersion();
 
-        var webapp = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
-        _webappDir = new FileSystemLike.Builder(webapp).readonly().noMemCheck().root();
+        File root = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath(""))).getParentFile();
+        FileLike labkeyRoot = new FileSystemLike.Builder(root).readwrite().noMemCheck().root();
+        _webappDir = labkeyRoot.resolveChild("labkeyWebapp");
 
         String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
-        File extraWebappDir;
+        FileLike extraWebappDir;
+
         if (extraWebappPath == null)
         {
-            extraWebappDir = FileUtil.appendName(webapp.getParentFile(), "extraWebapp");
+            extraWebappDir = labkeyRoot.resolveChild("extraWebapp");
         }
         else
         {
-            extraWebappDir = new File(extraWebappPath);
+            extraWebappDir = new FileSystemLike.Builder(new File(extraWebappPath)).readonly().noMemCheck().root();
         }
+
         if (extraWebappDir.isDirectory())
-            _extraWebappDir = new FileSystemLike.Builder(extraWebappDir).readonly().noMemCheck().root();
+            _extraWebappDir = extraWebappDir;
 
-        var startup = FileUtil.appendName(webapp.getParentFile(), "startup");
+        FileLike startup = labkeyRoot.resolveChild("startup");
         if (startup.isDirectory())
-            _startupPropertiesDir = new FileSystemLike.Builder(startup).readonly().noMemCheck().root();
+            _startupPropertiesDir = startup;
 
-        // load startup configuration information from properties, side-effect may set _newinstall=true
+        // load startup configuration information from properties, side effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
@@ -579,19 +582,27 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // Do this after we've checked to see if we can find the core module. See issue 22797.
         verifyProductionModeMatchesBuild();
 
-        // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
+        boolean fakeStartup = labkeyRoot.resolveChild("fake.txt").exists();
+        if (fakeStartup)
+        {
+            _log.info("fake.txt file is present, so a connection to the primary data source will be attempted and then the server will terminate");
+            _terminateAfterStartup = true;
+        }
+
+        // Initialize data sources and ensure primary data source is accessible before initializing modules
         DbScope.initializeDataSources();
+
+        if (fakeStartup)
+            return;
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if all the real working threads are hung.
         // This lets us invoke methods in the debugger, gain easier access to statics, etc.
         new BreakpointThread().start();
 
         // Start listening for requests for thread and heap dumps
-        File coreModuleDir = coreModule.getExplodedPath();
-        File modulesDir = coreModuleDir.getParentFile();
-        new DebugInfoDumper(modulesDir);
+        new DebugInfoDumper(labkeyRoot);
 
-        final File lockFile = createLockFile(modulesDir);
+        final File lockFile = createLockFile(labkeyRoot);
 
         // Prune modules before upgrading core module, see Issue 42150
         synchronized (_modulesLock)
@@ -830,21 +841,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     /** Create a file that indicates the server is in the midst of the upgrade process. Refuse to start up
      * if a previous startup left the lock file in place. */
-    private File createLockFile(File modulesDir) throws ConfigurationException
+    private File createLockFile(FileLike labkeyRoot) throws ConfigurationException
     {
-        File result = FileUtil.appendName(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
+        File result = FileUtil.toFileForWrite(labkeyRoot.resolveChild("labkeyUpgradeLockFile"));
         if (result.exists())
         {
             String lockFileContent = PageFlowUtil.getFileContentsAsString(result).trim();
             if (lockFileContent.contains(LOCK_FILE_DELIMITER))
             {
                 String sternLockFileMessage = "Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists. " +
-                        "A startup/upgrade attempt has left the server in an indeterminate state. " +
-                        "Review the logs carefully to determine the outcome of the previous upgrade attempt(s) before this " +
-                        "lock file prevented restart. Proceed with extreme caution as the database has not been properly " +
-                        "upgraded. More guidance at " +
-                        new HelpTopic("troubleshootingAdmin", "lock").getHelpTopicHref(HelpTopic.Referrer.log) +
-                        "\nDetails from lock file:\n" + lockFileContent;
+                    "A startup/upgrade attempt has left the server in an indeterminate state. " +
+                    "Review the logs carefully to determine the outcome of the previous upgrade attempt(s) before this " +
+                    "lock file prevented restart. Proceed with extreme caution as the database has not been properly " +
+                    "upgraded. More guidance at " +
+                    new HelpTopic("troubleshootingAdmin", "lock").getHelpTopicHref(HelpTopic.Referrer.log) +
+                    "\nDetails from lock file:\n" + lockFileContent;
 
                 if (AppProps.getInstance().isDevMode())
                 {
@@ -1084,7 +1095,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     if (moduleNameToFile.containsKey(module.getName()))
                     {
                         String error = "Module with name '" + module.getName() + "' has already been loaded from "
-                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir + ". You should delete the extra copy and restart the server.";
+                            + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir + ". You should delete the extra copy and restart the server.";
                         _duplicateModuleErrors.add(HtmlString.of(error));
                         _log.error(error);
                     }
@@ -1322,7 +1333,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         return enlistmentId;
     }
-
 
     public FileLike getWebappDir()
     {
@@ -2170,19 +2180,18 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-
     public @Nullable Module getModule(DbScope scope, String schemaName)
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
 
-        return null != details ? details.getModule() : null;
+        return null != details ? details.module() : null;
     }
 
     public @Nullable DbSchemaType getSchemaType(DbScope scope, String schemaName)
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
 
-        return null != details ? details.getType() : null;
+        return null != details ? details.type() : null;
     }
 
     private @Nullable SchemaDetails getSchemaDetails(DbScope scope, String schemaName)
@@ -2303,9 +2312,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public ModuleContext getModuleContextFromDatabase(@NotNull String name)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ").
-                append(getTableInfoModules(), "m").
-                append(" WHERE LOWER(Name) = LOWER(?)").
-                add(name);
+            append(getTableInfoModules(), "m").
+            append(" WHERE LOWER(Name) = LOWER(?)").
+            add(name);
         ModuleContext result = new SqlSelector(_core.getSchema(), sql).getObject(ModuleContext.class);
         if (result != null)
         {
@@ -2451,9 +2460,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Returns the startup property entries for the specified scope. If no scope is specified then all properties are
      * returned. If the server is bootstrapping then properties with both the bootstrap and startup modifiers are
-     * returned otherwise only startup properties are returned.
-     *
-     * Do not call this directly! Use a StartupPropertyHandler instead.
+     * returned otherwise only startup properties are returned. Do not call this directly! Use a StartupPropertyHandler
+     * instead.
      */
     @NotNull
     public Collection<StartupPropertyEntry> getStartupPropertyEntries(@Nullable String scope)
@@ -2603,27 +2611,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private static class SchemaDetails
-    {
-        private final Module _module;
-        private final DbSchemaType _type;
-
-        private SchemaDetails(Module module, DbSchemaType type)
-        {
-            _module = module;
-            _type = type;
-        }
-
-        public Module getModule()
-        {
-            return _module;
-        }
-
-        public DbSchemaType getType()
-        {
-            return _type;
-        }
-    }
+    private record SchemaDetails(Module module, DbSchemaType type) {}
 
     @Override
     public void beforeReport(Set<Object> set)

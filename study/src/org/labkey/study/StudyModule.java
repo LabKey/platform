@@ -366,14 +366,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().addUIProvider(new StudyReportUIProvider());
         ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
 
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
-        {
-            ss.addSearchCategory(StudyManager.subjectCategory);
-            ss.addSearchCategory(StudyManager.datasetCategory);
-            ss.addDocumentProvider(this);
-        }
+        SearchService.get().addSearchCategory(StudyManager.subjectCategory);
+        SearchService.get().addSearchCategory(StudyManager.datasetCategory);
+        SearchService.get().addDocumentProvider(this);
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
         if (null != SpecimenService.get())
@@ -742,9 +737,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService.TaskIndexingQueue queue, Date modifiedSince)
     {
-        StudyManager._enumerateDocuments(task, c, modifiedSince);
+        StudyManager._enumerateDocuments(queue, modifiedSince);
     }
     
     @Override
