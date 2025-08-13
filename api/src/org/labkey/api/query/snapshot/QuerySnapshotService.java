@@ -108,7 +108,7 @@ public class QuerySnapshotService
         /**
          * Returns the audit history view for a snapshot.
          */
-        HttpView createAuditView(QuerySnapshotForm form) throws Exception;
+        HttpView<?> createAuditView(QuerySnapshotForm form, BindException errors) throws Exception;
 
         /**
          * Returns the list of valid display columns for a specified QueryForm. The list of columns

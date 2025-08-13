@@ -5323,7 +5323,7 @@ public class StudyController extends BaseStudyController
                 boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 if (showHistory)
                 {
-                    HttpView historyView = provider.createAuditView(form);
+                    HttpView<?> historyView = provider.createAuditView(form, errors);
                     if (historyView != null)
                         box.addView(historyView);
                 }
