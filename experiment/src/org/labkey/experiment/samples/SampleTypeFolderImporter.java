@@ -67,7 +67,7 @@ public class SampleTypeFolderImporter extends AbstractExpFolderImporter
         {
             if (file.toLowerCase().endsWith(".tsv") && file.startsWith(SampleTypeFolderWriter.SAMPLE_TYPE_PREFIX))
             {
-                sampleTypeDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeFolderWriter.SAMPLE_TYPE_PREFIX.length())), file);
+                sampleTypeDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeFolderWriter.SAMPLE_TYPE_PREFIX.length()) + ".tsv"), file);
             }
         }
 

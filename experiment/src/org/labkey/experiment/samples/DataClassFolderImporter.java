@@ -85,7 +85,7 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
         {
             if (file.toLowerCase().endsWith(".tsv") && file.startsWith(DataClassFolderWriter.DATA_CLASS_PREFIX))
             {
-                dataClassDataFiles.put(FileUtil.getBaseName(file.substring(DataClassFolderWriter.DATA_CLASS_PREFIX.length())), file);
+                dataClassDataFiles.put(FileUtil.getBaseName(file.substring(DataClassFolderWriter.DATA_CLASS_PREFIX.length()) + ".tsv"), file);
             }
         }
 
