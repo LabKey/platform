@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
+
 /**
  * {@link ColumnInfo} backed by a LabKey SQL fragment
  */
@@ -345,6 +347,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         sql.append("(");
         bound.appendSql(sql, new _Query(tableAliasName));
         sql.append(")");
+        sql.append(SQLFragment.unsafe(CALCULATED_COLUMN_SQL_TAG));
         return sql;
     }
 
