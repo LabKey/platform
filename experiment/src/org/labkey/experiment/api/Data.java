@@ -36,7 +36,7 @@ public class Data extends RunItem
 {
     private String dataFileUrl;
     private boolean generated;
-    private Integer classId;
+    private Long classId;
 
     public Data()
     {
@@ -107,12 +107,12 @@ public class Data extends RunItem
         this.generated = generated;
     }
 
-    public Integer getClassId()
+    public Long getClassId()
     {
         return classId;
     }
 
-    public void setClassId(Integer classId)
+    public void setClassId(Long classId)
     {
         this.classId = classId;
     }
@@ -121,7 +121,7 @@ public class Data extends RunItem
     public @Nullable ActionURL detailsURL()
     {
         ActionURL ret = new ActionURL(ExperimentController.ShowDataAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
+        ret.addParameter("rowId", Long.toString(getRowId()));
         return ret;
     }
 

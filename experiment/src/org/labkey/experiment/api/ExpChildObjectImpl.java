@@ -93,7 +93,7 @@ public class ExpChildObjectImpl extends ExpObjectImpl
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         throw new UnsupportedOperationException();
     }

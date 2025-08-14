@@ -33,8 +33,8 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
 {
     private boolean _forceDelete;
     private String _dataRegionSelectionKey;
-    private Integer _singleObjectRowId;
-    private List<Integer> _rowIds;
+    private Long _singleObjectRowId;
+    private List<Long> _rowIds;
     private String _userComment;
 
     public void setUserComment(String userComment)
@@ -48,7 +48,7 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     }
 
     @NotNull
-    public Set<Integer> getIds(boolean clear)
+    public Set<Long> getIds(boolean clear)
     {
         if (getSingleObjectRowId() != null)
             return singleton(getSingleObjectRowId());
@@ -60,12 +60,12 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
             return Collections.emptySet();
     }
 
-    public Integer getSingleObjectRowId()
+    public Long getSingleObjectRowId()
     {
         return _singleObjectRowId;
     }
 
-    public void setSingleObjectRowId(Integer singleObjectRowId)
+    public void setSingleObjectRowId(Long singleObjectRowId)
     {
         _singleObjectRowId = singleObjectRowId;
     }
@@ -98,12 +98,12 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
             DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
     }
 
-    public List<Integer> getRowIds()
+    public List<Long> getRowIds()
     {
         return _rowIds;
     }
 
-    public void setRowIds(List<Integer> rowIds)
+    public void setRowIds(List<Long> rowIds)
     {
         _rowIds = rowIds;
     }

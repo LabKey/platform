@@ -15,6 +15,7 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
@@ -175,7 +176,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
     {
         if (studyService != null)
         {
-            Map<Integer, List<NotificationInfo>> categoryMap = new HashMap<>();
+            Map<Integer, List<NotificationInfo>> categoryMap = new IntHashMap<>();
             for (Map.Entry<Integer, List<NotificationInfo>> entry : notificationCategoryMap.entrySet())
             {
                 for (NotificationInfo ni : entry.getValue())
@@ -245,7 +246,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
 
     private Map<Integer, ViewCategory> getViewCategoryMap(Container container)
     {
-        Map<Integer, ViewCategory> viewCategoryMap = new HashMap<>();
+        Map<Integer, ViewCategory> viewCategoryMap = new IntHashMap<>();
         ViewCategory uncategorizedCategory = ReportUtil.getDefaultCategory(container, null, null);
         uncategorizedCategory.setRowId(ViewCategoryManager.UNCATEGORIZED_ROWID);
         viewCategoryMap.put(ViewCategoryManager.UNCATEGORIZED_ROWID, uncategorizedCategory);

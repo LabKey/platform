@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -168,14 +169,22 @@ public interface Selector
      * Returns a new value map. If the query selects a single column, return an identity map. If the query selects
      * multiple columns, the first column is the key, the second column is the value. Subsequent columns are ignored.
      */
-    @NotNull <K, V> Map<K, V> getValueMap();
+    default @NotNull <K, V> Map<K, V> getValueMap()
+    {
+        return getValueMap(null);
+    }
+    @NotNull <K, V> Map<K, V> getValueMap(@Nullable Class<K> keyClass);
 
     /**
      * Populates an existing map. If the query selects a single column, populates as an identity map. If the query
      * selects multiple columns, the first column is the key, the second column is the value. Subsequent columns are
      * ignored.
      */
-    @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
+    default @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map)
+    {
+        return fillValueMap(null, map);
+    }
+    public @NotNull <K, V> Map<K, V> fillValueMap(@Nullable Class<K> keyClass, @NotNull final Map<K, V> fillMap);
 
     /**
      * Returns a new MultiValuedMap. If the query selects a single column, returns an identity map. If the query selects
@@ -193,6 +202,7 @@ public interface Selector
 
     @SuppressWarnings("UnusedReturnValue")
     @NotNull <K> Set<K> fillSet(@NotNull final Set<K> fillSet);
+    @NotNull <K> Set<K> fillSet(Class<K> keyClass, @NotNull final Set<K> fillSet);
 
     /** Callback interface for dealing with objects or records streamed from the database one-by-one */
     interface ForEachBlock<T>

@@ -47,7 +47,7 @@ public interface DataIntegrationService
     }
 
     void registerStepProviders();
-    @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
+    @Nullable Long runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 
     boolean resetTransformState(Container c, User user, @NotNull String transformId);
 

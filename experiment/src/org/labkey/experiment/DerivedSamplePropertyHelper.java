@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.NameGenerator;
@@ -44,7 +45,6 @@ import org.labkey.experiment.api.property.DomainPropertyImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
-    private final Map<Integer, Pair<Lsid, String>> _lsids = new HashMap<>();
+    private final Map<Integer, Pair<Lsid, String>> _lsids = new IntHashMap<>();
     private final ExpSampleTypeImpl _sampleType;
     private final Container _container;
     private final User _user;

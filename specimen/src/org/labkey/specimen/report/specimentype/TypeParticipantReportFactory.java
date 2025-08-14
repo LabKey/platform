@@ -15,6 +15,7 @@
  */
 package org.labkey.specimen.report.specimentype;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -102,7 +103,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                 return Collections.emptyList();
         }
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        Map<Integer, Collection<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visits
+        Map<Integer, Collection<? extends Visit>> visitListCache = new IntHashMap<>(); // cohort rowId -> visits
         boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
         Collection<? extends Visit> allVisits = null;
         Study study = StudyService.get().getStudy(getContainer());

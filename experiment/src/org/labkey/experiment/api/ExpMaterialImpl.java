@@ -157,13 +157,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public Integer getRootMaterialRowId()
+    public Long getRootMaterialRowId()
     {
         return _object.getRootMaterialRowId();
     }
 
     @Override
-    public void setRootMaterialRowId(int rowId)
+    public void setRootMaterialRowId(long rowId)
     {
         _object.setRootMaterialRowId(rowId);
     }
@@ -180,13 +180,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         _object.setAliquotedFromLSID(lsid);
     }
 
-    public Integer getSampleStateId()
+    public Long getSampleStateId()
     {
         return _object.getSampleState();
     }
 
     @Override
-    public void setSampleStateId(Integer stateId)
+    public void setSampleStateId(Long stateId)
     {
         _object.setSampleState(stateId);
     }
@@ -287,7 +287,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
     @Override
-    public @Nullable Integer getParentObjectId()
+    public @Nullable Long getParentObjectId()
     {
         ExpSampleType st = getSampleType();
         if (st == null)
@@ -444,7 +444,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     {
                         JobRunner.getDefault().execute(1000, () ->
                         {
-                            List<Pair<Integer, Long>> copy;
+                            List<Pair<Long, Long>> copy;
                             synchronized (updateLastIndexedList)
                             {
                                 copy = List.copyOf(updateLastIndexedList);
@@ -474,7 +474,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
     }
 
-    static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
+    static final List<Pair<Long,Long>> updateLastIndexedList = new ArrayList<>();
 
     @Override
     public String getDocumentId()

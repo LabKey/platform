@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 public class AssayPlateTriggerFactory implements TriggerFactory
 {
     private final AssayProvider _provider;
@@ -154,7 +156,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
      */
     private class DataStateTrigger implements Trigger
     {
-        Set<Integer> _excludedRows = new HashSet<>();
+        Set<Long> _excludedRows = new HashSet<>();
 
         @Override
         public void beforeUpdate(
@@ -176,8 +178,8 @@ public class AssayPlateTriggerFactory implements TriggerFactory
                 if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
                 {
                     Object o = oldRow.get("RowId");
-                    if (o instanceof Integer rowId)
-                        _excludedRows.add(rowId);
+                    if (o instanceof Number num)
+                        _excludedRows.add(asLong(num));
                 }
             }
         }
@@ -246,7 +248,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (!enabled || errors.hasErrors())
                 return;
 
-            List<Integer> runIds = new ArrayList<>();
+            List<Long> runIds = new ArrayList<>();
             for (var expDataId : dataIds)
             {
                 var data = ExperimentService.get().getExpData(expDataId);

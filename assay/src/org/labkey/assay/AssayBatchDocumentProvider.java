@@ -3,6 +3,8 @@ package org.labkey.assay;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -84,17 +86,17 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
     {
         return new SearchService.ResourceResolver()
         {
-            private @Nullable Integer fromDocumentId(@NotNull String resourceIdentifier)
+            private @Nullable Long fromDocumentId(@NotNull String resourceIdentifier)
             {
                 final String prefix = getDocumentIdPrefix();
 
                 if (resourceIdentifier.startsWith(prefix))
                     resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-                int batchId;
+                long batchId;
                 try
                 {
-                    batchId = Integer.parseInt(resourceIdentifier);
+                    batchId = Long.parseLong(resourceIdentifier);
                 }
                 catch (NumberFormatException e)
                 {
@@ -106,7 +108,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
 
             private @Nullable ExpExperiment getBatch(@NotNull String resourceIdentifier)
             {
-                Integer batchRowId = fromDocumentId(resourceIdentifier);
+                Long batchRowId = fromDocumentId(resourceIdentifier);
                 if (batchRowId == null)
                     return null;
 
@@ -136,11 +138,11 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
             @Override
             public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
             {
-                Set<Integer> batchRowIds = new HashSet<>();
-                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                Set<Long> batchRowIds = new HashSet<>();
+                Map<Long, String> rowIdIdentifierMap = new LongHashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    Integer batchRowId = fromDocumentId(resourceIdentifier);
+                    Long batchRowId = fromDocumentId(resourceIdentifier);
                     if (batchRowId != null)
                     {
                         batchRowIds.add(batchRowId);

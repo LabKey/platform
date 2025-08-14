@@ -123,13 +123,13 @@ public class PropertyValidatorImpl implements IPropertyValidator
         edit().setContainer(container);
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         edit().setRowId(rowId);
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _validator.getRowId();
     }
@@ -194,7 +194,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         {
             String cid = _validator.getContainer();
             int propid = _validator.getPropertyId();
-            int rowid = _validator.getRowId();
+            long rowid = _validator.getRowId();
             return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
         }
     }

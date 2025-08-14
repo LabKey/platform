@@ -95,7 +95,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
-    private Integer _workflowTask;
+    private Long _workflowTask;
     private String _dataCollectorName;
     private boolean _multiRunUpload;
     private String _uploadStep;
@@ -105,8 +105,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<DomainProperty, FileLike> _additionalFiles;
-    private Integer _batchId;
-    private Integer _reRunId;
+    private Long _batchId;
+    private Long _reRunId;
     private String _severityLevel;
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
@@ -210,12 +210,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     @Override
-    public Integer getWorkflowTask()
+    public @Nullable Long getWorkflowTask()
     {
         return _workflowTask;
     }
 
-    public void setWorkflowTask(Integer workflowTask)
+    public void setWorkflowTask(Long workflowTask)
     {
         _workflowTask = workflowTask;
     }
@@ -569,12 +569,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _uploadAttemptID = GUID.makeGUID();
     }
 
-    public Integer getBatchId()
+    public Long getBatchId()
     {
         return _batchId;
     }
 
-    public void setBatchId(Integer batchId)
+    public void setBatchId(Long batchId)
     {
         _batchId = batchId;
     }
@@ -699,12 +699,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     @Override
-    public Integer getReRunId()
+    public Long getReRunId()
     {
         return _reRunId;
     }
 
-    public void setReRunId(Integer reRunId)
+    public void setReRunId(Long reRunId)
     {
         _reRunId = reRunId;
     }

@@ -65,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Created by cnathe on 1/24/14.
  */
@@ -456,7 +458,7 @@ public class TreatmentManager
                 throw errors.getLastRowError();
 
             if (updatedRows.size() == 1)
-                return (Integer) updatedRows.get(0).get(pkColName);
+                return asInteger(updatedRows.get(0).get(pkColName));
         }
 
         return null;

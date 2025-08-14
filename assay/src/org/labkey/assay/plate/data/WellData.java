@@ -22,8 +22,8 @@ public class WellData
     private String _position;
     private String _replicateGroup;
     private Integer _row;
-    private Integer _rowId;
-    private Integer _sampleId;
+    private Long _rowId;
+    private Long _sampleId;
     private WellGroup.Type _type;
     private String _wellGroup;
     // NOTE: If/when adding additional properties update hasData() to include the new properties
@@ -157,22 +157,22 @@ public class WellData
         _row = row;
     }
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
 
-    public Integer getSampleId()
+    public Long getSampleId()
     {
         return _sampleId;
     }
 
-    public void setSampleId(Integer sampleId)
+    public void setSampleId(Long sampleId)
     {
         _sampleId = sampleId;
     }
@@ -197,7 +197,7 @@ public class WellData
         _wellGroup = wellGroup;
     }
 
-    record CacheKey(int plateRowId, boolean includeSamples, boolean includeMetadata) {}
+    record CacheKey(long plateRowId, boolean includeSamples, boolean includeMetadata) {}
 
     public static class Cache
     {
@@ -212,7 +212,7 @@ public class WellData
             this.user = user;
         }
 
-        public List<WellData> getData(int plateRowId, boolean includeSamples, boolean includeMetadata)
+        public List<WellData> getData(long plateRowId, boolean includeSamples, boolean includeMetadata)
         {
             return cache.computeIfAbsent(
                 new CacheKey(plateRowId, includeSamples, includeMetadata),

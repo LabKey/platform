@@ -32,6 +32,8 @@ import org.labkey.api.util.UnexpectedException;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Bean class for domains (persisted in exp.DomainDescriptor). Most code shouldn't use this class directly, but should
  * instead use a {@link org.labkey.api.exp.property.Domain} wrapper.
@@ -123,7 +125,7 @@ public final class DomainDescriptor
         _domainURI = (String) map.get("DomainURI");
 
         if (map.containsKey("DomainId"))
-            _domainId = (Integer) map.get("DomainId");
+            _domainId = asInteger(map.get("DomainId"));
         else
             _domainId = 0;
 
@@ -137,7 +139,7 @@ public final class DomainDescriptor
 
         // This property is not stored in the database
         if (map.containsKey("titlePropertyId"))
-            _titlePropertyId = (Integer) map.get("titlePropertyId");
+            _titlePropertyId = asInteger(map.get("titlePropertyId"));
         else
             _titlePropertyId = 0;
 

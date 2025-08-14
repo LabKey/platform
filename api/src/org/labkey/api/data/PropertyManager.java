@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
@@ -51,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 public class PropertyManager
 {
@@ -207,7 +210,7 @@ public class PropertyManager
         while (curContainer != null)
         {
             String value = getProperty(user, curContainer, category, name);
-            Map<Integer, String> containerMap = new HashMap<>();
+            Map<Integer, String> containerMap = new IntHashMap<>();
 
             if (value != null)
                 containerMap.put(user.getUserId(), value);
@@ -535,7 +538,7 @@ public class PropertyManager
                         insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
                     }
 
-                    _set = (Integer) insertMap.get("Set");
+                    _set = asInteger(insertMap.get("Set"));
                 }
                 else
                 {

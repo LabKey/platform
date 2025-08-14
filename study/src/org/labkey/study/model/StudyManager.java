@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
@@ -222,6 +224,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_TABLE_NAME;
@@ -1486,7 +1489,7 @@ public class StudyManager
         map.put("cohortId", cohortId);
         map.put("containerId", container.getId());
         map = Table.insert(user, tinfo, map);
-        return (Integer) map.get("RowId");
+        return asInteger(map.get("RowId"));
     }
 
     @Nullable
@@ -1533,7 +1536,7 @@ public class StudyManager
 
     public Map<Integer, List<VisitTagMapEntry>> getVisitTagMapMap(Study study)
     {
-        final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
+        final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new IntHashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
         new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
@@ -1789,7 +1792,7 @@ public class StudyManager
     @Nullable
     public DataState getDefaultQCState(StudyImpl study)
     {
-        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        Long defaultQcStateId = study.getDefaultDirectEntryQCState();
         DataState defaultQCState = null;
         if (defaultQcStateId != null)
             defaultQCState = QCStateManager.getInstance().getStateForRowId(
@@ -1884,7 +1887,7 @@ public class StudyManager
         {
             String lsid = (String) row.get("lsid");
 
-            Integer oldStateId = (Integer) row.get(DatasetTableImpl.QCSTATE_ID_COLNAME);
+            Long oldStateId = MapUtils.getLong(row,DatasetTableImpl.QCSTATE_ID_COLNAME);
             DataState oldState = null;
             if (oldStateId != null)
                 oldState = QCStateManager.getInstance().getStateForRowId(container, oldStateId);
@@ -1949,6 +1952,15 @@ public class StudyManager
     }
 
     public static boolean safeIntegersEqual(Integer first, Integer second)
+    {
+        if (first == null && second == null)
+            return true;
+        if (first == null)
+            return false;
+        return first.equals(second);
+    }
+
+    public static boolean safeIntegersEqual(Long first, Long second)
     {
         if (first == null && second == null)
             return true;
@@ -2326,7 +2338,7 @@ public class StudyManager
         if (null == map)
             return null;
         else
-            return new Pair<>((String)map.get("Container"), (Integer)map.get("DatasetId"));
+            return new Pair<>((String)map.get("Container"), asInteger(map.get("DatasetId")));
     };
 
 
@@ -2497,7 +2509,7 @@ public class StudyManager
             Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(user, ds);
 
             allDatasetLsids.forEach(lsid -> {
-                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+                Set<Long> protocolApplications = pvs.getProtocolApplications(lsid);
 
                 OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
                 if (null != expObject)
@@ -3211,7 +3223,7 @@ public class StudyManager
                     }
 
                     String alternateId = Objects.toString(row.get(ALTERNATEID_COLUMN_NAME), null);
-                    Integer dateOffset = (null != row.get(DATEOFFSET_COLUMN_NAME)) ? (Integer)row.get(DATEOFFSET_COLUMN_NAME) : null;
+                    Integer dateOffset = (null != row.get(DATEOFFSET_COLUMN_NAME)) ? asInteger(row.get(DATEOFFSET_COLUMN_NAME)) : null;
 
                     if (null == alternateId && null == dateOffset)
                     {
@@ -4201,7 +4213,7 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter(columns.get(0).getFieldKey(), ptid);
 
         // Return source -> alias map
-        return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap();
+        return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap(String.class);
     }
 
     private void unindexDataset(DatasetDefinition ds)

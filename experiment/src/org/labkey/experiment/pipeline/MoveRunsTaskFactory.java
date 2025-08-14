@@ -68,7 +68,7 @@ public class MoveRunsTaskFactory extends AbstractTaskFactory<AbstractTaskFactory
     public boolean isJobComplete(PipelineJob j)
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)j;
-        for (int runId : job.getRunIds())
+        for (long runId : job.getRunIds())
         {
             ExpRun run = ExperimentService.get().getExpRun(runId);
             if (run != null && !run.getContainer().equals(j.getContainer()))

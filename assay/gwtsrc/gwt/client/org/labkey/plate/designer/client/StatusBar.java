@@ -80,10 +80,10 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
     @Override
     public void save(final SaveListener<Object> listener)
     {
-        _view.saveChanges(new ErrorDialogAsyncCallback<Integer>()
+        _view.saveChanges(new ErrorDialogAsyncCallback<Long>()
         {
             @Override
-            public void onSuccess(Integer result)
+            public void onSuccess(Long result)
             {
                 setDirty(false);
                 if (listener != null)

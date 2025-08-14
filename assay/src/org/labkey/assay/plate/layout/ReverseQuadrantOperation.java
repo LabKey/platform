@@ -18,7 +18,7 @@ public class ReverseQuadrantOperation implements LayoutOperation
     public List<WellLayout> execute(ExecutionContext context)
     {
         Plate sourcePlate = context.sourcePlates().get(0);
-        Integer plateRowId = sourcePlate.getRowId();
+        Long plateRowId = sourcePlate.getRowId();
 
         List<WellLayout> layouts = new ArrayList<>();
         for (int i = 0; i < 4; i++)

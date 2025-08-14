@@ -1553,9 +1553,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
 
     @Override
-    public @Nullable Integer getOwnerObjectId()
+    public @Nullable Long getOwnerObjectId()
     {
-        return OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
+        return OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Long) null);
     }
 
     @Nullable
@@ -1622,7 +1622,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return data;
         }
 
-        int sampleTypeObjectId = requireNonNull(getOwnerObjectId());
+        long sampleTypeObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
@@ -1635,7 +1635,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
                 {
                     List<String> lsids = searchIndexDataKeys.lsids();
-                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+                    List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
 
                     // Issue 51263: order by RowId to reduce deadlock
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->

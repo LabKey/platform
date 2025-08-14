@@ -1,5 +1,6 @@
 package org.labkey.api.view;
 
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.DataRegionSelection;
 
 import java.util.HashSet;
@@ -20,11 +21,11 @@ public class DataViewSnapshotSelectionForm extends DataViewSelectionForm
     }
 
     @Override
-    public Set<Integer> getIds(boolean clear)
+    public Set<Long> getIds(boolean clear)
     {
         if (_rowIds != null) return _rowIds;
         if (_useSnapshotSelection)
-            return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
+            return new LongHashSet(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
         else
             return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
     }

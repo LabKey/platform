@@ -47,7 +47,7 @@ public class SampleTypeDisplayColumn extends SimpleDisplayColumn
         else
         {
             ActionURL url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, st.getContainer());
-            url.addParameter("rowId", Integer.toString(st.getRowId()));
+            url.addParameter("rowId", Long.toString(st.getRowId()));
             out.write(LinkBuilder.simpleLink(st.getName(), url));
         }
     }

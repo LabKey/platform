@@ -92,6 +92,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
 * User: klum
 * Date: 9/19/12
@@ -456,7 +458,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
     {
         super.fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, existingRecord);
-        Integer userId = null!=oldRow ? (Integer)oldRow.get("UserId") : null!=newRow ? (Integer)newRow.get("UserId") : null;
+        Integer userId = null!=oldRow ? asInteger(oldRow.get("UserId")) : null!=newRow ? asInteger(newRow.get("UserId")) : null;
         if (null != userId && !before)
             UserManager.fireUserPropertiesChanged(userId);
     }
@@ -485,7 +487,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer pkVal = (Integer)oldRow.get("UserId");
+            Integer pkVal = asInteger(oldRow.get("UserId"));
             User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
             if (userToUpdate == null)
                 throw new NotFoundException("Unable to find user for " + pkVal + ".");

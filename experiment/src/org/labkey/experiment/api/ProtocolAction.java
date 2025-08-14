@@ -23,9 +23,9 @@ package org.labkey.experiment.api;
 public class ProtocolAction
 {
     private int _sequence;
-    private int _rowId;
-    private int _parentProtocolId;
-    private int _childProtocolId;
+    private long _rowId;
+    private long _parentProtocolId;
+    private long _childProtocolId;
 
     public int getSequence()
     {
@@ -37,32 +37,32 @@ public class ProtocolAction
         _sequence = sequence;
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }
 
-    public int getParentProtocolId()
+    public long getParentProtocolId()
     {
         return _parentProtocolId;
     }
 
-    public void setParentProtocolId(int parentProtocolId)
+    public void setParentProtocolId(long parentProtocolId)
     {
         _parentProtocolId = parentProtocolId;
     }
 
-    public int getChildProtocolId()
+    public long getChildProtocolId()
     {
         return _childProtocolId;
     }
 
-    public void setChildProtocolId(int childProtocolId)
+    public void setChildProtocolId(long childProtocolId)
     {
         _childProtocolId = childProtocolId;
     }

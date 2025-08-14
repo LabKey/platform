@@ -118,9 +118,9 @@ public class FilterProtocolInputCriteria extends AbstractProtocolInputCriteria
         // First select the RowId from the query table and then use ExperimentService to get the ExpData/ExpMaterial objects
         TableSelector ts = new TableSelector(table, table.getColumns("RowId"), _filter, null);
         if (protocolInput instanceof ExpDataProtocolInput)
-            return ExperimentService.get().getExpDatas(ts.getArrayList(Integer.class));
+            return ExperimentService.get().getExpDatas(ts.getArrayList(Long.class));
         else if (protocolInput instanceof ExpMaterialProtocolInput)
-            return ExperimentService.get().getExpMaterials(ts.getArrayList(Integer.class));
+            return ExperimentService.get().getExpMaterials(ts.getArrayList(Long.class));
         else
             throw new IllegalStateException();
     }

@@ -3,6 +3,7 @@ package org.labkey.api.specimen.location;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -29,7 +30,7 @@ public class LocationCache
         public LocationCollections(Container c)
         {
             List<LocationImpl> list = new LinkedList<>();
-            Map<Integer, LocationImpl> byRowId = new HashMap<>();
+            Map<Integer, LocationImpl> byRowId = new IntHashMap<>();
             Map<String, LocationImpl> byLabel = new HashMap<>();
 
             TableInfo tableInfo = SpecimenSchema.get().getTableInfoLocation(c);

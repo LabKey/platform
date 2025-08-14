@@ -45,19 +45,19 @@ import java.util.Set;
 public class XarExportSelection implements Serializable
 {
     // Store ids instead of experiment objects so that it's easily serializable
-    private final List<Integer> _expIds = new ArrayList<>();
-    private final Set<Integer> _runIds = new LinkedHashSet<>();
-    private final List<Integer> _dataIds = new ArrayList<>();
-    private final List<Integer> _sampleTypeIds = new ArrayList<>();
-    private final List<Integer> _protocolIds = new ArrayList<>();
-    private final List<Integer> _dataClassIds = new ArrayList<>();
+    private final List<Long> _expIds = new ArrayList<>();
+    private final Set<Long> _runIds = new LinkedHashSet<>();
+    private final List<Long> _dataIds = new ArrayList<>();
+    private final List<Long> _sampleTypeIds = new ArrayList<>();
+    private final List<Long> _protocolIds = new ArrayList<>();
+    private final List<Long> _dataClassIds = new ArrayList<>();
 
     private boolean _includeXarXml = true;
     private Set<String> _roles;
 
-    public void addExperimentIds(int... expIds)
+    public void addExperimentIds(long... expIds)
     {
-        for (int expId : expIds)
+        for (long expId : expIds)
         {
             _expIds.add(expId);
         }
@@ -69,28 +69,28 @@ public class XarExportSelection implements Serializable
         _runIds.addAll(runs.stream().map(ExpObject::getRowId).toList());
     }
 
-    public void addRunIds(Collection<Integer> runIds)
+    public void addRunIds(Collection<Long> runIds)
     {
         _runIds.addAll(runIds);
     }
 
-    public void addDataIds(int... dataIds)
+    public void addDataIds(long... dataIds)
     {
-        for (int dataId : dataIds)
+        for (long dataId : dataIds)
         {
             _dataIds.add(dataId);
         }
     }
 
-    public void addProtocolIds(int... protocolIds)
+    public void addProtocolIds(long... protocolIds)
     {
-        for (int protocolId : protocolIds)
+        for (long protocolId : protocolIds)
         {
             _protocolIds.add(protocolId);
         }
     }
 
-    public void addProtocolIds(Collection<Integer> protocolIds)
+    public void addProtocolIds(Collection<Long> protocolIds)
     {
         _protocolIds.addAll(protocolIds);
     }
@@ -125,12 +125,12 @@ public class XarExportSelection implements Serializable
 
     public void addContent(XarExporter exporter) throws ExperimentException
     {
-        for (int expId : _expIds)
+        for (long expId : _expIds)
         {
             exporter.addExperiment(ExperimentServiceImpl.get().getExpExperiment(expId));
         }
 
-        for (int protocolId : _protocolIds)
+        for (long protocolId : _protocolIds)
         {
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
             exporter.addProtocol(protocol, true);
@@ -138,22 +138,22 @@ public class XarExportSelection implements Serializable
 
         // Process runs after protocols because we want to assure the protocols are all defined
         // since SM Workflow Tasks can reference assay design protocols
-        for (int runId : _runIds)
+        for (long runId : _runIds)
         {
             exporter.addExperimentRun(ExperimentService.get().getExpRun(runId));
         }
 
-        for (int sampleTypeId : _sampleTypeIds)
+        for (long sampleTypeId : _sampleTypeIds)
         {
             exporter.addSampleType(SampleTypeService.get().getSampleType(sampleTypeId));
         }
 
-        for (int dataId : _dataIds)
+        for (var dataId : _dataIds)
         {
             exporter.addExpData(ExperimentServiceImpl.get().getExpData(dataId));
         }
 
-        for (int dataClassId : _dataClassIds)
+        for (var dataClassId : _dataClassIds)
         {
             exporter.addDataClass(ExperimentService.get().getDataClass(dataClassId));
         }

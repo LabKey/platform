@@ -336,7 +336,7 @@ public class TemplateView extends HorizontalPanel
         setDirty(true);
     }
 
-    public void saveChanges(final AsyncCallback<Integer> callback)
+    public void saveChanges(final AsyncCallback<Long> callback)
     {
         String templateName = _nameBox.getText().trim();
         if (templateName == null || templateName.isEmpty())
@@ -359,7 +359,7 @@ public class TemplateView extends HorizontalPanel
             _activeGroup.setProperties(_wellGroupPropertyPanel.getProperties());
         }
         setStatus("Saving...");
-        getService().saveChanges(_plate, !_copyMode, new AsyncCallback<Integer>()
+        getService().saveChanges(_plate, !_copyMode, new AsyncCallback<Long>()
         {
             @Override
             public void onFailure(Throwable throwable)
@@ -370,7 +370,7 @@ public class TemplateView extends HorizontalPanel
             }
 
             @Override
-            public void onSuccess(Integer newPlateId)
+            public void onSuccess(Long newPlateId)
             {
                 UrlBuilder urlBuilder = Window.Location.createUrlBuilder();
                 String oldUrl = urlBuilder.buildString();

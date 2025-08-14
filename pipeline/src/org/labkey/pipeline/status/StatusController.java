@@ -313,15 +313,15 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static ActionURL urlDetails(Container c, int rowId)
+    public static ActionURL urlDetails(Container c, long rowId)
     {
         return urlDetails(c, rowId, null);
     }
 
-    public static ActionURL urlDetails(Container c, int rowId, String errorMessage)
+    public static ActionURL urlDetails(Container c, long rowId, String errorMessage)
     {
         ActionURL url = new ActionURL(DetailsAction.class, c);
-        url.addParameter(RowIdForm.Params.rowId, Integer.toString(rowId));
+        url.addParameter(RowIdForm.Params.rowId, Long.toString(rowId));
         if (errorMessage != null)
         {
             url.addParameter("errorMessage", errorMessage);
@@ -338,15 +338,15 @@ public class StatusController extends SpringActionController
     {
         enum Params { rowId }
 
-        private int _rowId;
+        private long _rowId;
         private boolean _showDetails;
 
-        public int getRowId()
+        public long getRowId()
         {
             return _rowId;
         }
 
-        public void setRowId(int rowId)
+        public void setRowId(long rowId)
         {
             _rowId = rowId;
         }
@@ -523,10 +523,10 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
+    public static ActionURL urlShowFile(Container c, long rowId, String filename, boolean download)
     {
         return new ActionURL(ShowFileAction.class, c)
-            .addParameter(RowIdForm.Params.rowId, Integer.toString(rowId))
+            .addParameter(RowIdForm.Params.rowId, Long.toString(rowId))
             .addParameter(ShowFileForm.Params.filename, filename)
             .addParameter(ShowFileForm.Params.download, download);
     }
@@ -819,7 +819,7 @@ public class StatusController extends SpringActionController
     public static class SelectStatusApiForm extends ViewForm
     {
         private String _dataRegionSelectionKey;
-        private Set<Integer> _rowIds;
+        private Set<Long> _rowIds;
 
         public String getDataRegionSelectionKey()
         {
@@ -831,17 +831,17 @@ public class StatusController extends SpringActionController
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        public Set<Integer> getRowIds()
+        public Set<Long> getRowIds()
         {
             return _rowIds;
         }
 
-        public void setRowIds(Set<Integer> rowIds)
+        public void setRowIds(Set<Long> rowIds)
         {
             _rowIds = rowIds;
         }
 
-        public Set<Integer> getIds()
+        public Set<Long> getIds()
         {
             return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), false);
         }
@@ -903,7 +903,7 @@ public class StatusController extends SpringActionController
         {
             getContainerCheckAdmin();
 
-            Set<Integer> rowIds;
+            Set<Long> rowIds;
             if (form.getRowId() != 0)
             {
                 rowIds = Set.of(form.getRowId());
@@ -914,7 +914,7 @@ public class StatusController extends SpringActionController
             }
 
             ActionURL firstDetailsURL = null;
-            for (Integer rowId : rowIds)
+            for (Long rowId : rowIds)
             {
                 var sf = getStatusFile(rowId);
                 if (sf == null)
@@ -953,7 +953,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    private static ActionURL urlCancel(Container c, int rowId, @Nullable ActionURL returnUrl)
+    private static ActionURL urlCancel(Container c, long rowId, @Nullable ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
         url.addParameter("rowId", rowId);
@@ -993,7 +993,7 @@ public class StatusController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlDetails(Container container, int rowId)
+        public ActionURL urlDetails(Container container, long rowId)
         {
             return StatusController.urlDetails(container, rowId);
         }

@@ -112,7 +112,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
@@ -191,7 +191,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ExpSampleType getSampleType()
     {
-        Integer sampleTypeRowId = _object.getMaterialSourceId();
+        Long sampleTypeRowId = _object.getMaterialSourceId();
         if (sampleTypeRowId != null)
             return SampleTypeService.get().getSampleType(sampleTypeRowId);
 
@@ -199,7 +199,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
-    public void setSampleType(Integer sampleType)
+    public void setSampleType(Long sampleType)
     {
         ensureUnlocked();
         _object.setMaterialSourceId(sampleType);

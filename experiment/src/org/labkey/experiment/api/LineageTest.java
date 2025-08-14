@@ -533,7 +533,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // add A objects as inputs, B objects as outputs
         ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
         run = expSvc.saveSimpleExperimentRun(run, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), info, null, false);
-        Integer runObjectId = run.getObjectId();
+        Long runObjectId = run.getObjectId();
         assertNotNull(runObjectId);
 
         // HACK: Until we have the ability to add provenance information to the run, just insert directly into exp.edge
@@ -601,7 +601,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // Does not allow run-based edge insertion
         try
         {
-            expSvc.addEdges(List.of(new ExpLineageEdge(aa.objectId, bb.objectId, -1, bb.objectId, sourceKey)));
+            expSvc.addEdges(List.of(new ExpLineageEdge(aa.objectId, bb.objectId, -1L, bb.objectId, sourceKey)));
             fail("An error should have been thrown");
         }
         catch (IllegalArgumentException e)
@@ -644,7 +644,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         var exceptionThrown = false;
         try
         {
-            expSvc.removeEdges(new ExpLineageEdge.FilterOptions().runId(-1));
+            expSvc.removeEdges(new ExpLineageEdge.FilterOptions().runId(-1L));
         }
         catch (IllegalArgumentException e)
         {
@@ -829,11 +829,11 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     private _ExpObject createExpObject(String objectName)
     {
         Lsid lsid = lsidBuilder.setObjectId(objectName).build();
-        Integer objectId = OntologyManager.ensureObject(c, lsid.toString());
+        Long objectId = OntologyManager.ensureObject(c, lsid.toString());
         Identifiable identifiable = LsidManager.get().getObject(lsid);
         assertNotNull(identifiable);
         return new _ExpObject(objectId, identifiable);
     }
 
-    private record _ExpObject(Integer objectId, Identifiable identifiable) {}
+    private record _ExpObject(Long objectId, Identifiable identifiable) {}
 }

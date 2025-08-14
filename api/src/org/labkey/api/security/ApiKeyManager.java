@@ -61,6 +61,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class ApiKeyManager
 {
     private static final Logger LOG = LogHelper.getLogger(ApiKeyManager.class, "API key bookkeeping");
@@ -155,7 +157,7 @@ public class ApiKeyManager
             {
                 LOG.debug("Checking if session {} used API key {}", session.getId(), rowId);
                 Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
-                Integer apiKeyRowId = (Integer)map.get(API_KEY_ROW_ID);
+                Integer apiKeyRowId = asInteger(map.get(API_KEY_ROW_ID));
 
                 if (Objects.equals(rowId, apiKeyRowId))
                 {

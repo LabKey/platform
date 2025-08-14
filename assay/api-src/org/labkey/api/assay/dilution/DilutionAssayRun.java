@@ -382,7 +382,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     {
         private final String _dataRowLsid;
         private final Container _dataContainer;
-        private Integer _objectId;
+        private Long _objectId;
         private final DilutionSummary _dilutionSummary;
         private final DilutionMaterialKey _materialKey;
         private final Map<PropertyDescriptor, Object> _sampleProperties;
@@ -403,7 +403,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             _virusProperties = dilutionResultProperties.getVirusProperties();
         }
 
-        public Integer getObjectId()
+        public Long getObjectId()
         {
             if (null == _objectId)
             {

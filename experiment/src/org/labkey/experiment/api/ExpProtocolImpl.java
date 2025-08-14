@@ -143,7 +143,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }

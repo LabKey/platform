@@ -48,9 +48,9 @@ public interface ExpMaterial extends ExpRunItem
     @Override
     void save(User user);
 
-    Integer getRootMaterialRowId();
+    Long getRootMaterialRowId();
 
-    void setRootMaterialRowId(int rowId);
+    void setRootMaterialRowId(long rowId);
 
     String getAliquotedFromLSID();
 
@@ -78,7 +78,7 @@ public interface ExpMaterial extends ExpRunItem
 
     String getNameAndStatus();
 
-    void setSampleStateId(Integer stateId);
+    void setSampleStateId(Long stateId);
 
     Date getMaterialExpDate();
 

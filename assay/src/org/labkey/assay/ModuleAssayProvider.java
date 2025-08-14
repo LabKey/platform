@@ -584,7 +584,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public static class ResultDetailsBean extends AssayPageBean
     {
         public ExpData expData;
-        public Integer objectId;
+        public Long objectId;
     }
 
     @Override
@@ -604,13 +604,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
         }
         if (objectId instanceof Number)
         {
-            bean.objectId = ((Number)objectId).intValue();
+            bean.objectId = ((Number)objectId).longValue();
         }
         else
         {
             try
             {
-                bean.objectId = Integer.parseInt(objectId.toString());
+                bean.objectId = Long.parseLong(objectId.toString());
             }
             catch (NumberFormatException e)
             {

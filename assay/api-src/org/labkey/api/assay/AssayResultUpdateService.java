@@ -540,7 +540,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         }
 
         @Override
-        public Integer getReRunId()
+        public Long getReRunId()
         {
             return null;
         }

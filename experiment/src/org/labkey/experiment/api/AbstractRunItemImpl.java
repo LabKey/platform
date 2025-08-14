@@ -69,7 +69,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplicationImpl> _successorAppList;
-    private List<Integer> _successorRunIdList = null;
+    private List<Long> _successorRunIdList = null;
 
     // For serialization
     protected AbstractRunItemImpl() {}
@@ -106,14 +106,14 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         if (null == _successorRunIdList)
             throw new IllegalStateException("successorRunIdList not populated for '" + this.getName() + "'");
         List<ExpRun> result = new ArrayList<>();
-        for (Integer integer : _successorRunIdList)
+        for (Long integer : _successorRunIdList)
         {
             result.add(ExperimentService.get().getExpRun(integer.intValue()));
         }
         return result;
     }
 
-    public void addSuccessorRunId(int runId)
+    public void addSuccessorRunId(long runId)
     {
         if (_successorRunIdList == null)
         {
@@ -174,12 +174,12 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
 
-    protected void setRowId(int rowId)
+    protected void setRowId(long rowId)
     {
         _object.setRowId(rowId);
     }
@@ -215,7 +215,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
 
     @Override
-    public Integer getRunId()
+    public Long getRunId()
     {
         return _object.getRunId();
     }
@@ -398,7 +398,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                     // Issue 52961: DataClass: Integer fields are not index for data class
                     if (o instanceof String)
                         s = (String)o;
-                    else if (o instanceof Integer)
+                    else if (o instanceof Integer || o instanceof Long)
                         s = String.valueOf(o);
                     else
                         continue;

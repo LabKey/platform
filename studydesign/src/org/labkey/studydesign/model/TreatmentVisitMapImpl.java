@@ -110,7 +110,7 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
             visitMap.setCohortId(o.getInt("CohortId"));
         if (o.has("TreatmentId"))
         {
-            if (o.get("TreatmentId") instanceof Integer)
+            if (o.get("TreatmentId") instanceof Integer || o.get("TreatmentId") instanceof Long)
                 visitMap.setTreatmentId(o.getInt("TreatmentId"));
             else
                 visitMap.setTempTreatmentId(o.getString("TreatmentId"));

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -530,7 +531,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (dc != null)
             dataClassName = dc.getName();
         // why not just data:rowId?
-        return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId())).encode();
+        return "data:" + new Path(getContainer().getId(), dataClassName, Long.toString(getRowId())).encode();
     }
 
     @Override
@@ -556,7 +557,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return ret;
     }
 
-    private static Pair<Integer, ExpDataClass> getRowIdClassNameContainerFromDocumentId(String resourceIdentifier, Map<String, ExpDataClassImpl> dcCache)
+    private static Pair<Long, ExpDataClass> getRowIdClassNameContainerFromDocumentId(String resourceIdentifier, Map<String, ExpDataClassImpl> dcCache)
     {
         if (resourceIdentifier.startsWith("data:"))
             resourceIdentifier = resourceIdentifier.substring("data:".length());
@@ -568,10 +569,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         String dataClassName = path.get(1);
         String rowIdString = path.get(2);
 
-        int rowId;
+        long rowId;
         try
         {
-            rowId = Integer.parseInt(rowIdString);
+            rowId = Long.parseLong(rowIdString);
             if (rowId == 0)
                 return null;
         }
@@ -597,11 +598,11 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public static ExpDataImpl fromDocumentId(String resourceIdentifier)
     {
-        Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, new HashMap<>());
+        Pair<Long, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, new HashMap<>());
         if (rowIdDataClass == null)
             return null;
 
-        Integer rowId = rowIdDataClass.first;
+        Long rowId = rowIdDataClass.first;
         ExpDataClass dc = rowIdDataClass.second;
 
         if (dc != null)
@@ -613,18 +614,18 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public static Map<String, ExpData> fromDocumentIds(Collection<String> resourceIdentifiers)
     {
-        Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+        Map<Long, String> rowIdIdentifierMap = new LongHashMap<>();
         Map<String, ExpDataClassImpl> dcCache = new HashMap<>();
-        Map<Integer, ExpDataClass> dcMap = new HashMap<>();
-        Map<Integer, List<Integer>> dcRowIdMap = new HashMap<>(); // data rowIds with dataClass
-        List<Integer> rowIds = new ArrayList<>(); // data rowIds without dataClass
+        Map<Long, ExpDataClass> dcMap = new LongHashMap<>();
+        Map<Long, List<Long>> dcRowIdMap = new LongHashMap<>(); // data rowIds with dataClass
+        List<Long> rowIds = new ArrayList<>(); // data rowIds without dataClass
         for (String resourceIdentifier : resourceIdentifiers)
         {
-            Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, dcCache);
+            Pair<Long, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, dcCache);
             if (rowIdDataClass == null)
                 continue;
 
-            Integer rowId = rowIdDataClass.first;
+            Long rowId = rowIdDataClass.first;
             ExpDataClass dc = rowIdDataClass.second;
 
             rowIdIdentifierMap.put(rowId, resourceIdentifier);
@@ -646,7 +647,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         if (!dcRowIdMap.isEmpty())
         {
-            for (Integer dataClassId : dcRowIdMap.keySet())
+            for (Long dataClassId : dcRowIdMap.keySet())
             {
                 ExpDataClass dc = dcMap.get(dataClassId);
                 if (dc != null)
@@ -796,9 +797,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     private static class ExpDataResource extends SimpleDocumentResource
     {
-        final int _rowId;
+        final long _rowId;
 
-        public ExpDataResource(int rowId, Path path, String documentId, GUID containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties, User createdBy, Date created, User modifiedBy, Date modified)
+        public ExpDataResource(long rowId, Path path, String documentId, GUID containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties, User createdBy, Date created, User modifiedBy, Date modified)
         {
             super(path, documentId, containerId, contentType, body, executeUrl, createdBy, created, modifiedBy, modified, properties);
             _rowId = rowId;

@@ -149,10 +149,10 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
-    protected ActionURL linkToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    protected ActionURL linkToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Long, PublishKey> dataKeys, List<String> errors)
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
-        Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
+        Map<Container, Set<Long>> rowIdsByTargetContainer = new HashMap<>();
         List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(dataKeys.keySet());
         SampleTypeService sampleService = SampleTypeService.get();
         Collection<? extends ExpMaterial> unlinkableSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.LinkToStudy);
@@ -176,7 +176,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
             dataMap.put(ROW_ID, publishKey.getDataId());
 
-            Set<Integer> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
+            Set<Long> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
             rowIds.add(publishKey.getDataId());
 
             dataMaps.add(dataMap);

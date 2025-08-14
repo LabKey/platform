@@ -97,7 +97,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
@@ -195,7 +195,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         try (DbScope.Transaction transaction = ExperimentServiceImpl.get().ensureTransaction())
         {
             List<ExpRunImpl> existingRuns = getRuns();
-            Set<Integer> existingRunIds = new HashSet<>();
+            Set<Long> existingRunIds = new HashSet<>();
             for (ExpRun run : newRuns)
             {
                 if (_object.getBatchProtocolId() != null && run.getProtocol().getRowId() != _object.getBatchProtocolId().intValue())
@@ -209,7 +209,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 existingRunIds.add(er.getRowId());
             }
 
-            Integer batchId = _object.getBatchProtocolId() != null ? getRowId() : null;
+            Long batchId = _object.getBatchProtocolId() != null ? getRowId() : null;
 
             String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created" + (user == null ? " " : ", CreatedBy ") + ") VALUES ( ?, ?, ?" + (user == null ? " " : ", ? ") + ")";
             for (ExpRun run : newRuns)

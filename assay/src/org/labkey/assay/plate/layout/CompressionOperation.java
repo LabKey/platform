@@ -37,7 +37,7 @@ public class CompressionOperation implements LayoutOperation
 
         for (Plate sourcePlate : context.sourcePlates())
         {
-            int sourceRowId = sourcePlate.getRowId();
+            long sourceRowId = sourcePlate.getRowId();
             PlateType sourcePlateType = sourcePlate.getPlateType();
 
             for (int r = 0; r < sourcePlateType.getRows(); r++)

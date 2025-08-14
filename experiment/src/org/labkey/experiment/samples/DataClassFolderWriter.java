@@ -82,10 +82,10 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
             // protocol runs to track the lineage
             if (exportDataClassData)
             {
-                List<Integer> dataIdsToExport = dataClass.getDatas().stream().map(ExpData::getRowId).collect(toList());
+                List<Long> dataIdsToExport = dataClass.getDatas().stream().map(ExpData::getRowId).collect(toList());
 
                 // only want the sample derivation runs; other runs will get included in the experiment xar.
-                List<Integer> exportedRunIds = ExperimentService.get().getRunsUsingDataIds(dataIdsToExport).stream().filter(run -> {
+                List<Long> exportedRunIds = ExperimentService.get().getRunsUsingDataIds(dataIdsToExport).stream().filter(run -> {
                     String lsid = run.getProtocol().getLSID();
                     return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
                 })

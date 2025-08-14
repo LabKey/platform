@@ -23,6 +23,8 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * This is a helper class for DetailsURL. Rather than needing to subclass DetailsURL to provide a container value,
  * you may provide a ContainerContext instead.
@@ -68,8 +70,8 @@ public interface ContainerContext
                 return (Container)o;
             if (o instanceof String)
                 return ContainerManager.getForId((String)o);
-            if (o instanceof Integer)
-                return ContainerManager.getForRowId((Integer)o);
+            if (o instanceof Integer || o instanceof Long)
+                return ContainerManager.getForRowId(asInteger(o));
 
             // We couldn't resolve a container in the row of data we're rendering, so fall back to the current container
             // for the request in general, if available. This can happen if a custom query doesn't pull a Container

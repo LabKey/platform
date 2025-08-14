@@ -47,7 +47,7 @@ public interface ExpRunItem extends ExpObject, ExpSearchable, Identifiable
      * That is, the one that created it. In most cases, use getRun() instead - this method avoids the creation of the
      * ExpRun and therefore is faster for performance-critical scenarios
      */
-    Integer getRunId();
+    Long getRunId();
 
     /** @return all the protocol applications that reference this data/material as input */
     List<? extends ExpProtocolApplication> getTargetApplications();
