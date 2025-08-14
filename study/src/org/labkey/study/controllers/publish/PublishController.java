@@ -88,7 +88,7 @@ public class PublishController extends SpringActionController
     /**
      * Create a QueryView over the publish event audit log filtered by the source.
      */
-    protected @Nullable QueryView createHistoryView(int sourceRowId, String sourceColumnName, ContainerFilter cf, BindException errors)
+    protected @Nullable QueryView createHistoryView(long sourceRowId, String sourceColumnName, ContainerFilter cf, BindException errors)
     {
         UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
         if (schema == null)
@@ -219,7 +219,7 @@ public class PublishController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String jobGuid = startAutoLinkPipelineJob(form);
-            Integer jobId = null;
+            Long jobId = null;
 
             if (null != jobGuid)
                 jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
@@ -299,7 +299,7 @@ public class PublishController extends SpringActionController
     private static class AutoLinkPipelineJob extends PipelineJob
     {
         private Container _targetStudyContainer;
-        private Integer _protocolId;
+        private Long _protocolId;
         private List<Integer> _runIds = Collections.emptyList();
         private ActionURL _statusUrl;
         private String _autoLinkCategory;

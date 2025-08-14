@@ -38,7 +38,7 @@ import java.util.Set;
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
-    protected int _rowId;
+    protected long _rowId;
     protected String _job;
     protected String _jobParent;
     protected String _jobStore;
@@ -87,7 +87,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     @Override
     public int hashCode()
     {
-        int result = _rowId;
+        int result = (int)_rowId;
         result = 31 * result + (_job != null ? _job.hashCode() : 0);
         result = 31 * result + (_jobParent != null ? _jobParent.hashCode() : 0);
         result = 31 * result + (_activeTaskId != null ? _activeTaskId.hashCode() : 0);
@@ -268,12 +268,12 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }

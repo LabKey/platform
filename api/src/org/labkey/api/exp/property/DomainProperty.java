@@ -120,7 +120,7 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     List<? extends IPropertyValidator> getValidators();
     void addValidator(IPropertyValidator validator);
     void removeValidator(IPropertyValidator validator);
-    void removeValidator(int validatorId);
+    void removeValidator(long validatorId);
 
     void copyFrom(DomainProperty propSrc, Container targetContainer);
 

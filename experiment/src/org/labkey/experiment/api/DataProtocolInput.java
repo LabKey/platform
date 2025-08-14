@@ -20,14 +20,14 @@ import org.labkey.api.exp.api.ExpData;
 
 public class DataProtocolInput extends AbstractProtocolInput
 {
-    protected Integer _dataClassId;
+    protected Long _dataClassId;
 
-    public Integer getDataClassId()
+    public Long getDataClassId()
     {
         return _dataClassId;
     }
 
-    public void setDataClassId(Integer dataClassId)
+    public void setDataClassId(Long dataClassId)
     {
         _dataClassId = dataClassId;
     }

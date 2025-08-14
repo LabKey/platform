@@ -24,7 +24,7 @@ public class WellImpl extends PositionImpl implements Well
     private Double _dilution;
     private boolean _excluded;
     protected PlateImpl _plate;
-    private Integer _sampleId;
+    private Long _sampleId;
     private Double _value;
 
     public WellImpl()
@@ -107,12 +107,12 @@ public class WellImpl extends PositionImpl implements Well
     }
 
     @Override
-    public Integer getSampleId()
+    public Long getSampleId()
     {
         return _sampleId;
     }
 
-    public void setSampleId(Integer sampleId)
+    public void setSampleId(Long sampleId)
     {
         _sampleId = sampleId;
     }

@@ -46,7 +46,7 @@ public abstract class ExpProtocolInputImpl<T extends AbstractProtocolInput, I ex
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }

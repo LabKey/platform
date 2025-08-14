@@ -98,15 +98,15 @@ public interface StudyPublishService
         return ServiceRegistry.get().getService(StudyPublishService.class);
     }
 
-    void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
-                                   List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer);
+    void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Long> publishSource,
+                                   List<String> errors, Map<Container, Set<Long>> rowIdsByTargetContainer);
 
     ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
-                          Pair<Dataset.PublishSource, Integer> publishSource,
+                          Pair<Dataset.PublishSource, Long> publishSource,
                           List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors);
 
     ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
-                          String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
+                          String sourceName, Pair<Dataset.PublishSource, Long> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
     /**
@@ -114,9 +114,9 @@ public interface StudyPublishService
      */
     Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission);
 
-    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId);
+    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Long publishSourceId);
 
-    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId, ContainerFilter containerFilter);
+    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Long publishSourceId, ContainerFilter containerFilter);
 
     TimepointType getTimepointType(Container container);
 
@@ -136,17 +136,17 @@ public interface StudyPublishService
      * Automatically link derived samples, this will potentially pull in fields from the parent sample that
      * are configured in the default view.
      */
-    void autoLinkDerivedSamples(ExpSampleType sampleType, List<Integer> keys, Container container, User user) throws ExperimentException;
+    void autoLinkDerivedSamples(ExpSampleType sampleType, List<Long> keys, Container container, User user) throws ExperimentException;
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
-    boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
+    boolean hasMismatchedInfo(List<Long> dataRowPKs, AssayProtocolSchema schema);
 
     ExpProtocol ensureStudyPublishProtocol(User user) throws ExperimentException;
 
     /**
      * Returns the set of datasets which have ever had data linked from the provided protocol
      */
-    Set<? extends Dataset> getDatasetsForPublishSource(int sourceId, Dataset.PublishSource publishSource);
+    Set<? extends Dataset> getDatasetsForPublishSource(long sourceId, Dataset.PublishSource publishSource);
 
     /**
      * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
@@ -154,16 +154,16 @@ public interface StudyPublishService
      */
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
-    String checkForLockedLinks(Dataset def, @Nullable List<Integer> rowIds);
+    String checkForLockedLinks(Dataset def, @Nullable List<Long> rowIds);
 
-    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
+    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Long>> datasetRowLsidAndSourceRowIds);
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
      * had data linked into them.
      * @return The names of the added columns that should be visible
      */
-    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
+    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, long rowId, String rowIdName, User user);
 
     /**
      * For a given sample, helps identify the special columns : subject/visit/date that are needed to publish sample rows to a

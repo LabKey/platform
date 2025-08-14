@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -40,10 +41,10 @@ public class ParticipantGroupCache
 
         private ParticipantGroupCollections(Container c)
         {
-            Map<Integer, ParticipantGroup> groupRowIdMap = new HashMap<>();
+            Map<Integer, ParticipantGroup> groupRowIdMap = new IntHashMap<>();
             Map<String, ParticipantGroup> groupLabelMap = new HashMap<>();
-            Map<Integer, Collection<ParticipantGroup>> categoryMap = new HashMap<>();
-            Map<Integer, ParticipantCategoryImpl> categoryRowIdMap = new HashMap<>();
+            Map<Integer, Collection<ParticipantGroup>> categoryMap = new IntHashMap<>();
+            Map<Integer, ParticipantCategoryImpl> categoryRowIdMap = new IntHashMap<>();
             Map<String, ParticipantCategoryImpl> categoryLabelMap = new HashMap<>();
             Map<String, Collection<ParticipantCategoryImpl>> typeMap = new HashMap<>();
 

@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -470,7 +471,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run, List<Plate> plates, User user,
                                                                List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
-    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, int... dataObjectIds) throws ExperimentException, SQLException;
+    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException, SQLException;
 
     protected DilutionDataFileParser getDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
     {
@@ -617,7 +618,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
             runProperties.put(column.getName(), column);
 
-        Map<Integer, String> cutoffs = new HashMap<>();
+        Map<Integer, String> cutoffs = new IntHashMap<>();
         for (String cutoffPropName : DilutionAssayProvider.CUTOFF_PROPERTIES)
         {
             DomainProperty cutoffProp = runProperties.get(cutoffPropName);
@@ -743,7 +744,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     private void populateWellData(ExpProtocol protocol, ExpRun run, User user) throws ExperimentException
     {
-        Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
+        Map<String, Pair<Long, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
         new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
                 wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
@@ -756,7 +757,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      *
      */
     public void populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
-                                 Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException
+                                 Map<String, Pair<Long, String>> wellgroupNameToNabSpecimen) throws ExperimentException
     {
         _populateWellData(protocol, run, user, cutoffs, wellgroupNameToNabSpecimen, true, true, Collections.emptyList(), Collections.emptyList());
     }
@@ -767,7 +768,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      */
     public void recalculateWellData(ExpProtocol protocol, ExpRun run, User user, List<Map<String, Object>> dilutionData, List<Map<String, Object>> wellData) throws ExperimentException
     {
-        Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
+        Map<String, Pair<Long, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
         new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
                 wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
@@ -783,7 +784,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      * @param wellRows if commitData is false, then well data will be returned in this collection
      */
     private void _populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
-                                   Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen, boolean populatePlatesFromFile, boolean commitData,
+                                   Map<String, Pair<Long, String>> wellgroupNameToNabSpecimen, boolean populatePlatesFromFile, boolean commitData,
                                    List<Map<String, Object>> dilutionRows, List<Map<String, Object>> wellRows) throws ExperimentException
     {
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
@@ -839,7 +840,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 Map<String, Object> dilutionRow = new HashMap<>();
                 setDilutionDataFields(run, summary.getFirstWellGroup().getName(), plate.getPlateNumber(), dilutionRow);
 
-                Pair<Integer, String> pair = wellgroupNameToNabSpecimen.get(summary.getFirstWellGroup().getName());
+                Pair<Long, String> pair = wellgroupNameToNabSpecimen.get(summary.getFirstWellGroup().getName());
                 dilutionRow.put("runDataId", pair.first);
 
                 try
@@ -1043,9 +1044,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     }
 
     private void setSpecimenFields(Map<String, Object> wellDataRow, String wellGroupName, String wellGroupLookupName,
-                                   Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen)
+                                   Map<String, Pair<Long, String>> wellgroupNameToNabSpecimen)
     {
-        Pair<Integer, String> pair = wellgroupNameToNabSpecimen.get(wellGroupLookupName);
+        Pair<Long, String> pair = wellgroupNameToNabSpecimen.get(wellGroupLookupName);
         wellDataRow.put("specimenWellgroup", wellGroupName);
         wellDataRow.put("runDataId", pair.first);
         wellDataRow.put("specimenLsid", pair.second);

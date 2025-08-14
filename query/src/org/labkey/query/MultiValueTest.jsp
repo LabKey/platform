@@ -49,6 +49,8 @@
 <%@ page import="static org.junit.Assert.assertNotNull" %>
 <%@ page import="static org.junit.Assert.assertTrue" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final String aliasPrefix = "MultiValueTest-";
@@ -147,7 +149,7 @@
         );
         List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, antigenRows, errors, null, null);
         throwErrors(errors);
-        Integer antigenId = (Integer)insertedAntigens.get(0).get("rowId");
+        Integer antigenId = asInteger(insertedAntigens.get(0).get("rowId"));
 
         // insert a Label
         errors = new BatchValidationException();
@@ -157,7 +159,7 @@
         );
         List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, labelRows, errors, null, null);
         throwErrors(errors);
-        Integer labelId = (Integer)insertedLabels.get(0).get("rowId");
+        Long labelId = asLong(insertedLabels.get(0).get("rowId"));
 
         // insert Species
         errors = new BatchValidationException();
@@ -170,10 +172,10 @@
         );
         List<Map<String, Object>> insertedSpecies = speciesTable.getUpdateService().insertRows(getUser(), c, speciesRows, errors, null, null);
         throwErrors(errors);
-        Integer speciesId1 = (Integer)insertedSpecies.get(0).get("rowId");
-        Integer speciesId2 = (Integer)insertedSpecies.get(1).get("rowId");
-        Integer speciesId3 = (Integer)insertedSpecies.get(2).get("rowId");
-        Integer speciesId4 = (Integer)insertedSpecies.get(3).get("rowId");
+        Long speciesId1 = asLong(insertedSpecies.get(0).get("rowId"));
+        Long speciesId2 = asLong(insertedSpecies.get(1).get("rowId"));
+        Long speciesId3 = asLong(insertedSpecies.get(2).get("rowId"));
+        Long speciesId4 = asLong(insertedSpecies.get(3).get("rowId"));
 
         // insert Reagent
         errors = new BatchValidationException();
@@ -183,7 +185,7 @@
         );
         List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, reagentRows, errors, null, null);
         throwErrors(errors);
-        Integer reagentId = (Integer)insertedReagents.get(0).get("rowId");
+        Long reagentId = asLong(insertedReagents.get(0).get("rowId"));
 
         // insert ReagentSpecies
         errors = new BatchValidationException();
@@ -220,21 +222,21 @@
         JsonNode row0 = rows.get(0);
         ArrayNode row0species = (ArrayNode)row0.at("/data/Species");
 
-        Integer verifySpecies1 = null;
-        Integer verifySpecies2 = null;
-        Integer verifySpecies3 = null;
-        Integer verifySpecies4 = null;
+        Long verifySpecies1 = null;
+        Long verifySpecies2 = null;
+        Long verifySpecies3 = null;
+        Long verifySpecies4 = null;
 
         for (JsonNode node : row0species)
         {
             if ("foo1".equals(node.get("displayValue").asText()))
-                verifySpecies1 = node.get("value").asInt();
+                verifySpecies1 = node.get("value").asLong();
             else if ("foo2".equals(node.get("displayValue").asText()))
-                verifySpecies2 = node.get("value").asInt();
+                verifySpecies2 = node.get("value").asLong();
             else if ("foo3".equals(node.get("displayValue").asText()))
-                verifySpecies3 = node.get("value").asInt();
+                verifySpecies3 = node.get("value").asLong();
             else if ("foo4".equals(node.get("displayValue").asText()))
-                verifySpecies4 = node.get("value").asInt();
+                verifySpecies4 = node.get("value").asLong();
         }
 
         Assert.assertNotNull("Expected to find species1 id", verifySpecies1);

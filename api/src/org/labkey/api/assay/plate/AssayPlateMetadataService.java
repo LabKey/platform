@@ -65,7 +65,7 @@ public interface AssayPlateMetadataService
     DataIteratorBuilder mergePlateMetadata(
         Container container,
         User user,
-        Integer plateSetId,
+        Long plateSetId,
         DataIteratorBuilder rows,
         AssayProvider provider,
         ExpProtocol protocol
@@ -93,7 +93,7 @@ public interface AssayPlateMetadataService
      * Returns the plate set ID for the current run context.
      */
     @Nullable
-    Integer getPlateSetId(
+    Long getPlateSetId(
         AssayRunUploadContext<?> context,
         AssayProvider provider,
         ExpProtocol protocol
@@ -110,7 +110,7 @@ public interface AssayPlateMetadataService
         ExpData data,
         AssayProvider provider,
         ExpProtocol protocol,
-        Integer plateSetId,
+        Long plateSetId,
         FileLike dataFile,
         DataLoaderSettings settings
     ) throws ExperimentException;
@@ -180,7 +180,7 @@ public interface AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         TableInfo resultsTable,
-        List<Integer> runIds
+        List<Long> runIds
     ) throws ValidationException;
 
     /**

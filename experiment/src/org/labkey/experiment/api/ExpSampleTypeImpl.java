@@ -150,7 +150,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _object.getRowId();
     }
@@ -671,7 +671,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public DbSequence genIdSequence()
     {
         long minGenId = getMinGenId();
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getGenIdSequenceContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        // we shouldn't have more than 2billion sampletypes.
+        if (getRowId() > Integer.MAX_VALUE)
+            throw new IllegalStateException("Error allocation sequence");
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getGenIdSequenceContainer(), SEQUENCE_PREFIX, (int)getRowId(), 100);
         if (minGenId > 1)
             seq.ensureMinimum(minGenId - 1);
         return seq;
@@ -681,11 +684,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public long getCurrentGenId()
     {
         Container container = getGenIdSequenceContainer();
-        Integer seqRowId = DbSequenceManager.getRowId(container, SEQUENCE_PREFIX, getRowId());
+        // we shouldn't have more than 2billion sample types.
+        if (getRowId() > Integer.MAX_VALUE)
+            throw new IllegalStateException("Error allocation sequence");
+        Integer seqRowId = DbSequenceManager.getRowId(container, SEQUENCE_PREFIX, (int)getRowId());
         if (null == seqRowId)
             return 0;
 
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, (int)getRowId(), 0);
         return seq.current();
     }
 
@@ -693,7 +699,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public void ensureMinGenId(long newSeqValue) throws ExperimentException
     {
         Container container = getGenIdSequenceContainer();
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
+        if (getRowId() > Integer.MAX_VALUE)
+            throw new IllegalStateException("Error allocation sequence");
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, (int)getRowId(), 0);
         long current = seq.current();
         if (newSeqValue < current)
         {
@@ -701,12 +709,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
 
             seq.setSequenceValue(newSeqValue);
-            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, (int)getRowId());
         }
         else
         {
             seq.ensureMinimum(newSeqValue);
-            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, (int)getRowId());
         }
     }
 
@@ -783,7 +791,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ExperimentServiceImpl.get().getExpMaterial(filter);
     }
 
-    private ExpMaterialImpl getSampleByObjectId(Integer objectId)
+    private ExpMaterialImpl getSampleByObjectId(Long objectId)
     {
         return ExperimentServiceImpl.get().getExpMaterial(new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId));
     }
@@ -791,7 +799,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c, cf);
+        Long legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c, cf);
         if (legacyObjectId != null)
             return getSampleByObjectId(legacyObjectId);
 

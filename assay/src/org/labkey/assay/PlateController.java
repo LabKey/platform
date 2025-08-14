@@ -219,7 +219,7 @@ public class PlateController extends SpringActionController
         {
             Map<String, String> properties = new HashMap<>();
             String templateName = null;
-            Integer plateId = null;
+            Long plateId = null;
 
             if (form.getTemplateName() != null)
             {
@@ -458,7 +458,7 @@ public class PlateController extends SpringActionController
     public static class NameForm
     {
         private String _templateName;
-        private Integer _plateId;
+        private Long _plateId;
 
         public String getTemplateName()
         {
@@ -470,12 +470,12 @@ public class PlateController extends SpringActionController
             _templateName = templateName;
         }
 
-        public Integer getPlateId()
+        public Long getPlateId()
         {
             return _plateId;
         }
 
-        public void setPlateId(Integer plateId)
+        public void setPlateId(Long plateId)
         {
             _plateId = plateId;
         }
@@ -573,10 +573,10 @@ public class PlateController extends SpringActionController
         private String _description;
         private String _name;
         private String _barcode;
-        private Integer _plateSetId;
-        private Integer _plateType;
+        private Long _plateSetId;
+        private Long _plateType;
         private boolean _template;
-        private Integer _templateId;
+        private Long _templateId;
 
         public String getDescription()
         {
@@ -593,12 +593,12 @@ public class PlateController extends SpringActionController
             return _barcode;
         }
 
-        public Integer getPlateSetId()
+        public Long getPlateSetId()
         {
             return _plateSetId;
         }
 
-        public Integer getPlateType()
+        public Long getPlateType()
         {
             return _plateType;
         }
@@ -618,7 +618,7 @@ public class PlateController extends SpringActionController
             return _template;
         }
 
-        public Integer getTemplateId()
+        public Long getTemplateId()
         {
             return _templateId;
         }
@@ -633,10 +633,10 @@ public class PlateController extends SpringActionController
                 _barcode = json.getString("barcode");
 
             if (json.has("plateSetId"))
-                _plateSetId = json.getInt("plateSetId");
+                _plateSetId = json.getLong("plateSetId");
 
             if (json.has("plateType"))
-                _plateType = json.getInt("plateType");
+                _plateType = json.getLong("plateType");
 
             if (json.has("assayType"))
                 _assayType = json.getString("assayType");
@@ -648,7 +648,7 @@ public class PlateController extends SpringActionController
                 _template = json.getBoolean("template");
 
             if (json.has("templateId"))
-                _templateId = json.getInt("templateId");
+                _templateId = json.getLong("templateId");
 
             if (json.has("data"))
             {
@@ -845,14 +845,14 @@ public class PlateController extends SpringActionController
 
     public static class CustomFieldsForm extends DeletePlateMetadataFieldsForm
     {
-        private Integer _plateId;
+        private Long _plateId;
 
-        public Integer getPlateId()
+        public Long getPlateId()
         {
             return _plateId;
         }
 
-        public void setPlateId(Integer plateId)
+        public void setPlateId(Long plateId)
         {
             _plateId = plateId;
         }
@@ -998,26 +998,26 @@ public class PlateController extends SpringActionController
 
     public static class ArchiveForm
     {
-        private List<Integer> _plateIds;
-        private List<Integer> _plateSetIds;
+        private List<Long> _plateIds;
+        private List<Long> _plateSetIds;
         private boolean _restore;
 
-        public List<Integer> getPlateIds()
+        public List<Long> getPlateIds()
         {
             return _plateIds;
         }
 
-        public void setPlateIds(List<Integer> plateIds)
+        public void setPlateIds(List<Long> plateIds)
         {
             _plateIds = plateIds;
         }
 
-        public List<Integer> getPlateSetIds()
+        public List<Long> getPlateSetIds()
         {
             return _plateSetIds;
         }
 
-        public void setPlateSetIds(List<Integer> plateSetIds)
+        public void setPlateSetIds(List<Long> plateSetIds)
         {
             _plateSetIds = plateSetIds;
         }
@@ -1115,7 +1115,7 @@ public class PlateController extends SpringActionController
     {
         private int _assayProtocolId;
         private Boolean _markAsHit;
-        private List<Integer> _resultRowIds;
+        private List<Long> _resultRowIds;
         private String _resultSelectionKey;
 
         public int getAssayProtocolId()
@@ -1138,12 +1138,12 @@ public class PlateController extends SpringActionController
             _markAsHit = markAsHit;
         }
 
-        public List<Integer> getResultRowIds()
+        public List<Long> getResultRowIds()
         {
             return _resultRowIds;
         }
 
-        public void setResultRowIds(List<Integer> resultRowIds)
+        public void setResultRowIds(List<Long> resultRowIds)
         {
             _resultRowIds = resultRowIds;
         }
@@ -1569,7 +1569,7 @@ public class PlateController extends SpringActionController
         private boolean _copyAsTemplate;
         private String _description;
         private String _name;
-        private Integer _sourcePlateRowId;
+        private Long _sourcePlateRowId;
 
         public boolean isCopyAsTemplate()
         {
@@ -1601,12 +1601,12 @@ public class PlateController extends SpringActionController
             _name = name;
         }
 
-        public Integer getSourcePlateRowId()
+        public Long getSourcePlateRowId()
         {
             return _sourcePlateRowId;
         }
 
-        public void setSourcePlateRowId(Integer sourcePlateRowId)
+        public void setSourcePlateRowId(Long sourcePlateRowId)
         {
             _sourcePlateRowId = sourcePlateRowId;
         }

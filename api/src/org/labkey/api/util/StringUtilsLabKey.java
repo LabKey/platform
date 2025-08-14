@@ -46,6 +46,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 public class StringUtilsLabKey
 {
@@ -385,7 +386,7 @@ public class StringUtilsLabKey
         else if (value instanceof String v)
             return Integer.valueOf(v);
         else if (value instanceof Number v)
-            return v.intValue();
+            return asInteger(v).intValue();
 
         throw new IllegalArgumentException("Unable to get int value for value parameter");
     }

@@ -15,6 +15,8 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -27,7 +29,6 @@ import org.labkey.api.reports.report.ReportDB;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +37,7 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
     @Override
     public Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {
-        final Map<String, Map<Integer, List<NotificationInfo>>> reportInfoMap = new HashMap<>();
+        final Map<String, Map<Integer, List<NotificationInfo>>> reportInfoMap = new StringHashMap<>();
         TableInfo reportTableInfo = CoreSchema.getInstance().getTableInfoReport();
         SimpleFilter filter = new SimpleFilter();
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
@@ -46,7 +47,7 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
         {
             String containerId = report.getContainerId();
             if (!reportInfoMap.containsKey(containerId))
-                reportInfoMap.put(containerId, new HashMap<>());
+                reportInfoMap.put(containerId, new IntHashMap<>());
             Map<Integer, List<NotificationInfo>> subMap = reportInfoMap.get(containerId);
             NotificationInfo notificationInfo = new NotificationInfo(report, modifiedRangeStart, modifiedRangeEnd);
             if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())

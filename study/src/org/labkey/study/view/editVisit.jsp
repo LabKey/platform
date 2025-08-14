@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -206,7 +207,7 @@
             <td>
                 <table class="lk-fields-table">
                 <%
-                    HashMap<Integer, VisitDatasetType> typeMap = new HashMap<>();
+                    HashMap<Integer, VisitDatasetType> typeMap = new IntHashMap<>();
                     for (VisitDataset vds : visit.getVisitDatasets())
                         typeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL);
 

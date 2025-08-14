@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
@@ -466,7 +467,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             // enforce no updates if the plate has been imported in an assay run
             if (oldRow.containsKey(Column.PlateId.name()))
             {
-                Plate plate = PlateManager.get().getPlate(container, (Integer) oldRow.get(Column.PlateId.name()));
+                Plate plate = PlateManager.get().getPlate(container, asInteger(oldRow.get(Column.PlateId.name())));
                 if (plate != null)
                 {
                     int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);

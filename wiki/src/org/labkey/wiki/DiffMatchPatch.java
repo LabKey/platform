@@ -20,6 +20,8 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -382,13 +384,13 @@ public class DiffMatchPatch
     boolean doubleEnd = Diff_DualThreshold * 2 < max_d;
     List<Set<Long>> v_map1 = new ArrayList<>();
     List<Set<Long>> v_map2 = new ArrayList<>();
-    Map<Integer, Integer> v1 = new HashMap<>();
-    Map<Integer, Integer> v2 = new HashMap<>();
+    Map<Integer, Integer> v1 = new IntHashMap<>();
+    Map<Integer, Integer> v2 = new IntHashMap<>();
     v1.put(1, 0);
     v2.put(1, 0);
     int x, y;
     Long footstep = 0L;  // Used to track overlapping paths.
-    Map<Long, Integer> footsteps = new HashMap<>();
+    Map<Long, Integer> footsteps = new LongHashMap<>();
     boolean done = false;
     // If the total number of characters is odd, then the front path will
     // collide with the reverse path.

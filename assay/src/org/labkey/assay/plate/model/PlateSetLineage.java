@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +21,11 @@ import java.util.Stack;
 public class PlateSetLineage
 {
     private List<PlateSetEdge> _edges = Collections.emptyList();
-    private Map<Integer, PlateSet> _plateSets = Collections.emptyMap();
-    private Integer _root;
-    private final Integer _seed;
+    private Map<Long, PlateSet> _plateSets = Collections.emptyMap();
+    private Long _root;
+    private final Long _seed;
 
-    public PlateSetLineage(@NotNull Integer seed)
+    public PlateSetLineage(@NotNull Long seed)
     {
         _seed = seed;
     }
@@ -40,27 +40,27 @@ public class PlateSetLineage
         _edges = edges;
     }
 
-    public Map<Integer, PlateSet> getPlateSets()
+    public Map<Long, PlateSet> getPlateSets()
     {
         return _plateSets;
     }
 
-    public void setPlateSets(Map<Integer, PlateSet> plateSets)
+    public void setPlateSets(Map<Long, PlateSet> plateSets)
     {
         _plateSets = plateSets;
     }
 
-    public Integer getRoot()
+    public Long getRoot()
     {
         return _root;
     }
 
-    public void setRoot(Integer root)
+    public void setRoot(Long root)
     {
         _root = root;
     }
 
-    public Integer getSeed()
+    public long getSeed()
     {
         return _seed;
     }
@@ -72,21 +72,21 @@ public class PlateSetLineage
      * @return Map<Integer, PlateSet>
      */
     @JsonIgnore
-    public Map<Integer, PlateSet> getPlateSetAndDescendents(Integer plateSetId)
+    public Map<Long, PlateSet> getPlateSetAndDescendents(Long plateSetId)
     {
-        Map<Integer, PlateSet> allPlateSets = new HashMap<>();
+        Map<Long, PlateSet> allPlateSets = new LongHashMap<>();
         allPlateSets.put(plateSetId, _plateSets.get(plateSetId));
-        Set<Integer> parents = new HashSet<>(Arrays.asList(plateSetId));
+        Set<Long> parents = new HashSet<>(Arrays.asList(plateSetId));
 
         while (!parents.isEmpty())
         {
-            Set<Integer> children = new HashSet<>();
+            Set<Long> children = new HashSet<>();
 
             for (PlateSetEdge edge : _edges)
             {
                 if (parents.contains(edge.getFromPlateSetId()))
                 {
-                    Integer to = edge.getToPlateSetId();
+                    Long to = edge.getToPlateSetId();
                     children.add(to);
                     allPlateSets.put(to, _plateSets.get(to));
                 }
@@ -113,13 +113,13 @@ public class PlateSetLineage
         if (_edges.isEmpty() || _plateSets.isEmpty() || _root == null || _seed.equals(_root))
             return "/" + _seed + "/";
 
-        Integer target = _seed;
-        Stack<Integer> stack = new Stack<>();
+        Long target = _seed;
+        Stack<Long> stack = new Stack<>();
         stack.push(target);
 
         while (!target.equals(_root))
         {
-            final Integer currentTarget = target;
+            final Long currentTarget = target;
             Optional<PlateSetEdge> edge = _edges.stream().filter(e -> currentTarget.equals(e.getToPlateSetId())).findFirst();
 
             if (edge.isEmpty())

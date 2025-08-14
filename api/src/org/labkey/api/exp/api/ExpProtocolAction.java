@@ -25,7 +25,7 @@ import java.util.List;
  */
 public interface ExpProtocolAction
 {
-    int getRowId();
+    long getRowId();
     ExpProtocol getParentProtocol();
     ExpProtocol getChildProtocol();
     List<? extends ExpProtocolAction> getPredecessors();

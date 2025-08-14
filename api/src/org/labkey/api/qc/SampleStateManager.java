@@ -47,7 +47,7 @@ public class SampleStateManager extends DataStateManager
         return states;
     }
 
-    public DataState getState(Container container, Integer stateId)
+    public DataState getState(Container container, Long stateId)
     {
         if (stateId == null)
             return null;

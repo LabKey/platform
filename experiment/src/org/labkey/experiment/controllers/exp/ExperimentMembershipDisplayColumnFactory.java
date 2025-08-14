@@ -42,16 +42,16 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
 {
     private ColumnInfo _expRowIdCol;
     private FieldKey _expRunFieldKey;
-    private int _runId = -1;
-    private int _expId = -1;
+    private long _runId = -1;
+    private long _expId = -1;
 
-    public ExperimentMembershipDisplayColumnFactory(ColumnInfo expRowIdCol, int runId)
+    public ExperimentMembershipDisplayColumnFactory(ColumnInfo expRowIdCol, long runId)
     {
         _expRowIdCol = expRowIdCol;
         _runId = runId;
     }
 
-    public ExperimentMembershipDisplayColumnFactory(int expId, FieldKey expRunFieldKey)
+    public ExperimentMembershipDisplayColumnFactory(long expId, FieldKey expRunFieldKey)
     {
         _expId = expId;
         _expRunFieldKey = expRunFieldKey;
@@ -125,8 +125,8 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
 
             String id = HttpView.currentPageConfig().makeId("checkbox");
-            int currentExpId = getExpId(ctx);
-            int currentExpRunId = getRunId(ctx);
+            long currentExpId = getExpId(ctx);
+            long currentExpRunId = getRunId(ctx);
             ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
             ExpRun run = ExperimentService.get().getExpRun(currentExpRunId);
             Boolean checked = (Boolean)getDisplayColumn().getValue(ctx);
@@ -145,7 +145,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             out.write(checkbox);
         }
 
-        private int getExpId(RenderContext ctx)
+        private long getExpId(RenderContext ctx)
         {
             if (_expId == -1)
             {
@@ -157,7 +157,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
         }
 
-        private int getRunId(RenderContext ctx)
+        private long getRunId(RenderContext ctx)
         {
             if (_runId == -1)
             {
@@ -167,7 +167,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                     Object value = columnInfo.getValue(ctx);
                     if (value instanceof Number n)
                     {
-                        return n.intValue();
+                        return n.longValue();
                     }
                 }
                 return -1;

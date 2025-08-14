@@ -31,7 +31,7 @@ import java.util.Map;
 */
 public class GWTPropertyValidator implements Serializable, IsSerializable
 {
-    private int _rowId;
+    private long _rowId;
     private String _name;
     private PropertyValidatorType _type;
     private String _description;
@@ -69,12 +69,12 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
         d.setNew(s.isNew());
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }
@@ -187,7 +187,7 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
 
     public int hashCode()
     {
-        int result = getRowId();
+        int result = (int)getRowId();
         result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         result = 31 * result + (getType() != null ? getType().hashCode() : 0);
         result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);

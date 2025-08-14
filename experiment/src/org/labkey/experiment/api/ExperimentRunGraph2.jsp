@@ -42,8 +42,8 @@
   (
     SELECT
       0                                              AS depth,
-      objectid                                       AS fromObjectId,
-      CAST(NULL AS INT)                              AS toObjectId,
+      CAST(objectid AS BIGINT)                       AS fromObjectId,
+      CAST(NULL AS BIGINT)                           AS toObjectId,
       CAST('/' AS VARCHAR(8000)) AS path
 <% if (bean.isUseObjectIds()) { %>
     FROM ($LSIDS$) as _seed_(objectid)
@@ -141,8 +141,8 @@
   (
     SELECT
       0                                              AS depth,
-      CAST(NULL AS INT)                              AS fromObjectId,
-      objectid                                       AS toObjectId,
+      CAST(NULL AS BIGINT)                           AS fromObjectId,
+      CAST(objectid AS BIGINT)                       AS toObjectId,
       CAST('/' AS VARCHAR(8000)) AS PATH
 <% if (bean.isUseObjectIds()) { %>
     FROM ($LSIDS$) as _seed_(objectid)

@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class CoreUpgradeCode implements UpgradeCode
 {
     private static final Logger LOG = LogHelper.getLogger(CoreUpgradeCode.class, "Custom core upgrade steps");
@@ -89,7 +91,7 @@ public class CoreUpgradeCode implements UpgradeCode
             {
                 String seqName = (String) result.get("Name");
                 Long seqValue = (Long) result.get("Value");
-                Integer seqRowId = (Integer) result.get("RowId");
+                Integer seqRowId = asInteger(result.get("RowId"));
 
                 if (seqs.contains(seqName)) // case-insensitive duplicates found
                 {
@@ -98,7 +100,6 @@ public class CoreUpgradeCode implements UpgradeCode
                 }
                 else
                     seqs.add(seqName);
-
             }
 
             if (!toRemove.isEmpty())

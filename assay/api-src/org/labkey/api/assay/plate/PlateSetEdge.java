@@ -4,48 +4,48 @@ import java.util.Objects;
 
 public class PlateSetEdge
 {
-    private int _fromPlateSetId;
-    private int _rootPlateSetId;
-    private int _toPlateSetId;
+    private long _fromPlateSetId;
+    private long _rootPlateSetId;
+    private long _toPlateSetId;
 
     // Necessary for database serialization
     public PlateSetEdge()
     {
     }
 
-    public PlateSetEdge(int fromPlateSetId, int toPlateSetId, int rootPlateSetId)
+    public PlateSetEdge(long fromPlateSetId, long toPlateSetId, long rootPlateSetId)
     {
         _fromPlateSetId = fromPlateSetId;
         _toPlateSetId = toPlateSetId;
         _rootPlateSetId = rootPlateSetId;
     }
 
-    public int getFromPlateSetId()
+    public long getFromPlateSetId()
     {
         return _fromPlateSetId;
     }
 
-    public void setFromPlateSetId(int fromPlateSetId)
+    public void setFromPlateSetId(long fromPlateSetId)
     {
         _fromPlateSetId = fromPlateSetId;
     }
 
-    public int getRootPlateSetId()
+    public long getRootPlateSetId()
     {
         return _rootPlateSetId;
     }
 
-    public void setRootPlateSetId(int rootPlateSetId)
+    public void setRootPlateSetId(long rootPlateSetId)
     {
         _rootPlateSetId = rootPlateSetId;
     }
 
-    public int getToPlateSetId()
+    public long getToPlateSetId()
     {
         return _toPlateSetId;
     }
 
-    public void setToPlateSetId(int toPlateSetId)
+    public void setToPlateSetId(long toPlateSetId)
     {
         _toPlateSetId = toPlateSetId;
     }

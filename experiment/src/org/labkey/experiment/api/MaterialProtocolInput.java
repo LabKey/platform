@@ -20,14 +20,14 @@ import org.labkey.api.exp.api.ExpMaterial;
 
 public class MaterialProtocolInput extends AbstractProtocolInput
 {
-    protected Integer _materialSourceId;
+    protected Long _materialSourceId;
 
-    public Integer getMaterialSourceId()
+    public Long getMaterialSourceId()
     {
         return _materialSourceId;
     }
 
-    public void setMaterialSourceId(Integer materialSourceId)
+    public void setMaterialSourceId(Long materialSourceId)
     {
         _materialSourceId = materialSourceId;
     }

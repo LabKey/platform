@@ -383,7 +383,7 @@ public class AuditController extends SpringActionController
         @Override
         public Object execute(AuditTransactionForm form, BindException errors)
         {
-            List<Integer> rowIds;
+            List<Long> rowIds;
             ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
             if (form.isSampleType())
                 rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);

@@ -31,9 +31,9 @@ public class PublishKey
     private final String _participantId;
     private float _visitId;
     private Date _date;
-    private final int _dataId;
+    private final long _dataId;
 
-    public PublishKey(Container targetStudy, String participantId, float visitId, int dataId)
+    public PublishKey(Container targetStudy, String participantId, float visitId, long dataId)
     {
         _targetStudy = targetStudy;
         _participantId = participantId;
@@ -41,7 +41,7 @@ public class PublishKey
         _dataId = dataId;
     }
 
-    public PublishKey(Container targetStudy, String participantId, Date date, int dataId)
+    public PublishKey(Container targetStudy, String participantId, Date date, long dataId)
     {
         _targetStudy = targetStudy;
         _participantId = participantId;
@@ -64,7 +64,7 @@ public class PublishKey
         return _visitId;
     }
 
-    public int getDataId()
+    public long getDataId()
     {
         return _dataId;
     }

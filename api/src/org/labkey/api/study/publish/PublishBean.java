@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class PublishBean
 {
-    private final List<Integer> _ids;
+    private final List<Long> _ids;
     private final Set<Container> _studies;
     private final boolean _nullStudies;
     private final boolean _insufficientPermissions;
@@ -16,14 +16,14 @@ public class PublishBean
     private final ActionURL _returnUrl;
     private final ActionURL _successURL;
     private final String _containerFilterName;
-    private final List<Integer> _batchIds;
+    private final List<Long> _batchIds;
     private final String _batchNoun;
     private final boolean _autoLinkEnabled;
 
     public PublishBean(ActionURL successURL,
-                       List<Integer> ids, String dataRegionSelectionKey,
+                       List<Long> ids, String dataRegionSelectionKey,
                        Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, ActionURL returnUrl,
-                       String containerFilterName, List<Integer> batchIds, String batchNoun, boolean autoLinkEnabled)
+                       String containerFilterName, List<Long> batchIds, String batchNoun, boolean autoLinkEnabled)
     {
         _successURL = successURL;
         _insufficientPermissions = insufficientPermissions;
@@ -48,7 +48,7 @@ public class PublishBean
         return _returnUrl;
     }
 
-    public List<Integer> getIds()
+    public List<Long> getIds()
     {
         return _ids;
     }
@@ -78,7 +78,7 @@ public class PublishBean
         return _containerFilterName;
     }
 
-    public List<Integer> getBatchIds()
+    public List<Long> getBatchIds()
     {
         return _batchIds;
     }

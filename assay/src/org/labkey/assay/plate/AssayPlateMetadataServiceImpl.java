@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -120,6 +121,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -129,7 +131,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     public DataIteratorBuilder mergePlateMetadata(
         Container container,
         User user,
-        Integer plateSetId,
+        Long plateSetId,
         DataIteratorBuilder rows,
         AssayProvider provider,
         ExpProtocol protocol
@@ -155,7 +157,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             final Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
             final ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
             int rowCounter = 0;
-            final Map<Integer, ExpMaterial> sampleMap = new HashMap<>();
+            final Map<Long, ExpMaterial> sampleMap = new LongHashMap<>();
             final CaseInsensitiveMapWrapper<Object> sharedCasing = new CaseInsensitiveMapWrapper<>(new HashMap<>());
 
             @Override
@@ -193,7 +195,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
                     filter.addCondition(WellTable.Column.PlateId.fieldKey(), plate.getRowId());
-                    Set<Integer> wellSamples = new HashSet<>();
+                    Set<Long> wellSamples = new HashSet<>();
                     for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
                     {
                         positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
@@ -233,7 +235,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private List<Plate> getPlatesForPlateSet(
         Container container,
         User user,
-        Integer plateSetId,
+        Long plateSetId,
         ExpProtocol protocol
     ) throws ExperimentException
     {
@@ -256,7 +258,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         ExpData data,
         AssayProvider provider,
         ExpProtocol protocol,
-        Integer plateSetId,
+        Long plateSetId,
         FileLike dataFile,
         DataLoaderSettings settings
     ) throws ExperimentException
@@ -322,7 +324,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public @Nullable Integer getPlateSetId(AssayRunUploadContext<?> context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
+    public @Nullable Long getPlateSetId(AssayRunUploadContext<?> context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
     {
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
@@ -333,7 +335,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         Map<DomainProperty, String> runProps = context.getRunProperties();
         Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
-        return plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+        return plateSetVal != null ? Long.parseLong(String.valueOf(plateSetVal)) : null;
     }
 
     @Override
@@ -347,7 +349,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             ExpData data
     ) throws ExperimentException
     {
-        Integer plateSetId = getPlateSetId(context, provider, protocol);
+        Long plateSetId = getPlateSetId(context, provider, protocol);
         List<Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
@@ -369,6 +371,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (var row : rows)
         {
             var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
+            if (plateId instanceof Number)
+                plateId = asLong(plateId);
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
@@ -400,7 +404,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Map<FieldKey, ColumnInfo> columnInfoMap = QueryService.get().getColumns(resultsTable, columns);
 
         List<Map<String, Object>> newRows = new ArrayList<>();
-        Set<Integer> prevPlateRowIDs = new HashSet<>();
+        Set<Long> prevPlateRowIDs = new HashSet<>();
 
         try
         {
@@ -410,6 +414,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 while (results.next())
                 {
                     Object plate = results.getObject(plateFieldKey);
+                    // plateMap contains Strings and Longs
+                    if (plate instanceof Number)
+                        plate = asLong(plate);
                     if (plateMap.containsKey(plate) && !incomingPlates.contains(plate))
                     {
                         Map<String, Object> row = new HashMap<>();
@@ -473,7 +480,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         .append(")")
                         .addAll(prevPlateRowIDs);
 
-                List<Integer> rowIds = new SqlSelector(scope, sql).getArrayList(Integer.class);
+                List<Long> rowIds = new SqlSelector(scope, sql).getArrayList(Long.class);
                 if (!rowIds.isEmpty())
                     PlateManager.get().deleteHits(protocol.getRowId(), rowIds);
 
@@ -593,7 +600,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private List<Map<String, Object>> resolvePlateIdentifier(List<Plate> plates, List<Map<String, Object>> data, String plateIdField)
     {
         var newData = new ArrayList<Map<String, Object>>();
-        var plateIdentifiers = new HashMap<Object, Integer>();
+        var plateIdentifiers = new HashMap<Object, Long>();
 
         for (var row : data)
         {
@@ -605,12 +612,17 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 var plateRowId = plateIdentifiers.computeIfAbsent(plateId, (k) -> {
                     for (var plate : plates)
                     {
-                        if (plate.getRowId().equals(k))
-                            return plate.getRowId();
-                        else if (k instanceof String s && (plate.getPlateId().equalsIgnoreCase(s) || plate.getName().equalsIgnoreCase(s)))
-                            return plate.getRowId();
+                        if (k instanceof Number numberKey)
+                        {
+                            if (null != plate.getRowId() && plate.getRowId().longValue() == numberKey.longValue())
+                                return plate.getRowId();
+                        }
+                        else if (k instanceof String stringKey)
+                        {
+                            if (plate.getPlateId().equalsIgnoreCase(stringKey) || plate.getName().equalsIgnoreCase(stringKey))
+                                return plate.getRowId();
+                        }
                     }
-
                     return null;
                 });
 
@@ -1250,8 +1262,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             {
                 if (importAlias.contains(entry.getKey()))
                 {
-                    if (entry.getValue() instanceof Integer stateRowId)
+                    if (entry.getValue() instanceof Number)
                     {
+                        var stateRowId = asLong(entry.getValue());
                         DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                         if (state == null)
                             throw new ValidationException(String.format("No data states for the rowID %d was found.", stateRowId));
@@ -1353,7 +1366,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         TableInfo table,
-        List<Integer> runIds
+        List<Long> runIds
     ) throws ValidationException
     {
         if (runIds.isEmpty())
@@ -1427,7 +1440,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // Remove previous hits against the runs that have been modified
         PlateManager.get().deleteHitsForRuns(runIds);
 
-        var matchingResults = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null).getArrayList(Integer.class);
+        var matchingResults = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null).getArrayList(Long.class);
 
         try
         {
@@ -1500,8 +1513,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
-        private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
-        private final Map<Integer, Map<Position, Lsid>> _wellReplicateMap;      // map of plate position to replicate stats table
+        private final Map<Long, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
+        private final Map<Long, Map<Position, Lsid>> _wellReplicateMap;      // map of plate position to replicate stats table
         private final Map<Lsid, List<Map<String, Object>>> _replicateRows;
         private final Map<Object, Plate> _plateIdentifierMap;
         private final Container _container;
@@ -1555,7 +1568,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (plateSetProperty != null && plateIdentifier != null)
                 {
                     Object plateSetVal = _run.getProperty(plateSetProperty);
-                    Integer plateSetRowId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+                    Long plateSetRowId = plateSetVal != null ? Long.parseLong(String.valueOf(plateSetVal)) : null;
                     plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateSetRowId, plateIdentifier);
                 }
                 _plateIdentifierMap.put(plateIdentifier, plate);
@@ -1652,7 +1665,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 .append(" ON AR.dataid = ED.rowid")
                                 .append(" WHERE HT.runId = ? ").add(prevRun.getRowId())
                                 .append(" AND ED.runId = ? ").add(_run.getRowId());
-                        List<Integer> rowIds = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql).getArrayList(Integer.class);
+                        List<Long> rowIds = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql).getArrayList(Long.class);
                         if (!rowIds.isEmpty())
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);
 

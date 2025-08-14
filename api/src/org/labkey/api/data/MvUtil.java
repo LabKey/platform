@@ -150,7 +150,7 @@ public class MvUtil
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         Set<String> selectColumns = new CsvSet("mvindicator, label");
         Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
-        Map<String, String> indicatorsAndLabels = new TableSelector(mvTable, selectColumns, filter, null).getValueMap();
+        Map<String, String> indicatorsAndLabels = new TableSelector(mvTable, selectColumns, filter, null).getValueMap(String.class);
 
         return indicatorsAndLabels.isEmpty() ? null : Collections.unmodifiableMap(new CaseInsensitiveTreeMap<>(indicatorsAndLabels));
     }

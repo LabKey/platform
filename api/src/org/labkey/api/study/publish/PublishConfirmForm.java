@@ -55,7 +55,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private String[] _visitId;
     private String[] _date;
     private String[] _objectIdStrings;
-    private List<Integer> _objectId;
+    private List<Long> _objectId;
     private boolean _attemptPublish;
     private boolean _validate;
     private boolean _includeTimestamp;
@@ -132,7 +132,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
         _date = date;
     }
 
-    public List<Integer> getObjectIdValues()
+    public List<Long> getObjectIdValues()
     {
         return _objectId;
     }
@@ -146,7 +146,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     {
         _objectIdStrings = objectId;
         if (null != objectId)
-            _objectId = Arrays.stream(objectId).map(Integer::parseInt).collect(Collectors.toList());
+            _objectId = Arrays.stream(objectId).map(Long::parseLong).collect(Collectors.toList());
     }
 
     public void setAttemptPublish(boolean attemptPublish)

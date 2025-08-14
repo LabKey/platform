@@ -81,6 +81,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: klum
  * Date: Jun 1, 2011
@@ -700,8 +702,8 @@ public class ParticipantGroupManager
 
         ParticipantGroup group = null;
         Object o = session.getAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId());
-        if (o instanceof Integer)
-            group = getParticipantGroup(c, user, (Integer) o);
+        if (o instanceof Number)
+            group = getParticipantGroup(c, user, asInteger(o));
         else if (o instanceof ParticipantGroup)
             group = (ParticipantGroup) o;
         return group;

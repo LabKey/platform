@@ -646,7 +646,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public PipelineStatusFileImpl getStatusFile(int rowId)
+    public PipelineStatusFileImpl getStatusFile(long rowId)
     {
         return PipelineStatusManager.getStatusFile(rowId);
     }
@@ -820,7 +820,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public Integer getJobId(User u, Container c, String jobGUID)
+    public Long getJobId(User u, Container c, String jobGUID)
     {
         PipelineStatusFileImpl statusFile = getStatusFile(jobGUID);
         if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
@@ -831,7 +831,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public String getJobGUID(User u, Container c, int rowId)
+    public String getJobGUID(User u, Container c, long rowId)
     {
         PipelineStatusFileImpl statusFile = getStatusFile(rowId);
         if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
@@ -1024,7 +1024,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Long> rowIds) throws PipelineProvider.HandlerException
     {
         PipelineStatusManager.deleteStatus(c, u, deleteExpRuns, rowIds);
     }

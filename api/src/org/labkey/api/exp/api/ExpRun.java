@@ -55,7 +55,7 @@ public interface ExpRun extends ExpObject, Identifiable
     Path getFilePathRootPath();
     void setFilePathRootPath(Path filePathRoot);
     void setProtocol(ExpProtocol protocol);
-    void setJobId(Integer jobId);
+    void setJobId(Long jobId);
     ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
     
     /** Stored in the exp.experimentrun table */
@@ -90,7 +90,7 @@ public interface ExpRun extends ExpObject, Identifiable
      * including top-level inputs and outputs, as well as intermediate files
      */
     List<? extends ExpData> getAllDataUsedByRun();
-    Integer getJobId();
+    Long getJobId();
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
 
@@ -131,7 +131,7 @@ public interface ExpRun extends ExpObject, Identifiable
     void setCreated(Date created);
     void setCreatedBy(User user);
 
-    void setWorkflowTaskId(@Nullable Integer workflowTaskId);
+    void setWorkflowTaskId(@Nullable Long workflowTaskId);
 
     void setWorkflowTask(@Nullable ExpProtocolApplication workflowTask);
 

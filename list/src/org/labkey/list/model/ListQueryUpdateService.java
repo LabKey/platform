@@ -557,7 +557,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // Check the type of the list to ensure proper casting of the key type
         if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
-            if (key instanceof Integer)
+            if (key instanceof Integer || key instanceof Long)
                 return new SimpleFilter(FieldKey.fromParts(keyName), key);
             return new SimpleFilter(FieldKey.fromParts(keyName), Integer.valueOf(key.toString()));
         }
