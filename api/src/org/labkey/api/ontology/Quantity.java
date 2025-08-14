@@ -475,10 +475,6 @@ public class Quantity extends Number implements Comparable<Quantity>
             q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_kg.class);
             assertEquals(Quantity.class, q.getClass());
             assertEquals(new Quantity(KindOfQuantity.Mass, 1234000d), q);
-
-            q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_ug.class);
-            assertEquals(Quantity.class, q.getClass());
-            assertEquals(new Quantity(KindOfQuantity.Mass, 0.001234d), q);
         }
 
         @Test

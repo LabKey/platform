@@ -80,6 +80,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -1033,7 +1034,8 @@ public class ExperimentModule extends SpringModule
             Lsid.TestCase.class,
             LsidUtils.TestCase.class,
             PropertyController.TestCase.class,
-            Quantity.TestCase.class
+            Quantity.TestCase.class,
+            Unit.TestCase.class
         );
     }
 
