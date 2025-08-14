@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.Formats;
 
 import java.math.BigDecimal;
 import java.text.Format;
@@ -501,10 +502,10 @@ public class Quantity extends Number implements Comparable<Quantity>
             assertEquals("1000.0mg", q.format(Unit.mg));
 
             // with format
-            Format f = new java.text.DecimalFormat("#.###");
-            assertEquals("1.000g", q.format(f));
-            assertEquals("1.000g", q.format(Unit.g, f));
-            assertEquals("0.001kg", q.format(Unit.kg, f));
+            assertEquals("1.000g", q.format(Formats.f3));
+            assertEquals("1.000g", q.format(Unit.g, Formats.f3));
+            assertEquals("0.001kg", q.format(Unit.kg, Formats.f3));
+            assertEquals("1000000ug", q.format(Unit.ug, Formats.fv3));
         }
     }
 }
