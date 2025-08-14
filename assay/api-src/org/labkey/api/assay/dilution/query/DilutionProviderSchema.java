@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.SampleInfoMethod;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.EnumTableInfo;
@@ -110,7 +111,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         DilutionDataHandler dataHandler = provider.getDataHandler();
         List<PropertyDescriptor> propertyDescriptors = new ArrayList<>();
-        Map<Integer, String> cutoffFormats = new HashMap<>();
+        Map<Integer, String> cutoffFormats = new IntHashMap<>();
         Container container = protocol.getContainer();
         for (String fixedProp : _fixedRunDataProps)
             propertyDescriptors.add(dataHandler.getPropertyDescriptor(container, protocol, fixedProp, cutoffFormats));

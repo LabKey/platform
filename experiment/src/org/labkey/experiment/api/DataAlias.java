@@ -22,15 +22,15 @@ import org.labkey.api.data.Entity;
  */
 public class DataAlias extends Entity
 {
-    int _rowId;
+    long _rowId;
     String _name;
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }

@@ -51,7 +51,7 @@ public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements E
     @Override
     public ExpDataProtocolInput getProtocolInput()
     {
-        Integer protocolInputId = _input.getProtocolInputId();
+        Long protocolInputId = _input.getProtocolInputId();
         if (protocolInputId == null)
             return null;
 

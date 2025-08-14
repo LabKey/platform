@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -121,7 +122,7 @@ public abstract class SnapshotDependency
                     org.labkey.api.study.Dataset dsDef = (org.labkey.api.study.Dataset)sourceData.getValue();
 
                     // check if container is still valid
-                    Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<>();
+                    Map<Integer, QuerySnapshotDefinition> dependencies = new IntHashMap<>();
                     if (isContainerValid(sourceData.getContainer()))
                     {
                         List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
@@ -157,7 +158,7 @@ public abstract class SnapshotDependency
         }
 
         // map of property uri to dataset id
-        private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<>();
+        private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new IntHashMap<>();
 
         private boolean hasDependency(QuerySnapshotDefinition qsDef, @NotNull org.labkey.api.study.Dataset dsDef)
         {

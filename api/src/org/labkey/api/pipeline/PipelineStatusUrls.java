@@ -29,7 +29,7 @@ public interface PipelineStatusUrls extends UrlProvider
 
     ActionURL urlBegin(Container container, boolean notComplete);
 
-    ActionURL urlDetails(Container container, int rowId);
+    ActionURL urlDetails(Container container, long rowId);
 
     ActionURL urlShowFile(Container container, int rowId, String filename);
 

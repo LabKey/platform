@@ -24,6 +24,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.DefaultSchema;
@@ -2163,7 +2164,7 @@ public class BitSetQueryImpl
             MemberSet ret = new MemberSet();
             try (ResultSet rs = execute(serviceUser, sql))
             {
-                Map<Integer, Integer> columnMap = new HashMap<>();
+                Map<Integer, Integer> columnMap = new IntHashMap<>();
                 ResultSetMetaData metaData = rs.getMetaData();
                 Hierarchy hierarchy = level.getHierarchy();
                 NamedList<Level> levels = hierarchy.getLevels();

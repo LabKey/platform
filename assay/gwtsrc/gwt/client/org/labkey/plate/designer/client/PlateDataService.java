@@ -29,6 +29,6 @@ public interface PlateDataService extends RemoteService
 {
     GWTPlate getTemplateDefinition(String templateName, int plateId, String assayTypeName, String templateTypeName, int rowCount, int columnCount, boolean copyTemplate) throws SerializableException, Exception;
 
-    int saveChanges(GWTPlate plate, boolean replaceIfExisting) throws SerializableException, Exception;
+    long saveChanges(GWTPlate plate, boolean replaceIfExisting) throws SerializableException, Exception;
 
 }

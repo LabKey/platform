@@ -19,6 +19,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
@@ -111,7 +112,7 @@ public class ViewCategoryCache
 
             Collection<ViewCategory> categories = new TableSelector(mgr.getTableInfoCategories(), filter, null).getCollection(ViewCategory.class);
 
-            Map<Integer, ViewCategory> rowIdMap = new HashMap<>();
+            Map<Integer, ViewCategory> rowIdMap = new IntHashMap<>();
 
             for (ViewCategory category : categories)
             {

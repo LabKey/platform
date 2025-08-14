@@ -18,7 +18,7 @@ package org.labkey.api.assay.plate;
 
 public interface Well extends WellData, Position
 {
-    Integer getSampleId();
+    Long getSampleId();
 
     double getValue();
 

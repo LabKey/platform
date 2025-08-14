@@ -74,13 +74,13 @@ public interface AssayQCService
     /**
      * Update the QC states for the specified runs
      */
-    void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, DataState state, String comment);
+    void setQCStates(ExpProtocol protocol, Container container, User user, List<Long> runIds, DataState state, String comment);
 
     /**
      * Get the QC state (if any) associated with the run.
      */
     @Nullable
-    DataState getQCState(ExpProtocol protocol, int runId) throws ExperimentException;
+    DataState getQCState(ExpProtocol protocol, long runId) throws ExperimentException;
 
     /**
      * Generate the filter condition for the runs table based on the configured QC state.
@@ -98,8 +98,8 @@ public interface AssayQCService
      *
      * @param runs the list of runs to check
      */
-    List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs) throws ExperimentException;
-    List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds) throws ExperimentException;
+    List<Long> getUnapprovedRuns(ExpProtocol protocol, List<Long> runs) throws ExperimentException;
+    List<Long> getUnapprovedData(ExpProtocol protocol, List<Long> dataIds) throws ExperimentException;
 
     /**
      * Determine if any assay runs are assigned the specified state
@@ -146,13 +146,13 @@ public interface AssayQCService
         }
 
         @Override
-        public void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, DataState state, String comment)
+        public void setQCStates(ExpProtocol protocol, Container container, User user, List<Long> runIds, DataState state, String comment)
         {
         }
 
         @Nullable
         @Override
-        public DataState getQCState(ExpProtocol protocol, int runId)
+        public DataState getQCState(ExpProtocol protocol, long runId)
         {
             return null;
         }
@@ -170,13 +170,13 @@ public interface AssayQCService
         }
 
         @Override
-        public List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs)
+        public List<Long> getUnapprovedRuns(ExpProtocol protocol, List<Long> runs)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds)
+        public List<Long> getUnapprovedData(ExpProtocol protocol, List<Long> dataIds)
         {
             return Collections.emptyList();
         }

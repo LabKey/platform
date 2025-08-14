@@ -10,6 +10,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -27,10 +28,11 @@ import org.labkey.assay.plate.query.WellTable.Column;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 public class PlateMapExcelWriter extends ExcelWriter
 {
@@ -43,7 +45,7 @@ public class PlateMapExcelWriter extends ExcelWriter
 
     // Map of Row label (A, B, etc.) to Column Data, which is a Map of Column Label (1, 2, etc.) to Well Data (Sample
     // ID, metadata column values)
-    private final Map<Integer, Map<Integer, RowMap<Object>>> _wellData = new HashMap<>();
+    private final Map<Integer, Map<Integer, RowMap<Object>>> _wellData = new IntHashMap<>();
 
     public PlateMapExcelWriter(Plate plate, List<DisplayColumn> displayColumns, QueryView queryView) throws SQLException, IOException
     {
@@ -67,10 +69,10 @@ public class PlateMapExcelWriter extends ExcelWriter
             while (results.next())
             {
                 RowMap<Object> well = factory.getRowMap(results);
-                Integer row = (Integer) well.get(Column.Row.name());
-                Integer col = (Integer) well.get(Column.Col.name());
+                Integer row = asInteger(well.get(Column.Row.name()));
+                Integer col = asInteger(well.get(Column.Col.name()));
 
-                Map<Integer, RowMap<Object>> rowMap = _wellData.computeIfAbsent(row, k -> new HashMap<>());
+                Map<Integer, RowMap<Object>> rowMap = _wellData.computeIfAbsent(row, k -> new IntHashMap<>());
 
                 rowMap.put(col, well);
             }

@@ -9,7 +9,7 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateTypeBean implements PlateType
 {
-    private Integer _rowId;
+    private Long _rowId;
     private Integer _rows;
     private Integer _cols;
     private String _description;
@@ -20,12 +20,12 @@ public class PlateTypeBean implements PlateType
     }
 
     @Override
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }

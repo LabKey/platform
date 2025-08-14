@@ -27,6 +27,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -46,10 +47,11 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * Created by matthew on 5/11/2016.
@@ -308,7 +310,7 @@ public class NotificationController extends SpringActionController
                 if (form.getMaxRows() == null || i < form.getMaxRows())
                 {
                     Map<String, Object> notifPropMap = notification.asPropMap();
-                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer) notifPropMap.get("CreatedBy"), getUser()));
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), getUser()));
                     notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
                     notificationList.add(notifPropMap);
@@ -389,7 +391,7 @@ public class NotificationController extends SpringActionController
 
         private JSONObject getNotificationJson(User user)
         {
-            Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
+            Map<Integer, Map<String, Object>> notificationsPropMap = new IntHashMap<>();
             Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
             int unreadCount = 0;
             boolean hasRead = false;
@@ -407,7 +409,7 @@ public class NotificationController extends SpringActionController
                     }
 
                     Map<String, Object> notifPropMap = notification.asPropMap();
-                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), user));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
                     notificationsPropMap.put(notification.getRowId(), notifPropMap);
 

@@ -53,7 +53,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     }
 
     @Override
-    public Set<ExpData> getDatasForResultRows(Collection<Integer> resultRowIds, ExpProtocol protocol, ResolverCache cache)
+    public Set<ExpData> getDatasForResultRows(Collection<Long> resultRowIds, ExpProtocol protocol, ResolverCache cache)
     {
         Set<ExpData> result = new HashSet<>();
 

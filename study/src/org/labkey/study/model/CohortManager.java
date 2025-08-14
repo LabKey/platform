@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
@@ -435,8 +436,8 @@ public class CohortManager
             while (rs.next())
             {
                 String participantId = rs.getString("ParticipantId");
-                Integer visitRowId = (Integer) rs.getObject("VisitRowId");
-                Integer assignedCohortId = (Integer) rs.getObject("CohortId");
+                Integer visitRowId = asInteger(rs.getObject("VisitRowId"));
+                Integer assignedCohortId = asInteger(rs.getObject("CohortId"));
                 String newCohortLabel = cohortLabelCol.getStringValue(rs);
                 Integer newCohortId = null;
 

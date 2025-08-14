@@ -7,13 +7,12 @@ import java.util.Collection;
 
 public interface ObjectReferencer
 {
-    default Collection<Integer> getItemsWithReferences(Collection<Integer> referencedRowIds, @NotNull String referencedSchemaName)
+    default Collection<Long> getItemsWithReferences(Collection<Long> referencedRowIds, @NotNull String referencedSchemaName)
     {
         return getItemsWithReferences(referencedRowIds, referencedSchemaName, null);
     }
 
-    @NotNull
-    Collection<Integer> getItemsWithReferences(Collection<Integer> referencedRowIds, @NotNull String referencedSchemaName, @Nullable String referencedQueryName);
+    @NotNull Collection<Long> getItemsWithReferences(Collection<Long> referencedRowIds, @NotNull String referencedSchemaName, @Nullable String referencedQueryName);
 
     @Nullable
     String getObjectReferenceDescription(Class referencedClass);

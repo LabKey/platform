@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
@@ -66,7 +67,7 @@ public class ReportContentEmailManager
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
-                Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
+                Map<Integer, List<NotificationInfo>> reportsForUserInitial = new IntHashMap<>();
                 for (Integer category : categories)
                 {
                     if (null != category)
@@ -87,7 +88,7 @@ public class ReportContentEmailManager
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                     SortedSet<Integer> datasets, SortedSet<Integer> allCategories)
             {
-                Map<Integer, List<NotificationInfo>> reports = new HashMap<>();
+                Map<Integer, List<NotificationInfo>> reports = new IntHashMap<>();
                 for (Map.Entry<Integer, List<NotificationInfo>> entry : reportInfosByCategory.entrySet())
                 {
                     List<NotificationInfo> matchedReports = entry.getValue().stream()
@@ -202,7 +203,7 @@ public class ReportContentEmailManager
         String userListString = EmailService.get().getDefaultEmailPref(container, new ReportContentUserList());
         SortedSet<Integer> userList = makeIntegerSetFromDelimitedString(userListString, ";");
 
-        Map<Integer, SortedSet<Integer>> userCategoryMap = new HashMap<>();
+        Map<Integer, SortedSet<Integer>> userCategoryMap = new IntHashMap<>();
         for (Integer userId : userList)
         {
             if (null != userId)

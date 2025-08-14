@@ -390,6 +390,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public long getLongValue(ResultSet rs) throws SQLException
+    {
+        return delegate.getLongValue(rs);
+    }
+
+    @Override
     public String getStringValue(ResultSet rs) throws SQLException
     {
         return delegate.getStringValue(rs);

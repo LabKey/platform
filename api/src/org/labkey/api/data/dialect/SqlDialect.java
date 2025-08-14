@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -111,7 +112,7 @@ public abstract class SqlDialect
 
     private final Set<String> _reservedWordSet;
     private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<>();
-    private final Map<Integer, String> _sqlTypeIntMap = new HashMap<>();
+    private final Map<Integer, String> _sqlTypeIntMap = new IntHashMap<>();
     private final Map<String, DatabaseTableType> _tableTypeMap = new HashMap<>();
     private final String[] _tableTypes;
 

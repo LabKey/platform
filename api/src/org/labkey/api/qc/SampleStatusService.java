@@ -47,9 +47,9 @@ public interface SampleStatusService
 
     @NotNull List<DataState> getAllProjectStates(Container container);
 
-    DataState getStateForRowId(Container container, Integer stateId);
+    DataState getStateForRowId(Container container, Long stateId);
 
-    boolean isOperationPermitted(Container container, Integer stateId, @NotNull SampleTypeService.SampleOperations operation);
+    boolean isOperationPermitted(Container container, Long stateId, @NotNull SampleTypeService.SampleOperations operation);
 
     boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation);
 
@@ -87,13 +87,13 @@ public interface SampleStatusService
         }
 
         @Override
-        public DataState getStateForRowId(Container container, Integer stateId)
+        public DataState getStateForRowId(Container container, Long stateId)
         {
             return SampleStateManager.getInstance().getState(container, stateId);
         }
 
         @Override
-        public boolean isOperationPermitted(Container container, Integer stateId, SampleTypeService.@NotNull SampleOperations operation)
+        public boolean isOperationPermitted(Container container, Long stateId, SampleTypeService.@NotNull SampleOperations operation)
         {
             // by default all operations are permitted
             return true;

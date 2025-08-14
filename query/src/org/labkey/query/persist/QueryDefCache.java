@@ -21,6 +21,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -28,7 +29,6 @@ import org.labkey.api.data.TableSelector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class QueryDefCache
         {
             Map<String, Map<String, QueryDef>> queryDefs = new CaseInsensitiveHashMap<>();
             Map<String, Map<String, QueryDef>> customQueryDefs = new CaseInsensitiveHashMap<>();
-            Map<Integer, QueryDef> queryDefIdMap = new HashMap<>();
+            Map<Integer, QueryDef> queryDefIdMap = new IntHashMap<>();
 
             new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(QueryDef.class, queryDef -> {
 

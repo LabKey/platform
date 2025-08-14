@@ -67,6 +67,8 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.IntHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ActionButton;
@@ -315,6 +317,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
@@ -2160,7 +2163,7 @@ public class StudyController extends BaseStudyController
 
             StudyManager.getInstance().updateVisit(getUser(), postedVisit);
 
-            HashMap<Integer,VisitDatasetType> visitTypeMap = new HashMap<>();
+            HashMap<Integer,VisitDatasetType> visitTypeMap = new IntHashMap<>();
             for (VisitDataset vds :  postedVisit.getVisitDatasets())
                 visitTypeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL);
 
@@ -3102,8 +3105,8 @@ public class StudyController extends BaseStudyController
     {
         private DatasetDefinition _def;
         private Collection<String> _allLsids;
-        private MultiValuedMap<String,Pair<String,Integer>> _sourceLsidToLsidPair;
-        private Integer _sourceRowId = null;
+        private MultiValuedMap<String,Pair<String,Long>> _sourceLsidToLsidPair;
+        private Long _sourceRowId = null;
 
         @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
@@ -3127,14 +3130,14 @@ public class StudyController extends BaseStudyController
 
             // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
             _sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
-            List<Integer> rowIds = new ArrayList<>();
+            List<Long> rowIds = new ArrayList<>();
             List<Map<String,Object>> data = _def.getDatasetRows(getUser(), _allLsids);
 
             for (Map<String,Object> row : data)
             {
                 String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
                 String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
-                Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
+                Long rowId = MapUtils.getLong(row,StudyPublishService.ROWID_PROPERTY_NAME);
                 rowIds.add(rowId);
                 if (sourceLSID != null && datasetRowLsid != null)
                     _sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
@@ -3156,10 +3159,10 @@ public class StudyController extends BaseStudyController
             Dataset.PublishSource publishSource = _def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : _sourceLsidToLsidPair.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Long>>> entry : _sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
-                    Collection<Pair<String, Integer>> pairs = entry.getValue();
+                    Collection<Pair<String, Long>> pairs = entry.getValue();
                     Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, _sourceRowId);
                     if (sourceContainer != null)
                         StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), _def, pairs.size(), pairs);
@@ -3190,7 +3193,7 @@ public class StudyController extends BaseStudyController
     {
         private int datasetId;
         private boolean deleteAllData;
-        private Integer _publishSourceId;
+        private Long _publishSourceId;
 
         public int getDatasetId()
         {
@@ -3212,12 +3215,12 @@ public class StudyController extends BaseStudyController
             this.deleteAllData = deleteAllData;
         }
 
-        public Integer getPublishSourceId()
+        public Long getPublishSourceId()
         {
             return _publishSourceId;
         }
 
-        public void setPublishSourceId(Integer publishSourceId)
+        public void setPublishSourceId(Long publishSourceId)
         {
             _publishSourceId = publishSourceId;
         }
@@ -3595,37 +3598,37 @@ public class StudyController extends BaseStudyController
 
     public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
-        private Integer _defaultPipelineQCState;
-        private Integer _defaultPublishDataQCState;
-        private Integer _defaultDirectEntryQCState;
+        private Long _defaultPipelineQCState;
+        private Long _defaultPublishDataQCState;
+        private Long _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
 
-        public Integer getDefaultPipelineQCState()
+        public Long getDefaultPipelineQCState()
         {
             return _defaultPipelineQCState;
         }
 
-        public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
+        public void setDefaultPipelineQCState(Long defaultPipelineQCState)
         {
             _defaultPipelineQCState = defaultPipelineQCState;
         }
 
-        public Integer getDefaultPublishDataQCState()
+        public Long getDefaultPublishDataQCState()
         {
             return _defaultPublishDataQCState;
         }
 
-        public void setDefaultPublishDataQCState(Integer defaultPublishDataQCState)
+        public void setDefaultPublishDataQCState(Long defaultPublishDataQCState)
         {
             _defaultPublishDataQCState = defaultPublishDataQCState;
         }
 
-        public Integer getDefaultDirectEntryQCState()
+        public Long getDefaultDirectEntryQCState()
         {
             return _defaultDirectEntryQCState;
         }
 
-        public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
+        public void setDefaultDirectEntryQCState(Long defaultDirectEntryQCState)
         {
             _defaultDirectEntryQCState = defaultDirectEntryQCState;
         }
@@ -3787,7 +3790,7 @@ public class StudyController extends BaseStudyController
         private boolean _update;
         private int _datasetId;
         private String _dataRegionSelectionKey;
-        private Integer _newState;
+        private Long _newState;
         private DatasetQueryView _queryView;
         private String _dataRegionName;
 
@@ -3831,12 +3834,12 @@ public class StudyController extends BaseStudyController
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        public Integer getNewState()
+        public Long getNewState()
         {
             return _newState;
         }
 
-        public void setNewState(Integer newState)
+        public void setNewState(Long newState)
         {
             _newState = newState;
         }
@@ -3968,7 +3971,7 @@ public class StudyController extends BaseStudyController
                 url.addParameter(Dataset.DATASET_KEY, updateQCForm.getDatasetId());
             }
             if (updateQCForm.getNewState() != null)
-                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
+                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().longValue()).getLabel());
             return url;
         }
 
@@ -4390,7 +4393,7 @@ public class StudyController extends BaseStudyController
 
         private Map<Integer, Integer> getVisitIdToZeroMap(Collection<VisitImpl> visits)
         {
-            Map<Integer, Integer> order = new HashMap<>();
+            Map<Integer, Integer> order = new IntHashMap<>();
             for (VisitImpl visit : visits)
                 order.put(visit.getRowId(), 0);
             return order;
@@ -4482,7 +4485,7 @@ public class StudyController extends BaseStudyController
             String[] labels = form.getLabel() == null ? new String[0] : form.getLabel();
             String[] typeStrs = form.getExtraData()== null ? new String[0] : form.getExtraData();
 
-            Set<Integer> visible = new HashSet<>(visibleIds.length);
+            Set<Integer> visible = new IntHashSet(visibleIds.length);
             for (int id : visibleIds)
                 visible.add(id);
             if (allIds.length != form.getLabel().length)
@@ -4526,7 +4529,7 @@ public class StudyController extends BaseStudyController
         {
             _study = getStudyRedirectIfNull();
             var sqs = StudyQuerySchema.createSchema(_study, getUser());
-            Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
+            Map<Integer, DatasetVisibilityData> bean = new IntHashMap<>();
             for (DatasetDefinition def : _study.getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
@@ -5323,7 +5326,7 @@ public class StudyController extends BaseStudyController
                 boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 if (showHistory)
                 {
-                    HttpView historyView = provider.createAuditView(form);
+                    HttpView<?> historyView = provider.createAuditView(form, errors);
                     if (historyView != null)
                         box.addView(historyView);
                 }
@@ -5379,7 +5382,7 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetPropertyForm implements HasAllowBindParameter
     {
-        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
+        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new IntHashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
         public Map<Integer, DatasetVisibilityData> getDataset()
         {
@@ -7265,8 +7268,8 @@ public class StudyController extends BaseStudyController
             if (null != type)
                 _type = Type.valueOf(type);
 
-            _expectationDataset = (Integer)json.opt("expectationDataset");
-            _targetDataset = (Integer)json.opt("targetDataset");
+            _expectationDataset = asInteger(json.opt("expectationDataset"));
+            _targetDataset = asInteger(json.opt("targetDataset"));
         }
 
         @Override

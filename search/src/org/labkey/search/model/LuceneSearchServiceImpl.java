@@ -155,6 +155,7 @@ import java.util.stream.Stream;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
@@ -731,8 +732,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             addDateField(doc, FIELD_NAME.modified, r.getLastModified());
 
             Object owner = props.get(FIELD_NAME.owner.toString());
-            if (owner instanceof Integer)
-                addUserField(doc, FIELD_NAME.owner, (Integer)owner);
+            if (owner instanceof Integer || owner instanceof Long)
+                addUserField(doc, FIELD_NAME.owner, asInteger(owner));
             else if (owner instanceof User)
                 addUserField(doc, FIELD_NAME.owner, (User)owner);
 

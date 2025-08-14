@@ -25,18 +25,19 @@ import org.labkey.api.data.Container;
  */
 public class OntologyObject
 {
-    private int objectId;
+    private long objectId;
     private @NotNull Container container;
     private @NotNull String objectURI;
-    private Integer ownerObjectId;
+    private Long ownerObjectId;
 
-    public int getObjectId()
+    public long getObjectId()
     {
         return objectId;
     }
 
-    public void setObjectId(int objectId)
+    public void setObjectId(long objectId)
     {
+        assert objectId > 0;
         this.objectId = objectId;
     }
 
@@ -60,12 +61,12 @@ public class OntologyObject
         this.objectURI = objectURI;
     }
 
-    public Integer getOwnerObjectId()
+    public Long getOwnerObjectId()
     {
         return ownerObjectId;
     }
 
-    public void setOwnerObjectId(Integer ownerObjectId)
+    public void setOwnerObjectId(Long ownerObjectId)
     {
         this.ownerObjectId = ownerObjectId;
     }

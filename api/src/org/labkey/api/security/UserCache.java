@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.Sort;
@@ -54,9 +55,11 @@ class UserCache
     }
 
     // Return a new copy of the User with this userId, or null if user doesn't exist
-    static @Nullable User getUser(int userId)
+    static @Nullable User getUser(long userId)
     {
-        User user = getUserCollections().getUserIdMap().get(userId);
+        if (userId > Integer.MAX_VALUE)
+            throw new IllegalStateException("Unexpected userid: " + userId);
+        User user = getUserCollections().getUserIdMap().get((int)userId);
 
         // these should really be readonly
         return null != user ? user.cloneUser() : null;
@@ -209,7 +212,7 @@ class UserCache
         {
             Collection<User> allUsers = new TableSelector(CORE.getTableInfoUsers(), null, new Sort("Email")).getCollection(User.class);
 
-            Map<Integer, User> userIdMap = new HashMap<>((int)(1.3 * allUsers.size()));
+            Map<Integer, User> userIdMap = new IntHashMap<>((int)(1.3 * allUsers.size()));
             Map<ValidEmail, User> emailMap = new HashMap<>((int)(1.3 * allUsers.size()));
             Map<String, User> displayNameMap = new HashMap<>((int)(1.3 * allUsers.size()));
             List<User> activeUsers = new LinkedList<>();

@@ -69,6 +69,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "WellGroup";
@@ -191,7 +193,7 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
-                Integer wellGroupId = (Integer)oldRowMap.get("RowId");
+                Integer wellGroupId = asInteger(oldRowMap.get("RowId"));
                 if (wellGroupId != null)
                 {
                     WellGroup wellGroup = PlateManager.get().getWellGroup(container, wellGroupId);

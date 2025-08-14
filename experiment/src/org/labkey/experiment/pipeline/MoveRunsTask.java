@@ -69,7 +69,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
         try
         {
-            for (int runId : job.getRunIds())
+            for (long runId : job.getRunIds())
             {
                 ExpRunImpl experimentRun = ExperimentServiceImpl.get().getExpRun(runId);
                 if (experimentRun != null)
@@ -104,7 +104,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
-            Map<String,Integer> dataFiles = new HashMap<>();
+            Map<String,Long> dataFiles = new HashMap<>();
 
             for (ExpData oldData : experimentRun.getAllDataUsedByRun())
             {

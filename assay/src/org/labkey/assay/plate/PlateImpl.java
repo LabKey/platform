@@ -81,9 +81,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private int _plateNumber = 1;
     private PlateSet _plateSet;
     private PlateType _plateType;
-    private Integer _rowId;
+    private Long _rowId;
     private Integer _runCount;
-    private int _runId = PlateService.NO_RUNID; // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
+    private long _runId = PlateService.NO_RUNID; // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private boolean _template;
     private WellImpl[][] _wells = null;
     private Map<Integer, Well> _wellMap;
@@ -111,7 +111,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     // Note that barcode values will be auto-generated
-    public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, long runId, int plateNumber)
     {
         this(plate.getContainer(), plate.getName(), null, plate.getAssayType(), plate.getPlateType());
 
@@ -391,12 +391,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
@@ -642,7 +642,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @JsonProperty("plateSet")
-    public Integer getPlateSetId()
+    public Long getPlateSetId()
     {
         return _plateSet.getRowId();
     }
@@ -669,7 +669,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @JsonIgnore
-    public int getRunId()
+    public long getRunId()
     {
         return _runId;
     }
@@ -764,7 +764,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         public void testIdentifierMatch()
         {
             PlateImpl plate = new PlateImpl();
-            plate.setRowId(1);
+            plate.setRowId(1L);
             plate.setPlateId("test-id");
             plate.setName("Test Name");
             

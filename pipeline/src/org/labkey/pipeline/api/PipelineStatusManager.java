@@ -103,7 +103,7 @@ public class PipelineStatusManager
      * @param rowId id field
      * @return the corresponding <code>PipelineStatusFileImpl</code>
      */
-    public static PipelineStatusFileImpl getStatusFile(int rowId)
+    public static PipelineStatusFileImpl getStatusFile(long rowId)
     {
         return getStatusFile(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
@@ -525,7 +525,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static String retrieveJob(int rowId)
+    public static String retrieveJob(long rowId)
     {
         PipelineStatusFileImpl sfExist = getStatusFile(rowId);
         if (sfExist == null)
@@ -666,12 +666,12 @@ public class PipelineStatusManager
         return filter;
     }
 
-    public static void completeStatus(User user, Collection<Integer> rowIds)
+    public static void completeStatus(User user, Collection<Long> rowIds)
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
-            for (int rowId : rowIds)
+            for (long rowId : rowIds)
             {
                 boolean statusSet = false;
                 PipelineJob job = PipelineJobService.get().getJobStore().getJob(rowId);
@@ -705,12 +705,12 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    public static void deleteStatus(Container c, User u, boolean deleteExpRuns, Collection<Long> rowIds) throws PipelineProvider.HandlerException
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
-            Set<Integer> ids = new HashSet<>(rowIds);
+            Set<Long> ids = new HashSet<>(rowIds);
             deleteStatus(c, u, deleteExpRuns, ids);
             if (!ids.isEmpty())
             {
@@ -720,7 +720,7 @@ public class PipelineStatusManager
         }
     }
 
-    private static void deleteStatus(Container container, User user, boolean deleteExpRuns, Set<Integer> rowIds)
+    private static void deleteStatus(Container container, User user, boolean deleteExpRuns, Set<Long> rowIds)
     {
         assert _schema.getSchema().getScope().isTransactionActive() : "Should only be invoked inside of a transaction";
         if (rowIds.isEmpty())
@@ -731,7 +731,7 @@ public class PipelineStatusManager
         // Use a set instead of a list since the incoming set of rowIds may contain child and parent jobs, and
         // we don't want to double-log the deletion of the child jobs
         Set<PipelineStatusFile> deleteable = new HashSet<>();
-        for (int rowId : rowIds)
+        for (long rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
 
@@ -783,7 +783,7 @@ public class PipelineStatusManager
                     .append(" SET JobId = NULL ")
                     .append("WHERE JobId ");
 
-            List<Integer> statusFileIds = new ArrayList<>();
+            List<Long> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
                 Container targetContainer = pipelineStatusFile.lookupContainer();
@@ -839,12 +839,12 @@ public class PipelineStatusManager
             // Get the list of runs that reference this job
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), pipelineStatusFile.getRowId());
             TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
-            List<Integer> runIds = new TableSelector(runsTable, Collections.singleton("rowid"), filter, null).getArrayList(Integer.class);
+            List<Long> runIds = new TableSelector(runsTable, Collections.singleton("rowid"), filter, null).getArrayList(Long.class);
 
             // Convert to varargs
-            int[] ints = new int[runIds.size()];
+            long[] ints = new long[runIds.size()];
             int i = 0;
-            for (Integer runId : runIds)
+            for (Long runId : runIds)
                 ints[i++] = runId;
             ExperimentService.get().deleteExperimentRunsByRowIds(container, user, ints);
         }
@@ -875,7 +875,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static void cancelStatus(ViewBackgroundInfo info, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    public static void cancelStatus(ViewBackgroundInfo info, Collection<Long> rowIds) throws PipelineProvider.HandlerException
     {
         if (rowIds.isEmpty())
         {
@@ -883,7 +883,7 @@ public class PipelineStatusManager
         }
 
         int failed = 0;
-        for (int rowId : rowIds)
+        for (long rowId : rowIds)
         {
             PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(rowId);
             if (statusFile == null)

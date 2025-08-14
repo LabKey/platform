@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class AtomicDatabaseInteger
 {
     private final TableInfo _table;
@@ -139,7 +141,7 @@ public class AtomicDatabaseInteger
 
             map = Table.insert(user, table, map);
 
-            _rowId = (Integer)map.get("RowId");
+            _rowId = asInteger(map.get("RowId"));
             _adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), c, _rowId);
         }
 

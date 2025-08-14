@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -28,6 +29,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -135,6 +138,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -190,6 +194,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("ExpirationDate", "MaterialExpDate");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
     }
 
     public enum Options
@@ -261,16 +267,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ret;
     }
 
-    private Pair<Set<Integer>, Set<String>> getSampleParentsForRecalc(List<Map<String, Object>> outputRows)
+    private Pair<Set<Long>, Set<String>> getSampleParentsForRecalc(List<Map<String, Object>> outputRows)
     {
         if (outputRows == null || outputRows.isEmpty())
             return null;
 
-        Set<Integer> rootRowIds = new HashSet<>();
+        Set<Long> rootRowIds = new LongHashSet();
         Set<String> parentNames = new HashSet<>();
         if (outputRows.size() == 1 && outputRows.get(0).containsKey(ROOT_RECOMPUTE_ROWID_SET))
         {
-            rootRowIds.addAll((Collection<? extends Integer>) outputRows.get(0).get(ROOT_RECOMPUTE_ROWID_SET));
+            rootRowIds.addAll((Collection<? extends Long>) outputRows.get(0).get(ROOT_RECOMPUTE_ROWID_SET));
             if (outputRows.get(0).containsKey(PARENT_RECOMPUTE_NAME_SET))
                 parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
         }
@@ -280,10 +286,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (!result.containsKey(ROOT_RECOMPUTE_ROWID_COL))
                     break;
-                Object rootIdObj = result.get(ROOT_RECOMPUTE_ROWID_COL);
+                Long rootIdObj = MapUtils.getLong(result,ROOT_RECOMPUTE_ROWID_COL);
                 Object nameObj = result.get(PARENT_RECOMPUTE_NAME_COL);
                 if (rootIdObj != null)
-                    rootRowIds.add((Integer) rootIdObj);
+                    rootRowIds.add(rootIdObj);
                 if (nameObj != null)
                     parentNames.add((String) nameObj);
             }
@@ -308,7 +314,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
 
                 boolean hasRollUpColumns = parenRowIdToRecomputeCol != null && parentNameToRecomputeCol != null;
-                Set<Integer> rowIdsToRecompute = new HashSet<>();
+                Set<Long> rowIdsToRecompute = new LongHashSet();
                 Set<String> nameToRecompute = new HashSet<>();
 
                 if (hasRollUpColumns)
@@ -336,7 +342,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                 {
                                     Object rowIdObj = (_delegate).get(parenRowIdToRecomputeCol);
                                     if (rowIdObj != null)
-                                        rowIdsToRecompute.add((Integer) rowIdObj);
+                                        rowIdsToRecompute.add(asLong(rowIdObj));
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
                                     {
@@ -517,10 +523,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
             scope.addCommitTask(() ->
             {
-                List<Integer> orderedRowIds = new ArrayList<>();
+                List<Long> orderedRowIds = new ArrayList<>();
                 for (Map<String, Object> result : results)
                 {
-                    Integer rowId = (Integer) result.get(RowId.name());
+                    Long rowId = MapUtils.getLong(result, RowId.name());
                     if (rowId != null)
                         orderedRowIds.add(rowId);
                 }
@@ -586,7 +592,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private Map<Container, List<ExpMaterial>> getMaterialsForMoveRows(Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
     {
-        Set<Integer> sampleIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+        Set<Long> sampleIds = rows.stream().map(row -> MapUtils.getLong(row,RowId.name())).collect(Collectors.toSet());
         if (sampleIds.isEmpty())
         {
             errors.addRowError(new ValidationException("Sample IDs must be specified for the move operation."));
@@ -676,7 +682,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
-    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Integer> availableStatuses, Integer oldStatus, Integer newStatus)
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
     {
         if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
@@ -734,7 +740,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (aliquotRollupRoot == null && row.containsKey(SampleState.name()))
             {
-                List<Integer> availableSampleStatuses = new ArrayList<>();
+                List<Long> availableSampleStatuses = new ArrayList<>();
                 if (SampleStatusService.get().supportsSampleStatus())
                 {
                     for (DataState state: SampleStatusService.get().getAllProjectStates(c))
@@ -746,8 +752,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!availableSampleStatuses.isEmpty())
                 {
-                    Integer oldState = (Integer) oldRow.get(SampleState.name());
-                    Integer newState = (Integer) row.get(SampleState.name());
+                    Long oldState = asLong(oldRow.get(SampleState.name()));
+                    Long newState = asLong(row.get(SampleState.name()));
                     if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
                         aliquotRollupRoot = aliquotRoot;
                 }
@@ -771,9 +777,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
-        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) oldRow.get(SampleState.name()));
+        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), MapUtils.getLong(oldRow,SampleState.name()));
         boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
-        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) rowCopy.get(SampleState.name()));
+        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), MapUtils.getLong(rowCopy,SampleState.name()));
         boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
@@ -881,8 +887,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
     {
-        List<Integer> id = new LinkedList<>();
-        Integer rowId = getMaterialRowId(oldRowMap);
+        List<Long> id = new LinkedList<>();
+        Long rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false, false);
         return oldRowMap;
@@ -901,11 +907,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            List<Integer> ids = new LinkedList<>();
+            List<Long> ids = new LinkedList<>();
 
             for (Map<String, Object> k : keys)
             {
-                Integer rowId = getMaterialRowId(k);
+                Long rowId = getMaterialRowId(k);
                 // Issue 40621
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
@@ -917,7 +923,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                Integer sampleStateId = (Integer) map.get(SampleState.name());
+                Long sampleStateId = MapUtils.getLong(map,SampleState.name());
                 if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
                 {
                     DataState dataState = SampleStatusService.get().getStateForRowId(container, sampleStateId);
@@ -978,12 +984,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialIntegerValue(row, ExpMaterialTable.Column.MaterialSourceId.name());
     }
 
-    private @Nullable Integer getMaterialRowId(Map<String, Object> row)
+    private @Nullable Long getMaterialRowId(Map<String, Object> row)
     {
-        return getMaterialIntegerValue(row, ExpMaterialTable.Column.RowId.name());
+        return MapUtils.getLong(row, ExpMaterialTable.Column.RowId.name());
     }
 
-    private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container, boolean addInputs)
+    private Map<String, Object> getMaterialMap(Long rowId, String lsid, User user, Container container, boolean addInputs)
             throws QueryUpdateServiceException
     {
         Filter filter;
@@ -1149,9 +1155,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Set<String> selectColumns = existingRowSelect.columns;
 
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
-        Map<Integer, String> rowNumLsid = new HashMap<>();
+        Map<Integer, String> rowNumLsid = new IntHashMap<>();
 
-        Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
+        Map<Long, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
@@ -1159,7 +1165,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Integer rowNum = keyMap.getKey();
 
-            Integer rowId = getMaterialRowId(keyMap.getValue());
+            Long rowId = getMaterialRowId(keyMap.getValue());
             String lsid = getMaterialLsid(keyMap.getValue());
             String name = getMaterialName(keyMap.getValue());
             Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
@@ -1187,7 +1193,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                Integer rowId = (Integer) row.get("rowid");
+                Long rowId = asLong(row.get("rowid"));
                 Integer rowNum = rowIdRowNumMap.get(rowId);
                 String sampleLsid = (String) row.get("lsid");
 
@@ -1322,7 +1328,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
-        Pair<Set<Integer>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
+        Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
         {
@@ -1358,7 +1364,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void handleRecalc(Set<Integer> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
+    private void handleRecalc(Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
         Runnable runRecalc = () -> {
             try
@@ -1607,7 +1613,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final RemapCache _cache;
         final Container _container;
         final List<Supplier<Map<String, Object>>> _extraPropsFns;
-        final Map<Integer, ExpMaterial> _materialCache;
         final SampleNameGeneratorState _nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
@@ -1631,7 +1636,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _cache = new RemapCache(!context.getConfigParameterBoolean(SkipBulkRemapCache));
             _container = container;
             _extraPropsFns = new ArrayList<>();
-            _materialCache = new HashMap<>();
             _sampleType = sampleType;
             _user = user;
 

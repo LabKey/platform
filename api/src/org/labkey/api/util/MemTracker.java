@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.User;
@@ -326,7 +327,7 @@ public class MemTracker
             if (unviewed == null)
                 session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
 
-            return new ArrayList<>(unviewed);
+            return new LongArrayList(unviewed);
         }
     }
 

@@ -319,7 +319,7 @@ public class XarContext
 
     public void setCurrentRun(ExpRun run)
     {
-        addSubstitution(EXPERIMENT_RUN_ID_NAME, Integer.toString(run.getRowId()));
+        addSubstitution(EXPERIMENT_RUN_ID_NAME, Long.toString(run.getRowId()));
         addSubstitution(EXPERIMENT_RUN_LSID_NAME, run.getLSID());
         addSubstitution(EXPERIMENT_RUN_NAME_NAME, run.getName());
     }

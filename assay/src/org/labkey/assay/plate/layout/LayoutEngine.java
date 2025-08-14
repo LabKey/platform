@@ -17,7 +17,7 @@ public class LayoutEngine
     private final List<? extends PlateType> _allPlateTypes;
     private final LayoutOperation _operation;
     private final ReformatOptions _options;
-    private Collection<Integer> _sampleIds;
+    private Collection<Long> _sampleIds;
     private List<Plate> _sourcePlates;
     private List<Plate> _targetPlates;
     private List<PlateManager.PlateData> _targetPlateData;
@@ -83,7 +83,7 @@ public class LayoutEngine
         };
     }
 
-    public void setSampleIds(Collection<Integer> sampleIds)
+    public void setSampleIds(Collection<Long> sampleIds)
     {
         _sampleIds = sampleIds;
     }

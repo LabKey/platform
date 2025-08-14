@@ -51,7 +51,7 @@ public abstract class XarSource implements Serializable
 {
     public static final String LOG_FILE_NAME_SUFFIX = ".log";
 
-    private Integer _experimentRunId;
+    private Long _experimentRunId;
     private final Map<String, ExpProtocol> _xarProtocols = new HashMap<>();
     private final Map<String, ExpProtocol> _databaseProtocols = new HashMap<>();
     private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<>();
@@ -131,7 +131,7 @@ public abstract class XarSource implements Serializable
     {
     }
 
-    public void setExperimentRunRowId(Integer experimentRowId)
+    public void setExperimentRunRowId(Long experimentRowId)
     {
         _experimentRunId = experimentRowId;
     }
