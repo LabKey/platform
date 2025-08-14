@@ -23,8 +23,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.junit.BeforeClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
@@ -61,12 +64,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
+@RunWith(Enclosed.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
@@ -764,12 +762,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return _rowId == null || _rowId <= 0;
     }
 
-    public static final class TestCase
+    public static class TestCase extends Assert
     {
-        private static PlateSetImpl _plateSet;
+        private PlateSetImpl _plateSet;
 
-        @BeforeClass
-        public static void setup() throws Exception
+        @Before
+        public void setup() throws Exception
         {
             PlateSetImpl plateSet = new PlateSetImpl();
             _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null);
