@@ -73,7 +73,7 @@ public interface Dataset extends StudyEntity
         Assay
         {
             @Override
-            public @Nullable ExpProtocol resolvePublishSource(Integer publishSourceId)
+            public @Nullable ExpProtocol resolvePublishSource(Long publishSourceId)
             {
                 if (publishSourceId != null)
                     return ExperimentService.get().getExpProtocol(publishSourceId);
@@ -81,7 +81,7 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public String getLabel(Integer publishSourceId)
+            public String getLabel(Long publishSourceId)
             {
                 if (publishSourceId != null)
                 {
@@ -99,7 +99,7 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
+            public @Nullable ActionButton getSourceButton(Long publishSourceId, ContainerFilter cf, Container container)
             {
                 if (publishSourceId != null)
                 {
@@ -117,7 +117,7 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public boolean hasUsefulDetailsPage(Integer publishSourceId)
+            public boolean hasUsefulDetailsPage(Long publishSourceId)
             {
                 if (publishSourceId != null)
                 {
@@ -133,7 +133,7 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
+            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Long sourceRowId)
             {
                 // for assays the source lsid is the run
                 ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
@@ -152,13 +152,13 @@ public interface Dataset extends StudyEntity
         SampleType
         {
             @Override
-            public @Nullable ExpSampleType resolvePublishSource(Integer publishSourceId)
+            public @Nullable ExpSampleType resolvePublishSource(Long publishSourceId)
             {
                 return SampleTypeService.get().getSampleType(publishSourceId);
             }
 
             @Override
-            public String getLabel(Integer publishSourceId)
+            public String getLabel(Long publishSourceId)
             {
                 ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
                 if (sampleType != null)
@@ -167,7 +167,7 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
+            public @Nullable ActionButton getSourceButton(Long publishSourceId, ContainerFilter cf, Container container)
             {
                 if (publishSourceId != null)
                 {
@@ -179,13 +179,13 @@ public interface Dataset extends StudyEntity
             }
 
             @Override
-            public boolean hasUsefulDetailsPage(Integer publishSourceId)
+            public boolean hasUsefulDetailsPage(Long publishSourceId)
             {
                 return false;
             }
 
             @Override
-            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
+            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Long sourceRowId)
             {
                 if (sourceRowId != null)
                 {
@@ -217,11 +217,11 @@ public interface Dataset extends StudyEntity
             }
         };
 
-        public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
-        public abstract String getLabel(Integer publishSourceId);
-        public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container);
-        public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
-        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Integer sourceRowId);
+        public abstract @Nullable ExpObject resolvePublishSource(Long publishSourceId);
+        public abstract String getLabel(Long publishSourceId);
+        public abstract @Nullable ActionButton getSourceButton(Long publishSourceId, ContainerFilter cf, Container container);
+        public abstract boolean hasUsefulDetailsPage(Long publishSourceId);
+        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Long sourceRowId);
         public abstract String getSourceType();
         public abstract ActionURL getSourceActionURL(ExpObject source, Container container);
 
@@ -289,7 +289,7 @@ public interface Dataset extends StudyEntity
     ExpObject resolvePublishSource();
 
     @Nullable
-    Integer getPublishSourceId();
+    Long getPublishSourceId();
 
     Study getStudy();
 

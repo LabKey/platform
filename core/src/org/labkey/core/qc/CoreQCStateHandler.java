@@ -50,13 +50,13 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
         return AssayQCService.getProvider().isRequireCommentOnQCStateChange(container);
     }
 
-    public Integer getDefaultQCState(Container container)
+    public Long getDefaultQCState(Container container)
     {
         DataState state = AssayQCService.getProvider().getDefaultDataImportState(container);
         return state != null ? state.getRowId() : null;
     }
 
-    private void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState, boolean isRequireCommentOnQCStateChange)
+    private void setProps(Container container, boolean isBlankQCStatePublic, Long defaultQCState, boolean isRequireCommentOnQCStateChange)
     {
         AssayQCService.getProvider().setIsBlankQCStatePublic(container, isBlankQCStatePublic);
         AssayQCService.getProvider().setRequireCommentOnQCStateChange(container, isRequireCommentOnQCStateChange);

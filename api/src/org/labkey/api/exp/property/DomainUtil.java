@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
@@ -1073,7 +1075,7 @@ public class DomainUtil
 
     private static Map<Integer, GWTPropertyDescriptor> getLockedPropertyIdMap(Set<? extends GWTPropertyDescriptor> lockedFields)
     {
-        Map<Integer, GWTPropertyDescriptor> lockedFieldMap = new HashMap<>();
+        Map<Integer, GWTPropertyDescriptor> lockedFieldMap = new IntHashMap<>();
         for (GWTPropertyDescriptor lockedField : lockedFields)
         {
             lockedFieldMap.put(lockedField.getPropertyId(), lockedField);
@@ -1243,7 +1245,7 @@ public class DomainUtil
 
     private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, @Nullable GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
-        Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
+        Map<Long, GWTPropertyValidator> newProps = new LongHashMap<>();
         List<Map<String, Object>> valueUpdates = new ArrayList<>();
 
         PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
@@ -1512,7 +1514,7 @@ public class DomainUtil
     {
         if (null != orig)
         {
-            Map<Integer, String> propertyIdMap = new HashMap<>();
+            IntHashMap<String> propertyIdMap = new IntHashMap<>();
 
             for (GWTPropertyDescriptor origField : orig.getFields())
             {

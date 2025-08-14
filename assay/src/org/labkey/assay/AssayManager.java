@@ -607,7 +607,7 @@ public class AssayManager implements AssayService
     @Nullable
     public ExpExperiment findBatch(ExpRun run)
     {
-        int protocolId = run.getProtocol().getRowId();
+        long protocolId = run.getProtocol().getRowId();
         for (ExpExperiment potentialBatch : run.getExperiments())
         {
             ExpProtocol batchProtocol = potentialBatch.getBatchProtocol();
@@ -753,7 +753,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public void indexAssayRun(SearchService.TaskIndexingQueue queue, int expRunRowId)
+    public void indexAssayRun(SearchService.TaskIndexingQueue queue, long expRunRowId)
     {
         ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
         if (expRun == null)
@@ -1000,7 +1000,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public int deleteFlagsForRun(Container container, User user, AssayProvider provider, int runId)
+    public int deleteFlagsForRun(Container container, User user, AssayProvider provider, long runId)
     {
         AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
         if (handler != null)
@@ -1011,7 +1011,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls)
+    public <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, long runId, Class<FlagType> cls)
     {
         AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
         if (handler != null)

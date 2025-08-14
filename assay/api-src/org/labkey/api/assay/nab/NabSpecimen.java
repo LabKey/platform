@@ -23,7 +23,7 @@ package org.labkey.api.assay.nab;
  */
 public class NabSpecimen
 {
-    private int _rowId;
+    private long _rowId;
     private int _dataId;
     private int _runId;
     private String _specimenLsid;
@@ -181,12 +181,12 @@ public class NabSpecimen
         _protocolId = protocolId;
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }

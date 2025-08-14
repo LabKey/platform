@@ -29,7 +29,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 public class LineageGraphDisplayColumn extends SimpleDisplayColumn
 {
-    private final Integer _runId;
+    private final Long _runId;
     private final String _focus;
     private final String _linkText;
 
@@ -67,7 +67,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
         else
         {
             ActionURL url = new ActionURL(ExperimentController.ShowRunGraphDetailAction.class, ctx.getContainer());
-            url.addParameter("rowId", Integer.toString(_runId));
+            url.addParameter("rowId", Long.toString(_runId));
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);
 

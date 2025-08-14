@@ -162,7 +162,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private Integer _cohortId;
-    private Integer _publishSourceId;   // the identifier of the published data source
+    private Long _publishSourceId;   // the identifier of the published data source
     private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
 
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
@@ -2083,12 +2083,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
     @Override
-    public Integer getPublishSourceId()
+    public Long getPublishSourceId()
     {
         return _publishSourceId;
     }
 
-    public void setPublishSourceId(Integer publishSourceId)
+    public void setPublishSourceId(Long publishSourceId)
     {
         _publishSourceId = publishSourceId;
     }
@@ -2872,7 +2872,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         private String _description;
         private Boolean _demographicData = false;   //demographic information, sequenceNum
         private Integer _cohortId;
-        private Integer _publishSourceId;           // the identifier of the published data source
+        private Long _publishSourceId;           // the identifier of the published data source
         private PublishSource _publishSource;       // the type of published data source (assay, sample type, ...)
         private String _tag;
         private String _type = Dataset.TYPE_STANDARD;
@@ -2961,7 +2961,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return this;
         }
 
-        public Builder setPublishSourceId(Integer publishSourceId)
+        public Builder setPublishSourceId(Long publishSourceId)
         {
             _publishSourceId = publishSourceId;
             return this;

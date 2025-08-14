@@ -89,6 +89,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class ListManager implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(ListManager.class, "List indexing events");
@@ -670,8 +672,8 @@ public class ListManager implements SearchService.DocumentProvider
                     "text/plain",
                     body,
                     itemURL,
-                    UserManager.getUser((Integer) map.get(createdByKey)), created,
-                    UserManager.getUser((Integer) map.get(modifiedByKey)), modified,
+                    UserManager.getUser(asInteger( map.get(createdByKey))), created,
+                    UserManager.getUser(asInteger( map.get(modifiedByKey))), modified,
                     props)
                 {
                     @Override

@@ -17,6 +17,8 @@ package org.labkey.api.assay.dilution;
 
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Created by davebradlee on 8/14/15.
  *
@@ -48,17 +50,17 @@ public class DilutionDataRow
         DilutionDataRow row = new DilutionDataRow();
 
         if (data.containsKey("rowId"))
-            row.setRowId((Integer)data.get("rowId"));
+            row.setRowId(asInteger(data.get("rowId")));
         if (data.containsKey("runId"))
-            row.setRunId((Integer)data.get("runId"));
+            row.setRunId(asInteger(data.get("runId")));
         if (data.containsKey("runDataId"))
-            row.setRunDataId((Integer)data.get("runDataId"));
+            row.setRunDataId(asInteger(data.get("runDataId")));
         if (data.containsKey("wellGroupName"))
             row.setWellgroupName(String.valueOf(data.get("wellGroupName")));
         if (data.containsKey("replicateName"))
             row.setReplicateName(String.valueOf(data.get("replicateName")));
         if (data.containsKey("dilutionOrder"))
-            row.setDilutionOrder((Integer)data.get("dilutionOrder"));
+            row.setDilutionOrder(asInteger(data.get("dilutionOrder")));
         if (data.containsKey("dilution"))
             row.setDilution((Double)data.get("dilution"));
         if (data.containsKey("min"))
@@ -74,7 +76,7 @@ public class DilutionDataRow
         if (data.containsKey("maxDilution"))
             row.setMaxDilution((Double)data.get("maxDilution"));
         if (data.containsKey("plateNumber"))
-            row.setPlateNumber((Integer)data.get("plateNumber"));
+            row.setPlateNumber(asInteger(data.get("plateNumber")));
         if (data.containsKey("container"))
             row.setContainer(String.valueOf(data.get("container")));
 

@@ -24,6 +24,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -188,7 +189,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.004;
+        return 25.006;
     }
 
     @Nullable
@@ -286,7 +287,7 @@ public class ExperimentModule extends SpringModule
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
             }
@@ -297,7 +298,7 @@ public class ExperimentModule extends SpringModule
         BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunTypeWebPart();
             }
@@ -308,7 +309,7 @@ public class ExperimentModule extends SpringModule
         BaseWebPartFactory sampleTypeFactory = new BaseWebPartFactory(SAMPLE_TYPE_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new SampleTypeWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
@@ -317,9 +318,9 @@ public class ExperimentModule extends SpringModule
         result.add(sampleTypeFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                WebPartView view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
+                WebPartView<?> view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }
@@ -327,7 +328,7 @@ public class ExperimentModule extends SpringModule
 
         result.add(new AlwaysAvailableWebPartFactory("Data Classes", false, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new DataClassWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx, webPart);
             }
@@ -336,7 +337,7 @@ public class ExperimentModule extends SpringModule
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new ProtocolWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
@@ -350,8 +351,6 @@ public class ExperimentModule extends SpringModule
     private void addDataResourceResolver(String categoryName)
     {
         SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
 
         ss.addResourceResolver(categoryName, new SearchService.ResourceResolver()
         {
@@ -393,8 +392,6 @@ public class ExperimentModule extends SpringModule
     private void addDataClassResourceResolver(String categoryName)
     {
         SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
 
         ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
@@ -421,8 +418,6 @@ public class ExperimentModule extends SpringModule
     private void addSampleTypeResourceResolver(String categoryName)
     {
         SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
 
         ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
@@ -449,8 +444,6 @@ public class ExperimentModule extends SpringModule
     private void addSampleResourceResolver(String categoryName)
     {
         SearchService ss = SearchService.get();
-        if (null == ss)
-            return;
 
         ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
@@ -470,11 +463,11 @@ public class ExperimentModule extends SpringModule
             @Override
             public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
             {
-                Set<Integer> rowIds = new HashSet<>();
-                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                Set<Long> rowIds = new HashSet<>();
+                Map<Long, String> rowIdIdentifierMap = new LongHashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                    long rowId = NumberUtils.toLong(resourceIdentifier.replace(categoryName + ":", ""));
                     if (rowId != 0)
                     {
                         rowIds.add(rowId);
@@ -500,28 +493,25 @@ public class ExperimentModule extends SpringModule
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-//            ss.addSearchCategory(OntologyManager.conceptCategory);
-            ss.addSearchCategory(ExpSampleTypeImpl.searchCategory);
-            ss.addSearchCategory(ExpSampleTypeImpl.mediaSearchCategory);
-            ss.addSearchCategory(ExpMaterialImpl.searchCategory);
-            ss.addSearchCategory(ExpMaterialImpl.mediaSearchCategory);
-            ss.addSearchCategory(ExpDataClassImpl.SEARCH_CATEGORY);
-            ss.addSearchCategory(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY);
-            ss.addSearchCategory(ExpDataImpl.expDataCategory);
-            ss.addSearchCategory(ExpDataImpl.expMediaDataCategory);
-            ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
-            addDataResourceResolver(ExpDataImpl.expDataCategory.getName());
-            addDataResourceResolver(ExpDataImpl.expMediaDataCategory.getName());
-            addDataClassResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName());
-            addDataClassResourceResolver(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY.getName());
-            addSampleTypeResourceResolver(ExpSampleTypeImpl.searchCategory.getName());
-            addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
-            addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
-            addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
-            ss.addDocumentProvider(ExperimentServiceImpl.get());
-        }
+//        ss.addSearchCategory(OntologyManager.conceptCategory);
+        ss.addSearchCategory(ExpSampleTypeImpl.searchCategory);
+        ss.addSearchCategory(ExpSampleTypeImpl.mediaSearchCategory);
+        ss.addSearchCategory(ExpMaterialImpl.searchCategory);
+        ss.addSearchCategory(ExpMaterialImpl.mediaSearchCategory);
+        ss.addSearchCategory(ExpDataClassImpl.SEARCH_CATEGORY);
+        ss.addSearchCategory(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY);
+        ss.addSearchCategory(ExpDataImpl.expDataCategory);
+        ss.addSearchCategory(ExpDataImpl.expMediaDataCategory);
+        ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
+        addDataResourceResolver(ExpDataImpl.expDataCategory.getName());
+        addDataResourceResolver(ExpDataImpl.expMediaDataCategory.getName());
+        addDataClassResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName());
+        addDataClassResourceResolver(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY.getName());
+        addSampleTypeResourceResolver(ExpSampleTypeImpl.searchCategory.getName());
+        addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
+        addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
+        addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
+        ss.addDocumentProvider(ExperimentServiceImpl.get());
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
         ExperimentService.get().registerExperimentRunTypeSource(container -> Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE));
@@ -653,14 +643,15 @@ public class ExperimentModule extends SpringModule
                     sampleLookupCountMetrics.put("resultDomain", new SqlSelector(schema, resultAssaySampleLookupSQL).getObject(Long.class));
 
                     SQLFragment resultAssayMultipleSampleLookupSQL = new SQLFragment(
-                    "SELECT COUNT(*) FROM (\n" +
-                        "    SELECT PD.domainid, COUNT(*) AS PropCount\n" +
-                        "    FROM exp.propertydescriptor D\n" +
-                        "        JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "    WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery = 'Materials'))\n" +
-                        "        AND propertyuri LIKE ?\n" +
-                        "    GROUP BY PD.domainid\n" +
-                        ") X WHERE X.PropCount > 1"
+                            """
+                                    SELECT COUNT(*) FROM (
+                                        SELECT PD.domainid, COUNT(*) AS PropCount
+                                        FROM exp.propertydescriptor D
+                                            JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                        WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery = 'Materials'))
+                                            AND propertyuri LIKE ?
+                                        GROUP BY PD.domainid
+                                    ) X WHERE X.PropCount > 1"""
                     );
                     resultAssayMultipleSampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
                     sampleLookupCountMetrics.put("resultDomainWithMultiple", new SqlSelector(schema, resultAssayMultipleSampleLookupSQL).getObject(Long.class));
@@ -669,17 +660,19 @@ public class ExperimentModule extends SpringModule
 
 
                     // Putting these metrics at the same level as the other BooleanColumnCount metrics (e.g., sampleTypeWithBooleanColumnCount)
-                    results.put("assayResultWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                            "     exp.PropertyDescriptor D \n" +
-                            "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                            "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                    results.put("assayResultWithBooleanColumnCount", new SqlSelector(schema, """
+                            SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                                 exp.PropertyDescriptor D\s
+                                     JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                     JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                            WHERE D.propertyURI LIKE ? AND D.rangeURI = ?""", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
-                    results.put("assayRunWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                            "     exp.PropertyDescriptor D \n" +
-                            "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                            "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                    results.put("assayRunWithBooleanColumnCount", new SqlSelector(schema, """
+                            SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                                 exp.PropertyDescriptor D\s
+                                     JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                     JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                            WHERE D.propertyURI LIKE ? AND D.rangeURI = ?""", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                     results.put("assay", assayMetrics);
                 }
@@ -701,7 +694,7 @@ public class ExperimentModule extends SpringModule
                     ).count());
                 }
                 UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
-                FilteredTable table = (FilteredTable) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
+                FilteredTable<?> table = (FilteredTable<?>) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
 
                 SQLFragment sql = new SQLFragment("SELECT COUNT(*)\n" +
                         "                        FROM (\n" +
@@ -780,71 +773,82 @@ public class ExperimentModule extends SpringModule
 
                 results.put("scannableColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
                 results.put("uniqueIdColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
-                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE D.conceptURI = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE D.conceptURI = ?""", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
 
                 results.put("fileColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
-                results.put("sampleTypeWithFileColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
-                results.put("sampleTypeWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithFileColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithBooleanColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
-                results.put("sampleTypeAliquotSpecificField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentOnlyField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentAndAliquotField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
+                results.put("sampleTypeAliquotSpecificField", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT D.PropertyURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentOnlyField", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT D.PropertyURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentAndAliquotField", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT D.PropertyURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
 
                 results.put("attachmentColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
-                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
-                results.put("dataClassWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithBooleanColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                 results.put("textChoiceColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 
-                results.put("domainsWithDateTimeColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE D.rangeURI = ?", PropertyType.DATE_TIME.getTypeUri()).getObject(Long.class));
+                results.put("domainsWithDateTimeColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE D.rangeURI = ?""", PropertyType.DATE_TIME.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithDateColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE D.rangeURI = ?", PropertyType.DATE.getTypeUri()).getObject(Long.class));
+                results.put("domainsWithDateColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE D.rangeURI = ?""", PropertyType.DATE.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithTimeColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
-                        "     exp.PropertyDescriptor D \n" +
-                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
-                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                        "WHERE D.rangeURI = ?", PropertyType.TIME.getTypeUri()).getObject(Long.class));
+                results.put("domainsWithTimeColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE D.rangeURI = ?""", PropertyType.TIME.getTypeUri()).getObject(Long.class));
 
                 results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
@@ -943,7 +947,7 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpDataClassTable.Column.Name.name());
             columns.add(ExpDataClassTable.Column.DataCount.name());
 
-            Map<String, Number> results = new TableSelector(table, columns).getValueMap();
+            Map<String, Number> results = new TableSelector(table, columns).getValueMap(String.class);
             for (var entry : results.entrySet())
             {
                 long count = entry.getValue().longValue();
@@ -971,7 +975,7 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpSampleTypeTable.Column.Name.name());
             columns.add(ExpSampleTypeTable.Column.SampleCount.name());
 
-            Map<String, Number> results = new TableSelector(table, columns).getValueMap();
+            Map<String, Number> results = new TableSelector(table, columns).getValueMap(String.class);
             for (var entry : results.entrySet())
             {
                 long count = entry.getValue().longValue();

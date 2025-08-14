@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -354,7 +355,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 if (!(e instanceof ExpectedException))
                 {
                     ExceptionUtil.logExceptionToMothership(null, e);
-                    LogManager.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+
+                    Logger log = LogManager.getLogger(ApiResponseWriter.class);
+                    if (ExceptionUtil.isIgnorable(e))
+                        log.debug("ApiResponseWriter exception: ", e);
+                    else
+                        log.warn("ApiResponseWriter exception: ", e);
                 }
                 //at this point, we can't guarantee a legitimate
                 //JSON response, and we need to write the exception

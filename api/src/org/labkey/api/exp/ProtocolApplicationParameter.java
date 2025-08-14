@@ -22,25 +22,25 @@ package org.labkey.api.exp;
 public class ProtocolApplicationParameter extends AbstractParameter
 {
 
-    private Integer _runId;
-    private Integer _protocolApplicationId;
+    private Long _runId;
+    private Long _protocolApplicationId;
 
-    public Integer getRunId()
+    public Long getRunId()
     {
         return _runId;
     }
 
-    public void setRunId(Integer runId)
+    public void setRunId(Long runId)
     {
         _runId = runId;
     }
 
-    public Integer getProtocolApplicationId()
+    public Long getProtocolApplicationId()
     {
         return _protocolApplicationId;
     }
 
-    public void setProtocolApplicationId(Integer protocolApplicationId)
+    public void setProtocolApplicationId(Long protocolApplicationId)
     {
         _protocolApplicationId = protocolApplicationId;
     }

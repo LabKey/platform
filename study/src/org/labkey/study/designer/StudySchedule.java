@@ -18,6 +18,7 @@ package org.labkey.study.designer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
@@ -36,6 +37,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule UI.
@@ -145,7 +148,7 @@ public class StudySchedule implements ApiJsonForm
     private JSONArray serializeData(User user, List<DatasetDefinition> datasets, Collection<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
-        Map<Integer, VisitImpl> visitMap = new HashMap<>();
+        Map<Integer, VisitImpl> visitMap = new IntHashMap<>();
 
         for (VisitImpl visit : visits)
             visitMap.put(visit.getRowId(), visit);
@@ -192,7 +195,7 @@ public class StudySchedule implements ApiJsonForm
                     }
                     else if (value != null)
                     {
-                        Integer id = (Integer) value.opt("id");
+                        Integer id = asInteger(value.opt("id"));
                         Boolean required = (Boolean) value.opt("required");
 
                         if (id != null)

@@ -109,7 +109,7 @@ public enum DataURLRelativizer
                         return null;
 
                     ActionURL dataURL = new ActionURL(ExperimentController.ShowFileAction.class, data.getContainer());
-                    dataURL.addParameter("rowId", Integer.toString(data.getRowId()));
+                    dataURL.addParameter("rowId", Long.toString(data.getRowId()));
                     return dataURL.getURIString();
                 }
             };

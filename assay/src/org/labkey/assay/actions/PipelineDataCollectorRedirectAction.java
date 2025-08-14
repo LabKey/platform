@@ -113,7 +113,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         }
         else
         {
-            for (int dataId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
+            for (long dataId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
                 if (data == null || !data.getContainer().equals(container))

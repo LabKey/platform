@@ -109,7 +109,7 @@ public class SimpleModuleContainerListener extends ContainerManager.AbstractCont
             {
                 SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
 
-                Integer[] ids = new SqlSelector(userTable.getSchema(), objectIds).getArray(Integer.class);
+                Long[] ids = new SqlSelector(userTable.getSchema(), objectIds).getArray(Long.class);
                 OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
             }
         }

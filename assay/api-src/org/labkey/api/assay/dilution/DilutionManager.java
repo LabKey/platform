@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -51,6 +52,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * User: klum
@@ -123,7 +126,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
     public void insertCutoffValueRow(User user, Map<String, Object> fields)
@@ -136,10 +139,10 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(DILUTION_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
-    public static List<DilutionDataRow> getDilutionDataRows(int runId, int plateNumber, String name, Container container, boolean filterReplicate)
+    public static List<DilutionDataRow> getDilutionDataRows(long runId, long plateNumber, String name, Container container, boolean filterReplicate)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromString("runId"), runId);
@@ -155,7 +158,7 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(WELL_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
-        return (Integer)newFields.get("RowId");
+        return asInteger(newFields.get("RowId"));
     }
 
     public static List<WellDataRow> getWellDataRows(ExpRun run)
@@ -204,7 +207,7 @@ public class DilutionManager
     }
 
     @Nullable
-    public NabSpecimen getNabSpecimen(int rowId)
+    public NabSpecimen getNabSpecimen(long rowId)
     {
         Filter filter = new SimpleFilter(FieldKey.fromString("RowId"), rowId);
         return getNabSpecimen(filter);
@@ -229,7 +232,7 @@ public class DilutionManager
         return null;
     }
 
-    public List<NabSpecimen> getNabSpecimens(List<Integer> rowIds)
+    public List<NabSpecimen> getNabSpecimens(List<Long> rowIds)
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Filter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RowId"), rowIds));
@@ -278,8 +281,8 @@ public class DilutionManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             // Get dataIds that match the ObjectUri and make filter on NabSpecimen
-            List<Integer> dataIDs = new ArrayList<>(datas.size());
-            Set<Integer> runIds = new HashSet<>();
+            List<Long> dataIDs = new LongArrayList(datas.size());
+            Set<Long> runIds = new HashSet<>();
             for (ExpData data : datas)
             {
                 dataIDs.add(data.getRowId());

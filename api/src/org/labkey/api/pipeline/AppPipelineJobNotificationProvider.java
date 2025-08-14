@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 abstract public class AppPipelineJobNotificationProvider implements PipelineJobNotificationProvider
 {
     public enum ImportType {
@@ -170,7 +173,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             Integer count = null;
             if (info != null)
             {
-                count = (Integer) info.get("rowCount");
+                count = asInteger(info.get("rowCount"));
                 if (info.containsKey("terminalStorageCreated"))
                     successMsg.append(" created ").append(info.get("terminalStorageCreated")).append(" terminal storage unit(s) and");
             }
@@ -272,7 +275,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             {
                 String provider = (String) info.get("provider");
                 String assayName = (String) info.get("assayName");
-                int runId = (int) info.get("runId");
+                long runId = asLong(info.get("runId"));
                 urlFragment = urlFragment + "/" + provider + "/" + assayName + "/runs/" + runId;
             }
         }
@@ -284,7 +287,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     {
         ActionURL appURL = getAppURL(job.getContainer());
         String urlFragment = "/pipeline";
-        Integer jobId = PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID());
+        Long jobId = PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID());
         if (jobId != null)
             urlFragment = urlFragment + "/" + jobId;
 

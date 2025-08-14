@@ -65,9 +65,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final ViewContext _context;
     private final String _comments;
     private final String _name;
-    private final Integer _workflowTask;
+    private final Long _workflowTask;
     private final String _targetStudy;
-    private final Integer _reRunId;
+    private final Long _reRunId;
     private final ReImportOption _reImportOption;
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
@@ -269,7 +269,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public Integer getWorkflowTask()
+    public @Nullable Long getWorkflowTask()
     {
         return _workflowTask;
     }
@@ -382,7 +382,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public Integer getReRunId()
+    public Long getReRunId()
     {
         return _reRunId;
     }

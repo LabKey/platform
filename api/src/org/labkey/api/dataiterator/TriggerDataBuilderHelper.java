@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * User: matthewb
@@ -191,7 +192,7 @@ public class TriggerDataBuilderHelper
 
             while (getInput().next())
             {
-                int rowNumber = (Integer)getInput().get(0);
+                int rowNumber = asInteger(getInput().get(0));
                 _currentRow = getInput().getMap();
                 try
                 {
@@ -257,7 +258,7 @@ public class TriggerDataBuilderHelper
                 hasNext = getInput().next();
                 if (hasNext)
                 {
-                    int rowNumber = (Integer)getInput().get(0);
+                    int rowNumber = asInteger(getInput().get(0));
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {

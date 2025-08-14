@@ -161,9 +161,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpObject findObjectFromLSID(String lsid);
 
     @Nullable
-    ExpRun getExpRun(int rowId);
+    ExpRun getExpRun(long rowId);
 
-    List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
+    List<? extends ExpRun> getExpRuns(Collection<Long> rowIds);
 
     @Nullable
     ExpRun getExpRun(String lsid);
@@ -176,7 +176,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     
     List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
 
-    List<? extends ExpRun> getExpRunsForJobId(int jobId);
+    List<? extends ExpRun> getExpRunsForJobId(long jobId);
 
     List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
 
@@ -186,35 +186,35 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun createRunForProvenanceRecording(Container container, User user,
                                            RecordedActionSet actionSet,
                                            String runName,
-                                           @Nullable Integer runJobId) throws ExperimentException, ValidationException;
+                                           @Nullable Long runJobId) throws ExperimentException, ValidationException;
 
-    void queueSyncRunEdges(int runId);
+    void queueSyncRunEdges(long runId);
 
     void queueSyncRunEdges(ExpRun run);
 
-    void syncRunEdges(int runId);
+    void syncRunEdges(long runId);
 
     void syncRunEdges(ExpRun run);
 
     void syncRunEdges(Collection<ExpRun> runs);
 
     @Nullable
-    ExpData getExpData(int rowId);
+    ExpData getExpData(long rowId);
 
     @Nullable
     ExpData getExpData(String lsid);
 
     @NotNull
-    List<? extends ExpData> getExpDatas(int... rowIds);
+    List<? extends ExpData> getExpDatas(long... rowIds);
 
     @NotNull
     List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
 
     @NotNull
-    List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
+    List<? extends ExpData> getExpDatas(Collection<Long> rowid);
 
     @NotNull
-    List<? extends ExpData> getExpDatas(@NotNull ExpDataClass dataClass, Collection<Integer> rowIds);
+    List<? extends ExpData> getExpDatas(@NotNull ExpDataClass dataClass, Collection<Long> rowIds);
 
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
 
@@ -237,7 +237,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData getExpData(ExpDataClass dataClass, String name);
 
     @Nullable
-    ExpData getExpData(ExpDataClass dataClass, int rowId);
+    ExpData getExpData(ExpDataClass dataClass, long rowId);
 
     /**
      * Get a Data with name at a specific time.
@@ -307,13 +307,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a DataClass by rowId within the definition container.
      */
-    ExpDataClass getDataClass(@NotNull Container definitionContainer, int rowId);
+    ExpDataClass getDataClass(@NotNull Container definitionContainer, long rowId);
 
     /**
      * Get a DataClass by rowId within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
-    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, int rowId);
+    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, long rowId);
 
     /**
      * Get a DataClass by LSID.
@@ -325,7 +325,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by RowId
      * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
      */
-    ExpDataClass getDataClass(int rowId);
+    ExpDataClass getDataClass(long rowId);
 
     /**
      * Get a DataClass with name at a specific time.
@@ -351,16 +351,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param rowIds          The set of samples rowIds.
      * @param sampleType      Optional sample type that the samples must live in.
      */
-    List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType);
+    List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Long> rowIds, @Nullable ExpSampleType sampleType);
 
     /* This version of createExpMaterial() takes name from lsid.getObjectId() */
     @NotNull ExpMaterial createExpMaterial(Container container, Lsid lsid);
 
     @NotNull ExpMaterial createExpMaterial(Container container, String lsid, String name);
 
-    @Nullable ExpMaterial getExpMaterial(int rowId);
+    @Nullable ExpMaterial getExpMaterial(long rowId);
 
-    @Nullable ExpMaterial getExpMaterial(int rowId, ContainerFilter containerFilter);
+    @Nullable ExpMaterial getExpMaterial(long rowId, ContainerFilter containerFilter);
 
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
@@ -370,9 +370,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param rowId           The sample rowId.
      * @param sampleType      Optional sample type that the sample must live in.
      */
-    @Nullable ExpMaterial getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType);
+    @Nullable ExpMaterial getExpMaterial(Container c, User u, long rowId, @Nullable ExpSampleType sampleType);
 
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowIds);
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Long> rowIds);
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
@@ -390,7 +390,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull String dataClassName,
         String dataName,
         RemapCache cache,
-        Map<Integer, ExpData> dataCache
+        Map<Long, ExpData> dataCache
     ) throws ValidationException;
 
     /**
@@ -398,7 +398,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      *
      * @param container        The container in which to scope the resolution.
      * @param user             The user that is attempting to resolve the material.
-     * @param sampleIdentifier An identifier object (ExpMaterial, Integer, String, etc.) that identifies an individual material.
+     * @param sampleIdentifier An identifier object (ExpMaterial, Long, String, etc.) that identifies an individual material.
      * @param sampleType       An optional ExpSampleType in which to scope the resolution.
      * @param cache            Caller-supplied remapping cache that remaps underlying queries for samples
      * @param materialCache    Caller-supplied Map used to cache materials by rowId.
@@ -410,22 +410,22 @@ public interface ExperimentService extends ExperimentRunTypeSource
         Object sampleIdentifier,
         @Nullable ExpSampleType sampleType,
         @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialCache
+        @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ValidationException;
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
     @NotNull ExpExperiment createExpExperiment(Container container, String name);
 
-    @Nullable ExpExperiment getExpExperiment(int rowId);
+    @Nullable ExpExperiment getExpExperiment(long rowId);
 
     @Nullable ExpExperiment getExpExperiment(String lsid);
 
-    List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
+    List<? extends ExpExperiment> getExpExperiments(Collection<Long> rowIds);
 
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
-    @Nullable ExpProtocol getExpProtocol(int rowId);
+    @Nullable ExpProtocol getExpProtocol(long rowId);
 
     @Nullable ExpProtocol getExpProtocol(String lsid);
 
@@ -447,13 +447,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpProtocolInput getProtocolInput(Lsid lsid);
 
-    @Nullable ExpDataProtocolInput getDataProtocolInput(int rowId);
+    @Nullable ExpDataProtocolInput getDataProtocolInput(long rowId);
     @Nullable ExpDataProtocolInput getDataProtocolInput(Lsid lsid);
-    List<? extends ExpDataProtocolInput> getDataProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId);
+    List<? extends ExpDataProtocolInput> getDataProtocolInputs(long protocolId, boolean input, @Nullable String name, @Nullable Long materialSourceId);
 
-    @Nullable ExpMaterialProtocolInput getMaterialProtocolInput(int rowId);
+    @Nullable ExpMaterialProtocolInput getMaterialProtocolInput(long rowId);
     @Nullable ExpMaterialProtocolInput getMaterialProtocolInput(Lsid lsid);
-    List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId);
+    List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs(long protocolId, boolean input, @Nullable String name, @Nullable Long materialSourceId);
 
     /**
      * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
@@ -468,14 +468,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get the DataInput edge between the dataId and the protocolApplication.
      */
-    @Nullable ExpDataRunInput getDataInput(int dataId, int targetProtocolApplicationId);
+    @Nullable ExpDataRunInput getDataInput(long dataId, long targetProtocolApplicationId);
 
     @Nullable ExpDataRunInput getDataInput(Lsid lsid);
 
     /**
      * Get the MaterialInput edge between the materialId and the protocolApplication.
      */
-    @Nullable ExpMaterialRunInput getMaterialInput(int materialId, int targetProtocolApplicationId);
+    @Nullable ExpMaterialRunInput getMaterialInput(long materialId, long targetProtocolApplicationId);
 
     @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
 
@@ -770,17 +770,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param materialIds to get runs for
      * @return List of ExpRun's associated to these materials
      */
-    List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
+    List<? extends ExpRun> getRunsUsingMaterials(long... materialIds);
 
     List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
-    List<? extends ExpRun> getRunsUsingDataIds(List<Integer> ids);
+    List<? extends ExpRun> getRunsUsingDataIds(List<Long> ids);
 
     ExpRun getCreatingRun(File file, Container c);
 
-    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
+    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, long... rowIds);
 
-    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Integer> rowIds);
+    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Long> rowIds);
 
     List<? extends ExpRun> getRunsUsingSampleTypes(ExpSampleType... sampleTypes);
 
@@ -793,11 +793,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, int... runRowIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, long... runRowIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Integer> runRowIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Long> runRowIds);
 
-    void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+    void deleteExpExperimentByRowId(Container container, User user, long experimentId);
 
     void addExperimentListener(ExperimentListener listener);
 
@@ -807,7 +807,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void invalidateExperimentRun(String lsid);
 
-    List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);
+    List<ProtocolApplicationParameter> getProtocolApplicationParameters(long rowId);
 
     void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
 
@@ -815,7 +815,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     Identifiable getObject(Lsid lsid);
 
-    List<? extends ExpData> deleteExperimentRunForMove(int runId, User user);
+    List<? extends ExpData> deleteExperimentRunForMove(long runId, User user);
 
     /**
      * Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move
@@ -930,14 +930,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
-    @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);
+    @Nullable ExpProtocolApplication getExpProtocolApplication(long rowId);
 
     @Nullable ExpProtocolApplication getExpProtocolApplicationFromEntityId(String entityId);
 
     @NotNull
     List<? extends ExpProtocolApplication> getExpProtocolApplicationsByObjectId(Container container, String objectId);
 
-    List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
+    List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(long runId);
 
     List<? extends ExpProtocol> getExpProtocols(Container... containers);
 
@@ -972,7 +972,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException;
 
-    File exportXarForRuns(User user, Set<Integer> runIds, Integer expRowId, XarExportOptions options) throws NotFoundException, IOException, ExperimentException;
+    File exportXarForRuns(User user, Set<Long> runIds, Long expRowId, XarExportOptions options) throws NotFoundException, IOException, ExperimentException;
 
     /**
      * Create an experiment run to represent the work that the task's job has done so far.
@@ -1048,39 +1048,38 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
-    void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType);
+    void removeDataTypeExclusion(Collection<Long> rowIds, DataTypeForExclusion dataType);
 
     void removeContainerDataTypeExclusions(String containerId);
 
-    @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
+    @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
 
-    Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
+    Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Long dataTypeRowId);
 
-    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Long> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
 
     /**
      * @return Details about what's changed, to be used in audit log (old -> new)
      */
-    @NotNull Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+    @NotNull Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Long dataTypeId, User user);
 
-    void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user);
+    void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Long dataTypeId, Container container, User user);
 
-    String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
+    String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Long> ids, boolean isUpdate);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
     void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
 
-    void addObjectLegacyName(int objectId, String objectType, String legacyName, User user);
+    void addObjectLegacyName(long objectId, String objectType, String legacyName, User user);
 
     /**
-     *
-     * @param name The legacy name of the object
-     * @param dataType: One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
+     * @param name          The legacy name of the object
+     * @param dataType:     One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
      * @param effectiveDate The effective date that the legacy name was active
      * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
      */
-    Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf);
+    Long getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf);
 
     /**
      * Persists a collection of lineage relationships (a.k.a. "edges") between experiment objects.
@@ -1121,13 +1120,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     int removeEdges(ExpLineageEdge.FilterOptions options);
 
-    int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
+    int updateExpObjectContainers(TableInfo tableInfo, List<Long> rowIds, Container targetContainer);
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
     Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException;
 
-    int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
+    int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Long> dataIds, Container targetContainer);
 
     Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
@@ -1277,5 +1276,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
             _strictValidateExistingSampleType = strictValidateExistingSampleType;
             return this;
         }
+    }
+
+    static Long asLong(Object o)
+    {
+        return null==o ? null : o.getClass() == Long.class ? (Long)o : ((Number)o).longValue();
+    }
+    static Integer asInteger(Object o)
+    {
+        if (null == o)
+            return null;
+        if (o.getClass() == Integer.class)
+            return (Integer)o;
+        long l = ((Number)o).longValue();
+        if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE)
+            throw new IllegalArgumentException("Invalid int value: " + l);
+        return (int)l;
     }
 }

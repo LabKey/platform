@@ -45,7 +45,7 @@ public class QCStateImportHelper
         };
     }
 
-    public Integer translateQCState(@Nullable String currentStateLabel) throws ValidationException
+    public Long translateQCState(@Nullable String currentStateLabel) throws ValidationException
     {
         if (currentStateLabel != null)
         {

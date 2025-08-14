@@ -15,8 +15,8 @@
  */
 package org.labkey.api.announcements;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.labkey.api.collections.IntHashMap;
+
 
 /**
  * Wrapper over a set of options combined into a single value that controls the subscription type for notification messages related to
@@ -45,7 +45,7 @@ public enum EmailOption
 
     private final int value;
 
-    public static final Map<Integer, EmailOption> intToEmailOptionMap = new HashMap<>();
+    public static final IntHashMap<EmailOption> intToEmailOptionMap = new IntHashMap<>();
 
     static
     {

@@ -29,12 +29,12 @@ import java.util.Date;
  */
 public class ProtocolApplication extends IdentifiableBase
 {
-    private int rowId;
+    private long rowId;
     private String name;
     private String cpasType;
     private String protocolLSID;
     private Date activityDate;
-    private Integer runId;
+    private Long runId;
     private int actionSequence;
     private String comments;
     private Date startTime;
@@ -42,12 +42,12 @@ public class ProtocolApplication extends IdentifiableBase
     private Integer recordCount;
     private GUID _entityId;
 
-    public int getRowId()
+    public long getRowId()
     {
         return rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         this.rowId = rowId;
     }
@@ -96,12 +96,12 @@ public class ProtocolApplication extends IdentifiableBase
         this.activityDate = activityDate;
     }
 
-    public Integer getRunId()
+    public Long getRunId()
     {
         return runId;
     }
 
-    public void setRunId(Integer runId)
+    public void setRunId(Long runId)
     {
         this.runId = runId;
     }

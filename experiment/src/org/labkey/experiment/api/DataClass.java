@@ -31,7 +31,7 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
 {
     private String _description;
     private String _nameExpression;
-    private Integer _materialSourceId;
+    private Long _materialSourceId;
     private String _category;
     private String _dataParentImportAliasMap;
 
@@ -56,12 +56,12 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     }
 
     @Nullable
-    public Integer getMaterialSourceId()
+    public Long getMaterialSourceId()
     {
         return _materialSourceId;
     }
 
-    public void setMaterialSourceId(@Nullable Integer materialSourceId)
+    public void setMaterialSourceId(@Nullable Long materialSourceId)
     {
         _materialSourceId = materialSourceId;
     }

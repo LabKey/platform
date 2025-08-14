@@ -55,7 +55,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         {
             throw new NotFoundException();
         }
-        int[] objectIds;
+        long[] objectIds;
         if (form.getId() != null)
             objectIds = form.getId();
         else
@@ -65,7 +65,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
             {
                 throw new NotFoundException("No samples specified.");
             }
-            objectIds = new int[objectIdStrings.size()];
+            objectIds = new long[objectIdStrings.size()];
             int idx = 0;
             for (String objectIdString : objectIdStrings)
                 objectIds[idx++] = Integer.parseInt(objectIdString);
@@ -93,7 +93,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
     }
 
     protected abstract GraphSelectedBean createSelectionBean(ViewContext context, ExpProtocol protocol, int[] cutoffs,
-                                                             int[] dataObjectIds, String caption, String title);
+                                                             long[] dataObjectIds, String caption, String title);
 
     @Override
     public void addNavTrail(NavTree root)

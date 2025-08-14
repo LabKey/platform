@@ -205,9 +205,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
     public static class AuditEvent extends AuditTypeEvent
     {
         private String _sourceType; // the type of published data source (assay, sample type, ...)
-        private @Nullable Integer _protocol; // assay protocol id
+        private @Nullable Long _protocol; // assay protocol id
         private @Nullable String _sourceName; // assay name or sample type name
-        private @Nullable Integer _sampleTypeId; // sample type id
+        private @Nullable Long _sampleTypeId; // sample type id
         private String _targetStudy;
         private int _datasetId;
         private String _sourceLsid;
@@ -248,12 +248,12 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             _sourceType = sourceType;
         }
 
-        public @Nullable Integer getProtocol()
+        public @Nullable Long getProtocol()
         {
             return _protocol;
         }
 
-        public void setProtocol(@Nullable Integer protocol)
+        public void setProtocol(@Nullable Long protocol)
         {
             _protocol = protocol;
         }
@@ -268,12 +268,12 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             _sourceName = sourceName;
         }
 
-        public @Nullable Integer getSampleTypeId()
+        public @Nullable Long getSampleTypeId()
         {
             return _sampleTypeId;
         }
 
-        public void setSampleTypeId(@Nullable Integer sampleTypeId)
+        public void setSampleTypeId(@Nullable Long sampleTypeId)
         {
             _sampleTypeId = sampleTypeId;
         }

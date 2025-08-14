@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -352,7 +353,7 @@ public abstract class VisitManager
     public Map<Integer, List<BigDecimal>> getDatasetSequenceNums()
     {
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
-        final Map<Integer, List<BigDecimal>> ret = new HashMap<>();
+        final Map<Integer, List<BigDecimal>> ret = new IntHashMap<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs ->
         {

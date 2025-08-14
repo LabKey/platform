@@ -58,6 +58,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class LocationTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema, ContainerFilter cf)
@@ -161,7 +163,7 @@ public class LocationTable extends BaseStudyTable
 
             Map<String, Object> map = rows.get(0);
 
-            Integer locId = (Integer)map.get("RowId");
+            Integer locId = asInteger(map.get("RowId"));
             if (null == locId)
                 throw new InvalidKeyException("Invalid location ID");
 
@@ -189,7 +191,7 @@ public class LocationTable extends BaseStudyTable
             List<ValidationException> validationExceptions = new ArrayList<>();
             for (Map<String, Object> map : keys)
             {
-                Integer locId = (Integer)map.get("RowId");
+                Integer locId = asInteger(map.get("RowId"));
                 if (null == locId)
                     throw new InvalidKeyException("Invalid location ID");
 

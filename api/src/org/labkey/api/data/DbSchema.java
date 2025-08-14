@@ -57,6 +57,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class DbSchema
 {
     private static final Logger _log = LogHelper.getLogger(DbSchema.class, "Database schema loading problems");
@@ -568,7 +570,7 @@ public class DbSchema
             {
                 assertTrue("Not in transaction when should be.", testSchema.getScope().isTransactionActive());
                 m = Table.insert(ctx.getUser(), testTable, m);
-                rowId = ((Integer) m.get("RowId"));
+                rowId = asInteger( m.get("RowId"));
                 assertNotNull("Inserted Row doesn't have Id", rowId);
                 assertTrue(rowId != 0);
 

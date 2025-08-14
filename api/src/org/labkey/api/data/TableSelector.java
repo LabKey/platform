@@ -205,19 +205,19 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     @NotNull
     @Override
-    protected <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
+    protected <E> ArrayList<E> createPrimitiveArrayList(Class<E> clazz, ResultSet rs, @NotNull Table.Getter getter) throws SQLException
     {
         // Could be getArray(), getArrayList(), or getCollection()
         ensureStableColumnOrder("This TableSelector method");
-        return super.createPrimitiveArrayList(rs, getter);
+        return super.createPrimitiveArrayList(clazz, rs, getter);
     }
 
     @NotNull
     @Override
-    public <K, V> Map<K, V> getValueMap()
+    public <K, V> Map<K, V> getValueMap(Class<K> keyClass)
     {
         ensureStableColumnOrder("getValueMap()");
-        return super.getValueMap();
+        return super.getValueMap(keyClass);
     }
 
     @NotNull
@@ -230,10 +230,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     @NotNull
     @Override
-    public <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> fillMap)
+    public <K, V> Map<K, V> fillValueMap(@Nullable Class<K> keyClass, @NotNull Map<K, V> fillMap)
     {
         ensureStableColumnOrder("fillValueMap()");
-        return super.fillValueMap(fillMap);
+        return super.fillValueMap(keyClass, fillMap);
     }
 
     @Override

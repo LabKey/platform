@@ -48,6 +48,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -137,7 +138,7 @@
         int nocohortIndex = -1;
         int unenrolledIndex = -1;
         final List<CohortImpl> cohorts = new ArrayList<>();
-        final HashMap<Integer,Integer> cohortIndexMap = new HashMap<>();
+        final HashMap<Integer,Integer> cohortIndexMap = new IntHashMap<>();
 
         // cohorts
         if (!study.isDataspaceStudy())
@@ -178,7 +179,7 @@
 
         <%
         // groups/categories
-        final HashMap<Integer,Integer> groupMap = new HashMap<>();
+        final HashMap<Integer,Integer> groupMap = new IntHashMap<>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
         List<ParticipantCategoryImpl> categories = m.getParticipantCategories(container, user);
         boolean hasGroups = !categories.isEmpty();

@@ -305,8 +305,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             if (inRequestColumn != null)
             {
                 Object inRequest = inRequestColumn.getValue(ctx);
-                boolean requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
-                    (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
+                boolean requested = ((inRequest instanceof Boolean) && ((Boolean) inRequest).booleanValue()) ||
+                        ((inRequest instanceof Number inRequestNum) && inRequestNum.intValue() == 1);
                 return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");
             }
             else

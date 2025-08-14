@@ -37,7 +37,7 @@ import java.util.List;
 
 public interface PlateService
 {
-    int NO_RUNID = -1;
+    long NO_RUNID = -1;
 
     class NameConflictException extends Exception
     {
@@ -67,7 +67,7 @@ public interface PlateService
      * @param plateNumber Plate number (1-based)
      * @return A plate instance object with the applied data.
      */
-    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
+    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, long runId, int plateNumber);
 
     /**
      * Instantiates a new plate instance based on the specified plate and well data.
@@ -113,7 +113,7 @@ public interface PlateService
      * @param rowId The row id of the plate.
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
-    @Nullable Plate getPlate(Container container, int rowId);
+    @Nullable Plate getPlate(Container container, long rowId);
 
     /**
      * Gets a plate instance object by plate id.
@@ -129,7 +129,7 @@ public interface PlateService
      * @param rowId The row id of the plate.
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
-    @Nullable Plate getPlate(ContainerFilter cf, int rowId);
+    @Nullable Plate getPlate(ContainerFilter cf, long rowId);
 
     /**
      * Gets a plate instance object by lsid.
@@ -154,7 +154,7 @@ public interface PlateService
      * @param plateIdentifier The plate rowId, plateId, or name (checked in that order).
      * @return The requested plate, or null if no plate exists with the specified plate identifier.
      */
-    @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier);
+    @Nullable Plate getPlate(ContainerFilter cf, Long plateSetId, Object plateIdentifier);
 
     @NotNull List<Plate> getPlates(Container container);
 
@@ -163,9 +163,9 @@ public interface PlateService
      *
      * @return A plate set instance or null if it can't be located
      */
-    @Nullable PlateSet getPlateSet(Container container, int rowId);
+    @Nullable PlateSet getPlateSet(Container container, long rowId);
 
-    @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId);
+    @Nullable PlateSet getPlateSet(ContainerFilter cf, long rowId);
 
     /**
      * Returns the list of available plate types.
@@ -195,7 +195,7 @@ public interface PlateService
      * @throws SQLException Thrown in the event of a database failure.
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    int save(Container container, User user, Plate plate) throws Exception;
+    long save(Container container, User user, Plate plate) throws Exception;
 
     /**
      * Gets a well group by row id.
@@ -219,7 +219,7 @@ public interface PlateService
      * @param container The object's container.
      * @param rowid The row id of the plate object to be deleted.
      */
-    void deletePlate(Container container, User user, int rowid) throws Exception;
+    void deletePlate(Container container, User user, long rowid) throws Exception;
 
     /**
      * Registration of a details link provider allows plate grid views to include links to plate-specific detail pages.

@@ -85,7 +85,7 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
     }
 
     @Override
-    public final int getRowId()
+    public final long getRowId()
     {
         return 0;
     }

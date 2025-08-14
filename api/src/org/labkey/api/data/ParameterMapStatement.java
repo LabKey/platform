@@ -37,8 +37,8 @@ public class ParameterMapStatement implements AutoCloseable
     PreparedStatement _stmt;
     boolean _selectRowId = false;
     Integer _selectObjectIdIndex = null;
-    Integer _rowId;
-    Integer _objectId;
+    Long _rowId;
+    Long _objectId;
     Integer _objectUriIndex = null;
     String _objectURI;
     protected CaseInsensitiveHashMap<Integer> _map;
@@ -317,19 +317,19 @@ public class ParameterMapStatement implements AutoCloseable
                 _stmt.execute();
             int rowcount = _stmt.getUpdateCount();
 
-            Integer firstInt = null, secondInt = null;
+            Long firstInt = null, secondInt = null;
 
             if (null != rs)
             {
                 rs.next();
                 if (_selectRowId || _selectObjectIdIndex != null)
                 {
-                    firstInt = rs.getInt(1);
+                    firstInt = rs.getLong(1);
                     if (rs.wasNull())
                         firstInt = null;
                     if (rs.getMetaData().getColumnCount() >= 2 && _selectObjectIdIndex != null)
                     {
-                        secondInt = rs.getInt(2);
+                        secondInt = rs.getLong(2);
                         if (rs.wasNull())
                             secondInt = null;
                     }
@@ -367,12 +367,12 @@ public class ParameterMapStatement implements AutoCloseable
     }
 
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public Integer getObjectId()
+    public Long getObjectId()
     {
         return _objectId;
     }

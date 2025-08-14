@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -96,6 +97,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.DIV;
@@ -111,10 +114,10 @@ public class PublishResultsQueryView extends QueryView
     private final boolean _mismatched;
     private final boolean _showSpecimenMatch;
     private final TimepointType _timepointType;
-    private final Map<Object, String> _reshowVisits;
-    private final Map<Object, String> _reshowDates;
-    private final Map<Object, String> _reshowPtids;
-    private final Map<Object, String> _reshowTargetStudies;
+    private final Map<Long, String> _reshowVisits;
+    private final Map<Long, String> _reshowDates;
+    private final Map<Long, String> _reshowPtids;
+    private final Map<Long, String> _reshowTargetStudies;
     private final boolean _includeTimestamp;
     private final Map<StudyPublishService.LinkToStudyKeys, FieldKey> _additionalColumns;
     private final Map<String, Object> _hiddenFormFields;
@@ -127,12 +130,12 @@ public class PublishResultsQueryView extends QueryView
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
                                    Dataset.PublishSource publishSource,
                                    FieldKey objectIdFieldKey,
-                                   List<Integer> objectIds,
+                                   List<Long> objectIds,
                                    @Nullable Container targetStudyContainer,
-                                   Map<Object, String> reshowTargetStudies,
-                                   Map<Object, String> reshowVisits,
-                                   Map<Object, String> reshowDates,
-                                   Map<Object, String> reshowPtids,
+                                   Map<Long, String> reshowTargetStudies,
+                                   Map<Long, String> reshowVisits,
+                                   Map<Long, String> reshowDates,
+                                   Map<Long, String> reshowPtids,
                                    boolean mismatched,
                                    boolean showSpecimenMatch,
                                    boolean includeTimestamp,
@@ -313,12 +316,12 @@ public class PublishResultsQueryView extends QueryView
 
         private final Map<LinkToStudyKeys, ColumnInfo> _linkedColumnMap;
         private final ColumnInfo _objectIdCol;
-        private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
+        private final Map<Integer, ParticipantVisitResolver> _resolvers = new IntHashMap<>();
 
-        private Map<Object, String> _reshowVisits;
-        private Map<Object, String> _reshowDates;
-        private Map<Object, String> _reshowPtids;
-        private Map<Object, String> _reshowTargetStudies;
+        private Map<Long, String> _reshowVisits;
+        private Map<Long, String> _reshowDates;
+        private Map<Long, String> _reshowPtids;
+        private Map<Long, String> _reshowTargetStudies;
         private Map<String, BigDecimal> _translateMap;          // label to visit map, visit based studies only
 
         public ResolverHelper(Container targetStudyContainer,
@@ -339,7 +342,7 @@ public class PublishResultsQueryView extends QueryView
             return _user;
         }
 
-        private void setReshow(Map<Object, String> reshowVisits, Map<Object, String> reshowDates, Map<Object, String> reshowPtids, Map<Object, String> reshowTargetStudies)
+        private void setReshow(Map<Long, String> reshowVisits, Map<Long, String> reshowDates, Map<Long, String> reshowPtids, Map<Long, String> reshowTargetStudies)
         {
             _reshowVisits = reshowVisits;
             _reshowDates = reshowDates;
@@ -351,7 +354,7 @@ public class PublishResultsQueryView extends QueryView
         {
             if (_linkedColumnMap.containsKey(LinkToStudyKeys.SourceId))
             {
-                Integer sourceId = (Integer)_linkedColumnMap.get(LinkToStudyKeys.SourceId).getValue(ctx);
+                Integer sourceId = asInteger(_linkedColumnMap.get(LinkToStudyKeys.SourceId).getValue(ctx));
                 if (sourceId != null && !_resolvers.containsKey(sourceId))
                 {
                     // resolving ptid/timepoint by specimen or sample ID is only supported for Assays
@@ -437,7 +440,7 @@ public class PublishResultsQueryView extends QueryView
         {
             if (_reshowVisits != null)
             {
-                Object key = ctx.getRow().get(_objectIdCol.getName());
+                Long key = asLong(ctx.getRow().get(_objectIdCol.getName()));
                 return _reshowVisits.get(key);
             }
 
@@ -479,7 +482,7 @@ public class PublishResultsQueryView extends QueryView
         {
             if (_reshowPtids != null)
             {
-                Object key = ctx.getRow().get(_objectIdCol.getName());
+                Long key = asLong(ctx.getRow().get(_objectIdCol.getName()));
                 return _reshowPtids.get(key);
             }
             
@@ -499,7 +502,7 @@ public class PublishResultsQueryView extends QueryView
         {
             if (_reshowDates != null)
             {
-                Object key = ctx.getRow().get(_objectIdCol.getName());
+                Long key = asLong(ctx.getRow().get(_objectIdCol.getName()));
                 return _reshowDates.get(key);
             }
 
@@ -520,7 +523,7 @@ public class PublishResultsQueryView extends QueryView
             Object result = null;
             if (_reshowTargetStudies != null)
             {
-                Object key = ctx.getRow().get(_objectIdCol.getName());
+                Long key = asLong(ctx.getRow().get(_objectIdCol.getName()));
                 result = _reshowTargetStudies.get(key);
             }
             if (result == null && _linkedColumnMap.containsKey(LinkToStudyKeys.TargetStudy))
@@ -745,8 +748,8 @@ public class PublishResultsQueryView extends QueryView
                 if (sampleCol != null)
                 {
                     Object sampleId = sampleCol.getValue(ctx);
-                    if (sampleId instanceof Integer)
-                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
+                    if (sampleId instanceof Number)
+                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched(asLong(sampleId));
                 }
             }
 

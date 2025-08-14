@@ -58,7 +58,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
@@ -69,6 +68,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -197,7 +197,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     ptids.addAll(Arrays.asList(group.getParticipantIds()));
                 }
             }
-            SimpleFilter.InClause inClause = new SimpleFilter.InClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(qsDef.getContainer())), ptids);
+            SimpleFilter.InClause inClause = new SimpleFilter.InClause(FieldKey.fromParts(StudyServiceImpl.get().getSubjectColumnName(qsDef.getContainer())), ptids);
             filter.addClause(inClause);
         }
         return filter;
@@ -508,7 +508,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 }
             }
         }
-        errors.reject(SpringActionController.ERROR_MSG, "Unable to create a QueryDefinition for the source query, it may no longer exist.");
+        errors.reject(SpringActionController.ERROR_MSG, "Unable to create a QueryDefinition for the source query for snapshot " + form.getSnapshotName() + " in " + form.getViewContext().getContainer().getPath() + ", it may no longer exist.");
         return null;
     }
 
@@ -545,7 +545,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     }
 
     @Override
-    public HttpView createAuditView(QuerySnapshotForm form)
+    public HttpView<?> createAuditView(QuerySnapshotForm form, BindException errors)
     {
         ViewContext context = form.getViewContext();
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName(), form.getSnapshotName());
@@ -565,7 +565,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     settings.setBaseFilter(filter);
                     settings.setQueryName(DatasetAuditProvider.DATASET_AUDIT_EVENT);
 
-                    return schema.createView(context, settings);
+                    return schema.createView(context, settings, errors);
                 }
                 return null;
             }
@@ -641,18 +641,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private static List<QuerySnapshotDefinition> getDependencies(SnapshotDependency.SourceDataType sourceData)
     {
-        List<QuerySnapshotDefinition> dependencies = new ArrayList<>();
-
-        switch (sourceData.getType())
+        return switch (sourceData.getType())
         {
-            case dataset:
-                dependencies = _datasetDependency.getDependencies(sourceData);
-                break;
-            case participantCategory:
-                dependencies = _categoryDependency.getDependencies(sourceData);
-                break;
-        }
-        return dependencies;
+            case dataset -> _datasetDependency.getDependencies(sourceData);
+            case participantCategory -> _categoryDependency.getDependencies(sourceData);
+        };
     }
 
     private static class QuerySnapshotDependencyThread extends Thread implements ShutdownListener
@@ -708,7 +701,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    // Unfortunately complex generics here. In English, the container key of the outer map is the source
+    // Unfortunately, complex generics here. In English, the container key of the outer map is the source
     // container where the dataset change events are generated. The value is a map from the study that
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
     private static final Map<Container, List<SnapshotDependency.SourceDataType>> _coalesceMap = new HashMap<>();

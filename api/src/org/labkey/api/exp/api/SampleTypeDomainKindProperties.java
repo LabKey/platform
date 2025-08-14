@@ -62,7 +62,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private String labelColor;
     private String metricUnit;
 
-    private int rowId;
+    private long rowId;
     private int domainId;
     private String lsid;
     private List<Integer> idCols;
@@ -128,7 +128,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
         this.rowId = rowId;
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return this.rowId;
     }

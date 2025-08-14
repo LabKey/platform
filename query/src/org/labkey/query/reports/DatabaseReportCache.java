@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -54,7 +55,7 @@ public class DatabaseReportCache
         private ReportCollections(Container c)
         {
             ReportServiceImpl svc = ReportServiceImpl.getInstance();
-            Map<Integer, Report> rowIdMap = new HashMap<>();
+            Map<Integer, Report> rowIdMap = new IntHashMap<>();
             Map<String, Report> entityIdMap = new HashMap<>();
             MultiValuedMap<String, Report> reportKeyMap = new CaseInsensitiveArrayListValuedMap<>(); // Issue 36199: change map to by case insensitive
             List<Report> inheritableReports = new LinkedList<>();
