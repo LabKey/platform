@@ -12,8 +12,6 @@ import java.math.BigDecimal;
 import java.text.Format;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.ontology.Unit.g;
-
 /* CONSIDER: it's tempting to store BigDecimal in memory after parse for math/conversion purposed, even if we store as double in the database */
 
 /*
@@ -128,7 +126,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     public String format(Unit unit)
     {
-        return unit.fromStorageUnitValue(value) + unit.print;
+        return value(unit) + unit.print;
     }
 
     public String format(Format format)
@@ -138,7 +136,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     public String format(Unit unit, Format format)
     {
-        return format.format(unit.fromStorageUnitValue(value)) + unit.print;
+        return format.format(value(unit)) + unit.print;
     }
 
     /**
@@ -235,8 +233,8 @@ public class Quantity extends Number implements Comparable<Quantity>
         String unitPart=null;
         if (split > 0)
         {
-            valuePart = s.substring(0, split);
-            unitPart = s.substring(split+1);
+            valuePart = s.substring(0, split).trim();
+            unitPart = s.substring(split+1).trim();
         }
         else
         {
@@ -264,7 +262,7 @@ public class Quantity extends Number implements Comparable<Quantity>
                     new BigDecimal(valuePart);
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
-                unit = Unit.no_unit;
+                throw new ConversionException("Could not parse unit: " + unitPart);
             if (defaultUnit!=Unit.no_unit && !defaultUnit.kindOfQuantity.accept(unit))
                 throw new ConversionException("Quantity is of wrong type: expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
             return Quantity.of(value, unit);
@@ -375,16 +373,48 @@ public class Quantity extends Number implements Comparable<Quantity>
         @Test
         public void testParse()
         {
-            assertEquals(Quantity.of(1,g), parse("1", g));
-            assertEquals(Quantity.of(1,g), parse("1g"));
-            assertEquals(Quantity.of(1,g), parse("0.001kg"));
+            assertEquals(Quantity.of(1, Unit.g), parse("1", Unit.g));
+            assertEquals(Quantity.of(1, Unit.g), parse("1g"));
+            assertEquals(Quantity.of(1, Unit.g), parse("0.001kg"));
+
+            assertEquals(Quantity.of(1, Unit.count), parse("1"));
+            assertEquals(Quantity.of(1, Unit.count), parse("1 unit"));
+            assertEquals(Quantity.of(0, Unit.count), parse("0 no units"));
+            assertEquals(Quantity.of(0, Unit.count), parse("0count"));
+
             assertEquals(parse("1000mg"), parse("0.001kg"));
+            assertEquals(parse(" 1000mg"), parse("0.001kg"));
+            assertEquals(parse("1000mg "), parse("0.001kg"));
+            assertEquals(parse("1000 mg"), parse("0.001kg"));
+            assertEquals(parse("1000  mg"), parse("0.001kg"));
+        }
 
+        @Test
+        public void testFailToParseNoDigit()
+        {
             failToParse("kg");
-            failToParse("124xyz");
-            failToParse("g100");
+            failToParse("test");
+            failToParse("+");
+            failToParse(".");
+            failToParse("-");
+            failToParse("+e1");
+        }
 
+        @Test
+        public void testFailToParseInvalidUnit()
+        {
+            failToParse("124xyz");
+            failToParse("124 xyz");
+            failToParse("g100");
+        }
+
+        @Test
+        public void testFailToParseCantConvert()
+        {
             failToParse("1g", Unit.l);
+            failToParse("1g", Unit.ml);
+            failToParse("1g", Unit.count);
+            failToParse("1g", Unit.unit);
         }
 
         @Test
@@ -405,10 +435,10 @@ public class Quantity extends Number implements Comparable<Quantity>
             assertTrue(pattern.matcher("-.2").matches());
 
             // no digits
-            assertFalse(pattern.matcher("+").matches());
-            assertFalse(pattern.matcher(".").matches());
-            assertFalse(pattern.matcher("-").matches());
-            assertFalse(pattern.matcher("+e1").matches());
+            assertTrue(pattern.matcher("+").matches());
+            assertTrue(pattern.matcher(".").matches());
+            assertTrue(pattern.matcher("-").matches());
+            assertTrue(pattern.matcher("+e1").matches());
 
             //exponents
             assertEquals(0.1e2, Double.valueOf(".1e2"), 0.0);
@@ -421,6 +451,9 @@ public class Quantity extends Number implements Comparable<Quantity>
             // units
             assertTrue(pattern.matcher("1.23μF").matches());
             assertTrue(pattern.matcher("1.2e3 mℓ").matches());
+            assertTrue(pattern.matcher("test").matches());
+            assertTrue(pattern.matcher("g").matches());
+            assertTrue(pattern.matcher("mℓ").matches());
         }
 
 
@@ -431,12 +464,47 @@ public class Quantity extends Number implements Comparable<Quantity>
             registerQuantityConverters();
 
             q = (Quantity)ConvertUtils.convert("1.234kg", Quantity.Mass_g.class);
-            assertEquals(q.getClass(), Quantity.class);
+            assertEquals(Quantity.class, q.getClass());
             assertEquals(new Quantity(KindOfQuantity.Mass, 1234d), q);
 
             q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_g.class);
-            assertEquals(q.getClass(), Quantity.class);
+            assertEquals(Quantity.class, q.getClass());
             assertEquals(new Quantity(KindOfQuantity.Mass, 1234d), q);
+
+            q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_kg.class);
+            assertEquals(Quantity.class, q.getClass());
+            assertEquals(new Quantity(KindOfQuantity.Mass, 1234000d), q);
+
+            q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_ug.class);
+            assertEquals(Quantity.class, q.getClass());
+            assertEquals(new Quantity(KindOfQuantity.Mass, 0.001234d), q);
+        }
+
+        @Test
+        public void testDoubleValue()
+        {
+            Quantity q = Quantity.of(1, Unit.g);
+            assertEquals(1.0, q.doubleValue(Unit.g), 0.0);
+            assertEquals(0.001, q.doubleValue(Unit.kg), 0.0);
+            assertEquals(1000.0, q.doubleValue(Unit.mg), 0.001);
+            assertEquals(1000000.0, q.doubleValue(Unit.ug), 0.001);
+            assertEquals(1000000000.0, q.doubleValue(Unit.ng), 0.001);
+        }
+
+        @Test
+        public void testFormat()
+        {
+            Quantity q = Quantity.of(1, Unit.g);
+            assertEquals("1.0g", q.format());
+            assertEquals("1.0g", q.format(Unit.g));
+            assertEquals("0.001kg", q.format(Unit.kg));
+            assertEquals("1000.0mg", q.format(Unit.mg));
+
+            // with format
+            Format f = new java.text.DecimalFormat("#.###");
+            assertEquals("1.000g", q.format(f));
+            assertEquals("1.000g", q.format(Unit.g, f));
+            assertEquals("0.001kg", q.format(Unit.kg, f));
         }
     }
 }
