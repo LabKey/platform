@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
@@ -342,6 +343,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     {
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
+                    }
+                    else if (r.getValue() instanceof String strVal)
+                    {
+                        if (!StringUtils.isEmpty(strVal)) // Issue 53498: string value for attachment field is not allowed
+                            throw new ValidationException("Can't upload '" + strVal + "' to field " + r.getKey() + " with type Attachment.");
                     }
                 }
             }

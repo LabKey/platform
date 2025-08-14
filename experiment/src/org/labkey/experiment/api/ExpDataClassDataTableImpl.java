@@ -1315,20 +1315,35 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
             Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
-            row.forEach((name, value) -> {
-                if (isAttachmentProperty(name) && value instanceof AttachmentFile file)
+            for (Map.Entry<String, Object> entry : row.entrySet())
+            {
+                String name = entry.getKey();
+                Object value = entry.getValue();
+                if (isAttachmentProperty(name))
                 {
-                    if (null != file.getFilename())
+                    if (value instanceof AttachmentFile file)
                     {
-                        rowStripped.put(name, file.getFilename());
-                        attachments.put(name, value);
+                        if (null != file.getFilename())//
+                        {
+                            rowStripped.put(name, file.getFilename());
+                            attachments.put(name, value);
+                        }
                     }
+                    else if (value instanceof String strVal)
+                    {
+                        if (!StringUtils.isEmpty(strVal)) // Issue 53498: string value for attachment field is not allowed
+                            throw new ValidationException("Can't upload '" + strVal + "' to field " + name + " with type Attachment.");
+                        else
+                            rowStripped.put(name, value); // if blank, remove attachment
+                    }
+                    else
+                        rowStripped.put(name, value); // if null, remove attachment
                 }
                 else
                 {
                     rowStripped.put(name, value);
                 }
-            });
+            }
 
             for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
             {
