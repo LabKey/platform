@@ -3,11 +3,6 @@ package org.labkey.api.util;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.Objects;
-
 /** Class to help with dealing with Object that may represent an integer number (char,short,int,long)
  * Unfortunately, Number does not help with detecting integer/non-integer types, so this class only handles Object
  * instances that have corresponding to the primitive types.  {@code boolean}, {@code byte}, {@code char},
