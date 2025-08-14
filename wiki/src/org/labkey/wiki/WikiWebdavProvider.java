@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * WikiWebdavProvider is NOT used. It was previously registered to provide a WebDAV @wiki node but was unregistered in
@@ -526,8 +527,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
             // Properties contains the user when search is indexing the wiki
             User user = null;
-            if (_properties.get("createdby") instanceof Number)
-                user = UserManager.getUser(asInteger(_properties.get("createdby")));
+            if (asIntegerElseNull(_properties.get("createdby")) instanceof Integer createdBy)
+                user = UserManager.getUser(asInteger(createdBy));
 
             return user;
         }
@@ -546,8 +547,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
             // Properties contains the user when search is indexing the wiki
             User user = null;
-            if (_properties.get("modifiedBy") instanceof Number)
-                user = UserManager.getUser(asInteger(_properties.get("modifiedBy")));
+            if (asIntegerElseNull(_properties.get("modifiedBy")) instanceof Integer modifiedBy)
+                user = UserManager.getUser(modifiedBy);
 
             return user;
         }
@@ -665,8 +666,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 return _wiki.getCreated().getTime();
 
             // Properties contains the created date when search is indexing the wiki
-            if (_properties.get("created") instanceof Number)
-                return ((Number)_properties.get("created")).longValue();
+            if (_properties.get("created") instanceof Number created)
+                return created.longValue();
 
             return Long.MIN_VALUE;
         }
@@ -679,8 +680,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 return v.getCreated().getTime();
 
             // Properties contains the modified date when search is indexing the wiki
-            if (_properties.get("modified") instanceof Number)
-                return ((Number)_properties.get("modified")).longValue();
+            if (_properties.get("modified") instanceof Number modified)
+                return modified.longValue();
 
             return Long.MIN_VALUE;
         }

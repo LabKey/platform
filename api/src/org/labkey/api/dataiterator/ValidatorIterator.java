@@ -156,7 +156,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
             if (!_data.next())
                 return false;
 
-            int rowNum = _data.get(0) instanceof Integer ? (asInteger(_data.get(0))) : -1;
+            int rowNum = asInteger(_data.get(0));
 
             // first the column validators
             for (int i=1 ; i<_validators.size() ; i++)

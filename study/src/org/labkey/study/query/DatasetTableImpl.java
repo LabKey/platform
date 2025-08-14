@@ -117,6 +117,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
@@ -922,9 +923,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             Object value = getValue(ctx);
             HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
-            if (value instanceof Number numValue)
+            if (asLongElseNull(value) instanceof Long numValue)
             {
-                DataState state = getStateCache(ctx).get(numValue.longValue());
+                DataState state = getStateCache(ctx).get(numValue);
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(PageFlowUtil.popupHelp(HtmlString.of(state.getDescription()), "QC State " + state.getLabel()));
             }

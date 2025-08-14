@@ -3,7 +3,11 @@ package org.labkey.api.util;
 import org.junit.Assert;
 import org.junit.Test;
 
-/** Class to help with dealing with Object that may represent an integer number (char,short,int,long)
+/**
+ * This Class to help with dealing with Object that may represent an integer number (char,short,int,long).  It
+ * is meant to fill in the small gap between Java (e.g casts and instanceof) and ConvertUtils.  Hopefully, this
+ * class makes it just a little easier to deal with Integer valued Numbers.
+ * <br>
  * Unfortunately, Number does not help with detecting integer/non-integer types, so this class only handles Object
  * instances that have corresponding to the primitive types.  {@code boolean}, {@code byte}, {@code char},
  * {@code short}, {@code int}, {@code long}, {@code float}, and {@code double})
@@ -46,24 +50,28 @@ public class IntegerUtils
         return Integer.valueOf((int)l);
     }
 
-    /** Return an Integral value as Integer. Return no if not Integral or cannot be represented as an Integer
+    /** Return an Integral value as Integer. Return null if not Integral or cannot be represented as an Integer
      * NOTE: this method never throws, so any IF using this method should usually be accompanied by an ELSE.
+     * NOTE: This method returns Object so it can be used with instance of as in the example
+     *<br>
      * Usages:
-     *  {@code  if (null != (i = asIntegerOrNull()))
+     *  {@code  if (null != (i = (Integer)asIntegerElseNull()))
      *      return i;
      *  else
      *      throw ..
      *  <br>
-     *  if (asIntegerOrNull() instanceof Integer i))
+     *  if (asIntegerElseNull() instanceof Integer i))
      *      return i
      *  else
      *      throw .. }
      */
-    public static Integer asIntegerOrNull(Object o)
+    public static Object asIntegerElseNull(Object o)
     {
+        if (null == o)
+            return null;
         final Class<?> c = o.getClass();
         if (c == Integer.class)
-            return (Integer)o;
+            return o;
         if (c == Byte.class || c == Short.class)
             return Integer.valueOf(((Number)o).intValue());
         if (c == Long.class)
@@ -74,11 +82,28 @@ public class IntegerUtils
         return null;
     }
 
-    public static Long asLongOrNull(Object o)
+    /** Return an Integral value as Long. Return null if not Integral.
+     * NOTE: this method never throws, so any IF using this method should usually be accompanied by an ELSE.
+     * NOTE: This method returns Object so it can be used with instance of as in the example
+     *<br>
+     * Usages:
+     *  {@code  if (null != (i = (Long)asIntegerElseNull()))
+     *      return i;
+     *  else
+     *      throw ..
+     *  <br>
+     *  if (asIntegerElseNull() instanceof Long i))
+     *      return i
+     *  else
+     *      throw .. }
+     */
+    public static Object asLongElseNull(Object o)
     {
+        if (null == o)
+            return null;
         final Class<?> c = o.getClass();
         if (c == Long.class)
-            return (Long)o;
+            return o;
         if (c == Byte.class || c == Short.class || c==Integer.class)
             return Long.valueOf(((Number)o).longValue());
         return null;
@@ -108,6 +133,7 @@ public class IntegerUtils
             return ((Number)a).longValue() == ((Number)b).longValue();
         return false;
     }
+
 
     public static class TestCase extends Assert
     {

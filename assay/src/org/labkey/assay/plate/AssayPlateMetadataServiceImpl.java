@@ -121,7 +121,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
-import static org.labkey.api.util.IntegerUtils.asLong;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
+import static org.labkey.api.util.IntegerUtils.integerEquals;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -371,8 +372,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (var row : rows)
         {
             var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
-            if (plateId instanceof Number)
-                plateId = asLong(plateId);
+            // plateMap contains Strings and Longs
+            if (asLongElseNull(plateId) instanceof Long l)
+                plateId = l;
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
@@ -415,8 +417,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     Object plate = results.getObject(plateFieldKey);
                     // plateMap contains Strings and Longs
-                    if (plate instanceof Number)
-                        plate = asLong(plate);
+                    if (asLongElseNull(plate) instanceof Long l)
+                        plate = l;
                     if (plateMap.containsKey(plate) && !incomingPlates.contains(plate))
                     {
                         Map<String, Object> row = new HashMap<>();
@@ -614,7 +616,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     {
                         if (k instanceof Number numberKey)
                         {
-                            if (null != plate.getRowId() && plate.getRowId().longValue() == numberKey.longValue())
+                            if (null != plate.getRowId() && integerEquals(plate.getRowId(), numberKey))
                                 return plate.getRowId();
                         }
                         else if (k instanceof String stringKey)
@@ -1262,9 +1264,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             {
                 if (importAlias.contains(entry.getKey()))
                 {
-                    if (entry.getValue() instanceof Number)
+                    if (asLongElseNull(entry.getValue()) instanceof Long stateRowId)
                     {
-                        var stateRowId = asLong(entry.getValue());
                         DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                         if (state == null)
                             throw new ValidationException(String.format("No data states for the rowID %d was found.", stateRowId));

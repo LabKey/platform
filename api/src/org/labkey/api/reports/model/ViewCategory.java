@@ -31,7 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 public class ViewCategory extends Entity implements Comparable<ViewCategory>
 {
@@ -169,21 +169,21 @@ public class ViewCategory extends Entity implements Comparable<ViewCategory>
         category.setContainer(c.getId());
 
         Object row = info.opt("rowid");
-        if (row instanceof Integer || row instanceof Long)
-            category.setRowId(asInteger(row));
+        if (asIntegerElseNull(row) instanceof Integer i)
+            category.setRowId(i);
 
         Object label = info.opt("label");
         if (label instanceof String)
             category.setLabel((String)label);
 
         Object displayOrder = info.opt("displayOrder");
-        if (displayOrder instanceof Integer || displayOrder instanceof Long)
-            category.setDisplayOrder(asInteger(displayOrder));
+        if (asIntegerElseNull(displayOrder) instanceof Integer i)
+            category.setDisplayOrder(i);
 
         Object parent = info.opt("parent");
-        if (parent instanceof Integer || parent instanceof Long)
+        if (asIntegerElseNull(parent) instanceof Integer i)
         {
-            category.setParent(asInteger(parent));
+            category.setParent(i);
         }
         return category;
     }

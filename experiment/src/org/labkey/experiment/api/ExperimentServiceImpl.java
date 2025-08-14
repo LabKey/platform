@@ -310,10 +310,12 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
@@ -1964,8 +1966,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (sampleIdentifier == null)
             return null;
 
-        if (sampleIdentifier instanceof Number rowId)
-            return materialCache.computeIfAbsent(asLong(rowId), id -> getExpMaterial(container, user, id, sampleType));
+        if (asLongElseNull(sampleIdentifier) instanceof Long rowId)
+            return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
 
         if (sampleIdentifier instanceof ExpMaterial m)
         {
@@ -4721,9 +4723,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         String key = entry.getKey();
                         Object value = entry.getValue();
-                        if ((value instanceof Integer || value instanceof Long) && linkedColumnNames.contains(key))
+                        if (asIntegerElseNull(value) instanceof Integer valueInt && linkedColumnNames.contains(key))
                         {
-                            linkedDatasetsBySelectedRow.add(ExperimentService.asInteger(value));
+                            linkedDatasetsBySelectedRow.add(valueInt);
                         }
                     }
                 }

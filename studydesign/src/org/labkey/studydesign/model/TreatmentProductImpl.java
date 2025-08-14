@@ -24,7 +24,7 @@ import org.labkey.api.util.Pair;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * User: cnathe
@@ -192,10 +192,10 @@ public class TreatmentProductImpl implements TreatmentProduct
         //treatmentProduct.setDose(o.getString("Dose"));
         //treatmentProduct.setRoute(o.getString("Route"));
         treatmentProduct.setContainer(container);
-        if (o.has("ProductId") && (o.get("ProductId") instanceof Integer || o.get("ProductId") instanceof Long))
-            treatmentProduct.setProductId(asInteger(o.get("ProductId")));
-        if (o.has("TreatmentId") && (o.get("TreatmentId") instanceof Integer || o.get("TreatmentId") instanceof Long))
-            treatmentProduct.setTreatmentId(asInteger(o.get("TreatmentId")));
+        if (o.has("ProductId") && asIntegerElseNull(o.get("ProductId")) instanceof Integer productId)
+            treatmentProduct.setProductId(productId);
+        if (o.has("TreatmentId") && asIntegerElseNull(o.get("TreatmentId")) instanceof Integer treatmentId)
+            treatmentProduct.setTreatmentId(treatmentId);
         if (o.has("RowId"))
             treatmentProduct.setRowId(o.getInt("RowId"));
         if (o.has("DoseAndRoute"))

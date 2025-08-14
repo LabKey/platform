@@ -60,6 +60,7 @@ import java.util.Map;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 
 /**
@@ -340,15 +341,14 @@ public class CachedResultSet implements ResultSet, TableResultSet
     {
         if (null == o)
             return 0;
-        if (o instanceof Integer || o instanceof Short || o instanceof Byte)
-            return ((Number) o).intValue();
-        if (o instanceof Long)
+        try
         {
-            long l = (Long) o;
-            if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE)
-                return (int)l;
+            return asInteger(o);
         }
-        throwConversionError("Can't convert '" + o.getClass() + "' to int");
+        catch (Exception x)
+        {
+            throwConversionError("Can't convert '" + o.getClass() + "' to int");
+        }
         return 0;
     }
 

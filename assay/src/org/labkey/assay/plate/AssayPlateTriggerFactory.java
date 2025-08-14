@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.util.IntegerUtils.asLong;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public class AssayPlateTriggerFactory implements TriggerFactory
 {
@@ -178,8 +178,8 @@ public class AssayPlateTriggerFactory implements TriggerFactory
                 if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
                 {
                     Object o = oldRow.get("RowId");
-                    if (o instanceof Number num)
-                        _excludedRows.add(asLong(num));
+                    if (asLongElseNull(o) instanceof Long num)
+                        _excludedRows.add(num);
                 }
             }
         }

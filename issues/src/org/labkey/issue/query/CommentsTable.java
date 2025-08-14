@@ -43,7 +43,7 @@ import org.labkey.issue.model.IssueManager;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * User: adam
@@ -153,9 +153,9 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         private String getIssueTitle(RenderContext ctx)
         {
             Object o = getValue(ctx);
-            if (o instanceof Number)
+            if (asIntegerElseNull(o) instanceof Integer issueId)
             {
-                IssueObject issue = IssueManager.getIssue(_container, _user, asInteger(o));
+                IssueObject issue = IssueManager.getIssue(_container, _user, issueId);
                 if (issue != null)
                 {
                     return issue.getTitle();

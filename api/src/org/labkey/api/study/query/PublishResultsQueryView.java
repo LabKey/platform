@@ -104,6 +104,7 @@ import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public class PublishResultsQueryView extends QueryView
 {
@@ -748,8 +749,8 @@ public class PublishResultsQueryView extends QueryView
                 if (sampleCol != null)
                 {
                     Object sampleId = sampleCol.getValue(ctx);
-                    if (sampleId instanceof Number)
-                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched(asLong(sampleId));
+                    if (asLongElseNull(sampleId) instanceof Long sampleIdNum)
+                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched(sampleIdNum);
                 }
             }
 

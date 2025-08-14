@@ -51,7 +51,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 
 public class IssueObject extends Entity implements Serializable, Cloneable, Issue
@@ -639,12 +639,12 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         {
             if (prop.getKey().equalsIgnoreCase("created") && prop.getValue() instanceof Date)
                 setCreated((Date)prop.getValue());
-            else if (prop.getKey().equalsIgnoreCase("createdBy") && prop.getValue() instanceof Number)
-                setCreatedBy(asInteger(prop.getValue()));
+            else if (prop.getKey().equalsIgnoreCase("createdBy") && asIntegerElseNull(prop.getValue()) instanceof Integer i)
+                setCreatedBy(i);
             else if (prop.getKey().equalsIgnoreCase("modified") && prop.getValue() instanceof Date)
                 setModified((Date)prop.getValue());
-            else if (prop.getKey().equalsIgnoreCase("modifiedBy") && prop.getValue() instanceof Number)
-                setModifiedBy(asInteger(prop.getValue()));
+            else if (prop.getKey().equalsIgnoreCase("modifiedBy") && asIntegerElseNull(prop.getValue()) instanceof Integer i)
+                setModifiedBy(i);
         }
     }
 
