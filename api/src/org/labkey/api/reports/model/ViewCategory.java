@@ -31,7 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class ViewCategory extends Entity implements Comparable<ViewCategory>
 {

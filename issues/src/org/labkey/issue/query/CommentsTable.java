@@ -43,7 +43,7 @@ import org.labkey.issue.model.IssueManager;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * User: adam

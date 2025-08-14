@@ -40,7 +40,7 @@ import org.labkey.api.util.HtmlString;
 import java.util.Arrays;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Created by Joe on 8/19/2014.

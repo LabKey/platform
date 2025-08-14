@@ -24,7 +24,7 @@ package org.labkey.api.util;
 
 import java.io.Serializable;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Parses a string-based version number into major, minor and revision numbers

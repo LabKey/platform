@@ -97,8 +97,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.DIV;

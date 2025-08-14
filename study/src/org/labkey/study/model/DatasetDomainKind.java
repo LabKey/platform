@@ -80,7 +80,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
 
 public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomainKindProperties>

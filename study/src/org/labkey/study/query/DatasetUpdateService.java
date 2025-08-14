@@ -103,7 +103,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 import static org.labkey.api.gwt.client.AuditBehaviorType.NONE;
 

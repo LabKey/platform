@@ -122,7 +122,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 

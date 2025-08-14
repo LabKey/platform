@@ -99,7 +99,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.

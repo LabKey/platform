@@ -69,8 +69,8 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 public class DataGenerator<T extends DataGenerator.Config> implements ContainerUser
 {

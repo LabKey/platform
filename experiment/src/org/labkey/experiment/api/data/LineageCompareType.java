@@ -10,7 +10,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import java.util.Collection;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * <code>

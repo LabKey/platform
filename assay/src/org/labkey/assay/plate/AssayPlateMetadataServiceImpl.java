@@ -121,7 +121,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
