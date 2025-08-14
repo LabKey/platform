@@ -1,6 +1,7 @@
 package org.labkey.api.ontology;
 
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -15,6 +16,10 @@ public enum Unit
     count(KindOfQuantity.Count, null, 1.0, "",
             Quantity.class,
             "count", "count"),
+
+    unit(KindOfQuantity.Count, null, 1.0, "",
+            Quantity.class,
+            "unit", "units"),
 
     // UCUM prefers "l", but "L" is also common and already supported by inventory (sorry Lambert)
     l(KindOfQuantity.Volume, null, 10e0, "l",
@@ -74,6 +79,7 @@ public enum Unit
 
     @Getter
     final @NotNull KindOfQuantity kindOfQuantity;
+    @Getter
     final @NotNull Unit base;
     final @NotNull String print;
     // this is not a 'real' class, but is used for ConvertHelper binding
@@ -96,6 +102,16 @@ public enum Unit
         this.singular = singular;
         this.plural = plural;
         this.otherNames = null==otherNames || otherNames.length==0 ? null : otherNames;
+    }
+
+    public boolean isBase()
+    {
+        return this == base;
+    }
+
+    public boolean isCompatible(Unit other)
+    {
+        return other.base == base;
     }
 
     public double toBaseUnitValue(double v)
@@ -145,6 +161,8 @@ public enum Unit
 
     public static Unit fromName(String unitName)
     {
+        if (StringUtils.isEmpty(unitName))
+            return null;
         Unit unit = unitMap.get(unitName);
         if (null == unit)
             unit = unitMap.get(unitName.toLowerCase());
@@ -161,7 +179,7 @@ public enum Unit
         return (x) -> to.fromBaseUnitValue(from.toBaseUnitValue(x));
     }
 
-    static double convert(double value, Unit from, Unit to)
+    public static double convert(double value, Unit from, Unit to)
     {
         if (from.base != to.base)
             throw new IllegalArgumentException("Can't convert " + from.name() + " to " + to.name());
