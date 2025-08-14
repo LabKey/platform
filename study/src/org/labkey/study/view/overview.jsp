@@ -311,7 +311,7 @@
                 if (selectedCohort != null && cohortFilter != null)
                     cohortFilter.addURLParameters(study, defaultReportURL, DatasetQueryView.DATAREGION);
                 if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                    defaultReportURL.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                    defaultReportURL.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Long.parseLong(bean.qcStates.getFormValue())).getLabel());
                 // Public States case
                 if (bean.qcStates != null && QCStateSet.getPublicStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, DatasetQueryView.DATAREGION, container);
@@ -364,7 +364,7 @@
                     if (selectedCohort != null)
                         cohortFilter.addURLParameters(study, datasetLink, DatasetQueryView.DATAREGION);
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                        datasetLink.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                        datasetLink.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Long.parseLong(bean.qcStates.getFormValue())).getLabel());
 
                     innerHtml = HtmlStringBuilder.of(simpleLink(innerHtml, datasetLink));
                 }

@@ -293,8 +293,8 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            if (value instanceof Integer)
-                property.floatValue = ((Integer) value).doubleValue();
+            if (value instanceof Integer || value instanceof Long)
+                property.floatValue = ((Number) value).doubleValue();
             else if (null != value)
                 property.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
         }

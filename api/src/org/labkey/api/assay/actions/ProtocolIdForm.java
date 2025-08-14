@@ -41,7 +41,7 @@ public class ProtocolIdForm extends ViewForm
     private AssayProvider _provider;
 
     /** If no rowId is specified, we attempt to find the assay definition based on name */
-    private Integer _rowId;
+    private Long _rowId;
     private String _assayName;
     private String _uploadAttemptID;
     private String _providerName;
@@ -66,12 +66,12 @@ public class ProtocolIdForm extends ViewForm
         _providerName = providerName;
     }
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }

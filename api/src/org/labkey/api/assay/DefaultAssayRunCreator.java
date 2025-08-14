@@ -31,6 +31,7 @@ import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -123,7 +124,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     @Override
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId) throws ExperimentException, ValidationException
     {
         return saveExperimentRun(context, batchId, false);
     }
@@ -137,9 +138,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      */
     @Override
     public Pair<ExpExperiment, ExpRun> saveExperimentRun(
-        AssayRunUploadContext<ProviderType> context,
-        @Nullable Integer batchId,
-        boolean forceAsync
+            AssayRunUploadContext<ProviderType> context,
+            @Nullable Long batchId,
+            boolean forceAsync
     ) throws ExperimentException, ValidationException
     {
         ExpExperiment exp = null;
@@ -304,7 +305,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         // Cache of resolved alternate lookup keys -> rowId
         final RemapCache cache = new RemapCache(true);
         // Cache of rowId -> ExpMaterial
-        final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+        final Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
 
         addInputMaterials(context, inputMaterials, cache, materialCache);
         addInputDatas(context, inputDatas);
@@ -420,7 +421,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
-            Integer reRunId = context.getReRunId();
+            var reRunId = context.getReRunId();
             if (reRunId != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
                 final ExpRun replacedRun = ExperimentService.get().getExpRun(reRunId);
@@ -670,10 +671,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     protected void addInputMaterials(
-        AssayRunUploadContext<ProviderType> context,
-        Map<ExpMaterial, String> inputMaterials,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialCache
+            AssayRunUploadContext<ProviderType> context,
+            Map<ExpMaterial, String> inputMaterials,
+            @NotNull RemapCache cache,
+            @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
         addMaterials(context, inputMaterials, context.getInputMaterials(), null, cache, materialCache);
@@ -885,7 +886,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayRunUploadContext<ProviderType> context,
         Map<ExpMaterial, String> outputMaterials,
         @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialCache
+        @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
         addMaterials(context, outputMaterials, context.getOutputMaterials(), null, cache, materialCache);
@@ -897,7 +898,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         @NotNull Map<?, String> unresolved,
         @Nullable ExpSampleType sampleType,
         @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialCache
+        @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
         for (Map.Entry<?, String> entry : unresolved.entrySet())

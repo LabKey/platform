@@ -39,11 +39,11 @@ import static java.util.Collections.emptySet;
 
 public class AssaySampleLookupContext
 {
-    private final Set<Integer> _runIds;
+    private final Set<Long> _runIds;
     private final Map<FieldKey, Boolean> _sampleLookups;
 
     /** Structure representing a material and its designated role. */
-    public record MaterialInput(int materialRowId, String role) {}
+    public record MaterialInput(long materialRowId, String role) {}
 
     /** Structure containing the resolved metadata for an assay "sample lookup". */
     public record SampleLookup(
@@ -61,7 +61,7 @@ public class AssaySampleLookupContext
         this(emptySet());
     }
 
-    public AssaySampleLookupContext(Collection<Integer> runIds)
+    public AssaySampleLookupContext(Collection<Long> runIds)
     {
         _runIds = new HashSet<>(runIds);
         _sampleLookups = new HashMap<>();
@@ -179,7 +179,7 @@ public class AssaySampleLookupContext
         // material inputs are retained regardless of the current user's permissions.
         var serviceUser = User.getAdminServiceUser();
 
-        for (Integer expRunRowId : _runIds)
+        for (var expRunRowId : _runIds)
         {
             var run = ExperimentService.get().getExpRun(expRunRowId);
             if (run == null)
@@ -224,7 +224,7 @@ public class AssaySampleLookupContext
 
     private void syncLineageForRun(
         User user,
-        int expRunRowId,
+        long expRunRowId,
         Map<TableInfoKey, List<SampleLookup>> sampleLookups,
         List<ExpProtocolApplication> protocolApplications
     )
@@ -255,10 +255,10 @@ public class AssaySampleLookupContext
         }
     }
 
-    private Map<String, Set<Integer>> getInputGroups(Set<MaterialInput> inputs, Set<String> inputLineageRoles)
+    private Map<String, Set<Long>> getInputGroups(Set<MaterialInput> inputs, Set<String> inputLineageRoles)
     {
-        var groups = new LinkedHashMap<String, Set<Integer>>();
-        var seen = new HashSet<Integer>();
+        var groups = new LinkedHashMap<String, Set<Long>>();
+        var seen = new HashSet<Long>();
 
         var sortedInputs = new ArrayList<>(inputs);
         sortedInputs.sort(new MaterialInputRoleComparator(inputLineageRoles));
@@ -292,14 +292,14 @@ public class AssaySampleLookupContext
     }
 
     private Pair<Boolean, Set<MaterialInput>> computeMaterialInputs(
-        int expRunRowId,
+        long expRunRowId,
         Map<TableInfoKey, List<SampleLookup>> sampleLookups,
         Set<String> inputLineageRoles
     )
     {
         var currentInputs = getCurrentMaterialInputs(expRunRowId);
         var newInputs = getNewMaterialInputs(sampleLookups, expRunRowId);
-        var seen = new HashSet<Integer>();
+        var seen = new HashSet<Long>();
 
         for (var current : currentInputs)
         {
@@ -319,7 +319,7 @@ public class AssaySampleLookupContext
         return Pair.of(currentInputs.equals(newInputs), newInputs);
     }
 
-    private Set<MaterialInput> getCurrentMaterialInputs(int expRunRowId)
+    private Set<MaterialInput> getCurrentMaterialInputs(long expRunRowId)
     {
         var sql = new SQLFragment("""
             SELECT MI.MaterialId AS MaterialRowId, MI.Role AS MaterialInputRole
@@ -331,7 +331,7 @@ public class AssaySampleLookupContext
         return getMaterialInputs(new SqlSelector(ExperimentService.get().getSchema(), sql));
     }
 
-    private Set<MaterialInput> getNewMaterialInputs(Map<TableInfoKey, List<SampleLookup>> sampleLookups, int expRunRowId)
+    private Set<MaterialInput> getNewMaterialInputs(Map<TableInfoKey, List<SampleLookup>> sampleLookups, long expRunRowId)
     {
         if (sampleLookups.isEmpty())
             return new HashSet<>();
@@ -362,7 +362,7 @@ public class AssaySampleLookupContext
         return inputs;
     }
 
-    private SQLFragment getLookupColumnSql(TableInfoKey tableInfoKey, SampleLookup sampleLookup, int expRunRowId)
+    private SQLFragment getLookupColumnSql(TableInfoKey tableInfoKey, SampleLookup sampleLookup, long expRunRowId)
     {
         // Check invariants
         if (sampleLookup.domainProperty == null)

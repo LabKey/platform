@@ -138,7 +138,7 @@ public class PlateDataStateManager implements DataStateHandler
     }
 
     @Nullable
-    public DataState getStateForRowId(Container container, Integer rowId)
+    public DataState getStateForRowId(Container container, Long rowId)
     {
         return DataStateManager.getInstance().getStateForRowId(getDataStateContainer(container), rowId);
     }

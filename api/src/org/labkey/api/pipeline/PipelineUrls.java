@@ -45,7 +45,7 @@ public interface PipelineUrls extends UrlProvider
 
     ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl);
 
-    ActionURL statusDetails(Container container, int jobRowId);
+    ActionURL statusDetails(Container container, long jobRowId);
 
     ActionURL statusList(Container container);
 }

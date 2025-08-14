@@ -3,6 +3,7 @@ package org.labkey.specimen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -489,7 +490,7 @@ public class SpecimenManager
         List<Vial> vials = getVials(container, user, filter);
         if (vials.size() != vialRowIds.size())
         {
-            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
+            List<Long> unmatchedRowIds = new LongArrayList(vialRowIds);
             for (Vial vial : vials)
             {
                 unmatchedRowIds.remove(vial.getRowId());

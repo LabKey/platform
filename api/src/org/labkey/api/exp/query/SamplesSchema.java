@@ -191,7 +191,7 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
         StudyPublishService studyPublishService = StudyPublishService.get();
         if (withLinkToStudyColumns && studyPublishService != null)
         {
-            int rowId = st.getRowId();
+            long rowId = st.getRowId();
             String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
             studyPublishService.addLinkedToStudyColumns((AbstractTableInfo)tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
         }

@@ -110,9 +110,9 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     private Integer _participantCohortDatasetId;
     private boolean _manualCohortAssignment;
     private String _lsid;
-    private Integer _defaultPipelineQCState;
-    private Integer _defaultPublishDataQCState;
-    private Integer _defaultDirectEntryQCState;
+    private Long _defaultPipelineQCState;
+    private Long _defaultPublishDataQCState;
+    private Long _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault = true;
     private boolean _blankQCStatePublic = false;
     private boolean _advancedCohorts;
@@ -441,32 +441,32 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
         _lsid = lsid;
     }
 
-    public Integer getDefaultPipelineQCState()
+    public Long getDefaultPipelineQCState()
     {
         return _defaultPipelineQCState;
     }
 
-    public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
+    public void setDefaultPipelineQCState(Long defaultPipelineQCState)
     {
         _defaultPipelineQCState = defaultPipelineQCState;
     }
 
-    public Integer getDefaultPublishDataQCState()
+    public Long getDefaultPublishDataQCState()
     {
         return _defaultPublishDataQCState;
     }
 
-    public void setDefaultPublishDataQCState(Integer defaultPublishDataQCState)
+    public void setDefaultPublishDataQCState(Long defaultPublishDataQCState)
     {
         _defaultPublishDataQCState = defaultPublishDataQCState;
     }
 
-    public Integer getDefaultDirectEntryQCState()
+    public Long getDefaultDirectEntryQCState()
     {
         return _defaultDirectEntryQCState;
     }
 
-    public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
+    public void setDefaultDirectEntryQCState(Long defaultDirectEntryQCState)
     {
         _defaultDirectEntryQCState = defaultDirectEntryQCState;
     }

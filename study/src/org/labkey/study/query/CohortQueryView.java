@@ -36,6 +36,8 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
     boolean canEditDelete;
@@ -116,7 +118,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         @Override
         public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            Integer rowId = (Integer)rowIdColumn.getValue(ctx);
+            Integer rowId = asInteger(rowIdColumn.getValue(ctx));
             Container folder = ContainerManager.getForId((String) folderColumn.getValue(ctx));
 
             if (folder != null)

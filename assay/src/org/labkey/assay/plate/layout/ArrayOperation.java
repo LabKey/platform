@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.layout;
 
+import org.apache.commons.collections4.MapUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -29,7 +30,7 @@ public class ArrayOperation implements LayoutOperation
     }
 
     private final Layout _layout;
-    private Map<Integer, WellLayout.Well> _sampleWells;
+    private Map<Long, WellLayout.Well> _sampleWells;
 
     public ArrayOperation(@NotNull Layout layout)
     {
@@ -41,11 +42,11 @@ public class ArrayOperation implements LayoutOperation
     {
         int sampleIndex = 0;
         List<WellLayout> layouts = new ArrayList<>();
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap = new HashMap<>();
-        Map<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>(_sampleWells);
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap = new HashMap<>();
+        Map<Long, WellLayout.Well> sampleWells = new LinkedHashMap<>(_sampleWells);
 
-        List<Integer> sampleIds = new ArrayList<>();
-        for (Map.Entry<Integer, WellLayout.Well> entry : sampleWells.entrySet())
+        List<Long> sampleIds = new ArrayList<>();
+        for (Map.Entry<Long, WellLayout.Well> entry : sampleWells.entrySet())
             sampleIds.add(entry.getKey());
 
         List<WellLayout> targetLayouts = new ArrayList<>();
@@ -55,7 +56,7 @@ public class ArrayOperation implements LayoutOperation
         // Does this need to be a choice? It's difficult to grasp.
         if (context.options().isFillExistingWells() && context.targetPlates() != null)
         {
-            Map<Integer, Long> plateRunCounts = PlateManager.get().getPlateRunCounts(context.container(), context.user(), context.targetPlates());
+            Map<Long, Long> plateRunCounts = PlateManager.get().getPlateRunCounts(context.container(), context.user(), context.targetPlates());
 
             for (Plate plate : context.targetPlates())
             {
@@ -173,7 +174,7 @@ public class ArrayOperation implements LayoutOperation
         return null;
     }
 
-    private Pair<Integer, WellLayout> executeRowColumnLayout(WellLayout target, Map<Integer, WellLayout.Well> sampleWells, List<Integer> sampleIds, int sampleIndex)
+    private Pair<Integer, WellLayout> executeRowColumnLayout(WellLayout target, Map<Long, WellLayout.Well> sampleWells, List<Long> sampleIds, int sampleIndex)
     {
         PlateType targetPlateType = target.getPlateType();
         boolean isColumnLayout = Layout.Column.equals(_layout);
@@ -221,9 +222,9 @@ public class ArrayOperation implements LayoutOperation
     private Pair<Integer, WellLayout> executeTargetPlateLayout(
         ExecutionContext context,
         WellLayout target,
-        List<Integer> sampleIds,
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
-        Map<Integer, WellLayout.Well> sampleWells,
+        List<Long> sampleIds,
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap,
+        Map<Long, WellLayout.Well> sampleWells,
         int sampleIndex
     )
     {
@@ -241,7 +242,7 @@ public class ArrayOperation implements LayoutOperation
                 int colIdx = isColumnLayout ? outerIdx : innerIdx;
                 int wellIdx = rowIdx * columnCount + colIdx;
                 WellData wellData = plateWellData.get(wellIdx);
-                Integer wellSampleId = wellData.getSampleId();
+                Long wellSampleId = wellData.getSampleId();
                 if (wellSampleId == null)
                 {
                     boolean isSampleOrReplicate = wellData.isSampleOrReplicate();
@@ -252,14 +253,14 @@ public class ArrayOperation implements LayoutOperation
                         // Fill remaining group wells
                         if (isSampleOrReplicate && groupKey != null && groupSampleMap.containsKey(groupKey))
                         {
-                            Integer sampleId = groupSampleMap.get(groupKey);
+                            Long sampleId = MapUtils.getLong(groupSampleMap,groupKey);
                             WellLayout.Well sourceWell = sampleWells.get(sampleId);
                             target.setWell(wellData.getRow(), wellData.getCol(), sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx(), sampleId);
                         }
                     }
                     else if (isSampleOrReplicate)
                     {
-                        Integer sampleId = sampleIds.get(sampleIndex);
+                        Long sampleId = sampleIds.get(sampleIndex);
 
                         if (groupKey != null)
                         {
@@ -284,7 +285,7 @@ public class ArrayOperation implements LayoutOperation
                     }
                     else if (wellData.getType() == null)
                     {
-                        Integer sampleId = sampleIds.get(sampleIndex);
+                        Long sampleId = sampleIds.get(sampleIndex);
                         sampleIndex++;
 
                         WellLayout.Well sourceWell = sampleWells.get(sampleId);
@@ -300,9 +301,9 @@ public class ArrayOperation implements LayoutOperation
     private static Pair<Integer, WellLayout> executeTemplateLayout(
         ExecutionContext context,
         WellLayout target,
-        List<Integer> sampleIds,
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
-        Map<Integer, WellLayout.Well> sampleWells,
+        List<Long> sampleIds,
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap,
+        Map<Long, WellLayout.Well> sampleWells,
         int sampleIndex
     )
     {
@@ -316,14 +317,14 @@ public class ArrayOperation implements LayoutOperation
                 // Fill remaining group wells
                 if (isSampleOrReplicate && groupKey != null && groupSampleMap.containsKey(groupKey))
                 {
-                    Integer sampleId = groupSampleMap.get(groupKey);
+                    Long sampleId = groupSampleMap.get(groupKey);
                     WellLayout.Well sourceWell = sampleWells.get(sampleId);
                     target.setWell(wellData.getRow(), wellData.getCol(), sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx(), sampleId);
                 }
             }
             else if (isSampleOrReplicate)
             {
-                Integer sampleId = sampleIds.get(sampleIndex);
+                Long sampleId = sampleIds.get(sampleIndex);
 
                 if (groupKey != null)
                 {
@@ -354,13 +355,13 @@ public class ArrayOperation implements LayoutOperation
     private static void populateGroupSampleMap(
         ExecutionContext context,
         Plate plate,
-        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
-        Map<Integer, WellLayout.Well> sampleWells
+        Map<Pair<WellGroup.Type, String>, Long> groupSampleMap,
+        Map<Long, WellLayout.Well> sampleWells
     )
     {
         for (WellData wellData : context.wellDataCache().getData(plate.getRowId(), true, false))
         {
-            Integer sampleId = wellData.getSampleId();
+            Long sampleId = wellData.getSampleId();
             if (sampleId == null)
                 continue;
 
@@ -384,11 +385,11 @@ public class ArrayOperation implements LayoutOperation
             throw new ValidationException("Invalid configuration. Either source plates or source samples must be provided.");
     }
 
-    private Map<Integer, WellLayout.Well> generateSampleWellsFromSampleIds(Collection<Integer> sampleIds)
+    private Map<Long, WellLayout.Well> generateSampleWellsFromSampleIds(Collection<Long> sampleIds)
     {
-        LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
+        LinkedHashMap<Long, WellLayout.Well> sampleWells = new LinkedHashMap<>();
 
-        for (Integer sampleId : sampleIds)
+        for (Long sampleId : sampleIds)
         {
             if (!sampleWells.containsKey(sampleId))
                 sampleWells.put(sampleId, new WellLayout.Well(-1, -1, -1, -1, -1, sampleId));
@@ -397,17 +398,17 @@ public class ArrayOperation implements LayoutOperation
         return sampleWells;
     }
 
-    private Map<Integer, WellLayout.Well> generateSampleWellsFromSourcePlates(ExecutionContext context)
+    private Map<Long, WellLayout.Well> generateSampleWellsFromSourcePlates(ExecutionContext context)
     {
-        LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
+        LinkedHashMap<Long, WellLayout.Well> sampleWells = new LinkedHashMap<>();
 
         for (Plate sourcePlate : context.sourcePlates())
         {
-            int sourceRowId = sourcePlate.getRowId();
+            long sourceRowId = sourcePlate.getRowId();
 
             for (WellData wellData : context.wellDataCache().getData(sourceRowId, true, false))
             {
-                Integer wellSampleId = wellData.getSampleId();
+                Long wellSampleId = wellData.getSampleId();
                 if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && wellData.isSampleOrReplicate())
                 {
                     sampleWells.put(wellSampleId, new WellLayout.Well(-1, -1, sourceRowId, wellData.getRow(), wellData.getCol(), null));

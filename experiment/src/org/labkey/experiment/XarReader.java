@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -137,9 +138,9 @@ public class XarReader extends AbstractXarImporter
 
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
-    private final Map<Integer, String> _runWorkflowTaskMap = new HashMap<>();
+    private final Map<Long, String> _runWorkflowTaskMap = new LongHashMap<>();
     /** Retain replacement info so we can wire them up after all runs have been imported */
-    private final Map<Integer, String> _runReplacedByMap = new HashMap<>();
+    private final Map<Long, String> _runReplacedByMap = new LongHashMap<>();
 
     private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
@@ -153,7 +154,7 @@ public class XarReader extends AbstractXarImporter
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
     private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
     private final Map<String, ExpProtocol> _loadedProtocols = new HashMap<>();
-    private final Map<String, Integer> _rootMaterialLSIDsToRowIds = new LRUMap<>(1_000);
+    private final Map<String, Long> _rootMaterialLSIDsToRowIds = new LRUMap<>(1_000);
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -478,7 +479,7 @@ public class XarReader extends AbstractXarImporter
 
     private void resolveReplacedByRunLSIDs() throws XarFormatException, BatchValidationException
     {
-        for (Map.Entry<Integer, String> entry : _runReplacedByMap.entrySet())
+        for (Map.Entry<Long, String> entry : _runReplacedByMap.entrySet())
         {
             String runLSID = LsidUtils.resolveLsidFromTemplate(entry.getValue(), _xarSource.getXarContext(), ExpRun.DEFAULT_CPAS_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
             ExpRunImpl replacedByRun = ExperimentServiceImpl.get().getExpRun(runLSID);
@@ -1327,7 +1328,7 @@ public class XarReader extends AbstractXarImporter
             throw new XarFormatException("Unknown protocol " + xmlProtocolApp.getProtocolLSID() + " referenced by protocol application " + protAppLSID);
         }
 
-        int runId = experimentRun.getRowId();
+        long runId = experimentRun.getRowId();
 
         ProtocolApplication protocolApp = ExperimentServiceImpl.get().getProtocolApplication(protAppLSID);
         if (protocolApp == null)
@@ -1354,7 +1355,7 @@ public class XarReader extends AbstractXarImporter
         if (null == protocolApp)
             throw new XarFormatException("No row found");
 
-        int protAppId = protocolApp.getRowId();
+        long protAppId = protocolApp.getRowId();
 
         PropertyCollectionType xbProps = xmlProtocolApp.getProperties();
 
@@ -1456,7 +1457,7 @@ public class XarReader extends AbstractXarImporter
     private ExpMaterial loadMaterial(
         MaterialBaseType xbMaterial,
         @Nullable ExperimentRun run,
-        Integer sourceApplicationId,
+        Long sourceApplicationId,
         XarContext context
     ) throws ExperimentException
     {
@@ -1503,7 +1504,7 @@ public class XarReader extends AbstractXarImporter
                     _rootMaterialLSIDsToRowIds.put(rootMaterialLSID, rootMaterial == null ? null : rootMaterial.getRowId());
                 }
 
-                Integer rootMaterialRowId = _rootMaterialLSIDsToRowIds.get(rootMaterialLSID);
+                Long rootMaterialRowId = _rootMaterialLSIDsToRowIds.get(rootMaterialLSID);
                 if (rootMaterialRowId != null)
                     m.setRootMaterialRowId(rootMaterialRowId);
             }
@@ -1574,7 +1575,7 @@ public class XarReader extends AbstractXarImporter
         return material;
     }
 
-    private void updateSourceInfo(RunItem output, Integer sourceApplicationId,
+    private void updateSourceInfo(RunItem output, Long sourceApplicationId,
                                   ExperimentRun run, String rootMaterialLSID, String aliquotedFromLSID, TableInfo tableInfo)
             throws XarFormatException
     {
@@ -1624,9 +1625,9 @@ public class XarReader extends AbstractXarImporter
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
                 getLog().debug("Updating " + description + " with aliquot root");
 
-                int newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : output.getRowId();
-                int rowId = output.getRowId();
-                Integer existingRootRowId = ((Material) output).getRootMaterialRowId();
+                long newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : output.getRowId();
+                long rowId = output.getRowId();
+                Long existingRootRowId = ((Material) output).getRootMaterialRowId();
 
                 // When importing over existing samples, if the root rowId does not match the rowId, we only log an info message here and don't update.
                 if (!Objects.equals(existingRootRowId, rowId))
@@ -1687,7 +1688,7 @@ public class XarReader extends AbstractXarImporter
 
     private Data loadData(DataBaseType xbData,
                           ExperimentRun experimentRun,
-                          Integer sourceApplicationId,
+                          Long sourceApplicationId,
                           XarContext context) throws SQLException, ExperimentException
     {
         TableInfo tiData = ExperimentServiceImpl.get().getTinfoData();
@@ -1877,7 +1878,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     private void loadProtocolApplicationParameters(SimpleValueCollectionType xbParams,
-                                                   int protAppId)
+                                                   long protAppId)
     {
         TableInfo tiValueTable = ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter();
         for (SimpleValueType simple : xbParams.getSimpleValArray())
@@ -2234,11 +2235,11 @@ public class XarReader extends AbstractXarImporter
             }
             priorSeq = currentSeq;
 
-            int parentProtocolRowId = parentProtocol.getRowId();
+            long parentProtocolRowId = parentProtocol.getRowId();
             ExpProtocol childProtocol = _loadedProtocols.get(childLSID);
             if (childProtocol == null)
                 childProtocol = _xarSource.getProtocol(childLSID, "ActionSet child");
-            int childProtocolRowId = childProtocol.getRowId();
+            long childProtocolRowId = childProtocol.getRowId();
 
             ProtocolAction action = null;
             // Look for an existing action that matches
@@ -2267,7 +2268,7 @@ public class XarReader extends AbstractXarImporter
                 action = Table.insert(getUser(), tiAction, action);
             }
 
-            int actionRowId = action.getRowId();
+            long actionRowId = action.getRowId();
 
             ProtocolActionType.PredecessorAction[] predecessors = xAction.getPredecessorActionArray();
             if (predecessors == null)

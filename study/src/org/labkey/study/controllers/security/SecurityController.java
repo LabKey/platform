@@ -27,6 +27,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -79,7 +80,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -384,7 +384,7 @@ public class SecurityController extends SpringActionController
             if (permsAndGroups == null)
                 return null;
 
-            Map<Integer, String> groupToPermission = new HashMap<>();
+            Map<Integer, String> groupToPermission = new IntHashMap<>();
 
             for (String permAndGroup : permsAndGroups)
             {

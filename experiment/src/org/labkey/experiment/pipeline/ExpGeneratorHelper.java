@@ -153,7 +153,7 @@ public class ExpGeneratorHelper
             protocolSequences.addAll(factory.getProtocolActionNames());
         }
 
-        Integer jobId = PipelineService.get().getJobId(user, container, job.getJobGUID());
+        Long jobId = PipelineService.get().getJobId(user, container, job.getJobGUID());
 
         // create the main (parent) protocol for the run
         ExpProtocol parentProtocol;
@@ -206,7 +206,7 @@ public class ExpGeneratorHelper
     static public ExpRunImpl insertRun(Container container, User user,
                                        RecordedActionSet actionSet,
                                        String runName,
-                                       @Nullable Integer runJobId,
+                                       @Nullable Long runJobId,
                                        ExpProtocol protocol,
                                        @NotNull Logger log,
                                        @Nullable XarSource source,
@@ -286,7 +286,7 @@ public class ExpGeneratorHelper
     static private ExpRunImpl _insertRun(Container container,
                                          User user,
                                          String runName,
-                                         @Nullable Integer runJobId,
+                                         @Nullable Long runJobId,
                                          ExpProtocol protocol,
                                          Set<RecordedAction> actions,
                                          @Nullable XarSource source,

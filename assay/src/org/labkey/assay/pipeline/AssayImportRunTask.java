@@ -834,7 +834,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             AssayRunUploadContext uploadContext = factory.create();
 
-            Integer batchId = null;
+            Long batchId = null;
 
             // Import the assay run
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);

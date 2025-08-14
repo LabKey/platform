@@ -41,7 +41,7 @@ import java.util.List;
 public class PublishedRecordQueryView extends DatasetQueryView
 {
     private final String _sourceLsid;
-    private final int _publishSourceId;
+    private final long _publishSourceId;
     private final int _recordCount;
     @Nullable
     private final Dataset.PublishSource _publishSource;

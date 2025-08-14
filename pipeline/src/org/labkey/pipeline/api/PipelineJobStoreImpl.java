@@ -61,7 +61,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     @Override
     @Nullable
-    public PipelineJob getJob(int rowId)
+    public PipelineJob getJob(long rowId)
     {
         return fromStatus(PipelineStatusManager.retrieveJob(rowId));
     }

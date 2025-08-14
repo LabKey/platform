@@ -21,6 +21,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.LongArrayList;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -65,12 +68,12 @@ import static org.labkey.api.util.HttpUtil.Method.POST;
 public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmForm> extends FormViewAction<FORM>
 {
     @Nullable protected String _targetStudyName;
-    protected Map<Object, String> _postedVisits;
-    protected Map<Object, String> _postedDates;
-    protected Map<Object, String> _postedPtids;
-    protected Map<Object, String> _postedTargetStudies;
-    protected Set<Integer> _selectedObjects;
-    protected List<Integer> _allObjects = Collections.emptyList();
+    protected Map<Long, String> _postedVisits;
+    protected Map<Long, String> _postedDates;
+    protected Map<Long, String> _postedPtids;
+    protected Map<Long, String> _postedTargetStudies;
+    protected Set<Long> _selectedObjects;
+    protected List<Long> _allObjects = Collections.emptyList();
     protected Container _targetStudy;
     protected ActionURL _successURL;
 
@@ -120,11 +123,11 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             _targetStudyName = study.getLabel();
         }
 
-        _selectedObjects = new HashSet<>(AbstractPublishStartAction.getCheckboxIds(getViewContext()));
+        _selectedObjects = new LongHashSet(AbstractPublishStartAction.getCheckboxIds(getViewContext()));
         _allObjects = form.getObjectIdValues();
 
         if (_allObjects == null) // On first post, this is empty, so use the current selection
-            _allObjects = new ArrayList<>(_selectedObjects);
+            _allObjects = new LongArrayList(_selectedObjects);
 
         if (form.getReturnUrlHelper() == null)
             errors.reject(SpringActionController.ERROR_MSG, "No return URL configured for this form");
@@ -135,10 +138,10 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     {
         if (form.isAttemptPublish() && form.getDefaultValueSource().equals(PublishConfirmForm.DefaultValueSource.UserSpecified.name()))
         {
-            _postedVisits = new HashMap<>();
-            _postedDates = new HashMap<>();
-            _postedPtids = new HashMap<>();
-            _postedTargetStudies = new HashMap<>();
+            _postedVisits = new LongHashMap<>();
+            _postedDates = new LongHashMap<>();
+            _postedPtids = new LongHashMap<>();
+            _postedTargetStudies = new LongHashMap<>();
 
             attemptLinkage(form, errors, _selectedObjects, _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids);
         }
@@ -198,7 +201,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     /**
      * Perform the link to study operation
      */
-    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Long, PublishKey> publishData, List<String> publishErrors);
 
     /**
      * Returns the hidden form fields that need to be included on the data region form
@@ -309,15 +312,15 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     }
 
     private void attemptLinkage(FORM form, BindException errors,
-                            Set<Integer> selectedObjects, List<Integer> allObjects,
+                            Set<Long> selectedObjects, List<Long> allObjects,
                             Container targetStudy,
-                            Map<Object, String> postedTargetStudies,
-                            Map<Object, String> postedVisits,
-                            Map<Object, String> postedDates,
-                            Map<Object, String> postedPtids)
+                            Map<Long, String> postedTargetStudies,
+                            Map<Long, String> postedVisits,
+                            Map<Long, String> postedDates,
+                            Map<Long, String> postedPtids)
             throws RedirectException
     {
-        Map<Integer, PublishKey> publishData = new LinkedHashMap<>();
+        Map<Long, PublishKey> publishData = new LinkedHashMap<>();
         String[] participantIds = form.getParticipantId();
         String[] visitIds = form.getVisitId();
         String[] dates = form.getDate();
@@ -332,7 +335,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         boolean badVisitIds = false;
         boolean badDates = false;
         int index = 0;
-        for (int objectId : allObjects)
+        for (long objectId : allObjects)
         {
             // we only want to give errors for selected rows, but we want to compute visits and ptids regardless
             boolean selected = selectedObjects.contains(objectId);

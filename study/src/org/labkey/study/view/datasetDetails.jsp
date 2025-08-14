@@ -49,6 +49,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_DISPLAY" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -231,7 +232,7 @@ if (!pipelineSet)
     <labkey:panel title="Visit Associations">
         <table class="lk-fields-table"><%
             List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
-            HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
+            HashMap<Integer,VisitDataset> visitMap = new IntHashMap<>();
             for (VisitDataset vds : visitList)
                 visitMap.put(vds.getVisitRowId(), vds);
             boolean hasVisitAssociations = false;

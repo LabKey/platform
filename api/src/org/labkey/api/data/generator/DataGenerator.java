@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -67,6 +69,9 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 public class DataGenerator<T extends DataGenerator.Config> implements ContainerUser
 {
     private static final String SEARCH_FIELD_NAME = "Search";
@@ -106,8 +111,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
     protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
 
-    protected Map<Integer, Long> _sampleTypeCounts = new HashMap<>();
-    protected Map<Integer, Long> _dataClassCounts = new HashMap<>();
+    protected Map<Long, Long> _sampleTypeCounts = new LongHashMap<>();
+    protected Map<Long, Long> _dataClassCounts = new LongHashMap<>();
 
     public record NamingPatternData(String prefix, Long startGenId) {}
 
@@ -118,7 +123,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
 
     // Map from rowId to # of aliquots. TODO remove
-    private final Map<Integer, Integer> _numAliquotsPerParent = new HashMap<>();
+    private final HashMap<Long,Integer> _numAliquotsPerParent = new LongHashMap<>();
 
     record FieldPrefix(String uri, String namePrefix) { }
 
@@ -426,7 +431,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             return 0;
         }
 
-        List<Integer> sampleStatuses = new ArrayList<>();
+        List<Long> sampleStatuses = new ArrayList<>();
         for (DataState state: SampleStatusService.get().getAllProjectStates(getContainer()))
         {
             // skip locked/consumed to avoid operation error
@@ -458,7 +463,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         return totalAliquots;
     }
 
-    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations, List<Integer> sampleStatuses) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations, List<Long> sampleStatuses) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         int generatedCount = 0;
         List<Map<String, Object>> aliquots = new ArrayList<>();
@@ -471,7 +476,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
                 continue;
 
             Map<String, Object> parent = parents.get(p);
-            Integer parentId = (Integer) parent.get("rowId");
+            Long parentId = asLong(parent.get("rowId"));
 
             // choose a number of aliquots to create
             int currentAliquots = _numAliquotsPerParent.getOrDefault(parentId, 0);
@@ -521,14 +526,14 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
     }
 
-    public List<Integer> selectExistingSamplesIds(ExpSampleType sampleType, int limit, long totalSampleCount, ContainerFilter containerFilter)
+    public List<Long> selectExistingSamplesIds(ExpSampleType sampleType, int limit, long totalSampleCount, ContainerFilter containerFilter)
     {
         if (limit <= 0)
             return Collections.emptyList();
 
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName(), containerFilter);
         SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId", limit, totalSampleCount);
-        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class);
     }
 
     private SQLFragment limitFromOffsetSqlFrag(TableInfo tableInfo, String columns, int limit, long totalCount)
@@ -613,8 +618,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 //        List<Map<String, Object>> rows = new ArrayList<>();
 //        List<Map<String, Object>> oldKeys = new ArrayList<>();
 //        // choose a random set of child samples to.
-//        List<Integer> possibleParents = new ArrayList<>(samples.stream().map(sample -> (Integer) sample.get("RowId")).toList());
-//        List<Integer> possibleChildren = new ArrayList<>(getRandomSamples(sampleType, numPooled).stream().map(sample -> (Integer) sample.get("RowId")).toList());
+//        List<Integer> possibleParents = new ArrayList<>(samples.stream().map(sample -> asInteger( sample.get("RowId")).toList()));
+//        List<Integer> possibleChildren = new ArrayList<>(getRandomSamples(sampleType, numPooled).stream().map(sample -> asInteger( sample.get("RowId")).toList()));
 //        for (int i = 0;  i < possibleChildren.size() ; i++)
 //        {
 //            Map<String, Object> row = new CaseInsensitiveHashMap<>();

@@ -57,7 +57,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
     }
 
     @Override
-    public int getRowId()
+    public long getRowId()
     {
         return _action.getRowId();
     }
@@ -101,7 +101,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
 
     public int hashCode()
     {
-        return getRowId() ^ getClass().hashCode();
+        return (int)getRowId() ^ getClass().hashCode();
     }
 
     public static List<ExpProtocolActionImpl> fromProtocolActions(List<ProtocolAction> actions)

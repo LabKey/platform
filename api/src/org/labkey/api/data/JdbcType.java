@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.util.DateUtil;
 
@@ -333,7 +334,7 @@ public enum JdbcType
     }
 
     private static final HashMap<Class<?>, JdbcType> classMap = new HashMap<>();
-    private static final HashMap<Integer, JdbcType> sqlTypeMap = new HashMap<>();
+    private static final IntHashMap<JdbcType> sqlTypeMap = new IntHashMap<>();
 
     static
     {

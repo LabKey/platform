@@ -147,13 +147,13 @@ public interface SampleTypeService
     ExpSampleType createSampleType();
 
     @Nullable
-    ExpSampleType getSampleType(int rowId);
+    ExpSampleType getSampleType(long rowId);
 
     @Nullable
     ExpSampleType getSampleType(String lsid);
 
     @Nullable
-    DataState getSampleState(Container container, Integer stateRowId);
+    DataState getSampleState(Container container, Long stateRowId);
 
     void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
 
@@ -185,13 +185,13 @@ public interface SampleTypeService
     /**
      * Get a SampleType by rowId within the definition container.
      */
-    ExpSampleType getSampleType(@NotNull Container definitionContainer, int rowId);
+    ExpSampleType getSampleType(@NotNull Container definitionContainer, long rowId);
 
     /**
      * Get a SampleType by rowId within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
-    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
+    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, long rowId);
 
     Lsid getSampleTypeLsid(String name, Container container);
 
@@ -222,7 +222,7 @@ public interface SampleTypeService
 
     void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck);
 
-    void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
+    void deleteSampleType(long rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     // used by DomainKind.invalidate()
     void indexSampleType(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue);
@@ -248,9 +248,9 @@ public interface SampleTypeService
 
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 
-    int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
+    int recomputeSamplesRollup(Collection<Long> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
 
-    int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Integer> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
+    int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 

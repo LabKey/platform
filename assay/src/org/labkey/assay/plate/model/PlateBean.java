@@ -9,14 +9,14 @@ import org.labkey.assay.plate.PlateImpl;
 public class PlateBean extends Entity
 {
     private Boolean _archived;
-    private Integer _rowId;
+    private Long _rowId;
     private String _lsid;
     private String _name;
     private Boolean _template;
     private String _dataFileId;
     private String _assayType;
-    private Integer _plateSet;
-    private Integer _plateType;
+    private Long _plateSet;
+    private Long _plateType;
     private String _plateId;
     private String _description;
     private String _barcode;
@@ -51,12 +51,12 @@ public class PlateBean extends Entity
         _archived = archived;
     }
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
@@ -111,22 +111,22 @@ public class PlateBean extends Entity
         _assayType = assayType;
     }
 
-    public Integer getPlateSet()
+    public Long getPlateSet()
     {
         return _plateSet;
     }
 
-    public void setPlateSet(Integer plateSet)
+    public void setPlateSet(Long plateSet)
     {
         _plateSet = plateSet;
     }
 
-    public Integer getPlateType()
+    public Long getPlateType()
     {
         return _plateType;
     }
 
-    public void setPlateType(Integer plateType)
+    public void setPlateType(Long plateType)
     {
         _plateType = plateType;
     }

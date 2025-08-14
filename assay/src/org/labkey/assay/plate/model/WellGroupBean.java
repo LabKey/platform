@@ -11,7 +11,7 @@ public class WellGroupBean
 {
     private Integer _rowId;
     private String _lsid;
-    private Integer _plateId;
+    private Long _plateId;
     private String _name;
     private Boolean _template;
     private String _typename;
@@ -50,12 +50,12 @@ public class WellGroupBean
         _lsid = lsid;
     }
 
-    public Integer getPlateId()
+    public Long getPlateId()
     {
         return _plateId;
     }
 
-    public void setPlateId(Integer plateId)
+    public void setPlateId(Long plateId)
     {
         _plateId = plateId;
     }

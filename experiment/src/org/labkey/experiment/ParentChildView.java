@@ -106,11 +106,11 @@ public class ParentChildView extends VBox
 
     private QueryView createDataView(Set<ExpData> data, String dataRegionName, String title)
     {
-        Integer classId = null;
+        Long classId = null;
         data.removeIf(d -> !d.getContainer().hasPermission(getUser(), ReadPermission.class));
         for (ExpData d : data)
         {
-            Integer id = ((ExpDataImpl)d).getDataObject().getClassId();
+            Long id = ((ExpDataImpl)d).getDataObject().getClassId();
             if (classId == null)
             {
                 classId = id;
@@ -122,7 +122,7 @@ public class ParentChildView extends VBox
             }
         }
 
-        final List<Integer> rowIds = data.stream().map(ExpData::getRowId).toList();
+        final List<Long> rowIds = data.stream().map(ExpData::getRowId).toList();
         final ExpDataClass dataClass = classId == null ? null : ExperimentServiceImpl.get().getDataClass(classId);
 
         UserSchema schema = new ExpSchema(getUser(), getContainer());
@@ -216,7 +216,7 @@ public class ParentChildView extends VBox
             settings = schema.getSettings(getViewContext(), dataRegionName, st.getName());
         }
 
-        final List<Integer> rowIds = materials.stream().map(ExpMaterial::getRowId).toList();
+        final List<Long> rowIds = materials.stream().map(ExpMaterial::getRowId).toList();
         settings.getBaseFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIds);
 
         QueryView queryView = new QueryView(schema, settings, null)

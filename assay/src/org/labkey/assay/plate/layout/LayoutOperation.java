@@ -61,11 +61,11 @@ public interface LayoutOperation
         Plate targetTemplate,
         List<Plate> targetPlates,
         List<PlateManager.PlateData> targetPlateData,
-        Collection<Integer> sampleIds,
+        Collection<Long> sampleIds,
         WellData.Cache wellDataCache
     )
     {
-        public @Nullable PlateType resolvePlateType(Integer plateTypeRowId)
+        public @Nullable PlateType resolvePlateType(Long plateTypeRowId)
         {
             if (allPlateTypes == null || allPlateTypes.isEmpty())
                 return null;

@@ -36,6 +36,8 @@ import org.labkey.study.model.StudyManager;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: jgarms
  * Date: Aug 8, 2008
@@ -83,7 +85,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         if (row.get("enrolled") != null)
             cohort.setEnrolled((Boolean)row.get("enrolled"));
         if (row.get("subjectCount") != null)
-            cohort.setSubjectCount((Integer)row.get("subjectCount"));
+            cohort.setSubjectCount(asInteger(row.get("subjectCount")));
         if (row.get("description") != null)
             cohort.setDescription((String)row.get("description"));
 
@@ -132,7 +134,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
             // hard table columns handled separately
             boolean newEnrolled = (Boolean)row.get("enrolled");
-            Integer newSubjectCount = (Integer)row.get("subjectCount");
+            Integer newSubjectCount = asInteger(row.get("subjectCount"));
             String newDescription = (String)row.get("description");
 
             if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled)

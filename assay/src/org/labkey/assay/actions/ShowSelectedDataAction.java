@@ -54,7 +54,7 @@ public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDat
     public ActionURL getRedirectURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
-        int[] selectedIds = PageFlowUtil.toInts(selection);
+        long[] selectedIds = PageFlowUtil.toLongs(selection);
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), ContainerFilter.getType(form.getContainerFilterName()), selectedIds);
         String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";

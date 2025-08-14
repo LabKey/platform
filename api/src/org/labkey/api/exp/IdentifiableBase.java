@@ -32,7 +32,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     private String _lsid;
     private String _name;
     // some entities copy the exp.object.objectid value
-    private Integer objectId;
+    private Long objectId;
     // Issue 46473 - don't retain a reference to container itself from a potentially cached object,
     // just know how to easily resolve it so we can get the latest version
     private static final Supplier<Container> NULL_SUPPLIER = Container.supplierOf(null);
@@ -81,12 +81,12 @@ public class IdentifiableBase implements Identifiable, Serializable
         return _name;
     }
 
-    public Integer getObjectId()
+    public Long getObjectId()
     {
         return objectId;
     }
 
-    public void setObjectId(Integer objectId)
+    public void setObjectId(Long objectId)
     {
         if (this.objectId != null && !this.objectId.equals(objectId))
             throw new IllegalStateException("can't change objectId");
@@ -94,7 +94,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     }
 
     // allows updating objectId -- should only be used if there is an existing objectId that was updated
-    public void replaceExistingObjectId(int objectId)
+    public void replaceExistingObjectId(long objectId)
     {
         if (this.objectId == null || this.objectId.equals(objectId))
             throw new IllegalStateException("only call this method if you are creating a new exp.object with a different LSID and need to update the objectId");

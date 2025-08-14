@@ -572,7 +572,7 @@ public class ExperimentJSONConverter
         JSONObject jsonObject = serializeIdentifiableBean(object, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpObject.DEFAULT_CPAS_TYPE);
 
-        int rowId = object.getRowId();
+        long rowId = object.getRowId();
         if (rowId != 0)
             jsonObject.put(ID, rowId);
 

@@ -21,6 +21,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,6 +67,7 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
@@ -738,8 +740,8 @@ public class ExperimentController extends SpringActionController
             // Or a reference to a DataRegion selection key
             else if (selectionKey != null)
             {
-                Set<Integer> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, false);
-                for (Integer id : ids)
+                Set<Long> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, false);
+                for (Long id : ids)
                 {
                     ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(id);
                     if (run != null)
@@ -1512,7 +1514,7 @@ public class ExperimentController extends SpringActionController
         private List<ExpDataClass> getDataClasses(DeleteForm deleteForm)
         {
             List<ExpDataClass> dataClasses = new ArrayList<>();
-            for (int rowId : deleteForm.getIds(false))
+            for (long rowId : deleteForm.getIds(false))
             {
                 ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), rowId);
                 if (dataClass != null)
@@ -1835,7 +1837,7 @@ public class ExperimentController extends SpringActionController
     // END DataClass actions
     //
 
-    public static ActionURL getRunGraphURL(Container c, int runId)
+    public static ActionURL getRunGraphURL(Container c, long runId)
     {
         return new ActionURL(ShowRunGraphAction.class, c).addParameter("rowId", runId);
     }
@@ -2220,7 +2222,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    public static ActionURL getShowRunGraphDetailURL(Container c, int rowId)
+    public static ActionURL getShowRunGraphDetailURL(Container c, long rowId)
     {
         ActionURL url = new ActionURL(ShowRunGraphDetailAction.class, c);
         url.addParameter("rowId", rowId);
@@ -2283,7 +2285,7 @@ public class ExperimentController extends SpringActionController
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             TableInfo table;
-            int pk;
+            long pk;
             if (dataClass == null)
             {
                 table = schema.getDatasTable();
@@ -2999,7 +3001,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    public static ActionURL getShowApplicationURL(Container c, int rowId)
+    public static ActionURL getShowApplicationURL(Container c, long rowId)
     {
         ActionURL url = new ActionURL(ShowApplicationAction.class, c);
         url.addParameter("rowId", rowId);
@@ -3284,7 +3286,7 @@ public class ExperimentController extends SpringActionController
     public static class DataForm
     {
         private boolean _inline;
-        private int _rowId;
+        private long _rowId;
         private String _lsid;
         private Integer _maxDimension;
         private String _format;
@@ -3299,12 +3301,12 @@ public class ExperimentController extends SpringActionController
             _inline = inline;
         }
 
-        public int getRowId()
+        public long getRowId()
         {
             return _rowId;
         }
 
-        public void setRowId(int rowId)
+        public void setRowId(long rowId)
         {
             _rowId = rowId;
         }
@@ -3352,7 +3354,7 @@ public class ExperimentController extends SpringActionController
 
     public static class ExpObjectForm extends QueryViewAction.QueryExportForm
     {
-        private int _rowId;
+        private long _rowId;
         private String _lsid;
 
         public String getLsid()
@@ -3375,12 +3377,12 @@ public class ExperimentController extends SpringActionController
             setLsid(lsid);
         }
 
-        public int getRowId()
+        public long getRowId()
         {
             return _rowId;
         }
 
-        public void setRowId(int rowId)
+        public void setRowId(long rowId)
         {
             _rowId = rowId;
         }
@@ -3402,8 +3404,8 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpRun> runs = new ArrayList<>();
 
-            Map<Integer, ExpRun> idToRunMap = new HashMap<>();
-            for (int runId : deleteForm.getIds(false))
+            Map<Long, ExpRun> idToRunMap = new LongHashMap<>();
+            for (long runId : deleteForm.getIds(false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run != null)
@@ -3418,7 +3420,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            Map<Integer, ExpRun> referencedItems = new HashMap<>();
+            Map<Long, ExpRun> referencedItems = new LongHashMap<>();
             List<String> referenceDescriptions = new ArrayList<>();
             AssayService assayService = AssayService.get();
             if (!idToRunMap.isEmpty() && assayService != null )
@@ -3431,7 +3433,7 @@ public class ExperimentController extends SpringActionController
                     SchemaKey key = AssayProtocolSchema.schemaName(provider, protocol);
                     ExperimentService.get().getObjectReferencers()
                             .forEach(referencer -> {
-                                        Collection<Integer> referenced = referencer.getItemsWithReferences(
+                                        Collection<Long> referenced = referencer.getItemsWithReferences(
                                                 idToRunMap.keySet(),
                                                 key.toString(),
                                                 "Runs"
@@ -3528,12 +3530,12 @@ public class ExperimentController extends SpringActionController
         @Override
         protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
         {
-            Set<Integer> runIdsToDelete = new HashSet<>(form.getIds(true));
-            Set<Integer> runIdsCascadeDeleted = new HashSet<>();
+            Set<Long> runIdsToDelete = new HashSet<>(form.getIds(true));
+            Set<Long> runIdsCascadeDeleted = new HashSet<>();
 
             if (form.isCascade())
             {
-                for (int runId : runIdsToDelete)
+                for (long runId : runIdsToDelete)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(runId);
                     if (run != null)
@@ -3553,7 +3555,7 @@ public class ExperimentController extends SpringActionController
             return response;
         }
 
-        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        private void addReplacesRuns(ExpRun run, Set<Long> runIds)
         {
             for (ExpRun replacedRun : run.getReplacesRuns())
             {
@@ -3677,7 +3679,7 @@ public class ExperimentController extends SpringActionController
     public static List<ExpProtocol> getProtocolsForDeletion(DeleteForm form)
     {
         List<ExpProtocol> protocols = new ArrayList<>();
-        for (int protocolId : form.getIds(false))
+        for (long protocolId : form.getIds(false))
         {
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
             if (protocol != null)
@@ -3762,11 +3764,11 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(DataOperationConfirmationForm form, BindException errors)
         {
-            Collection<Integer> requestIds = form.getIds(false);
+            Collection<Long> requestIds = form.getIds(false);
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<ExpDataImpl> allData = service.getExpDatas(requestIds);
 
-            Set<Integer> notAllowedIds = new HashSet<>();
+            Set<Long> notAllowedIds = new HashSet<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
@@ -3774,7 +3776,7 @@ public class ExperimentController extends SpringActionController
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allData);
 
             Collection<Container> containers = new HashSet<>();
-            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Collection<Long> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
             for (ExpDataImpl expData : allData)
             {
@@ -3832,11 +3834,11 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(MaterialOperationConfirmationForm form, BindException errors)
         {
-            Set<Integer> requestIds = form.getIds(false);
+            Set<Long> requestIds = form.getIds(false);
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            Set<Integer> notAllowedIds = new HashSet<>();
+            Set<Long> notAllowedIds = new HashSet<>();
             // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc.
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 service.getObjectReferencers().forEach(referencer ->
@@ -3848,7 +3850,7 @@ public class ExperimentController extends SpringActionController
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allMaterials);
 
             Collection<Container> containers = new HashSet<>();
-            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Collection<Long> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getSampleOperation().getPermissionClass();
             for (ExpMaterial material : allMaterials)
             {
@@ -3978,7 +3980,7 @@ public class ExperimentController extends SpringActionController
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
         {
             List<ExpData> datas = new ArrayList<>();
-            for (int dataId : deleteForm.getIds(clear))
+            for (long dataId : deleteForm.getIds(clear))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
                 if (data != null)
@@ -4028,7 +4030,7 @@ public class ExperimentController extends SpringActionController
         private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)
         {
             List<ExpExperiment> experiments = new ArrayList<>();
-            for (int experimentId : deleteForm.getIds(false))
+            for (long experimentId : deleteForm.getIds(false))
             {
                 ExpExperiment experiment = ExperimentService.get().getExpExperiment(experimentId);
                 if (experiment != null)
@@ -4126,7 +4128,7 @@ public class ExperimentController extends SpringActionController
         private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)
         {
             List<ExpSampleType> sources = new ArrayList<>();
-            for (int rowId : deleteForm.getIds(false))
+            for (long rowId : deleteForm.getIds(false))
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), rowId);
                 if (sampleType != null)
@@ -4732,8 +4734,8 @@ public class ExperimentController extends SpringActionController
         private final String _fileName;
         private final String _dataRegionSelectionKey;
         private final String _error;
-        private final Integer _expRowId;
-        private final Integer _protocolId;
+        private final Long _expRowId;
+        private final Long _protocolId;
         private final ActionURL _postURL;
         private final Set<String> _roles;
 
@@ -4785,12 +4787,12 @@ public class ExperimentController extends SpringActionController
             return _postURL;
         }
 
-        public Integer getProtocolId()
+        public Long getProtocolId()
         {
             return _protocolId;
         }
 
-        public Integer getExpRowId()
+        public Long getExpRowId()
         {
             return _expRowId;
         }
@@ -4812,9 +4814,9 @@ public class ExperimentController extends SpringActionController
         private String _xarFileName;
         private String _zipFileName;
         private String _fileExportType;
-        private Integer _protocolId;
+        private Long _protocolId;
         private Integer _sampleTypeId;
-        private int[] _dataIds;
+        private long[] _dataIds;
         private String[] _roles = new String[0];
 
         public String getError()
@@ -4877,12 +4879,12 @@ public class ExperimentController extends SpringActionController
             _lsidOutputType = lsidOutputType;
         }
 
-        public Integer getProtocolId()
+        public Long getProtocolId()
         {
             return _protocolId;
         }
 
-        public void setProtocolId(Integer protocolId)
+        public void setProtocolId(Long protocolId)
         {
             _protocolId = protocolId;
         }
@@ -4907,12 +4909,12 @@ public class ExperimentController extends SpringActionController
             _sampleTypeId = sampleTypeId;
         }
 
-        public int[] getDataIds()
+        public long[] getDataIds()
         {
             return _dataIds;
         }
 
-        public void setDataIds(int[] dataIds)
+        public void setDataIds(long[] dataIds)
         {
             _dataIds = dataIds;
         }
@@ -4932,7 +4934,7 @@ public class ExperimentController extends SpringActionController
                 return protocols;
             }
 
-            for (Integer protocolId : DataRegionSelection.getSelectedIntegers(context, clearSelection))
+            for (Long protocolId : DataRegionSelection.getSelectedIntegers(context, clearSelection))
             {
                 try
                 {
@@ -5013,7 +5015,7 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpProtocol> protocols = form.lookupProtocols(getViewContext(), false);
 
-            int[] ids = new int[protocols.size()];
+            long[] ids = new long[protocols.size()];
             for (int i = 0; i < ids.length; i++)
             {
                 ids[i] = protocols.get(i).getRowId();
@@ -5070,7 +5072,7 @@ public class ExperimentController extends SpringActionController
 
         public List<ExpRun> lookupRuns(ExportOptionsForm form)
         {
-            Set<Integer> runIds;
+            Set<Long> runIds;
             if (form.getRunIds() != null && form.getRunIds().length > 0)
                 runIds = new HashSet<>(Arrays.asList(form.getRunIds()));
             else
@@ -5082,7 +5084,7 @@ public class ExperimentController extends SpringActionController
             }
             List<ExpRun> result = new ArrayList<>();
 
-            for (int id : runIds)
+            for (long id : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(id);
                 if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
@@ -5176,7 +5178,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            int[] dataIds = form.getDataIds();
+            long[] dataIds = form.getDataIds();
             if (dataIds == null || dataIds.length == 0)
             {
                 throw new NotFoundException();
@@ -5184,7 +5186,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                for (int id : dataIds)
+                for (long id : dataIds)
                 {
                     ExpData data = ExperimentService.get().getExpData(id);
                     if (data == null || !data.getContainer().hasPermission(getUser(), ReadPermission.class))
@@ -5210,8 +5212,8 @@ public class ExperimentController extends SpringActionController
     public static class ExperimentRunListForm implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _dataRegionSelectionKey;
-        private Integer _expRowId;
-        private Integer[] _runIds;
+        private Long _expRowId;
+        private Long[] _runIds;
 
         @Override
         public String getDataRegionSelectionKey()
@@ -5225,22 +5227,22 @@ public class ExperimentController extends SpringActionController
             _dataRegionSelectionKey = key;
         }
 
-        public Integer getExpRowId()
+        public Long getExpRowId()
         {
             return _expRowId;
         }
 
-        public void setExpRowId(Integer expRowId)
+        public void setExpRowId(Long expRowId)
         {
             _expRowId = expRowId;
         }
 
-        public Integer[] getRunIds()
+        public Long[] getRunIds()
         {
             return _runIds;
         }
 
-        public void setRunIds(Integer[] runIds)
+        public void setRunIds(Long[] runIds)
         {
             _runIds = runIds;
         }
@@ -5253,9 +5255,9 @@ public class ExperimentController extends SpringActionController
 
     private void addSelectedRunsToExperiment(ExpExperiment exp, String dataRegionSelectionKey)
     {
-        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, true);
+        Collection<Long> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, true);
         List<ExpRun> runs = new ArrayList<>();
-        for (int runId : runIds)
+        for (long runId : runIds)
         {
             ExpRun run = ExperimentServiceImpl.get().getExpRun(runId);
             if (run != null)
@@ -5306,7 +5308,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
 
-            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false))
+            for (long runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -6157,7 +6159,7 @@ public class ExperimentController extends SpringActionController
                         @Override
                         protected List<? extends ExpMaterial> getExpObject(List<Map<String, Object>> insertedRows)
                         {
-                            List<Integer> rowIds = insertedRows.stream().map(r -> (Integer) r.get("rowid")).collect(toList());
+                            List<Long> rowIds = insertedRows.stream().map(r -> MapUtils.getLong(r,"rowid")).collect(toList());
                             return ExperimentService.get().getExpMaterials(rowIds);
                         }
                     };
@@ -6577,9 +6579,9 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+            Set<Long> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
             List<ExpRun> runs = new ArrayList<>();
-            for (Integer runId : runIds)
+            for (Long runId : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run != null)
@@ -6668,7 +6670,7 @@ public class ExperimentController extends SpringActionController
 
 
     // TODO: DotGraph has been adding a "runId" parameter, but ShowGraphMoreListAction
-    public static ActionURL getShowGraphMoreListURL(Container c, @Nullable Integer runId, @NotNull String objtype)
+    public static ActionURL getShowGraphMoreListURL(Container c, @Nullable Long runId, @NotNull String objtype)
     {
         ActionURL url = new ActionURL(ShowGraphMoreListAction.class, c);
 
@@ -6949,7 +6951,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getRunGraphURL(Container container, int runId)
+        public ActionURL getRunGraphURL(Container container, long runId)
         {
             return ExperimentController.getRunGraphURL(container, runId);
         }
@@ -6961,7 +6963,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getRunTextURL(Container c, int runId)
+        public ActionURL getRunTextURL(Container c, long runId)
         {
             return new ActionURL(ShowRunTextAction.class, c).addParameter("rowId", runId);
         }
@@ -7162,7 +7164,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getShowDataClassURL(Container container, int rowId)
+        public ActionURL getShowDataClassURL(Container container, long rowId)
         {
             ActionURL url = new ActionURL(ShowDataClassAction.class, container);
             url.addParameter("rowId", rowId);
@@ -7187,7 +7189,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
+        public ActionURL getMaterialDetailsURL(Container c, long materialRowId)
         {
             return getMaterialDetailsBaseURL(c, null).addParameter("rowId", materialRowId);
         }
@@ -8168,11 +8170,11 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Set<Integer> getIds(boolean clear)
+        public Set<Long> getIds(boolean clear)
         {
             if (_rowIds != null)
                 return _rowIds;
-            Set<Integer> selectedIds;
+            Set<Long> selectedIds;
             if (isUseSnapshotSelection())
                 selectedIds = new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
             else
@@ -8188,7 +8190,7 @@ public class ExperimentController extends SpringActionController
                     SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                     filter.addInClause(FieldKey.fromParts("id"), selectedIds);
                     TableSelector selector = new TableSelector(tInfo, Collections.singleton("SampleID"), filter, null);
-                    return new HashSet<>(selector.getArrayList(Integer.class));
+                    return new HashSet<>(selector.getArrayList(Long.class));
                 }
             }
             return selectedIds;
@@ -8264,7 +8266,7 @@ public class ExperimentController extends SpringActionController
             if (null == cycleObjectIds)
                 return new HtmlView(HtmlString.of("No cycles found"));
 
-            Map<Integer, ExpObject> map = new HashMap<>();
+            Map<Long, ExpObject> map = new LongHashMap<>();
             var cf = new ContainerFilter.AllFolders(getUser());
             var materials = ExperimentServiceImpl.get().getExpMaterialsByObjectId(cf, cycleObjectIds);
             materials.forEach( (m) -> map.put(m.getObjectId(), m));

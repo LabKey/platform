@@ -3,6 +3,8 @@ package org.labkey.assay;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -83,17 +85,17 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
     {
         return new SearchService.ResourceResolver()
         {
-            private Integer fromDocumentId(@NotNull String resourceIdentifier)
+            private Long fromDocumentId(@NotNull String resourceIdentifier)
             {
                 final String prefix = getDocumentIdPrefix();
 
                 if (resourceIdentifier.startsWith(prefix))
                     resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-                int expRunId;
+                long expRunId;
                 try
                 {
-                    expRunId = Integer.parseInt(resourceIdentifier);
+                    expRunId = Long.parseLong(resourceIdentifier);
                 }
                 catch (NumberFormatException e)
                 {
@@ -105,7 +107,7 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
 
             private @Nullable ExpRun getExpRun(@NotNull String resourceIdentifier)
             {
-                Integer expRunRowId = fromDocumentId(resourceIdentifier);
+                Long expRunRowId = fromDocumentId(resourceIdentifier);
                 if (expRunRowId == null)
                     return null;
 
@@ -135,11 +137,11 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
             @Override
             public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
             {
-                Set<Integer> expRunRowIds = new HashSet<>();
-                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                Set<Long> expRunRowIds = new HashSet<>();
+                Map<Long, String> rowIdIdentifierMap = new LongHashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    Integer expRunRowId = fromDocumentId(resourceIdentifier);
+                    Long expRunRowId = fromDocumentId(resourceIdentifier);
                     if (expRunRowId != null)
                     {
                         expRunRowIds.add(expRunRowId);

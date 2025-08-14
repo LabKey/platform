@@ -10,7 +10,7 @@ public interface PlateSet extends Identifiable
     int MAX_PLATE_WELL_SIZE = 384;
     int MAX_PLATE_SET_WELLS = MAX_PLATES * MAX_PLATE_WELL_SIZE;
 
-    Integer getRowId();
+    Long getRowId();
 
     String getDescription();
 
@@ -30,5 +30,5 @@ public interface PlateSet extends Identifiable
 
     PlateSetType getType();
 
-    Integer getRootPlateSetId();
+    Long getRootPlateSetId();
 }

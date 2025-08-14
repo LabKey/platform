@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.ss.formula.functions.T;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -376,6 +377,18 @@ public class Table
 
     public static void batchExecute1Integer(DbSchema schema, @NotNull String sql1, @Nullable String sql100, List<Integer> paramList) throws SQLException
     {
+        _batchExecute1Integer(Integer.class, schema, sql1, sql100, paramList);
+    }
+
+    public static void batchExecute1Long(DbSchema schema, @NotNull String sql1, @Nullable String sql100, List<Long> paramList) throws SQLException
+    {
+        _batchExecute1Integer(Long.class, schema, sql1, sql100, paramList);
+    }
+
+    public static <T> void _batchExecute1Integer(Class<T> clazz, DbSchema schema, @NotNull String sql1, @Nullable String sql100, List<T> paramList) throws SQLException
+    {
+        boolean useInteger = clazz == Integer.class;
+
         try (Connection conn = schema.getScope().getConnection())
         {
             try
@@ -392,11 +405,13 @@ public class Table
                         {
                             for (int index = outerIndex; index < outerIndex + 100; index++)
                             {
-                                Integer I = paramList.get(index);
+                                Number I = (Number)paramList.get(index);
                                 if (null == I)
                                     stmt100.setNull(index % 100 + 1, Types.INTEGER);
-                                else
+                                else if (useInteger)
                                     stmt100.setInt(index % 100 + 1, I.intValue());
+                                else
+                                    stmt100.setLong(index % 100 + 1, I.longValue());
                                 paramCounter++;
                             }
                             stmt100.addBatch();
@@ -419,11 +434,14 @@ public class Table
                 {
                     for (int index = outerIndex; index < paramList.size(); index++)
                     {
-                        Integer I = paramList.get(index);
+                        Number I = (Number)paramList.get(index);
                         if (null == I)
                             stmt1.setNull(1, Types.INTEGER);
-                        else
+                        else if (useInteger)
                             stmt1.setInt(1, I.intValue());
+                        else
+                            stmt1.setLong(1, I.longValue());
+
                         stmt1.addBatch();
                         paramCounter++;
                         if (paramCounter > 1000)
@@ -543,7 +561,7 @@ public class Table
             _getterMap.put(c, this);
         }
 
-        public static <K> Getter forClass(Class<K> c)
+        public static <K> @Nullable Getter forClass(Class<K> c)
         {
             return _getterMap.get(c);
         }
@@ -907,13 +925,7 @@ public class Table
             {
                 rs = table.getSqlDialect().executeWithResults(stmt);
                 rs.next();
-
-                // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
-                // here because PostgreSQL sequences always return Long, and we expect Integer in many places.
-                if (autoIncColumn.getJavaClass().isAssignableFrom(Long.TYPE))
-                    _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
-                else
-                    _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
+                _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
             }
 
             _copyInsertSpecialFields(returnObject, fields);

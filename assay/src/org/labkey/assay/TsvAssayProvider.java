@@ -884,7 +884,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             _context.checking(new Expectations()
             {{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                Map<Pair<Container, Integer>, Collection> map = new HashMap<>();
+                Map<Pair<Container, Long>, Collection> map = new HashMap<>();
                 map.put(new Pair<>(_container, _protocol.getRowId()), Collections.singletonList(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile"))));
                 will(returnValue(map));
                 allowing(_uploadContext).getReRun();

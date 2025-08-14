@@ -30,6 +30,8 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.view.GridView;
 import org.springframework.validation.Errors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: kevink
  * Date: 10/14/13
@@ -99,7 +101,7 @@ public class WikiVersionsGrid extends GridView
         @Override
         protected String getRowClass(RenderContext ctx, int rowIndex)
         {
-            if (((Integer)ctx.get("Version")).intValue() == version)
+            if ((asInteger(ctx.get("Version")).intValue() == version))
                 return "labkey-alternate-row";
             else
                 return "labkey-row";

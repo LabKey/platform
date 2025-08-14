@@ -24,6 +24,8 @@ package org.labkey.api.util;
 
 import java.io.Serializable;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Parses a string-based version number into major, minor and revision numbers
  * based on the format "major.minor.revision". Revision can be either an integer
@@ -111,8 +113,8 @@ public class VersionNumber implements Serializable
 
     public int getRevisionAsInt()
     {
-        if (null != _revision && _revision instanceof Integer)
-            return (Integer)_revision;
+        if (null != _revision && (_revision instanceof Integer || _revision instanceof Long))
+            return asInteger(_revision);
         else
             return 0;
     }

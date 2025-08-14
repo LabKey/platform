@@ -17,13 +17,13 @@ import java.util.Map;
 @JsonIgnoreProperties("systemFields")
 public class DataClassDomainKindProperties
 {
-    private int rowId;
+    private long rowId;
     private String lsid;
     private int domainId;
     private String name;
     private String description;
     private String nameExpression;
-    private Integer sampleType;
+    private Long sampleType;
     private String category;
     private boolean _strictFieldValidation = true; // Set as false to skip validation check in ExperimentServiceImpl.createDataClass (used in Rlabkey labkey.domain.createAndLoad)
     private List<String> excludedContainerIds;
@@ -51,7 +51,10 @@ public class DataClassDomainKindProperties
             this.description = dc.getDomain().getDescription();
 
         if (dc.getSampleType() != null)
+        {
             this.sampleType = dc.getSampleType().getRowId();
+            assert 0 != this.sampleType;
+        }
 
         if (dc.getDomain() != null)
             this.domainId = dc.getDomain().getTypeId();
@@ -66,12 +69,12 @@ public class DataClassDomainKindProperties
         }
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         this.rowId = rowId;
     }
@@ -116,25 +119,27 @@ public class DataClassDomainKindProperties
         this.nameExpression = nameExpression;
     }
 
-    public Integer getSampleType()
+    public Long getSampleType()
     {
         return sampleType;
     }
 
-    public void setSampleType(Integer sampleType)
+    public void setSampleType(Long sampleType)
     {
+        assert null == sampleType || 0 < sampleType;
         this.sampleType = sampleType;
     }
 
     @Deprecated // Left in place for now, until domain templates get cleaned up (e.g., media-base.template.xml)
-    public Integer getSampleSet()
+    public Long getSampleSet()
     {
         return sampleType;
     }
 
     @Deprecated // Left in place for now, until domain templates get cleaned up (e.g., media-base.template.xml)
-    public void setSampleSet(Integer sampleType)
+    public void setSampleSet(Long sampleType)
     {
+        assert 0 != sampleType;
         this.sampleType = sampleType;
     }
 

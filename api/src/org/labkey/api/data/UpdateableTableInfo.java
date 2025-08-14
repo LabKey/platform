@@ -70,7 +70,7 @@ public interface UpdateableTableInfo extends TableInfo
 
     /** getOwnerObjectId() is used to populate the exp.object.ownerObjectId column when inserting. */
     @Nullable
-    default Integer getOwnerObjectId() { return null; }
+    default Long getOwnerObjectId() { return null; }
 
     // name of column that contains exp.object.objectid
     @Nullable

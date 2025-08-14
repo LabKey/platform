@@ -216,6 +216,10 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 {
                     allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Integer)value, Integer.class));
                 }
+                else if (value instanceof Long)
+                {
+                    allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Long)value, Long.class));
+                }
                 else if (value instanceof Date)
                 {
                     allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Date)value, Date.class));
