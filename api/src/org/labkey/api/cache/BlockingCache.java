@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -275,7 +275,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     public static class BlockingCacheTest extends Assert
     {
         private Cache<Integer, Wrapper<Integer>> _cache;
-        private final Map<Integer, Wrapper<Integer>> _map = new HashMap<>();
+        private final Map<Integer, Wrapper<Integer>> _map = new IntHashMap<>();
 
         @Before
         public void setUp()

@@ -32,12 +32,12 @@ public class MaterialInput extends AbstractRunInput
         return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + NAMESPACE + ":";
     }
 
-    /*package*/static String lsid(int inputKey, int targetApplicationId)
+    /*package*/static String lsid(long inputKey, long targetApplicationId)
     {
         return AbstractRunInput.lsid(NAMESPACE, inputKey, targetApplicationId);
     }
 
-    private int _materialId;
+    private long _materialId;
 
     public MaterialInput()
     {
@@ -50,18 +50,18 @@ public class MaterialInput extends AbstractRunInput
         return lsid(getInputKey(), getTargetApplicationId());
     }
 
-    public int getMaterialId()
+    public long getMaterialId()
     {
         return _materialId;
     }
 
-    public void setMaterialId(int materialId)
+    public void setMaterialId(long materialId)
     {
         _materialId = materialId;
     }
 
     @Override
-    protected int getInputKey()
+    protected long getInputKey()
     {
         return _materialId;
     }

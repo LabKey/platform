@@ -39,18 +39,18 @@ import java.nio.file.Path;
  */
 public class MoveRunsPipelineJob extends PipelineJob
 {
-    private final int[] _runIds;
+    private final long[] _runIds;
     private final Container _sourceContainer;
 
     @JsonCreator
-    protected MoveRunsPipelineJob(@JsonProperty("_runIds") int[] runIds, @JsonProperty("_sourceContainer") Container sourceContainer)
+    protected MoveRunsPipelineJob(@JsonProperty("_runIds") long[] runIds, @JsonProperty("_sourceContainer") Container sourceContainer)
     {
         super();
         _runIds = runIds;
         _sourceContainer = sourceContainer;
     }
 
-    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds, PipeRoot root)
+    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, long[] runIds, PipeRoot root)
     {
         super(ExperimentPipelineProvider.NAME, info, root);
         _runIds = runIds;
@@ -60,7 +60,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         setupLocalDirectoryAndJobLog(getPipeRoot(), ExperimentService.MODULE_NAME, baseLogFileName);
 
         getLogger().info(getDescription());
-        for (int runId : _runIds)
+        for (var runId : _runIds)
         {
             ExpRun run = ExperimentService.get().getExpRun(runId);
             if (run == null)
@@ -92,7 +92,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         return null;
     }
 
-    public int[] getRunIds()
+    public long[] getRunIds()
     {
         return _runIds;
     }

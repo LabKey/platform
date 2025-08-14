@@ -44,7 +44,7 @@ public class AliasInsertHelper
     {
         // parse the alias value into separate names and alias rowIds
         Set<String> aliasNames = new HashSet<>();
-        Set<Integer> aliasIds = new HashSet<>();
+        Set<Long> aliasIds = new HashSet<>();
         parseValue(value, aliasNames, aliasIds);
 
         // ensure the alias exist collect the alias' rowId
@@ -70,17 +70,19 @@ public class AliasInsertHelper
             aliasNames.add(input);
     }
 
-    private static void parseItemValue(Object value, Set<String> aliasNames, Set<Integer> aliasIds)
+    private static void parseItemValue(Object value, Set<String> aliasNames, Set<Long> aliasIds)
     {
         if (value instanceof String s)
             cleanValueAndAdd(s, aliasNames);
         else if (value instanceof Integer i)
-            aliasIds.add(i);
+            aliasIds.add(i.longValue());
+        else if (value instanceof Long l)
+            aliasIds.add(l);
         else
             throw new IllegalArgumentException("Unsupported item value for column 'Alias': " + value);
     }
 
-    private static void parseValue(Object value, Set<String> aliasNames, Set<Integer> aliasIds)
+    private static void parseValue(Object value, Set<String> aliasNames, Set<Long> aliasIds)
     {
         if (value == null)
             return;
@@ -116,9 +118,13 @@ public class AliasInsertHelper
             // Parse the single string element value submitted by the generic query insert and the tsv import forms.
             aliasNames.addAll(splitAliases(s));
         }
+        else if (value instanceof Long l)
+        {
+            aliasIds.add(l);
+        }
         else if (value instanceof Integer i)
         {
-            aliasIds.add(i);
+            aliasIds.add(Long.valueOf(i));
         }
         else
         {
@@ -146,9 +152,9 @@ public class AliasInsertHelper
         return aliasNames;
     }
 
-    private static void insertMapEntries(Container container, User user, TableInfo aliasMapTable, Set<Integer> aliasIds, String lsid)
+    private static void insertMapEntries(Container container, User user, TableInfo aliasMapTable, Set<Long> aliasIds, String lsid)
     {
-        for (Integer aliasId : aliasIds)
+        for (Long aliasId : aliasIds)
         {
             Map<String, Object> row = CaseInsensitiveHashMap.of(
                 "container", container.getEntityId(),
@@ -159,7 +165,7 @@ public class AliasInsertHelper
         }
     }
 
-    private static Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
+    private static Collection<Long> ensureAliases(User user, Set<String> aliasNames)
     {
         return ExperimentServiceImpl.get().ensureAliases(user, aliasNames);
     }

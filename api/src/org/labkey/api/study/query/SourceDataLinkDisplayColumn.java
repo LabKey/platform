@@ -28,6 +28,8 @@ import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 /**
  * Serves the dual purpose of adding a hidden <input> element for the object id and showing a link to the originating source
  */
@@ -59,7 +61,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
     {
         if (null != _objectIdCol)
             super.renderGridCellContents(ctx, out);
-        Integer sourceId = (Integer)_sourceIdCol.getValue(ctx);
+        Long sourceId = asLong(_sourceIdCol.getValue(ctx));
         if (sourceId != null)
         {
             switch (_publishSource)

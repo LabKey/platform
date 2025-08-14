@@ -50,14 +50,14 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private ActionURL _cancelUrl;
         private ActionURL _successUrl;
         private String _dataRegionSelectionKey;
-        private final Integer _singleObjectRowId;
+        private final Long _singleObjectRowId;
         private final String _extraNoun;
         private final List<Pair<SecurableResource, ActionURL>> _deleteableExtras;
         private final List<Pair<SecurableResource, ActionURL>> _noPermissionExtras;
         private final List<? extends ExpObject> _referencedItems;
         private final String _referencesDescription;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, @NotNull List<? extends ExpObject> referencedItems, @Nullable String referencesDescription)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Long singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, @NotNull List<? extends ExpObject> referencedItems, @Nullable String referencesDescription)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
@@ -142,7 +142,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        public Integer getSingleObjectRowId()
+        public Long getSingleObjectRowId()
         {
             return _singleObjectRowId;
         }

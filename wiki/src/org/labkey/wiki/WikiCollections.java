@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /*
 * User: adam
 * Date: Dec 9, 2010
@@ -131,7 +133,7 @@ public class WikiCollections
 
         _aliasesByRowId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
             .mapStream()
-            .map(map->new Alias((Integer)map.get("PageRowId"), (String)map.get("Alias")))
+            .map(map->new Alias(asInteger(map.get("PageRowId")), (String)map.get("Alias")))
             .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
             .collect(LabKeyCollectors.toMultiValuedMap(record->record.pageRowId, record->record.alias));
         _namesByAlias = _aliasesByRowId.entries().stream()

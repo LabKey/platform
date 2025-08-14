@@ -53,7 +53,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
     public SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> params)
     {
         Object first = params.iterator().next();
-        if (first instanceof Integer)
+        if (first instanceof Long)
+            return appendInClauseSql(sql, params, JdbcType.BIGINT);
+        else if (first instanceof Integer)
             return appendInClauseSql(sql, params, JdbcType.INTEGER);
         else if (first instanceof String)
             return appendInClauseSql(sql, params, JdbcType.VARCHAR);
@@ -66,6 +68,10 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         if (jdbcType == JdbcType.INTEGER)
         {
             sortedParameters = collectIntegers(paramsCollection);
+        }
+        else if (jdbcType == JdbcType.BIGINT)
+        {
+            sortedParameters = collectLongs(paramsCollection);
         }
         else if (jdbcType == JdbcType.VARCHAR)
         {
@@ -105,8 +111,10 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 {
                     if (jdbcType == JdbcType.VARCHAR)
                         Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>) sortedParameters);
-                    else
+                    else if (jdbcType == JdbcType.INTEGER)
                         Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>) sortedParameters);
+                    else
+                        Table.batchExecute1Long(DbSchema.getTemp(), sql1, sql100, (ArrayList<Long>) sortedParameters);
                 }
             }
             catch (SQLException e)
@@ -169,6 +177,29 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 ts.add((Integer) i);
         }
         List<Integer> params = new ArrayList<>(ts);
+        if (hasNull)
+            params.add(null);
+        return params;
+    }
+
+
+    // unique and ordered list
+    private List<Long> collectLongs(@NotNull Collection<?> paramsCollection)
+    {
+        boolean hasNull = false;
+        Set<Long> ts = new TreeSet<>();
+        for (Object i : paramsCollection)
+        {
+            if (null == i)
+                hasNull = true;
+            else if (i instanceof Long)
+                ts.add((Long)i);
+            else if (i instanceof Integer)
+                ts.add(Long.valueOf(((Integer) i).longValue()));
+            else
+                return null;
+        }
+        List<Long> params = new ArrayList<>(ts);
         if (hasNull)
             params.add(null);
         return params;

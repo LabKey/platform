@@ -43,6 +43,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
+
 /**
  * Created by marty on 7/25/2017.
  */
@@ -85,7 +87,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         private DataState getDataState(Map<String, Object> row, Container container)
         {
             if (_dataState == null)
-                _dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) row.get("rowid"));
+                _dataState = DataStateManager.getInstance().getStateForRowId(container, asLong(row.get("rowid")));
             return _dataState;
         }
 

@@ -1,5 +1,6 @@
 package org.labkey.specimen.actions;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MenuButton;
@@ -24,7 +25,6 @@ import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +102,7 @@ public class ManageRequestBean extends SpecimensViewBean
             addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, LocationImpl> relevantSites = new HashMap<>();
+        Map<Integer, LocationImpl> relevantSites = new IntHashMap<>();
         if (specimenRequest.getDestinationSiteId() == null)
         {
             throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +

@@ -822,21 +822,26 @@ public class PageFlowUtil
     }
 
 
-    // Cookie helper function -- loops through Cookie array and returns matching value (or defaultValue if not found)
+    // Cookie helper function -- loops through Cookie array and returns first matching value (or defaultValue if not found)
     public static String getCookieValue(Cookie[] cookies, String cookieName, @Nullable String defaultValue)
     {
         if (null != cookies)
             for (Cookie cookie : cookies)
             {
                 if (cookieName.equals(cookie.getName()))
-                    return (cookie.getValue());
+                    return cookie.getValue();
             }
-        return (defaultValue);
+        return defaultValue;
     }
 
     public static int[] toInts(Collection<String> strings)
     {
         return toInts(strings.toArray(new String[0]));
+    }
+
+    public static long[] toLongs(Collection<String> strings)
+    {
+        return toLongs(strings.toArray(new String[0]));
     }
 
     public static int[] toInts(String[] strings)
@@ -845,6 +850,16 @@ public class PageFlowUtil
         for (int i = 0; i < strings.length; i++)
         {
             result[i] = Integer.parseInt(strings[i]);
+        }
+        return result;
+    }
+
+    public static long[] toLongs(String[] strings)
+    {
+        long[] result = new long[strings.length];
+        for (int i = 0; i < strings.length; i++)
+        {
+            result[i] = Long.parseLong(strings[i]);
         }
         return result;
     }

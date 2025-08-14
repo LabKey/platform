@@ -48,7 +48,7 @@ public class ProtocolDisplayColumn extends SimpleDisplayColumn
         else
         {
             ActionURL url = new ActionURL(ExperimentController.ProtocolDetailsAction.class, ctx.getContainer());
-            url.addParameter("rowId", Integer.toString(_protocol.getRowId()));
+            url.addParameter("rowId", Long.toString(_protocol.getRowId()));
 
             out.write(LinkBuilder.simpleLink(_protocol.getName(), url));
         }

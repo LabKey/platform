@@ -99,6 +99,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
@@ -973,7 +974,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object value =  _convertCol.convert(o);
                 ForeignKey fk = _toCol.getFk();
                 // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
+                if (fk != null && _toCol.getJdbcType().isText() && equalsTo(o, value))
                 {
                     if (_remapper.getPkColumn().getJdbcType().isText())
                     {
@@ -988,6 +989,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 return null;
             }
+        }
+
+        private static boolean equalsTo(Object a, Object b)
+        {
+            if (Objects.equals(a,b))
+                return true;
+            if ((a instanceof Integer || a instanceof Long) && (b instanceof Integer || b instanceof Long))
+                return ((Number) a).longValue() == ((Number) b).longValue();
+            return false;
         }
 
         private Object convertWithRemapper(Object o)
@@ -1428,7 +1438,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 columnNames.add(lookupColumnName);
                 columnNames.add(lookupTablePkColumnName);
                 new TableSelector(tableInfo, columnNames).forEachMap(row -> {
-                    Integer rowId = (Integer)row.get(lookupTablePkColumnName);
+                    Integer rowId = asInteger(row.get(lookupTablePkColumnName));
                     String name = (String)row.get(lookupColumnName);
                     lookupStringToRowIdMap.put(name, rowId);
                 });
@@ -1504,7 +1514,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 if (dbSequenceBatchSize == null)
                     dbSequenceBatchSize = 100;
 
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, dbSequenceBatchSize, null);
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), (Integer)null, dbSequenceBatchSize, null);
                 added.add(columnInfo.getName());
             });
         return added;
@@ -1597,7 +1607,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName)
     {
-        return addSequenceColumn(col, sequenceContainer, sequenceName, null, null, null);
+        return addSequenceColumn(col, sequenceContainer, sequenceName, (Integer)null, null, null);
+    }
+
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Long sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)
+    {
+        // TODO BIGINT
+        if (null != sequenceId && sequenceId > Integer.MAX_VALUE)
+            throw new UnsupportedOperationException("sequenceId is too large");
+        return addSequenceColumn(col, sequenceContainer, sequenceName, null==sequenceId?null:sequenceId.intValue(), batchSize, minValue);
     }
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)

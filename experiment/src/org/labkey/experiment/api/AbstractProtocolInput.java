@@ -22,8 +22,8 @@ public abstract class AbstractProtocolInput extends IdentifiableBase
 {
     /*package*/ static final String NAMESPACE = LsidType.ProtocolInput.name();
 
-    protected int _rowId;
-    protected int _protocolId;
+    protected long _rowId;
+    protected long _protocolId;
     protected boolean _input;
     protected String _criteriaName;
     protected String _criteriaConfig;
@@ -34,22 +34,22 @@ public abstract class AbstractProtocolInput extends IdentifiableBase
     {
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }
 
-    public int getProtocolId()
+    public long getProtocolId()
     {
         return _protocolId;
     }
 
-    public void setProtocolId(int protocolId)
+    public void setProtocolId(long protocolId)
     {
         _protocolId = protocolId;
     }

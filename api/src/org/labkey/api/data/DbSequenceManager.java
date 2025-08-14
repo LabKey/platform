@@ -63,7 +63,7 @@ public class DbSequenceManager
         return get(c, name, 0);
     }
 
-    public static DbSequence get(Container c, String name, int id)
+    public static DbSequence get(Container c, String name, long id)
     {
         return new DbSequence(c, name, ensure(c, name, id));
     }
@@ -94,13 +94,13 @@ public class DbSequenceManager
         return getPreallocatingSequence(c, name, 0, 100);
     }
 
-    public static void invalidatePreallocatingSequence(Container c, String name, int id)
+    public static void invalidatePreallocatingSequence(Container c, String name, long id)
     {
         String key = c.getId() + "/" + name + "/" + id;
         _sequences.remove(key);
     }
 
-    public static DbSequence getPreallocatingSequence(Container c, String name, int id, int batchSize)
+    public static DbSequence getPreallocatingSequence(Container c, String name, long id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;
         return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
@@ -114,12 +114,12 @@ public class DbSequenceManager
         return ((DbSequence.Preallocate)seq).reserveSequentialBlock(count);
     }
 
-    private static int ensure(Container c, String name, int id)
+    private static int ensure(Container c, String name, long id)
     {
         return ensure(c, name, id, false);
     }
 
-    private static int ensure(Container c, String name, int id, boolean withUpdateLock)
+    private static int ensure(Container c, String name, long id, boolean withUpdateLock)
     {
         Integer rowId = getRowId(c, name, id, withUpdateLock);
 
@@ -129,12 +129,12 @@ public class DbSequenceManager
             return create(c, name, id, withUpdateLock);
     }
 
-    public static @Nullable Integer getRowId(Container c, String name, int id)
+    public static @Nullable Integer getRowId(Container c, String name, long id)
     {
         return getRowId(c, name, id, false);
     }
 
-    public static @Nullable Integer getRowId(Container c, String name, int id, boolean withUpdateLock)
+    public static @Nullable Integer getRowId(Container c, String name, long id, boolean withUpdateLock)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
@@ -158,7 +158,7 @@ public class DbSequenceManager
     }
 
 
-    private static Collection<Integer> getRowIds(Container c, String likePrefix, int id)
+    private static Collection<Integer> getRowIds(Container c, String likePrefix, long id)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
@@ -176,9 +176,14 @@ public class DbSequenceManager
     }
 
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
-    private static int create(Container c, String name, int id, boolean withUpdateLock)
+    private static int create(Container c, String name, long id, boolean withUpdateLock)
     {
         TableInfo tinfo = getTableInfo();
+
+        // TODO BIGINT
+        // convert Id to INT->BIGINT
+        if (id > Integer.MAX_VALUE)
+            throw new IllegalStateException("Sequence ID is too large: " + id);
 
         SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(tinfo.getSelectName());
         insertSql.append(" (Container, Name, Id, Value) VALUES (?, ?, ?, ?)");
@@ -232,7 +237,7 @@ public class DbSequenceManager
         }
     }
 
-    public static void deleteLike(Container c, String likePrefix, int id, SqlDialect dialect)
+    public static void deleteLike(Container c, String likePrefix, long id, SqlDialect dialect)
     {
         Collection<Integer> rowIds = getRowIds(c, likePrefix, id);
 

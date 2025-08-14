@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyType;
@@ -72,8 +73,8 @@ public class NameGeneratorState implements AutoCloseable
     private boolean _counterSequencesCleaned = false;
     protected final Container _container;
 
-    protected final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-    protected final Map<Integer, ExpData> dataCache = new HashMap<>();
+    protected final Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+    protected final Map<Long, ExpData> dataCache = new LongHashMap<>();
     protected final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 

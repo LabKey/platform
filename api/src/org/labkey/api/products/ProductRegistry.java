@@ -257,7 +257,7 @@ public class ProductRegistry
     {
         List<String> productIds = origProductIds == null ? getProductIdsForContainer(context.getContainer()) : origProductIds;
 
-        Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions = ExperimentService.get().getContainerDataTypeExclusions(context.getContainer().getId());
+        Map<ExperimentService.DataTypeForExclusion, Set<Long>> dataTypeExclusions = ExperimentService.get().getContainerDataTypeExclusions(context.getContainer().getId());
 
         List<MenuSection> sections = new ArrayList<>();
         for (String productId : productIds)
@@ -384,7 +384,7 @@ public class ProductRegistry
             }
 
             @Override
-            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
+            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Map<ExperimentService.DataTypeForExclusion, Set<Long>> dataTypeExclusions)
             {
                 if (_sectionNames.contains(sectionName))
                     return new TestMenuSection(context, sectionName, sectionName);

@@ -35,12 +35,12 @@ public class DataInput extends AbstractRunInput
         return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + NAMESPACE + ":";
     }
 
-    /*package*/ static String lsid(int inputKey, int targetApplicationId)
+    /*package*/ static String lsid(long inputKey, long targetApplicationId)
     {
         return AbstractRunInput.lsid(NAMESPACE, inputKey, targetApplicationId);
     }
 
-    private int _dataId;
+    private long _dataId;
 
     public DataInput()
     {
@@ -53,18 +53,18 @@ public class DataInput extends AbstractRunInput
         return lsid(getInputKey(), getTargetApplicationId());
     }
 
-    public int getDataId()
+    public long getDataId()
     {
         return _dataId;
     }
 
-    public void setDataId(int id)
+    public void setDataId(long id)
     {
         _dataId = id;
     }
 
     @Override
-    protected int getInputKey()
+    protected long getInputKey()
     {
         return _dataId;
     }

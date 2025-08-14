@@ -28,10 +28,10 @@ public class ExperimentRun extends IdentifiableEntity
     private String protocolLSID;
     private String filePathRoot;
     private String comments;
-    private Integer jobId;
-    private Integer _replacedByRunId;
-    private Integer _batchId;
-    private Integer _workflowTask;
+    private Long jobId;
+    private Long _replacedByRunId;
+    private Long _batchId;
+    private Long _workflowTask;
 
     public String getProtocolLSID()
     {
@@ -63,12 +63,12 @@ public class ExperimentRun extends IdentifiableEntity
         this.comments = comments;
     }
 
-    public Integer getJobId()
+    public Long getJobId()
     {
         return jobId;
     }
 
-    public void setJobId(Integer jobId)
+    public void setJobId(Long jobId)
     {
         this.jobId = jobId;
     }
@@ -84,32 +84,32 @@ public class ExperimentRun extends IdentifiableEntity
         super.setName(name);
     }
 
-    public Integer getReplacedByRunId()
+    public Long getReplacedByRunId()
     {
         return _replacedByRunId;
     }
 
-    public void setReplacedByRunId(Integer replacedByRunId)
+    public void setReplacedByRunId(Long replacedByRunId)
     {
         _replacedByRunId = replacedByRunId;
     }
 
-    public Integer getBatchId()
+    public Long getBatchId()
     {
         return _batchId;
     }
 
-    public void setBatchId(Integer batchId)
+    public void setBatchId(Long batchId)
     {
         _batchId = batchId;
     }
 
-    public Integer getWorkflowTask()
+    public Long getWorkflowTask()
     {
         return _workflowTask;
     }
 
-    public void setWorkflowTask(Integer workflowTaskId)
+    public void setWorkflowTask(Long workflowTaskId)
     {
         _workflowTask = workflowTaskId;
     }
@@ -137,7 +137,7 @@ public class ExperimentRun extends IdentifiableEntity
     public int hashCode()
     {
         int result = super.hashCode();
-        result = 31 * result + getRowId();
+        result = 31 * result + (int)getRowId();
         result = 31 * result + (protocolLSID != null ? protocolLSID.hashCode() : 0);
         return result;
     }

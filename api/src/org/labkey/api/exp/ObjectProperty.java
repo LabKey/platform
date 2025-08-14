@@ -37,7 +37,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     // Object fields
     private GUID containerId;
     private String objectURI;
-    private Integer objectOwnerId;
+    private Long objectOwnerId;
 
     // PropertyDescriptor
 	private String propertyURI;
@@ -186,12 +186,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         this.objectURI = objectURI;
     }
 
-    public Integer getObjectOwnerId()
+    public Long getObjectOwnerId()
     {
         return objectOwnerId;
     }
 
-    public void setObjectOwnerId(Integer objectOwnerId)
+    public void setObjectOwnerId(Long objectOwnerId)
     {
         this.objectOwnerId = objectOwnerId;
     }

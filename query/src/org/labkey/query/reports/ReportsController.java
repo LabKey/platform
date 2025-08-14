@@ -50,6 +50,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -3102,7 +3103,7 @@ public class ReportsController extends SpringActionController
             ViewCategoryManager vcm = ViewCategoryManager.getInstance();
 
             // get the collection of all distinct categories
-            Map<Integer, CategoryHelper> categories = new HashMap<>();
+            Map<Integer, CategoryHelper> categories = new IntHashMap<>();
             for (DataViewInfo view : views)
             {
                 ViewCategory og = view.getCategory();
@@ -3115,7 +3116,7 @@ public class ReportsController extends SpringActionController
                 }
             }
 
-            Map<Integer, Path> mapRowidPath = new HashMap<>();
+            Map<Integer, Path> mapRowidPath = new IntHashMap<>();
             Map<Path, CategoryHelper> mapPathHelper = new HashMap<>();
             if (collapseByLabel)
             {

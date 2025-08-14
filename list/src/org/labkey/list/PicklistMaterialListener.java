@@ -23,7 +23,7 @@ public class PicklistMaterialListener implements ExperimentListener
     public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
     {
         Collection<ListDef> picklists = ListManager.get().getPicklists(container);
-        List<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
+        List<Long> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
         picklists.forEach(picklist -> {
             ListQuerySchema listQuerySchema = new ListQuerySchema(user, container);
             TableInfo table = listQuerySchema.getTable(picklist.getName());

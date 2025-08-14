@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     private static final String EVENT_NAME = "ParticipantGroupEvent";
@@ -286,7 +288,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         {
             if (bean.containsKey("ownerId"))
             {
-                bean.put("shared", (Integer)bean.get("ownerId") == -1);
+                bean.put("shared", asInteger(bean.get("ownerId")) == -1);
             }
 
             if (bean.containsKey("participantIds"))

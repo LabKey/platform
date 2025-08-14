@@ -34,7 +34,7 @@ public class PlateSetCache
 
     private static class Loader implements CacheLoader<String, PlateSet>
     {
-        private final Map<Container, Set<Integer>> _containerPlateSet = new HashMap<>();            // internal collection to help un-cache all plate sets for a container
+        private final Map<Container, Set<Long>> _containerPlateSet = new HashMap<>();            // internal collection to help un-cache all plate sets for a container
 
         @Override
         public PlateSet load(@NotNull String key, @Nullable Object argument)
@@ -80,17 +80,17 @@ public class PlateSetCache
 
     public static @NotNull List<PlateSet> getPlateSets(Container c)
     {
-        List<Integer> ids = new TableSelector(
+        List<Long> ids = new TableSelector(
             AssayDbSchema.getInstance().getTableInfoPlateSet(),
             Collections.singleton(PlateSetTable.Column.RowId.name()),
             SimpleFilter.createContainerFilter(c),
             new Sort(PlateSetTable.Column.RowId.name())
-        ).getArrayList(Integer.class);
+        ).getArrayList(Long.class);
 
         return ids.stream().map(id -> PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, id))).toList();
     }
 
-    public static @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)
+    public static @Nullable PlateSet getPlateSet(ContainerFilter cf, long rowId)
     {
         SimpleFilter filter = new SimpleFilter(PlateSetTable.Column.RowId.fieldKey(), rowId);
         Container c = PlateManager.getContainerWithPlateSetIdentifier(cf, filter);
@@ -98,7 +98,7 @@ public class PlateSetCache
         return c != null ? PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, rowId)) : null;
     }
 
-    public static @Nullable PlateSet getPlateSet(Container c, int rowId)
+    public static @Nullable PlateSet getPlateSet(Container c, long rowId)
     {
         return PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, rowId));
     }
@@ -115,15 +115,15 @@ public class PlateSetCache
         // uncache all plate sets for this container
         if (_loader._containerPlateSet.containsKey(c))
         {
-            Set<Integer> rowIds = new HashSet<>(_loader._containerPlateSet.get(c));
-            for (Integer rowId : rowIds)
+            Set<Long> rowIds = new HashSet<>(_loader._containerPlateSet.get(c));
+            for (Long rowId : rowIds)
             {
                 uncache(c, rowId);
             }
         }
     }
 
-    public static void uncache(Container c, int rowId)
+    public static void uncache(Container c, long rowId)
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateSetCacheKey.getCacheKey(c, rowId);
@@ -184,7 +184,7 @@ public class PlateSetCache
             return _getCacheKey(c, Type.plateSetId, plateSetId);
         }
 
-        public static String getCacheKey(Container c, Integer rowId)
+        public static String getCacheKey(Container c, Long rowId)
         {
             return _getCacheKey(c, Type.rowId, rowId);
         }

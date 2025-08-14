@@ -14,7 +14,7 @@ public class StampOperation implements LayoutOperation
         for (Plate plate : context.sourcePlates())
         {
             WellLayout wellLayout = new WellLayout(plate.getPlateType());
-            int plateId = plate.getRowId();
+            long plateId = plate.getRowId();
 
             for (int r = 0; r < plate.getRows(); r++)
             {

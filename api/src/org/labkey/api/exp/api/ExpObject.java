@@ -39,9 +39,9 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     /** Prevent edits to this object. Subsequent calls to setters will throw an IllegalStateException */
     ExpObject lock();
 
-    int getRowId();
+    long getRowId();
     /** Get the exp.object objectId */
-    @Nullable Integer getObjectId();
+    @Nullable Long getObjectId();
     void setLSID(String lsid);
     void setLSID(Lsid lsid);
     void setName(String name);

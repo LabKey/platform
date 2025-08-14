@@ -60,7 +60,7 @@ public class ExpDataProtocolInputImpl extends ExpProtocolInputImpl<DataProtocolI
     @Override
     public @Nullable ExpDataClassImpl getType()
     {
-        Integer dataClassId = _object.getDataClassId();
+        Long dataClassId = _object.getDataClassId();
         if (dataClassId == null)
             return null;
 

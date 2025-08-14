@@ -911,7 +911,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private static class QCStateDisplayColumn extends DataColumn
     {
-        private Map<Integer, DataState> _qcStateCache;
+        private Map<Long, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
         {
             super(col);
@@ -922,16 +922,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             Object value = getValue(ctx);
             HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
-            if (value instanceof Integer)
+            if (value instanceof Number numValue)
             {
-                DataState state = getStateCache(ctx).get(value);
+                DataState state = getStateCache(ctx).get(numValue.longValue());
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(PageFlowUtil.popupHelp(HtmlString.of(state.getDescription()), "QC State " + state.getLabel()));
             }
             return formattedValue.getHtmlString();
         }
 
-        private Map<Integer, DataState> getStateCache(RenderContext ctx)
+        private Map<Long, DataState> getStateCache(RenderContext ctx)
         {
             if (_qcStateCache == null)
             {

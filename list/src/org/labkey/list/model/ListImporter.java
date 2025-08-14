@@ -158,10 +158,9 @@ public class ListImporter
                 {
                     throw new IllegalStateException("Table information not available for list: " + def.getName());
                 }
-
                 // infer columns (default) is needed because in resolveDomainChanges() we auto-add columns.
                 // However Don't infer types if xmlmetadata is available. Fix for Issue 35760: List Archive Imports change numbers into scientific notation on text fields
-                if(hasXmlMetadata)
+                if (hasXmlMetadata)
                     loader.setInferTypes(false);
                 loader.setKnownColumns(ti.getColumns());
 

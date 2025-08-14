@@ -39,7 +39,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         super(name, true, true, WebPartFactory.LOCATION_BODY);
     }
 
-    protected static Integer getIntPropertry(Portal.WebPart webPart, String propertyName)
+    protected static Integer getIntProperty(Portal.WebPart webPart, String propertyName)
     {
         String value = webPart.getPropertyMap().get(propertyName);
         if (value != null)
@@ -55,9 +55,25 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         return null;
     }
 
-    public static Integer getProtocolId(Portal.WebPart webPart)
+    protected static Long getLongProperty(Portal.WebPart webPart, String propertyName)
     {
-        return getIntPropertry(webPart, PROTOCOL_ID_KEY);
+        String value = webPart.getPropertyMap().get(propertyName);
+        if (value != null)
+        {
+            try
+            {
+                return Long.valueOf(value);
+            }
+            catch (NumberFormatException e)
+            {
+            }
+        }
+        return null;
+    }
+
+    public static Long getProtocolId(Portal.WebPart webPart)
+    {
+        return getLongProperty(webPart, PROTOCOL_ID_KEY);
     }
 
 //    public static Integer getBatchId(Portal.WebPart webPart)
@@ -73,7 +89,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
     @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        Integer protocolId = getProtocolId(webPart);
+        Long protocolId = getProtocolId(webPart);
         ProtocolIdForm protocolIdForm = new ProtocolIdForm();
         protocolIdForm.setRowId(protocolId);
         protocolIdForm.setUser(portalCtx.getUser());

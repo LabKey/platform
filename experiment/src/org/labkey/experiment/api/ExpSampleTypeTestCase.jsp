@@ -89,6 +89,8 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
+<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -584,7 +586,7 @@ public void testBlankRows() throws Exception
     assertEquals("Expected to insert 2 samples, got: " + insertedRows.size(), 2, insertedRows.size());
     assertEquals(0, insertedRows.get(0).get("AliquotCount"));
 
-    ExpMaterial material1 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(0).get("rowid"));
+    ExpMaterial material1 = ExperimentService.get().getExpMaterial(asLong(insertedRows.get(0).get("rowid")));
     Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
     assertEquals("Expected to only have 'age' property, got: " + map, 1, map.size());
 
@@ -593,7 +595,7 @@ public void testBlankRows() throws Exception
     assertEquals("Expected to insert age of 20, got: " + age1, 20, age1.intValue());
 
     ExpMaterial material2 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(1).get("rowid"));
-    Integer age2 = (Integer)material2.getPropertyValues().values().iterator().next();
+    Integer age2 = asInteger(material2.getPropertyValues().values().iterator().next());
     assertNotNull(age2);
     assertEquals("Expected to insert age of 30, got: " + age2, 30, age2.intValue());
 
@@ -608,7 +610,7 @@ public void testBlankRows() throws Exception
     svc.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
     assertFalse(errors.hasErrors());
     var result = new TableSelector(table, TableSelector.ALL_COLUMNS, new SimpleFilter("lsid", material1.getLSID()), null).getMap();
-    assertEquals(21, ((Integer)result.get("age")).intValue());
+    assertEquals(21, asInteger(result.get("age")).intValue());
 
     // and a delete
     svc.deleteRows(user, c, Collections.singletonList(updated), null, null);
@@ -1071,7 +1073,7 @@ public void testExpMaterialPermissions() throws Exception
     assertFalse(msg, errors.hasErrors());
     assertEquals(1,ret.size());
     assertNotNull(ret.get(0).get("rowid"));
-    int stSampleId = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+    long stSampleId = (long) JdbcType.BIGINT.convert(ret.get(0).get("rowid"));
 
     // verify insert, update aren't allowed, but read and delete are allowed
     var materialsTable = schema.getTable(ExpSchema.TableType.Materials.name());

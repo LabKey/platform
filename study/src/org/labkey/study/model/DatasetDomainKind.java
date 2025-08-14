@@ -80,6 +80,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
 
 public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomainKindProperties>
@@ -373,7 +374,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (arguments.containsKey("categoryName"))
                 throw new IllegalArgumentException("Category ID and category name cannot both be specified.");
 
-            ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, (Integer)arguments.get("categoryId"));
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, asInteger(arguments.get("categoryId")));
             if (category == null)
                 throw new IllegalArgumentException("Unable to find a category with the ID : " + arguments.get("categoryId") + " in this folder.");
 

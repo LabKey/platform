@@ -17,13 +17,13 @@ package org.labkey.api.qc;
 
 public class DeleteDataStateForm
 {
-    private int _id;
+    private long _id;
     private boolean _all = false;
     private String _manageReturnUrl;
 
-    public int getId() {return _id;}
+    public long getId() {return _id;}
 
-    public void setId(int id) {_id = id;}
+    public void setId(long id) {_id = id;}
 
     public boolean isAll()
     {

@@ -458,7 +458,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     protected Collection<NavTree> getActionsHelper(User user, List<ExpData> expDatas)
     {
         List<NavTree> result = new ArrayList<>();
-        Set<Integer> runIDs = new HashSet<>();
+        Set<Long> runIDs = new HashSet<>();
 
         for (ExpData data : expDatas)
         {

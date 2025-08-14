@@ -16,6 +16,7 @@
 
 package org.labkey.study.reports;
 
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
@@ -39,8 +40,8 @@ public class BaseStudyView<T> extends HttpView<T>
 {
     private final Study _study;
     private final StudyManager _studyManager;
-    private final HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
-    private final HashMap<Integer, DatasetDefinition> _datasetMap = new HashMap<>();
+    private final HashMap<Integer, VisitImpl> _visitMap = new IntHashMap<>();
+    private final HashMap<Integer, DatasetDefinition> _datasetMap = new IntHashMap<>();
 
     private Collection<VisitImpl> _visits;            // display ordered
     private List<DatasetDefinition> _datasetDefs;

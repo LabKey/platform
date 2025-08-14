@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * Delete is the only supported operation. Site and application admins can delete any API key; others are restricted to
  * deleting their own.
@@ -73,7 +75,7 @@ public class ApiKeysUpdateService extends DefaultQueryUpdateService
         // so we skip the container permission check from the base class.
         aliasColumns(_columnMapping, oldRowMap);
 
-        Integer rowId = (Integer)oldRowMap.get("rowId");
+        Integer rowId = asInteger(oldRowMap.get("rowId"));
         ApiKeyManager.get().deleteKeys(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
 
         return oldRowMap;
@@ -84,7 +86,7 @@ public class ApiKeysUpdateService extends DefaultQueryUpdateService
         // Site and application admins can delete anyone's API key; others are restricted to deleting their own.
         if (!user.hasRootPermission(UserManagementPermission.class))
         {
-            Integer createdById = (Integer) row.get("CreatedBy");
+            Integer createdById = asInteger(row.get("CreatedBy"));
             if (createdById == null)
                 return;
             if (user.getUserId() != createdById)

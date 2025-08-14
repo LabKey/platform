@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * This is a pass-through iterator, it does not change any of the data, it only creates errors
  */
@@ -154,7 +156,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
             if (!_data.next())
                 return false;
 
-            int rowNum = _data.get(0) instanceof Integer ? ((Integer)_data.get(0)) : -1;
+            int rowNum = _data.get(0) instanceof Integer ? (asInteger(_data.get(0))) : -1;
 
             // first the column validators
             for (int i=1 ; i<_validators.size() ; i++)

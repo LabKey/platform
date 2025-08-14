@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class DataState
 {
-    private int _rowId;
+    private long _rowId;
     private String _label;
     private GUID _containerId;
     private String _description;
@@ -32,12 +32,12 @@ public class DataState
     private String _stateType;
     private String _color;
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }
@@ -127,7 +127,7 @@ public class DataState
     public int hashCode()
     {
         int result;
-        result = _rowId;
+        result = (int)_rowId;
         result = 31 * result + (_label != null ? _label.hashCode() : 0);
         result = 31 * result + (_containerId != null ? _containerId.hashCode() : 0);
         result = 31 * result + (_description != null ? _description.hashCode() : 0);

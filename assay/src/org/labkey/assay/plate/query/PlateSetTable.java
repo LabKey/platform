@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.query;
 
+import org.apache.commons.collections4.MapUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
@@ -244,7 +246,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
-            Integer rowId = (Integer) oldRowMap.get(Column.RowId.name());
+            Long rowId = MapUtils.getLong(oldRowMap,Column.RowId.name());
             PlateSet plateSet = PlateManager.get().getPlateSet(container, rowId);
             if (plateSet == null)
                 throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", rowId));
@@ -277,7 +279,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             @Nullable Map<Enum, Object> configParameters
         ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer rowId = (Integer) oldRow.get(Column.RowId.name());
+            Long rowId = asLong(oldRow.get(Column.RowId.name()));
             PlateSet plateSet = PlateManager.get().requirePlateSet(container, rowId, "Failed to update plate set.");
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
