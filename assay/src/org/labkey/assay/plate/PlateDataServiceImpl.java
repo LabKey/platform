@@ -109,7 +109,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 translated.add(gwtWellGroup);
             }
 
-            int newPlateId = copyTemplate || template.getRowId() == null ? -1 : template.getRowId();
+            long newPlateId = copyTemplate || template.getRowId() == null ? -1 : template.getRowId();
             GWTPlate plate = new GWTPlate(newPlateId,
                     template.getName(), template.getAssayType(), template.getRows(),
                     template.getColumns(), getTypeList(template), handler.showEditorWarningPanel());
@@ -148,7 +148,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
     }
 
     @Override
-    public int saveChanges(GWTPlate gwtPlate, boolean replaceIfExisting) throws Exception
+    public long saveChanges(GWTPlate gwtPlate, boolean replaceIfExisting) throws Exception
     {
         try
         {

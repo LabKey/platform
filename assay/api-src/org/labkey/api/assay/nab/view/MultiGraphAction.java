@@ -40,7 +40,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
     @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
-        int[] ids = form.getId();
+        long[] ids = form.getId();
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), ids);

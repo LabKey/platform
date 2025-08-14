@@ -26,32 +26,32 @@ import java.util.Date;
  */
 public abstract class RunItem extends IdentifiableBase
 {
-    private Integer _runId;
-    private int _rowId;
+    private Long _runId;
+    private long _rowId;
     private Date _created;
     private Integer _createdBy;
     private Date _modified;
     private Integer _modifiedBy;
     private String _cpasType;
-    private Integer _sourceApplicationId;
+    private Long _sourceApplicationId;
     private String _description;
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }
 
-    public Integer getRunId()
+    public Long getRunId()
     {
         return _runId;
     }
 
-    public void setRunId(Integer runId)
+    public void setRunId(Long runId)
     {
         _runId = runId;
     }
@@ -76,12 +76,12 @@ public abstract class RunItem extends IdentifiableBase
         _cpasType = cpasType;
     }
 
-    public Integer getSourceApplicationId()
+    public Long getSourceApplicationId()
     {
         return _sourceApplicationId;
     }
 
-    public void setSourceApplicationId(Integer sourceApplicationId)
+    public void setSourceApplicationId(Long sourceApplicationId)
     {
         _sourceApplicationId = sourceApplicationId;
     }
@@ -128,6 +128,6 @@ public abstract class RunItem extends IdentifiableBase
 
     public int hashCode()
     {
-        return _rowId + getClass().hashCode();
+        return (int)(_rowId + getClass().hashCode());
     }
 }

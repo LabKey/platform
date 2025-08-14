@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
@@ -332,7 +333,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer plateId = (Integer) oldRow.get(Column.RowId.name());
+            Integer plateId = asInteger(oldRow.get(Column.RowId.name()));
             Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();
@@ -374,7 +375,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
-            Integer plateId = (Integer) oldRowMap.get(Column.RowId.name());
+            Integer plateId = asInteger(oldRowMap.get(Column.RowId.name()));
             Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();

@@ -147,7 +147,7 @@ public class DatasetImportRunnable implements Runnable
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         DataState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                DataStateManager.getInstance().getStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+                DataStateManager.getInstance().getStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState()) : null;
 
         List<String> validateErrors = new ArrayList<>();
         validate(validateErrors);

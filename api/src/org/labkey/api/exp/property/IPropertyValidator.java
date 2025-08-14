@@ -32,7 +32,7 @@ import java.util.Map;
 public interface IPropertyValidator
 {
     int getPropertyId();
-    int getRowId();
+    long getRowId();
     String getName();
     String getTypeURI();
     String getDescription();

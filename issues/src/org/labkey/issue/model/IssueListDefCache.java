@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -46,7 +47,7 @@ public class IssueListDefCache
 
         private IssueDefCollections(Container c)
         {
-            Map<Integer, IssueListDef> rowIdMap = new HashMap<>();
+            Map<Integer, IssueListDef> rowIdMap = new IntHashMap<>();
             Map<String, IssueListDef> nameMap = new HashMap<>();
             Map<String, List<IssueListDef>> domainKindMap = new HashMap<>();
 

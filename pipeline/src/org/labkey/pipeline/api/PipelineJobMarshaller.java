@@ -77,7 +77,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     }
 
     @Override
-    public PipelineJob getJob(int rowId)
+    public PipelineJob getJob(long rowId)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }

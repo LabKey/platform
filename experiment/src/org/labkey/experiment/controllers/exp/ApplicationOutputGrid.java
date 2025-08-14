@@ -36,7 +36,7 @@ import java.util.List;
 */
 public class ApplicationOutputGrid extends GridView
 {
-    public ApplicationOutputGrid(Container c, Integer rowIdPA, TableInfo ti)
+    public ApplicationOutputGrid(Container c, Long rowIdPA, TableInfo ti)
     {
         super(new DataRegion(), (BindException)null);
         List<ColumnInfo> cols = ti.getColumns("RowId,Name");

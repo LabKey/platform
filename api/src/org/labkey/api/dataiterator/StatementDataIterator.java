@@ -64,6 +64,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 
 public class StatementDataIterator extends AbstractDataIterator
 {
@@ -217,7 +219,7 @@ public class StatementDataIterator extends AbstractDataIterator
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
         {
-            contextTxSize = (Integer) _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize);
+            contextTxSize = asInteger(_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize));
             _log = (Logger)_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger); // may still be null
         }
         if (contextTxSize != null && contextTxSize > 1)
@@ -356,7 +358,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
             if (hasNextRow)
             {
-                int n = (Integer)_data.get(0);
+                int n = asInteger(_data.get(0));
                 assert( n > _currentRowNumber);
                 _currentRowNumber = n;
 
@@ -375,7 +377,7 @@ public class StatementDataIterator extends AbstractDataIterator
                     }
                     else
                     {
-                        binding.to.setValue(value);
+                            binding.to.setValue(value);
                     }
                 }
                 log("</clear and set parameters on " + _currentStmt + ">");
@@ -425,7 +427,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 sqlx = sqlx.getNextException();
             if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
             {
-                getRowError().addGlobalError(sqlx);
+                getGlobalError().addGlobalError(sqlx);
 //              see bug21719
 //              Sometimes (always?) Postgres leaves the connection unusable after a constraint exception, so we can't continue even if we want to
                 throw _errors;
@@ -434,7 +436,7 @@ public class StatementDataIterator extends AbstractDataIterator
             else if (SqlDialect.isObjectNotFoundException(sqlx))
             {
                 OptimisticConflictException opt = OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
-                getRowError().addGlobalError(opt);
+                getGlobalError().addGlobalError(opt);
                 throw _errors;
             }
             throw new RuntimeSQLException(sqlx);

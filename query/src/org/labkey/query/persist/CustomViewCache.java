@@ -23,6 +23,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -58,7 +59,7 @@ public class CustomViewCache
         {
             Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> customViews = new CaseInsensitiveHashMap<>();
             Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> inheritableCustomViews = new CaseInsensitiveHashMap<>();
-            Map<Integer, CstmView> rowIdMap = new HashMap<>();
+            Map<Integer, CstmView> rowIdMap = new IntHashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
             new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(CstmView.class, cstmView -> {

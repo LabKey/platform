@@ -1,6 +1,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -17,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 {
     public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
@@ -27,7 +30,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     final CachingDataIterator _unwrapped;
     final TableInfo target;
-    final int _sampleTypeId;
+    final long _sampleTypeId;
     final ColumnInfo pkColumn;
     final Supplier<Object> pkSupplier;
     final int _aliquotedFromColIndex;
@@ -37,11 +40,11 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
-    final HashMap<Integer, String> aliquotParents = new HashMap<>();
-    final HashMap<Integer, Integer> aliquotRoots = new HashMap<>();
-    final HashMap<Integer, Integer> sampleState = new HashMap<>();
+    final IntHashMap<String> aliquotParents = new IntHashMap<>();
+    final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
+    final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useLsid)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, boolean useLsid)
     {
         super(in);
 
@@ -77,7 +80,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     @Override
     public Object get(int i)
     {
-        Integer rowNumber = (Integer)_delegate.get(0);
+        Integer rowNumber = asInteger(_delegate.get(0));
 
         if (i == _aliquotedFromColIndex)
             return aliquotParents.get(rowNumber);
@@ -107,7 +110,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     protected void prefetchExisting() throws BatchValidationException
     {
-        Integer rowNumber = (Integer)_delegate.get(0);
+        Integer rowNumber = asInteger(_delegate.get(0));
         if (rowNumber <= lastPrefetchRowNumber)
             return;
 
@@ -120,7 +123,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         Map<String, Integer> keyRowMap = new LinkedHashMap<>();
         do
         {
-            lastPrefetchRowNumber = (Integer) _delegate.get(0);
+            lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
 
             String key = null;

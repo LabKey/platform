@@ -51,7 +51,7 @@ public class SampleTypeContentsView extends QueryView
         );
     }
 
-    public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Integer targetSampleTypeId)
+    public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Long targetSampleTypeId)
     {
         ActionURL urlDeriveSamples = new ActionURL(ExperimentController.DeriveSamplesChooseTargetAction.class, container);
         if (targetSampleTypeId != null)

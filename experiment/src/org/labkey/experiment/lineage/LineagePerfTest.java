@@ -68,6 +68,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 @TestWhen(TestWhen.When.WEEKLY)
@@ -359,7 +360,7 @@ public class LineagePerfTest extends Assert
             insertDataTimer.stop();
 
             Map<String, Object> firstDataMap = insertedDatas.get(0);
-            Integer firstDataRowId = (Integer)firstDataMap.get("rowId");
+            Long firstDataRowId = asLong(firstDataMap.get("rowId"));
             assertNotNull(firstDataRowId);
             firstData = ExperimentService.get().getExpData(firstDataRowId);
             assertNotNull(firstData);
@@ -399,7 +400,7 @@ public class LineagePerfTest extends Assert
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
         filter.addCondition(FieldKey.fromParts("classId"), dc.getRowId());
-        Integer firstDataRowId = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("rowId"), filter, new Sort("rowId")).setMaxRows(1).getObject(Integer.class);
+        Long firstDataRowId = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("rowId"), filter, new Sort("rowId")).setMaxRows(1).getObject(Long.class);
         if (firstDataRowId == null)
             return null;
 
@@ -426,7 +427,7 @@ public class LineagePerfTest extends Assert
         final ExpLineageOptions opt = new ExpLineageOptions();
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);
 
-        Integer maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(rowId) FROM exp.material").getObject(Integer.class);
+        Long maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(rowId) FROM exp.material").getObject(Long.class);
 
         for (int i = 0; i < 10; i++)
         {

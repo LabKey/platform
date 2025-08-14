@@ -34,6 +34,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -113,7 +114,7 @@
                 {
                     index++;
                     List<? extends TreatmentVisitMap> mapping = TreatmentManager.getInstance().getStudyTreatmentVisitMap(c, cohort.getRowId());
-                    Map<Integer, Integer> visitTreatments = new HashMap<>();
+                    Map<Integer, Integer> visitTreatments = new IntHashMap<>();
                     for (TreatmentVisitMap treatmentVisitMap : mapping)
                     {
                         visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());

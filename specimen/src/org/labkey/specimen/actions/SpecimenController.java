@@ -34,6 +34,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanViewForm;
@@ -621,7 +622,7 @@ public class SpecimenController extends SpringActionController
             addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, LocationImpl> relevantSites = new HashMap<>();
+        Map<Integer, LocationImpl> relevantSites = new IntHashMap<>();
         if (specimenRequest.getDestinationSiteId() == null)
         {
             throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
@@ -2761,7 +2762,7 @@ public class SpecimenController extends SpringActionController
     private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container)
     {
         SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(container);
-        Map<Integer, SpecimenRequestActor> idToStatus = new HashMap<>();
+        Map<Integer, SpecimenRequestActor> idToStatus = new IntHashMap<>();
         for (SpecimenRequestActor actor : actors)
             idToStatus.put(actor.getRowId(), actor);
         return idToStatus;
@@ -2924,7 +2925,7 @@ public class SpecimenController extends SpringActionController
     private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
     {
         Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
-        Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
+        Map<Integer, SpecimenRequestStatus> idToStatus = new IntHashMap<>();
         for (SpecimenRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
         return idToStatus;

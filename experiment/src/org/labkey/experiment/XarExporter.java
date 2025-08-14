@@ -147,10 +147,10 @@ public class XarExporter
     private final Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
     private final Set<String> _domainLSIDs = new HashSet<>();
 
-    private final Set<Integer> _expDataClasses = new HashSet<>();
-    private final Set<Integer> _expDataIDs = new HashSet<>();
+    private final Set<Long> _expDataClasses = new HashSet<>();
+    private final Set<Long> _expDataIDs = new HashSet<>();
 
-    private final Map<Integer, String> _rootMaterialRowIdsToLSIDs = new LRUMap<>(1_000);
+    private final Map<Long, String> _rootMaterialRowIdsToLSIDs = new LRUMap<>(1_000);
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
@@ -604,7 +604,7 @@ public class XarExporter
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
 
-        final Integer rootMaterialRowId = material.getRootMaterialRowId();
+        final Long rootMaterialRowId = material.getRootMaterialRowId();
         if (rootMaterialRowId != null && !rootMaterialRowId.equals(material.getRowId()))
         {
             if (!_rootMaterialRowIdsToLSIDs.containsKey(rootMaterialRowId))

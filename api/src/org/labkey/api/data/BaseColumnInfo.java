@@ -1443,8 +1443,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return false;
         if (o instanceof Boolean)
             return (Boolean)o;
-        else if (o instanceof Integer)
-            return (Integer)o != 0;
+        else if (o instanceof Integer || o instanceof Long)
+            return ((Number)o).longValue() != 0;
         else
             return booleanFromString(o.toString());
     }
@@ -2090,6 +2090,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         // UNDONE
         return rs.getInt(getAlias().getId());
+    }
+
+    @Override
+    public long getLongValue(ResultSet rs) throws SQLException
+    {
+        return rs.getLong(getAlias().getId());
     }
 
     @Override

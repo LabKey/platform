@@ -474,6 +474,11 @@ public class ListWriter
                     // Write URL, if exists, from property descriptor
                     if (null != propertyDescriptor.getURL())
                         columnXml.setUrl(propertyDescriptor.getURL().toXML());
+                    else if (column.getPropertyType() == PropertyType.ATTACHMENT)
+                    {
+                        // Issue 53505 : don't serialize the download URL if it wasn't set on the property descriptor
+                        columnXml.unsetUrl();
+                    }
                 }
             }
         }

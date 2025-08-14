@@ -70,7 +70,7 @@ public class AssayJSONConverter
         return jsonObject;
     }
 
-    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Integer... objectIds)
+    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Long... objectIds)
     {
         Domain dataDomain = provider.getResultsDomain(protocol);
         List<FieldKey> fieldKeys = new ArrayList<>();

@@ -52,8 +52,8 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
 {
     private ExpProtocol _protocol;
     private AssayProvider _provider;
-    private List<Integer> _ids = new ArrayList<>();
-    private List<Integer> _runIds = new ArrayList<>();
+    private List<Long> _ids = new ArrayList<>();
+    private List<Long> _runIds = new ArrayList<>();
 
     public static class AssayPublishStartForm extends ProtocolIdForm implements PublishStartForm
     {
@@ -120,7 +120,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     public ModelAndView getView(AssayPublishStartForm form, BindException errors)
     {
         // initialize the result row ids
-        List<Integer> ids = getDataIDs(form);
+        List<Long> ids = getDataIDs(form);
 
         // if QC is enabled for this protocol, verify that the selected data has been approved, otherwise show an error
         if (!validateQCState(_runIds, ids))
@@ -138,7 +138,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
             if (form.getReturnUrl() != null)
                 inputs.add(Pair.of(ActionURL.Param.returnUrl.name(), form.getReturnUrl().toString()));
             inputs.add(Pair.of(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey()));
-            for (Integer id : ids)
+            for (var id : ids)
                 inputs.add(Pair.of(DataRegion.SELECT_CHECKBOX_NAME, id.toString()));
 
             // Copy url parameters to hidden inputs
@@ -161,7 +161,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     }
 
     @Override
-    protected List<Integer> getDataIDs(AssayPublishStartForm form)
+    protected List<Long> getDataIDs(AssayPublishStartForm form)
     {
         if (_ids.isEmpty())
         {
@@ -191,7 +191,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
 
                 // Pull out the data row ids
                 _ids = new ArrayList<>();
-                new TableSelector(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString())).setForDisplay(true).forEach(rs -> _ids.add(dataRowIdColumn.getIntValue(rs)));
+                new TableSelector(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString())).setForDisplay(true).forEach(rs -> _ids.add(dataRowIdColumn.getLongValue(rs)));
             }
             else
             {
@@ -208,7 +208,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     }
 
     @Override
-    protected List<Integer> getBatchIds()
+    protected List<Long> getBatchIds()
     {
         return _runIds;
     }
@@ -226,7 +226,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
      *
      * @return true if all runs or data are approved, else false
      */
-    private boolean validateQCState(List<Integer> runIds, List<Integer> dataIds)
+    private boolean validateQCState(List<Long> runIds, List<Long> dataIds)
     {
         if (AssayQCService.getProvider().supportsQC())
         {

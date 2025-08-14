@@ -37,7 +37,7 @@ public class PlateCache
 
     private static class PlateLoader implements CacheLoader<String, Plate>
     {
-        private final Map<Container, Set<Integer>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
+        private final Map<Container, Set<Long>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
 
         @Override
         public Plate load(@NotNull String key, @Nullable Object argument)
@@ -89,7 +89,7 @@ public class PlateCache
         }
     }
 
-    public static @Nullable Plate getPlate(Container c, int rowId)
+    public static @Nullable Plate getPlate(Container c, long rowId)
     {
         Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
         // We allow plates to be mutated, return a copy of the cached object which still references the
@@ -97,7 +97,7 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    public static @Nullable Plate getPlate(ContainerFilter cf, int rowId)
+    public static @Nullable Plate getPlate(ContainerFilter cf, long rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         Container c = PlateManager.getContainerWithPlateIdentifier(cf, filter);
@@ -133,7 +133,7 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    private static @NotNull List<Integer> getPlateIDs(Container c, @Nullable SimpleFilter filter)
+    private static @NotNull List<Long> getPlateIDs(Container c, @Nullable SimpleFilter filter)
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(c);
         if (filter != null)
@@ -147,12 +147,12 @@ public class PlateCache
                 Collections.singleton(PlateTable.Column.RowId.name()),
                 plateFilter,
                 new Sort(PlateTable.Column.RowId.name())
-        ).getArrayList(Integer.class);
+        ).getArrayList(Long.class);
     }
 
     private static @NotNull List<Plate> getPlates(Container c, @Nullable SimpleFilter filter)
     {
-        List<Integer> ids = getPlateIDs(c, filter);
+        List<Long> ids = getPlateIDs(c, filter);
         return ids.stream().map(id -> PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id))).toList();
     }
 
@@ -161,7 +161,7 @@ public class PlateCache
         return getPlates(c, null);
     }
 
-    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Integer plateSetRowId)
+    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Long plateSetRowId)
     {
         return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId));
     }
@@ -178,15 +178,15 @@ public class PlateCache
         // uncache all plates for this container
         if (_loader._containerPlateMap.containsKey(c))
         {
-            Set<Integer> rowIds = new HashSet<>(_loader._containerPlateMap.get(c));
-            for (Integer rowId : rowIds)
+            Set<Long> rowIds = new HashSet<>(_loader._containerPlateMap.get(c));
+            for (Long rowId : rowIds)
             {
                 uncache(c, rowId);
             }
         }
     }
 
-    public static void uncache(Container c, int rowId)
+    public static void uncache(Container c, long rowId)
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateCacheKey.getCacheKey(c, rowId);
@@ -258,7 +258,7 @@ public class PlateCache
             return _getCacheKey(c, Type.plateId, plateId);
         }
 
-        public static String getCacheKey(Container c, Integer rowId)
+        public static String getCacheKey(Container c, Long rowId)
         {
             return _getCacheKey(c, Type.rowId, rowId);
         }

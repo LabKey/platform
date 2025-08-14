@@ -17,6 +17,7 @@ package org.labkey.issue.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -62,7 +63,7 @@ public class RelatedIssuesView extends VBox
         TableSelector ts = new TableSelector(issues, issues.getColumns( "issueDefId", "issueId", "container"), f, null);
 
         // Group issues by issuesListDef from the domain definition container
-        Map<Integer, IssuesByListDef> issuesByListDefMap = new HashMap<>();
+        Map<Integer, IssuesByListDef> issuesByListDefMap = new IntHashMap<>();
         ts.forEachMap((Map<String, Object> m) -> {
             Integer issueDefId = (Integer)m.get("issueDefId");
             Integer issueId = (Integer)m.get("issueId");

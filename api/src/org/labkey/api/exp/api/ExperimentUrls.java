@@ -39,11 +39,11 @@ public interface ExperimentUrls extends UrlProvider
     }
 
     default ActionURL getRunGraphURL(ExpRun run) { return null; }
-    default ActionURL getRunGraphURL(Container c, int rowId) { return null; }
+    default ActionURL getRunGraphURL(Container c, long rowId) { return null; }
 
     default ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus) { return null; }
 
-    default ActionURL getRunTextURL(Container c, int rowId) { return null; }
+    default ActionURL getRunTextURL(Container c, long rowId) { return null; }
     default ActionURL getRunTextURL(ExpRun run) { return null; }
 
     default ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnUrl) { return null; }
@@ -78,13 +78,13 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getCreateDataClassURL(Container c) { return null; }
 
-    default ActionURL getShowDataClassURL(Container container, int rowId) { return null; }
+    default ActionURL getShowDataClassURL(Container container, long rowId) { return null; }
 
     default ActionURL getShowFileURL(ExpData data, boolean inline) { return null; }
 
     default ActionURL getMaterialDetailsURL(ExpMaterial material) { return null; }
 
-    default ActionURL getMaterialDetailsURL(Container c, int materialRowId) { return null; }
+    default ActionURL getMaterialDetailsURL(Container c, long materialRowId) { return null; }
 
     default ActionURL getMaterialDetailsBaseURL(Container c, @Nullable String materialIdFieldKey) { return null; }
 

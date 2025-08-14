@@ -50,12 +50,12 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayListURL(Container container);
     ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol);
-    ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds);
+    ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, long... batchIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol);
-    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
-    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter.Type containerFilterType, int... runIds);
-    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
-    @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, long... runIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter.Type containerFilterType, long... runIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, long... runIds);
+    @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, long rowId);
 
     ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 

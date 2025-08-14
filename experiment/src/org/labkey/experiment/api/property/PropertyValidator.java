@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class PropertyValidator implements Serializable, Cloneable
 {
-    private int _rowId;
+    private long _rowId;
     private String _name;
     private String _description;
     private String _typeURI;
@@ -52,12 +52,12 @@ public class PropertyValidator implements Serializable, Cloneable
         _propertyId = v.getPropertyId();
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }

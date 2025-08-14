@@ -69,7 +69,7 @@ public interface AssayWellExclusionService
 
     void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container);
 
-    void deleteExclusionsForRun(ExpProtocol protocol, int runId);
+    void deleteExclusionsForRun(ExpProtocol protocol, long runId);
 
     int getExclusionCount(ExpRun run);
 
@@ -77,7 +77,7 @@ public interface AssayWellExclusionService
     ResultsQueryView.ResultsDataRegion createResultsDataRegion(ExpProtocol protocol);
 
     ActionURL getExclusionReportURL(Container container, ExpRun run);
-    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, ActionURL returnUrl);
+    ActionURL getExclusionURL(Container container, AssayProvider provider, long rowId, String runId, ActionURL returnUrl);
 
     @Nullable
     // returns a view containing warnings if the specified run has current well exclusions associated with it

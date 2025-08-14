@@ -92,7 +92,7 @@ public interface AssayFlagHandler
     /**
      * Delete all flags for the run.
      */
-    int deleteFlagsForRun(Container container, User user, int runId);
+    int deleteFlagsForRun(Container container, User user, long runId);
 
     /**
      * Delete the specified flag
@@ -102,5 +102,5 @@ public interface AssayFlagHandler
     /**
      * Returns the flags for the specified run.
      */
-    <FlagType extends ExpQCFlag> List<FlagType> getFlags(int runId, Class<FlagType> cls);
+    <FlagType extends ExpQCFlag> List<FlagType> getFlags(long runId, Class<FlagType> cls);
 }

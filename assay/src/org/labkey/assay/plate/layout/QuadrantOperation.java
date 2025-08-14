@@ -27,7 +27,7 @@ public class QuadrantOperation implements LayoutOperation
                 target = new WellLayout(_targetPlateType);
 
             Plate sourcePlate = context.sourcePlates().get(i);
-            Integer plateRowId = sourcePlate.getRowId();
+            Long plateRowId = sourcePlate.getRowId();
 
             int quadrant = i % 4;
             int rowOffset = 0;

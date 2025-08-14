@@ -24,19 +24,19 @@ public class ReformatOptions
 
     public static class TargetPlateSet
     {
-        private Integer _rowId;
+        private Long _rowId;
         private String _description;
         private String _name;
-        private Integer _parentPlateSetId;
+        private Long _parentPlateSetId;
         private Boolean _template;
         private PlateSetType _type;
 
-        public Integer getRowId()
+        public Long getRowId()
         {
             return _rowId;
         }
 
-        public TargetPlateSet setRowId(Integer rowId)
+        public TargetPlateSet setRowId(Long rowId)
         {
             _rowId = rowId;
             return this;
@@ -75,12 +75,12 @@ public class ReformatOptions
             return this;
         }
 
-        public Integer getParentPlateSetId()
+        public Long getParentPlateSetId()
         {
             return _parentPlateSetId;
         }
 
-        public TargetPlateSet setParentPlateSetId(Integer parentPlateSetId)
+        public TargetPlateSet setParentPlateSetId(Long parentPlateSetId)
         {
             _parentPlateSetId = parentPlateSetId;
             return this;
@@ -106,7 +106,7 @@ public class ReformatOptions
             type
         }
 
-        private Integer _rowId;
+        private Long _rowId;
         private SourceType _sourceType;
 
         public TargetPlateSource()
@@ -125,12 +125,12 @@ public class ReformatOptions
             _rowId = template.getRowId();
         }
 
-        public Integer getRowId()
+        public Long getRowId()
         {
             return _rowId;
         }
 
-        public void setRowId(Integer rowId)
+        public void setRowId(Long rowId)
         {
             _rowId = rowId;
         }
@@ -150,7 +150,7 @@ public class ReformatOptions
     private Boolean _fillPlatesOnly = false;
     private ReformatOperation _operation;
     private List<PlateManager.PlateData> _plates;
-    private List<Integer> _plateRowIds;
+    private List<Long> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
     private Boolean _previewData = true;
@@ -202,12 +202,12 @@ public class ReformatOptions
         return this;
     }
 
-    public List<Integer> getPlateRowIds()
+    public List<Long> getPlateRowIds()
     {
         return _plateRowIds;
     }
 
-    public ReformatOptions setPlateRowIds(List<Integer> plateRowIds)
+    public ReformatOptions setPlateRowIds(List<Long> plateRowIds)
     {
         _plateRowIds = plateRowIds;
         return this;

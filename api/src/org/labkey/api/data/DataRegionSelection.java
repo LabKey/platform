@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -168,9 +169,9 @@ public class DataRegionSelection
      * @param context Used to get the selection key
      * @return an unmodifiable copy of the selected item ids
      */
-    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context)
+    public static @NotNull Set<Long> getSelectedIntegers(ViewContext context)
     {
-        return asInts(getSelected(context, true));
+        return asLongs(getSelected(context, true));
     }
 
     /**
@@ -179,9 +180,9 @@ public class DataRegionSelection
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
      */
-    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, boolean clearSelection)
+    public static @NotNull Set<Long> getSelectedIntegers(ViewContext context, boolean clearSelection)
     {
-        return asInts(getSelected(context, null, clearSelection));
+        return asLongs(getSelected(context, null, clearSelection));
     }
 
     @Nullable
@@ -224,9 +225,9 @@ public class DataRegionSelection
     /**
      * Get the selected items from the request parameters (the current page of a data region) and session state as integers.
      */
-    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, @Nullable String key, boolean clearSession)
+    public static @NotNull Set<Long> getSelectedIntegers(ViewContext context, @Nullable String key, boolean clearSession)
     {
-        return asInts(getSelected(context, key, clearSession));
+        return asLongs(getSelected(context, key, clearSession));
     }
 
     public static @NotNull ArrayList<String> getSnapshotSelected(ViewContext context, @Nullable String key)
@@ -234,19 +235,19 @@ public class DataRegionSelection
         return new ArrayList<>(getSet(context, key, false, true));
     }
 
-    public static @NotNull ArrayList<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
+    public static @NotNull ArrayList<Long> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
     {
-        return new ArrayList<>(asInts(getSnapshotSelected(context, key)));
+        return new LongArrayList(asLongs(getSnapshotSelected(context, key)));
     }
 
-    private static @NotNull Set<Integer> asInts(Collection<String> ids)
+    private static @NotNull Set<Long> asLongs(Collection<String> ids)
     {
-        Set<Integer> result = new LinkedHashSet<>();
+        Set<Long> result = new LinkedHashSet<>();
         for (String s : ids)
         {
             try
             {
-                result.add(Integer.parseInt(s));
+                result.add(Long.parseLong(s));
             }
             catch (NumberFormatException nfe)
             {

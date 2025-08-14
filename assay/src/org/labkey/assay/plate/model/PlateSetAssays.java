@@ -11,30 +11,30 @@ import java.util.Map;
 public class PlateSetAssays
 {
     // A map of Assay Protocol ID to Plate Set IDs
-    private Map<Integer, List<Integer>> _protocolPlateSets = Collections.emptyMap();
+    private Map<Long, List<Long>> _protocolPlateSets = Collections.emptyMap();
     // A map of Plate Set ID to Plate Set
-    private Map<Integer, PlateSet> _plateSets = Collections.emptyMap();
+    private Map<Long, PlateSet> _plateSets = Collections.emptyMap();
 
     public PlateSetAssays()
     {
     }
 
-    public Map<Integer, List<Integer>> getProtocolPlateSets()
+    public Map<Long, List<Long>> getProtocolPlateSets()
     {
         return _protocolPlateSets;
     }
 
-    public void setProtocolPlateSets(Map<Integer, List<Integer>> protocolPlateSets)
+    public void setProtocolPlateSets(Map<Long, List<Long>> protocolPlateSets)
     {
         _protocolPlateSets = protocolPlateSets;
     }
 
-    public Map<Integer, PlateSet> getPlateSets()
+    public Map<Long, PlateSet> getPlateSets()
     {
         return _plateSets;
     }
 
-    public void setPlateSets(Map<Integer, PlateSet> plateSets)
+    public void setPlateSets(Map<Long, PlateSet> plateSets)
     {
         _plateSets = plateSets;
     }

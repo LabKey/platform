@@ -147,23 +147,23 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     {
         // Use the protocol's RowId instead the ExpProtocol itself because it will be serialized as part of the session
         // state when Tomcat is shut down cleanly
-        Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        Map<Pair<Container, Long>, List<Map<String, File>>> collections = (Map<Pair<Container, Long>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
         {
             collections = new HashMap<>();
             session.setAttribute(PipelineDataCollector.class.getName(), collections);
         }
-        Pair<Container, Integer> key = new Pair<>(c, protocol.getRowId());
+        Pair<Container, Long> key = new Pair<>(c, protocol.getRowId());
         return collections.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
     public static synchronized void clearFileQueue(HttpSession session, Container c, ExpProtocol protocol)
     {
-        Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        Map<Pair<Container, Long>, List<Map<String, File>>> collections = (Map<Pair<Container, Long>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
             return;
 
-        Pair<Container, Integer> key = new Pair<>(c, protocol.getRowId());
+        Pair<Container, Long> key = new Pair<>(c, protocol.getRowId());
         collections.remove(key);
     }
 

@@ -35,7 +35,7 @@
     Portal.WebPart webPart = bean.webPart;
     ViewContext ctx = getViewContext();
     ActionURL postUrl = webPart.getCustomizePostURL(ctx);
-    Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
+    Long viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
     boolean showButtons = true;
@@ -44,7 +44,7 @@
         showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY));
     }
 
-    Map<String, Integer> nameToId = new TreeMap<>();
+    Map<String, Long> nameToId = new TreeMap<>();
     for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -60,7 +60,7 @@
             <td>
                 <select name="<%=h(AssayBaseWebPartFactory.PROTOCOL_ID_KEY)%>">
                     <%
-                        for (Map.Entry<String, Integer> entry : nameToId.entrySet())
+                        for (Map.Entry<String, Long> entry : nameToId.entrySet())
                         {
                     %>
                          <option value="<%= entry.getValue() %>"<%=selected(entry.getValue().equals(viewProtocolId))%>>

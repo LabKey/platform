@@ -48,7 +48,7 @@ import java.util.Map;
  */
 public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends PipelineJob
 {
-    private int _batchId;
+    private long _batchId;
     private AssayRunAsyncContext<ProviderType> _context;
 
     private File _primaryFile;

@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class GWTProtocol implements IsSerializable
 {
-    private Integer _protocolId;
+    private Long _protocolId;
     private String _name;
     private String _description;
     private String _providerName;
@@ -84,12 +84,12 @@ public class GWTProtocol implements IsSerializable
     {
     }
 
-    public Integer getProtocolId()
+    public Long getProtocolId()
     {
         return _protocolId;
     }
 
-    public void setProtocolId(Integer protocolId)
+    public void setProtocolId(Long protocolId)
     {
         _protocolId = protocolId;
     }

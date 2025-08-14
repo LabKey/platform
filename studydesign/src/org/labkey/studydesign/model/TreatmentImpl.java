@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: cnathe
  * Date: 12/27/13
@@ -168,8 +170,8 @@ public class TreatmentImpl implements Treatment
 
         if (o.has("RowId"))
         {
-            if (o.get("RowId") instanceof Integer)
-                treatment.setRowId(o.getInt("RowId"));
+            if (o.get("RowId") instanceof Integer || o.get("RowId") instanceof Integer)
+                treatment.setRowId(asInteger("RowId"));
             else
                 treatment.setTempRowId(o.getString("RowId"));
         }

@@ -50,7 +50,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
             qcXml.setInsertUpdateDefault(datasetInsertState.getLabel());
     }
 
-    private DataState getQCStateFromRowId(Container container, Integer rowId)
+    private DataState getQCStateFromRowId(Container container, Long rowId)
     {
         if (rowId != null)
             return DataStateManager.getInstance().getStateForRowId(container, rowId);
@@ -79,7 +79,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
     }
 
     @Override
-    public void setDefaultPublishedDataQCState(Container container, User user, Integer stateId)
+    public void setDefaultPublishedDataQCState(Container container, User user, Long stateId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study != null)
@@ -91,7 +91,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
     }
 
     @Override
-    public void setDefaultPipelineQCState(Container container, User user, Integer stateId)
+    public void setDefaultPipelineQCState(Container container, User user, Long stateId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study != null)
@@ -103,7 +103,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
     }
 
     @Override
-    public void setDefaultDirectEntryQCState(Container container, User user, Integer stateId)
+    public void setDefaultDirectEntryQCState(Container container, User user, Long stateId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study != null)

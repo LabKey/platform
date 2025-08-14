@@ -40,6 +40,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -1023,7 +1024,7 @@ public class WikiController extends SpringActionController
                 List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
 
                 //map source page row ids to new page row ids
-                Map<Integer, Integer> pageIdMap = new HashMap<>();
+                Map<Integer, Integer> pageIdMap = new IntHashMap<>();
                 //shortcut for root topics
                 pageIdMap.put(null, null);
 

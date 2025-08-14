@@ -33,6 +33,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: adam
  * Date: Fed 22, 2008
@@ -63,7 +65,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         _contentType = (String) map.get("DocumentType");
 
-        int size = (Integer)map.get("DocumentSize");
+        int size = asInteger(map.get("DocumentSize"));
         _fileSize = (size > 0 ? size : 0);
     }
 

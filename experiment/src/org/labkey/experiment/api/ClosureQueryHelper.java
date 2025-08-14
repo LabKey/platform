@@ -349,7 +349,7 @@ public class ClosureQueryHelper
         }
     }
 
-    public static void clearAncestorsForMaterial(int rowId)
+    public static void clearAncestorsForMaterial(long rowId)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -360,7 +360,7 @@ public class ClosureQueryHelper
         recomputeMaterialAncestors(rowId);
     }
 
-    public static void clearAncestorsForDataObject(int rowId)
+    public static void clearAncestorsForDataObject(long rowId)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -485,7 +485,7 @@ public class ClosureQueryHelper
         }
     }
 
-    private static void recomputeMaterialAncestors(int rowId)
+    private static void recomputeMaterialAncestors(long rowId)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
@@ -493,7 +493,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
-    public static void recomputeMaterialAncestorsForRun(String sourceTypeLsid, int runId)
+    public static void recomputeMaterialAncestorsForRun(String sourceTypeLsid, long runId)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -512,7 +512,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
-    private static void recomputeMaterialAncestorsForRuns(Collection<Integer> runIds)
+    private static void recomputeMaterialAncestorsForRuns(Collection<Long> runIds)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -532,7 +532,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
-    private static void recomputeDataObjectAncestors(int rowId)
+    private static void recomputeDataObjectAncestors(long rowId)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
@@ -540,7 +540,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
-    public static void recomputeDataAncestorsForRun(String sourceTypeLsid, int runId)
+    public static void recomputeDataAncestorsForRun(String sourceTypeLsid, long runId)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -559,7 +559,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
-    private static void recomputeDataAncestorsForRuns(Collection<Integer> runIds)
+    private static void recomputeDataAncestorsForRuns(Collection<Long> runIds)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
@@ -579,7 +579,7 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
-    public static void recomputeAncestorsForRuns(Collection<Integer> runIds)
+    public static void recomputeAncestorsForRuns(Collection<Long> runIds)
     {
         if (runIds.isEmpty())
             return;
