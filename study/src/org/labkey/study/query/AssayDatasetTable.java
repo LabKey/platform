@@ -306,6 +306,6 @@ public class AssayDatasetTable extends LinkedDatasetTable
 
     private String getAssayResultAlias(String mainAlias)
     {
-        return mainAlias + "_AR";
+        return getSqlDialect().truncate(mainAlias + "_AR", 0);
     }
 }
