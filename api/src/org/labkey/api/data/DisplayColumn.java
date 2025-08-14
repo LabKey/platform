@@ -537,7 +537,7 @@ public abstract class DisplayColumn extends RenderColumn
             if (null == format)
                 formattedString = q.format(displayUnit);
             else
-                formattedString = q.format(displayUnit, format);\
+                formattedString = q.format(displayUnit, format);
              */
             /* DISPLAY WITHOUT UNIT SUFFIX */
             var doubleValue = q.doubleValue(displayUnit);
