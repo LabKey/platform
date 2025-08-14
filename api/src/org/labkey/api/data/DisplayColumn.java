@@ -388,10 +388,8 @@ public abstract class DisplayColumn extends RenderColumn
         _tsvFormat = createFormat(formatString, tsvFormatSymbols);
     }
 
-    private Format createFormat(String formatString, @Nullable DecimalFormatSymbols dfs)
+    private Format createFormat(@Nullable String formatString, @Nullable DecimalFormatSymbols dfs)
     {
-        if (null == formatString)
-            return null;
         return createFormat(formatString, getDisplayValueClass(), dfs);
     }
 

@@ -799,9 +799,13 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
             ret = getJdbcType().getJavaClass(isNullable);
             isNumeric = getJdbcType().isNumeric();
         }
-        Unit unit = getDisplayUnit();
-        if (isNumeric && null != unit)
-           return unit.getQuantityClass();
+
+        if (isNumeric)
+        {
+            Unit unit = getDisplayUnit();
+            if (null != unit)
+                return unit.getQuantityClass();
+        }
         return ret;
     }
 
