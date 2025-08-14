@@ -20,7 +20,7 @@ import org.labkey.api.view.ActionURL;
 public class MenuItem
 {
     private String _label; // the display text for the UI
-    private Integer _id; // generally, the row id of the item being linked to
+    private Long _id; // generally, the row id of the item being linked to
     private String _key; // to be used in routing to the item within the application
     private String _url; // the URL on the server side
     private Integer _orderNum; // ordinal for producing the primary sort order of the items
@@ -33,7 +33,7 @@ public class MenuItem
 
     private Boolean _hidden; // if the item should be hidden
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer, boolean hidden)
+    public MenuItem(String label, String url, Long id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer, boolean hidden)
     {
         _label = label;
         _id = id;
@@ -46,37 +46,37 @@ public class MenuItem
         _hidden = hidden;
     }
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer)
+    public MenuItem(String label, String url, Long id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer)
     {
         this(label, url, id, key, orderNum, productId, hasActiveJob, isSharedContainer, false);
     }
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob)
+    public MenuItem(String label, String url, Long id, String key, Integer orderNum, String productId, boolean hasActiveJob)
     {
         this(label, url, id, key, orderNum, productId, hasActiveJob, false);
     }
 
-    public MenuItem(String label, ActionURL url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob)
+    public MenuItem(String label, ActionURL url, Long id, String key, Integer orderNum, String productId, boolean hasActiveJob)
     {
         this(label, url == null ? null : url.toString(), id, key, orderNum, productId, hasActiveJob, false);
     }
 
-    public MenuItem(String label, ActionURL url, Integer id, String key, Integer orderNum, String productId)
+    public MenuItem(String label, ActionURL url, Long id, String key, Integer orderNum, String productId)
     {
         this(label, url == null ? null : url.toString(), id, key, orderNum, productId, false, false);
     }
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
+    public MenuItem(String label, String url, Long id, String key, Integer orderNum, String productId)
     {
         this(label, url, id, key, orderNum, productId, false, false);
     }
 
-    public MenuItem(String label, ActionURL url, Integer id, Integer orderNum, String productId)
+    public MenuItem(String label, ActionURL url, Long id, Integer orderNum, String productId)
     {
         this(label, url == null ? null : url.toString(), id, String.valueOf(id), orderNum, productId);
     }
 
-    public MenuItem(String label, ActionURL url, Integer id, String productId)
+    public MenuItem(String label, ActionURL url, Long id, String productId)
     {
         this(label, url, id, null, productId);
     }
@@ -91,12 +91,12 @@ public class MenuItem
         _label = label;
     }
 
-    public Integer getId()
+    public Long getId()
     {
         return _id;
     }
 
-    public void setId(Integer id)
+    public void setId(Long id)
     {
         _id = id;
     }

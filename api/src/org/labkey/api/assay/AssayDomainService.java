@@ -21,7 +21,7 @@ import org.labkey.api.query.ValidationException;
 
 public interface AssayDomainService
 {
-    GWTProtocol getAssayDefinition(int rowId, boolean copy);
+    GWTProtocol getAssayDefinition(long rowId, boolean copy);
 
     GWTProtocol getAssayTemplate(String providerName);
 

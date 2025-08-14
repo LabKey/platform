@@ -132,7 +132,7 @@ public class AnnouncementManager
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
     }
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, int rowId)
+    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, long rowId)
     {
         return getAnnouncement(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
@@ -715,7 +715,7 @@ public class AnnouncementManager
     }
 
 
-    public static void deleteAnnouncement(Container c, int rowId)
+    public static void deleteAnnouncement(Container c, long rowId)
     {
         AnnouncementModel ann;
 

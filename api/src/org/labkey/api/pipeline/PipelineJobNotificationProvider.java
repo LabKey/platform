@@ -109,7 +109,7 @@ public interface PipelineJobNotificationProvider
             }
             else
             {
-                Integer jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
+                Long jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
                 if (jobId != null)
                 {
                     n.setActionLinkURL(PageFlowUtil.urlProvider(PipelineUrls.class).statusDetails(job.getContainer(), jobId).getLocalURIString());

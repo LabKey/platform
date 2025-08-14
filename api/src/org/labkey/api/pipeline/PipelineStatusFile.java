@@ -38,7 +38,7 @@ public interface PipelineStatusFile
         PipelineStatusFile getStatusFile(File logFile);
         PipelineStatusFile getStatusFile(Container container, Path logFile);
 
-        PipelineStatusFile getStatusFile(int rowId);
+        PipelineStatusFile getStatusFile(long rowId);
 
         PipelineStatusFile getStatusFile(String jobGuid);
 
@@ -68,7 +68,7 @@ public interface PipelineStatusFile
 
         PipelineJob getJob(String jobId);
 
-        PipelineJob getJob(int rowId);
+        PipelineJob getJob(long rowId);
 
         void retry(String jobId) throws IOException, NoSuchJobException;
 
@@ -91,7 +91,7 @@ public interface PipelineStatusFile
 
     Date getModified();
 
-    int getRowId();
+    long getRowId();
 
     String getJobId();
 

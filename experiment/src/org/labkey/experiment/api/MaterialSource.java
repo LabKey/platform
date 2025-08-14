@@ -206,7 +206,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public @Nullable ActionURL detailsURL()
     {
         ActionURL ret = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
+        ret.addParameter("rowId", Long.toString(getRowId()));
         return ret;
     }
 
@@ -227,7 +227,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     @Override
     public int hashCode()
     {
-        return getRowId();
+        return (int)getRowId();
     }
 
     @Override

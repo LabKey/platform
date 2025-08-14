@@ -149,6 +149,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * Responsible for user authentication, creating or modifying groups, and similar user/group operations.
@@ -1019,7 +1020,7 @@ public class SecurityManager
                 try
                 {
                     Map<String, Object> returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
-                    userId = (Integer) returnMap.get("UserId");
+                    userId = asInteger(returnMap.get("UserId"));
                 }
                 catch (RuntimeSQLException e)
                 {

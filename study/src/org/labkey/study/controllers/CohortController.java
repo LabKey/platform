@@ -61,6 +61,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public class CohortController extends BaseStudyController
 {
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(CohortController.class);
@@ -394,7 +396,7 @@ public class CohortController extends BaseStudyController
             CohortImpl cohort;
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
             boolean newEnrolled = (Boolean) dataMap.remove("enrolled"); // same with enrolled
-            Integer newSubjectCount = (Integer)dataMap.remove("subjectCount"); // same with subjectCount;
+            Integer newSubjectCount = asInteger(dataMap.remove("subjectCount")); // same with subjectCount;
             String newDescription = (String)dataMap.remove("description"); // same with description;
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();

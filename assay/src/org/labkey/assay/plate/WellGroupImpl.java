@@ -58,7 +58,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     private WellGroup.Type _type;
     boolean _deleted;
 
-    protected Integer _plateId;
+    protected Long _plateId;
     protected List<? extends Position> _positions;
 
     public WellGroupImpl()
@@ -170,12 +170,12 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
         _type = WellGroup.Type.valueOf(type);
     }
 
-    public Integer getPlateId()
+    public Long getPlateId()
     {
         return _plateId;
     }
 
-    public void setPlateId(Integer plateId)
+    public void setPlateId(Long plateId)
     {
         _plateId = plateId;
     }

@@ -91,14 +91,14 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         ExpProtocol protocol;
         AssayProvider provider;
 
-        Integer batchId;
+        Long batchId;
         String name;
-        Integer workflowTask;
+        Long workflowTask;
         String comments;
         Map<String, Object> runProperties = null;
         Map<String, Object> batchProperties = null;
         String targetStudy;
-        Integer reRunId;
+        Long reRunId;
         AssayRunUploadContext.ReImportOption reImportOption = null;
         String runFilePath;
         String moduleName;
@@ -130,9 +130,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             protocol = pp.first;
             provider = pp.second;
 
-            batchId = json.optInt(AssayJSONConverter.BATCH_ID);
+            batchId = json.optLong(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
-            workflowTask = json.optInt(ExperimentJSONConverter.WORKFLOW_TASK);
+            workflowTask = json.optLong(ExperimentJSONConverter.WORKFLOW_TASK);
             if (workflowTask == 0)
                 workflowTask = null;
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
@@ -152,7 +152,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
             targetStudy = json.optString("targetStudy", null);
-            reRunId = json.has("reRunId") ? json.optInt("reRunId") : null;
+            reRunId = json.has("reRunId") ? json.optLong("reRunId") : null;
             if (json.has("reImportOption"))
                 reImportOption = json.getEnum(AssayRunUploadContext.ReImportOption.class, "reImportOption");
             runFilePath = json.optString("runFilePath", null);
@@ -349,12 +349,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
     protected static class ImportRunApiForm extends SimpleApiJsonForm implements HasBindParameters
     {
         private Integer _assayId;
-        private Integer _batchId;
+        private Long _batchId;
         private String _comment;
         private JSONObject _json;
         private String _name;
-        private Integer _workflowTask;
-        private Integer _reRunId;
+        private Long _workflowTask;
+        private Long _reRunId;
         private AssayRunUploadContext.ReImportOption _reImportOption;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
@@ -392,12 +392,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             _assayId = assayId;
         }
 
-        public Integer getBatchId()
+        public Long getBatchId()
         {
             return _batchId;
         }
 
-        public void setBatchId(Integer batchId)
+        public void setBatchId(Long batchId)
         {
             _batchId = batchId;
         }
@@ -412,12 +412,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             _name = name;
         }
 
-        public Integer getWorkflowTask()
+        public Long getWorkflowTask()
         {
             return _workflowTask;
         }
 
-        public void setWorkflowTask(Integer workflowTask)
+        public void setWorkflowTask(Long workflowTask)
         {
             _workflowTask = workflowTask;
         }
@@ -442,12 +442,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             _targetStudy = targetStudy;
         }
 
-        public Integer getReRunId()
+        public Long getReRunId()
         {
             return _reRunId;
         }
 
-        public void setReRunId(Integer reRunId)
+        public void setReRunId(Long reRunId)
         {
             _reRunId = reRunId;
         }

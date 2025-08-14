@@ -30,7 +30,7 @@
     JspView<DeriveSamplesChooseTargetBean> me = HttpView.currentView();
     DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
-    Map<Integer, String> sampleTypeOptions = new LinkedHashMap<>();
+    Map<Long, String> sampleTypeOptions = new LinkedHashMap<>();
     for (ExpSampleType st : bean.getSampleTypes())
     {
         sampleTypeOptions.put(st.getRowId(), st.getName() + " in " + st.getContainer().getPath());

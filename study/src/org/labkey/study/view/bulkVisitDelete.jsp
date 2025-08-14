@@ -35,8 +35,8 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -59,7 +59,7 @@
     ActionURL returnUrl = form.getReturnActionURL(urlFor(ManageVisitsAction.class));
 
     Map<VisitMapKey, VisitManager.VisitStatistics> visitSummaryMap = visitManager.getVisitSummary(getUser(), null, null, Collections.singleton(VisitManager.VisitStatistic.RowCount), true);
-    Map<Integer, Integer> visitRowCountMap = new HashMap<>();
+    Map<Integer, Integer> visitRowCountMap = new IntHashMap<>();
     for (Map.Entry<VisitMapKey, VisitManager.VisitStatistics> e : visitSummaryMap.entrySet())
     {
         VisitMapKey key = e.getKey();

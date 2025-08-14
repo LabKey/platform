@@ -7,6 +7,8 @@ import org.labkey.api.data.ContainerManager;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationProvider> implements AuthenticationConfiguration<AP>
 {
     private final AP _provider;
@@ -18,7 +20,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     public BaseAuthenticationConfiguration(AP provider, Map<String, Object> standardSettings)
     {
         _provider = provider;
-        _rowId = (Integer)standardSettings.get("RowId");
+        _rowId = asInteger(standardSettings.get("RowId"));
         _entityId = (String)standardSettings.get("EntityId");
         _description = (String)standardSettings.get("Description");
         _enabled = (Boolean)standardSettings.get("Enabled");

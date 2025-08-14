@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 public interface Issue
 {
     enum action
@@ -378,13 +380,13 @@ public interface Issue
             @Override
             public Integer getAssignedTo()
             {
-                return (Integer)_properties.get("assignedTo");
+                return asInteger(_properties.get("assignedTo"));
             }
 
             @Override
             public Integer getResolvedBy()
             {
-                return (Integer)_properties.get("resolvedBy");
+                return asInteger(_properties.get("resolvedBy"));
             }
 
             @Override
@@ -396,7 +398,7 @@ public interface Issue
             @Override
             public Integer getClosedBy()
             {
-                return (Integer)_properties.get("closedBy");
+                return asInteger(_properties.get("closedBy"));
             }
 
             @Override

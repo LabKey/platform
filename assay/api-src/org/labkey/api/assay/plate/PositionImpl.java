@@ -36,7 +36,7 @@ public class PositionImpl implements Position
     private GUID _containerId;
     private Integer _rowId;
     private String _lsid;
-    private Integer _plateId;
+    private Long _plateId;
 
     @SuppressWarnings("unused")
     public PositionImpl()
@@ -168,12 +168,12 @@ public class PositionImpl implements Position
         setColumn(column);
     }
 
-    public Integer getPlateId()
+    public Long getPlateId()
     {
         return _plateId;
     }
 
-    public void setPlateId(Integer plateId)
+    public void setPlateId(Long plateId)
     {
         _plateId = plateId;
     }

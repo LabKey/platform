@@ -320,6 +320,8 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     int getIntValue(ResultSet rs) throws SQLException;
 
+    long getLongValue(ResultSet rs) throws SQLException;
+
     String getStringValue(ResultSet rs) throws SQLException;
 
     Object getValue(RenderContext context);

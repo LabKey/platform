@@ -164,13 +164,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @Nullable
     Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
 
-    Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Integer> rowIds);
+    Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Long> rowIds);
 
     /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors);
+    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Long, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 

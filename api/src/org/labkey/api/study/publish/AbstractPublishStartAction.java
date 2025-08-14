@@ -55,7 +55,7 @@ public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> 
     /**
      * Returns the data row IDs that will be candidates for linking to the target study.
      */
-    protected abstract List<Integer> getDataIDs(FORM form);
+    protected abstract List<Long> getDataIDs(FORM form);
 
     /**
      * Return the set of Study containers that are implicitly associated with this form. For assays, this
@@ -71,7 +71,7 @@ public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> 
      * If an alternate to individual result rows are being provided this would be the ID of the batch
      * definition. For assays, this could be a run and for samples could be the sample type.
      */
-    protected abstract List<Integer> getBatchIds();
+    protected abstract List<Long> getBatchIds();
     protected abstract String getBatchNoun();
 
     @Override
@@ -111,19 +111,19 @@ public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> 
                     form.isAutoLinkEnabled()));
     }
 
-    public static List<Integer> getCheckboxIds(ViewContext context)
+    public static List<Long> getCheckboxIds(ViewContext context)
     {
         Set<String> idStrings = DataRegionSelection.getSelected(context, null, false);
 
         DataRegionSelection.clearAll(context, null);
         DataRegionSelection.setSelected(context, null, idStrings, true);
 
-        List<Integer> ids = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
         for (String rowIdStr : idStrings)
         {
             try
             {
-                ids.add(Integer.parseInt(rowIdStr));
+                ids.add(Long.parseLong(rowIdStr));
             }
             catch (NumberFormatException e)
             {

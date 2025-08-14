@@ -18,6 +18,8 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -43,14 +45,14 @@ public class DataStateManager
     private static class DataStateCollections
     {
         private final List<DataState> _dataStates;
-        private final Map<Integer, DataState> _dataStateIdMap;
+        private final Map<Long, DataState> _dataStateIdMap;
         private final Map<String, DataState> _dataStateLabelMap;
 
         private DataStateCollections(Container c)
         {
             List<DataState> dataStates = new ArrayList<>();
-            Map<Integer, DataState> dataStateIdMap = new HashMap<>();
-            Map<String, DataState>  dataStateLabelMap = new HashMap<>();
+            Map<Long, DataState> dataStateIdMap = new LongHashMap<>();
+            Map<String, DataState>  dataStateLabelMap = new StringHashMap<>();
 
             new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(DataState.class, dataState -> {
 
@@ -70,7 +72,7 @@ public class DataStateManager
             return _dataStateLabelMap.get(label);
         }
 
-        DataState getState(int rowId)
+        DataState getState(long rowId)
         {
             return _dataStateIdMap.get(rowId);
         }
@@ -137,7 +139,7 @@ public class DataStateManager
         return (preDeleteStates.size() == 1);
     }
 
-    public DataState getStateForRowId(Container container, Integer rowId)
+    public DataState getStateForRowId(Container container, Long rowId)
     {
         if (rowId == null)
             return null;

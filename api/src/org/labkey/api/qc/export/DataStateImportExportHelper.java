@@ -56,9 +56,9 @@ public interface DataStateImportExportHelper
     /**
      * The default QC state for data linked (published) to the study
      */
-    void setDefaultPublishedDataQCState(Container container, User user, Integer stateId);
-    void setDefaultPipelineQCState(Container container, User user, Integer stateId);
-    void setDefaultDirectEntryQCState(Container container, User user, Integer stateId);
+    void setDefaultPublishedDataQCState(Container container, User user, Long stateId);
+    void setDefaultPipelineQCState(Container container, User user, Long stateId);
+    void setDefaultDirectEntryQCState(Container container, User user, Long stateId);
     void setShowPrivateDataByDefault(Container container, User user, boolean showPrivate);
     void setBlankQCStatePublic(Container container, User user, boolean isPublic);
     void setRequireCommentOnQCStateChange(Container container, User user, boolean requireCommentOnQCStateChange);

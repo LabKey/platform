@@ -208,7 +208,7 @@ public class ExperimentRunGraph
                     inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
                     if (!run.getProtocolApplications().isEmpty())
                     {
-                        int groupId = run.getProtocolApplications().get(0).getRowId();
+                        long groupId = run.getProtocolApplications().get(0).getRowId();
                         addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
                         generateDetailGraph(run, dg, ctrlProps);
                     }
@@ -401,7 +401,7 @@ public class ExperimentRunGraph
     private static void generateDetailGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
         int countPAForSeq = 0;
-        Integer groupIdPA = null;
+        Long groupIdPA = null;
 
         // We're going to remove entries as we use them, so we need our own copy
         Map<ExpData, String> runDataInputs = new HashMap<>(expRun.getDataInputs());
@@ -411,7 +411,7 @@ public class ExperimentRunGraph
 
         for (ExpProtocolApplicationImpl protApp : expRun.getProtocolApplications())
         {
-            int rowIdPA = protApp.getRowId();
+            long rowIdPA = protApp.getRowId();
             String namePA = protApp.getName();
             int sequence = protApp.getActionSequence();
 
@@ -439,7 +439,7 @@ public class ExperimentRunGraph
 
             for (ExpMaterial material : inputMaterials)
             {
-                Integer groupId = dg.getMGroupId(material.getRowId());
+                Long groupId = dg.getMGroupId(material.getRowId());
                 dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
 
                 // check if we need to start or stop grouping at this level of PAs
@@ -463,7 +463,7 @@ public class ExperimentRunGraph
 
             for (ExpData data : inputDatas)
             {
-                Integer groupId = dg.getDGroupId(data.getRowId());
+                Long groupId = dg.getDGroupId(data.getRowId());
                 dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
 
                 // same check as above
@@ -489,7 +489,7 @@ public class ExperimentRunGraph
                 // determine group membership for output nodes.  Either we are starting
                 // a new group because we are exceeding Max siblings, or
                 // we are inheriting a group from above.
-                Integer groupId = dg.getPAGroupId(rowIdPA);
+                Long groupId = dg.getPAGroupId(rowIdPA);
                 if ((null == groupId) &&
                         (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
@@ -502,7 +502,7 @@ public class ExperimentRunGraph
             for (int i = 0; i < outputDatas.size(); i++)
             {
                 ExpData data = outputDatas.get(i);
-                Integer groupId = dg.getPAGroupId(rowIdPA);
+                Long groupId = dg.getPAGroupId(rowIdPA);
                 if ((null == groupId) &&
                         (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
@@ -516,9 +516,9 @@ public class ExperimentRunGraph
         }
     }
 
-    private static void addStartingInputs(List<ExpMaterial> inputMaterials, List<ExpData> inputDatas, int protAppId, DotGraph dg, int expRunId, GraphCtrlProps ctrlProps)
+    private static void addStartingInputs(List<ExpMaterial> inputMaterials, List<ExpData> inputDatas, long protAppId, DotGraph dg, long expRunId, GraphCtrlProps ctrlProps)
     {
-        Integer groupId = null;
+        Long groupId = null;
         for (int i=0;i<inputMaterials.size();i++)
         {
             // check if we need to group
@@ -537,12 +537,12 @@ public class ExperimentRunGraph
 
     private static void generateSummaryGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
-        int runId = expRun.getRowId();
+        long runId = expRun.getRowId();
         Map<? extends ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
         Map<? extends ExpData, String> inputDatas = expRun.getDataInputs();
         List<ExpMaterial> outputMaterials = expRun.getMaterialOutputs();
         List<ExpData> outputDatas = expRun.getDataOutputs();
-        Integer groupId;
+        Long groupId;
 
         int i = 0;
         for (Map.Entry<? extends ExpMaterial, String> entry : inputMaterials.entrySet())
@@ -550,7 +550,7 @@ public class ExperimentRunGraph
             ExpMaterial inputMaterial = entry.getKey();
             groupId=null;
             if (ctrlProps.fGroupInputs && (i >= ctrlProps.maxSiblingNodes - 1))
-                groupId = 0;
+                groupId = 0L;
             dg.addStartingMaterial(inputMaterial, groupId, null, runId);
             dg.addExpRun(runId, expRun.getName());
             dg.connectMaterialToRun(inputMaterial.getRowId(), runId, entry.getValue());
@@ -568,7 +568,7 @@ public class ExperimentRunGraph
             ExpData inputData = entry.getKey();
             groupId=null;
             if (ctrlProps.fGroupInputs && (i >= ctrlProps.maxSiblingNodes - 1))
-                groupId = 0;
+                groupId = 0L;
             dg.addStartingData(inputData, groupId, null, runId);
             dg.addExpRun(runId, expRun.getName());
             dg.connectDataToRun(inputData.getRowId(), runId, entry.getValue());
@@ -587,7 +587,7 @@ public class ExperimentRunGraph
             {
                 groupId = null;
                 if ((outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
-                    groupId = 1;
+                    groupId = 1L;
                 dg.addExpRun(runId, expRun.getName());
                 dg.addMaterial(material, groupId, null, expRun.getMaterialOutputs().contains(material));
                 dg.connectRunToMaterial(runId, material.getRowId());
@@ -607,7 +607,7 @@ public class ExperimentRunGraph
             {
                 groupId = null;
                 if ((outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
-                    groupId = 1;
+                    groupId = 1L;
                 dg.addExpRun(runId, expRun.getName());
                 dg.addData(data, groupId, null, expRun.getDataOutputs().contains(data));
                 dg.connectRunToData(runId, data.getRowId());

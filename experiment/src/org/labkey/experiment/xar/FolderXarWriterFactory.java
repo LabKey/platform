@@ -153,7 +153,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return reorderedRuns;
         }
 
-        private List<Integer> getProtocols(Container c)
+        private List<Long> getProtocols(Container c)
         {
             // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.

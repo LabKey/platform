@@ -23,6 +23,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
@@ -60,12 +61,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public static final String UNIT_TESTING_PROTOCOL_NAME = "LABKEYTESTINGPROTOCOL";
     // Store the RowIds, etc of objects so that we can safely serialize and deserialize them
     private int _userId;
-    private int _protocolId;
+    private long _protocolId;
     private String _targetStudy;
     private String _containerId;
     private String _runName;
     private String _runComments;
-    private Integer _runWorkflowTask;
+    private Long _runWorkflowTask;
     private ActionURL _actionURL;
     private Map<String, FileLike> _uploadedData;
     /** propertyId -> value */
@@ -74,7 +75,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private Map<Integer, String> _batchPropertiesById;
     /** RowIds for all the domains associated with properties we need to remember */
     private final Set<Integer> _domainIds = new HashSet<>();
-    private Integer _reRunId;
+    private Long _reRunId;
     private ReImportOption _reImportOption;
     private boolean _allowCrossRunFileInputs;
 
@@ -136,7 +137,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** Convert to a map that can be serialized - DomainProperty can't be */
     protected Map<Integer, String> convertPropertiesToIds(Map<DomainProperty, String> properties)
     {
-        Map<Integer, String> result = new HashMap<>();
+        Map<Integer, String> result = new IntHashMap<>();
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
             result.put(entry.getKey().getPropertyId(), entry.getValue());
@@ -298,7 +299,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public Integer getWorkflowTask()
+    public @Nullable Long getWorkflowTask()
     {
         return _runWorkflowTask;
     }
@@ -385,7 +386,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public Integer getReRunId()
+    public Long getReRunId()
     {
         return _reRunId;
     }

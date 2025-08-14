@@ -279,14 +279,14 @@
     <%
         }
         // data row IDs
-        for (Integer id : bean.getIds())
+        for (Long id : bean.getIds())
         {
     %>
     <input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= id %>">
     <%
         }
         // run IDs (if run selected)
-        for (Integer id : bean.getBatchIds())
+        for (Long id : bean.getBatchIds())
         {
     %>
     <input type="hidden" name="runId" value="<%= id %>">

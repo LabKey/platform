@@ -113,7 +113,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
         return false;
     }
 
-    default void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
+    default void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, long oldDataRowID) throws ExperimentException
     {
         SQLFragment sql = new SQLFragment("UPDATE exp.object SET Container = ? WHERE Container = ? AND ObjectURI = ?");
         sql.add(targetContainer);

@@ -56,7 +56,7 @@ public interface ExpDataClass extends ExpObject, ExpSearchable
     @Nullable
     ExpSampleType getSampleType();
 
-    void setSampleType(Integer sampleType);
+    void setSampleType(Long sampleType);
 
     @NotNull
     Domain getDomain();

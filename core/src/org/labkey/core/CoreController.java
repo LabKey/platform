@@ -2543,15 +2543,15 @@ public class CoreController extends SpringActionController
 
     public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
-        private Integer _defaultQCState;
+        private Long _defaultQCState;
         private boolean _requireCommentOnQCStateChange;
 
-        public Integer getDefaultQCState()
+        public Long getDefaultQCState()
         {
             return _defaultQCState;
         }
 
-        public void setDefaultQCState(Integer defaultQCState)
+        public void setDefaultQCState(Long defaultQCState)
         {
             _defaultQCState = defaultQCState;
         }

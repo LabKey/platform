@@ -23,8 +23,8 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 @RequiresPermission(InsertPermission.class)
 public class SampleTypePublishStartAction extends AbstractPublishStartAction<SampleTypePublishStartAction.SampleTypePublishStartForm>
 {
-    private List<Integer> _ids = new ArrayList<>();
-    private final List<Integer> _sampleTypeIds = new ArrayList<>();
+    private List<Long> _ids = new ArrayList<>();
+    private final List<Long> _sampleTypeIds = new ArrayList<>();
     private ExpSampleType _sampleType;
 
     public static class SampleTypePublishStartForm extends ViewForm implements PublishStartForm
@@ -113,7 +113,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     }
 
     @Override
-    protected List<Integer> getDataIDs(SampleTypePublishStartForm form)
+    protected List<Long> getDataIDs(SampleTypePublishStartForm form)
     {
         // Deferred: Support SampleType-level links
         if (_ids.isEmpty() && !form.isSampleTypeIds() && null != form.getRowId())
@@ -126,7 +126,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     }
 
     @Override
-    protected List<Integer> getBatchIds()
+    protected List<Long> getBatchIds()
     {
         return _sampleTypeIds;
     }

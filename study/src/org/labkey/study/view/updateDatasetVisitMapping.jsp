@@ -34,6 +34,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -44,7 +45,7 @@
     StudyImpl study = StudyManager.getInstance().getStudy(container);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, getUser());
-    Map<Integer, String> cohortMap = new HashMap<>();
+    Map<Integer, String> cohortMap = new IntHashMap<>();
     cohortMap.put(null, "All");
 
     if (cohorts != null)

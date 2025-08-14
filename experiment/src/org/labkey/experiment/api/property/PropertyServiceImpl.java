@@ -692,10 +692,10 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 ),
                 "propertyCountsByRange", stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
-                ).getValueMap()),
+                ).getValueMap(String.class)),
                 "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
-                ).getValueMap()),
+                ).getValueMap(String.class)),
                         "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class),
                 "storageColumnNameMismatches", storageColumnNameMismatches
         );

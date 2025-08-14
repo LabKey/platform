@@ -94,6 +94,7 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="java.io.IOException" %>
+<%@ page import="org.apache.commons.collections.MapUtils" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -241,7 +242,7 @@
         if (errors.hasErrors())
             throw errors;
 
-        List<Integer> insertedRowIds = insertedRows.stream().map(row -> (Integer) row.get("RowId")).toList();
+        List<Long> insertedRowIds = insertedRows.stream().map(row -> MapUtils.getLong(row,"RowId")).toList();
         return new ArrayList<>(ExperimentService.get().getExpMaterials(insertedRowIds));
     }
 
@@ -339,9 +340,9 @@
         final ExpData originalOutputData = run.getDataOutputs().get(0);
         assertEquals(file.getName(), originalOutputData.getName());
 
-        final int dataRowId = originalOutputData.getRowId();
+        final long dataRowId = originalOutputData.getRowId();
         final String dataLsid = originalOutputData.getLSID();
-        final Integer dataOID = originalOutputData.getObjectId();
+        final long dataOID = originalOutputData.getObjectId();
         final OntologyObject oo1 = OntologyManager.getOntologyObject(originalOutputData.getObjectId());
         assertNotNull(oo1);
 
@@ -363,7 +364,7 @@
         ExpData data2 = ExperimentService.get().getExpData(dataRowId);
         assertNotNull(data2);
         assertEquals(dataLsid, data2.getLSID());
-        assertEquals(dataOID, data2.getObjectId());
+        assertEquals(dataOID, data2.getObjectId().longValue());
         assertEquals("hello world", data2.getComment());
         if (someStuffProp != null)
             assertEquals("SomeData", data2.getProperty(someStuffProp));
@@ -389,7 +390,7 @@
         ExpData data3 = ExperimentService.get().getExpData(dataRowId);
         assertNotNull(data3);
         assertEquals(dataLsid, data3.getLSID());
-        assertEquals(dataOID, data3.getObjectId());
+        assertEquals(dataOID, data3.getObjectId().longValue());
         assertEquals("hello world", data3.getComment());
         if (someStuffProp != null)
             assertEquals("SomeData", data3.getProperty(someStuffProp));
@@ -491,7 +492,7 @@
         assertEquals(1, dataList.size());
     }
 
-    private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, int resultRowId)
+    private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, long resultRowId)
     {
         Map<String, Object>[] results = new SqlSelector(schema, "SELECT * FROM assayresult." + assayResultRealTable + " WHERE rowid = '" + resultRowId + "'").getMapArray();
         return results[0];
@@ -518,7 +519,7 @@
         // import the file
         log.info("first import");
         var run = assayImportFile(c, user, provider, assayProtocol, file, false, null);
-        int runRowId = run.getRowId();
+        long runRowId = run.getRowId();
 
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, assayProtocol, null);
         TableInfo runsTable = schema.getTable("Runs");
@@ -533,7 +534,7 @@
         Map<String, Object> originalRunResult = new TableSelector(runsTable, selectColumns, new SimpleFilter("rowId", runRowId), null).getMap();
         FieldKey runFieldKey = new FieldKey(FieldKey.fromParts("Run"), "RowId");
         Map<String, Object> originalQueryResult = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
-        int resultRowId = (Integer) originalQueryResult.get("rowid");
+        long resultRowId = MapUtils.getLong(originalQueryResult,"rowid");
 
         // verify results created/modified matches run's created in query table
         Object runOriginalCreated = originalRunResult.get("Created");

@@ -24,7 +24,7 @@ import java.util.*;
 @SuppressWarnings("Convert2Diamond")
 public class GWTPlate implements IsSerializable
 {
-    private int _rowId;
+    private long _rowId;
     private String _name;
     private String _type;
     private int _rows;
@@ -42,7 +42,7 @@ public class GWTPlate implements IsSerializable
     {
     }
 
-    public GWTPlate(int rowId, String name, String type, int rows, int cols, List<String> groupTypes, boolean showWarningPanel)
+    public GWTPlate(long rowId, String name, String type, int rows, int cols, List<String> groupTypes, boolean showWarningPanel)
     {
         _rowId = rowId;
         _name = name;
@@ -53,7 +53,7 @@ public class GWTPlate implements IsSerializable
         _showWarningPanel = showWarningPanel;
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }

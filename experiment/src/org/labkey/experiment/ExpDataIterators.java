@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,10 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.IntArrayList;
+import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.collections.LongArrayList;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -161,6 +166,7 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -195,12 +201,15 @@ public class ExpDataIterators
         private final int _id;
 
         public static DataIteratorBuilder create(@NotNull DataIteratorBuilder in, Container container,
-                                                 AbstractTableInfo expTable, String sequencePrefix, int sequenceId)
+                                                 AbstractTableInfo expTable, String sequencePrefix, long sequenceId)
         {
+            // TODO BIGIT
+            if (sequenceId > Integer.MAX_VALUE)
+                throw new IllegalStateException("Sequence id is too large");
             if (expTable.getCounterDefinitions().isEmpty())
                 return in;
 
-            return new CounterDataIteratorBuilder(in, container, expTable, sequencePrefix, sequenceId);
+            return new CounterDataIteratorBuilder(in, container, expTable, sequencePrefix,(int) sequenceId);
         }
 
         public CounterDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container,
@@ -229,7 +238,7 @@ public class ExpDataIterators
                 skipColumns.addAll(attachedColumnNames);
 
                 // validate we have all the paired columns
-                List<Integer> pairedIndexes = new ArrayList<>();
+                List<Integer> pairedIndexes = new IntArrayList();
                 for (String pairedColumnName : counterDefinition.getPairedColumnNames())
                 {
                     Integer i = columnNameMap.get(pairedColumnName);
@@ -366,7 +375,7 @@ public class ExpDataIterators
         private final Integer _parentNameToRecomputeCol;
         private final boolean _isInsert;
         private final boolean _isUpdate;
-        private final List<Integer> availableSampleStatuses = new ArrayList<>();
+        private final List<Long> availableSampleStatuses = new LongArrayList();
         private final TSVWriter _tsvWriter;
 
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, Container container)
@@ -413,11 +422,11 @@ public class ExpDataIterators
             Integer rootAliquot = (Integer) existingMap.get(RootMaterialRowId.name());
             Double existingAmount = (Double) existingMap.get(StoredAmount.name());
             String existingUnits = (String) existingMap.get(Units.name());
-            Integer existingState = (Integer) existingMap.get(SampleState.name());
+            Long existingState = asLong(existingMap.get(SampleState.name()));
 
             if (!availableSampleStatuses.isEmpty())
             {
-                Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
+                Long newState = _sampleStateCol == null ? null : asLong(get(_sampleStateCol));
                 if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
                     return new Pair<>(true, rootAliquot);
             }
@@ -627,11 +636,11 @@ public class ExpDataIterators
         final ExpSampleType _sampleType;
         final MapDataIterator _data;
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
-        final List<Integer> _derivativeKeys = new ArrayList<>();
+        final List<Long> _derivativeKeys = new LongArrayList();
         final UserSchema _schema;
         final boolean _hasParentInput;
         final Integer _rowIdCol;
-        final List<Integer> _parentCols = new ArrayList<>();
+        final List<Integer> _parentCols = new IntArrayList();
 
         protected AutoLinkToStudyDataIterator(DataIterator di, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
@@ -708,7 +717,7 @@ public class ExpDataIterators
             }
             else
             {
-                _derivativeKeys.add((Integer)get(_rowIdCol));
+                _derivativeKeys.add(asLong(get(_rowIdCol)));
             }
 
             return true;
@@ -880,7 +889,7 @@ public class ExpDataIterators
         }
     }
 
-    static boolean hasAliquots(int sampleTypeRowId, List<String> names)
+    static boolean hasAliquots(long sampleTypeRowId, List<String> names)
     {
         SimpleFilter f = new SimpleFilter(Name.fieldKey(), names, IN);
         f.addCondition(MaterialSourceId.fieldKey(), sampleTypeRowId);
@@ -1011,8 +1020,8 @@ public class ExpDataIterators
                                    List<UploadSampleRunRecord> runRecords,
                                    Set<Pair<String, String>> parentNames,
                                    RemapCache cache,
-                                   Map<Integer, ExpMaterial> materialCache,
-                                   Map<Integer, ExpData> dataCache,
+                                   Map<Long, ExpMaterial> materialCache,
+                                   Map<Long, ExpData> dataCache,
                                    @Nullable String aliquotedFrom,
                                    String dataType /*sample type or source type name*/,
                                    boolean updateOnly) throws ValidationException, ExperimentException
@@ -1177,8 +1186,8 @@ public class ExpDataIterators
                 try
                 {
                     RemapCache cache = new RemapCache(!_context.getConfigParameterBoolean(SkipBulkRemapCache));
-                    Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-                    Map<Integer, ExpData> dataCache = new HashMap<>();
+                    Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+                    Map<Long, ExpData> dataCache = new LongHashMap<>();
 
                     if (isSample() && _context.getInsertOption().mergeRows)
                     {
@@ -1358,8 +1367,8 @@ public class ExpDataIterators
                 try
                 {
                     RemapCache cache = new RemapCache(true);
-                    Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-                    Map<Integer, ExpData> dataCache = new HashMap<>();
+                    Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+                    Map<Long, ExpData> dataCache = new LongHashMap<>();
 
                     List<UploadSampleRunRecord> runRecords = new ArrayList<>();
                     Set<String> keys = new LinkedHashSet<>();
@@ -1678,8 +1687,8 @@ public class ExpDataIterators
         @Nullable ExpRunItem runItem,
         Set<Pair<String, String>> entityNamePairs,
         RemapCache cache,
-        Map<Integer, ExpMaterial> materialMap,
-        Map<Integer, ExpData> dataMap,
+        Map<Long, ExpMaterial> materialMap,
+        Map<Long, ExpData> dataMap,
         Map<String, ExpSampleType> sampleTypes,
         Map<String, ExpDataClass> dataClasses,
         @Nullable String aliquotedFrom,
@@ -1966,7 +1975,7 @@ public class ExpDataIterators
         }
     }
 
-    public record SearchIndexDataKeys(@NotNull List<Integer> orderedRowIds, @NotNull List<String> lsids) { }
+    public record SearchIndexDataKeys(@NotNull List<Long> orderedRowIds, @NotNull List<String> lsids) { }
 
     private static class SearchIndexIterator extends WrapperDataIterator
     {
@@ -1974,7 +1983,7 @@ public class ExpDataIterators
         final Integer _lsidCol;
         final Integer _rowIdCol;
         final ArrayList<String> _lsids;
-        final ArrayList<Integer> _rowIds;
+        final ArrayList<Long> _rowIds;
         final Function<SearchIndexDataKeys, Runnable> _indexFunction;
         final boolean _isInsert;
 
@@ -1989,9 +1998,14 @@ public class ExpDataIterators
             _lsidCol = map.get("lsid");
             _rowIdCol = map.get("rowId");
             _lsids = new ArrayList<>(100);
-            _rowIds = new ArrayList<>(100);
+            _rowIds = new LongArrayList(100);
 
             _isInsert = !context.getInsertOption().allowUpdate; // only useRowIdCol for INSERT. For UPDATE, rowId usually is not available. For MERGE, rowId is a new DBSequence value for existing data
+        }
+
+        static Long asLong(Object o)
+        {
+            return null==o ? null : ((Number)o).longValue();
         }
 
         @Override
@@ -2001,11 +2015,11 @@ public class ExpDataIterators
 
             if (hasNext)
             {
-                Integer rowId = null;
+                Long rowId = null;
                 String lsid = null;
                 if (_isInsert)
                 {
-                    rowId = _rowIdCol == null ? null : (Integer) get(_rowIdCol);
+                    rowId = _rowIdCol == null ? null : asLong(get(_rowIdCol));
                     if (rowId == null)
                         lsid = _lsidCol == null ? null : (String) get(_lsidCol);
                 }
@@ -2015,7 +2029,7 @@ public class ExpDataIterators
                     if (map != null)
                     {
                         if (map.containsKey("rowId")) // favor rowId over lsid to reduce deadlock during indexing
-                            rowId = (Integer) map.get("rowId");
+                            rowId = MapUtils.getLong(map, "rowId");
                         if (rowId == null && map.containsKey("lsid"))
                             lsid = (String) map.get("lsid");
                     }
@@ -2036,7 +2050,7 @@ public class ExpDataIterators
                 if (null != ss)
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
-                    final ArrayList<Integer> rowIds = new ArrayList<>(_rowIds);
+                    final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
                     Collections.sort(rowIds);
                     final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
@@ -2153,7 +2167,7 @@ public class ExpDataIterators
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases, @Nullable Long ownerObjectId)
         {
             _in = in;
             _expTable = expTable;
@@ -2772,7 +2786,7 @@ public class ExpDataIterators
                 return null;
             }
 
-            List<Integer> fieldIndexes = new ArrayList<>();
+            List<Integer> fieldIndexes = new IntArrayList();
             List<String> header = new ArrayList<>();
 
             for (int i = 1; i <= getColumnCount(); i++)
@@ -2819,8 +2833,8 @@ public class ExpDataIterators
             validFields.add("Storage Unit Label");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
-            List<Integer> fieldIndexes = new ArrayList<>();
-            Map<Integer, String> dependencyIndexes = new HashMap<>();
+            List<Integer> fieldIndexes = new IntArrayList();
+            Map<Integer, String> dependencyIndexes = new IntHashMap<>();
             List<String> header = new ArrayList<>();
             // index is 1-based; column 0 is the rowNumber
             for (int i = 1; i <= getColumnCount(); i++)
@@ -3126,7 +3140,7 @@ public class ExpDataIterators
         final DataIteratorContext _context;
         private final Integer _sampleStateCol;
         private final Integer _oldSampleStateCol;
-        private final Map<Integer, DataState> _allStates;
+        private final Map<Long, DataState> _allStates;
         private final boolean _noStatusChangeCol;
         private final boolean _hasNonStatusChangeCol;
 
@@ -3170,11 +3184,11 @@ public class ExpDataIterators
             if (_oldSampleStateCol == null && getExistingRecord() == null)
                 return true;
 
-            Integer oldState;
+            Long oldState;
             if (_oldSampleStateCol != null)
-                oldState = (Integer) get(_oldSampleStateCol);
+                oldState = asLong(get(_oldSampleStateCol));
             else
-                oldState = (Integer) getExistingRecord().get(SampleState.name());
+                oldState = asLong(getExistingRecord().get(SampleState.name()));
 
             if (oldState == null)
                 return true;
@@ -3190,7 +3204,7 @@ public class ExpDataIterators
                 return true;
             }
 
-            Integer newState = (Integer) get(_sampleStateCol);
+            Long newState = asLong(get(_sampleStateCol));
             DataState newStatus = _allStates.get(newState);
             boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 

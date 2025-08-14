@@ -7,7 +7,7 @@ import java.util.Set;
 public class DataViewSelectionForm extends ViewForm
 {
     protected String _dataRegionSelectionKey;
-    protected Set<Integer> _rowIds;
+    protected Set<Long> _rowIds;
 
     public String getDataRegionSelectionKey()
     {
@@ -19,17 +19,17 @@ public class DataViewSelectionForm extends ViewForm
         _dataRegionSelectionKey = dataRegionSelectionKey;
     }
 
-    public Set<Integer> getRowIds()
+    public Set<Long> getRowIds()
     {
         return _rowIds;
     }
 
-    public void setRowIds(Set<Integer> rowIds)
+    public void setRowIds(Set<Long> rowIds)
     {
         _rowIds = rowIds;
     }
 
-    public Set<Integer> getIds(boolean clear)
+    public Set<Long> getIds(boolean clear)
     {
         return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
     }

@@ -1,6 +1,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.IntHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -47,9 +48,9 @@ public class StudyUtils
     }
 
     @NotNull
-    private static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
+    private static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right, Set<T> result)
     {
-        Set<T> intersection = new HashSet<>();
+        Set<T> intersection = null == result ? new HashSet<>() : result;
         for (T item : left)
         {
             if (right.contains(item))
@@ -65,7 +66,7 @@ public class StudyUtils
 
         for (List<Vial> vials : specimensBySample)
         {
-            Set<Integer> currentLocations = new HashSet<>();
+            Set<Integer> currentLocations = new IntHashSet();
             for (Vial vial : vials)
             {
                 if (vial.getCurrentLocation() != null)
@@ -75,7 +76,7 @@ public class StudyUtils
                 locationIntersection = currentLocations;
             else
             {
-                locationIntersection = intersect(locationIntersection, currentLocations);
+                locationIntersection = intersect(locationIntersection, currentLocations, new IntHashSet());
                 if (locationIntersection.isEmpty())
                     return locationIntersection;
             }

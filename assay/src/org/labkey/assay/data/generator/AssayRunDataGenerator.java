@@ -125,7 +125,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 }
                 else
                 {
-                    List<Integer> sampleIds = new ArrayList<>();
+                    List<Long> sampleIds = new ArrayList<>();
                     while (sampleIds.size() < rawData.size())
                     {
                         _sampleTypeCounts.computeIfAbsent(sampleType.getRowId(), t -> sampleType.getSamplesCount(getContainer(), null));

@@ -406,7 +406,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
         String aliquotParentLsid = null;
-        Integer aliquotRootRowId = null;
+        Long aliquotRootRowId = null;
         if (isAliquotProtocol)
         {
             if (inputMaterial.size() != 1)

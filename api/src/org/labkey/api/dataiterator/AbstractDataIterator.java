@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
 
 /**
  * User: matthewb
@@ -98,7 +99,7 @@ public abstract class AbstractDataIterator implements DataIterator
 
     protected ValidationException getRowError()
     {
-        Integer row = (Integer)this.get(0);
+        Integer row = asInteger(this.get(0));
         if (null == _rowError)
             _rowError = _errors.getLastRowError();
         if (null == _rowError || row != _rowError.getRowNumber())

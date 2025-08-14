@@ -1003,7 +1003,7 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void removeValidator(int validatorId)
+    public void removeValidator(long validatorId)
     {
         if (validatorId == 0) return;
 

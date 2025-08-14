@@ -271,7 +271,7 @@ public class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, S
         return (T) this;
     }
 
-    public T value(int value)
+    public T value(long value)
     {
         _value = HtmlString.unsafe(String.valueOf(value));
         return (T) this;

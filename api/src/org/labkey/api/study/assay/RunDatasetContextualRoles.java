@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.api.ExperimentService.asInteger;
+
 /**
  * User: kevink
  * Date: Jun 1, 2009 1:02:56 PM
@@ -147,7 +149,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
             {
                 if (!(datasetColumn instanceof StudyDatasetLinkedColumn))
                     continue;
-                Integer datasetId = (Integer)result.get(datasetColumn.getName());
+                Integer datasetId = asInteger(result.get(datasetColumn.getName()));
                 if (datasetId == null)
                     continue;
 

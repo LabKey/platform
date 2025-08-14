@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -334,7 +335,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         Set<Long> rowIds = new HashSet<>(rows.size());
-        Map<Long, Map<String, Object>> uniqueRows = new HashMap<>(rows.size());
+        Map<Long, Map<String, Object>> uniqueRows = new LongHashMap<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -351,7 +352,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             rowIds.add(rowId);
             uniqueRows.put(rowId, row);
         }
-        Map<Long, Vial> vials = new HashMap<>();
+        Map<Long, Vial> vials = new LongHashMap<>();
         for (Vial vial : SpecimenManager.get().getVials(container, user, rowIds))
         {
             vials.put(vial.getRowId(), vial);

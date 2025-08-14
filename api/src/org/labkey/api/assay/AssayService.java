@@ -135,7 +135,7 @@ public interface AssayService
     void indexAssay(SearchService.TaskIndexingQueue queue, ExpProtocol protocol);
     void indexAssays(SearchService.TaskIndexingQueue queue);
 
-    void indexAssayRun(SearchService.TaskIndexingQueue queue, int expRunRowId);
+    void indexAssayRun(SearchService.TaskIndexingQueue queue, long expRunRowId);
 
     void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
 
@@ -223,7 +223,7 @@ public interface AssayService
      *
      * @return the count of flags deleted
      */
-    int deleteFlagsForRun(Container container, User user, AssayProvider provider, int runId);
+    int deleteFlagsForRun(Container container, User user, AssayProvider provider, long runId);
 
     /**
      * Delete the specified flag.
@@ -235,7 +235,7 @@ public interface AssayService
      * Returns the flags for the specified run.
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
-    <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
+    <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, long runId, Class<FlagType> cls);
 
     void onBeforeAssayResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow);
 

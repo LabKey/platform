@@ -103,7 +103,7 @@ public class PlateSetExport
     // Create sampleIdToRow of the following form:
     // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
     // Where the data rows contain the key's sample
-    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport)
+    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, long plateSetId, String plateSetExport)
     {
         Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
@@ -128,8 +128,8 @@ public class PlateSetExport
 
     public List<Object[]> getWorklist(
         TableInfo wellTable,
-        int sourcePlateSetId,
-        int destinationPlateSetId,
+        long sourcePlateSetId,
+        long destinationPlateSetId,
         List<FieldKey> sourceIncludedMetadataCols,
         List<FieldKey> destinationIncludedMetadataCols
     )
@@ -177,7 +177,7 @@ public class PlateSetExport
         return plateDataRows;
     }
 
-    public List<Object[]> getInstrumentInstructions(TableInfo wellTable, int plateSetId, List<FieldKey> includedMetadataCols)
+    public List<Object[]> getInstrumentInstructions(TableInfo wellTable, long plateSetId, List<FieldKey> includedMetadataCols)
     {
         List<Object[]> plateDataRows = new ArrayList<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
