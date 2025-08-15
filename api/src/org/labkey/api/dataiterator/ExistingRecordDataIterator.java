@@ -170,6 +170,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        if (_context.getErrors().hasErrors())
+            return false;
+
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         if (useMark)
             _unwrapped.mark();  // unwrapped _delegate
