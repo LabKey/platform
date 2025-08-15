@@ -86,6 +86,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -1670,6 +1671,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             if (isNewInstall())
                 ContextListener.afterNewInstallComplete();
         }
+        catch (ShuttingDownException e)
+        {
+            // Let this exception propagate so we abort the startup ASAP
+            throw e;
+        }
         catch (Throwable t)
         {
             setStartupFailure(t);
@@ -1727,6 +1733,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 ctx.setModuleState(ModuleState.Starting);
                 setStartingUpMessage("Starting module '" + m.getName() + "'");
                 m.startup(ctx);
+            }
+            catch (ShuttingDownException e)
+            {
+                // Let this exception propagate so we abort the startup ASAP
+                throw e;
             }
             catch (Throwable x)
             {
