@@ -136,7 +136,8 @@ public class SampleDatasetTable extends LinkedDatasetTable
 
     private String getSampleTableAlias(String mainAlias)
     {
-        return mainAlias + "_ST";
+        // see LookupColumn.getTableAlias() for similar usage
+        return getSqlDialect().truncate(mainAlias + "_ST", 0);
     }
 
 
