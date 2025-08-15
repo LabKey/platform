@@ -606,6 +606,12 @@ public class Table
         }
     }
 
+    static void debugException(SQLFragment sql, @Nullable Connection conn, SQLException e)
+    {
+        _log.debug(e);
+        _logQuery(Level.DEBUG, sql, conn);
+    }
+
 
     /** Typical finally block cleanup. Tolerant of null or already closed JDBC resources */
     static void doClose(@Nullable ResultSet rs, @Nullable Statement stmt, @Nullable Connection conn, @NotNull DbScope scope)
