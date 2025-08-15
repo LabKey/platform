@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.PropertyType;
@@ -785,12 +786,12 @@ public class NameGenerator
         return values;
     }
 
-    public static boolean isParentInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    public static boolean isParentInput(Object token, @NotNull CaseInsensitiveHashMap<String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
     {
         return isParentInputToken(token, importAliases, false) || isParentInputWithDataType(token.toString().split("/", 2), currentDataTypeName, false, container, user);
     }
 
-    public static boolean isParentLookup(List<String> fieldParts, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    public static boolean isParentLookup(List<String> fieldParts, @NotNull CaseInsensitiveHashMap<String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
     {
         if (!isParentInputToken(fieldParts.get(0), importAliases, false))
             return false;
@@ -798,18 +799,13 @@ public class NameGenerator
         return fieldParts.size() != 2 || !isParentInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, false, container, user);
     }
 
-    public static boolean isAncestorSearch(List<String> fieldParts, @Nullable Map<String, String> importAliases, Container container, User user)
+    public static boolean isAncestorSearch(List<String> fieldParts, @NotNull CaseInsensitiveHashMap<String> importAliases, Container container, User user)
     {
         if (!fieldParts.get(0).startsWith("~"))
             return false;
 
         if (fieldParts.size() == 1)
-        {
-            Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
-            if (importAliases != null)
-                aliasesInsensitive.putAll(importAliases);
-            return aliasesInsensitive.containsKey(fieldParts.get(0).substring(1));
-        }
+            return importAliases.containsKey(fieldParts.get(0).substring(1));
 
         if (!isParentInputToken(fieldParts.get(0), null, true))
             return false;
@@ -836,14 +832,10 @@ public class NameGenerator
                 return false;
             sTok = sTok.substring(1); // remove leading ~
         }
-        Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
-        if (importAliases != null)
-            aliasesInsensitive.putAll(importAliases);
-
         return INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok)
-                || aliasesInsensitive.containsKey(sTok);
+                || (importAliases != null && importAliases.containsKey(sTok));
     }
 
     public static boolean isParentInputWithDataType(String[] parts, @Nullable String currentDataTypeName, boolean isAncestorSearch, Container container, User user)
@@ -1052,8 +1044,12 @@ public class NameGenerator
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any parent input tokens
     //   (c) any replacement tokens that include a lookup, e.g., ${foo/bar}
-    private void initialize(@Nullable Map<String, String> importAliases)
+    private void initialize(@Nullable Map<String, String> importAliasesMap)
     {
+        CaseInsensitiveHashMap<String> importAliases = new CaseInsensitiveHashMap<>();
+        if (importAliasesMap != null)
+            importAliases.putAll(importAliasesMap);
+
         assert _parsedNameExpression != null;
 
         Map<String, FieldKey> importAliasFieldKeys = getParentImportAliasFieldKeys(importAliases);
@@ -1246,7 +1242,7 @@ public class NameGenerator
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
-                                throw new UnsupportedOperationException(errorMsg);
+                                throw new ApiUsageException(errorMsg);
                         }
 
                         if (lookupValuePreview != null)
@@ -1270,7 +1266,7 @@ public class NameGenerator
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
                         else
-                            throw new UnsupportedOperationException(errorMsg);
+                            throw new ApiUsageException(errorMsg);
                     }
 
                     if (isParentPart)
@@ -1288,7 +1284,7 @@ public class NameGenerator
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
-                                throw new UnsupportedOperationException(errorMsg);
+                                throw new ApiUsageException(errorMsg);
                         }
 
                         lookups.add(fkTok);
@@ -1419,7 +1415,7 @@ public class NameGenerator
             _previewName = _parsedNameExpression.eval(previewCtx);
     }
 
-    private List<String> processFieldParts(FieldKey fkTok, Map<FieldKey, NameExpressionAncestorPartOption> partAncestorOptions, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs, @Nullable Map<String, String> importAliases, User user)
+    private List<String> processFieldParts(FieldKey fkTok, Map<FieldKey, NameExpressionAncestorPartOption> partAncestorOptions, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs, @NotNull CaseInsensitiveHashMap<String> importAliases, User user)
     {
         List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = new ArrayList<>();
         List<String> allFieldParts = fkTok.getParts();
@@ -1436,7 +1432,7 @@ public class NameGenerator
             fieldParts.addAll(allFieldParts);
 
             String alias = allFieldParts.get(0);
-            boolean isParentAlias = importAliases != null && importAliases.containsKey(alias.substring(1));
+            boolean isParentAlias = importAliases.containsKey(alias.substring(1));
             String isMaterialStr;
             String typeStr;
             if (isParentAlias)
@@ -1502,7 +1498,8 @@ public class NameGenerator
                     }
 
                     Pair<ExpLineageOptions.LineageExpType, String> ancestorPart = getAncestorPart(fPart, dataClassLSIDs, sampleTypeLSIDs);
-                    ancestorPaths.add(ancestorPart);
+                    if (ancestorPart != null)
+                        ancestorPaths.add(ancestorPart);
                 }
 
                 partInd++;
@@ -1529,7 +1526,7 @@ public class NameGenerator
             if (parentParts.size() == 1) // alias, or one of Inputs/, MaterialInputs/, DataInputs/
             {
                 String alias = parentParts.get(0);
-                boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
+                boolean isParentAlias = importAliases.containsKey(alias);
                 if (isParentAlias)
                 {
                     String dataTypeToken = importAliases.get(alias);
@@ -2145,6 +2142,7 @@ public class NameGenerator
     {
         final String aliquotedFrom = "S100";
         final String sourceMeta = "mouse1";
+        final CaseInsensitiveHashMap<String> emptyAliases = new CaseInsensitiveHashMap<>();
 
         @Test
         public void testDateFormats()
@@ -2645,21 +2643,21 @@ public class NameGenerator
 
         }
 
-        private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @NotNull CaseInsensitiveHashMap<String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             Container c = JunitUtil.getTestContainer();
             NameExpressionValidationResult results = getValidationMessages(ExperimentService.get().getTinfoMaterial(), "SampleTypeBeingCreated", expression, fields, importAliases, c);
             assertEquals(expectedResult, results);
         }
 
-        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg, @Nullable Map<String, String> importAliases)
+        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg, @NotNull CaseInsensitiveHashMap<String> importAliases)
         {
             validateNameResult(expression, errorMsg, importAliases, null);
         }
 
         private void validateNameResult(String expression, NameExpressionValidationResult errorMsg)
         {
-            validateNameResult(expression, errorMsg, null);
+            validateNameResult(expression, errorMsg, emptyAliases);
         }
 
         private NameExpressionValidationResult withErrors(String... errors)
@@ -2685,27 +2683,27 @@ public class NameGenerator
 
             GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor("FieldA", "http://www.w3.org/2001/XMLSchema#string");
             List<GWTPropertyDescriptor> fields = Collections.singletonList(descriptor);
-            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
 
             descriptor = new GWTPropertyDescriptor("Field/A", "http://www.w3.org/2001/XMLSchema#string");
             fields = Collections.singletonList(descriptor);
-            validateNameResult("S-${Field/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
-            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${Field/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
+            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
 
             descriptor = new GWTPropertyDescriptor("FieldA\\", "http://www.w3.org/2001/XMLSchema#string");
             fields = Collections.singletonList(descriptor);
-            validateNameResult("S-${FieldA\\}-${FieldB}", withErrors("No closing brace found for the substitution pattern starting at position 3."), null, fields);
-            validateNameResult("S-${FieldA\\\\}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${FieldA\\}-${FieldB}", withErrors("No closing brace found for the substitution pattern starting at position 3."), emptyAliases, fields);
+            validateNameResult("S-${FieldA\\\\}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
 
             descriptor = new GWTPropertyDescriptor("Field/A", "http://www.w3.org/2001/XMLSchema#string");
             fields = Collections.singletonList(descriptor);
-            validateNameResult("S-${Field/A}", withErrors("Lookup field does not exist: Field/A"), null, fields);
-            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${Field/A}", withErrors("Lookup field does not exist: Field/A"), emptyAliases, fields);
+            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
 
             descriptor = new GWTPropertyDescriptor("Field/A}", "http://www.w3.org/2001/XMLSchema#string");
             fields = Collections.singletonList(descriptor);
-            validateNameResult("S-${Field/A}}", withErrors("Lookup field does not exist: Field/A"), null, fields);
-            validateNameResult("S-${Field\\/A\\}}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${Field/A}}", withErrors("Lookup field does not exist: Field/A"), emptyAliases, fields);
+            validateNameResult("S-${Field\\/A\\}}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), emptyAliases, fields);
 
         }
 
@@ -2714,7 +2712,9 @@ public class NameGenerator
         {
             validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C."));
 
-            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+            CaseInsensitiveHashMap<String> importAliases = new CaseInsensitiveHashMap<>();
+            importAliases.put("parentAlias", "MaterialInputs/SampleTypeA");
+            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), importAliases);
 
             validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
 
@@ -2772,11 +2772,12 @@ public class NameGenerator
             fields.add(stringField);
             fields.add(intField);
 
-            Map<String, String> importAliases = Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA");
+            CaseInsensitiveHashMap<String> importAliases = new CaseInsensitiveHashMap<>();
+            importAliases.put("parentAlias", "MaterialInputs/SampleTypeA");
 
-            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldstr' is recognized as a field. Use ${fieldstr} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStr")), null, fields);
+            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldstr' is recognized as a field. Use ${fieldstr} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStr")), emptyAliases, fields);
 
-            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldint' is recognized as a field. Use ${fieldint} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStrValue-FieldInt")), null, fields);
+            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldint' is recognized as a field. Use ${fieldint} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStrValue-FieldInt")), emptyAliases, fields);
 
             validateNameResult("S-parentAlias", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'parentalias' is recognized as a field. Use ${parentalias} if you want to include the field value in the naming pattern."), Collections.singletonList("S-parentAlias")), importAliases, null);
          }
@@ -2815,14 +2816,14 @@ public class NameGenerator
 
         }
 
-        private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        private void verifyPreview(String expression, String preview, @NotNull CaseInsensitiveHashMap<String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             validateNameResult(expression, new NameExpressionValidationResult(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(preview)), importAliases, fields);
         }
 
         private void verifyPreview(String expression, String preview)
         {
-            verifyPreview(expression, preview, null, null);
+            verifyPreview(expression, preview, emptyAliases, null);
         }
 
         @Test
@@ -2865,35 +2866,37 @@ public class NameGenerator
             fields.add(stringField);
             fields.add(intField);
             fields.add(dateField);
-            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:number('00000')}", "S-FieldStrValue-00003", null, fields);
-            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue(1234)}", "S-FieldStrValue-1234", null, fields);
-            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue('5678')}", "S-FieldStrValue-5678", null, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:number('00000')}", "S-FieldStrValue-00003", emptyAliases, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue(1234)}", "S-FieldStrValue-1234", emptyAliases, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue('5678')}", "S-FieldStrValue-5678", emptyAliases, fields);
 
-            verifyPreview("S-${FieldStr}-${FieldDate\\:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
-            verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", emptyAliases, fields);
+            verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", emptyAliases, fields);
 
-            verifyPreview("S-${FieldStr}-${FieldDate\\\\:dailySampleCount}", "S-FieldStrValue-14", null, fields);
-            verifyPreview("S-${FieldStr}-${FieldDate\\:yearlySampleCount}", "S-FieldStrValue-412", null, fields);
-            verifyPreview("S-${FieldStr}-${dailySampleCount}", "S-FieldStrValue-14", null, fields);
-            verifyPreview("S-${FieldStr}-${yearlySampleCount}", "S-FieldStrValue-412", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\\\:dailySampleCount}", "S-FieldStrValue-14", emptyAliases, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\:yearlySampleCount}", "S-FieldStrValue-412", emptyAliases, fields);
+            verifyPreview("S-${FieldStr}-${dailySampleCount}", "S-FieldStrValue-14", emptyAliases, fields);
+            verifyPreview("S-${FieldStr}-${yearlySampleCount}", "S-FieldStrValue-412", emptyAliases, fields);
 
+            CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<>();
+            aliasMap.put("parentAlias", "MaterialInputs/SampleTypeA");
             // with input
             verifyPreview("S-${Inputs}", "S-Parent101");
             verifyPreview("S-${Inputs/SampleTypeBeingCreated}", "S-Parent101");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated}", "S-Sample101");
             verifyPreview("S-${Inputs/name}", "S-parentname");
             verifyPreview("S-${Inputs/SampleTypeBeingCreated/name}", "S-parentname");
-            verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
-            verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${parentAlias}", "S-Parent101", aliasMap, null);
+            verifyPreview("S-${parentAlias/name}", "S-parentname", aliasMap, null);
 
             // ancestor lookup
             verifyPreview("S-${MaterialInputs/..[MaterialInputs]/name}", "S-ancestorname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/..[DataInputs/GreatGrandParentDataType]/name}", "S-ancestorname");
-            verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname", aliasMap, null);
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", "S-ancestorname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname");
-            verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname", aliasMap, null);
         }
 
         @After

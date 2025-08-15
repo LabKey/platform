@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -67,6 +68,8 @@ import java.util.stream.Collectors;
  */
 public class TabLoader extends DataLoader
 {
+    public static final String FEATUREFLAG_UNESCAPE_BACKSLASH  = "dataloader-unescape-backslashes";
+
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
     public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
@@ -200,7 +203,7 @@ public class TabLoader extends DataLoader
 
     private boolean _parseQuotes = true;
     private boolean _parseEnclosedQuotes = false; // only treat quote as quote if it comes in pairs, otherwise treat it as a regular character
-    private boolean _unescapeBackslashes = true;
+    private boolean _unescapeBackslashes = AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_UNESCAPE_BACKSLASH);
 
     // Infer whether there are headers
     public TabLoader(File inputFile)
