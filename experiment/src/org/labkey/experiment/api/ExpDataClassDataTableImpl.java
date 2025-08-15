@@ -721,7 +721,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
             sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
-        String subAlias = alias + "_dc_sub";
+        String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
         sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 

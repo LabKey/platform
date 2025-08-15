@@ -137,8 +137,8 @@ public class UsersMsgPrefTable extends UsersTable
         {
             super.declareJoins(parentAlias, map);
 
-            String tableAlias = parentAlias + "$" + _emailPrefsJoin;
-            String tableOptionsAlias = parentAlias + "$" + _emailOptionsJoin;
+            String tableAlias = getSqlDialect().truncate(parentAlias + "$" + _emailPrefsJoin, 0);
+            String tableOptionsAlias = getSqlDialect().truncate(parentAlias + "$" + _emailOptionsJoin, 0);
             if (map.containsKey(tableAlias))
                 return;
 
