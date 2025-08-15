@@ -1323,7 +1323,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 {
                     if (value instanceof AttachmentFile file)
                     {
-                        if (null != file.getFilename())//
+                        if (null != file.getFilename())
                         {
                             rowStripped.put(name, file.getFilename());
                             attachments.put(name, value);
