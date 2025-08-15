@@ -96,6 +96,7 @@ import java.util.regex.Pattern;
 public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
+    public static final String CALCULATED_COLUMN_SQL_TAG = "/* CALCULATED-EXPRESSION-COLUMN-QUERY */";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
