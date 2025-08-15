@@ -367,6 +367,10 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
                 return false;
 
+            // Issue 51862: Skip indexing calculated columns
+            if (col.isValueExpressionColumn())
+                return false;
+
             return true;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
 

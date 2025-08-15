@@ -37,6 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
+
 /**
  * Selector that is driven by SQL, which subclasses can control how it's interpreted (LabKey SQL, raw DB SQL, etc)
  */
@@ -536,7 +538,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         @Override
         public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
-            Table.logException(_sql, conn, e, getLogLevel());
+            // Reduce the logging for calculated expression column SQL errors (Issue 52026 and 51862)
+            if (_sql != null && _sql.toString().contains(CALCULATED_COLUMN_SQL_TAG))
+            {
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                Table.debugException(_sql, conn, e);
+            }
+            else
+                Table.logException(_sql, conn, e, getLogLevel());
 
             if (null != _sql)
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toDebugString(), false);
