@@ -26,7 +26,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) table;
-            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getAuditBehavior() : auditBehaviorType;
+            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getDefaultAuditBehavior() : auditBehaviorType; //
 
             if (auditType == SUMMARY)
             {
@@ -68,7 +68,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            auditType = auditConfigurable.getAuditBehavior(auditType);
+            auditType = auditConfigurable.getEffectiveAuditBehavior(auditType);
 
             // Truncate audit event doesn't accept any params
             if (action == QueryService.AuditAction.TRUNCATE)

@@ -437,7 +437,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
-        AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
+        AuditBehaviorType behaviorType = (_target != null) ? _target.getEffectiveAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
 
         try
         {

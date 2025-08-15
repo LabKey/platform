@@ -1665,6 +1665,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    @Override
+    @NotNull
+    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    {
+        return AuditBehaviorType.DETAILED;
+    }
+
     static final Set<String> excludeFromDetailedAuditField;
     static
     {

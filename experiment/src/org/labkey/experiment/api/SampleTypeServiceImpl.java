@@ -1894,7 +1894,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = samplesTable.getEffectiveAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {

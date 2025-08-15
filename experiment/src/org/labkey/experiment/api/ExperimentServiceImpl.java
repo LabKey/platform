@@ -9561,10 +9561,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
-                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment);
 
                 // create new detailed events for each data object that was moved
-                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getEffectiveAuditBehavior(auditBehavior);
                 if (dcAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     List<Map<String, Object>> oldRows = new ArrayList<>();
@@ -9597,12 +9597,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return updateCounts;
-    }
-
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
-    {
-        QueryService queryService = QueryService.get();
-        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)

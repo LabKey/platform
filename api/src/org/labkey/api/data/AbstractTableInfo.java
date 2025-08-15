@@ -276,10 +276,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _schema = schema;
         _columnMap = constructColumnMap(); // This is just an empty map, not populating any columns yet
         setName(name);
+        _auditBehaviorType = getDefaultAuditBehaviorType();
         addTriggerFactory(new ScriptTriggerFactory());
         MemTracker.getInstance().put(this);
     }
 
+    @NotNull
+    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    {
+        return AuditBehaviorType.NONE;
+    }
 
     public void afterConstruct()
     {
@@ -1487,7 +1493,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.getAuditLogging() != null)
         {
             AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
-            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+            try
+            {
+                AuditBehaviorType auditBehaviorType = AuditBehaviorType.valueOf(auditBehavior.toString());
+                setAuditBehavior(auditBehaviorType);
+            }
+            catch (IllegalArgumentException ignore)
+            {
+
+            }
+
         }
 
         _warnings.addAll(warnings);
@@ -2001,7 +2016,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public AuditBehaviorType getAuditBehavior()
+    @NotNull
+    public AuditBehaviorType getDefaultAuditBehavior()
     {
         return _auditBehaviorType;
     }

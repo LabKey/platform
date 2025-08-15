@@ -161,7 +161,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     default AuditHandler getAuditHandler(@Nullable AuditBehaviorType auditBehaviorOverride)
     {
-        if (!supportsAuditTracking() || auditBehaviorOverride == AuditBehaviorType.NONE || (auditBehaviorOverride == null && getAuditBehavior() == AuditBehaviorType.NONE))
+        if (!supportsAuditTracking() || getEffectiveAuditBehavior(auditBehaviorOverride) == AuditBehaviorType.NONE)
             return new _DoNothingAuditHandler();
         return QueryService.get().getDefaultAuditHandler();
     }
@@ -662,43 +662,46 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns);
 
     /** see interface AuditConfigurable */
-    default AuditBehaviorType getAuditBehavior()
+    @NotNull
+    default AuditBehaviorType getDefaultAuditBehavior()
     {
         return AuditBehaviorType.NONE;
     }
 
-    /**
-     * Retrieves the audit behavior for this table taking into account, in order of precedence:
-     *  - the setting from the XML file (always returned if there is a value set)
-     *  - the override value provided
-     *  - the value supplied by this table's implementation
-     *
-     * @param overrideValue value used to override the behavior type provided by the table implementation
-     * @return audit behavior for this table
-     */
-    default AuditBehaviorType getAuditBehavior(@Nullable AuditBehaviorType overrideValue)
+    @NotNull
+    default AuditBehaviorType getEffectiveAuditBehavior()
     {
-        AuditBehaviorType type = getXmlAuditBehaviorType();
-        if (type != null)
-            return type;
-        if (overrideValue != null)
-            return overrideValue;
-        return getAuditBehavior();
+        return getXmlAuditBehaviorType() == null ? getDefaultAuditBehavior() : getXmlAuditBehaviorType();
     }
 
-    default AuditBehaviorType getAuditBehavior(@Nullable String overrideValue)
+    /**
+     * Retrieves the audit behavior for this table taking into account, in order of precedence:
+     *  - the override value provided
+     *  - the setting from the XML file (always returned if there is a value set)
+     *  - the value supplied by this table's implementation
+     *
+     * @param apiOverride value used to override the behavior type provided by the table implementation
+     * @return audit behavior for this table
+     */
+    @NotNull
+    default AuditBehaviorType getEffectiveAuditBehavior(@Nullable AuditBehaviorType apiOverride)
     {
-        if (overrideValue != null)
+        return AuditBehaviorType.getEffectiveAuditLevel(apiOverride, getEffectiveAuditBehavior());
+    }
+
+    default AuditBehaviorType getEffectiveAuditBehavior(@Nullable String apiOverrideValue)
+    {
+        if (apiOverrideValue != null)
         {
             try
             {
-                return getAuditBehavior(AuditBehaviorType.valueOf(overrideValue));
+                return getEffectiveAuditBehavior(AuditBehaviorType.valueOf(apiOverrideValue));
             }
             catch (IllegalArgumentException ignored)
             {
             }
         }
-        return getAuditBehavior();
+        return getEffectiveAuditBehavior();
     }
 
     /* Can be used to distinguish AuditBehaviorType.NONE vs absent xml audit config */

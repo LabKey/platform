@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -682,4 +683,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     {
         return super.supportTableRules();
     }
+
+    @Override
+    @NotNull
+    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    {
+        return AuditBehaviorType.DETAILED;
+    }
+
 }

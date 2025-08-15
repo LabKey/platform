@@ -527,14 +527,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public void setAuditBehavior(AuditBehaviorType type)
+    public void setAuditBehavior(@NotNull AuditBehaviorType type)
      {
          _auditBehaviorType = type;
          _xmlAuditBehaviorType = type;
      }
 
     @Override
-    public AuditBehaviorType getAuditBehavior()
+    @NotNull
+    public AuditBehaviorType getDefaultAuditBehavior()
      {
          return _auditBehaviorType;
      }
@@ -629,7 +630,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         if (xmlTable.getAuditLogging() != null)
         {
             AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
-            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+            try
+            {
+                AuditBehaviorType auditBehaviorType = AuditBehaviorType.valueOf(auditBehavior.toString());
+                setAuditBehavior(auditBehaviorType);
+            }
+            catch (IllegalArgumentException ignore)
+            {
+
+            }
         }
 
         // Stash so we can overlay ColumnInfo properties later
