@@ -177,7 +177,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (useMark)
             _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (ret && !pkColumns.isEmpty())
+        if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
         {
             prefetchExisting();
             if (_context.shouldCancel())
