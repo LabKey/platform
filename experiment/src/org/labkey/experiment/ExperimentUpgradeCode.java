@@ -124,7 +124,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             long desiredValue = Integer.MAX_VALUE + 1L;
             if (primary.getSqlDialect().isPostgreSQL())
             {
-
                 String sequenceName = "object_objectid_seq";
                 ensureBigObjectIds(
                     // Calling currval() is not an option since it requires a previous call to nextval() in this database session
