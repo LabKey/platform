@@ -15,25 +15,29 @@
  */
 package org.labkey.experiment;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ExperimentUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
+    private static final Logger LOG = LogHelper.getLogger(ExperimentUpgradeCode.class, "Experiment upgrade status");
 
     // called from exp-24.003-24.004.sql
+    @SuppressWarnings("unused")
     public static void addMissingSampleTypeIdsForSampleTimelineAudit(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -100,11 +104,54 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     // called from exp-24.005-24.006.sql
+    @SuppressWarnings("unused")
     public static void repopulateAncestors(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
 
         ClosureQueryHelper.truncateAndRecreate(LOG);
+    }
+
+    // called from exp-25.006-25.007.sql
+    @SuppressWarnings("unused")
+    public static void ensureBigObjectIds(ModuleContext context)
+    {
+        if (AppProps.getInstance().isDevMode())
+        {
+            DbScope primary = DbScope.getLabKeyScope();
+            String schemaName = "exp";
+            long desiredValue = Integer.MAX_VALUE + 1L;
+            if (primary.getSqlDialect().isPostgreSQL())
+            {
+
+                String sequenceName = "object_objectid_seq";
+                ensureBigObjectIds(
+                    // Calling currval() is not an option since it requires a previous call to nextval() in this database session
+                    new SqlSelector(primary, new SQLFragment("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
+                    newValue -> new SqlExecutor(primary).execute("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue),
+                    desiredValue
+                );
+            }
+            else
+            {
+                String tableName = schemaName + "." + "Object";
+                ensureBigObjectIds(
+                    new SqlSelector(primary, new SQLFragment("SELECT IDENT_CURRENT(?)", tableName)),
+                    newValue -> new SqlExecutor(primary).execute("DBCC CHECKIDENT(?, RESEED, ?)", tableName, newValue),
+                    desiredValue
+                );
+            }
+        }
+    }
+
+    private static void ensureBigObjectIds(Selector lastValueSelector, Consumer<Long> setValueConsumer, long desiredValue)
+    {
+        Long lastValue = lastValueSelector.getObject(Long.class);
+        if (lastValue == null || lastValue < desiredValue)
+        {
+            setValueConsumer.accept(desiredValue);
+            LOG.info("Setting exp.ObjectId next value to {}. Last value was previously {}.", desiredValue, lastValue);
+        }
     }
 }
