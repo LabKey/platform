@@ -39,6 +39,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -52,6 +53,7 @@ import org.springframework.web.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
@@ -511,12 +513,23 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     private @Nullable JSONObject getJsonObject() throws IOException
     {
+        HttpServletRequest request = getViewContext().getRequest();
+        if (request == null)
+            return null;
+
+        String characterEncoding = request.getCharacterEncoding();
+        if (characterEncoding == null)
+            characterEncoding = StringUtilsLabKey.DEFAULT_CHARSET.name();
+
         long maxLength = getMaximumJsonInputLength();
-        try (Reader r = getViewContext().getRequest().getReader();
-            Reader jsonReader = maxLength > 0 ? new StrictBoundedReader(r, maxLength) : r)
+
+        // Issue 53699: Use request.getInputStream() instead of request.getReader() to
+        // avoid BufferUnderflowException when processing multibyte character JSON payloads.
+        try (Reader streamReader = new InputStreamReader(request.getInputStream(), characterEncoding);
+             Reader jsonReader = maxLength > 0 ? new StrictBoundedReader(streamReader, maxLength) : streamReader)
         {
-            JSONTokener tokener = new JSONTokener(r);
-            return tokener.more() ? new JSONObject(new JSONTokener(jsonReader)) : null;
+            JSONTokener tokener = new JSONTokener(jsonReader);
+            return tokener.more() ? new JSONObject(tokener) : null;
         }
     }
 
