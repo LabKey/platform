@@ -127,7 +127,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _buttonBarConfig = BUTTON_BAR_NOT_SET;        // lazy copy button bar when asked
         if (_rootTable.supportsAuditTracking())
         {
-            _auditBehaviorType = _rootTable.getDefaultAuditBehavior();
+            _auditBehaviorType = _rootTable.getAuditBehavior();
             _xmlAuditBehaviorType = _rootTable.getXmlAuditBehaviorType();
         }
 

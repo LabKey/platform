@@ -2017,7 +2017,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Override
     @NotNull
-    public AuditBehaviorType getDefaultAuditBehavior()
+    public AuditBehaviorType getAuditBehavior()
     {
         return _auditBehaviorType;
     }

@@ -26,7 +26,8 @@ public abstract class AbstractAuditHandler implements AuditHandler
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) table;
-            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getDefaultAuditBehavior() : auditBehaviorType; //
+            // don't use  auditConfigurable.getAuditBehavior(auditBehaviorType) to allow extra summary independent of table config
+            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getAuditBehavior() : auditBehaviorType;
 
             if (auditType == SUMMARY)
             {
