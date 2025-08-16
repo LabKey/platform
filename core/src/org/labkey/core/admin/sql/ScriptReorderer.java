@@ -127,14 +127,14 @@ public class ScriptReorderer
             patterns.add(new SqlPattern("(DROP|ALTER) INDEX (IF EXISTS )?" + SCHEMA_NAME_REGEX + "(IX_|IDX_|UQ_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             // Find table name based on sequence naming conventions
-            patterns.add(new SqlPattern("CREATE SEQUENCE " + SCHEMA_NAME_REGEX + "." + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("CREATE SEQUENCE " + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (\\S+) (.+?) \\2 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?( VOLATILE)?( COST \\d+)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
             patterns.add(new SqlPattern("DO (\\S+) (.+?) END \\1" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
 
-        patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\)" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\).*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         // Put this at the end to catch all other ALTER TABLE statements (i.e., not RENAMEs)
         patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE (IF EXISTS )?(ONLY )?"), Type.Table, Operation.Other));
 
