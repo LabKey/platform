@@ -245,14 +245,11 @@ CREATE TABLE exp.PropertyDescriptor
 (
     PropertyId SERIAL NOT NULL,
     PropertyURI VARCHAR (200) NOT NULL,
-    OntologyURI VARCHAR (200) NULL,
     Name VARCHAR (200) NULL,
     Description TEXT NULL,
     RangeURI VARCHAR (200) NOT NULL CONSTRAINT DF_PropertyDescriptor_Range DEFAULT ('http://www.w3.org/2001/XMLSchema#string'),
     ConceptURI VARCHAR (200) NULL,
     Label VARCHAR (200) NULL,
-    SearchTerms VARCHAR (1000) NULL,
-    SemanticType VARCHAR (200) NULL,
     Format VARCHAR (50) NULL,
     Container ENTITYID NOT NULL,
     Project ENTITYID NOT NULL,
@@ -275,6 +272,7 @@ CREATE TABLE exp.PropertyDescriptor
     CONSTRAINT UQ_PropertyDescriptor UNIQUE (Project, PropertyURI),
     CONSTRAINT UQ_PropertyURIContainer UNIQUE (PropertyURI, Container)
 );
+
 CREATE INDEX IX_PropertyDescriptor_Container ON exp.PropertyDescriptor(Container);
 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN CreatedBy USERID NULL;
@@ -283,7 +281,6 @@ ALTER TABLE exp.PropertyDescriptor ADD COLUMN ModifiedBy USERID NULL;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN Modified TIMESTAMP NULL;
 ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT FK_PropertyDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN FacetingBehaviorType VARCHAR(40) NOT NULL DEFAULT 'AUTOMATIC';
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN Protected BOOLEAN NOT NULL DEFAULT False;
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupschema TYPE VARCHAR(200);
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupquery TYPE VARCHAR(200);
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN ExcludeFromShifting BOOLEAN NOT NULL DEFAULT False;
@@ -293,16 +290,10 @@ ALTER TABLE exp.PropertyDescriptor ADD COLUMN DefaultScale VARCHAR(40) NOT NULL 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN StorageColumnName VARCHAR(100) NULL;
 ALTER TABLE exp.PropertyDescriptor RENAME COLUMN KeyVariable TO RecommendedVariable;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN Phi VARCHAR(20) NOT NULL DEFAULT 'NotPHI';
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN Protected;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN RedactedText VARCHAR(450) NULL;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN mvIndicatorStorageColumnName VARCHAR(120);
 ALTER TABLE exp.propertydescriptor ADD TextExpression varchar(200) NULL;
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI TYPE VARCHAR(300);
-
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
-
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN PrincipalConceptCode VARCHAR(50) NULL;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN SourceOntology VARCHAR(20) NULL;
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN ConceptImportColumn VARCHAR(200) NULL;
@@ -356,10 +347,8 @@ ALTER TABLE exp.material ALTER COLUMN name SET NOT NULL;
 ALTER TABLE exp.material ADD description VARCHAR(4000);
 ALTER TABLE exp.material ADD COLUMN objectid INT;
 ALTER TABLE exp.material ALTER COLUMN objectid SET NOT NULL;
-ALTER TABLE exp.Material ADD COLUMN RootMaterialLSID LSIDtype NULL;
 ALTER TABLE exp.Material ADD COLUMN AliquotedFromLSID LSIDtype NULL;
 ALTER TABLE exp.Material ADD COLUMN SampleState INT;
-ALTER TABLE exp.Material ADD COLUMN RecomputeRollup BOOL NULL DEFAULT(FALSE);
 ALTER TABLE exp.Material ADD COLUMN AliquotCount INTEGER NULL;
 ALTER TABLE exp.Material ADD COLUMN AliquotVolume FLOAT NULL;
 ALTER TABLE exp.Material ADD COLUMN AliquotUnit VARCHAR(10) NULL;
@@ -369,12 +358,8 @@ ALTER TABLE exp.Material ADD COLUMN StoredAmount DOUBLE PRECISION;
 ALTER TABLE exp.Material ADD COLUMN Units VARCHAR(20);
 ALTER TABLE exp.Material ADD COLUMN AvailableAliquotCount INTEGER NULL;
 ALTER TABLE exp.Material ADD COLUMN AvailableAliquotVolume FLOAT NULL;
-ALTER TABLE exp.material ALTER COLUMN rootmateriallsid SET NOT NULL;
 ALTER TABLE exp.material ADD COLUMN RootMaterialRowId INT;
 ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
-
-ALTER TABLE exp.Material DROP COLUMN RecomputeRollup;
-ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
 
 ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
 
