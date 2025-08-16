@@ -89,7 +89,7 @@ public class ScriptReorderer
         patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE (ON )?"), Type.Table, Operation.AlterRows));
         patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, Operation.AlterRows));
 
-        patterns.add(new SqlPattern("CREATE (UNIQUE )?((NON)?CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("CREATE (UNIQUE )?((NON)?CLUSTERED )?INDEX (IF NOT EXISTS )?\\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("TRUNCATE( TABLE)? "), Type.Table, Operation.Other));
 
@@ -124,7 +124,10 @@ public class ScriptReorderer
             patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, Operation.Other));
 
             // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
-            patterns.add(new SqlPattern("(DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("(DROP|ALTER) INDEX (IF EXISTS )?" + SCHEMA_NAME_REGEX + "(IX_|IDX_|UQ_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+
+            // Find table name based on sequence naming conventions
+            patterns.add(new SqlPattern("CREATE SEQUENCE " + SCHEMA_NAME_REGEX + "." + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (\\S+) (.+?) \\2 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?( VOLATILE)?( COST \\d+)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
