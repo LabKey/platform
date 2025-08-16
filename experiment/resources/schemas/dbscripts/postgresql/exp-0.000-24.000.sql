@@ -58,6 +58,8 @@ CREATE INDEX IDX_Protocol_Container ON exp.Protocol (Container);
 
 ALTER TABLE exp.Protocol ADD CONSTRAINT FK_Protocol_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 
+ALTER TABLE exp.Protocol ADD COLUMN Status VARCHAR(60);
+
 CREATE TABLE exp.Experiment
 (
     RowId SERIAL NOT NULL,
@@ -143,6 +145,10 @@ ALTER TABLE exp.experimentrun ALTER COLUMN objectid SET NOT NULL;
 CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid);
 ALTER TABLE exp.ExperimentRun ADD LastIndexed TIMESTAMP NULL;
 
+ALTER TABLE exp.ExperimentRun ADD COLUMN WorkflowTask INT;
+
+CREATE INDEX IDX_ExperimentRun_WorkflowTask ON exp.ExperimentRun(WorkflowTask);
+
 CREATE TABLE exp.ProtocolApplication
 (
     RowId SERIAL NOT NULL,
@@ -169,6 +175,12 @@ ALTER TABLE exp.ProtocolApplication ADD COLUMN EndTime TIMESTAMP NULL;
 ALTER TABLE exp.ProtocolApplication ADD COLUMN RecordCount INT NULL;
 
 ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments TYPE TEXT;
+
+ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId SET NOT NULL;
+
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL;
 
 CREATE TABLE exp.Data
 (
@@ -220,6 +232,9 @@ ALTER TABLE exp.data ADD COLUMN objectid INT;
 
 ALTER TABLE exp.data ALTER COLUMN objectid SET NOT NULL;
 CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid);
+-- Most major file systems cap file lengths at 255 characters. Let's do the same
+ALTER TABLE exp.data ALTER COLUMN Name TYPE VARCHAR(255);
+
 -- Make PropertyDescriptor consistent with OWL terms, and also work for storing NCI_Thesaurus concepts
 
 -- We're somewhat merging to concepts here.
@@ -284,6 +299,18 @@ ALTER TABLE exp.PropertyDescriptor ADD COLUMN mvIndicatorStorageColumnName VARCH
 ALTER TABLE exp.propertydescriptor ADD TextExpression varchar(200) NULL;
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI TYPE VARCHAR(300);
 
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN PrincipalConceptCode VARCHAR(50) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN SourceOntology VARCHAR(20) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN ConceptImportColumn VARCHAR(200) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN ConceptLabelColumn VARCHAR(200) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN DerivationDataScope VARCHAR(20) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN IF NOT EXISTS ConceptSubtree TEXT NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN Scannable BOOLEAN NOT NULL DEFAULT false;
+
 CREATE TABLE exp.DataInput
 (
     DataId INT NOT NULL,
@@ -324,21 +351,42 @@ CREATE TABLE exp.Material
     CONSTRAINT FK_Material_ProtocolApplication FOREIGN KEY (SourceApplicationID) REFERENCES exp.ProtocolApplication (RowId),
     CONSTRAINT FK_Material_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 );
-CREATE INDEX IDX_CL_Material_RunId ON exp.Material(RunId);
-CREATE INDEX IX_Material_Container ON exp.Material(Container);
-CREATE INDEX IX_Material_SourceApplicationId ON exp.Material(SourceApplicationId);
-CREATE INDEX IX_Material_CpasType ON exp.Material(CpasType);
-CREATE INDEX IDX_Material_LSID ON exp.Material(LSID);
 
 ALTER TABLE exp.material ALTER COLUMN name SET NOT NULL;
-
-CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
-
 ALTER TABLE exp.material ADD description VARCHAR(4000);
 ALTER TABLE exp.material ADD COLUMN objectid INT;
 ALTER TABLE exp.material ALTER COLUMN objectid SET NOT NULL;
+ALTER TABLE exp.Material ADD COLUMN RootMaterialLSID LSIDtype NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotedFromLSID LSIDtype NULL;
+ALTER TABLE exp.Material ADD COLUMN SampleState INT;
+ALTER TABLE exp.Material ADD COLUMN RecomputeRollup BOOL NULL DEFAULT(FALSE);
+ALTER TABLE exp.Material ADD COLUMN AliquotCount INTEGER NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotVolume FLOAT NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotUnit VARCHAR(10) NULL;
+ALTER TABLE exp.Material ADD COLUMN MaterialSourceId INT NULL;
+ALTER TABLE exp.Material ADD COLUMN MaterialExpDate TIMESTAMP NULL;
+ALTER TABLE exp.Material ADD COLUMN StoredAmount DOUBLE PRECISION;
+ALTER TABLE exp.Material ADD COLUMN Units VARCHAR(20);
+ALTER TABLE exp.Material ADD COLUMN AvailableAliquotCount INTEGER NULL;
+ALTER TABLE exp.Material ADD COLUMN AvailableAliquotVolume FLOAT NULL;
+ALTER TABLE exp.material ALTER COLUMN rootmateriallsid SET NOT NULL;
+ALTER TABLE exp.material ADD COLUMN RootMaterialRowId INT;
+ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
 
+ALTER TABLE exp.Material DROP COLUMN RecomputeRollup;
+ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
+
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
+
+-- Recreate indices on exp.material
+CREATE INDEX IDX_CL_Material_RunId ON exp.material (RunId);
+CREATE INDEX IX_Material_Container ON exp.material (Container);
+CREATE INDEX IX_Material_SourceApplicationId ON exp.material (SourceApplicationId);
+CREATE INDEX IX_Material_CpasType ON exp.material (CpasType);
+CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
 CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
+CREATE INDEX IDX_material_name_sourceid ON exp.material (name, materialSourceId);
+CREATE INDEX IX_Material_RootMaterialRowId ON exp.material (RootMaterialRowId);
 
 CREATE TABLE exp.MaterialInput
 (
@@ -385,16 +433,16 @@ ALTER TABLE exp.MaterialSource ADD CONSTRAINT FK_MaterialSource_Container FOREIG
 -- Change exp.MaterialSource.Name from VARCHAR(50) to VARCHAR(100). Going to 200 to match other experiment tables
  -- hits limits with domain URIs, etc
 ALTER TABLE exp.MaterialSource ALTER COLUMN Name TYPE VARCHAR(100);
-
 ALTER TABLE exp.MaterialSource ADD COLUMN NameExpression VARCHAR(200) NULL;
-
 ALTER TABLE exp.materialsource ALTER COLUMN nameexpression TYPE VARCHAR(500);
-
 ALTER TABLE exp.materialsource ADD COLUMN lastindexed TIMESTAMP NULL;
-
 ALTER TABLE exp.materialsource ADD COLUMN materialparentimportaliasmap VARCHAR(4000) NULL;
-
 ALTER TABLE exp.MaterialSource ADD COLUMN LabelColor VARCHAR(7) NULL;
+ALTER TABLE exp.MaterialSource ADD COLUMN MetricUnit VARCHAR(10) NULL;
+ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkTargetContainer ENTITYID NULL;
+ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkCategory VARCHAR(200) NULL;
+ALTER TABLE exp.MaterialSource ADD COLUMN AliquotNameExpression VARCHAR(200) NULL;
+ALTER TABLE exp.MaterialSource ADD COLUMN Category VARCHAR(20) NULL;
 
 CREATE TABLE exp.Object
 (
@@ -411,6 +459,23 @@ CREATE TABLE exp.Object
 );
 CREATE INDEX IDX_Object_ContainerOwnerObjectId ON exp.Object (Container, OwnerObjectId, ObjectId);
 CREATE INDEX IX_Object_OwnerObjectId ON exp.Object(OwnerObjectId);
+
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+
+-- add constraints for lsid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+-- add constraints for objectid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
 
 CREATE TABLE exp.ObjectProperty
 (
@@ -500,23 +565,21 @@ CREATE TABLE exp.DomainDescriptor
     StorageTableName VARCHAR(100),
     StorageSchemaName VARCHAR(100),
 
-    CONSTRAINT PK_DomainDescriptor PRIMARY KEY (DomainId),
-    CONSTRAINT UQ_DomainDescriptor UNIQUE (Project, DomainURI),
-    CONSTRAINT UQ_DomainURIContainer UNIQUE (DomainURI, Container)
+    CONSTRAINT PK_DomainDescriptor PRIMARY KEY (DomainId)
 );
+
 CREATE INDEX IX_DomainDescriptor_Container ON exp.DomainDescriptor(Container);
 
 -- Finally, add some FKs so we don't get into this horrible state again
 ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT FK_DomainDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domainuricontainer;
-ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domaindescriptor;
-ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT uq_domaindescriptor UNIQUE (DomainURI, Project);
 CREATE SEQUENCE exp.domaindescriptor_ts;
+ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT uq_domaindescriptor UNIQUE (DomainURI, Project);
 ALTER TABLE exp.DomainDescriptor ADD _ts BIGINT DEFAULT nextval('exp.domaindescriptor_ts') NOT NULL;
 ALTER TABLE exp.DomainDescriptor ADD COLUMN ModifiedBy USERID;
 ALTER TABLE exp.DomainDescriptor ADD COLUMN Modified TIMESTAMP DEFAULT now();
 ALTER TABLE exp.DomainDescriptor ADD COLUMN TemplateInfo VARCHAR(4000) NULL;
 ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI TYPE VARCHAR(300);
+ALTER TABLE exp.DomainDescriptor ADD COLUMN SystemFieldConfig VARCHAR NULL;
 
 CREATE TABLE exp.PropertyDomain
 (
@@ -542,25 +605,8 @@ CREATE TABLE exp.RunList
 );
 CREATE INDEX IX_RunList_ExperimentRunId ON exp.RunList(ExperimentRunId);
 
--- Clean up orphaned experiment objects that were not properly deleted when their container was deleted
--- Then, add real FKs to ensure we don't orphan rows in the future
-
 ALTER TABLE exp.RunList ADD COLUMN Created TIMESTAMP;
 ALTER TABLE exp.RunList ADD COLUMN CreatedBy INT;
-
-CREATE TABLE exp.ActiveMaterialSource
-(
-    Container ENTITYID NOT NULL,
-    MaterialSourceLSID LSIDtype NOT NULL,
-
-    CONSTRAINT PK_ActiveMaterialSource PRIMARY KEY (Container),
-    CONSTRAINT FK_ActiveMaterialSource_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-    CONSTRAINT FK_ActiveMaterialSource_MaterialSourceLSID FOREIGN KEY (MaterialSourceLSID) REFERENCES exp.MaterialSource(LSID)
-);
-CREATE INDEX IX_ActiveMaterialSource_MaterialSourceLSID ON exp.ActiveMaterialSource(MaterialSourceLSID);
-
--- Removing active sample types
-SELECT core.fn_dropifexists('ActiveMaterialSource', 'exp', 'TABLE', NULL);
 
 CREATE TABLE exp.list
 (
@@ -609,10 +655,10 @@ ALTER TABLE exp.list ADD EachItemBodyTemplate VARCHAR(1000) NULL;
 
 ALTER TABLE exp.List ADD LastIndexed TIMESTAMP NULL;
 
--- Merge the "meta data only" and "entire list data" settings, migrating them to a single boolean (EntireListIndex) plus
--- a setting denoting what to index (EntireListIndexSetting = meta data only (0), item data only (1), or both (2))
+-- Merge the "metadata only" and "entire list data" settings, migrating them to a single boolean (EntireListIndex) plus
+-- a setting denoting what to index (EntireListIndexSetting = metadata only (0), item data only (1), or both (2))
 
-ALTER TABLE exp.List ADD EntireListIndexSetting INT NOT NULL DEFAULT 0;  -- Meta data only, the default
+ALTER TABLE exp.List ADD EntireListIndexSetting INT NOT NULL DEFAULT 0;  -- Metadata only, the default
 ALTER TABLE exp.List DROP MetaDataIndex;
 
 ALTER TABLE exp.List DROP CONSTRAINT PK_List;
@@ -626,6 +672,14 @@ SELECT core.fn_dropifexists('list', 'exp', 'CONSTRAINT', 'UQ_RowId');
 SELECT core.fn_dropifexists('list', 'exp', 'COLUMN', 'rowid');
 
 ALTER TABLE exp.list ADD FileAttachmentIndex BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE exp.List ADD COLUMN Category VARCHAR(20) NULL;
+
+ALTER TABLE exp.list ALTER COLUMN Name TYPE VARCHAR(200);
+
+-- These columns have been unused for years. https://github.com/LabKey/platform/pull/4549 cleaned up all code references.
+ALTER TABLE exp.List DROP COLUMN EntireListTitleSetting;
+ALTER TABLE exp.List DROP COLUMN EachItemTitleSetting;
 
 CREATE TABLE exp.ConditionalFormat
 (
@@ -677,24 +731,24 @@ CREATE INDEX IX_AssayQCFlag_Keys ON exp.AssayQCFlag(Key1, Key2);
 
 CREATE TABLE exp.DataClass
 (
-  RowId SERIAL NOT NULL,
-  Name VARCHAR(200) NOT NULL,
-  LSID LSIDtype NOT NULL,
-  Container ENTITYID NOT NULL,
-  Created TIMESTAMP NULL,
-  CreatedBy INT NULL,
-  Modified TIMESTAMP NULL,
-  ModifiedBy INT NULL,
-  Description TEXT NULL,
-  MaterialSourceId INT NULL,
-  NameExpression VARCHAR(200) NULL,
+    RowId SERIAL NOT NULL,
+    Name VARCHAR(200) NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Container ENTITYID NOT NULL,
+    Created TIMESTAMP NULL,
+    CreatedBy INT NULL,
+    Modified TIMESTAMP NULL,
+    ModifiedBy INT NULL,
+    Description TEXT NULL,
+    MaterialSourceId INT NULL,
+    NameExpression VARCHAR(200) NULL,
 
-  CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
-  CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
-  CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
+    CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
+    CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
+    CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
 
-  CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-  CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
+    CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
+    CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
 );
 CREATE INDEX IX_DataClass_Container ON exp.DataClass(Container);
 
@@ -706,30 +760,32 @@ ALTER TABLE exp.DataClass ADD COLUMN Category VARCHAR(20) NULL;
 
 ALTER TABLE exp.dataclass ADD COLUMN lastindexed TIMESTAMP NULL;
 
+ALTER TABLE exp.DataClass ADD COLUMN dataparentimportaliasmap VARCHAR(4000) NULL;
+
 CREATE TABLE exp.Alias
 (
-  RowId SERIAL NOT NULL,
-  Created TIMESTAMP,
-  CreatedBy INT,
-  Modified TIMESTAMP,
-  ModifiedBy INT,
+    RowId SERIAL NOT NULL,
+    Created TIMESTAMP,
+    CreatedBy INT,
+    Modified TIMESTAMP,
+    ModifiedBy INT,
 
-  Name VARCHAR(500) NOT NULL,
+    Name VARCHAR(500) NOT NULL,
 
-  CONSTRAINT PK_Alias PRIMARY KEY (RowId),
-  CONSTRAINT UQ_Alias_Name UNIQUE (Name)
+    CONSTRAINT PK_Alias PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Alias_Name UNIQUE (Name)
 );
 
 CREATE INDEX IX_Alias_Name ON exp.Alias(Name);
 
 CREATE TABLE exp.DataAliasMap
 (
-  LSID LSIDtype NOT NULL,
-  Alias INT NOT NULL,
-  Container EntityId NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
 
-  CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
-  CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+    CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
 );
 
 ALTER TABLE exp.DataAliasMap ADD CONSTRAINT FK_DataAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Data(LSID);
@@ -737,12 +793,12 @@ CREATE INDEX IX_DataAliasMap ON exp.DataAliasMap(LSID, Alias, Container);
 
 CREATE TABLE exp.MaterialAliasMap
 (
-  LSID LSIDtype NOT NULL,
-  Alias INT NOT NULL,
-  Container EntityId NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
 
-  CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
-  CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+    CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
 );
 
 ALTER TABLE exp.MaterialAliasMap ADD CONSTRAINT FK_MaterialAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Material(LSID);
@@ -764,31 +820,47 @@ CREATE TABLE exp.Edge
     CONSTRAINT UQ_Edge_ToFrom_RunId UNIQUE (ToObjectId, FromObjectId, RunId)
 );
 
+ALTER TABLE exp.Edge
+    DROP CONSTRAINT UQ_Edge_FromTo_RunId,
+    DROP CONSTRAINT UQ_Edge_ToFrom_RunId,
+
+    ALTER COLUMN RunId DROP NOT NULL,
+
+    ADD SourceId INT NULL,
+    ADD SourceKey VARCHAR(200) NULL,
+
+    ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid),
+    ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
+
+CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
+CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
+CREATE INDEX IDX_Edge_RunId ON exp.Edge(RunId);
+
 CREATE TABLE exp.ProtocolInput
 (
-  RowId SERIAL NOT NULL,
-  Name VARCHAR(300) NOT NULL,
-  LSID LSIDtype NOT NULL,
-  ProtocolId INT NOT NULL,
-  Input BOOLEAN NOT NULL,
+    RowId SERIAL NOT NULL,
+    Name VARCHAR(300) NOT NULL,
+    LSID LSIDtype NOT NULL,
+    ProtocolId INT NOT NULL,
+    Input BOOLEAN NOT NULL,
 
-  -- One of 'Material' or 'Data'
-  ObjectType VARCHAR(8) NOT NULL,
+    -- One of 'Material' or 'Data'
+    ObjectType VARCHAR(8) NOT NULL,
 
-  -- DataClassId may be non-null when ObjectType='Data'
-  DataClassId INT NULL,
-  -- MaterialSourceId may be non-null when ObjectType='Material'
-  MaterialSourceId INT NULL,
+    -- DataClassId may be non-null when ObjectType='Data'
+    DataClassId INT NULL,
+    -- MaterialSourceId may be non-null when ObjectType='Material'
+    MaterialSourceId INT NULL,
 
-  CriteriaName VARCHAR(50) NULL,
-  CriteriaConfig TEXT NULL,
-  MinOccurs INT NOT NULL,
-  MaxOccurs INT NULL,
+    CriteriaName VARCHAR(50) NULL,
+    CriteriaConfig TEXT NULL,
+    MinOccurs INT NOT NULL,
+    MaxOccurs INT NULL,
 
-  CONSTRAINT PK_ProtocolInput_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_ProtocolInput_ProtocolId FOREIGN KEY (ProtocolId) REFERENCES exp.Protocol (RowId),
-  CONSTRAINT FK_ProtocolInput_DataClassId FOREIGN KEY (DataClassId) REFERENCES exp.DataClass (RowId),
-  CONSTRAINT FK_ProtocolInput_MaterialSourceId FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
+    CONSTRAINT PK_ProtocolInput_RowId PRIMARY KEY (RowId),
+    CONSTRAINT FK_ProtocolInput_ProtocolId FOREIGN KEY (ProtocolId) REFERENCES exp.Protocol (RowId),
+    CONSTRAINT FK_ProtocolInput_DataClassId FOREIGN KEY (DataClassId) REFERENCES exp.DataClass (RowId),
+    CONSTRAINT FK_ProtocolInput_MaterialSourceId FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
 );
 
 CREATE INDEX IX_ProtocolInput_ProtocolId ON exp.ProtocolInput (ProtocolId);
@@ -816,150 +888,6 @@ CREATE TABLE exp.PropertyValidator
 );
 CREATE INDEX ix_propertyvalidator_propertyid on exp.PropertyValidator(PropertyId);
 
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
-
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN PrincipalConceptCode VARCHAR(50) NULL;
-
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN SourceOntology VARCHAR(20) NULL;
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN ConceptImportColumn VARCHAR(200) NULL;
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN ConceptLabelColumn VARCHAR(200) NULL;
-
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN DerivationDataScope VARCHAR(20) NULL;
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN IF NOT EXISTS ConceptSubtree TEXT NULL;
-
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN Scannable BOOLEAN NOT NULL DEFAULT false;
-
-ALTER TABLE exp.MaterialSource ADD COLUMN MetricUnit VARCHAR(10) NULL;
-
-ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkTargetContainer ENTITYID NULL;
-
-ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkCategory VARCHAR(200) NULL;
-
-ALTER TABLE exp.MaterialSource ADD COLUMN AliquotNameExpression VARCHAR(200) NULL;
-
-ALTER TABLE exp.MaterialSource ADD COLUMN Category VARCHAR(20) NULL;
-
-SELECT core.fn_dropifexists('materialsource', 'exp', 'constraint', 'UQ_MaterialSource_Container_Name');
-
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-
--- add constraints for lsid -> exp.object
-ALTER TABLE exp.data ADD CONSTRAINT FK_Data_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
--- add constraints for objectid -> exp.object
-ALTER TABLE exp.data ADD CONSTRAINT FK_Data_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-
--- Most major file systems cap file lengths at 255 characters. Let's do the same
-ALTER TABLE exp.data ALTER COLUMN Name TYPE VARCHAR(255);
-
-ALTER TABLE exp.Material ADD COLUMN RootMaterialLSID LSIDtype NULL;
-ALTER TABLE exp.Material ADD COLUMN AliquotedFromLSID LSIDtype NULL;
-
-ALTER TABLE exp.Material ADD COLUMN SampleState INT;
-
-ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
-
-ALTER TABLE exp.Material ADD COLUMN RecomputeRollup BOOL NULL DEFAULT(FALSE);
-ALTER TABLE exp.Material ADD COLUMN AliquotCount INTEGER NULL;
-ALTER TABLE exp.Material ADD COLUMN AliquotVolume FLOAT NULL;
-ALTER TABLE exp.Material ADD COLUMN AliquotUnit VARCHAR(10) NULL;
-
-CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=TRUE;
-
-ALTER TABLE exp.Material ADD COLUMN MaterialSourceId INT NULL;
-
-CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
-
-ALTER TABLE exp.Material ADD COLUMN MaterialExpDate TIMESTAMP NULL;
-ALTER TABLE exp.Material ADD COLUMN StoredAmount DOUBLE PRECISION;
-ALTER TABLE exp.Material ADD COLUMN Units VARCHAR(20);
-
-SELECT core.fn_dropifexists('Material', 'exp', 'INDEX', 'IDX_exp_material_recompute');
-
-ALTER TABLE exp.Material DROP COLUMN RecomputeRollup;
-
-ALTER TABLE exp.Material ADD COLUMN AvailableAliquotCount INTEGER NULL;
-ALTER TABLE exp.Material ADD COLUMN AvailableAliquotVolume FLOAT NULL;
-
-ALTER TABLE exp.material
-    ALTER COLUMN rootmateriallsid SET NOT NULL;
-
-CREATE INDEX IF NOT EXISTS uq_material_rootlsid
-    on exp.material (rootmateriallsid);
-
--- this is duplicative of constraint uq_material_lsid
-DROP INDEX IF EXISTS exp.idx_material_lsid;
-
--- Drop all indices on exp.material
-DROP INDEX IF EXISTS exp.IDX_CL_Material_RunId;
-DROP INDEX IF EXISTS exp.IX_Material_Container;
-DROP INDEX IF EXISTS exp.IX_Material_SourceApplicationId;
-DROP INDEX IF EXISTS exp.IX_Material_CpasType;
-DROP INDEX IF EXISTS exp.IDX_Material_LSID;
-DROP INDEX IF EXISTS exp.idx_material_AK;
-DROP INDEX IF EXISTS exp.idx_material_objectid;
-DROP INDEX IF EXISTS exp.IDX_material_name_sourceid;
-DROP INDEX IF EXISTS exp.IX_Material_RootRowId;
-DROP INDEX IF EXISTS exp.uq_material_rootlsid;
-
--- Add new "RootMaterialRowId" column
-ALTER TABLE exp.material ADD COLUMN RootMaterialRowId INT;
-
--- Add NOT NULL constraint to "RootMaterialRowId"
-ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
-
--- Add FK on "RootMaterialRowId"
--- See exp-23.012-23.013.sql
--- ALTER TABLE exp.material ADD CONSTRAINT FK_Material_RootMaterialRowId
---     FOREIGN KEY (RootMaterialRowId) REFERENCES exp.material (RowId);
-
--- Remove the "RootMaterialLSID" column
-ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
-
--- Recreate indices on exp.material
-CREATE INDEX IDX_CL_Material_RunId ON exp.material (RunId);
-CREATE INDEX IX_Material_Container ON exp.material (Container);
-CREATE INDEX IX_Material_SourceApplicationId ON exp.material (SourceApplicationId);
-CREATE INDEX IX_Material_CpasType ON exp.material (CpasType);
-CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
-CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
-CREATE INDEX IDX_material_name_sourceid ON exp.material (name, materialSourceId);
-CREATE INDEX IX_Material_RootMaterialRowId ON exp.material (RootMaterialRowId);
-
--- It is possible for parent samples of aliquots to be moved to a subfolder where upon deletion
--- of the subfolder we need to delete the parent sample but the aliquot still exists.
-ALTER TABLE exp.material DROP CONSTRAINT IF EXISTS FK_Material_RootMaterialRowId;
-ALTER TABLE exp.List ADD COLUMN Category VARCHAR(20) NULL;
-
-ALTER TABLE exp.list ALTER COLUMN Name TYPE VARCHAR(200);
-
--- These columns have been unused for years. https://github.com/LabKey/platform/pull/4549 cleaned up all code references.
-ALTER TABLE exp.List DROP COLUMN EntireListTitleSetting;
-ALTER TABLE exp.List DROP COLUMN EachItemTitleSetting;
-
-ALTER TABLE exp.Protocol ADD COLUMN Status VARCHAR(60);
-
-ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
-
-ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId SET NOT NULL;
-
-ALTER TABLE exp.ExperimentRun ADD COLUMN WorkflowTask INT;
-
-ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL;
-
-CREATE INDEX IDX_ExperimentRun_WorkflowTask ON exp.ExperimentRun(WorkflowTask);
-
 CREATE TABLE exp.ObjectLegacyNames
 (
     RowId SERIAL NOT NULL,
@@ -973,28 +901,6 @@ CREATE TABLE exp.ObjectLegacyNames
 
     CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
 );
-
-ALTER TABLE exp.Edge
-    DROP CONSTRAINT UQ_Edge_FromTo_RunId,
-    DROP CONSTRAINT UQ_Edge_ToFrom_RunId,
-
-    ALTER COLUMN RunId DROP NOT NULL,
-
-    ADD SourceId INT NULL,
-    ADD SourceKey VARCHAR(200) NULL,
-
-    ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid),
-    ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
-
-CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
-CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
-
-CREATE INDEX IDX_Edge_RunId ON exp.Edge(RunId);
-
-ALTER TABLE exp.DomainDescriptor ADD COLUMN SystemFieldConfig VARCHAR NULL;
-
-ALTER TABLE exp.DataClass
-    ADD COLUMN dataparentimportaliasmap VARCHAR(4000) NULL;
 
 CREATE TABLE exp.DataTypeExclusion
 (
@@ -1010,226 +916,3 @@ CREATE TABLE exp.DataTypeExclusion
     CONSTRAINT PK_DataTypeExclusion PRIMARY KEY (RowId),
     CONSTRAINT UQ_DataTypeExclusion UNIQUE (DataTypeRowId, DataType, ExcludedContainer)
 );
-
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
-CREATE FUNCTION exp.ensureObject(ENTITYID, LSIDType, INTEGER) RETURNS INTEGER AS $$
-DECLARE
-    _container ALIAS FOR $1;
-    _lsid ALIAS FOR $2;
-    _ownerObjectId ALIAS FOR $3;
-    _objectid INTEGER;
-BEGIN
--- START TRANSACTION;
-        _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
-        IF (_objectid IS NULL) THEN
-            INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (_container, _lsid, _ownerObjectId);
-            _objectid := currval('exp.object_objectid_seq');
-        END IF;
--- COMMIT;
-    RETURN _objectid;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- SELECT exp.deleteObject('00000000-0000-0000-0000-000000000000', 'lsidA')
-CREATE FUNCTION exp.deleteObject(ENTITYID, LSIDType) RETURNS void AS '
-DECLARE
-    _container ALIAS FOR $1;
-    _lsid ALIAS FOR $2;
-    _objectid INTEGER;
-BEGIN
-        _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
-        IF (_objectid IS NULL) THEN
-            RETURN;
-        END IF;
---    START TRANSACTION;
-        DELETE FROM exp.ObjectProperty WHERE ObjectId IN
-            (SELECT ObjectId FROM exp.Object WHERE Container=_container AND OwnerObjectId = _objectid);
-        DELETE FROM exp.ObjectProperty WHERE ObjectId = _objectid;
-        DELETE FROM exp.Object WHERE Container=_container AND OwnerObjectId = _objectid;
-        DELETE FROM exp.Object WHERE ObjectId = _objectid;
---    COMMIT;
-    RETURN;
-END;
-' LANGUAGE plpgsql;
-
-
--- internal methods
-
--- SELECT exp._insertFloatProperty(13, 5, 101.0)
-CREATE FUNCTION exp._insertFloatProperty(INTEGER, INTEGER, FLOAT) RETURNS void AS $$
-DECLARE
-    _objectid ALIAS FOR $1;
-    _propid ALIAS FOR $2;
-    _float ALIAS FOR $3;
-BEGIN
-    IF (_propid IS NULL OR _objectid IS NULL) THEN
-        RETURN;
-    END IF;
-    INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, FloatValue)
-    VALUES (_objectid, _propid, 'f', _float);
-    RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE FUNCTION exp._insertDateTimeProperty(INTEGER, INTEGER, TIMESTAMP) RETURNS void AS $$
-DECLARE
-    _objectid ALIAS FOR $1;
-    _propid ALIAS FOR $2;
-    _datetime ALIAS FOR $3;
-BEGIN
-    IF (_propid IS NULL OR _objectid IS NULL) THEN
-        RETURN;
-    END IF;
-    INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, DateTimeValue)
-    VALUES (_objectid, _propid, 'd', _datetime);
-    RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE FUNCTION exp._insertStringProperty(INTEGER, INTEGER, VARCHAR(400)) RETURNS void AS $$
-DECLARE
-    _objectid ALIAS FOR $1;
-    _propid ALIAS FOR $2;
-    _string ALIAS FOR $3;
-BEGIN
-    IF (_propid IS NULL OR _objectid IS NULL) THEN
-        RETURN;
-    END IF;
-    INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, StringValue)
-    VALUES (_objectid, _propid, 's', _string);
-    RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
-
---
--- Set the same property on multiple objects (e.g. impoirt a column of datea)
---
--- fast method for importing ObjectProperties (need to wrap with datalayer code)
---
--- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
--- SELECT * FROM exp.Object
--- SELECT * FROM exp.PropertyDescriptor
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
-CREATE FUNCTION exp.setFloatProperties(_propertyid INTEGER,
-    _objectid1 INTEGER, _float1 FLOAT,
-    _objectid2 INTEGER, _float2 FLOAT,
-    _objectid3 INTEGER, _float3 FLOAT,
-    _objectid4 INTEGER, _float4 FLOAT,
-    _objectid5 INTEGER, _float5 FLOAT,
-    _objectid6 INTEGER, _float6 FLOAT,
-    _objectid7 INTEGER, _float7 FLOAT,
-    _objectid8 INTEGER, _float8 FLOAT,
-    _objectid9 INTEGER, _float9 FLOAT,
-    _objectid10 INTEGER, _float10 FLOAT
-    ) RETURNS void AS '
-BEGIN
---    BEGIN TRANSACTION
-        DELETE FROM exp.ObjectProperty WHERE PropertyId=_propertyid AND ObjectId IN (_objectid1, _objectid2, _objectid3, _objectid4, _objectid5, _objectid6, _objectid7, _objectid8, _objectid9, _objectid10);
-        PERFORM exp._insertFloatProperty(_objectid1, _propertyid, _float1);
-        PERFORM exp._insertFloatProperty(_objectid2, _propertyid, _float2);
-        PERFORM exp._insertFloatProperty(_objectid3, _propertyid, _float3);
-        PERFORM exp._insertFloatProperty(_objectid4, _propertyid, _float4);
-        PERFORM exp._insertFloatProperty(_objectid5, _propertyid, _float5);
-        PERFORM exp._insertFloatProperty(_objectid6, _propertyid, _float6);
-        PERFORM exp._insertFloatProperty(_objectid7, _propertyid, _float7);
-        PERFORM exp._insertFloatProperty(_objectid8, _propertyid, _float8);
-        PERFORM exp._insertFloatProperty(_objectid9, _propertyid, _float9);
-        PERFORM exp._insertFloatProperty(_objectid10, _propertyid, _float10);
---    COMMIT
-    RETURN;
-END;
-' LANGUAGE plpgsql;
-
-
-CREATE FUNCTION exp.setStringProperties
-(
-    _propertyid INTEGER,
-    _objectid1 INTEGER, _string1 VARCHAR(400),
-    _objectid2 INTEGER, _string2 VARCHAR(400),
-    _objectid3 INTEGER, _string3 VARCHAR(400),
-    _objectid4 INTEGER, _string4 VARCHAR(400),
-    _objectid5 INTEGER, _string5 VARCHAR(400),
-    _objectid6 INTEGER, _string6 VARCHAR(400),
-    _objectid7 INTEGER, _string7 VARCHAR(400),
-    _objectid8 INTEGER, _string8 VARCHAR(400),
-    _objectid9 INTEGER, _string9 VARCHAR(400),
-    _objectid10 INTEGER, _string10 VARCHAR(400)
-) RETURNS void AS $$
-BEGIN
---    BEGIN TRANSACTION
-        DELETE FROM exp.ObjectProperty WHERE PropertyId=_propertyid AND ObjectId IN (_objectid1, _objectid2, _objectid3, _objectid4, _objectid5, _objectid6, _objectid7, _objectid8, _objectid9, _objectid10);
-        PERFORM exp._insertStringProperty(_objectid1, _propertyid, _string1);
-        PERFORM exp._insertStringProperty(_objectid2, _propertyid, _string2);
-        PERFORM exp._insertStringProperty(_objectid3, _propertyid, _string3);
-        PERFORM exp._insertStringProperty(_objectid4, _propertyid, _string4);
-        PERFORM exp._insertStringProperty(_objectid5, _propertyid, _string5);
-        PERFORM exp._insertStringProperty(_objectid6, _propertyid, _string6);
-        PERFORM exp._insertStringProperty(_objectid7, _propertyid, _string7);
-        PERFORM exp._insertStringProperty(_objectid8, _propertyid, _string8);
-        PERFORM exp._insertStringProperty(_objectid9, _propertyid, _string9);
-        PERFORM exp._insertStringProperty(_objectid10, _propertyid, _string10);
---    COMMIT
-    RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE FUNCTION exp.setDateTimeProperties(_propertyid INTEGER,
-    _objectid1 INTEGER, _datetime1 TIMESTAMP,
-    _objectid2 INTEGER, _datetime2 TIMESTAMP,
-    _objectid3 INTEGER, _datetime3 TIMESTAMP,
-    _objectid4 INTEGER, _datetime4 TIMESTAMP,
-    _objectid5 INTEGER, _datetime5 TIMESTAMP,
-    _objectid6 INTEGER, _datetime6 TIMESTAMP,
-    _objectid7 INTEGER, _datetime7 TIMESTAMP,
-    _objectid8 INTEGER, _datetime8 TIMESTAMP,
-    _objectid9 INTEGER, _datetime9 TIMESTAMP,
-    _objectid10 INTEGER, _datetime10 TIMESTAMP
-    ) RETURNS void AS '
-BEGIN
---    BEGIN TRANSACTION
-        DELETE FROM exp.ObjectProperty WHERE PropertyId=_propertyid AND ObjectId IN (_objectid1, _objectid2, _objectid3, _objectid4, _objectid5, _objectid6, _objectid7, _objectid8, _objectid9, _objectid10);
-        PERFORM exp._insertDateTimeProperty(_objectid1, _propertyid, _datetime1);
-        PERFORM exp._insertDateTimeProperty(_objectid2, _propertyid, _datetime2);
-        PERFORM exp._insertDateTimeProperty(_objectid3, _propertyid, _datetime3);
-        PERFORM exp._insertDateTimeProperty(_objectid4, _propertyid, _datetime4);
-        PERFORM exp._insertDateTimeProperty(_objectid5, _propertyid, _datetime5);
-        PERFORM exp._insertDateTimeProperty(_objectid6, _propertyid, _datetime6);
-        PERFORM exp._insertDateTimeProperty(_objectid7, _propertyid, _datetime7);
-        PERFORM exp._insertDateTimeProperty(_objectid8, _propertyid, _datetime8);
-        PERFORM exp._insertDateTimeProperty(_objectid9, _propertyid, _datetime9);
-        PERFORM exp._insertDateTimeProperty(_objectid10, _propertyid, _datetime10);
---    COMMIT
-    RETURN;
-END;
-' LANGUAGE plpgsql;
-
-
-CREATE FUNCTION exp.deleteObjectById(ENTITYID, INTEGER) RETURNS void AS '
-DECLARE
-    _container ALIAS FOR $1;
-    _inputObjectId ALIAS FOR $2;
-    _objectid INTEGER;
-BEGIN
-        _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectId=_inputObjectid);
-        IF (_objectid IS NULL) THEN
-            RETURN;
-        END IF;
---    START TRANSACTION;
-        DELETE FROM exp.ObjectProperty WHERE ObjectId IN
-            (SELECT ObjectId FROM exp.Object WHERE Container=_container AND OwnerObjectId = _objectid);
-        DELETE FROM exp.ObjectProperty WHERE ObjectId = _objectid;
-        DELETE FROM exp.Object WHERE Container=_container AND OwnerObjectId = _objectid;
-        DELETE FROM exp.Object WHERE ObjectId = _objectid;
---    COMMIT;
-    RETURN;
-END;
-' LANGUAGE plpgsql;
