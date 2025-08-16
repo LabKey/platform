@@ -243,7 +243,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 
     private void importFilePathError(String participantId, String sequenceNum, String filePath)
     {
-        String pasteData = TestDataUtils.tsvStringFromRowMapsEscapeBackslash(List.of(
+        String pasteData = TestDataUtils.tsvStringFromRowMaps(List.of(
                 Map.of("ParticipantId", participantId, "SequenceNum", sequenceNum, FILE_FIELD_1, filePath)),
                 List.of("ParticipantId", "SequenceNum", FILE_FIELD_1), true);
         setFormElement(Locator.name("text"), pasteData);
