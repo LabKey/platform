@@ -82,14 +82,14 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                 queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        String prefix = (isSamples ? MATERIAL_INPUTS : DATA_INPUTS) + "\\/";
+        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
 
         for (String oldQueryName : queryNameChangeMap.keySet())
         {
             String newQueryName = queryNameChangeMap.get(oldQueryName);
 
-            String searchStr = "\"" + prefix + oldQueryName + "\"";
-            String replaceStr = "\"" + prefix.replace("\\/", "\\\\/") + newQueryName + "\"";
+            String searchStr = "\"" + (prefix + oldQueryName).replaceAll("/", "\\\\/") + "\""; // slash needs to be escaped with backslash for sql
+            String replaceStr = "\"" + (prefix + newQueryName).replace("/", "\\\\/") + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
@@ -116,13 +116,12 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         if (!isSamples && !isData)
             return;
 
-        String prefix = (isSamples ? MATERIAL_INPUTS : DATA_INPUTS) + "\\/";
-        String parsedPrefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
+        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
 
         for (String removed : queries)
         {
-            String inputType = parsedPrefix + removed;
-            String searchStr = "\"" + prefix + removed + "\"";
+            String inputType = prefix + removed;
+            String searchStr = "\"" + inputType.replaceAll("/", "\\\\/") + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
