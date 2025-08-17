@@ -80,14 +80,15 @@ public class AttachmentDataIterator extends WrapperDataIterator
     }
 
     @Override
-    public boolean next()
+    public boolean next() throws BatchValidationException
     {
+        boolean ret = super.next();
+        if (!ret)
+            return false;
+
         ArrayList<AttachmentFile> attachmentFiles = null;
         try
         {
-            boolean ret = super.next();
-            if (!ret)
-                return false;
             for (_AttachmentUploadHelper p : attachmentColumns)
             {
                 Object attachmentValue = get(p.index);

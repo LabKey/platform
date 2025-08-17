@@ -344,10 +344,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
                     }
-                    else if (r.getValue() instanceof String strVal)
+                    else if (r.getValue() != null && !StringUtils.isEmpty(String.valueOf(r.getValue())))
                     {
-                        if (!StringUtils.isEmpty(strVal)) // Issue 53498: string value for attachment field is not allowed
-                            throw new ValidationException("Can't upload '" + strVal + "' to field " + r.getKey() + " with type Attachment.");
+                        throw new ValidationException("Can't upload '" + r.getValue() + "' to field " + r.getKey() + " with type Attachment.");
                     }
                 }
             }

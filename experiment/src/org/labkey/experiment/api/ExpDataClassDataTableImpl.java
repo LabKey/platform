@@ -1329,15 +1329,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                             attachments.put(name, value);
                         }
                     }
-                    else if (value instanceof String strVal)
+                    else if (value != null && !StringUtils.isEmpty(String.valueOf(value)))
                     {
-                        if (!StringUtils.isEmpty(strVal)) // Issue 53498: string value for attachment field is not allowed
-                            throw new ValidationException("Can't upload '" + strVal + "' to field " + name + " with type Attachment.");
-                        else
-                            rowStripped.put(name, value); // if blank, remove attachment
+                        // Issue 53498: string value for attachment field is not allowed
+                        throw new ValidationException("Can't upload '" + value + "' to field " + name + " with type Attachment.");
                     }
                     else
-                        rowStripped.put(name, value); // if null, remove attachment
+                        rowStripped.put(name, value); // if null or empty, remove attachment
                 }
                 else
                 {
