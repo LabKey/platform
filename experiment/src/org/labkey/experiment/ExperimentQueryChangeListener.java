@@ -88,7 +88,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         {
             String newQueryName = queryNameChangeMap.get(oldQueryName);
 
-            String searchStr = "\"" + (prefix + oldQueryName).replaceAll("/", "\\\\/") + "\""; // slash needs to be escaped with backslash for sql
+            String searchStr = "\"" + (prefix + oldQueryName).replaceAll("/", "\\\\/") + "\""; // LabKeyObjectMapper enables JsonWriteFeature.ESCAPE_FORWARD_SLASHES
             String replaceStr = "\"" + (prefix + newQueryName).replace("/", "\\\\/") + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
