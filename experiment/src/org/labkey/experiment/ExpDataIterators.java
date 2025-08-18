@@ -474,7 +474,7 @@ public class ExpDataIterators
                         return needRecac.second;
                 }
 
-                // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or a amount/status update
+                // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or an amount/status update
                 // merge: either a new record, or detailed audit disabled
                 if (!_isUpdate)
                 {
