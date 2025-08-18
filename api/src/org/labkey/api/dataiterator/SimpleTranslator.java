@@ -1882,9 +1882,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     value = null;
                 }
             }
-            else if (value instanceof String filePath)
-                return ExpDataFileConverter.convert(filePath);
-            return value;
+
+            return ExpDataFileConverter.convert(value);
         }
     }
 
