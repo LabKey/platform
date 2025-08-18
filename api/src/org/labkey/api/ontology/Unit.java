@@ -111,7 +111,7 @@ public enum Unit
 
     public boolean isCompatible(Unit other)
     {
-        return other.base == base;
+        return other != null && other.base == base;
     }
 
     public double toBaseUnitValue(double v)
@@ -215,6 +215,7 @@ public enum Unit
             assertTrue(Unit.unit.isCompatible(Unit.count));
             assertTrue(Unit.unit.isCompatible(Unit.no_unit));
             assertFalse(Unit.unit.isCompatible(Unit.ml));
+            assertFalse(Unit.ml.isCompatible(null));
         }
 
         @Test
