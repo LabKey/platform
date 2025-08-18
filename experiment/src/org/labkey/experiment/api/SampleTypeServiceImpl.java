@@ -56,7 +56,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -1611,91 +1610,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 //        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
         return new AliquotAvailableAmountUnit(totalVolume, totalUnit == null ? null : totalUnit.name(), totalAvailableVolume);
-    }
-
-    private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
-    {
-        if (volumeUnits == null || volumeUnits.isEmpty())
-            return null;
-
-        String totalDisplayUnitStr = sampleTypeUnitsStr;
-        Measurement.Unit totalDisplayUnit = null;
-
-        if (StringUtils.isEmpty(totalDisplayUnitStr) && (sampleItemUnit != null))
-        {
-            // if sample type lacks unit, but the sample has a unit, use sample's unit
-            totalDisplayUnitStr = sampleItemUnit;
-        }
-
-        // if sample unit is empty, use 1st aliquot unit
-        if (StringUtils.isEmpty(totalDisplayUnitStr))
-        {
-            String aliquotUnit = volumeUnits.get(0).unit;
-            if (!StringUtils.isEmpty(aliquotUnit))
-                totalDisplayUnitStr = aliquotUnit;
-        }
-
-        if (!StringUtils.isEmpty(totalDisplayUnitStr))
-        {
-            try
-            {
-                totalDisplayUnit = Measurement.Unit.valueOf(totalDisplayUnitStr);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // do nothing; leave unit as null;
-            }
-        }
-
-        double totalVolume = 0.0;
-        double totalAvailableVolume = 0.0;
-
-        for (AliquotAmountUnitResult volumeUnit : volumeUnits)
-        {
-            Measurement.Unit unit = null;
-            try
-            {
-                double storedAmount = volumeUnit.amount;
-                String aliquotUnit = volumeUnit.unit;
-                boolean isAvailable = volumeUnit.isAvailable;
-
-                try
-                {
-                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : Measurement.Unit.valueOf(aliquotUnit);
-                }
-                catch (IllegalArgumentException ignore)
-                {
-                }
-
-                double convertedAmount = 0;
-                // include in total volume only if aliquot unit is compatible
-                if (totalDisplayUnit != null && totalDisplayUnit.isCompatible(unit))
-                    convertedAmount = unit.convertAmount(storedAmount, totalDisplayUnit);
-                else if (totalDisplayUnit == null) // sample (or 1st aliquot) unit is not a supported unit, or is blank
-                {
-                    if (StringUtils.isEmpty(totalDisplayUnitStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
-                        convertedAmount = storedAmount;
-                    else if (totalDisplayUnitStr != null && totalDisplayUnitStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same no supported unit ('cc')
-                        convertedAmount = storedAmount;
-                }
-
-                totalVolume += convertedAmount;
-                if (isAvailable)
-                    totalAvailableVolume += convertedAmount;
-            }
-            catch (IllegalArgumentException ignore) // invalid volume
-            {
-
-            }
-        }
-        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
-        totalVolume = Precision.round(totalVolume, scale);
-        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
-
-        if (Double.compare(totalVolume, 0.0) == 0)
-            totalDisplayUnit = null;
-
-        return new AliquotAvailableAmountUnit(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name(), totalAvailableVolume);
     }
 
     public Pair<Collection<Long>, Collection<Long>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
