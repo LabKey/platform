@@ -719,7 +719,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (PropertyType.FILE_LINK.equals(col.getPropertyType()) && value instanceof String strVal)
                         value = ExpDataFileConverter.convert(strVal);
                     else
-                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                        value = col.getConvertFn().apply(value);
                 }
                 catch (ConvertHelper.FileConversionException e)
                 {

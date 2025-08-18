@@ -49,6 +49,7 @@ public interface AppProps
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
+    String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 

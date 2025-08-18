@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -377,6 +378,9 @@ public class Parameter implements AutoCloseable
 
         if (value == null)
             return null;
+
+        if (value instanceof Quantity q)
+            value = q.value();
 
         if (value instanceof Double)
             return ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double)value));
