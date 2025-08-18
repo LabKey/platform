@@ -3,6 +3,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
@@ -159,7 +160,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         List<GWTPropertyDescriptor> properties = domain.getFields();
         Domain vocabularyDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
 
-        Set<String> propertyUris = new HashSet<>();
+        Set<String> propertyUris = new CaseInsensitiveHashSet();
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         try
         {

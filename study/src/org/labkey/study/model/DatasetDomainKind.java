@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -502,7 +503,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();
-                    Set<String> propertyUris = new HashSet<>();
+                    Set<String> propertyUris = new CaseInsensitiveHashSet();
 
                     for (GWTPropertyDescriptor pd : properties)
                     {
