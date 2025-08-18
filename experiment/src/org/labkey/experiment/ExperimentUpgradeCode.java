@@ -141,7 +141,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ClosureQueryHelper.truncateAndRecreate(LOG);
     }
 
-    // called from exp-25.004-25.005.sql TODO UPDATE
+    // called from exp-25.006-25.007.sql
     public static void upgradeAmountsAndUnits(ModuleContext context)
     {
         if (context.isNewInstall())
