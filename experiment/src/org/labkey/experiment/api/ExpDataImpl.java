@@ -742,6 +742,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             if (!(tableInfo instanceof ExpDataClassDataTableImpl expDataClassDataTable))
                 throw new IllegalArgumentException(String.format("Unable to index data class item in %s. Table must be an instance of %s", dc.getName(), ExpDataClassDataTableImpl.class.getName()));
 
+            if (!expDataClassDataTable.getDataClass().equals(dc))
+                throw new IllegalArgumentException(String.format("Data class table mismatch for %s", dc.getName()));
+
             // Collect other text columns and lookup display columns
             getIndexValues(props, expDataClassDataTable, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
         }

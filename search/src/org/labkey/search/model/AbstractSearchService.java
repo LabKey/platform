@@ -20,6 +20,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -679,17 +680,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void purgeForContainer(@NotNull Container container)
     {
+        MutableInt count = new MutableInt(0);
         Predicate<Item> itemChecker = (i) -> {
             boolean result = container.getEntityId().equals(i._containerId) && i._pri != PRIORITY.delete;
             if (result)
             {
                 // Let the task know too, treating them as failures (since they were not successfully indexed)
                 i._task.completeItem(i, false);
+                count.increment();
             }
             return result;
         };
         _runQueue.removeIf(itemChecker);
         _itemQueue.removeIf(itemChecker);
+        logQueueStatus("Purged " + count.intValue() + " items from the search queue for container " + container.getPath());
     }
 
     @Override
@@ -1076,10 +1080,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             try
             {
-// UNDONE: only pause the crawler for now, don't want to worry about the queue growing unchecked
-//                    if (!waitForRunning())
-//                        continue;
-
                 i = _runQueue.poll(30, TimeUnit.SECONDS);
 
                 if (null != i)
@@ -1089,6 +1089,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     {
                         try {Thread.sleep(100);}catch(InterruptedException ignored){}
                     }
+
+                    Container c;
+                    if (item._containerId != null)
+                    {
+                        c = ContainerManager.getForId(item._containerId);
+                        if (c == null)
+                        {
+                            logQueueStatus("runRunnable:container not found for " + item._containerId);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        c = null;
+                    }
+
+                    // Hand off a queue that piggybacks on the same priority as the original work
                     item._run.accept(new TaskIndexingQueue()
                     {
                         @Override
@@ -1110,7 +1127,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         @Override
                         public Container getContainer()
                         {
-                            return ContainerManager.getForId(item._containerId);
+                            return c;
                         }
                     });
                 }

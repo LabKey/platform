@@ -2115,9 +2115,7 @@ public class ExpDataIterators
                             }
                         }
 
-                        if (value instanceof String filePath)
-                            return ExpDataFileConverter.convert(filePath);
-                        return value;
+                        return ExpDataFileConverter.convert(value);
                     };
                 }
             }
