@@ -24,7 +24,12 @@ public class ShuttingDownException extends RuntimeException
 {
     public ShuttingDownException()
     {
-        super("Server is shutting down");
+        this("Server is shutting down");
+    }
+
+    public ShuttingDownException(Throwable t)
+    {
+        super("Server is shutting down", t);
     }
 
     public ShuttingDownException(String msg)

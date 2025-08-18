@@ -1678,6 +1678,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
         catch (Throwable t)
         {
+            if (_shuttingDown)
+            {
+                // We're already shutting down so don't bother logging startup failures
+                throw new ShuttingDownException(t);
+            }
             setStartupFailure(t);
             _log.error("Failure during module startup", t);
         }
