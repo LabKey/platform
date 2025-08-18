@@ -221,7 +221,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(",Dependencies, SupportedDatabases");
         cte.append(")\n");
 
-        String tableName = alias + "$m";
+        String tableName = getSqlDialect().truncate(alias + "$m", 0);
         String token = ret.addCommonTableExpression(getSqlDialect(), "modulestableconstants", tableName, cte);
 
         // join with core.modules

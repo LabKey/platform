@@ -219,7 +219,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     private static Quantity parse(@NotNull String s) throws ConversionException
     {
-        return parse(s, Unit.no_unit);
+        return parse(s, Unit.unit);
     }
 
 
@@ -264,7 +264,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
                 throw new ConversionException("Could not parse unit: " + unitPart);
-            if (defaultUnit!=Unit.no_unit && !defaultUnit.kindOfQuantity.accept(unit))
+            if (!defaultUnit.kindOfQuantity.accept(unit))
                 throw new ConversionException("Quantity is of wrong type: expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
             return Quantity.of(value, unit);
         }
@@ -375,19 +375,19 @@ public class Quantity extends Number implements Comparable<Quantity>
         public void testParse()
         {
             assertEquals(Quantity.of(1, Unit.g), parse("1", Unit.g));
-            assertEquals(Quantity.of(1, Unit.g), parse("1g"));
-            assertEquals(Quantity.of(1, Unit.g), parse("0.001kg"));
+            assertEquals(Quantity.of(1, Unit.g), parse("1g", Unit.g));
+            assertEquals(Quantity.of(1, Unit.g), parse("0.001kg", Unit.g));
 
             assertEquals(Quantity.of(1, Unit.count), parse("1"));
             assertEquals(Quantity.of(1, Unit.count), parse("1 unit"));
-            assertEquals(Quantity.of(0, Unit.count), parse("0 no units"));
+            assertEquals(Quantity.of(0, Unit.count), parse("0 units"));
             assertEquals(Quantity.of(0, Unit.count), parse("0count"));
 
-            assertEquals(parse("1000mg"), parse("0.001kg"));
-            assertEquals(parse(" 1000mg"), parse("0.001kg"));
-            assertEquals(parse("1000mg "), parse("0.001kg"));
-            assertEquals(parse("1000 mg"), parse("0.001kg"));
-            assertEquals(parse("1000  mg"), parse("0.001kg"));
+            assertEquals(parse("1000mg", Unit.g), parse("0.001kg", Unit.g));
+            assertEquals(parse(" 1000mg", Unit.g), parse("0.001kg", Unit.g));
+            assertEquals(parse("1000mg ", Unit.g), parse("0.001kg", Unit.g));
+            assertEquals(parse("1000 mg", Unit.g), parse("0.001kg", Unit.g));
+            assertEquals(parse("1000  mg", Unit.g), parse("0.001kg", Unit.g));
         }
 
         @Test

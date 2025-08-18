@@ -17,9 +17,6 @@ public enum Unit
     count(KindOfQuantity.Count, unit, 1.0, "",
             Quantity.class,
             "count", "count"),
-    no_unit(KindOfQuantity.Count, unit, 1.0, "",
-            Quantity.class,
-            "no units", "no units"),
 
     ml(KindOfQuantity.Volume, null, 1e0, "ml",
             Quantity.Volume_ml.class,
@@ -213,7 +210,6 @@ public enum Unit
             assertTrue(Unit.g.isCompatible(Unit.mg));
             assertFalse(Unit.g.isCompatible(Unit.ml));
             assertTrue(Unit.unit.isCompatible(Unit.count));
-            assertTrue(Unit.unit.isCompatible(Unit.no_unit));
             assertFalse(Unit.unit.isCompatible(Unit.ml));
             assertFalse(Unit.ml.isCompatible(null));
         }
@@ -228,7 +224,6 @@ public enum Unit
             assertEquals(1e-3, Unit.mg.toBaseUnitValue(1.0), 0.00001);
             assertEquals(1e-6, Unit.ug.toBaseUnitValue(1.0), 0.00001);
             assertEquals(1e0, Unit.count.toBaseUnitValue(1.0), 0.00001);
-            assertEquals(1e0, Unit.no_unit.toBaseUnitValue(1.0), 0.00001);
         }
 
         @Test
@@ -241,7 +236,6 @@ public enum Unit
             assertEquals(1.0, Unit.mg.fromBaseUnitValue(1e-3), 0.00001);
             assertEquals(1.0, Unit.ug.fromBaseUnitValue(1e-6), 0.00001);
             assertEquals(1.0, Unit.count.fromBaseUnitValue(1e0), 0.00001);
-            assertEquals(1.0, Unit.no_unit.fromBaseUnitValue(1e0), 0.00001);
         }
 
         @Test
@@ -254,7 +248,6 @@ public enum Unit
             assertEquals(0.001, Unit.mg.toStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(0.000001, Unit.ug.toStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1.0, Unit.count.toStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(1.0, Unit.no_unit.toStorageUnitValue(1.0).doubleValue(), 0.00001);
         }
 
         @Test
@@ -267,7 +260,6 @@ public enum Unit
             assertEquals(1000.0, Unit.mg.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1000000.0, Unit.ug.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1.0, Unit.count.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(1.0, Unit.no_unit.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
         }
 
         @Test

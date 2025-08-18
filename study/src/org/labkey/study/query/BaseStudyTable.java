@@ -347,14 +347,22 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         public ParticipantVisitColumn(TableInfo parent, @Nullable Container container)
         {
-            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$PV" + ".VisitRowId"), JdbcType.INTEGER);
+            super(parent, "Visit", null, JdbcType.INTEGER);
             this.container = container;
         }
 
         @Override
+        public SQLFragment getValueSql(String parentAlias)
+        {
+            String pvAlias = getSqlDialect().truncate(parentAlias + "$PV", 0);
+            return new SQLFragment().appendDottedIdentifiers(pvAlias, "VisitRowId");
+        }
+
+
+        @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            String pvAlias = parentAlias + "$PV";
+            String pvAlias = getSqlDialect().truncate(parentAlias + "$PV", 0);
             SQLFragment join = new SQLFragment();
 
             join.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).append(" ON\n");
@@ -625,7 +633,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         private void participantCommentJoin(String parentAlias, Map<String, SQLFragment> map)
         {
-            String ptidTableAlias = parentAlias + "$" + PARTICIPANT_COMMENT_JOIN;
+            String ptidTableAlias = getSqlDialect().truncate(parentAlias + "$" + PARTICIPANT_COMMENT_JOIN, 0);
             if (map.containsKey(ptidTableAlias))
                 return;
 
@@ -640,7 +648,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         private void participantVisitCommentJoin(String parentAlias, Map<String, SQLFragment> map)
         {
-            String ptidTableAlias = parentAlias + "$" + PARTICIPANTVISIT_COMMENT_JOIN;
+            String ptidTableAlias = getSqlDialect().truncate(parentAlias + "$" + PARTICIPANTVISIT_COMMENT_JOIN, 0);
             if (map.containsKey(ptidTableAlias))
                 return;
 

@@ -949,7 +949,7 @@ public class DataColumn extends DisplayColumn
         if (_caption == null)
             return null;
         var title = _caption.eval(ctx);
-        if (null != _displayColumn && null != _displayColumn.getDisplayUnit())
+        if (null != _displayColumn && null != _displayColumn.getDisplayUnit() && !StringUtils.isEmpty(_displayColumn.getDisplayUnit().toString()))
             title += " (" + _displayColumn.getDisplayUnit() + ")";
         return title.isEmpty() ? HtmlString.NBSP : HtmlString.of(title);
     }

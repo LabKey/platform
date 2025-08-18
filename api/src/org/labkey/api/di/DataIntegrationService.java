@@ -59,7 +59,7 @@ public interface DataIntegrationService
     /**
      * Returns the Set of transform job IDs for the container
      */
-    Set<Integer> getTransformRunJobIds(Container c);
+    Set<Long> getTransformRunJobIds(Container c);
 
     /**
      * Execute an efficient reimport operation Create a dataIterator based on target.getQueryUpdateService()

@@ -472,7 +472,7 @@ abstract public class QNode implements Cloneable
             test("CONVERT(now(),SQL_DATE)", JdbcType.DATE);
             test("CAST(now() AS DATE)", JdbcType.DATE);
             test("CASE WHEN 1=1 THEN CONVERT(now(),SQL_DATE) ELSE CAST(now() AS DATE) END", JdbcType.DATE);
-            test("1 + 2.0", JdbcType.DOUBLE);
+            test("1 + 2.0", JdbcType.DECIMAL);
             test("'hello' | 'world'", JdbcType.VARCHAR);
         }
 
