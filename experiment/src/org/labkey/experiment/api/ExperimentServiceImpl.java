@@ -314,6 +314,8 @@ import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
+import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
@@ -1043,11 +1045,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         selector.setJdbcCaching(false);
         MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
+        // Avoid creating a new TableInfo for each sample type we encounter
+        Map<Long, TableInfo> tables = new HashMap<>();
+
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            expMaterial.index(queue, null);
+            ExpSampleType sampleType = expMaterial.getSampleType();
+            TableInfo table = null;
+            if (sampleType != null)
+            {
+                table = tables.computeIfAbsent(sampleType.getRowId(), st -> QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(sampleType.getName()));
+            }
+            expMaterial.index(queue, table);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
@@ -1081,11 +1092,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         selector.setJdbcCaching(false);
         MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
+        // Avoid creating a new TableInfo for each data class we encounter
+        Map<Long, TableInfo> tables = new HashMap<>();
+
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         List<Data> data = selector.getArrayList(Data.class);
         data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
-            expData.index(queue, null);
+
+            ExpDataClassImpl dataClass = expData.getDataClass();
+            TableInfo table = null;
+            if (dataClass != null)
+            {
+                table = tables.computeIfAbsent(dataClass.getRowId(), dc -> QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_EXP_DATA).getTable(dataClass.getName()));
+            }
+
+            expData.index(queue, table);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
