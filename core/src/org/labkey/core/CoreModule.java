@@ -543,6 +543,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Resolve Missing Lookup Values to Null",
             "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
             false, false, OptionalFeatureService.FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(TabLoader.FEATUREFLAG_UNESCAPE_BACKSLASH,
+                "Unescape backslash character on import",
+                "Treat backslash '\\' character as an escape character when loading data from file.",
+                false, false, OptionalFeatureService.FeatureType.Deprecated));
+
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
