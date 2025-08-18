@@ -132,7 +132,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
                 auditType = queryTable.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
 
             // Detailed auditing and not set to bulk load in ETL
-            if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
+            if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad) && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit))
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
