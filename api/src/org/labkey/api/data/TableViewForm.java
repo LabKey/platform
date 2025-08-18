@@ -34,6 +34,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -409,33 +410,36 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         for (String propName : keys)
         {
+            ColumnInfo col = getColumnByFormFieldName(propName);
             String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
+            Class<?> propType = null;
 
             if (StringUtils.isEmpty(str))
                 str = null;
 
-            Class<?> propType = null;
-
             try
             {
+
                 if (null != str)
                 {
-                    propType = _dynaClass.getTruePropType(propName);
-                    if (propType != null)
+                    Object val;
+                    if (null != col && null != col.getKindOfQuantity())
                     {
-                        Object val = ConvertUtils.convert(str, propType);
-                        values.put(propName, val);
+                        val = Quantity.convert(str, col.getDisplayUnit());
                     }
                     else
                     {
-                        values.put(propName, str);
+                        propType = _dynaClass.getTruePropType(propName);
+                        if (propType != null)
+                            val = ConvertUtils.convert(str, propType);
+                        else
+                            val = str;
                     }
+                    values.put(propName, val);
                 }
                 else if (_validateRequired && null != _tinfo)
                 {
-                    ColumnInfo col = getColumnByFormFieldName(propName);
-
                     if (null == col || !col.isRequired())
                     {
                         values.put(propName, null);
@@ -472,7 +476,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 boolean skipError = false;
 
                 // Attempt to resolve lookups by display value
-                ColumnInfo col = getColumnByFormFieldName(propName);
                 String defaultMessage = null;
                 if (col != null && col.getFk() != null && col.getFk().allowImportByAlternateKey())
                 {
