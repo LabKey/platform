@@ -87,6 +87,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
@@ -728,10 +730,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
-                Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
+                Unit oldRowUnits = Unit.getValidatedUnit((String) oldRow.get(Units.name()), _sampleType.getBaseUnit());
+                Unit rowUnits = Unit.getValidatedUnit((String) row.get(Units.name()), _sampleType.getBaseUnit());
+                Quantity oldQuantity = null;
+                Quantity newQuantity = null;
+                if (oldRowUnits != null)
+                    oldQuantity = Quantity.of((Number) oldRow.get(StoredAmount.name()), oldRowUnits);
+                if (rowUnits != null)
+                    newQuantity = Quantity.of((Number) row.get(StoredAmount.name()), rowUnits);
 
-                if (!oldAmount.equals(newAmount))
+                if (newQuantity != null && (oldQuantity == null || !oldQuantity.equals(newQuantity)))
                 {
                     if (aliquotRoot != null)
                         aliquotRollupRoot = aliquotRoot;
@@ -1780,13 +1788,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
-        private final Measurement.Unit _metricUnit;
+        private final Unit _amountUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
-            _metricUnit = _sampleType.getMetricUnit() != null ? Measurement.Unit.valueOf(_sampleType.getMetricUnit()) : null;
+            _amountUnit = _sampleType.getAmountUnit();
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases, !context.getInsertOption().updateOnly);
         }
@@ -1931,8 +1939,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                Measurement.validateUnits((String) o, _metricUnit);
-                return Measurement.Unit.getUnit((String) o);
+                return Unit.getValidatedUnit((String) o, _amountUnit);
             }
         }
 
