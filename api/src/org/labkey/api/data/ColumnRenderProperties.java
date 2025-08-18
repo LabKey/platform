@@ -15,19 +15,28 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.text.DecimalFormatSymbols;
 import java.util.Date;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.labkey.api.ontology.OntologyService.conceptCodeConceptURI;
 
@@ -199,7 +208,7 @@ public interface ColumnRenderProperties extends ImportAliasable
      */
     boolean isScannable();
 
-        /* Properties loaded by OntologyService */
+    /* Properties loaded by OntologyService */
 
     // any column can be annotated with PrincipalConceptCode
     default String getPrincipalConceptCode()
@@ -245,11 +254,145 @@ public interface ColumnRenderProperties extends ImportAliasable
     {
         return null;
     }
+
+    default KindOfQuantity getKindOfQuantity()
+    {
+        var unit = getDisplayUnit();
+        if (null == unit)
+            return null;
+        return unit.getKindOfQuantity();
+    }
+
+    default Unit getDisplayUnit()
+    {
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
+        {
+            if (!getJdbcType().isNumeric())
+                return null;
+            String name = getName();
+            var index = name.lastIndexOf("__");
+            if (index < 0)
+                return null;
+            var unitPart = name.substring(index + 2);
+            try
+            {
+                return Unit.valueOf(unitPart);
+            }
+            catch (IllegalArgumentException x)
+            {
+                // pass
+            }
+        }
+        return null;
+    }
+
+
     /* End properties loaded by OntologyService */
 
 
     default String getDerivationDataScope()
     {
         return null;
+    }
+
+
+    /**
+     * This Format can be used for low-level conversion of the type represented by this column.  It does handle
+     * basic numeric/date conversion including formats, and default display unit handling.  That's about it.
+     * It never produces HTML
+     * It does not handle compound/column formatting (missing values, oor, etc)
+     * It does not handle conditional formatting
+     * This method moves (most) of the work formerly done in DisplayColumn.formatValue() to a shared location (getFormat())
+     * Likewise for SimpleConvertColumn.simpleConvert() (getConvert())
+     */
+    @Transient
+    default Function<Object, String> getFormatFn()
+    {
+        return getDefaultFormatFn(getName(), getJavaObjectClass(), getDisplayUnit(), getFormat(), null);
+    }
+
+    @Transient
+    default Function<Object, String> getTsvFormatFn()
+    {
+        return getDefaultFormatFn(getName(), getJavaObjectClass(), getDisplayUnit(), getTsvFormatString(), DisplayColumn.tsvFormatSymbols);
+    }
+
+    @Transient
+    default Function<Object,Object> getConvertFn()
+    {
+        return getDefaultConvertFn(this);
+    }
+
+    static Function<Object, String> getDefaultFormatFn(String colName, Class javaObjectClass, final Unit displayUnit, String formatString, DecimalFormatSymbols dfs)
+    {
+        final var format = null==formatString ? null : DisplayColumn.createFormat(formatString, javaObjectClass, dfs);
+
+        if (null == format && null == displayUnit)
+        {
+            return (value) -> null==value ? "" : value instanceof String ? (String)value : ConvertUtils.convert(value);
+        }
+
+        return (value) ->
+        {
+            if (null == value)
+                return "";
+
+            @NotNull String formattedString;
+            if (null != displayUnit && value instanceof Number)
+            {
+                Quantity q = (value instanceof Quantity) ?
+                        (Quantity) value :
+                        displayUnit.getKindOfQuantity().toQuantity((Number) value);
+                var doubleValue = q.doubleValue(displayUnit);
+                if (null == format)
+                    formattedString = ConvertUtils.convert(doubleValue);
+                else
+                    formattedString = format.format(doubleValue);
+            }
+            else if (null != format)
+            {
+                try
+                {
+                    formattedString = format.format(value);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    LogHelper.getLogger(ColumnRenderProperties.class, "Column metadata").warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, colName);
+                    formattedString = ConvertUtils.convert(value);
+                }
+            }
+            else if (value instanceof String)
+            {
+                formattedString = (String) value;
+            }
+            else
+            {
+                formattedString = ConvertUtils.convert(value);
+            }
+
+            return formattedString;
+        };
+    }
+
+    /* empty string -> null */
+    static Function<Object,Object> getDefaultConvertFn(ColumnRenderProperties col)
+    {
+        final Class<?> javaClass = col.getJavaObjectClass();
+        final var defaultUnit = col.getDisplayUnit();
+        final @NotNull var jdbcType = col.getJdbcType();
+
+        if (null == defaultUnit)
+        {
+            return (value) ->
+            {
+                // quick check for unnecessary conversion
+                if (value == null || javaClass == value.getClass())
+                    return value;
+                if (value instanceof CharSequence)
+                    ConvertUtils.convert(value.toString(), javaClass);
+                return jdbcType.convert(value);
+            };
+        }
+        return defaultUnit::convert;
     }
 }

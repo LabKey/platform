@@ -459,10 +459,6 @@ public class SearchController extends SpringActionController
         public ActionURL getRedirectURL(ReturnUrlForm form)
         {
             SearchService ss = SearchService.get();
-    
-            if (null == ss)
-                return null;
-
             SearchService.IndexTask defaultTask = ss.defaultTask();
             for (SearchService.IndexTask task : ss.getTasks())
             {
@@ -484,9 +480,6 @@ public class SearchController extends SpringActionController
         public ActionURL getRedirectURL(ReturnUrlForm form)
         {
             SearchService ss = SearchService.get();
-
-            if (null == ss)
-                return null;
 
             ss.addPathToCrawl(
                     WebdavService.getPath().append(getContainer().getParsedPath()),
@@ -545,9 +538,6 @@ public class SearchController extends SpringActionController
         {
             SearchService ss = SearchService.get();
 
-            if (null == ss)
-                return null;
-
             SearchService.IndexTask task = null;
 
             try (var ignored = SpringActionController.ignoreSqlUpdates())
@@ -584,10 +574,6 @@ public class SearchController extends SpringActionController
         public ApiResponse execute(SearchForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
-            if (null == ss)
-            {
-                throw new NotFoundException();
-            }
 
             audit(form);
 
@@ -804,11 +790,6 @@ public class SearchController extends SpringActionController
             _form = form;
 
             SearchService ss = SearchService.get();
-
-            if (null == ss)
-            {
-                throw new NotFoundException("Search service is not registered");
-            }
 
             if (null == _scope || null == _scope.getRoot(getContainer()))
             {

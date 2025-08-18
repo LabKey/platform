@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
@@ -785,11 +786,27 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public Class<?> getJavaClass(boolean isNullable)
     {
+        Class<?> ret;
+        boolean isNumeric;
         PropertyType pt = getPropertyType();
         if (pt != null)
-            return pt.getJavaType();
+        {
+            ret = pt.getJavaType();
+            isNumeric = pt.getJdbcType().isNumeric();
+        }
+        else
+        {
+            ret = getJdbcType().getJavaClass(isNullable);
+            isNumeric = getJdbcType().isNumeric();
+        }
 
-        return getJdbcType().getJavaClass(isNullable);
+        if (isNumeric)
+        {
+            Unit unit = getDisplayUnit();
+            if (null != unit)
+                return unit.getQuantityClass();
+        }
+        return ret;
     }
 
     @Override
