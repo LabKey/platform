@@ -92,6 +92,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -1489,10 +1490,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         Long sampleId = sampleAliquotAmounts.getKey();
                         List<AliquotAmountUnitResult> aliquotAmounts = sampleAliquotAmounts.getValue();
 
-                        AliquotAvailableAmountUnit amountUnit = convertToDisplayUnits(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
-                        if (amountUnit == null)
+                        if (aliquotAmounts == null || aliquotAmounts.isEmpty())
                             continue;
-
+                        AliquotAvailableAmountUnit amountUnit = computeAliquotTotalAmounts(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
                         rowid.setValue(sampleId);
                         amount.setValue(amountUnit.amount);
                         unit.setValue(amountUnit.unit);
@@ -1539,6 +1539,78 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(")");
 
         return new SqlSelector(tableInfo.getSchema(), sql).fillSet(Long.class, new HashSet<>());
+    }
+
+    private AliquotAvailableAmountUnit computeAliquotTotalAmounts(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnitsStr)
+    {
+        if (volumeUnits == null || volumeUnits.isEmpty())
+            return null;
+
+        Unit totalUnit = null;
+        String totalUnitsStr = null;
+        if (!StringUtils.isEmpty(sampleTypeUnitsStr))
+            totalUnitsStr = sampleTypeUnitsStr;
+        else if (!StringUtils.isEmpty(sampleItemUnitsStr))
+            totalUnitsStr = sampleItemUnitsStr;
+        if (!StringUtils.isEmpty(totalUnitsStr))
+        {
+            try
+            {
+                totalUnit = Unit.valueOf(sampleTypeUnitsStr).getBase();
+            }
+            catch (IllegalArgumentException e)
+            {
+                // do nothing; leave unit as null
+            }
+        }
+
+        double totalVolume = 0.0;
+        double totalAvailableVolume = 0.0;
+
+        for (AliquotAmountUnitResult volumeUnit : volumeUnits)
+        {
+            Unit unit = null;
+            try
+            {
+                double storedAmount = volumeUnit.amount;
+                String aliquotUnit = volumeUnit.unit;
+                boolean isAvailable = volumeUnit.isAvailable;
+
+                try
+                {
+                    unit = StringUtils.isEmpty(aliquotUnit) ? totalUnit : Unit.fromName(aliquotUnit);
+                }
+                catch (IllegalArgumentException ignore)
+                {
+                }
+
+                double convertedAmount = 0;
+                // include in total volume only if aliquot unit is compatible
+                if (totalUnit != null && totalUnit.isCompatible(unit))
+                    convertedAmount = Unit.convert(storedAmount, unit, totalUnit);
+                else if (totalUnit == null) // sample (or 1st aliquot) unit is not a supported unit
+                {
+                    if (StringUtils.isEmpty(sampleTypeUnitsStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
+                        convertedAmount = storedAmount;
+                    else if (sampleTypeUnitsStr != null && sampleTypeUnitsStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same unsupported unit ('cc')
+                        convertedAmount = storedAmount;
+                }
+
+                totalVolume += convertedAmount;
+                if (isAvailable)
+                    totalAvailableVolume += convertedAmount;
+            }
+            catch (IllegalArgumentException ignore) // invalid volume
+            {
+
+            }
+        }
+        // TODO
+//        int scale = baseUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : baseUnit.getPrecisionScale();
+//        totalVolume = Precision.round(totalVolume, scale);
+//        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
+
+        return new AliquotAvailableAmountUnit(totalVolume, totalUnit == null ? null : totalUnit.name(), totalAvailableVolume);
     }
 
     private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
@@ -1668,7 +1740,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private Collection<Long> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
-        SqlDialect dialect = dbSchema.getSqlDialect();
 
         SQLFragment sql = withAmount ? getParentsOfAliquotsWithAmountsSql() : getParentsOfAliquotsSql();
 
@@ -1697,7 +1768,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // have run yet.
         SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
                 .append(useRootMaterialLSID ? "a.rootMaterialLsid = m.lsid" : "a.rootMaterialRowId = m.rowId")
-                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
+                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Long, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
@@ -1790,7 +1861,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(useRootMaterialLSID ? "parent.lsid = aliquot.rootmateriallsid" : "parent.rowid = aliquot.rootmaterialrowid")
                 .append(" WHERE ")
                 .append(useRootMaterialLSID ? "aliquot.rootmateriallsid <> aliquot.lsid" : "aliquot.rootmaterialrowid <> aliquot.rowid")
-                .append(" AND parent.rowid\s");
+                .append(" AND parent.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Long, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new LongHashMap<>();
