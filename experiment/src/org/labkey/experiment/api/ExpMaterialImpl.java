@@ -404,6 +404,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
                 throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
 
+            if (!expMaterialTable.getSampleType().equals(st))
+                throw new IllegalArgumentException(String.format("Sample type table mismatch for %s", st.getName()));
+
             getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
         }
 
