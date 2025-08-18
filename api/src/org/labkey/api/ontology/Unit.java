@@ -3,8 +3,10 @@ package org.labkey.api.ontology;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ConversionExceptionWithMessage;
 
 import java.util.HashMap;
 import java.util.function.Function;
@@ -87,8 +89,8 @@ public enum Unit
     final String[] otherNames;
     final double value;
 
-    Unit(KindOfQuantity kind, Unit base, double value, @NotNull String printName,
-         Class<? extends Quantity> quantityClass,
+    Unit(@NotNull KindOfQuantity kind, Unit base, double value, @NotNull String printName,
+         @NotNull Class<? extends Quantity> quantityClass,
          @NotNull String singular, @NotNull String plural, String... otherNames)
     {
         this.kindOfQuantity = kind;
@@ -121,14 +123,14 @@ public enum Unit
         return v / this.value;
     }
 
-    public Number toStorageUnitValue(Number v)
+    public Number toStorageUnitValue(@NotNull Number v)
     {
         if (this == kindOfQuantity.getStorageUnit())
             return v;
         return convert(v.doubleValue(), this, kindOfQuantity.storageUnit);
     }
 
-    public Number fromStorageUnitValue(Number v)
+    public Number fromStorageUnitValue(@NotNull Number v)
     {
         if (this == kindOfQuantity.getStorageUnit())
             return v;
@@ -156,7 +158,7 @@ public enum Unit
     }
 
 
-    public static Unit fromName(String unitName)
+    public static Unit fromName(@Nullable String unitName)
     {
         if (StringUtils.isEmpty(unitName))
             return null;
@@ -176,16 +178,34 @@ public enum Unit
         return (x) -> to.fromBaseUnitValue(from.toBaseUnitValue(x));
     }
 
-    public static double convert(double value, Unit from, Unit to)
+    public static double convert(double value, @NotNull Unit from, @NotNull Unit to)
     {
         if (from.base != to.base)
             throw new IllegalArgumentException("Can't convert " + from.name() + " to " + to.name());
         return from==to ? value : to.fromBaseUnitValue(from.toBaseUnitValue(value));
     }
 
-    public Quantity convert(Object value)
+    public Quantity convert(@Nullable Object value)
     {
         return Quantity.convert(value, this);
+    }
+
+    public static Unit getValidatedUnit(@Nullable String rawUnits, @Nullable Unit defaultUnits)
+    {
+        if (!StringUtils.isBlank(rawUnits))
+        {
+            rawUnits = rawUnits.trim();
+
+            Unit mUnit = Unit.fromName(rawUnits);
+            if (mUnit == null)
+            {
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
+            }
+            if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
+                throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
+            return mUnit;
+        }
+        return null;
     }
 
     public static class TestCase extends Assert
@@ -282,5 +302,57 @@ public enum Unit
             assertNull(Unit.fromName(null));
             assertNull(Unit.fromName(""));
         }
+
+        @Test
+        public void testGetValidatedUnit()
+        {
+            try
+            {
+                Unit.getValidatedUnit("g", Unit.mg);
+                Unit.getValidatedUnit("g ", Unit.mg);
+                Unit.getValidatedUnit(" g ", Unit.mg);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("Compatible unit should not throw exception.");
+            }
+            try
+            {
+                Unit.getValidatedUnit(null, Unit.unit);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("null units should validate");
+            }
+            try
+            {
+                Unit.getValidatedUnit("", Unit.unit);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("empty units should validate");
+            }
+            try
+            {
+                Unit.getValidatedUnit("g", Unit.unit);
+                fail("Units that are not comparable should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+            try
+            {
+                Unit.getValidatedUnit("nonesuch", Unit.unit);
+                fail("Invalid units should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+        }
+
     }
 }
