@@ -35,7 +35,7 @@ public class IntegerUtils
         return o.getClass() == Long.class ? (Long)o : Long.valueOf(((Number)o).longValue());
     }
 
-    /** returns Numeric object as a Long.  This method will throw if not Object is not Integral or is out of range. */
+    /** returns Numeric object as an Integer.  This method will throw if not Object is not Integral or is out of range. */
     public static Integer asInteger(Object o) throws ClassCastException
     {
         if (null == o)
