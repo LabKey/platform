@@ -133,7 +133,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
         if (name.contains("/"))
             name = name.replace('/', '.');
 
-        String  propertyURI = DomainUtil.createUniquePropertyURI(domain.getTypeURI(), new HashSet<>());
+        String  propertyURI = DomainUtil.createUniquePropertyURI(domain.getTypeURI());
 
         if (pd != null)
         {

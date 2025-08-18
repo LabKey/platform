@@ -288,7 +288,7 @@ public class IssueListDef extends Entity
             DomainProperty prop = domain.addProperty();
 
             prop.setName(spec.getName());
-            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri, new HashSet<>()));
+            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri));
             prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());

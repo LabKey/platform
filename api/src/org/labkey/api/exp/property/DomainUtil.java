@@ -1108,6 +1108,11 @@ public class DomainUtil
         return p;
     }
 
+    public static String createUniquePropertyURI(String typeURI)
+    {
+        return createUniquePropertyURI(typeURI, new CaseInsensitiveHashSet());
+    }
+
     public static String createUniquePropertyURI(String typeURI, Set<String> propertyUrisInUse)
     {
         // Don't use property name in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)

@@ -117,7 +117,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
                 prop.setName(name);
                 prop.setLabel(label);
                 prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-                prop.setPropertyURI(DomainUtil.createUniquePropertyURI(getDomainURI(container), new HashSet<>()));
+                prop.setPropertyURI(DomainUtil.createUniquePropertyURI(getDomainURI(container)));
 
                 dp = prop;
             }

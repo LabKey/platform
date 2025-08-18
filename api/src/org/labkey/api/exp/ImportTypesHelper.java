@@ -246,7 +246,7 @@ public class ImportTypesHelper
             String propertyURI = StringUtils.trimToEmpty(pd.getPropertyURI());
             if (propertyURI.isEmpty())
             {
-                pd.setPropertyURI(DomainUtil.createUniquePropertyURI(domainURI, new HashSet<>()));
+                pd.setPropertyURI(DomainUtil.createUniquePropertyURI(domainURI));
             }
 
             // try use existing SystemProperty PropertyDescriptor from Shared container.

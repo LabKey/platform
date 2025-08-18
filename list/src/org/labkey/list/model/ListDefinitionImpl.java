@@ -448,7 +448,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
 
         DomainProperty prop = domain.addProperty();
-        prop.setPropertyURI(DomainUtil.createUniquePropertyURI(domain.getTypeURI(), new HashSet<>()));
+        prop.setPropertyURI(DomainUtil.createUniquePropertyURI(domain.getTypeURI()));
         prop.setName(getKeyName());
         prop.setType(PropertyService.get().getType(domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
 

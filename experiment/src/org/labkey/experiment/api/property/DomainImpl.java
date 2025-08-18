@@ -1290,7 +1290,7 @@ public class DomainImpl implements Domain
         pd.setNullable(spec.isNullable());
 //        pd.setAutoIncrement(spec.isAutoIncrement());      // always false in PropertyDescriptor
         pd.setMvEnabled(spec.isMvEnabled());
-        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(getTypeURI(), new HashSet<>())); // Issue 53586
+        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(getTypeURI())); // Issue 53586
         pd.setDescription(spec.getDescription());
         pd.setImportAliases(spec.getImportAliases());
         pd.setScale(spec.getSize());
