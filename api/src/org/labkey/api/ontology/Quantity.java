@@ -5,6 +5,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.Formats;
@@ -64,10 +65,20 @@ public class Quantity extends Number implements Comparable<Quantity>
         throw new IllegalStateException();
     }
 
+    @NotNull
+    public static Quantity of(@NotNull Number value, @Nullable String unitStr)
+    {
+        Unit unit = Unit.fromName(unitStr);
+        if (unit == null)
+            throw new IllegalArgumentException("Unknown unit (" + unitStr + ") for quantity " + value + ".");
+        return of(value, unit);
+    }
+
     /* Returns a quantity = value*units
      *    of(1, Kg) -> 1000g
      */
-    public static Quantity of(Number value, Unit unit)
+    @NotNull
+    public static Quantity of(@NotNull Number value, @NotNull Unit unit)
     {
         if (value instanceof Quantity q)
         {
@@ -89,7 +100,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         this.isDouble = false;
     }
 
-    protected Quantity(@NotNull KindOfQuantity kind, BigDecimal value, Unit from)
+    protected Quantity(@NotNull KindOfQuantity kind, BigDecimal value, @NotNull Unit from)
     {
         this.kind = kind;
         this.value = from.toStorageUnitValue(value);
@@ -104,7 +115,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         this.isDouble = true;
     }
 
-    protected Quantity(@NotNull KindOfQuantity kind, Double value, Unit from)
+    protected Quantity(@NotNull KindOfQuantity kind, Double value, @NotNull Unit from)
     {
         this.kind = kind;
         this.value = from.toStorageUnitValue(value);
@@ -112,7 +123,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         assert isDouble || this.value instanceof BigDecimal;
     }
 
-    public double doubleValue(Unit unit)
+    public double doubleValue(@NotNull Unit unit)
     {
         if (unit == kind.getStorageUnit())
             return value.doubleValue();
@@ -125,7 +136,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return format(kind.getDefaultDisplayUnit());
     }
 
-    public String format(Unit unit)
+    public String format(@NotNull Unit unit)
     {
         return value(unit) + unit.print;
     }
@@ -135,7 +146,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return format(kind.getDefaultDisplayUnit(), format);
     }
 
-    public String format(Unit unit, Format format)
+    public String format(@NotNull Unit unit, Format format)
     {
         return format.format(value(unit)) + unit.print;
     }
@@ -175,7 +186,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return value;
     }
 
-    public Number value(Unit unit)
+    public Number value(@NotNull Unit unit)
     {
         return unit.fromStorageUnitValue(value);
     }
@@ -299,7 +310,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
 
     // convert (ala BeanUtils.Converter to Quantity
-    public static Quantity convert(Object o, Unit unit)
+    public static Quantity convert(@Nullable Object o, Unit unit)
     {
         if (null == o)
             return null;
