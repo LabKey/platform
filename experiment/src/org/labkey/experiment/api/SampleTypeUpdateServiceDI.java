@@ -138,7 +138,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -1924,7 +1924,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, indexFrom, to, null, true);
             }
 
             @Override
@@ -1939,7 +1940,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, indexFrom, to, null, true);
             }
 
             @Override
@@ -1955,7 +1957,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             public AliquotRollupConvertColumn(String fieldName, @Nullable JdbcType to, int aliquotedFromColInd)
             {
-                super(fieldName, 0, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, 0, to, null, true);
                 this.aliquotedFromColInd = aliquotedFromColInd;
             }
 

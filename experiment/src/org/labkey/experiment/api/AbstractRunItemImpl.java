@@ -58,6 +58,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.IntegerUtils.isIntegral;
+
 /**
  * Base class for both types of objects that can be the input and output from an experiment run - material and data.
  * User: jeckels
@@ -398,7 +400,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                     // Issue 52961: DataClass: Integer fields are not index for data class
                     if (o instanceof String)
                         s = (String)o;
-                    else if (o instanceof Integer || o instanceof Long)
+                    else if (isIntegral(o))
                         s = String.valueOf(o);
                     else
                         continue;

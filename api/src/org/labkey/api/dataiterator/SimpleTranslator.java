@@ -58,6 +58,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -71,6 +72,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -99,7 +101,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
@@ -491,7 +493,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
         {
-            super(convertCol.fieldName, convertCol.index, convertCol.type);
+            super(convertCol.fieldName, convertCol.index, convertCol.type, convertCol.defaultUnit);
             _convertCol = convertCol;
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
@@ -568,12 +570,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         AliasColumn(String fieldName, int index)
         {
-            super(fieldName, index, null);
+            super(fieldName, index, null, null);
         }
 
         AliasColumn(String fieldName, int index, JdbcType convert)
         {
-            super(fieldName, index, convert);
+            super(fieldName, index, convert, null);
         }
 
         @Override
@@ -620,23 +622,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         final int index;
         final @Nullable JdbcType type;
+        final @Nullable Unit defaultUnit;
         final String fieldName;
         final boolean _preserveEmptyString;
 
-        SimpleConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+        SimpleConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, @Nullable Unit defaultUnit)
         {
-            this.fieldName = fieldName;
-            this.index = indexFrom;
-            this.type = to;
-            _preserveEmptyString = false;
+            this(fieldName, indexFrom, to, defaultUnit, false);
         }
 
-        public SimpleConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, boolean preserveEmptyString)
+        public SimpleConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, @Nullable Unit defaultUnit, boolean preserveEmptyString)
         {
             this.index = indexFrom;
             this.type = to;
             this.fieldName = fieldName;
-            _preserveEmptyString = preserveEmptyString;
+            this.defaultUnit = (null==type || type.isNumeric()) ? defaultUnit : null;
+            _preserveEmptyString = preserveEmptyString && null != type && type.isText();
         }
 
         @Override
@@ -656,11 +657,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
         }
 
+        protected Object simpleConvert(Object o)
+        {
+            if (_preserveEmptyString && "".equals(o))
+                return "";
+            if (null != defaultUnit)
+                return defaultUnit.convert(o);
+            if (null != type)
+                return type.convert(o);
+            return o;
+        }
+
         protected Object convert(Object o)
         {
-            if (o instanceof String && JdbcType.VARCHAR.equals(type) && "".equals(o) && _preserveEmptyString)
-                return "";
-            return null==type ? o : type.convert(o);
+            return simpleConvert(o);
         }
 
         protected Object getSourceValue()
@@ -784,15 +794,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         boolean supportsMissingValue = true;
         int indicator;
 
-        MissingValueConvertColumn(String fieldName, int index,JdbcType to)
-        {
-            super(fieldName, index, to);
-            indicator = NO_MV_INDEX;
-        }
 
-        MissingValueConvertColumn(String fieldName, int index, int indexIndicator, @Nullable JdbcType to)
+        MissingValueConvertColumn(String fieldName, int index, int indexIndicator, @Nullable JdbcType to, @Nullable Unit defaultUnit)
         {
-            super(fieldName, index, to);
+            super(fieldName, index, to, defaultUnit);
             indicator = indexIndicator;
         }
 
@@ -841,9 +846,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         Object innerConvert(Object value)
         {
-            if (type != null)
-                return type.convert(value);
-            return value;
+            return super.simpleConvert(value);
         }
     }
 
@@ -852,10 +855,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         @Nullable PropertyType pt;
 
-        PropertyConvertColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMissingValue, @Nullable PropertyType pt, @Nullable JdbcType type)
+        PropertyConvertColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMissingValue, @Nullable PropertyType pt, @Nullable JdbcType type, Unit defaultUnit)
         {
-            super(fieldName, fromIndex, mvIndex, type != null ? type : pt != null ? pt.getJdbcType() : null);
-            this.pt = pt;
+            super(fieldName, fromIndex, mvIndex, type != null ? type : pt != null ? pt.getJdbcType() : null, defaultUnit);
             this.supportsMissingValue = supportsMissingValue;
         }
 
@@ -872,9 +874,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         boolean trimRightOnly;
 
-        PropertyConvertAndTrimColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMissingValue, @Nullable PropertyType pt, @Nullable JdbcType type, boolean trimRightOnly)
+        PropertyConvertAndTrimColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMissingValue, @Nullable PropertyType pt, @Nullable JdbcType type, @Nullable Unit defaultUnit, boolean trimRightOnly)
         {
-            super(fieldName, fromIndex, mvIndex, supportsMissingValue, pt, type);
+            super(fieldName, fromIndex, mvIndex, supportsMissingValue, pt, type, defaultUnit);
             this.trimRightOnly = trimRightOnly;
         }
 
@@ -900,7 +902,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         MultiValueConvertColumn(SimpleConvertColumn c)
         {
-            super(c.fieldName, c.index, c.type);
+            super(c.fieldName, c.index, c.type, c.defaultUnit);
             _c = c;
         }
 
@@ -957,7 +959,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public RemappingConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull LookupResolutionType lookupResolutionType)
         {
-            super(convertCol.fieldName, convertCol.index, convertCol.type);
+            super(convertCol.fieldName, convertCol.index, convertCol.type, convertCol.defaultUnit);
             _convertCol = convertCol;
             _toCol = toCol;
             _missing = missing;
@@ -974,7 +976,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object value =  _convertCol.convert(o);
                 ForeignKey fk = _toCol.getFk();
                 // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                if (fk != null && _toCol.getJdbcType().isText() && equalsTo(o, value))
+                if (fk != null && _toCol.getJdbcType().isText() && IntegerUtils.objectEquals(o, value))
                 {
                     if (_remapper.getPkColumn().getJdbcType().isText())
                     {
@@ -989,15 +991,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 return null;
             }
-        }
-
-        private static boolean equalsTo(Object a, Object b)
-        {
-            if (Objects.equals(a,b))
-                return true;
-            if ((a instanceof Integer || a instanceof Long) && (b instanceof Integer || b instanceof Long))
-                return ((Number) a).longValue() == ((Number) b).longValue();
-            return false;
         }
 
         private Object convertWithRemapper(Object o)
@@ -1350,9 +1343,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         SimpleConvertColumn c;
         if (PropertyType.STRING == pt && (trimString || trimStringRight))
-            c = new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, mv, pt, type, !trimString);
+            c = new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, mv, pt, type, col.getDisplayUnit(), !trimString);
         else
-            c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type);
+            c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type, col.getDisplayUnit());
 
         ForeignKey fk = col.getFk();
         LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
@@ -1881,9 +1874,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     value = null;
                 }
             }
-            else if (value instanceof String filePath)
-                return ExpDataFileConverter.convert(filePath);
-            return value;
+
+            return ExpDataFileConverter.convert(value);
         }
     }
 

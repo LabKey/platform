@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 public abstract class ExistingRecordDataIterator extends WrapperDataIterator

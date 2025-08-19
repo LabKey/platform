@@ -126,6 +126,7 @@ import static java.util.stream.Collectors.toList;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 import static org.labkey.api.exp.OntologyManager.NO_OP_ROW_CALLBACK;
 import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler
 {
@@ -1007,8 +1008,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                 throw new RuntimeValidationException(ve);
                             }
                         }
-                        else if (o instanceof Number n)
-                            material = materialCache.computeIfAbsent(n.longValue(), (id) -> exp.getExpMaterial(id, containerFilter));
+                        else if (asLongElseNull(o) instanceof Long n)
+                            material = materialCache.computeIfAbsent(n, (id) -> exp.getExpMaterial(id, containerFilter));
 
                         if (material != null)
                         {

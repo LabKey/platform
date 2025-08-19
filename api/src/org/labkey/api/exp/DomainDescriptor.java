@@ -32,7 +32,7 @@ import org.labkey.api.util.UnexpectedException;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Bean class for domains (persisted in exp.DomainDescriptor). Most code shouldn't use this class directly, but should

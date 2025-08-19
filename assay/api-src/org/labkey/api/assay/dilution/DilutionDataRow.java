@@ -17,7 +17,7 @@ package org.labkey.api.assay.dilution;
 
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Created by davebradlee on 8/14/15.

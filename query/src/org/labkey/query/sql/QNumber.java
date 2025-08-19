@@ -33,7 +33,13 @@ public class QNumber extends QExpr implements IConstant
 
 	public QNumber(String s)
 	{
-		if (StringUtils.containsOnly(s,"0123456789"))
+		String substring = s;
+		if (s.startsWith("0x"))
+			setValue(convertInteger(s));
+		else if (s.startsWith("+") || s.startsWith("-"))
+			substring = s.substring(1);
+
+		if (StringUtils.containsOnly(substring,"0123456789"))
 			setValue(convertInteger(s));
 		else
 			setValue(convertDouble(s));
@@ -142,13 +148,37 @@ public class QNumber extends QExpr implements IConstant
 
 	Number convertDouble(String s)
 	{
-		try
+		boolean floatish = false;
+		if (s.endsWith("f") || s.endsWith("F") || s.endsWith("d") || s.endsWith("D"))
 		{
-			return Double.parseDouble(s);
+			s = s.substring(0,s.length()-1);
+			floatish = true;
 		}
-		catch (NumberFormatException x)
+		if (StringUtils.containsAny(s, "eE"))
+			floatish = true;
+		if (floatish)
 		{
-			return new BigDecimal(s);
+			// try double first fall-back to decimal
+			try
+			{
+				return Double.parseDouble(s);
+			}
+			catch (NumberFormatException x)
+			{
+				return new BigDecimal(s);
+			}
+		}
+		else
+		{
+			// try decimal first fall-back to double
+			try
+			{
+				return new BigDecimal(s);
+			}
+			catch (NumberFormatException x)
+			{
+				return Double.parseDouble(s);
+			}
 		}
 	}
 

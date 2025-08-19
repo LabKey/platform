@@ -46,6 +46,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1353,11 +1355,20 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     public static String labelFromName(String name)
     {
-        if (name == null)
-            return null;
-
-        if (name.isEmpty())
+        if (StringUtils.isBlank(name))
             return name;
+
+        // NOTE: This is just for testing (let the DataRegion/DataColumn do this)
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
+        {
+            var index = name.indexOf("__");
+            if (index > 0)
+            {
+                String unit = name.substring(index + 2);
+                if (null != org.labkey.api.ontology.Unit.fromName(unit))
+                    name = name.substring(0, index);
+            }
+        }
 
         StringBuilder buf = new StringBuilder(name.length() + 10);
         char[] chars = new char[name.length()];

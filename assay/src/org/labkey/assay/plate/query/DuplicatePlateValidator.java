@@ -14,7 +14,7 @@ import org.labkey.assay.plate.PlateManager;
 
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 public class DuplicatePlateValidator extends WrapperDataIterator
 {

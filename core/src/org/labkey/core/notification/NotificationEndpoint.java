@@ -42,7 +42,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * WebSocket endpoint for simple browser notification/alerting

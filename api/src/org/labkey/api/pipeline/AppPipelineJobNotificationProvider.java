@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 abstract public class AppPipelineJobNotificationProvider implements PipelineJobNotificationProvider
 {

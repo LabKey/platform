@@ -550,15 +550,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         preImportDIBValidation(null, colNames);
-
-        List<Map<String, Object>> convertedRows = new ArrayList<>();
-        for (int i = 0; i < rows.size(); i++)
-        {
-            Map<String, Object> row = rows.get(i);
-            row = coerceTypes(row);
-            convertedRows.add(row);
-        }
-        return MapDataIterator.of(colNames, convertedRows, debugName);
+        return MapDataIterator.of(colNames, rows, debugName);
     }
 
 
@@ -716,10 +708,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
-                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()) && value instanceof String strVal)
-                        value = ExpDataFileConverter.convert(strVal);
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
+                        value = ExpDataFileConverter.convert(value);
                     else
-                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                        value = col.getConvertFn().apply(value);
                 }
                 catch (ConvertHelper.FileConversionException e)
                 {
@@ -1022,6 +1014,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
+        if (!(value instanceof MultipartFile) && !(value instanceof SpringAttachmentFile))
+            throw new ValidationException("Invalid file value");
+
         String auditMessageFormat = "Saved file '%s' for field '%s' in folder %s.";
         FileLike file = null;
         try
@@ -1042,8 +1037,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 event.setComment(String.format(auditMessageFormat, multipartFile.getOriginalFilename(), name, container.getPath()));
                 event.setProvidedFileName(multipartFile.getOriginalFilename());
             }
-            else if (value instanceof SpringAttachmentFile saf)
+            else
             {
+                SpringAttachmentFile saf = (SpringAttachmentFile) value;
                 file = FileUtil.findUniqueFileName(saf.getFilename(), dir);
                 checkFileUnderRoot(container, file);
                 saf.saveTo(file);
@@ -1059,9 +1055,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             throw new QueryUpdateServiceException(e);
         }
-
-        if (file == null)
-            return value;
 
         ensureExpData(user, container, file.toNioPathForRead().toFile());
         return file;

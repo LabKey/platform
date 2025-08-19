@@ -47,7 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * User: klum
@@ -198,8 +198,8 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
             Object[] keys = getKeys(oldRowMap, c);
             Survey survey = null;
 
-            if (keys.length >= 1 && (keys[0] instanceof Integer || keys[0] instanceof Long))
-                survey = SurveyManager.get().getSurvey(c, user, asInteger(keys[0]));
+            if (keys.length >= 1 && (asIntegerElseNull(keys[0]) instanceof Integer key))
+                survey = SurveyManager.get().getSurvey(c, user, key);
 
             List<Throwable> errors = SurveyManager.get().fireBeforeDeleteSurvey(c, user, survey);
             if (!errors.isEmpty())
