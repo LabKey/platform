@@ -14,6 +14,7 @@ import org.labkey.api.security.SecurityManager;
 
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -146,7 +147,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
             String filename = queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName();
             if (!StringUtils.isEmpty(filename))
-                urlFragment = urlFragment + and + "importFile=" + filename;
+                urlFragment = urlFragment + and + "importFile=" + PageFlowUtil.encode(filename);
 
             return appURL.setFragment(urlFragment);
         }
@@ -253,7 +254,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             else
             {
                 String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-                urlFragment += "/" + type + "?";
+                urlFragment += "/" + PageFlowUtil.encode(type) + "?";
             }
 
             String and = "";
@@ -266,7 +267,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
             String filename = queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName();
             if (!StringUtils.isEmpty(filename))
-                urlFragment = urlFragment + and + "importFile=" + filename;
+                urlFragment = urlFragment + and + "importFile=" + PageFlowUtil.encode(filename);
 
         }
         else if (job instanceof AssayUploadPipelineJob)
@@ -276,7 +277,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                 String provider = (String) info.get("provider");
                 String assayName = (String) info.get("assayName");
                 long runId = asLong(info.get("runId"));
-                urlFragment = urlFragment + "/" + provider + "/" + assayName + "/runs/" + runId;
+                urlFragment = urlFragment + "/" + provider + "/" + PageFlowUtil.encode(assayName) + "/runs/" + runId;
             }
         }
 
