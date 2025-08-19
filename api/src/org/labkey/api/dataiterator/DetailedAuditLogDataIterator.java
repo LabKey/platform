@@ -73,6 +73,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         assert DETAILED == table.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad);
+        assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit);
 
         _existingRows = _data.supportsGetExistingRecord() ? new ArrayList<>() : null;
     }
