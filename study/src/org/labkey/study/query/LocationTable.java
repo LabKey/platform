@@ -58,7 +58,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class LocationTable extends BaseStudyTable
 {

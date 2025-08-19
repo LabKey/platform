@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * User: matthewb

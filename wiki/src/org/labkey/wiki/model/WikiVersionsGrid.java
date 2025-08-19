@@ -30,7 +30,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.view.GridView;
 import org.springframework.validation.Errors;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * User: kevink

@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 // NOTE DataColumn perhaps does more than we need, consider extending DisplayColumn instead?

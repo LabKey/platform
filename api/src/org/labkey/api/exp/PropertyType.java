@@ -45,6 +45,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
+
 /**
  * TODO: Add more types? Entity, Lsid, User, ...
  */
@@ -270,8 +273,8 @@ public enum PropertyType
         {
             if (null == value)
                 return null;
-            if (value instanceof Integer)
-                return value;
+            if (asIntegerElseNull(value) instanceof Integer i)
+                return i;
             else
                 return ConvertUtils.convert(value.toString(), Integer.class);
         }
@@ -293,9 +296,11 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            if (value instanceof Integer || value instanceof Long)
-                property.floatValue = ((Number) value).doubleValue();
-            else if (null != value)
+            if (null == value)
+                property.floatValue = null;
+            else if (asIntegerElseNull(value) instanceof Integer i)
+                property.floatValue = i.doubleValue();
+            else
                 property.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
         }
 
@@ -324,8 +329,8 @@ public enum PropertyType
         {
             if (null == value)
                 return null;
-            if (value instanceof Long)
-                return value;
+            if (asLongElseNull(value) instanceof Long l)
+                return l;
             else
                 return ConvertUtils.convert(value.toString(), Long.class);
         }
@@ -347,9 +352,11 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            if (value instanceof Long)
-                property.floatValue = ((Long) value).doubleValue();
-            else if (null != value)
+            if (null == value)
+                property.floatValue = null;
+            else if (asLongElseNull(value) instanceof Long l)
+                property.floatValue = l.doubleValue();
+            else
                 property.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
         }
 

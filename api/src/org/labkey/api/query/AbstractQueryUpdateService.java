@@ -550,15 +550,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         preImportDIBValidation(null, colNames);
-
-        List<Map<String, Object>> convertedRows = new ArrayList<>();
-        for (int i = 0; i < rows.size(); i++)
-        {
-            Map<String, Object> row = rows.get(i);
-            row = coerceTypes(row);
-            convertedRows.add(row);
-        }
-        return MapDataIterator.of(colNames, convertedRows, debugName);
+        return MapDataIterator.of(colNames, rows, debugName);
     }
 
 

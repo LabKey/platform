@@ -93,8 +93,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style

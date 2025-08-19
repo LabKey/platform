@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * User: cnathe
@@ -170,8 +170,8 @@ public class TreatmentImpl implements Treatment
 
         if (o.has("RowId"))
         {
-            if (o.get("RowId") instanceof Integer || o.get("RowId") instanceof Integer)
-                treatment.setRowId(asInteger("RowId"));
+            if (asIntegerElseNull(o.get("RowId")) instanceof Integer rowId)
+                treatment.setRowId(rowId);
             else
                 treatment.setTempRowId(o.getString("RowId"));
         }

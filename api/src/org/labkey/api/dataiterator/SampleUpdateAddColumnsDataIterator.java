@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 {

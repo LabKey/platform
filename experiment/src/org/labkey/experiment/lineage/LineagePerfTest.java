@@ -68,7 +68,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 @TestWhen(TestWhen.When.WEEKLY)

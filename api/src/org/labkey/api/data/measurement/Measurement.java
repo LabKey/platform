@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.util.IntegerUtils.isIntegral;
+
 public class Measurement
 {
     public static final int DEFAULT_PRECISION_SCALE = 6;
@@ -319,13 +321,9 @@ public class Measurement
     {
         if (amountObj == null)
             return null;
-        else if (amountObj instanceof Integer || amountObj instanceof Long)
+        if (amountObj instanceof Double || amountObj instanceof Float || isIntegral(amountObj))
         {
-            return Double.valueOf(((Number) amountObj).longValue());
-        }
-        else if (amountObj instanceof Double)
-        {
-            return (Double) amountObj;
+            return ((Number)amountObj).doubleValue();
         }
         else if (amountObj instanceof BigDecimal)
         {

@@ -7,7 +7,7 @@ import org.labkey.api.data.ContainerManager;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationProvider> implements AuthenticationConfiguration<AP>
 {

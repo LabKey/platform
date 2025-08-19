@@ -71,6 +71,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.IntegerUtils.isIntegral;
+
 /**
  * Implementation of QueryUpdateService for Lists
  */
@@ -562,7 +564,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // Check the type of the list to ensure proper casting of the key type
         if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
-            if (key instanceof Integer || key instanceof Long)
+            if (isIntegral(key))
                 return new SimpleFilter(FieldKey.fromParts(keyName), key);
             return new SimpleFilter(FieldKey.fromParts(keyName), Integer.valueOf(key.toString()));
         }

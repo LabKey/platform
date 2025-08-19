@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.api.util.StringUtilsLabKey.unquoteString;
 
 public class AliasInsertHelper
@@ -74,9 +75,7 @@ public class AliasInsertHelper
     {
         if (value instanceof String s)
             cleanValueAndAdd(s, aliasNames);
-        else if (value instanceof Integer i)
-            aliasIds.add(i.longValue());
-        else if (value instanceof Long l)
+        else if (asLongElseNull(value) instanceof Long l)
             aliasIds.add(l);
         else
             throw new IllegalArgumentException("Unsupported item value for column 'Alias': " + value);
@@ -118,13 +117,9 @@ public class AliasInsertHelper
             // Parse the single string element value submitted by the generic query insert and the tsv import forms.
             aliasNames.addAll(splitAliases(s));
         }
-        else if (value instanceof Long l)
+        else if (asLongElseNull(value) instanceof Long l)
         {
             aliasIds.add(l);
-        }
-        else if (value instanceof Integer i)
-        {
-            aliasIds.add(Long.valueOf(i));
         }
         else
         {

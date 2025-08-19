@@ -39,7 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * Represents a custom button bar configuration passed from the client
@@ -199,8 +199,8 @@ public class ButtonBarConfig
             else if (item.isSetInsertPosition())
             {
                 Object position = item.getInsertPosition();
-                if (position instanceof Integer || position instanceof Long)
-                    buttonConfig.setInsertPosition(asInteger(position));
+                if (asIntegerElseNull(position) instanceof Integer positionNum)
+                    buttonConfig.setInsertPosition(positionNum);
                 else if ("beginning".equals(position))
                     buttonConfig.setInsertPosition(0);
                 else if ("end".equals(position))
@@ -223,8 +223,8 @@ public class ButtonBarConfig
             else if (item.isSetInsertPosition())
             {
                 Object position = item.getInsertPosition();
-                if (position instanceof Integer || position instanceof Long)
-                    buttonConfig.setInsertPosition(asInteger(position));
+                if (asIntegerElseNull(position) instanceof Integer positionNum)
+                    buttonConfig.setInsertPosition(positionNum);
                 else if ("beginning".equals(position))
                     buttonConfig.setInsertPosition(0);
                 else if ("end".equals(position))
