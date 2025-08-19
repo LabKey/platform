@@ -13,7 +13,6 @@ import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.assay.AssayConstants;
-import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
