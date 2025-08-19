@@ -1962,18 +1962,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // This should return a Number in the base units of the sample type. It may be provided (via the units column)
                 // as a different unit.
-                Unit unit = _sampleTypeBaseUnit;
+                Unit unit = _sampleTypeDisplayUnit;
+                // We need to handle the following cases
+                // StoredAmount,Unit
+                // 7g,mg -- should convert to 7 g
+                // 8,    -- should use the sample type display unit, and then convert to that base unit
+                // 8,mg  -- should convert to .008 g
                 if (_unitsColInd != -1)
                 {
-                    unit =  Unit.getValidatedUnit((String) _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                    unit =  Unit.getValidatedUnit((String) _data.get(_unitsColInd), _sampleTypeDisplayUnit);
                 }
                 if (unit != null)
                 {
                     if (amountObj instanceof Number)
                         return Quantity.of((Number) amountObj, unit).doubleValue();
                     else if (amountObj instanceof String)
-                        // TODO unit should be _sampleTypeBaseUnit when the string has the unit in it but should be the given unit when not
-                        // Can we assume that amountObj is a number if importing with split columns?
+                        // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
+                        // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
+                        // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
                         return Quantity.convert(amountObj, unit).doubleValue();
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);

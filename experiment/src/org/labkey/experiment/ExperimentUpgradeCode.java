@@ -199,13 +199,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
         // create a single transaction event at the root container for use in tying all updates together
         TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
-//        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
-//        {
-//            LOG.info("** Starting upgrade in folder: {}", c.getPath());
-//            convertAmountsToBaseUnits(c, admin, transactionEvent);
-//            LOG.info("** Finished upgrade in folder: {}", c.getPath());
-//        });
-        convertAmountsToBaseUnits(ContainerManager.getForPath("Sam Man Quant 2"), admin, transactionEvent);
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
+        {
+            LOG.info("** Starting upgrade in folder: {}", c.getPath());
+            convertAmountsToBaseUnits(c, admin, transactionEvent);
+            LOG.info("** Finished upgrade in folder: {}", c.getPath());
+        });
+//        convertAmountsToBaseUnits(ContainerManager.getForPath("Sam Man Quant 2"), admin, transactionEvent);
         ModuleUpgrader.getLogger().info("Finished upgrade of amounts and units");
     }
 

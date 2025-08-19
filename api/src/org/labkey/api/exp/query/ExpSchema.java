@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -388,7 +389,7 @@ public class ExpSchema extends AbstractExpSchema
 
         if (MEASUREMENT_UNITS_TABLE.equalsIgnoreCase(name))
         {
-            EnumTableInfo<Measurement.Unit> table =  new EnumTableInfo<>(Measurement.Unit.class, this, Measurement.Unit::name, false, "Contains the list of available units for measurements such as sample stored amounts.");
+            EnumTableInfo<Unit> table =  new EnumTableInfo<>(Unit.class, this, Unit::name, false, "Contains the list of available units for measurements such as sample stored amounts.");
             table.setPublicSchemaName(this.getName());
             table.setName(MEASUREMENT_UNITS_TABLE);
             return table;
