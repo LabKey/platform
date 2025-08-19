@@ -64,7 +64,7 @@ public enum KindOfQuantity
     }
 
     /* unit used for database storage and in-memory representation of Quantity*/
-    Unit getStorageUnit()
+    public Unit getStorageUnit()
     {
         if (null == storageUnit)
             storageUnit = Unit.fromName(storageUnitName);
