@@ -67,8 +67,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 public final class PlateManagerTest
@@ -1534,8 +1534,8 @@ public final class PlateManagerTest
         {
             for (Map<String, Object> well : data.data())
             {
-                if (well.get(WellTable.Column.SampleID.name()) instanceof Number num)
-                    sampleIds.add(asLong(num));
+                if (asLongElseNull(well.get(WellTable.Column.SampleID.name())) instanceof Long num)
+                    sampleIds.add(num);
             }
         }
 

@@ -75,7 +75,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>

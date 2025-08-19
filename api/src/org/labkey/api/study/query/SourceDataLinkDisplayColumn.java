@@ -28,7 +28,7 @@ import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 /**
  * Serves the dual purpose of adding a hidden <input> element for the object id and showing a link to the originating source

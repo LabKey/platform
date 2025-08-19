@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>

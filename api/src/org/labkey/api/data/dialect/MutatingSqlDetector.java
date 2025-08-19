@@ -15,16 +15,16 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.SqlScanner;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
 
 public class MutatingSqlDetector
 {
-    private static final Logger LOG = LogManager.getLogger(MutatingSqlDetector.class);
+    private static final Logger LOG = LogHelper.getLogger(MutatingSqlDetector.class, "Unknown SQL keywords");
 
     private final String _sql;
     private final StringBuilder _firstWord = new StringBuilder();
@@ -66,7 +66,7 @@ public class MutatingSqlDetector
                         mutatingWord = Boolean.TRUE;
 
                     if (null == mutatingWord)
-                        LOG.warn("Unrecognized keyword: " + word + " for SQL: " + sql);
+                        LOG.warn("Unrecognized keyword: {} for SQL: {}", word, sql);
 
                     if (Boolean.TRUE == mutatingWord)
                         return DONE;
@@ -136,6 +136,7 @@ public class MutatingSqlDetector
 
         // Needed for SQL Server
         WORD_MUTATING_MAP.putAll(Map.of(
+            "DBCC", true,   // Rarely used, but most likely mutating
             "DECLARE", false,
             "EXEC", true,
             "EXECUTE", true,

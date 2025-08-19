@@ -55,7 +55,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 
 public class DbLoginManager implements DbLoginService
