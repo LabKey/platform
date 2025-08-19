@@ -24,6 +24,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -133,6 +134,9 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
     /** @return Metric Unit if set. */
     @Nullable
     String getMetricUnit();
+
+    /** @return Metric Unit as Unit if set. */
+    public @Nullable Unit getAmountUnit();
 
     /** @return Auto link target container if set. */
     @Nullable

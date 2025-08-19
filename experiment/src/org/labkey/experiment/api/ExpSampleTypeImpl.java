@@ -55,6 +55,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
@@ -361,6 +362,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public @Nullable String getMetricUnit()
     {
         return _object.getMetricUnit();
+    }
+
+    public @Nullable Unit getAmountUnit()
+    {
+        return _object.getAmountUnit();
+    }
+
+    public @Nullable Unit getBaseUnit()
+    {
+        return getAmountUnit() == null ? null : getAmountUnit().getBase();
     }
 
     public void setAutoLinkTargetContainer(Container autoLinkTargetContainerId)
