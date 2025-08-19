@@ -78,7 +78,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         else if (defaultUnitsStr != null)
             return Quantity.of((Number) value, defaultUnitsStr);
         else
-            return null;
+            return Quantity.of((Number) value, Unit.unit);
     }
 
     @NotNull

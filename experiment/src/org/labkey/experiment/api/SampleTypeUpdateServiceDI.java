@@ -728,8 +728,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = Unit.getValidatedUnit((String) oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = Unit.getValidatedUnit((String) row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
+                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null)
@@ -1939,7 +1939,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             protected Object convert(Object o)
             {
                 // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-                Unit validatedUnit = Unit.getValidatedUnit((String) o, _sampleTypeBaseUnit);
+                Unit validatedUnit = Unit.getValidatedUnit(o, _sampleTypeBaseUnit);
                 if (_sampleTypeBaseUnit != null)
                     return _sampleTypeBaseUnit.name();
                 else
@@ -1970,7 +1970,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // 8,mg  -- should convert to .008 g
                 if (_unitsColInd != -1)
                 {
-                    unit =  Unit.getValidatedUnit((String) _data.get(_unitsColInd), _sampleTypeDisplayUnit);
+                    unit =  Unit.getValidatedUnit(_data.get(_unitsColInd), _sampleTypeDisplayUnit);
                 }
                 if (unit != null)
                 {
