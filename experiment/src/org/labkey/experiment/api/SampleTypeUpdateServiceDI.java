@@ -54,7 +54,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -182,13 +181,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
 
-    private static final Map<String, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
-            AliquotCount.toString(), JdbcType.INTEGER,
-            AvailableAliquotCount.toString(), JdbcType.INTEGER,
-            AliquotVolume.toString(), JdbcType.DOUBLE,
-            AvailableAliquotVolume.toString(), JdbcType.DOUBLE
+    private static final Map<ExpMaterialTable.Column, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
+            AliquotCount, JdbcType.INTEGER,
+            AvailableAliquotCount, JdbcType.INTEGER,
+            AliquotVolume, JdbcType.DOUBLE,
+            AvailableAliquotVolume, JdbcType.DOUBLE
     );
-
 
     static
     {
@@ -1608,7 +1606,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliquotRollupHeader(String name)
         {
             Set<String> rollupFields = new CaseInsensitiveHashSet();
-            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet());
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet().stream().map(ExpMaterialTable.Column::name).toList());
             rollupFields.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
             return rollupFields.contains(name);
         }
@@ -1788,13 +1786,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
-        private final Unit _amountUnit;
+        private final Unit _sampleTypeDisplayUnit;
+        private final Unit _sampleTypeBaseUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
-            _amountUnit = _sampleType.getAmountUnit();
+            _sampleTypeDisplayUnit = _sampleType.getAmountUnit();
+            _sampleTypeBaseUnit = _sampleType.getBaseUnit();
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases, !context.getInsertOption().updateOnly);
         }
@@ -1869,7 +1869,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (StoredAmount.name().equalsIgnoreCase(name))
                     {
-                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType()));
+                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType(), unitDataColInd));
                     }
                     else
                     {
@@ -1892,13 +1892,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (initRollupCounts)
             {
-                for (Map.Entry<String, JdbcType> entry : ALIQUOT_ROLLUP_FIELDS.entrySet())
+                for (Map.Entry<ExpMaterialTable.Column, JdbcType> entry : ALIQUOT_ROLLUP_FIELDS.entrySet())
                 {
-                    String fieldName = entry.getKey();
+                    ExpMaterialTable.Column field = entry.getKey();
                     JdbcType jdbcType = entry.getValue();
-                    var col = new BaseColumnInfo(fieldName, jdbcType);
+                    var col = new BaseColumnInfo(field.name(), jdbcType);
 
-                    addColumn(col, new AliquotRollupConvertColumn(fieldName, jdbcType, aliquotedFromDataColInd));
+                    addColumn(col, new AliquotRollupConvertColumn(field, jdbcType, aliquotedFromDataColInd));
                 }
             }
         }
@@ -1932,29 +1932,53 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
-                // TODO reconcile unit handling
                 super(fieldName, indexFrom, to, null, true);
             }
 
             @Override
             protected Object convert(Object o)
             {
-                return Unit.getValidatedUnit((String) o, _amountUnit);
+                // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
+                Unit validatedUnit = Unit.getValidatedUnit((String) o, _sampleTypeBaseUnit);
+                if (_sampleTypeBaseUnit != null)
+                    return _sampleTypeBaseUnit.name();
+                else
+                    return validatedUnit == null ? null : validatedUnit.name();
             }
         }
 
         protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            final int _unitsColInd;
+            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, int unitsColInd)
             {
-                // TODO reconcile unit handling
-                super(fieldName, indexFrom, to, null, true);
+                // should convert from the amount in the given unit into the sample type base unit, if we have one
+                super(fieldName, indexFrom, to, _sampleTypeBaseUnit, true);
+                _unitsColInd = unitsColInd;
             }
 
             @Override
             protected Object convert(Object amountObj)
             {
-                return Measurement.convertToAmount(amountObj);
+                // This should return a Number in the base units of the sample type. It may be provided (via the units column)
+                // as a different unit.
+                Unit unit = _sampleTypeBaseUnit;
+                if (_unitsColInd != -1)
+                {
+                    unit =  Unit.getValidatedUnit((String) _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                }
+                if (unit != null)
+                {
+                    if (amountObj instanceof Number)
+                        return Quantity.of((Number) amountObj, unit).doubleValue();
+                    else if (amountObj instanceof String)
+                        // TODO unit should be _sampleTypeBaseUnit when the string has the unit in it but should be the given unit when not
+                        // Can we assume that amountObj is a number if importing with split columns?
+                        return Quantity.convert(amountObj, unit).doubleValue();
+                    else
+                        throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
+                }
+                return amountObj; // have no given unit or base unit
             }
         }
 
@@ -1962,10 +1986,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             final int aliquotedFromColInd;
 
-            public AliquotRollupConvertColumn(String fieldName, @Nullable JdbcType to, int aliquotedFromColInd)
+            public AliquotRollupConvertColumn(ExpMaterialTable.Column field, @Nullable JdbcType to, int aliquotedFromColInd)
             {
-                // TODO reconcile unit handling
-                super(fieldName, 0, to, null, true);
+                super(field.name(),0, to, field.hasUnit() ? _sampleTypeDisplayUnit : null, true);
                 this.aliquotedFromColInd = aliquotedFromColInd;
             }
 
