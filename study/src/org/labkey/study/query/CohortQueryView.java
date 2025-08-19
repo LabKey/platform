@@ -36,7 +36,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class CohortQueryView extends ExtensibleObjectQueryView
 {

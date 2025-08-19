@@ -69,7 +69,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {

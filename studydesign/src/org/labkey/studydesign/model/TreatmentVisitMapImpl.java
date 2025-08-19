@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+
 /**
  * User: cnathe
  * Date: 12/30/13
@@ -110,8 +112,8 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
             visitMap.setCohortId(o.getInt("CohortId"));
         if (o.has("TreatmentId"))
         {
-            if (o.get("TreatmentId") instanceof Integer || o.get("TreatmentId") instanceof Long)
-                visitMap.setTreatmentId(o.getInt("TreatmentId"));
+            if (asIntegerElseNull(o.get("TreatmentId")) instanceof Integer treatmentId)
+                visitMap.setTreatmentId(treatmentId);
             else
                 visitMap.setTempTreatmentId(o.getString("TreatmentId"));
         }

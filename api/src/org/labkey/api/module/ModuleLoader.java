@@ -86,6 +86,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -1670,8 +1671,18 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             if (isNewInstall())
                 ContextListener.afterNewInstallComplete();
         }
+        catch (ShuttingDownException e)
+        {
+            // Let this exception propagate so we abort the startup ASAP
+            throw e;
+        }
         catch (Throwable t)
         {
+            if (_shuttingDown)
+            {
+                // We're already shutting down so don't bother logging startup failures
+                throw new ShuttingDownException(t);
+            }
             setStartupFailure(t);
             _log.error("Failure during module startup", t);
         }
@@ -1728,8 +1739,18 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 setStartingUpMessage("Starting module '" + m.getName() + "'");
                 m.startup(ctx);
             }
+            catch (ShuttingDownException e)
+            {
+                // Let this exception propagate so we abort the startup ASAP
+                throw e;
+            }
             catch (Throwable x)
             {
+                if (_shuttingDown)
+                {
+                    // We're already shutting down so don't bother logging startup failures
+                    throw new ShuttingDownException(x);
+                }
                 setStartupFailure(x);
                 _log.error("Failure starting module: {}", m.getName(), x);
             }

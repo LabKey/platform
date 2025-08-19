@@ -39,6 +39,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import static org.labkey.api.util.IntegerUtils.isIntegral;
+
 /**
  * ENUM version of java.sql.Types
  */
@@ -619,7 +621,7 @@ public enum JdbcType
     {
         if (n instanceof BigDecimal)
             return (BigDecimal)n;
-        if (n instanceof Integer || n instanceof Long)
+        if (isIntegral(n))
             return new BigDecimal(n.longValue());
         return new BigDecimal(n.toString());
     }

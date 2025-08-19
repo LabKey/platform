@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Created by matthew on 5/11/2016.

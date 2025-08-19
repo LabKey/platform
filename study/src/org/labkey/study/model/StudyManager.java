@@ -224,7 +224,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_TABLE_NAME;

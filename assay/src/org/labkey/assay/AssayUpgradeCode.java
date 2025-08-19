@@ -74,7 +74,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.assay.plate.AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.assay.plate.PlateMetadataDomainKind.Column;
 
 public class AssayUpgradeCode implements UpgradeCode

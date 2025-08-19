@@ -1,1 +1,1 @@
-EXEC core.executeJavaUpgradeCode 'upgradeAmountsAndUnits';
+EXEC core.executeJavaInitializationCode 'ensureBigObjectIds';

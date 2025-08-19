@@ -43,7 +43,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 /**
  * Created by marty on 7/25/2017.

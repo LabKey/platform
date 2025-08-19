@@ -77,6 +77,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.labkey.api.util.IntegerUtils.asLongElseNull;
+
 public class SpecimenRequestManager
 {
     private static final SpecimenRequestManager INSTANCE = new SpecimenRequestManager();
@@ -992,10 +994,8 @@ public class SpecimenRequestManager
                                 Map<String, Object> rowMap = resultSet.getRowMap();
                                 long count = 0;
                                 Object countObject = rowMap.get(sampleCountName);
-                                if (countObject instanceof Long)
-                                    count = (Long) countObject;
-                                else if (countObject instanceof Integer)
-                                    count = (Integer) countObject;
+                                if (asLongElseNull(countObject) instanceof Long l)
+                                    count = l;
 
                                 Map<String, GroupedResults> currentGroupedResultsMap = groupedResultsMap;
 

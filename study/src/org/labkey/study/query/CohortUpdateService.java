@@ -36,7 +36,7 @@ import org.labkey.study.model.StudyManager;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * User: jgarms

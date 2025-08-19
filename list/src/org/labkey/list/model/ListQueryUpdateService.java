@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
@@ -69,6 +70,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
  * Implementation of QueryUpdateService for Lists
@@ -343,6 +346,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
                     }
+                    else if (r.getValue() != null && !StringUtils.isEmpty(String.valueOf(r.getValue())))
+                    {
+                        throw new ValidationException("Can't upload '" + r.getValue() + "' to field " + r.getKey() + " with type Attachment.");
+                    }
                 }
             }
         }
@@ -557,7 +564,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // Check the type of the list to ensure proper casting of the key type
         if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
-            if (key instanceof Integer || key instanceof Long)
+            if (isIntegral(key))
                 return new SimpleFilter(FieldKey.fromParts(keyName), key);
             return new SimpleFilter(FieldKey.fromParts(keyName), Integer.valueOf(key.toString()));
         }

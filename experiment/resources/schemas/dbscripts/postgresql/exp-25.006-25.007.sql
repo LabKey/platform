@@ -1,1 +1,1 @@
-SELECT core.executeJavaUpgradeCode('upgradeAmountsAndUnits');
+SELECT core.executeJavaInitializationCode('ensureBigObjectIds');

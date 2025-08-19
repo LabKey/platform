@@ -64,8 +64,6 @@ ALTER TABLE study.Study ADD StudyGrant VARCHAR(200);
 ALTER TABLE study.Study RENAME COLUMN studyGrant TO "Grant";
 ALTER TABLE study.study ADD COLUMN DefaultTimepointDuration INT NOT NULL DEFAULT 1;
 
-DELETE FROM study.study WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
 ALTER TABLE study.Study
     ADD CONSTRAINT FK_Study_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 
@@ -83,10 +81,8 @@ ALTER TABLE study.Study ADD AllowReqLocRepository BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE study.Study ADD AllowReqLocClinic BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE study.Study ADD AllowReqLocSAL BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE study.Study ADD AllowReqLocEndpoint BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE study.study ADD ParticipantAliasDatasetName VARCHAR(200);
 ALTER TABLE study.study ADD ParticipantAliasSourceColumnName VARCHAR(200);
 ALTER TABLE study.study ADD ParticipantAliasColumnName VARCHAR(200);
-ALTER TABLE study.study DROP ParticipantAliasDatasetName;
 ALTER TABLE study.study ADD ParticipantAliasDatasetId INT;
 ALTER TABLE study.study RENAME ParticipantAliasSourceColumnName TO ParticipantAliasSourceProperty;
 ALTER TABLE study.study RENAME ParticipantAliasColumnName TO ParticipantAliasProperty;
@@ -102,6 +98,8 @@ ALTER TABLE study.Study ADD COLUMN ShareDatasetDefinitions BOOLEAN NOT NULL DEFA
 ALTER TABLE study.Study ADD COLUMN ValidateQueriesAfterImport BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE study.Study ADD COLUMN ShareVisitDefinitions BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE study.study ADD COLUMN FailForUndefinedTimepoints BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE TABLE study.Cohort
 (
@@ -143,16 +141,7 @@ CREATE INDEX IX_Visit_CohortId ON study.Visit(CohortId);
 
 ALTER TABLE study.Visit ADD SequenceNumHandling VARCHAR(32) NULL;
 ALTER TABLE study.Visit ADD COLUMN Description TEXT;
-
--- new fields to add to existing visit table, default SequenceNumTarget to SequenceNumMin
-ALTER TABLE study.Visit ADD COLUMN SequenceNumTarget NUMERIC(15,4) NOT NULL DEFAULT 0;
-ALTER TABLE study.visit RENAME COLUMN SequenceNumTarget TO ProtocolDay;
-UPDATE study.visit SV SET ProtocolDay = Round((SV.SequenceNumMax + SV.SequenceNumMin)/2)
-FROM study.study SS
-WHERE SS.Container = SV.Container AND SS.TimePointType = 'DATE';
-
-ALTER TABLE study.visit ALTER COLUMN protocolday DROP NOT NULL;
-ALTER TABLE study.visit ALTER COLUMN protocolday SET DEFAULT NULL;
+ALTER TABLE study.Visit ADD COLUMN ProtocolDay NUMERIC(15,4) NULL;
 
 CREATE TABLE study.VisitMap
 (
@@ -170,7 +159,6 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
     DataSetId INT NOT NULL,
     TypeURI VARCHAR(200) NULL,
     Label VARCHAR(200) NOT NULL,
-    Category VARCHAR(200) NULL,
     ShowByDefault BOOLEAN NOT NULL DEFAULT '1',
     DisplayOrder INT NOT NULL DEFAULT 0,
     EntityId ENTITYID,
@@ -184,25 +172,16 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
     KeyManagementType VARCHAR(10)NOT NULL,
 
     CONSTRAINT PK_DataSet PRIMARY KEY (Container,DataSetId),
-    CONSTRAINT UQ_DatasetName UNIQUE (Container, Name),
-    CONSTRAINT UQ_DatasetLabel UNIQUE (Container, Label),
     CONSTRAINT FK_Dataset_Cohort FOREIGN KEY (CohortId) REFERENCES study.Cohort (RowId)
 );
 
 CREATE INDEX IX_Dataset_CohortId ON study.Dataset(CohortId);
 
--- Switch case-sensitive UNIQUE CONSTRAINTs to case-insensitive UNIQUE INDEXes
-
-ALTER TABLE study.dataset DROP CONSTRAINT UQ_DatasetName;
-ALTER TABLE study.dataset DROP CONSTRAINT UQ_DatasetLabel;
-
+-- CREATE case-insensitive UNIQUE INDEXes
 CREATE UNIQUE INDEX UQ_DatasetName ON study.Dataset (Container, LOWER(Name));
 CREATE UNIQUE INDEX UQ_DatasetLabel ON study.Dataset (Container, LOWER(Label));
 
 ALTER TABLE study.Dataset ADD COLUMN CategoryId Integer;
-
--- drop the category column
-ALTER TABLE study.Dataset DROP COLUMN Category;
 ALTER TABLE study.Dataset ADD COLUMN Modified TIMESTAMP;
 ALTER TABLE study.Dataset ADD COLUMN Type VARCHAR(50) NOT NULL DEFAULT 'Standard';
 
@@ -220,8 +199,6 @@ ALTER TABLE study.Dataset ALTER COLUMN TypeURI TYPE VARCHAR(300);
 ALTER TABLE study.Dataset RENAME COLUMN ProtocolId TO PublishSourceId;
 
 ALTER TABLE study.Dataset ADD COLUMN PublishSourceType VARCHAR(50);
-UPDATE study.Dataset SET PublishSourceType = 'Assay'
-    WHERE PublishSourceId IS NOT NULL;
 
 CREATE TABLE study.SampleRequestStatus
 (
@@ -347,7 +324,6 @@ ALTER TABLE study.Participant ADD LastIndexed TIMESTAMP NULL;
 
 -- Add Modified column so we can actually use LastIndexed, #31139
 ALTER TABLE study.Participant ADD COLUMN Modified TIMESTAMP;
-UPDATE study.Participant SET Modified = CURRENT_TIMESTAMP;
 
 CREATE TABLE study.SampleRequestSpecimen
 (
@@ -391,66 +367,22 @@ CREATE TABLE study.ParticipantVisit
     CohortID INT NULL,
     ParticipantSequenceKey VARCHAR(200),
 
-    CONSTRAINT PK_ParticipantVisit PRIMARY KEY (Container, SequenceNum, ParticipantId),
-    CONSTRAINT UQ_StudyData_ParticipantSequenceKey UNIQUE (ParticipantSequenceKey, Container),
     CONSTRAINT FK_ParticipantVisit_Cohort FOREIGN KEY (CohortID) REFERENCES study.Cohort (RowId)
 );
 
-CREATE INDEX IX_ParticipantVisit_Container ON study.ParticipantVisit(Container);
-CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit(ParticipantId);
-CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit(SequenceNum);
-CREATE INDEX IX_ParticipantVisit_ParticipantSequenceKey ON study.ParticipantVisit(ParticipantSequenceKey, Container);
-
 -- Rename 'ParticipantSequenceKey' to 'ParticipantSequenceNum' along with constraints and indices.
-ALTER TABLE study.ParticipantVisit
-  RENAME ParticipantSequenceKey TO ParticipantSequenceNum;
-ALTER TABLE study.ParticipantVisit
-  ADD CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum UNIQUE (ParticipantSequenceNum, Container);
-ALTER TABLE study.ParticipantVisit
-  DROP CONSTRAINT UQ_StudyData_ParticipantSequenceKey;
-
-ALTER INDEX study.IX_ParticipantVisit_ParticipantSequenceKey RENAME TO IX_ParticipantVisit_ParticipantSequenceNum;
-
--- To change the PK, it is more efficient to drop all other indexes (including unique constraints),
--- drop and recreate PK, and then rebuild indexes
-
--- Consider: do we need a unique constraint on ParticipantSequenceNum if we have separate ones on Participant, SequenceNum ??
-ALTER TABLE study.ParticipantVisit DROP CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum;
-DROP INDEX study.IX_ParticipantVisit_Container;
-DROP INDEX study.IX_ParticipantVisit_ParticipantId;
-DROP INDEX study.IX_ParticipantVisit_ParticipantSequenceNum;
-DROP INDEX study.IX_ParticipantVisit_SequenceNum;
+ALTER TABLE study.ParticipantVisit RENAME ParticipantSequenceKey TO ParticipantSequenceNum;
 
 -- changing order of keys to make supporting index useful for Container+Participant queries
-ALTER TABLE study.ParticipantVisit DROP CONSTRAINT PK_ParticipantVisit;
 
 -- Was previously Container, SequenceNum, ParticipantId
-ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY
-  (Container, ParticipantId, SequenceNum);
+ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY (Container, ParticipantId, SequenceNum);
 
-ALTER TABLE study.ParticipantVisit ADD CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum UNIQUE
-  (ParticipantSequenceNum, Container);
+-- Consider: do we need a unique constraint on ParticipantSequenceNum if we have separate ones on Participant, SequenceNum ??
+ALTER TABLE study.ParticipantVisit ADD CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum UNIQUE (ParticipantSequenceNum, Container);
 
-CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit (ParticipantId);
-CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit (SequenceNum);
-
--- clean up some bad participantsequencenum values seen in the wild
-DELETE FROM Study.ParticipantVisit WHERE ParticipantSequenceNum = 'NULL';
-
-UPDATE study.participantvisit SET visitrowid=-1 WHERE visitrowid IS NULL;
 ALTER TABLE study.participantvisit ALTER COLUMN visitrowid SET DEFAULT -1;
 ALTER TABLE study.participantvisit ALTER COLUMN visitrowid SET NOT NULL;
-
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum');
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_ParticipantId');
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_SequenceNum');
-
-CREATE INDEX IX_PV_SequenceNum ON study.ParticipantVisit (Container, SequenceNum);
-
---Drop existing indexes, if they exist
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum');
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum');
-SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_visitrowid');
 
 --For Resync perf
 CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
@@ -546,21 +478,6 @@ CREATE TABLE study.SampleAvailabilityRule
     CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
 );
 
-ALTER TABLE exp.objectproperty DROP CONSTRAINT pk_objectproperty;
-ALTER TABLE exp.objectproperty DROP CONSTRAINT fk_objectproperty_object;
-ALTER TABLE exp.objectproperty DROP CONSTRAINT fk_objectproperty_propertydescriptor;
-DELETE FROM exp.ObjectProperty
-WHERE propertyid IN (SELECT DP.propertyid FROM exp.propertydomain DP JOIN exp.domaindescriptor D on DP.domainid = D.domainid JOIN study.dataset DS ON D.domainuri = DS.typeuri);
-
-ALTER TABLE exp.objectproperty
-  ADD CONSTRAINT pk_objectproperty PRIMARY KEY (objectid, propertyid),
-  ADD CONSTRAINT fk_objectproperty_object FOREIGN KEY (objectid)
-      REFERENCES exp."object" (objectid) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  ADD CONSTRAINT fk_objectproperty_propertydescriptor FOREIGN KEY (propertyid)
-      REFERENCES exp.propertydescriptor (propertyid) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION;
-
 CREATE TABLE study.VisitAliases
 (
     RowId SERIAL,
@@ -584,7 +501,6 @@ CREATE TABLE study.ParticipantCategory
 
     Label VARCHAR(200) NOT NULL,
     Type VARCHAR(60) NOT NULL,
-    Shared boolean,
     AutoUpdate boolean,
 
 	-- for queries
@@ -598,12 +514,7 @@ CREATE TABLE study.ParticipantCategory
 );
 
 -- Add Primary Key constraint
-ALTER TABLE study.participantcategory
-    ADD CONSTRAINT pk_participantcategory PRIMARY KEY (rowid);
-
--- Add Unique constraint
-ALTER TABLE study.participantcategory
-    ADD CONSTRAINT uq_label_container UNIQUE (label, container);
+ALTER TABLE study.participantcategory ADD CONSTRAINT pk_participantcategory PRIMARY KEY (rowid);
 
 -- named sets of normalization factors
 ALTER TABLE study.ParticipantCategory ADD ModifiedBy USERID;
@@ -612,8 +523,6 @@ ALTER TABLE study.ParticipantCategory ADD Modified TIMESTAMP;
 -- Create an owner column to represent shared or private participant categories
 ALTER TABLE study.ParticipantCategory ADD COLUMN OwnerId USERID NOT NULL DEFAULT -1;
 
-ALTER TABLE study.ParticipantCategory DROP CONSTRAINT uq_label_container;
-ALTER TABLE study.ParticipantCategory DROP COLUMN shared;
 ALTER TABLE study.ParticipantCategory ADD CONSTRAINT uq_label_container_owner UNIQUE(Label, Container, OwnerId);
 
 -- represents a grouping category for a participant classification
@@ -650,11 +559,8 @@ CREATE TABLE study.ParticipantGroupMap
     Container ENTITYID NOT NULL,
 
     CONSTRAINT pk_participantGroupMap PRIMARY KEY (GroupId, ParticipantId, Container),
-    CONSTRAINT fk_participantGroup_groupId FOREIGN KEY (GroupId) REFERENCES study.ParticipantGroup (RowId),
-    CONSTRAINT fk_participant_participantId_container FOREIGN KEY (Container, ParticipantId) REFERENCES study.Participant (Container, ParticipantId)
+    CONSTRAINT fk_participantGroup_groupId FOREIGN KEY (GroupId) REFERENCES study.ParticipantGroup (RowId)
 );
-
-ALTER TABLE study.ParticipantGroupMap DROP CONSTRAINT fk_participant_participantId_container;
 
 ALTER TABLE study.ParticipantGroupMap ADD CONSTRAINT
 	fk_participant_participantId_container FOREIGN KEY (Container, ParticipantId) REFERENCES study.Participant(Container, ParticipantId)
@@ -688,62 +594,62 @@ ALTER TABLE study.StudySnapshot ADD COLUMN Type VARCHAR(10);
 
 CREATE TABLE study.StudyDesignImmunogenTypes
 (
-  Name VARCHAR(200) NOT NULL,
-  Label VARCHAR(200) NOT NULL,
-  Inactive BOOLEAN NOT NULL DEFAULT FALSE,
+    Name VARCHAR(200) NOT NULL,
+    Label VARCHAR(200) NOT NULL,
+    Inactive BOOLEAN NOT NULL DEFAULT FALSE,
 
-  CreatedBy USERID,
-  Created TIMESTAMP,
-  ModifiedBy USERID,
-  Modified TIMESTAMP,
-  Container ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Container ENTITYID NOT NULL,
 
-  CONSTRAINT pk_studydesignimmunogentypes PRIMARY KEY (Container, Name)
+    CONSTRAINT pk_studydesignimmunogentypes PRIMARY KEY (Container, Name)
 );
 
 CREATE TABLE study.StudyDesignGenes
 (
-  Name VARCHAR(200) NOT NULL,
-  Label VARCHAR(200) NOT NULL,
-  Inactive BOOLEAN NOT NULL DEFAULT FALSE,
+    Name VARCHAR(200) NOT NULL,
+    Label VARCHAR(200) NOT NULL,
+    Inactive BOOLEAN NOT NULL DEFAULT FALSE,
 
-  CreatedBy USERID,
-  Created TIMESTAMP,
-  ModifiedBy USERID,
-  Modified TIMESTAMP,
-  Container ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Container ENTITYID NOT NULL,
 
-  CONSTRAINT pk_studydesigngenes PRIMARY KEY (Container, Name)
+    CONSTRAINT pk_studydesigngenes PRIMARY KEY (Container, Name)
 );
 
 CREATE TABLE study.StudyDesignRoutes
 (
-  Name VARCHAR(200) NOT NULL,
-  Label VARCHAR(200) NOT NULL,
-  Inactive BOOLEAN NOT NULL DEFAULT FALSE,
+    Name VARCHAR(200) NOT NULL,
+    Label VARCHAR(200) NOT NULL,
+    Inactive BOOLEAN NOT NULL DEFAULT FALSE,
 
-  CreatedBy USERID,
-  Created TIMESTAMP,
-  ModifiedBy USERID,
-  Modified TIMESTAMP,
-  Container ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Container ENTITYID NOT NULL,
 
-  CONSTRAINT pk_studydesignroutes PRIMARY KEY (Container, Name)
+    CONSTRAINT pk_studydesignroutes PRIMARY KEY (Container, Name)
 );
 
 CREATE TABLE study.StudyDesignSubTypes
 (
-  Name VARCHAR(200) NOT NULL,
-  Label VARCHAR(200) NOT NULL,
-  Inactive BOOLEAN NOT NULL DEFAULT FALSE,
+    Name VARCHAR(200) NOT NULL,
+    Label VARCHAR(200) NOT NULL,
+    Inactive BOOLEAN NOT NULL DEFAULT FALSE,
 
-  CreatedBy USERID,
-  Created TIMESTAMP,
-  ModifiedBy USERID,
-  Modified TIMESTAMP,
-  Container ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Container ENTITYID NOT NULL,
 
-  CONSTRAINT pk_studydesignsubtypes PRIMARY KEY (Container, Name)
+    CONSTRAINT pk_studydesignsubtypes PRIMARY KEY (Container, Name)
 );
 
 CREATE TABLE study.StudyDesignSampleTypes
@@ -940,7 +846,6 @@ CREATE UNIQUE INDEX VisitTagMap_container_tag_visit_idx ON study.VisitTagMap (Co
 CREATE TABLE study.DoseAndRoute
 (
   RowId SERIAL,
-  Label VARCHAR(600),
   Dose VARCHAR(200),
   Route VARCHAR(200),
   ProductId INT NOT NULL,
@@ -951,13 +856,10 @@ CREATE TABLE study.DoseAndRoute
   Modified TIMESTAMP,
   Container ENTITYID NOT NULL,
 
-  CONSTRAINT PK_DoseAndRoute PRIMARY KEY (RowId),
-  CONSTRAINT DoseAndRoute_Dose_Route_ProductId UNIQUE (Dose, Route, ProductId)
+  CONSTRAINT PK_DoseAndRoute PRIMARY KEY (RowId)
 );
 
-ALTER TABLE study.DoseAndRoute DROP CONSTRAINT DoseAndRoute_Dose_Route_ProductId;
 ALTER TABLE study.DoseAndRoute ADD CONSTRAINT DoseAndRoute_Container_Dose_Route_ProductId UNIQUE (Container, Dose, Route, ProductId);
-ALTER TABLE study.DoseAndRoute DROP COLUMN Label;
 
 CREATE TABLE study.StudyDesignChallengeTypes
 (
@@ -973,5 +875,3 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
   CONSTRAINT pk_studydesignchallengetypes PRIMARY KEY (Container, Name)
 );
-
-ALTER TABLE study.study ADD COLUMN FailForUndefinedTimepoints BOOLEAN NOT NULL DEFAULT FALSE;
