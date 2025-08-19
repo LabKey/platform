@@ -11,65 +11,65 @@ import java.util.function.Function;
 
 public enum Unit
 {
-    unit(KindOfQuantity.Count, null, 1.0, "",
+    unit(KindOfQuantity.Count, null, 1.0, null, "unit",
             Quantity.class,
             "unit", "units"),
-    count(KindOfQuantity.Count, unit, 1.0, "",
+    count(KindOfQuantity.Count, unit, 1.0, null, "count",
             Quantity.class,
             "count", "count"),
 
-    ml(KindOfQuantity.Volume, null, 1e0, "ml",
+    ml(KindOfQuantity.Volume, null, 1e0, 6, "mL",
             Quantity.Volume_ml.class,
             "milliliter", "milliliters",
             "mL", "millilitre", "millilitres"),
     // UCUM prefers "l", but "L" is also common and already supported by inventory (sorry Lambert)
-    l(KindOfQuantity.Volume, ml, 1e3, "l",
+    l(KindOfQuantity.Volume, ml, 1e3, 9, "L",
             Quantity.Volume_l.class,
             "liter", "liters",
             "L", "ℓ", "litre", "liters"),
     // is it better to include these little used units, to avoid future case-sensitivity problems?
-    Ml(KindOfQuantity.Volume, ml, 1e9, "Ml",
+    Ml(KindOfQuantity.Volume, ml, 1e9, 12, "ML",
             Quantity.Volume_Megal.class,
             "megaliter", "megaliters",
             "ML", "megalitre", "megalitres"),
-    kl(KindOfQuantity.Volume, ml, 1e6, "kl",
+    kl(KindOfQuantity.Volume, ml, 1e6, 12, "kL",
             Quantity.Volume_kl.class,
             "kiloliter", "kiloliters",
             "kL", "kilolitre", "kilolitres"),
-    ul(KindOfQuantity.Volume, ml, 1e-3, "ul",
+    ul(KindOfQuantity.Volume, ml, 1e-3, 3, "uL",
             Quantity.Volume_ul.class,
             "microliter", "microliters",
             "uL", "μl", "μL", "microlitre", "microlitres"),
-    nl(KindOfQuantity.Volume, ml, 1e-6, "nl",
+    nl(KindOfQuantity.Volume, ml, 1e-6, 3, "nL",
             Quantity.Volume_nl.class,
             "nanoliter", "nanoliters",
             "nL", "nanolitre", "nanolitres"),
-    pl(KindOfQuantity.Volume, ml, 1e-9, "pl",
+    pl(KindOfQuantity.Volume, ml, 1e-9, 3, "pL",
             Quantity.Volume_pl.class,
             "picoliter", "picoliters",
             "pL", "picolitre", "picolitres"),
 
-    g(KindOfQuantity.Mass, null, 1e0, "g",
+    g(KindOfQuantity.Mass, null, 1e0, 9, "g",
             Quantity.Mass_g.class,
             "gram", "grams"),
-    Mg(KindOfQuantity.Mass, g, 1e6, "Mg",
+    Mg(KindOfQuantity.Mass, g, 1e6, 12, "Mg",
             Quantity.Mass_Megag.class,
             "megagram", "megagrams",
             "tonne", "tonnes"),
-    kg(KindOfQuantity.Mass, g, 1e3, "kg",
+    kg(KindOfQuantity.Mass, g, 1e3, 12, "kg",
             Quantity.Mass_kg.class,
             "kilogram", "kilograms"),
-    mg(KindOfQuantity.Mass, g, 1e-3, "mg",
+    mg(KindOfQuantity.Mass, g, 1e-3, 6, "mg",
             Quantity.Mass_mg.class,
             "milligram", "milligrams"),
-    ug(KindOfQuantity.Mass, g, 1e-6, "ug",
+    ug(KindOfQuantity.Mass, g, 1e-6, 3, "ug",
             Quantity.Mass_ug.class,
             "microgram", "micrograms",
         "μg"),
-    ng(KindOfQuantity.Mass, g, 1e-9, "ng",
+    ng(KindOfQuantity.Mass, g, 1e-9, 3, "ng",
             Quantity.Mass_ng.class,
             "nanogram", "nanograms"),
-    pg(KindOfQuantity.Mass, g, 1e-12, "pg",
+    pg(KindOfQuantity.Mass, g, 1e-12, 3, "pg",
             Quantity.Mass_pg.class,
             "picogram", "picograms");
 
@@ -85,15 +85,19 @@ public enum Unit
     final @NotNull String singular;
     final @NotNull String plural;
     final String[] otherNames;
+    @Getter
     final double value;
+    @Getter
+    final Integer precisionScale;
 
-    Unit(KindOfQuantity kind, Unit base, double value, @NotNull String printName,
-         Class<? extends Quantity> quantityClass,
+    Unit(@NotNull KindOfQuantity kind, Unit base, double value, Integer precisionScale, @NotNull String printName,
+         @NotNull Class<? extends Quantity> quantityClass,
          @NotNull String singular, @NotNull String plural, String... otherNames)
     {
         this.kindOfQuantity = kind;
         this.base = null == base ? this : base;
         this.value = value;
+        this.precisionScale = precisionScale;
         this.print = printName;
         this.quantityClass = quantityClass;
         this.singular = singular;
