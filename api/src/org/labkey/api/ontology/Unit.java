@@ -75,6 +75,7 @@ public enum Unit
             Quantity.Mass_pg.class,
             "picogram", "picograms");
 
+    private static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) cannot be converted to the default units (%s).";
 
     @Getter
     final @NotNull KindOfQuantity kindOfQuantity;
@@ -195,19 +196,31 @@ public enum Unit
         return Quantity.convert(value, this);
     }
 
-    public static Unit getValidatedUnit(@Nullable String rawUnits, @Nullable Unit defaultUnits)
+    public static Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits)
     {
-        if (!StringUtils.isBlank(rawUnits))
+        if (rawUnits == null)
+            return defaultUnits;
+        if (rawUnits instanceof Unit u)
+            if (defaultUnits == null)
+                return u;
+            else if (u.kindOfQuantity != defaultUnits.kindOfQuantity)
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
+            else
+                return u;
+        if (!(rawUnits instanceof String))
+            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
+        String rawUnitsString = (String) rawUnits;
+        if (!StringUtils.isBlank(rawUnitsString))
         {
-            rawUnits = rawUnits.trim();
+            rawUnitsString = rawUnitsString.trim();
 
-            Unit mUnit = Unit.fromName(rawUnits);
+            Unit mUnit = Unit.fromName(rawUnitsString);
             if (mUnit == null)
             {
-                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
             }
             if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
-                throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
             return mUnit;
         }
         return defaultUnits;
