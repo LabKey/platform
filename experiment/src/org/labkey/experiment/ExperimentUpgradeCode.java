@@ -188,7 +188,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // called from exp-25.006-25.007.sql
+    // called from exp-25.007-25.008.sql
+    @SuppressWarnings("unused")
     public static void upgradeAmountsAndUnits(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -198,13 +199,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
         // create a single transaction event at the root container for use in tying all updates together
         TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
-        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
-        {
-            LOG.info("** Starting upgrade in folder: {}", c.getPath());
-            convertAmountsToBaseUnits(c, admin, transactionEvent);
-            LOG.info("** Finished upgrade in folder: {}", c.getPath());
-        });
-//        convertAmountsToBaseUnits(ContainerManager.getForPath("Sam Man Quant 2"), admin, transactionEvent);
+//        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
+//        {
+//            LOG.info("** Starting upgrade in folder: {}", c.getPath());
+//            convertAmountsToBaseUnits(c, admin, transactionEvent);
+//            LOG.info("** Finished upgrade in folder: {}", c.getPath());
+//        });
+        convertAmountsToBaseUnits(ContainerManager.getForPath("Sam Man Quant 2"), admin, transactionEvent);
         ModuleUpgrader.getLogger().info("Finished upgrade of amounts and units");
     }
 
@@ -263,7 +264,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                             if (materialUnit == null && !StringUtils.isEmpty((String) sampleMap.get(Units.name())))
                             {
                                 // invalid unit stored with sample. Leave as is.
-                                LOG.info("Found invalid unit '{}' for sample '{}'. No conversion done.", (String) sampleMap.get(Units.name()), sampleMap.get(Name.name()));
+                                LOG.info("Found invalid unit '{}' for sample '{}'. No conversion done.", sampleMap.get(Units.name()), sampleMap.get(Name.name()));
                                 sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
                             }
                             else if (materialUnit != null && !materialUnit.isCompatible(baseUnit))
