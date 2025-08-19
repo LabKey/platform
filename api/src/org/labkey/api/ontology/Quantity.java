@@ -444,8 +444,8 @@ public class Quantity extends Number implements Comparable<Quantity>
         @Test
         public void testFailToParseCantConvert()
         {
-            failToParse("1g", Unit.l);
-            failToParse("1g", Unit.ml);
+            failToParse("1g", Unit.L);
+            failToParse("1g", Unit.mL);
             failToParse("1g", Unit.count);
             failToParse("1g", Unit.unit);
         }

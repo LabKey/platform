@@ -20,36 +20,36 @@ public enum Unit
             Quantity.class,
             "count", "count"),
 
-    ml(KindOfQuantity.Volume, null, 1e0, 6, "mL",
+    mL(KindOfQuantity.Volume, null, 1e0, 6, "mL",
             Quantity.Volume_ml.class,
             "milliliter", "milliliters",
-            "mL", "millilitre", "millilitres"),
+            "ml", "millilitre", "millilitres"),
     // UCUM prefers "l", but "L" is also common and already supported by inventory (sorry Lambert)
-    l(KindOfQuantity.Volume, ml, 1e3, 9, "L",
+    L(KindOfQuantity.Volume, mL, 1e3, 9, "L",
             Quantity.Volume_l.class,
             "liter", "liters",
-            "L", "ℓ", "litre", "liters"),
+            "l", "ℓ", "litre", "liters"),
     // is it better to include these little used units, to avoid future case-sensitivity problems?
-    Ml(KindOfQuantity.Volume, ml, 1e9, 12, "ML",
+    ML(KindOfQuantity.Volume, mL, 1e9, 12, "ML",
             Quantity.Volume_Megal.class,
             "megaliter", "megaliters",
-            "ML", "megalitre", "megalitres"),
-    kl(KindOfQuantity.Volume, ml, 1e6, 12, "kL",
+            "Ml", "megalitre", "megalitres"),
+    kL(KindOfQuantity.Volume, mL, 1e6, 12, "kL",
             Quantity.Volume_kl.class,
             "kiloliter", "kiloliters",
-            "kL", "kilolitre", "kilolitres"),
-    ul(KindOfQuantity.Volume, ml, 1e-3, 3, "uL",
+            "kl", "kilolitre", "kilolitres"),
+    uL(KindOfQuantity.Volume, mL, 1e-3, 3, "uL",
             Quantity.Volume_ul.class,
             "microliter", "microliters",
-            "uL", "μl", "μL", "microlitre", "microlitres"),
-    nl(KindOfQuantity.Volume, ml, 1e-6, 3, "nL",
+            "ul", "μl", "μL", "microlitre", "microlitres"),
+    nL(KindOfQuantity.Volume, mL, 1e-6, 3, "nL",
             Quantity.Volume_nl.class,
             "nanoliter", "nanoliters",
-            "nL", "nanolitre", "nanolitres"),
-    pl(KindOfQuantity.Volume, ml, 1e-9, 3, "pL",
+            "nl", "nanolitre", "nanolitres"),
+    pL(KindOfQuantity.Volume, mL, 1e-9, 3, "pL",
             Quantity.Volume_pl.class,
             "picoliter", "picoliters",
-            "pL", "picolitre", "picolitres"),
+            "pl", "picolitre", "picolitres"),
 
     g(KindOfQuantity.Mass, null, 1e0, 9, "g",
             Quantity.Mass_g.class,
@@ -152,6 +152,7 @@ public enum Unit
     {
         for (Unit unit : Unit.values())
         {
+            unitMap.put(unit.name(), unit);
             unitMap.put(unit.print, unit);
             unitMap.put(unit.singular, unit);
             unitMap.put(unit.plural, unit);
@@ -209,7 +210,7 @@ public enum Unit
                 throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
             return mUnit;
         }
-        return null;
+        return defaultUnits;
     }
 
     public static class TestCase extends Assert
@@ -217,8 +218,8 @@ public enum Unit
         @Test
         public void testIsBase()
         {
-            assertTrue(Unit.ml.isBase());
-            assertFalse(Unit.l.isBase());
+            assertTrue(Unit.mL.isBase());
+            assertFalse(Unit.L.isBase());
             assertTrue(Unit.g.isBase());
             assertFalse(Unit.kg.isBase());
             assertTrue(Unit.unit.isBase());
@@ -228,22 +229,22 @@ public enum Unit
         @Test
         public void testIsCompatible()
         {
-            assertTrue(Unit.ml.isCompatible(Unit.ul));
-            assertTrue(Unit.ml.isCompatible(Unit.l));
-            assertFalse(Unit.ml.isCompatible(Unit.g));
+            assertTrue(Unit.mL.isCompatible(Unit.uL));
+            assertTrue(Unit.mL.isCompatible(Unit.L));
+            assertFalse(Unit.mL.isCompatible(Unit.g));
             assertTrue(Unit.g.isCompatible(Unit.mg));
-            assertFalse(Unit.g.isCompatible(Unit.ml));
+            assertFalse(Unit.g.isCompatible(Unit.mL));
             assertTrue(Unit.unit.isCompatible(Unit.count));
-            assertFalse(Unit.unit.isCompatible(Unit.ml));
-            assertFalse(Unit.ml.isCompatible(null));
+            assertFalse(Unit.unit.isCompatible(Unit.mL));
+            assertFalse(Unit.mL.isCompatible(null));
         }
 
         @Test
         public void testBaseUnitValue()
         {
-            assertEquals(1e0, Unit.ml.toBaseUnitValue(1.0), 0.00001);
-            assertEquals(1e3, Unit.l.toBaseUnitValue(1.0), 0.00001);
-            assertEquals(1e-3, Unit.ul.toBaseUnitValue(1.0), 0.00001);
+            assertEquals(1e0, Unit.mL.toBaseUnitValue(1.0), 0.00001);
+            assertEquals(1e3, Unit.L.toBaseUnitValue(1.0), 0.00001);
+            assertEquals(1e-3, Unit.uL.toBaseUnitValue(1.0), 0.00001);
             assertEquals(1e0, Unit.g.toBaseUnitValue(1.0), 0.00001);
             assertEquals(1e-3, Unit.mg.toBaseUnitValue(1.0), 0.00001);
             assertEquals(1e-6, Unit.ug.toBaseUnitValue(1.0), 0.00001);
@@ -253,9 +254,9 @@ public enum Unit
         @Test
         public void testFromBaseUnitValue()
         {
-            assertEquals(1.0, Unit.ml.fromBaseUnitValue(1e0), 0.00001);
-            assertEquals(1.0, Unit.l.fromBaseUnitValue(1e3), 0.00001);
-            assertEquals(1.0, Unit.ul.fromBaseUnitValue(1e-3), 0.00001);
+            assertEquals(1.0, Unit.mL.fromBaseUnitValue(1e0), 0.00001);
+            assertEquals(1.0, Unit.L.fromBaseUnitValue(1e3), 0.00001);
+            assertEquals(1.0, Unit.uL.fromBaseUnitValue(1e-3), 0.00001);
             assertEquals(1.0, Unit.g.fromBaseUnitValue(1e0), 0.00001);
             assertEquals(1.0, Unit.mg.fromBaseUnitValue(1e-3), 0.00001);
             assertEquals(1.0, Unit.ug.fromBaseUnitValue(1e-6), 0.00001);
@@ -265,9 +266,9 @@ public enum Unit
         @Test
         public void testToStorageUnitValue()
         {
-            assertEquals(1.0, Unit.ml.toStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(1000.0, Unit.l.toStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(0.001, Unit.ul.toStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(1.0, Unit.mL.toStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(1000.0, Unit.L.toStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(0.001, Unit.uL.toStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1.0, Unit.g.toStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(0.001, Unit.mg.toStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(0.000001, Unit.ug.toStorageUnitValue(1.0).doubleValue(), 0.00001);
@@ -277,9 +278,9 @@ public enum Unit
         @Test
         public void testFromStorageUnitValue()
         {
-            assertEquals(1.0, Unit.ml.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(0.001, Unit.l.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
-            assertEquals(1000.0, Unit.ul.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(1.0, Unit.mL.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(0.001, Unit.L.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
+            assertEquals(1000.0, Unit.uL.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1.0, Unit.g.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1000.0, Unit.mg.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
             assertEquals(1000000.0, Unit.ug.fromStorageUnitValue(1.0).doubleValue(), 0.00001);
@@ -289,19 +290,19 @@ public enum Unit
         @Test
         public void testFromName()
         {
-            assertEquals(Unit.ml, Unit.fromName("ml"));
-            assertEquals(Unit.ml, Unit.fromName("mL"));
-            assertEquals(Unit.ml, Unit.fromName("milliliter"));
-            assertEquals(Unit.ml, Unit.fromName("milliliters"));
-            assertEquals(Unit.ml, Unit.fromName("millilitre"));
-            assertEquals(Unit.ml, Unit.fromName("millilitres"));
+            assertEquals(Unit.mL, Unit.fromName("ml"));
+            assertEquals(Unit.mL, Unit.fromName("mL"));
+            assertEquals(Unit.mL, Unit.fromName("milliliter"));
+            assertEquals(Unit.mL, Unit.fromName("milliliters"));
+            assertEquals(Unit.mL, Unit.fromName("millilitre"));
+            assertEquals(Unit.mL, Unit.fromName("millilitres"));
 
-            assertEquals(Unit.l, Unit.fromName("l"));
-            assertEquals(Unit.l, Unit.fromName("L"));
-            assertEquals(Unit.l, Unit.fromName("liter"));
-            assertEquals(Unit.l, Unit.fromName("liters"));
-            assertEquals(Unit.l, Unit.fromName("litre"));
-            assertEquals(Unit.l, Unit.fromName("liters"));
+            assertEquals(Unit.L, Unit.fromName("l"));
+            assertEquals(Unit.L, Unit.fromName("L"));
+            assertEquals(Unit.L, Unit.fromName("liter"));
+            assertEquals(Unit.L, Unit.fromName("liters"));
+            assertEquals(Unit.L, Unit.fromName("litre"));
+            assertEquals(Unit.L, Unit.fromName("liters"));
 
             assertNull(Unit.fromName(null));
             assertNull(Unit.fromName(""));
