@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
@@ -847,6 +848,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 return ExpDataFileConverter.convert(value);
             }
             return col.getConvertFn().apply(value);
+        }
+        catch (ConvertHelper.FileConversionException e)
+        {
+            throw new ValidationException(e.getMessage());
         }
         catch (ConversionException e)
         {
