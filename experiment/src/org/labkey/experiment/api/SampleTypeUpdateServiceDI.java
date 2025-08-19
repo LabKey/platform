@@ -1960,6 +1960,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
+                if (amountObj == null)
+                    return null;
+
                 // This should return a Number in the base units of the sample type. It may be provided (via the units column)
                 // as a different unit.
                 Unit unit = _sampleTypeDisplayUnit;
