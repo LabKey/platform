@@ -513,7 +513,7 @@ public class StatementUtils
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
         }
 
-        useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
+        useVariables = Operation.merge == _operation;
         String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
         String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
 
