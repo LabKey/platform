@@ -91,6 +91,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
@@ -1555,7 +1556,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             try
             {
-                totalUnit = Unit.valueOf(sampleTypeUnitsStr).getBase();
+                totalUnit = Unit.valueOf(totalUnitsStr).getBase();
             }
             catch (IllegalArgumentException e)
             {
@@ -1604,10 +1605,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-        // TODO
-//        int scale = baseUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : baseUnit.getPrecisionScale();
-//        totalVolume = Precision.round(totalVolume, scale);
-//        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
+        int scale = totalUnit == null ? Quantity.DEFAULT_PRECISION_SCALE : totalUnit.getPrecisionScale();
+        totalVolume = Precision.round(totalVolume, scale);
+        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
         return new AliquotAvailableAmountUnit(totalVolume, totalUnit == null ? null : totalUnit.name(), totalAvailableVolume);
     }
