@@ -36,7 +36,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
 {
@@ -82,10 +83,9 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     protected void checkSingleUse(Container container, User user, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException
     {
         String visitTagName = (String)row.get("VisitTag");
-        Object cohortObj = row.get("Cohort");
-        if (!(cohortObj instanceof Integer || cohortObj instanceof Long))
+        Integer cohortId = (Integer)asIntegerElseNull(row.get("Cohort"));
+        if (null == cohortId)
             return;                 // skip check
-        Integer cohortId = asInteger(cohortObj);
 
         StudyManager studyManager = StudyManager.getInstance();
         Study study = studyManager.getStudy(container);

@@ -180,8 +180,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
-import static org.labkey.api.exp.api.ExperimentService.asLong;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener

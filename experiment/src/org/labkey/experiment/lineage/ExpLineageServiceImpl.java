@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -46,6 +47,7 @@ import java.util.function.Predicate;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.util.IntegerUtils.asLong;
 
 public class ExpLineageServiceImpl implements ExpLineageService
 {
@@ -59,9 +61,9 @@ public class ExpLineageServiceImpl implements ExpLineageService
     public record LineageResult(
         Set<Identifiable> seeds,
         Set<ExpLineage.Edge> edges,
-        Set<Integer> dataIds,
-        Set<Integer> materialIds,
-        Set<Integer> runIds,
+        Set<Long> dataIds,
+        Set<Long> materialIds,
+        Set<Long> runIds,
         Set<String> objectLsids
     )
     {
@@ -123,19 +125,6 @@ public class ExpLineageServiceImpl implements ExpLineageService
         return new SeedIdentifiers(seedObjectIds, seedLsids);
     }
 
-    private static Integer _int(Object o)
-    {
-        return null == o ? null : ((Number)o).intValue();
-    }
-    private static Long _long(Object o)
-    {
-        return null == o ? null : ((Number)o).longValue();
-    }
-    Set<Long> _toLongSet(Set<Integer> ints)
-    {
-        return ints.stream().map(Long::valueOf).collect(toSet());
-    }
-
     public LineageResult getLineageResult(Container container, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
         var seedIdentifiers = getLineageSeedIdentifiers(container, user, seeds);
@@ -164,9 +153,9 @@ public class ExpLineageServiceImpl implements ExpLineageService
             }
         }
 
-        var dataIds = new HashSet<Integer>();
-        var materialIds = new HashSet<Integer>();
-        var runIds = new HashSet<Integer>();
+        var dataIds = new LongHashSet();
+        var materialIds = new LongHashSet();
+        var runIds = new LongHashSet();
         var objectLsids = new HashSet<String>();
 
         var sql = ExperimentServiceImpl.get().generateExperimentTreeSQLObjectIdsSeeds(seedIdentifiers.objectIds(), options);
@@ -179,9 +168,8 @@ public class ExpLineageServiceImpl implements ExpLineageService
             String parentExpType = (String) m.get("parent_exptype");
             String childExpType = (String) m.get("child_exptype");
 
-            // TODO BIGINT
-            Integer parentRowId = _int(m.get("parent_rowid"));
-            Integer childRowId = _int(m.get("child_rowid"));
+            Long parentRowId = asLong(m.get("parent_rowid"));
+            Long childRowId = asLong(m.get("child_rowid"));
 
             if (parentRowId == null || childRowId == null)
             {
@@ -248,9 +236,9 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         LsidManager lsidManager = LsidManager.get();
         ExperimentServiceImpl expSvc = ExperimentServiceImpl.get();
-        Set<ExpData> data = expSvc.getExpDatas(_toLongSet(result.dataIds)).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpMaterial> materials = expSvc.getExpMaterials(_toLongSet(result.materialIds)).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpRun> runs = expSvc.getExpRuns(_toLongSet(result.runIds)).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpData> data = expSvc.getExpDatas(result.dataIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpMaterial> materials = expSvc.getExpMaterials(result.materialIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpRun> runs = expSvc.getExpRuns(result.runIds).stream().filter(lineageItemFilter).collect(toSet());
         Set<Identifiable> otherObjects = result.objectLsids.stream().map(lsidManager::getObject).filter(lineageItemFilter).collect(toSet());
 
         return new ExpLineage(seeds, data, materials, runs, otherObjects, result.edges);
@@ -328,7 +316,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
         context.writer.endObject();
     }
 
-    private static <T extends Identifiable> void writeNodes(Set<Integer> rowIds, TableInfo table, Class<T> clazz, StreamContext context)
+    private static <T extends Identifiable> void writeNodes(Set<Long> rowIds, TableInfo table, Class<T> clazz, StreamContext context)
     {
         new TableSelector(table, new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN), null).forEach(clazz, (node) -> writeNode(node.getExpObject(), context));
     }

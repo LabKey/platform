@@ -10,7 +10,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import java.util.Collection;
 import java.util.Set;
 
-import static org.labkey.api.exp.api.ExperimentService.asInteger;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 /**
  * <code>
@@ -51,8 +51,8 @@ public class LineageCompareType extends CompareType
             Object depthObj = values[1];
             if (depthObj instanceof String depthObjStr)
                 depth = Integer.parseInt(depthObjStr);
-            else if (depthObj instanceof Integer || depthObj instanceof Long)
-                depth = asInteger(depthObj);
+            else if (asIntegerElseNull(depthObj) instanceof Integer depthInt)
+                depth = depthInt;
         }
 
         String sourceKey = null;

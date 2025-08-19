@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+
 /**
  * User: klum
  * Date: 11/12/13
@@ -353,16 +355,16 @@ public abstract class AbstractSpecimenTransformTask
 
     protected void toInt(String key, Map<String, Object> row)
     {
-        Object i = row.get(key);
-        if (null == i || i instanceof Integer)
+        Object o = row.get(key);
+        if (null == o || o instanceof Integer)
             return;
         try
         {
-            if (i instanceof Number)
-                i = ((Number)i).intValue();
+            if (asIntegerElseNull(o) instanceof Integer i)
+                o = i;
             else
-                i = Integer.parseInt(String.valueOf(i));
-            row.put(key,i);
+                o = Integer.parseInt(String.valueOf(o));
+            row.put(key,o);
         }
         catch (NumberFormatException x)
         {

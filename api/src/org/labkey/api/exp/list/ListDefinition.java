@@ -43,6 +43,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+
 /**
  * Represents a single list definition, as captured by a domain and some list-specific configuration, and defined
  * in a single container.
@@ -56,8 +58,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
                 @Override
                 protected Object convertKeyInternal(Object key)
                 {
-                    if (key instanceof Integer)
-                        return key;
+                    if (asIntegerElseNull(key) instanceof Integer i)
+                        return i;
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
@@ -72,8 +74,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
                 @Override
                 protected Object convertKeyInternal(Object key)
                 {
-                    if (key instanceof Integer)
-                        return key;
+                    if (asIntegerElseNull(key) instanceof Integer i)
+                        return i;
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
