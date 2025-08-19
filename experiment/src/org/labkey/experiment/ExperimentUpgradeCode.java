@@ -274,7 +274,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                                 }
                                 else // in base unit but not explicitly set
                                     aliquotCounts.put("setUnitsWithoutConvert", aliquotCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
-                                newDataMap.put(Units.name(), baseUnit.name());
+                                newDataMap.put(AliquotUnit.name(), baseUnit.name());
                             }
                         }
                     }
@@ -290,7 +290,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         {
                             if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
                             {
-                                newDataMap.put(AliquotUnit.name(), Measurement.Unit.unit.name());
+                                newDataMap.put(AliquotUnit.name(), Unit.unit.name());
                                 aliquotCounts.put("amountWithoutMaterialOrDisplayUnits", aliquotCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
                             }
                         }
