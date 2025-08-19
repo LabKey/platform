@@ -579,7 +579,7 @@ public class StatementUtils
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" BIGINT").appendEOS();
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
                 sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();
-                useVariables = _dialect.isPostgreSQL();
+                useVariables |= _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
 
