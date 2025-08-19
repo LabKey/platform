@@ -28,7 +28,7 @@ public enum KindOfQuantity
         @Override
         List<Unit> getCommonUnits()
         {
-            return List.of(Unit.kg, Unit.g, Unit.mg ,Unit.ug);
+            return List.of(Unit.kg, Unit.g, Unit.mg);
         }
     },
 
