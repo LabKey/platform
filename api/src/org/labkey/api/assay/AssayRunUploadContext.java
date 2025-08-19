@@ -427,5 +427,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public abstract AssayRunUploadContext<ProviderType> create();
     }
 
-    default Map<String, Object> getUnresolvedRunProperties() { return  emptyMap(); }
+    default Map<String, Object> getUnresolvedRunProperties()
+    {
+        return emptyMap();
+    }
 }

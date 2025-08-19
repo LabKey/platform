@@ -370,7 +370,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
-            List<ExpData> insertedDatas = new ArrayList<>();
 
             if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm<ProviderType> uploadForm)
             {
@@ -409,7 +408,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 savePropertyObject(run, container, runProperties, context.getUser());
 
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
             Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
@@ -419,7 +418,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (assayResultFileRoot != null)
                     QueryService.get().setEnvironment(QueryService.Environment.ASSAYFILESPATH, assayResultFileRoot);
             }
-            importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
+
+            importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult);
 
             var reRunId = context.getReRunId();
             if (reRunId != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
@@ -486,7 +486,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             // TODO: This is better done as a post-rollback task on the transaction
             // clean up the run results file dir here if it was created, for non-async imports
-            AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
+            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
             cleanPrimaryFile(context);
@@ -507,12 +507,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     private void cleanPrimaryFile(AssayRunUploadContext<ProviderType> context) throws ExperimentException
     {
+        // Do not clear the primary file for run re-imports
+        if (context.getReRunId() != null)
+            return;
+
         try
         {
             // Issue 51300: don't keep the primary file if the new run failed to save
-            boolean isReRun = context.getReRunId() != null;
             FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            if (!isReRun && primaryFile != null && primaryFile.exists())
+            if (primaryFile != null && primaryFile.exists())
                 primaryFile.delete();
         }
         catch (IOException e)
@@ -528,7 +531,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> outputMaterials,
         Map<ExpData, String> outputDatas,
         Map<DomainProperty, String> allProperties,
-        ParticipantVisitResolverType resolverType
+        @Nullable ParticipantVisitResolverType resolverType
     ) throws ExperimentException
     {
         try
@@ -572,11 +575,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> inputDatas,
         Map<ExpData, String> outputDatas,
         ViewBackgroundInfo info,
-        XarContext xarContext,
-        List<ExpData> insertedDatas
+        XarContext xarContext
     ) throws ExperimentException, BatchValidationException
     {
         DataIteratorBuilder rawData = context.getRawData();
+        List<ExpData> insertedDatas = new ArrayList<>();
+
         if (rawData != null)
         {
             insertedDatas.addAll(outputDatas.keySet());
@@ -630,13 +634,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> outputDatas,
         ViewBackgroundInfo info,
         XarContext xarContext,
-        TransformResult transformResult,
-        List<ExpData> insertedDatas
+        TransformResult transformResult
     ) throws ExperimentException, BatchValidationException
     {
         if (transformResult.getTransformedData().isEmpty())
         {
-            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext, insertedDatas);
+            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext);
             return;
         }
 
