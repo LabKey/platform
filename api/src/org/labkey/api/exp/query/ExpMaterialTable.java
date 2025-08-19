@@ -26,10 +26,10 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Alias,
         AliquotCount,
         AliquotUnit,
-        AliquotVolume,
+        AliquotVolume(true),
         AliquotedFromLSID,
         AvailableAliquotCount,
-        AvailableAliquotVolume,
+        AvailableAliquotVolume(true),
         Created,
         CreatedBy,
         Description,
@@ -48,7 +48,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Properties,
         Property,
         QueryableInputs,
-        RawAmount,
+        RawAmount(true),
         RawUnits,
         RootMaterialRowId,
         RowId,
@@ -60,12 +60,25 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceApplicationInput,
         SourceProtocolApplication,
         SourceProtocolLSID,
-        StoredAmount,
+        StoredAmount(true),
         Units;
+
+        private boolean _hasUnit = false;
+        Column() { }
+
+        Column(boolean hasUnit)
+        {
+            _hasUnit = hasUnit;
+        }
 
         public FieldKey fieldKey()
         {
             return FieldKey.fromParts(name());
+        }
+
+        public boolean hasUnit()
+        {
+            return _hasUnit;
         }
     }
 
