@@ -65,8 +65,23 @@ public class Quantity extends Number implements Comparable<Quantity>
         throw new IllegalStateException();
     }
 
+    @Nullable
+    public static Quantity of(@Nullable Object value, @Nullable String unitsStr, @Nullable String defaultUnitsStr)
+    {
+        if (value == null)
+            return null;
+        if (!(value instanceof Number))
+            throw new IllegalArgumentException("Value must be a number");
+        if (unitsStr != null)
+            return Quantity.of((Number) value, unitsStr);
+        else if (defaultUnitsStr != null)
+            return Quantity.of((Number) value, defaultUnitsStr);
+        else
+            return null;
+    }
+
     @NotNull
-    public static Quantity of(@NotNull Number value, @Nullable String unitStr)
+    public static Quantity of(@NotNull Number value, @NotNull String unitStr)
     {
         Unit unit = Unit.fromName(unitStr);
         if (unit == null)
@@ -121,6 +136,11 @@ public class Quantity extends Number implements Comparable<Quantity>
         this.value = from.toStorageUnitValue(value);
         this.isDouble = this.value instanceof Double;
         assert isDouble || this.value instanceof BigDecimal;
+    }
+
+    public @NotNull KindOfQuantity getKind()
+    {
+        return kind;
     }
 
     public double doubleValue(@NotNull Unit unit)
