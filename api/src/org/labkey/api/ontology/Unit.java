@@ -13,10 +13,10 @@ import java.util.function.Function;
 
 public enum Unit
 {
-    unit(KindOfQuantity.Count, null, 1.0, null, "unit",
+    unit(KindOfQuantity.Count, null, 1.0, 2, "unit",
             Quantity.class,
             "unit", "units"),
-    count(KindOfQuantity.Count, unit, 1.0, null, "count",
+    count(KindOfQuantity.Count, unit, 1.0, 2, "count",
             Quantity.class,
             "count", "count"),
 
