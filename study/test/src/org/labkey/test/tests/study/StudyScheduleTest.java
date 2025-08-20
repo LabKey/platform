@@ -29,7 +29,6 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.StudyHelper;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
@@ -105,9 +104,9 @@ public class StudyScheduleTest extends StudyBaseTest
     {
         clickTab("Manage");
         click(Locator.linkWithText("Study Schedule"));
-        shortWait().until(ExpectedConditions.elementToBeClickable(By.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']")));
+        shortWait().until(ExpectedConditions.elementToBeClickable(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']")));
         click(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']"));
-        shortWait().until(ExpectedConditions.elementToBeClickable(By.xpath("//span[.='Save Changes']")));
+        shortWait().until(ExpectedConditions.elementToBeClickable(Locator.xpath("//span[.='Save Changes']")));
         click(Locator.xpath("//span[.='Save Changes']"));
         waitForElement(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='checked']"));
     }
