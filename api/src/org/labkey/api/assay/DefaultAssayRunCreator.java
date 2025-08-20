@@ -380,33 +380,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
 
             if (saveBatchProps)
-            {
-                if (!transformResult.getBatchProperties().isEmpty())
-                {
-                    Map<DomainProperty, String> props = transformResult.getBatchProperties();
-                    List<ValidationError> errors = validateProperties(context, props);
-                    if (!errors.isEmpty())
-                        throw new ValidationException(errors);
-                    savePropertyObject(batch, container, props, context.getUser());
-                }
-                else
-                    savePropertyObject(batch, container, batchProperties, context.getUser());
-            }
-
+                saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties);
             if (null != transformResult.getAssayId())
                 run.setName(transformResult.getAssayId());
             if (null != transformResult.getComments())
                 run.setComments(transformResult.getComments());
-            if (!transformResult.getRunProperties().isEmpty())
-            {
-                Map<DomainProperty, String> props = transformResult.getRunProperties();
-                List<ValidationError> errors = validateProperties(context, props);
-                if (!errors.isEmpty())
-                    throw new ValidationException(errors);
-                savePropertyObject(run, container, props, context.getUser());
-            }
-            else
-                savePropertyObject(run, container, runProperties, context.getUser());
+            saveProperties(context, batch, transformResult.getRunProperties(), runProperties);
 
             AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
@@ -1110,46 +1089,60 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void savePropertyObject(ExpObject object, Container container, Map<DomainProperty, String> properties, User user) throws ExperimentException
+    private void saveProperties(
+        final AssayRunUploadContext<ProviderType> context,
+        ExpObject expObject,
+        Map<DomainProperty, String> transformResultProperties,
+        Map<DomainProperty, String> properties
+    ) throws ValidationException
     {
-        try
+        Map<DomainProperty, String> propsToSave;
+        if (transformResultProperties.isEmpty())
+            propsToSave = properties;
+        else
         {
-            for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
-            {
-                DomainProperty pd = entry.getKey();
-                String value = entry.getValue();
-
-                // resolve any file links for batch or run properties
-                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
-                {
-                    File resolvedFile = ExpDataFileConverter.convert(value);
-                    if (resolvedFile != null)
-                        value = resolvedFile.getAbsolutePath();
-                }
-
-                // Treat the empty string as a null in the database, which is our normal behavior when receiving data
-                // from HTML forms.
-                if ("".equals(value))
-                {
-                    value = null;
-                }
-                if (value != null)
-                {
-                    object.setProperty(user, pd.getPropertyDescriptor(), value);
-                }
-                else
-                {
-                    // We still need to validate blanks
-                    List<ValidationError> errors = new ArrayList<>();
-                    OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), new ObjectProperty(object.getLSID(), object.getContainer(), pd.getPropertyDescriptor(), value), errors, new ValidatorContext(pd.getContainer(), user));
-                    if (!errors.isEmpty())
-                        throw new ValidationException(errors);
-                }
-            }
+            List<ValidationError> errors = validateProperties(context, transformResultProperties);
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+            propsToSave = transformResultProperties;
         }
-        catch (ValidationException ve)
+
+        savePropertyObject(expObject, propsToSave, context.getUser());
+    }
+
+    protected void savePropertyObject(ExpObject object, Map<DomainProperty, String> properties, User user) throws ValidationException
+    {
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            throw new ExperimentException(ve.getMessage(), ve);
+            DomainProperty pd = entry.getKey();
+            String value = entry.getValue();
+
+            // resolve any file links for batch or run properties
+            if (PropertyType.FILE_LINK.getTypeUri().equals(pd.getType().getTypeURI()))
+            {
+                File resolvedFile = ExpDataFileConverter.convert(value);
+                if (resolvedFile != null)
+                    value = resolvedFile.getAbsolutePath();
+            }
+
+            // Treat the empty string as a null in the database, which is our normal behavior when receiving data
+            // from HTML forms.
+            if ("".equals(value))
+            {
+                value = null;
+            }
+            if (value != null)
+            {
+                object.setProperty(user, pd.getPropertyDescriptor(), value);
+            }
+            else
+            {
+                // We still need to validate blanks
+                List<ValidationError> errors = new ArrayList<>();
+                OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), new ObjectProperty(object.getLSID(), object.getContainer(), pd.getPropertyDescriptor(), value), errors, new ValidatorContext(pd.getContainer(), user));
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
+            }
         }
     }
 
@@ -1202,7 +1195,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         String label,
         Boolean required,
         Lookup lookup,
-        Class type,
+        Class<?> type,
         RemapCache cache,
         List<ValidationError> errors
     )
