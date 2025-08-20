@@ -55,6 +55,7 @@ import org.labkey.api.exp.LsidManager.LsidHandler;
 import org.labkey.api.exp.LsidManager.LsidHandlerFinder;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -1094,5 +1095,33 @@ public class AssayManager implements AssayService
         // The assay run and assay result may have properties that have the same name which will
         // result in lineage inputs which we are unable to disambiguate when processing based on "role".
         return dp.getName();
+    }
+
+    @Override
+    public @NotNull DataType getDataType(Container container, Long protocolId, String originalFileName)
+    {
+        if (protocolId != null)
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+            if (protocol == null)
+                throw new NotFoundException("No such assay design: " + protocolId);
+
+            if (!AssayService.get().getAssayProtocols(container).contains(protocol))
+                throw new NotFoundException("Assay design " + protocolId + " is not in scope for " + container.getPath());
+
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                throw new NotFoundException("Assay provider not found for assay design '" + protocol.getName() + "'");
+
+            if (provider.getDataType() != null)
+            {
+                if (!provider.getDataType().getFileType().isType(originalFileName))
+                    throw new IllegalArgumentException("File '" + originalFileName + "' does not match expected suffixes for " + provider.getName());
+
+                return provider.getDataType();
+            }
+        }
+
+        return ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE);
     }
 }

@@ -27,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -248,6 +249,12 @@ public interface AssayService
 
     /** Returns the lineage "role" for an assay run/result property. */
     @NotNull String getPropertyInputLineageRole(@NotNull DomainProperty dp);
+
+    /**
+     * Checks if we've been given a protocol id to use as a reference. If so, tracks down its assay provider and
+     * requests its desired data LSID namespace prefix, validating that the file name matches the expected inputs.
+     */
+    @NotNull DataType getDataType(Container container, Long protocolId, String originalFileName);
 
     interface ResultsCheckHelper
     {

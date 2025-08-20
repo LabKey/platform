@@ -801,15 +801,15 @@ public class AssayController extends SpringActionController
 
     public static class AssayFileUploadForm extends AbstractFileUploadAction.FileUploadForm
     {
-        private Integer _protocolId;
+        private Long _protocolId;
 
-        public Integer getProtocolId()
+        public Long getProtocolId()
         {
             return _protocolId;
         }
 
         @SuppressWarnings("unused")
-        public void setProtocolId(Integer protocolId)
+        public void setProtocolId(Long protocolId)
         {
             _protocolId = protocolId;
         }
@@ -845,8 +845,7 @@ public class AssayController extends SpringActionController
                 File file = entry.getValue().getKey();
                 String originalName = entry.getValue().getValue();
 
-                DataType dataType = getDataType(form, originalName);
-
+                DataType dataType = AssayService.get().getDataType(getContainer(), form.getProtocolId(), originalName);
                 ExpData data = ExperimentService.get().createData(getContainer(), dataType);
 
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
@@ -871,40 +870,6 @@ public class AssayController extends SpringActionController
             // Make sure that Ext treats the submission as a success
             fullMap.put("success", true);
             return fullMap.toString();
-        }
-
-        /**
-         * Checks if we've been given a protocol id to use as a reference. If so, tracks down its assay provider and
-         * requests its desired data LSID namespace prefix, validating that the file name matches the expected inputs.
-         */
-        private DataType getDataType(AssayFileUploadForm form, String originalName)
-        {
-            if (form.getProtocolId() != null)
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
-                if (protocol == null)
-                {
-                    throw new NotFoundException("No such assay design: " + form.getProtocolId());
-                }
-                if (!AssayService.get().getAssayProtocols(getContainer()).contains(protocol))
-                {
-                    throw new NotFoundException("Assay design " + form.getProtocolId() + " is not in scope for " + getContainer().getPath());
-                }
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                if (provider == null)
-                {
-                    throw new NotFoundException("Assay provider not found for assay design '" + protocol.getName() + "'");
-                }
-                if (provider.getDataType() != null)
-                {
-                    if (!provider.getDataType().getFileType().isType(originalName))
-                    {
-                        throw new IllegalArgumentException("File '" + originalName + "' does not match expected suffixes for " + provider.getName());
-                    }
-                    return provider.getDataType();
-                }
-            }
-            return ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE);
         }
     }
 

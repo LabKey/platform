@@ -50,8 +50,10 @@ public class AssayJSONConverter
     public static final String BATCH_IDS = "batchIds";
     public static final String BATCH = "batch";
     public static final String BATCHES = "batches";
+    public static final String BATCH_PROPERTIES = "batchProperties";
     public static final String RUN = "run";
     public static final String RUNS = "runs";
+    public static final String RUN_PROPERTIES = "properties";
 
     // Run properties
     public static final String DATA_ROWS = "dataRows";

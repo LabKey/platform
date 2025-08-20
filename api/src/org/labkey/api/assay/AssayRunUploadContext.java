@@ -70,7 +70,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
-    default @Nullable Long getWorkflowTask() {
+    default @Nullable Long getWorkflowTask()
+    {
         return null;
     }
 
@@ -150,11 +151,19 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getTargetStudy();
 
-    default Long getTransactionAuditId() { return null; }
+    default Long getTransactionAuditId()
+    {
+        return null;
+    }
 
-    default void setTransactionAuditId(Long transactionAuditId) { }
+    default void setTransactionAuditId(Long transactionAuditId)
+    {
+    }
 
-    default String getAuditUserComment() { return null; }
+    default String getAuditUserComment()
+    {
+        return null;
+    }
 
     TransformResult getTransformResult();
 
@@ -187,13 +196,14 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     default void setPipelineJobGUID(String jobGUID)
     {
-
     }
 
     @Nullable
     Logger getLogger();
 
-    default void init() throws ExperimentException {}
+    default void init() throws ExperimentException
+    {
+    }
 
     /**
      * For files that already existed on the server's file system prior to import, and which have been copied
@@ -201,7 +211,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * @return null if the file was uploaded as part of the import
      */
     @Nullable
-    default File getOriginalFileLocation() { return null; }
+    default File getOriginalFileLocation()
+    {
+        return null;
+    }
 
     default boolean shouldAutoFillDefaultResultColumns()
     {
