@@ -136,7 +136,7 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
     String getMetricUnit();
 
     /** @return Metric Unit as Unit if set. */
-    public @Nullable Unit getAmountUnit();
+    public @Nullable Unit getDisplayUnit();
 
     /** @return Auto link target container if set. */
     @Nullable

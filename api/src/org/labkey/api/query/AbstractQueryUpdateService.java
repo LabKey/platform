@@ -78,6 +78,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -128,7 +129,7 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    private final TableInfo _queryTable;
+    protected final TableInfo _queryTable;
 
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
@@ -710,6 +711,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
                         value = ExpDataFileConverter.convert(value);
+                    else if (col.getKindOfQuantity() != null)
+                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
                     else
                         value = col.getConvertFn().apply(value);
                 }

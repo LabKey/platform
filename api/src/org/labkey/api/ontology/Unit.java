@@ -336,7 +336,7 @@ public enum Unit
             }
             try
             {
-                Unit.getValidatedUnit(null, Unit.unit);
+                assertEquals(Unit.unit, Unit.getValidatedUnit(null, Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -344,7 +344,7 @@ public enum Unit
             }
             try
             {
-                Unit.getValidatedUnit("", Unit.unit);
+                assertEquals(Unit.unit, Unit.getValidatedUnit("", Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {

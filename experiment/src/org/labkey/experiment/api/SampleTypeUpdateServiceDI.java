@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -38,8 +39,10 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -113,6 +116,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -480,10 +484,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return results;
     }
 
+    private void validateAmountAndUnitColumns(List<Map<String, Object>> rows) throws BatchValidationException
+    {
+        if (rows == null || rows.isEmpty())
+            return;
+
+        Map<String, Object> row = rows.get(0);
+        boolean hasUnits = row.containsKey("Units");
+        boolean hasAmount = StoredAmount.namesAndLabels().stream().anyMatch(row::containsKey);
+        if (hasAmount != hasUnits)
+            throw new BatchValidationException(new ValidationException("When updating samples, both StoredAmount and Units must be provided."));
+    }
+
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+
+        validateAmountAndUnitColumns(rows);
 
         boolean useDib = false;
         if (rows != null && !rows.isEmpty() && oldKeys == null)
@@ -555,6 +573,79 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return results;
+    }
+
+    /**
+     * Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion
+     */
+    @Deprecated
+    @Override
+    protected Map<String, Object> coerceTypes(Map<String, Object> row)
+    {
+        Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
+        Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
+        Object unitsVal = null;
+        ColumnInfo unitsCol = null;
+        if (row.containsKey(ExpMaterialTable.Column.Units.name()))
+        {
+            unitsVal = row.get(ExpMaterialTable.Column.Units.name());
+            unitsCol = columnMap.get(ExpMaterialTable.Column.Units.name());
+        }
+        Object amountVal = null;
+        ColumnInfo amountCol = null;
+        for (String colName : ExpMaterialTable.Column.StoredAmount.namesAndLabels())
+        {
+            if (row.containsKey(colName))
+            {
+                amountVal = row.get(colName);
+                amountCol = columnMap.get(colName);
+                break;
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : row.entrySet())
+        {
+            ColumnInfo col = columnMap.get(entry.getKey());
+
+            Object value = entry.getValue();
+            if (col == unitsCol)
+            {
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountCol != null, amountVal, _sampleType == null ? null : _sampleType.getBaseUnit());
+            }
+            else if (col == amountCol)
+            {
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, _sampleType == null ? null : _sampleType.getBaseUnit());
+            }
+            else if (col != null && value != null &&
+                    !col.getJavaObjectClass().isInstance(value) &&
+                    !(value instanceof AttachmentFile) &&
+                    !(value instanceof MultipartFile) &&
+                    !(value instanceof String[]) &&
+                    !(col.getFk() instanceof MultiValuedForeignKey))
+            {
+                try
+                {
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
+                        value = ExpDataFileConverter.convert(value);
+                    else if (col.getKindOfQuantity() != null)
+                    {
+                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                    }
+                    else
+                        value = col.getConvertFn().apply(value);
+                }
+                catch (ConvertHelper.FileConversionException e)
+                {
+                    throw e;
+                }
+                catch (ConversionException e)
+                {
+                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
+                }
+            }
+            result.put(entry.getKey(), value);
+        }
+        return result;
     }
 
     @Override
@@ -732,9 +823,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
-                if (oldRowUnits != null)
+                if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
                     oldQuantity = Quantity.of((Number) oldRow.get(StoredAmount.name()), oldRowUnits);
-                if (rowUnits != null)
+                if (rowUnits != null && row.get(StoredAmount.name()) != null)
                     newQuantity = Quantity.of((Number) row.get(StoredAmount.name()), rowUnits);
 
                 if (newQuantity != null && (oldQuantity == null || !oldQuantity.equals(newQuantity)))
@@ -1793,7 +1884,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             super(source, context);
             _sampleType = sampleType;
-            _sampleTypeDisplayUnit = _sampleType.getAmountUnit();
+            _sampleTypeDisplayUnit = _sampleType.getDisplayUnit();
             _sampleTypeBaseUnit = _sampleType.getBaseUnit();
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases, !context.getInsertOption().updateOnly);
@@ -1865,7 +1956,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (Units.name().equalsIgnoreCase(name))
                     {
-                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType(), amountDataColInd));
                     }
                     else if (StoredAmount.name().equalsIgnoreCase(name))
                     {
@@ -1930,20 +2021,37 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            final int _storedAmountColInd;
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, int storedAmountIdx)
             {
                 super(fieldName, indexFrom, to, null, true);
+                _storedAmountColInd = storedAmountIdx;
+            }
+
+            public static Object getValue(Object o, boolean hasStoredAmountCol, Object amountObj, Unit baseUnit)
+            {
+                if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
+                {
+                    if (!hasStoredAmountCol) // If updating, we will have already validated that the amount column is also provided.
+                        return null;
+                    else
+                    {
+                        if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
+                            return null;
+                    }
+                }
+                // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
+                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                if (baseUnit != null)
+                    return baseUnit.name();
+                else
+                    return validatedUnit == null ? null : validatedUnit.name();
             }
 
             @Override
             protected Object convert(Object o)
             {
-                // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-                Unit validatedUnit = Unit.getValidatedUnit(o, _sampleTypeBaseUnit);
-                if (_sampleTypeBaseUnit != null)
-                    return _sampleTypeBaseUnit.name();
-                else
-                    return validatedUnit == null ? null : validatedUnit.name();
+                return getValue(o, _storedAmountColInd != -1, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _sampleTypeBaseUnit);
             }
         }
 
@@ -1957,37 +2065,46 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 _unitsColInd = unitsColInd;
             }
 
-            @Override
-            protected Object convert(Object amountObj)
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
             {
                 if (amountObj == null)
                     return null;
 
                 // This should return a Number in the base units of the sample type. It may be provided (via the units column)
                 // as a different unit.
-                Unit unit = _sampleTypeDisplayUnit;
+                Unit unit = displayUnit;
                 // We need to handle the following cases
                 // StoredAmount,Unit
                 // 7g,mg -- should convert to 7 g
                 // 8,    -- should use the sample type display unit, and then convert to that base unit
                 // 8,mg  -- should convert to .008 g
-                if (_unitsColInd != -1)
+                if (hasUnitsCol)
                 {
-                    unit =  Unit.getValidatedUnit(_data.get(_unitsColInd), _sampleTypeDisplayUnit);
+                    unit =  Unit.getValidatedUnit(unitsObj, unit);
                 }
                 if (unit != null)
                 {
                     if (amountObj instanceof Number)
                         return Quantity.of((Number) amountObj, unit).doubleValue();
-                    else if (amountObj instanceof String)
+                    else if (amountObj instanceof String amountStr)
+                    {
+                        if (StringUtils.isEmpty(amountStr.trim()))
+                            return null;
                         // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
                         // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
                         // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
                         return Quantity.convert(amountObj, unit).doubleValue();
+                    }
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
                 }
                 return amountObj; // have no given unit or base unit
+            }
+
+            @Override
+            protected Object convert(Object amountObj)
+            {
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeDisplayUnit);
             }
         }
 

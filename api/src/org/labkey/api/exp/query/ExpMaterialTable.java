@@ -16,8 +16,12 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
+
+import java.util.Set;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
@@ -60,15 +64,25 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceApplicationInput,
         SourceProtocolApplication,
         SourceProtocolLSID,
-        StoredAmount(true),
+        StoredAmount(true, "Amount"),
         Units;
 
         private boolean _hasUnit = false;
-        Column() { }
+        private final String _label;
+        Column() {
+            _label = ColumnInfo.labelFromName(name());
+        }
 
         Column(boolean hasUnit)
         {
+            this();
             _hasUnit = hasUnit;
+        }
+
+        Column(boolean hasUnit, String label)
+        {
+            _hasUnit = hasUnit;
+            _label = label;
         }
 
         public FieldKey fieldKey()
@@ -79,6 +93,21 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         public boolean hasUnit()
         {
             return _hasUnit;
+        }
+
+        public String label()
+        {
+            return _label;
+        }
+
+        public Set<String> namesAndLabels()
+        {
+            Set<String> values = new CaseInsensitiveHashSet();
+
+            values.add(this.name());
+            values.add(this.label());
+            values.add(this.label().replaceAll("\\s", ""));
+            return values;
         }
     }
 
