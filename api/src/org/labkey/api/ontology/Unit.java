@@ -91,9 +91,9 @@ public enum Unit
     @Getter
     final double value;
     @Getter
-    final Integer precisionScale;
+    final int precisionScale;
 
-    Unit(@NotNull KindOfQuantity kind, Unit base, double value, Integer precisionScale, @NotNull String printName,
+    Unit(@NotNull KindOfQuantity kind, Unit base, double value, int precisionScale, @NotNull String printName,
          @NotNull Class<? extends Quantity> quantityClass,
          @NotNull String singular, @NotNull String plural, String... otherNames)
     {
