@@ -513,7 +513,7 @@ public class StatementUtils
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
         }
 
-        useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
+        useVariables = Operation.merge == _operation;
         String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
         String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
 
@@ -579,7 +579,7 @@ public class StatementUtils
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" BIGINT").appendEOS();
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
                 sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();
-                useVariables = _dialect.isPostgreSQL();
+                useVariables |= _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
 
