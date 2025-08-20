@@ -800,11 +800,11 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         {
             String testContainerId = JunitUtil.getTestContainer().getId();
             int testUserId = TestContext.get().getUser().getUserId();
-            int plateTypeId = PlateManager.get().getPlateTypes().stream().findFirst().orElseThrow().getRowId();
-            int plateSetId = _plateSet.getRowId();
+            Long plateTypeId = PlateManager.get().getPlateTypes().stream().findFirst().orElseThrow().getRowId();
+            Long plateSetId = _plateSet.getRowId();
 
             PlateBean bean = new PlateBean();
-            Integer expectedRowId = 1;
+            Long expectedRowId = 1L;
             String expectedName = "Test Name";
             Boolean archived = null;
             bean.setPlateType(plateTypeId);
