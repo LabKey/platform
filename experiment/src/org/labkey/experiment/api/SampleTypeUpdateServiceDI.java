@@ -608,11 +608,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             ColumnInfo col = columnMap.get(entry.getKey());
 
             Object value = entry.getValue();
-            if (col == unitsCol)
+            if (col != null && col == unitsCol)
             {
                 value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountCol != null, amountVal, _sampleType == null ? null : _sampleType.getBaseUnit());
             }
-            else if (col == amountCol)
+            else if (col != null && col == amountCol)
             {
                 value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, _sampleType == null ? null : _sampleType.getDisplayUnit());
             }
@@ -628,9 +628,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
                         value = ExpDataFileConverter.convert(value);
                     else if (col.getKindOfQuantity() != null)
-                    {
                         value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                    }
                     else
                         value = col.getConvertFn().apply(value);
                 }
