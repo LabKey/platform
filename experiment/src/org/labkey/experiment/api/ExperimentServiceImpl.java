@@ -207,6 +207,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.WrappedUser;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -3995,7 +3996,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
             }
-            
+
+            // In linked schema case, use the wrapped user to determine access to definitions in project and shared, Issue 53421
+            if (user instanceof WrappedUser wu)
+                user = wu.unwrap();
+
             Container project = container.getProject();
             if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
             {

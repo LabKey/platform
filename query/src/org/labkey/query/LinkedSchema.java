@@ -43,6 +43,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.WrappedUser;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -582,9 +583,10 @@ public class LinkedSchema extends ExternalSchema
         return new Class[]{ReaderRole.class};
     }
 
-    private static class LinkedSchemaUserWrapper extends LimitedUser
+    private static class LinkedSchemaUserWrapper extends LimitedUser implements WrappedUser
     {
         private final Set<String> _allowedResourceIds = new HashSet<>();
+        private final User _wrappedUser;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
@@ -603,6 +605,8 @@ public class LinkedSchema extends ExternalSchema
                 if (null != study)
                     _allowedResourceIds.add(study.getResourceId());
             }
+
+            _wrappedUser = realUser;
         }
 
         @Override
@@ -616,6 +620,12 @@ public class LinkedSchema extends ExternalSchema
 
             // For all other containers and studies, no permissions
             return Stream.empty();
+        }
+
+        @Override
+        public User unwrap()
+        {
+            return _wrappedUser;
         }
     }
 }
