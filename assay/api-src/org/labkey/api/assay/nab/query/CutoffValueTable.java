@@ -81,7 +81,9 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         defaultICSQL.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
         defaultICSQL.append(", ");
         defaultICSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
-        defaultICSQL.append(" WHERE op.PropertyId = pd.PropertyId AND pd.PropertyURI LIKE '%#" + DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME + "' AND ns.RowId = ");
+        defaultICSQL.append(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ? ");
+        defaultICSQL.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
+        defaultICSQL.append("AND ns.RowId = ");
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS);
         defaultICSQL.append(".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
         defaultICSQL.append("\nWHEN 'Polynomial' THEN ");
