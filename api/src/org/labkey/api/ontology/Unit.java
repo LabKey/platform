@@ -13,10 +13,10 @@ import java.util.function.Function;
 
 public enum Unit
 {
-    unit(KindOfQuantity.Count, null, 1.0, null, "unit",
+    unit(KindOfQuantity.Count, null, 1.0, 6, "unit",
             Quantity.class,
             "unit", "units"),
-    count(KindOfQuantity.Count, unit, 1.0, null, "count",
+    count(KindOfQuantity.Count, unit, 1.0, 6, "count",
             Quantity.class,
             "count", "count"),
 
@@ -91,9 +91,9 @@ public enum Unit
     @Getter
     final double value;
     @Getter
-    final Integer precisionScale;
+    final int precisionScale;
 
-    Unit(@NotNull KindOfQuantity kind, Unit base, double value, Integer precisionScale, @NotNull String printName,
+    Unit(@NotNull KindOfQuantity kind, Unit base, double value, int precisionScale, @NotNull String printName,
          @NotNull Class<? extends Quantity> quantityClass,
          @NotNull String singular, @NotNull String plural, String... otherNames)
     {

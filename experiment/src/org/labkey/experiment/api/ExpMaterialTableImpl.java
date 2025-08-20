@@ -40,6 +40,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MaterializedQueryHelper;
@@ -74,6 +75,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -141,6 +143,8 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
@@ -307,10 +311,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case StoredAmount ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
-                columnInfo.setLabel("Amount");
-                columnInfo.setImportAliasesSet(Set.of("Amount"));
-                return columnInfo;
+                String label = "Amount";
+                Unit typeUnit = getSampleTypeUnit();
+                if (typeUnit != null)
+                {
+                    // TODO check on the case for issue 52745
+                    // TODO check on Issue 48500: For the MultiValuedDisplayColumn this may be an empty string when the actual value is null
+
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, typeUnit);
+                    columnInfo.setShownInUpdateView(true);
+                    columnInfo.setShownInInsertView(true);
+                    columnInfo.setUserEditable(true);
+                    columnInfo.setCalculated(false);
+                    return columnInfo;
+                }
+                else
+                {
+                    var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                    columnInfo.setLabel(label);
+                    columnInfo.setImportAliasesSet(Set.of(label));
+                    return columnInfo;
+                }
             }
             case RawUnits ->
             {
@@ -318,16 +339,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case Units ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
-                columnInfo.setFk(new LookupForeignKey("Value", "Value")
+                ForeignKey fk = new LookupForeignKey("Value", "Value")
                 {
                     @Override
                     public @Nullable TableInfo getLookupTableInfo()
                     {
                         return getExpSchema().getTable(ExpSchema.MEASUREMENT_UNITS_TABLE);
                     }
-                });
-                return columnInfo;
+                };
+
+                Unit typeUnit = getSampleTypeUnit();
+                if (typeUnit != null)
+                {
+                    SampleTypeUnitDisplayColumn columnInfo = new SampleTypeUnitDisplayColumn(this, Column.Units.name(), typeUnit);
+                    columnInfo.setFk(fk);
+                    columnInfo.setShownInUpdateView(true);
+                    columnInfo.setShownInInsertView(true);
+                    columnInfo.setUserEditable(true);
+                    columnInfo.setCalculated(false);
+                    return columnInfo;
+                }
+                else
+                {
+                    var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
+                    columnInfo.setFk(fk);
+                    return columnInfo;
+                }
             }
             case Description ->
             {
@@ -558,6 +595,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         ret.setDescription("A holder for any custom fields associated with this sample");
         ret.setHidden(true);
         return ret;
+    }
+
+    private Unit getSampleTypeUnit()
+    {
+        Unit typeUnit = null;
+        if (_ss != null && _ss.getMetricUnit() != null)
+            typeUnit = Unit.fromName(_ss.getMetricUnit());
+        return typeUnit;
     }
 
     private void setSampleType(@Nullable ExpSampleType st)
@@ -1044,6 +1089,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (null == selectedColumns)
             return ALL_COLUMNS;
         selectedColumns = new TreeSet<>(selectedColumns);
+        if (selectedColumns.contains(new FieldKey(null, StoredAmount)))
+            selectedColumns.add(new FieldKey(null, Units));
         if (selectedColumns.contains(new FieldKey(null, ExpMaterial.ALIQUOTED_FROM_INPUT)))
             selectedColumns.add(new FieldKey(null, Column.AliquotedFromLSID.name()));
         if (selectedColumns.contains(new FieldKey(null, Column.IsAliquot.name())))
@@ -1504,6 +1551,40 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         protected boolean isDisabledInput(RenderContext ctx)
         {
             return !super.isDisabledInput() && ctx.getMode() != DataRegion.MODE_INSERT;
+        }
+    }
+
+    private static class SampleTypeAmountDisplayColumn extends ExprColumn
+    {
+        public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Unit typeUnit)
+        {
+            super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
+                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
+                            .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(" IS NOT NULL THEN ROUND(CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(" / ? AS DECIMAL), ?) ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(" END)")
+                            .add(typeUnit.getBase().toString())
+                            .add(typeUnit.getValue())
+                            .add(typeUnit.getPrecisionScale()),
+                    JdbcType.DOUBLE);
+
+            setLabel(label);
+            setImportAliasesSet(Set.of(label));
+        }
+    }
+
+    private static class SampleTypeUnitDisplayColumn extends ExprColumn
+    {
+        public SampleTypeUnitDisplayColumn(TableInfo parent, String unitFieldName, Unit typeUnit)
+        {
+            super(parent, FieldKey.fromParts(Column.Units.name()), new SQLFragment(
+                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
+                            .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
+                            .append(" END)")
+                            .add(typeUnit.getBase().toString())
+                            .add(typeUnit.toString()),
+                    JdbcType.VARCHAR);
         }
     }
 
