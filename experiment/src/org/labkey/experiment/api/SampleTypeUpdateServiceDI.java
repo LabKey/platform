@@ -484,7 +484,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return results;
     }
 
-    private void validateAmountAndUnitColumns(List<Map<String, Object>> rows) throws BatchValidationException
+    private void confirmAmountAndUnitColumns(List<Map<String, Object>> rows) throws BatchValidationException
     {
         if (rows == null || rows.isEmpty())
             return;
@@ -501,7 +501,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
-        validateAmountAndUnitColumns(rows);
+        confirmAmountAndUnitColumns(rows);
 
         boolean useDib = false;
         if (rows != null && !rows.isEmpty() && oldKeys == null)
@@ -614,7 +614,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
             else if (col == amountCol)
             {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, _sampleType == null ? null : _sampleType.getBaseUnit());
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, _sampleType == null ? null : _sampleType.getDisplayUnit());
             }
             else if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
