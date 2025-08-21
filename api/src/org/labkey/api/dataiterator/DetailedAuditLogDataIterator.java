@@ -56,6 +56,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
     // for batching
     final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
+    final ArrayList<Map<String, Object>> _providedValues = new ArrayList<>(); // TODO
     final ArrayList<Map<String,Object>> _existingRows;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c)
@@ -97,7 +98,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (!hasNext || _updatedRows.size() > 1000)
         {
             if (!_updatedRows.isEmpty())
-                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _useTransactionAuditCache);
+                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _providedValues, _useTransactionAuditCache);
             _updatedRows.clear();
             if (null != _existingRows)
                 _existingRows.clear();

@@ -582,7 +582,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
      */
     @Deprecated
     @Override
-    protected Map<String, Object> coerceTypes(Map<String, Object> row)
+    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues)
     {
         Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
         Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
@@ -603,6 +603,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 amountCol = columnMap.get(colName);
                 break;
             }
+        }
+        if (amountVal != null)
+        {
+            String unitsStr = "";
+            if (unitsVal != null)
+                unitsStr = unitsVal.toString();
+            else if (_sampleType != null)
+                unitsStr = _sampleType.getMetricUnit();
+
+            providedValues.put(StoredAmount.label(),  amountVal + unitsStr);
         }
 
         for (Map.Entry<String, Object> entry : row.entrySet())
@@ -630,7 +640,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
                         value = ExpDataFileConverter.convert(value);
                     else if (col.getKindOfQuantity() != null)
+                    {
+                        providedValues.put(entry.getKey(), value);
                         value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                    }
                     else
                         value = col.getConvertFn().apply(value);
                 }
@@ -1038,7 +1051,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
             audit(QueryService.AuditAction.DELETE);
-            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
+            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null, null);
         }
         return result;
     }

@@ -53,7 +53,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
@@ -3119,7 +3118,7 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);

@@ -1759,7 +1759,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
                         // note switched order (oldRecord, newRecord)
-                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow);
+                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null);
                         batch.add(event);
                         if (batch.size() > 1000)
                         {
@@ -1786,7 +1786,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * NOTE: userComment field is not supported for this domain and will be ignored
          */
         @Override
-        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues)
         {
             String auditComment = switch (action)
                     {

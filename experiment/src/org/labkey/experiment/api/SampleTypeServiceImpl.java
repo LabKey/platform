@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1163,9 +1164,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues)
     {
-        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
     }
 
     @Override
@@ -1190,17 +1191,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, userComment, null, row, null);
+        return createAuditRecord(c, comment, userComment, null, row, null, null);
     }
 
     private boolean isInputFieldKey(String fieldKey)
     {
         int slash = fieldKey.indexOf('/');
-        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
-                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && Strings.CI.startsWith(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && Strings.CI.startsWith(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -1249,20 +1250,28 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         // Put the raw amount and units into the stored amount and unit fields to override the conversion to display values that has happened via the expression columns
-        if (existingRow != null)
+        if (existingRow != null && !existingRow.isEmpty())
         {
             existingRow.put(StoredAmount.name(), existingRow.get(RawAmount.name()));
             existingRow.put(Units.name(), existingRow.get(RawUnits.name()));
         }
 
+        // Add providedValues to eventMetadata
+        Map<String, Object> eventMetadata = new HashMap<>();
+        if (providedValues != null)
+        {
+            providedValues.forEach((key, value) -> {
+                eventMetadata.put(PROVIDED_VALUE_PREFIX + key, value);
+            });
+        }
         if (action != null)
         {
-            Map<String, Object> eventMetadata = new HashMap<>();
             SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
             if (timelineEventType != null)
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
-            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
         }
+        if (!eventMetadata.isEmpty())
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
 
         return event;
     }
