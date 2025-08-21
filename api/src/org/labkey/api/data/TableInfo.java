@@ -663,7 +663,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /** see interface AuditConfigurable */
     @NotNull
-    default AuditBehaviorType getAuditBehavior()
+    default AuditBehaviorType getDefaultAuditBehavior()
     {
         return AuditBehaviorType.NONE;
     }
@@ -671,7 +671,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     default AuditBehaviorType getEffectiveAuditBehavior()
     {
-        return getXmlAuditBehaviorType() == null ? getAuditBehavior() : getXmlAuditBehaviorType();
+        return getXmlAuditBehaviorType() == null ? getDefaultAuditBehavior() : getXmlAuditBehaviorType();
     }
 
     /**

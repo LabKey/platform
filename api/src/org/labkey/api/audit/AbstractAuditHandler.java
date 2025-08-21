@@ -27,7 +27,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) table;
             // don't use  auditConfigurable.getAuditBehavior(auditBehaviorType) to allow extra summary independent of table config
-            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getAuditBehavior() : auditBehaviorType;
+            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getDefaultAuditBehavior() : auditBehaviorType;
 
             if (auditType == SUMMARY)
             {
@@ -100,6 +100,8 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
 
                     AuditLogService.get().addEvent(user, event);
+
+                    return;
                 }
                 case DETAILED:
                 {

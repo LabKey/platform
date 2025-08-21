@@ -1667,7 +1667,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     @Override
     @NotNull
-    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    public AuditBehaviorType getDefaultAuditBehavior()
     {
         return AuditBehaviorType.DETAILED;
     }

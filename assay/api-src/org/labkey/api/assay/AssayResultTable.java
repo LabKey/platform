@@ -686,7 +686,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     @Override
     @NotNull
-    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    public AuditBehaviorType getDefaultAuditBehavior()
     {
         return AuditBehaviorType.DETAILED;
     }

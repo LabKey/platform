@@ -533,9 +533,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
          _xmlAuditBehaviorType = type;
      }
 
-    @Override
-    @NotNull
-    public AuditBehaviorType getAuditBehavior()
+     @Override
+     @NotNull
+     public AuditBehaviorType getDefaultAuditBehavior()
      {
          return _auditBehaviorType;
      }

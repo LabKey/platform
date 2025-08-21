@@ -201,7 +201,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     @Override
     @NotNull
-    protected AuditBehaviorType getDefaultAuditBehaviorType()
+    public AuditBehaviorType getDefaultAuditBehavior()
     {
         return AuditBehaviorType.DETAILED;
     }
