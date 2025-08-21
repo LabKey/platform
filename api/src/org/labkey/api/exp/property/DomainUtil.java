@@ -1091,7 +1091,7 @@ public class DomainUtil
         LOG.debug("Adding property for " + pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
-            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), propertyUrisInUse);
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), null, propertyUrisInUse);
             assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
             pd.setPropertyURI(newPropertyURI);
             propertyUrisInUse.add(newPropertyURI);
@@ -1110,15 +1110,16 @@ public class DomainUtil
 
     public static String createUniquePropertyURI(String typeURI)
     {
-        return createUniquePropertyURI(typeURI, new CaseInsensitiveHashSet());
+        return createUniquePropertyURI(typeURI, null, new CaseInsensitiveHashSet());
     }
 
-    public static String createUniquePropertyURI(String typeURI, Set<String> propertyUrisInUse)
+    public static String createUniquePropertyURI(String typeURI, @Nullable String propURISuffix, Set<String> propertyUrisInUse)
     {
-        // Don't use property name in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
-        String dbSeqStr = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
+        // Don't use long property names in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
+        if (propURISuffix == null)
+            propURISuffix = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
 
-        String base = typeURI + "#" + dbSeqStr;
+        String base = typeURI + "#" + propURISuffix;
         String candidateURI = base;
         int i = 0;
 

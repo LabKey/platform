@@ -154,7 +154,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
             DomainProperty prop = domain.addProperty();
 
             prop.setName(spec.getName());
-            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri, propertyURIs));
+            prop.setPropertyURI(DomainUtil.createUniquePropertyURI(typeUri, null, propertyURIs));
             prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
