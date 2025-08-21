@@ -311,7 +311,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case StoredAmount ->
             {
-                String label = "Amount";
+                String label = StoredAmount.label();
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
