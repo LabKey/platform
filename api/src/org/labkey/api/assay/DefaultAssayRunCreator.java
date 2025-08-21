@@ -482,23 +482,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException | ConvertHelper.FileConversionException e)
+        catch (ExperimentException | IOException | ConvertHelper.FileConversionException | BatchValidationException e)
         {
+            // TODO: This is better done as a post-rollback task on the transaction
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
             cleanPrimaryFile(context);
 
-            if (e instanceof ExperimentException)
-                throw (ExperimentException)e;
-            else if (e instanceof ConvertHelper.FileConversionException)
-                throw new ApiUsageException(e.getMessage(), e);
-            else
-                throw new ExperimentException(e);
-        }
-        catch (BatchValidationException e)
-        {
+            if (e instanceof ExperimentException ee)
+                throw ee;
+
+            // HACK: Rethrowing these as ApiUsageException avoids any upstream consequences of wrapping them in ExperimentException.
+            // Namely, that they are logged to the server/mothership. There has to be a better way.
+            if (e instanceof ConvertHelper.FileConversionException fce)
+                throw new ApiUsageException(fce.getMessage(), fce);
+            else if (e instanceof BatchValidationException bve)
+                throw new ApiUsageException(bve.getMessage(), bve);
+
             throw new ExperimentException(e);
         }
     }
