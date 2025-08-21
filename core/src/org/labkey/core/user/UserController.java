@@ -61,6 +61,7 @@ import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -1004,6 +1005,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
+    @IgnoresForbiddenProjectCheck // Users should be able to complete required fields if they're logging in to a locked project
     public static class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
@@ -1100,7 +1102,6 @@ public class UserController extends SpringActionController
             if (userId == null)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "UserId parameter must be provided.");
-                return;
             }
         }
 
