@@ -17,9 +17,10 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -137,16 +138,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -157,12 +154,15 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotC
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -1268,7 +1268,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
-                    if (ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    if (ExperimentService.isInputOutputColumn(col) || Strings.CI.equals("parent",col) || importAliases.containsKey(col))
                     {
                         hasParentInput = true;
                         break;
