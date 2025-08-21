@@ -11,13 +11,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.security.SecurityManager;
-
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -277,7 +275,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                 String provider = (String) info.get("provider");
                 String assayName = (String) info.get("assayName");
                 long runId = asLong(info.get("runId"));
-                urlFragment = urlFragment + "/" + provider + "/" + PageFlowUtil.encode(assayName) + "/runs/" + runId;
+                urlFragment = urlFragment + "/" + PageFlowUtil.encode(provider) + "/" + PageFlowUtil.encode(assayName) + "/runs/" + runId;
             }
         }
 
