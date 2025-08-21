@@ -392,16 +392,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Nullable
     protected Map<String, Object> extractProvidedAmountsAndUnits(@NotNull Map<String, Object> dataRow)
     {
-        Map<String, Object> result = new HashMap<>();
+        // with no sample type display unit, no conversion will happen
+        if (_sampleType == null || _sampleType.getMetricUnit() == null)
+            return null;
 
         Object amountVal = dataRow.get(PROVIDED_DATA_PREFIX + StoredAmount.name());
         if (amountVal == null)
             return null;
 
+        Map<String, Object> result = new HashMap<>();
         String unitsStr = "";
         if (dataRow.get(PROVIDED_DATA_PREFIX + Units.name()) != null)
             unitsStr = (dataRow.get(PROVIDED_DATA_PREFIX + Units.name())).toString();
-        else if (_sampleType != null)
+        else
             unitsStr = _sampleType.getMetricUnit();
 
         result.put(StoredAmount.label(),  amountVal + unitsStr);
@@ -608,31 +611,34 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
         Object unitsVal = null;
         ColumnInfo unitsCol = null;
-        if (row.containsKey(ExpMaterialTable.Column.Units.name()))
-        {
-            unitsVal = row.get(ExpMaterialTable.Column.Units.name());
-            unitsCol = columnMap.get(ExpMaterialTable.Column.Units.name());
-        }
         Object amountVal = null;
         ColumnInfo amountCol = null;
-        for (String colName : ExpMaterialTable.Column.StoredAmount.namesAndLabels())
+        if (_sampleType != null && _sampleType.getMetricUnit() != null)
         {
-            if (row.containsKey(colName))
+            if (row.containsKey(ExpMaterialTable.Column.Units.name()))
             {
-                amountVal = row.get(colName);
-                amountCol = columnMap.get(colName);
-                break;
+                unitsVal = row.get(ExpMaterialTable.Column.Units.name());
+                unitsCol = columnMap.get(ExpMaterialTable.Column.Units.name());
             }
-        }
-        if (amountVal != null)
-        {
-            String unitsStr = "";
-            if (unitsVal != null)
-                unitsStr = unitsVal.toString();
-            else if (_sampleType != null)
-                unitsStr = _sampleType.getMetricUnit();
+            for (String colName : ExpMaterialTable.Column.StoredAmount.namesAndLabels())
+            {
+                if (row.containsKey(colName))
+                {
+                    amountVal = row.get(colName);
+                    amountCol = columnMap.get(colName);
+                    break;
+                }
+            }
+            if (amountVal != null)
+            {
+                String unitsStr = "";
+                if (unitsVal != null)
+                    unitsStr = unitsVal.toString();
+                else if (_sampleType != null)
+                    unitsStr = _sampleType.getMetricUnit();
 
-            providedValues.put(StoredAmount.label(),  amountVal + unitsStr);
+                providedValues.put(StoredAmount.label(),  amountVal + unitsStr);
+            }
         }
 
         for (Map.Entry<String, Object> entry : row.entrySet())
@@ -2105,6 +2111,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (amountObj == null)
                     return null;
 
+                if (displayUnit == null)
+                    return amountObj; // no conversions happen when there is no display unit
+
                 // This should return a Number in the base units of the sample type. It may be provided (via the units column)
                 // as a different unit.
                 Unit unit = displayUnit;
@@ -2117,6 +2126,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     unit =  Unit.getValidatedUnit(unitsObj, unit);
                 }
+
                 if (unit != null)
                 {
                     if (amountObj instanceof Number)
