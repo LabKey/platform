@@ -159,6 +159,10 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -1242,6 +1246,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
             row.put(ROW_ID,staticsRow.get(ROW_ID));
+        }
+
+        // Put the raw amount and units into the stored amount and unit fields to override the conversion to display values that has happened via the expression columns
+        if (existingRow != null)
+        {
+            existingRow.put(StoredAmount.name(), existingRow.get(RawAmount.name()));
+            existingRow.put(Units.name(), existingRow.get(RawUnits.name()));
         }
 
         if (action != null)

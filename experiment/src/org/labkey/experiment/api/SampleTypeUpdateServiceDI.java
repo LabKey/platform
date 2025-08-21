@@ -143,6 +143,8 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
@@ -1198,7 +1200,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             remap = CaseInsensitiveHashMap.of();
 
         // AliquotRollupDataIterator needs "samplestate", "storedamount", "rootmaterialrowId", "units" for MERGE option
-        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name());
+        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name(), RawAmount.name(), RawUnits.name());
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))
