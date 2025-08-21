@@ -1573,7 +1573,7 @@ boxPlot.render();
  *                          For LeveyJennings, the range is +/- 3 standard deviations from a mean.
  *                          For MovingRange, the range is [0, 3.268*mean(mR)].
  *                          For CUSUM, the range is [0, +5].
- * @description This helper will take the input data and generate a sequencial x-axis so that all data points are the same distance apart.
+ * @description This helper will take the input data and generate a sequential x-axis so that all data points are the same distance apart.
  * @param {Object} config An object that contains the following properties
  * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
  * @param {String} [config.qcPlotType] Specifies the plot type to be one of "LeveyJennings", "CUSUM", "MovingRange". Defaults to "LeveyJennings".
@@ -1622,6 +1622,14 @@ boxPlot.render();
  *                          Used by CUSUM only.
  * @param {String} [config.properties.negativeValueRight] The data property name for the value to be plotted on the right y-axis for CUSUM-.
  *                          Used by CUSUM only.
+ * @param {String} [config.properties.TrailingMean] The data property name for the moving range value to be plotted on the left y-axis.
+ *                          Used by TrailingMean.
+ * @param {String} [config.properties.TrailingMeanRight] The data property name for the moving range to be plotted on the right y-axis.
+ *                          Used by TrailingMean.
+ * @param {String} [config.properties.TrailingCV] The data property name for the moving range value to be plotted on the left y-axis.
+ *                          Used by TrailingCV.
+ * @param {String} [config.properties.TrailingCVRight] The data property name for the moving range to be plotted on the right y-axis.
+ *                          Used by TrailingCV.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {Boolean} [config.properties.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
@@ -1760,7 +1768,11 @@ boxPlot.render();
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the (LJ) trend line data
         var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [],
             groupedTrendlineData = [], groupedTrendlineSeriesData = {},
-            hasYRightMetric = config.properties.valueRight || config.properties.positiveValueRight || config.properties.valueRightMR;
+            hasYRightMetric = config.properties.valueRight ||
+                    config.properties.positiveValueRight ||
+                    config.properties.valueRightMR ||
+                    config.properties.TrailingMeanRight ||
+                    config.properties.TrailingCVRight;
 
         var convertToPercentDeviation = function(value, mean) {
             var calc = Math.round(((value / mean) * 100) * 100) / 100;
@@ -1893,10 +1905,14 @@ boxPlot.render();
         else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
             valProp = config.properties["TrailingMean"];
             valRightProp = config.properties["TrailingMeanRight"]
+            sdProp = "stddevTrailingMean";
+            meanProp = "meanTrailingMean";
         }
         else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
             valProp = config.properties["TrailingCV"];
             valRightProp = config.properties["TrailingCVRight"]
+            sdProp = "stddevTrailingCV";
+            meanProp = "meanTrailingCV";
         }
         else {
             meanProp = config.properties["mean"] || "mean";
@@ -2020,7 +2036,10 @@ boxPlot.render();
                     row[meanProp] = 0;
                 }
 
-                if (!config.properties.valueRight && !config.properties.valueRightMR) {
+                if (!config.properties.valueRight &&
+                        !config.properties.valueRightMR &&
+                        !config.properties.TrailingMeanRight &&
+                        !config.properties.TrailingCVRight) {
 
                     if (!config.properties.yAxisDomain) {
                         config.properties.yAxisDomain = [0, 0];
@@ -2089,11 +2108,11 @@ boxPlot.render();
                     }
                     else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
                         plotValueName = config.properties.TrailingMean;
-                        plotValueNameRight = config.properties.negativeValueRight;
+                        plotValueNameRight = config.properties.TrailingMeanRight;
                     }
                     else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
                         plotValueName = config.properties.TrailingCV;
-                        plotValueNameRight = config.properties.negativeValueRight;
+                        plotValueNameRight = config.properties.TrailingCVRight;
                     }
 
                     addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueName, row[plotValueName], 'sum1', 'count1');
@@ -2501,6 +2520,7 @@ boxPlot.render();
                     geom: new LABKEY.vis.Geom.Path({
                         opacity: 1,
                         size: 1.5,
+                        // TODO - differentiate left and right
                         dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum,
                         color: config.properties.lineColor
                     }),
@@ -2712,7 +2732,7 @@ boxPlot.render();
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingMean, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightTrailingMean, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.TrailingMeanRight, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingMean)));
@@ -2721,7 +2741,7 @@ boxPlot.render();
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingCV, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightTrailingCV, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.TrailingCVRight, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingCV)));
