@@ -1551,7 +1551,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             dib = getConceptURIVocabularyDomainDataIteratorBuilder(user, container, dib);
 
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, null);
 
             return dib;
         }

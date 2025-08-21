@@ -1261,7 +1261,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (providedValues != null)
         {
             providedValues.forEach((key, value) -> {
-                eventMetadata.put(PROVIDED_VALUE_PREFIX + key, value);
+                eventMetadata.put(PROVIDED_DATA_PREFIX + key, value);
             });
         }
         if (action != null)

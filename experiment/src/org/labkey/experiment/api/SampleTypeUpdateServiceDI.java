@@ -138,6 +138,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
@@ -388,6 +389,25 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExperimentServiceImpl.get().checkDuplicateParentColumns(in, inputColumns, _sampleType);
     }
 
+    @Nullable
+    protected Map<String, Object> extractProvidedAmountsAndUnits(@NotNull Map<String, Object> dataRow)
+    {
+        Map<String, Object> result = new HashMap<>();
+
+        Object amountVal = dataRow.get(PROVIDED_DATA_PREFIX + StoredAmount.name());
+        if (amountVal == null)
+            return null;
+
+        String unitsStr = "";
+        if (dataRow.get(PROVIDED_DATA_PREFIX + Units.name()) != null)
+            unitsStr = (dataRow.get(PROVIDED_DATA_PREFIX + Units.name())).toString();
+        else if (_sampleType != null)
+            unitsStr = _sampleType.getMetricUnit();
+
+        result.put(StoredAmount.label(),  amountVal + unitsStr);
+        return result;
+    }
+
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -399,7 +419,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, this::extractProvidedAmountsAndUnits);
 
         UserSchema userSchema = getQueryTable().getUserSchema();
         if (userSchema != null)
@@ -1969,10 +1989,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (Units.name().equalsIgnoreCase(name))
                     {
+                        addColumn(PROVIDED_DATA_PREFIX + Units.name(), i);
                         addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType(), amountDataColInd));
                     }
                     else if (StoredAmount.name().equalsIgnoreCase(name))
                     {
+                        addColumn(PROVIDED_DATA_PREFIX + StoredAmount.name(), i);
                         addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType(), unitDataColInd));
                     }
                     else

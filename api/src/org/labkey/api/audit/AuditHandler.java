@@ -31,7 +31,8 @@ import java.util.Set;
 
 public interface AuditHandler
 {
-    public static final String PROVIDED_VALUE_PREFIX = ":::provided:::";
+    String PROVIDED_DATA_PREFIX = ":::provided:::";
+
     void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment);
 
     void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,

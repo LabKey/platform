@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -29,6 +30,7 @@ import org.labkey.api.security.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
@@ -53,13 +55,14 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     final QueryService.AuditAction _auditAction;
     final AuditHandler _auditHandler;
     final boolean _useTransactionAuditCache;
+    Function<Map<String, Object>, Map<String, Object>> _extractProvidedValues;
 
     // for batching
     final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
     final ArrayList<Map<String, Object>> _providedValues = new ArrayList<>(); // TODO
     final ArrayList<Map<String,Object>> _existingRows;
 
-    protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c)
+    protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c, @Nullable Function<Map<String, Object>, Map<String, Object>> extractProvidedValues)
     {
         super(context);
         _table = table;
@@ -70,6 +73,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _useTransactionAuditCache = !context.getInsertOption().updateOnly && context.isUseTransactionAuditCache();
         _auditAction = auditAction;
         _auditHandler = table.getAuditHandler(DETAILED);
+        _extractProvidedValues = extractProvidedValues;
 
         assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
@@ -105,7 +109,13 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         }
         if (hasNext)
         {
-            _updatedRows.add(_data.getMap());
+            Map<String, Object> map = _data.getMap();
+            _updatedRows.add(map);
+            if (_extractProvidedValues != null)
+                _providedValues.add(_extractProvidedValues.apply(map));
+            else
+                _providedValues.add(null);
+
             if (null != _existingRows)
                 _existingRows.add(_data.getExistingRecord());
         }
@@ -124,7 +134,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data.close();
     }
 
-    public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryUpdateService.InsertOption insertOption, final User user, final Container container)
+    public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryUpdateService.InsertOption insertOption, final User user, final Container container, @Nullable Function<Map<String, Object>, Map<String, Object>> extractProvidedValues)
     {
         return context ->
         {
@@ -137,7 +147,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
-                return new DetailedAuditLogDataIterator(in, context, queryTable, insertOption.auditAction, user, container);
+                return new DetailedAuditLogDataIterator(in, context, queryTable, insertOption.auditAction, user, container, extractProvidedValues);
             }
             // Nothing to do, so just return input DataIterator
             return builder.getDataIterator(context);

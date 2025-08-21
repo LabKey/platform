@@ -13,13 +13,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+
 public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 {
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
 
-    public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of("AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit");
+    public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of(
+            "AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit",
+            PROVIDED_DATA_PREFIX + StoredAmount.name(), PROVIDED_DATA_PREFIX + Units.name());
 
     public enum SampleTimelineEventType
     {

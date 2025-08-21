@@ -2399,7 +2399,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
         }
 
-        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target, null);
         return LoggingDataIterator.wrap(audit);
     }
 
