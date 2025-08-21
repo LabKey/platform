@@ -21,6 +21,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -33,7 +34,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.audit.AuditLogService;
@@ -74,6 +74,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.assay.FileBasedModuleDataHandler;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
@@ -86,8 +87,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -311,6 +314,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
         }
 
+        boolean success = false;
+        Set<FileLike> propertyFiles = new HashSet<>();
+
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
@@ -320,8 +326,13 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // bind file property values and persist files to the file system
             {
                 Map<String, MultipartFile> fileMap = getFileMap();
-                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, auditTransactionId);
-                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, auditTransactionId);
+                CaseInsensitiveHashMap<FileLike> batchFileProps = bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, auditTransactionId);
+                if (batchFileProps != null)
+                    propertyFiles.addAll(batchFileProps.values());
+
+                CaseInsensitiveHashMap<FileLike> runFileProps = bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, auditTransactionId);
+                if (runFileProps != null)
+                    propertyFiles.addAll(runFileProps.values());
             }
 
             AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.setOutputDatas(outputData)
@@ -334,6 +345,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             ExpRun run = result.second;
 
             transaction.commit();
+            success = true;
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -354,29 +366,46 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }
+        finally
+        {
+            if (!success && !propertyFiles.isEmpty())
+                cleanFilePropertyFiles(propertyFiles, protocol.getName());
+        }
 
         return null;
     }
 
-    private void bindAndPersistFilePropertyValues(String propertyName, CaseInsensitiveHashMap<Object> properties, Map<String, MultipartFile> fileMap, Long auditTransactionId) throws ExperimentException, ValidationException
+    private @Nullable CaseInsensitiveHashMap<FileLike> bindAndPersistFilePropertyValues(
+        String propertyName,
+        CaseInsensitiveHashMap<Object> properties,
+        Map<String, MultipartFile> fileMap,
+        Long auditTransactionId
+    ) throws ExperimentException, ValidationException
     {
         if (properties == null || fileMap == null || fileMap.isEmpty())
-            return;
+            return null;
 
-        Map<String, MultipartFile> filePropertyMap = getFilePropertyValues(propertyName, properties, fileMap);
+        CaseInsensitiveHashMap<MultipartFile> filePropertyMap = bindFilePropertyValues(propertyName, properties, fileMap);
         if (filePropertyMap.isEmpty())
-            return;
+            return null;
 
-        Map<String, String> fileProperties = persistFilePropertyFiles(filePropertyMap, auditTransactionId);
-        properties.putAll(fileProperties);
+        CaseInsensitiveHashMap<FileLike> fileProperties = persistFilePropertyFiles(filePropertyMap, auditTransactionId);
+        for (var entry : fileProperties.entrySet())
+            properties.put(entry.getKey(), entry.getValue().toNioPathForRead().toString());
+
+        return fileProperties;
     }
 
-    private Map<String, MultipartFile> getFilePropertyValues(String propertyName, @NotNull CaseInsensitiveHashMap<Object> properties, @NotNull Map<String, MultipartFile> fileMap) throws ValidationException
+    private CaseInsensitiveHashMap<MultipartFile> bindFilePropertyValues(
+        String propertyName,
+        @NotNull CaseInsensitiveHashMap<Object> properties,
+        @NotNull Map<String, MultipartFile> fileMap
+    ) throws ValidationException
     {
         String propertyPrefix = propertyName + "[";
         String propertySuffix = "]";
 
-        Map<String, MultipartFile> filePropertyMap = new HashMap<>();
+        CaseInsensitiveHashMap<MultipartFile> filePropertyMap = new CaseInsensitiveHashMap<>();
 
         for (Map.Entry<String, MultipartFile> entry : fileMap.entrySet())
         {
@@ -397,11 +426,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         return filePropertyMap;
     }
 
-    private Map<String, String> persistFilePropertyFiles(Map<String, MultipartFile> filePropertyMap, Long auditTransactionId) throws ExperimentException
+    private CaseInsensitiveHashMap<FileLike> persistFilePropertyFiles(Map<String, MultipartFile> filePropertyMap, Long auditTransactionId) throws ExperimentException
     {
-        // TODO: Consider creating an AssayFilePropertiesFileWriter to encapsulate these behaviors
         FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-        Map<String, String> properties = new CaseInsensitiveHashMap<>();
+        CaseInsensitiveHashMap<FileLike> properties = new CaseInsensitiveHashMap<>();
 
         try
         {
@@ -412,9 +440,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 String legalName = FileUtil.makeLegalName(originalName);
                 FileLike fileLike = FileUtil.findUniqueFileName(legalName, targetDirectory);
                 File file = toFileForWrite(fileLike);
-                multipartFile.transferTo(file); // TODO: Handle cleanup upon transaction rollback
+                multipartFile.transferTo(file);
 
-                DataType dataType = AssayService.get().getDataType(getContainer(), null, originalName);
+                DataType dataType = ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE);
                 ExpData data = ExperimentService.get().createData(getContainer(), dataType);
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
                 data.setName(originalName);
@@ -428,8 +456,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 event.setTransactionId(auditTransactionId);
                 AuditLogService.get().addEvent(getUser(), event);
 
-                // TODO: Seems a bit wild to me we are exposing the system absolute path in assay-assayFileUpload.view...
-                properties.put(entry.getKey(), data.getFile().getAbsolutePath());
+                properties.put(entry.getKey(), data.getFileLike());
             }
         }
         catch (IOException e)
@@ -438,6 +465,24 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
 
         return properties;
+    }
+
+    private void cleanFilePropertyFiles(Set<FileLike> fileProps, String protocolName)
+    {
+        FileLike targetDir = AssayFileWriter.getUploadDirectory(getContainer());
+
+        for (var file : fileProps)
+        {
+            try
+            {
+                if (file.exists() && file.isFile() && targetDir.equals(file.getParent()))
+                    file.delete();
+            }
+            catch (IOException e)
+            {
+                logger.error("Failed to clean up file {} for protocol \"{}\" in folder {} after failed run import", file.getName(), protocolName, getContainer().getPath(), e);
+            }
+        }
     }
 
     protected ActionURL getUploadWizardCompleteURL(ExpProtocol protocol, ExpRun run)

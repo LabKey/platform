@@ -232,7 +232,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
 
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), null, pipelineJob.getJobGUID());
+            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), null, pipelineJob.getJobGUID());
             resultsFileWriter.savePostedFiles(context);
 
             // Don't queue the job until the transaction is committed, since otherwise the thread
@@ -385,7 +385,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 run.setName(transformResult.getAssayId());
             if (null != transformResult.getComments())
                 run.setComments(transformResult.getComments());
-            saveProperties(context, batch, transformResult.getRunProperties(), runProperties);
+            saveProperties(context, run, transformResult.getRunProperties(), runProperties);
 
             AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
