@@ -131,7 +131,6 @@ public class AssayTest extends AbstractAssayTest
         verifyStudyList();
         verifyRunDeletionRecallsDatasetRows();
         verifyWebdavTree();
-        goBack();
     }
 
     @Test
