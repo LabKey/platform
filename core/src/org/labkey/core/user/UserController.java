@@ -252,6 +252,11 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getUserUpdateURL(Container c, URLHelper returnUrl, int userId)
         {
+            // issue 53750 : if the user doesn't have access to the folder from the redirect, just
+            // default to the home container for the profile update.
+            if (!SecurityManager.getFolderUserids(c).contains(userId))
+                c = ContainerManager.getHomeContainer();
+
             ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
             url.addParameter(QueryParam.schemaName.toString(), CoreQuerySchema.NAME);
