@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 package org.labkey.api.query;
-
-/*
-* User: Dave
-* Date: Jun 10, 2008
-* Time: 10:42:11 AM
-*/
-
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 

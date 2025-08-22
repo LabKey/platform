@@ -19,6 +19,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -45,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -80,12 +83,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final boolean _allowLookupByAlternateKey;
     private final String _auditUserComment;
 
-
     // Lazily created fields
     private Map<String, FileLike> _uploadedData;
     private Map<DomainProperty, String> _runProperties;
     private Map<DomainProperty, String> _batchProperties;
     private Map<String, Object> _unresolvedRunProperties;
+    private Map<String, Object> _unresolvedBatchProperties;
 
     // Mutable fields
     private TransformResult _transformResult;
@@ -174,7 +177,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_runProperties == null)
         {
             Domain runDomain = _provider.getRunDomain(_protocol);
-            _unresolvedRunProperties = new HashMap<>();
+            _unresolvedRunProperties = new CaseInsensitiveHashMap<>();
             _runProperties = propertiesFromRawValues(runDomain, _rawRunProperties, _unresolvedRunProperties);
         }
         return _runProperties;
@@ -186,15 +189,28 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_batchProperties == null)
         {
             Domain batchDomain = _provider.getBatchDomain(_protocol);
-            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties, null);
+            _unresolvedBatchProperties = new CaseInsensitiveHashMap<>();
+            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties, _unresolvedBatchProperties);
         }
         return _batchProperties;
     }
 
     @Override
-    public Map<String, Object> getUnresolvedRunProperties()
+    public @NotNull Map<String, Object> getUnresolvedBatchProperties()
+    {
+        return _unresolvedBatchProperties;
+    }
+
+    @Override
+    public @NotNull Map<String, Object> getUnresolvedRunProperties()
     {
         return _unresolvedRunProperties;
+    }
+
+    @Override
+    public boolean validateUnresolvedProperties()
+    {
+        return true;
     }
 
     private Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
@@ -202,23 +218,32 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         Map<DomainProperty, String> properties = new HashMap<>();
         if (rawProperties != null)
         {
+            CaseInsensitiveHashSet resolvedProperties = new CaseInsensitiveHashSet();
             for (DomainProperty prop : domain.getProperties())
             {
                 Object value;
                 if (rawProperties.containsKey(prop.getName()))
+                {
                     value = rawProperties.get(prop.getName());
+                    resolvedProperties.add(prop.getName());
+                }
                 else
                     value = rawProperties.get(prop.getPropertyURI());
                 properties.put(prop, Objects.toString(value, null));
             }
 
-            addVocabularyAndUnresolvedRunProperties(properties, rawProperties, unresolvedProperties);
+            addVocabularyAndUnresolvedRunProperties(properties, rawProperties, unresolvedProperties, resolvedProperties);
         }
 
         return unmodifiableMap(properties);
     }
 
-    private void addVocabularyAndUnresolvedRunProperties(Map<DomainProperty, String> properties, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
+    private void addVocabularyAndUnresolvedRunProperties(
+        Map<DomainProperty, String> properties,
+        Map<String, Object> rawProperties,
+        Map<String, Object> unresolvedProperties,
+        Set<String> resolvedProperties
+    )
     {
         // 1. Properties belonging to a VocabularyDomain will be added to the run properties.
         // 2. This is the only implementation of AssayRunUploadContext for adding these properties as importRuns Api uses this implementation.
@@ -226,6 +251,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         for (Map.Entry<String, Object> property : rawProperties.entrySet())
         {
+            if (resolvedProperties.contains(property.getKey()))
+                continue;
+
             if (URIUtil.hasURICharacters(property.getKey()))
             {
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
@@ -248,11 +276,10 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     properties.put(dp, property.getValue().toString());
                 }
             }
-            else if (null != unresolvedProperties)
+            else
             {
                 unresolvedProperties.put(property.getKey(),property.getValue());
             }
-
         }
     }
 
@@ -300,7 +327,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     /**
-     * Map of file name to uploaded file that will be imported by the assay's DataHandler.
+     * Map of file name to an uploaded file that will be imported by the assay's DataHandler.
      * The uploaded file is expected to be POSTed as a form-data parameter named '<code>file</code>'.
      * The file will be added as an output ExpData to the imported assay run.
      *
@@ -400,9 +427,16 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public Long getTransactionAuditId() { return _transactionAuditId; }
+    public Long getTransactionAuditId()
+    {
+        return _transactionAuditId;
+    }
+
     @Override
-    public String getAuditUserComment() { return _auditUserComment; }
+    public String getAuditUserComment()
+    {
+        return _auditUserComment;
+    }
 
     @Override
     public TransformResult getTransformResult()
@@ -419,7 +453,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     @Override
     public void uploadComplete(ExpRun run)
     {
-        // no-op
     }
 
     @Override

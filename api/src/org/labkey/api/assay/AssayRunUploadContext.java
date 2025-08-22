@@ -45,7 +45,7 @@ import static java.util.Collections.emptyMap;
  * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
  * into which the run should be inserted, etc. Specific assay implementations may need to extend the basic interface
  * to include assay-specific metadata that they require. Different implementations can get the information from
- * different sources. Examples include HTTP POST data, a run that's already in the database, or from files that are
+ * different sources. Examples include HTTP POST data, a run already in the database, or from files that are
  * already on the server.
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
@@ -54,7 +54,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     enum ReImportOption
     {
         REPLACE,                // existing behavior where all results are replaced with new incoming data
-        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate based assays merge on a plate boundary within the same plate set
+        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate-based assays merge on a plate boundary within the same plate set
     }
 
     @NotNull
@@ -225,8 +225,23 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     {
     }
 
+    default @NotNull Map<String, Object> getUnresolvedBatchProperties()
+    {
+        return emptyMap();
+    }
+
+    default @NotNull Map<String, Object> getUnresolvedRunProperties()
+    {
+        return emptyMap();
+    }
+
+    default boolean validateUnresolvedProperties()
+    {
+        return false;
+    }
+
     /**
-     * Builder pattern for creating a AssayRunUploadContext instance.
+     * Builder pattern for creating an AssayRunUploadContext instance.
      */
     abstract class Factory<ProviderType extends AssayProvider, FACTORY extends Factory<ProviderType, FACTORY>>
     {
@@ -391,7 +406,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         }
 
         /**
-         * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
+         * Map of file name to an uploaded file that will be parsed and imported by the assay's DataHandler.
          * One of either uploadedData or rawData can be used, not both.
          */
         public final FACTORY setUploadedData(Map<String, FileLike> uploadedData)
@@ -438,10 +453,5 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public abstract FACTORY self();
 
         public abstract AssayRunUploadContext<ProviderType> create();
-    }
-
-    default Map<String, Object> getUnresolvedRunProperties()
-    {
-        return emptyMap();
     }
 }

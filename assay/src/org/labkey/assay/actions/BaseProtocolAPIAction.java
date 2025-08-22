@@ -15,6 +15,7 @@
  */
 package org.labkey.assay.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -36,10 +37,6 @@ import org.springframework.validation.BindException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * User: jeckels
- * Date: Jan 15, 2009
- */
 public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> extends MutatingApiAction<FORM>
 {
     private AssayProvider _provider;
@@ -90,8 +87,8 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
         if (assayId > 0)
             return getProtocolProvider(assayId, c);
 
-        String assayName = json.optString(AssayJSONConverter.ASSAY_NAME);
-        String providerName = json.optString(AssayJSONConverter.PROVIDER_NAME);
+        String assayName = StringUtils.trimToNull(json.optString(AssayJSONConverter.ASSAY_NAME));
+        String providerName = StringUtils.trimToNull(json.optString(AssayJSONConverter.PROVIDER_NAME));
         if (assayName == null || providerName == null)
             throw new IllegalArgumentException("assayId or both protocolName and providerName required");
 
