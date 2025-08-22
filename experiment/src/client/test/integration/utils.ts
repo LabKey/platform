@@ -3,10 +3,10 @@ import {
     IntegrationTestServer,
     RequestOptions,
     selectRandomN,
-    successfulResponse
+    successfulResponse,
 } from '@labkey/test';
-import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
-import { PermissionRoles } from '@labkey/api';
+import { caseInsensitive, IDomainField, Row, RowValue, SCHEMAS } from '@labkey/components';
+import { AssayDOM, PermissionRoles } from '@labkey/api';
 
 export const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
 export const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
@@ -19,6 +19,41 @@ export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 const SAMPLE_TYPE_DOMAIN_KIND = 'SampleSet';
 const DATA_CLASS_DOMAIN_KIND = 'DataClass';
 
+function options(folderOptions?: RequestOptions, userOptions?: RequestOptions): RequestOptions {
+    return folderOptions || userOptions ? { ...folderOptions, ...userOptions } : undefined;
+}
+
+export interface AssayDesignFieldOptions {
+    batchFields?: Partial<IDomainField>[];
+    resultFields?: Partial<IDomainField>[];
+    runFields?: Partial<IDomainField>[];
+}
+
+export async function createAssayDesign(
+    server: IntegrationTestServer,
+    assayName: string,
+    fields?: AssayDesignFieldOptions,
+    folderOptions?: RequestOptions,
+    userOptions?: RequestOptions
+) {
+    const { batchFields, resultFields, runFields } = fields || {};
+    const payload = getAssayDesignPayload(assayName, batchFields, runFields, resultFields);
+    const response = await server
+        .post('assay', 'saveProtocol.api', payload, options(folderOptions, userOptions))
+        .expect(successfulResponse);
+    return response.body.data;
+}
+
+export function createDomainField(field: Partial<IDomainField>): Partial<IDomainField> {
+    return {
+        scale: 4000,
+        shownInDetailsView: true,
+        shownInInsertView: true,
+        shownInUpdateView: true,
+        ...field,
+    };
+}
+
 // TODO move getSourceDataByName to ExperimentCrudUtils
 export async function getSourceDataByName(server: IntegrationTestServer, sourceName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
     const response = await server.post('query', 'selectRows', {
@@ -26,7 +61,7 @@ export async function getSourceDataByName(server: IntegrationTestServer, sourceN
         queryName,
         'query.Name~eq': sourceName,
         'query.columns': columns,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    }, options(folderOptions, userOptions)).expect(successfulResponse);
     if (debug)
         console.log(response);
     return response.body.rows[0];
@@ -92,7 +127,7 @@ export async function createDerivedObjects(
 
         return request;
 
-    }, { ...userOptions, ...folderOptions }).expect(200);
+    }, options(folderOptions, userOptions)).expect(200);
     const data = [];
     response.body.rows.forEach(row => {
         data.push({
@@ -114,6 +149,53 @@ export async function getExperimentRun(server: IntegrationTestServer, runId: num
     return response.body.rows;
 }
 
+export async function getRunQueryRow(
+    server: IntegrationTestServer,
+    assayName: string,
+    runId: number,
+    folderOptions?: RequestOptions,
+    userOptions?: RequestOptions
+): Promise<Record<string, RowValue>> {
+    const response = await server
+        .post(
+            'query',
+            'selectRows.api',
+            {
+                schemaName: `assay.General.${assayName}`,
+                'query.queryName': 'Runs',
+                apiVersion: 17.1,
+                'query.RowId~eq': runId,
+            },
+            options(folderOptions, userOptions)
+        )
+        .expect(successfulResponse);
+    return response.body.rows[0].data;
+}
+
+export async function getAuditLogsForTransaction(
+    server: IntegrationTestServer,
+    transactionId: number,
+    auditQuery: string,
+    folderOptions?: RequestOptions,
+    userOptions?: RequestOptions
+): Promise<Row[]> {
+    const response = await server
+        .post(
+            'query',
+            'selectRows.api',
+            {
+                schemaName: SCHEMAS.AUDIT_TABLES.SCHEMA,
+                'query.queryName': auditQuery,
+                apiVersion: 17.1,
+                'query.transactionId~eq': transactionId,
+                'query.columns': '*',
+            },
+            options(folderOptions, userOptions)
+        )
+        .expect(successfulResponse);
+    return response.body.rows;
+}
+
 export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: any[], folderOptions: RequestOptions, userOptions: RequestOptions, reRunId?: number, batchId?: number) {
     const runResponse = await server.post('assay', 'importRun', {
         assayId: assayId,
@@ -123,11 +205,66 @@ export async function importRun(server: IntegrationTestServer, assayId: number, 
         dataRows,
         reRunId,
         batchId,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    }, options(folderOptions, userOptions)).expect(successfulResponse);
     return {
         runId: caseInsensitive(runResponse.body, 'runId'),
         batchId: caseInsensitive(runResponse.body, 'batchId'),
     }
+}
+
+function serializeRunProperties(
+    prop: string,
+    properties: any,
+    attachments: Record<string, any>,
+    fields: Record<string, any>
+): void {
+    if (!properties) return;
+
+    for (const [key, value] of Object.entries(properties)) {
+        const propKey = `${prop}['${key}']`;
+        if (typeof value === 'string' && value.startsWith('file://')) {
+            attachments[propKey] = value;
+        } else {
+            fields[propKey] = JSON.stringify(value);
+        }
+    }
+}
+
+export type ImportRunOptions = Omit<AssayDOM.ImportRunOptions, 'failure' | 'scope' | 'success'>;
+
+export async function importRunToServer(
+    server: IntegrationTestServer,
+    importRunOptions: ImportRunOptions,
+    folderOptions?: RequestOptions,
+    userOptions?: RequestOptions
+) {
+    const { batchProperties, properties, ...props } = importRunOptions;
+
+    const fields = {};
+    const attachments = {};
+
+    for (const [key, value] of Object.entries(props)) {
+        fields[key] = JSON.stringify(value);
+    }
+
+    serializeRunProperties('batchProperties', batchProperties, attachments, fields);
+    serializeRunProperties('properties', properties, attachments, fields);
+
+    return server.request(
+        'assay',
+        'importRun.api',
+        (agent, url) => {
+            let req = agent.post(url);
+            for (const [key, value] of Object.entries(fields)) {
+                req = req.field(key, value);
+            }
+            for (const [key, value] of Object.entries(attachments)) {
+                req = req.attach(key, value);
+            }
+            return req;
+        },
+        options(folderOptions, userOptions)
+    );
 }
 
 export async function uploadAssayFile(server: IntegrationTestServer, assayDesignName: string, rowId: number, isRun: boolean, fieldName: string, fileName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -695,45 +832,42 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     await ExperimentCRUDUtils.insertRows(server, [{'name': 'CNoParent'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
 }
 
-export const getAssayDesignPayload = (name: string, runFields: any[], resultFields: any[]) => {
+export const getAssayDesignPayload = (
+    name: string,
+    batchFields: Partial<IDomainField>[] = [],
+    runFields: Partial<IDomainField>[] = [],
+    resultFields: Partial<IDomainField>[] = []
+) => {
     return {
-        "allowEditableResults": true,
-        "editableResults": true,
-        "editableRuns": true,
-        "domains": [
+        allowEditableResults: true,
+        editableResults: true,
+        editableRuns: true,
+        domains: [
             {
-                "name": "Batch Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:${GpatAssayDBSeq}",
-                "domainId": 0,
-                "fields": [],
-                "indices": [],
-                "mandatoryFieldNames": [],
-                "domainKindName": "Assay",
+                domainId: undefined,
+                domainURI: 'urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:${GpatAssayDBSeq}',
+                fields: batchFields,
+                name: 'Batch Fields',
             },
             {
-                "name": "Run Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:${GpatAssayDBSeq}",
-                "domainId": 0,
-                "fields": runFields,
-                "indices": [],
-                "mandatoryFieldNames": [],
-                "domainKindName": "Assay",
+                domainId: undefined,
+                domainURI: 'urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:${GpatAssayDBSeq}',
+                fields: runFields,
+                name: 'Run Fields',
             },
             {
-                "name": "Data Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:${GpatAssayDBSeq}",
-                "domainId": 0,
-                "fields": resultFields,
-                "indices": [],
-                "domainKindName": "Assay",
-            }
+                domainId: undefined,
+                domainURI: 'urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:${GpatAssayDBSeq}',
+                fields: resultFields,
+                name: 'Data Fields',
+            },
         ],
-        "name": name,
-        "protocolId": null,
-        "providerName": "General",
-        "status": "Active",
-    }
-}
+        name: name,
+        protocolId: null,
+        providerName: 'General',
+        status: 'Active',
+    };
+};
 
 export async function verifyRequiredLineageReference(server: IntegrationTestServer, parentTypeRowId: number, isSampleParent: boolean, folderOptions: RequestOptions, userOptions: RequestOptions, sampleTypeRefs: string[] = [], dataTypeRefs : string[] = []){
     await server.post('experiment', 'getDataTypesWithRequiredLineage', {
