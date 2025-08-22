@@ -74,7 +74,9 @@ public interface Domain extends IPropertyType
     DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd);
     DomainProperty addProperty();
     DomainProperty addProperty(PropertyStorageSpec spec);
-    DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propURISuffix);
+
+    @Deprecated // Use addProperty(PropertyStorageSpec)
+    DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propSuffix);
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 

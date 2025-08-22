@@ -1113,13 +1113,15 @@ public class DomainUtil
         return createUniquePropertyURI(typeURI, null, new CaseInsensitiveHashSet());
     }
 
-    public static String createUniquePropertyURI(String typeURI, @Nullable String propURISuffix, Set<String> propertyUrisInUse)
+    public static String createUniquePropertyURI(String typeURI, @Nullable String propSuffix, Set<String> propertyUrisInUse)
     {
         // Don't use long property names in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
-        if (propURISuffix == null)
-            propURISuffix = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
+        if (propSuffix == null)
+            propSuffix = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
+        else
+            propSuffix = Lsid.encodePart(propSuffix);
 
-        String base = typeURI + "#" + propURISuffix;
+        String base = typeURI + "#" + propSuffix;
         String candidateURI = base;
         int i = 0;
 

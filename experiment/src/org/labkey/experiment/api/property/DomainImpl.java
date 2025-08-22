@@ -1287,7 +1287,7 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propURISuffix)
+    public DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propSuffix)
     {
         PropertyDescriptor pd = new PropertyDescriptor();
         pd.setContainer(getContainer());
@@ -1297,7 +1297,7 @@ public class DomainImpl implements Domain
         pd.setNullable(spec.isNullable());
 //        pd.setAutoIncrement(spec.isAutoIncrement());      // always false in PropertyDescriptor
         pd.setMvEnabled(spec.isMvEnabled());
-        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(getTypeURI(), propURISuffix, new CaseInsensitiveHashSet())); // Issue 53586
+        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(getTypeURI(), propSuffix, new CaseInsensitiveHashSet())); // Issue 53586
         pd.setDescription(spec.getDescription());
         pd.setImportAliases(spec.getImportAliases());
         pd.setScale(spec.getSize());

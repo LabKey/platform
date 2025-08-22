@@ -166,7 +166,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         {
             for (GWTPropertyDescriptor pd : properties)
             {
-                pd.setPropertyURI(DomainUtil.createUniquePropertyURI(vocabularyDomain.getTypeURI(), Lsid.encodePart(pd.getName()), propertyUris));
+                pd.setPropertyURI(DomainUtil.createUniquePropertyURI(vocabularyDomain.getTypeURI(), pd.getName(), propertyUris));
                 DomainUtil.addProperty(vocabularyDomain, pd, defaultValues, propertyUris, null);
             }
             vocabularyDomain.save(user);
