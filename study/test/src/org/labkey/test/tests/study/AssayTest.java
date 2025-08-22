@@ -262,7 +262,6 @@ public class AssayTest extends AbstractAssayTest
     {
         beginAt("_webdav");
         _fileBrowserHelper.selectFileBrowserItem(getProjectName() + "/Studies/Study 1/");
-        assertTextPresent("@pipeline", 2);
         Locator.XPathLocator l = Locator.xpath("//span[text()='@pipeline']");
         assertElementPresent(l,  1);
     }
