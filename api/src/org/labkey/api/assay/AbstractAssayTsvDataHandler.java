@@ -943,7 +943,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                             catch (ConvertHelper.FileConversionException e)
                             {
-                                throw new ApiUsageException(e);
+                                errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
                             }
                         }
                     }

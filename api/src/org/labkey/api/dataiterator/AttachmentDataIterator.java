@@ -43,10 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-/**
- * Moved from ListQueryUpdateService.java
- * by iansigmon on 2/16/16.
- */
 public class AttachmentDataIterator extends WrapperDataIterator
 {
     final VirtualFile attachmentDir;
@@ -92,19 +88,21 @@ public class AttachmentDataIterator extends WrapperDataIterator
             for (_AttachmentUploadHelper p : attachmentColumns)
             {
                 Object attachmentValue = get(p.index);
+                if (null == attachmentValue)
+                    continue;
+
                 String filename;
                 AttachmentFile attachmentFile;
 
-                if (null == attachmentValue)
-                    continue;
-                else if (attachmentValue instanceof String str)
+                if (attachmentValue instanceof String str)
                 {
                     if (null == attachmentDir)
                     {
-                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload '" + str + "' to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
+                        errors.addRowError(propertyValidationException(p.domainProperty, attachmentValue));
                         return false;
                     }
-                    filename = (String) attachmentValue;
+
+                    filename = str;
                     InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
                     if (aIS == null)
                     {
@@ -113,25 +111,25 @@ public class AttachmentDataIterator extends WrapperDataIterator
                     }
                     attachmentFile = new InputStreamAttachmentFile(aIS, filename);
                 }
-                else if (attachmentValue instanceof AttachmentFile)
+                else if (attachmentValue instanceof AttachmentFile file)
                 {
-                    attachmentFile = (AttachmentFile) attachmentValue;
+                    attachmentFile = file;
                     filename = attachmentFile.getFilename();
                 }
-                else if (attachmentValue instanceof File)
+                else if (attachmentValue instanceof File file)
                 {
-                    attachmentFile = new FileAttachmentFile((File) attachmentValue);
+                    attachmentFile = new FileAttachmentFile(file);
                     filename = attachmentFile.getFilename();
                 }
                 else
                 {
-                    errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachment file."));
+                    errors.addRowError(propertyValidationException(p.domainProperty, attachmentValue));
                     return false;
                 }
 
                 if (entityIdIndex == 0)
                 {
-                    errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Unable to create attachment file."));
+                    errors.addRowError(rowValidationException("Unable to create attachment file."));
                     return false;
                 }
 
@@ -170,6 +168,16 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 }
             }
         }
+    }
+
+    private ValidationException propertyValidationException(DomainProperty property, Object value)
+    {
+        return rowValidationException(String.format("Can't upload '%s' to field %s with type %s.", value, property.getName(), property.getType().getLabel()));
+    }
+
+    private ValidationException rowValidationException(String message)
+    {
+        return new ValidationException("Row " + get(0) + ": " + message);
     }
 
     public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder,
