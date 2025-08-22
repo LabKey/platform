@@ -98,10 +98,6 @@ describe('Assay Designer - Permissions', () => {
         ).expect((resp) => {
             exception = JSON.parse(resp.text).exception;
         })
-
-        if (exception !== error)
-            console.log(badDomainName);
-
         expect(exception).toBe(error.replace('REPLACE', badDomainName));
     }
 

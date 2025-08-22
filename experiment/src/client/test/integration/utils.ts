@@ -62,8 +62,6 @@ export async function getSourceDataByName(server: IntegrationTestServer, sourceN
         'query.Name~eq': sourceName,
         'query.columns': columns,
     }, options(folderOptions, userOptions)).expect(successfulResponse);
-    if (debug)
-        console.log(response);
     return response.body.rows[0];
 }
 
@@ -610,7 +608,6 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     const useLowerCase = Math.random() < 0.5;
     // test both lower case and upper case prefix
     const parentInput = (isParentSample ? (useLowerCase ? 'materialInputs/' : 'MaterialInputs/') : (useLowerCase ? 'dataInputs/' : 'DataInputs/')) + parentDataType;
-    console.log("Selected alias input type: " + parentInput);
     await server.post('property', 'createDomain', {
         kind: isChildSample ? SAMPLE_TYPE_DOMAIN_KIND : DATA_CLASS_DOMAIN_KIND,
         domainDesign: { name: dataType, fields: [{ name: isChildSample ? 'Name' : 'Prop' }]},
