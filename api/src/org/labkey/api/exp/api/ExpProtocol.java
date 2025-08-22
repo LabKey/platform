@@ -47,12 +47,14 @@ public interface ExpProtocol extends ExpObject
      */
     enum AssayDomainTypes implements IAssayDomainType
     {
-        Batch("Batch"), Run("Run"), Result("Data");
+        Batch("Batch", "Batch Fields"), Run("Run", "Run Fields"), Result("Data", "Results Fields");
 
         private final String prefix;
+        private final String domainName;
 
-        AssayDomainTypes(String prefixName)
+        AssayDomainTypes(String prefixName, String domainName)
         {
+            this.domainName = domainName;
             this.prefix = ASSAY_DOMAIN_PREFIX + prefixName;
         }
 
@@ -72,6 +74,12 @@ public interface ExpProtocol extends ExpObject
         public String getLsidTemplate()
         {
             return AbstractAssayProvider.getPresubstitutionLsid(getPrefix());
+        }
+
+        @Override
+        public String getDomainName()
+        {
+            return domainName;
         }
     }
 

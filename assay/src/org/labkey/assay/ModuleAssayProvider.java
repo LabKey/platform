@@ -340,7 +340,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             if (xDomain != null && xDomain.validate(options))
             {
                 if (!xDomain.isSetName())
-                    xDomain.setName(domainType.getName() + " Fields");
+                    xDomain.setName(domainType.getDomainName());
 
                 if (!xDomain.isSetDomainURI())
                     xDomain.setDomainURI(domainType.getLsidTemplate());
