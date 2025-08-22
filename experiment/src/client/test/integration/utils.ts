@@ -196,6 +196,9 @@ export async function getAuditLogsForTransaction(
     return response.body.rows;
 }
 
+/**
+ * @deprecated Use {@link importRunToServer} instead.
+ */
 export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: any[], folderOptions: RequestOptions, userOptions: RequestOptions, reRunId?: number, batchId?: number) {
     const runResponse = await server.post('assay', 'importRun', {
         assayId: assayId,
