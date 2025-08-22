@@ -435,6 +435,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         _useAsync = Boolean.valueOf(getParam(Params.useAsync)); // useAsync will save import file to pipeline root as well as run import in a background job
 
+        boolean isCrossTypeImport = getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
+
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
         AuditBehaviorType behaviorType = (_target != null) ? _target.getEffectiveAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
@@ -630,8 +632,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             configureLoader(loader);
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
-            if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
-                auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
+            if (isCrossTypeImport || (behaviorType != null && behaviorType != AuditBehaviorType.NONE))
+                auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction);
 
             int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
 

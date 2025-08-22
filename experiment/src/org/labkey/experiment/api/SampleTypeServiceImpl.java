@@ -1160,13 +1160,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
-        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
+        return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
     }
 
     @Override
     protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), userComment, row);
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
 
     @Override
@@ -1183,9 +1183,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         });
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable Map<String, Object> row)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, userComment, null, row, null);
+        return createAuditRecord(c, tInfo, comment, userComment, null, row, null);
     }
 
     private boolean isInputFieldKey(String fieldKey)
@@ -1195,7 +1195,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -1241,6 +1241,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
             row.put(ROW_ID,staticsRow.get(ROW_ID));
+        }
+        else if (tInfo != null)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, tInfo.getUserSchema().getUser(), tInfo.getName());
+            if (sampleType != null)
+            {
+                event.setSampleType(sampleType.getName());
+                event.setSampleTypeId(sampleType.getRowId());
+            }
         }
 
         if (action != null)

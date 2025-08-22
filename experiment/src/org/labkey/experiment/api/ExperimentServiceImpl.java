@@ -9594,7 +9594,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
-                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment);
+                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment, true);
 
                 // create new detailed events for each data object that was moved
                 AuditBehaviorType dcAuditBehavior = dataClassTable.getEffectiveAuditBehavior(auditBehavior);
