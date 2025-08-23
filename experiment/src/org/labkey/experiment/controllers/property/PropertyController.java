@@ -2200,8 +2200,6 @@ public class PropertyController extends SpringActionController
 
     public static class TestCase extends Assert
     {
-        private static Domain domain;
-
         @BeforeClass
         public static void initialSetUp() throws ValidationException
         {
@@ -2229,14 +2227,23 @@ public class PropertyController extends SpringActionController
 
             gwtDomain.setFields(gwtProps);
 
-            domain = DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
+            DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
+        }
+
+        static Domain getDomain()
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String domainName = "TestVocabularyDomain";
+            DomainKind kind = PropertyService.get().getDomainKindByName(VocabularyDomainKind.KIND_NAME);
+            return PropertyService.get().getDomain(c, kind.generateDomainURI(null, domainName, c, user));
         }
 
         @AfterClass
         public static void tearDown() throws DomainNotFoundException
         {
             User user = TestContext.get().getUser();
-            domain.delete(user);
+            getDomain().delete(user);
         }
 
         @Test
@@ -2244,6 +2251,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = getDomain();
 
             Set<String> domainKinds = new HashSet<>();
             domainKinds.add(VocabularyDomainKind.KIND_NAME);
@@ -2259,6 +2267,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = getDomain();
 
             var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
 
@@ -2307,6 +2316,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = getDomain();
 
             var intProp = domain.getPropertyByName("testIntField");
             var stringProp = domain.getPropertyByName("testStringField");
