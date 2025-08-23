@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Handler;
@@ -98,7 +99,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
             List<? extends GWTPropertyDescriptor> properties = gwtDomain.getFields();
             Domain newDomain = PropertyService.get().createDomain(container, domainURI, gwtDomain.getName(), templateInfo);
 
-            Set<String> propertyUris = new HashSet<>();
+            Set<String> propertyUris = new CaseInsensitiveHashSet();
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
             try
             {

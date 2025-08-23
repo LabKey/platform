@@ -75,6 +75,9 @@ public interface Domain extends IPropertyType
     DomainProperty addProperty();
     DomainProperty addProperty(PropertyStorageSpec spec);
 
+    @Deprecated // Use addProperty(PropertyStorageSpec)
+    DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propSuffix);
+
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
     boolean isMutable();

@@ -328,7 +328,6 @@ public class RenderAssayBean extends RenderAssayForm
     {
         try
         {
-            Lsid fitErrorURI = new Lsid(DilutionDataHandler.NAB_PROPERTY_LSID_PREFIX, getAssay().getProtocol().getName(), DilutionDataHandler.FIT_ERROR_PROPERTY);
             PropertyDescriptor fitErrorPd =
                     _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), DilutionDataHandler.FIT_ERROR_PROPERTY, new HashMap<>());
             if (null != fitErrorPd)

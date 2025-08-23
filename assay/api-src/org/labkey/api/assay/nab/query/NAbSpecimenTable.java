@@ -104,7 +104,8 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
         sql.append(", ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
-        sql.append(" WHERE op.PropertyId = pd.PropertyId AND pd.PropertyURI LIKE '%#" + DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME + "'");
+        sql.append(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ?");
+        sql.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
         sql.append(" AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".RunId)");
         sql.append("\nWHEN 'Polynomial' THEN ");
         sql.append(ExprColumn.STR_TABLE_ALIAS + ".");

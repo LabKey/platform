@@ -47,6 +47,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -1090,7 +1091,7 @@ public class DomainUtil
         LOG.debug("Adding property for " + pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
-            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + Lsid.encodePart(pd.getName()), propertyUrisInUse);
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), null, propertyUrisInUse);
             assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
             pd.setPropertyURI(newPropertyURI);
             propertyUrisInUse.add(newPropertyURI);
@@ -1107,8 +1108,20 @@ public class DomainUtil
         return p;
     }
 
-    private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
+    public static String createUniquePropertyURI(String typeURI)
     {
+        return createUniquePropertyURI(typeURI, null, new CaseInsensitiveHashSet());
+    }
+
+    public static String createUniquePropertyURI(String typeURI, @Nullable String propSuffix, Set<String> propertyUrisInUse)
+    {
+        // Don't use long property names in URIs as it can create strings that are longer than the DB column length when encoded (Issue 53586)
+        if (propSuffix == null)
+            propSuffix = String.valueOf(LsidManager.getLsidPrefixDbSeq("Property", 1).next());
+        else
+            propSuffix = Lsid.encodePart(propSuffix);
+
+        String base = typeURI + "#" + propSuffix;
         String candidateURI = base;
         int i = 0;
 
