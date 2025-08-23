@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -47,7 +46,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -88,7 +86,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private Map<DomainProperty, String> _runProperties;
     private Map<DomainProperty, String> _batchProperties;
     private Map<String, Object> _unresolvedRunProperties;
-    private Map<String, Object> _unresolvedBatchProperties;
 
     // Mutable fields
     private TransformResult _transformResult;
@@ -189,16 +186,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_batchProperties == null)
         {
             Domain batchDomain = _provider.getBatchDomain(_protocol);
-            _unresolvedBatchProperties = new CaseInsensitiveHashMap<>();
-            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties, _unresolvedBatchProperties);
+            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties, null);
         }
         return _batchProperties;
-    }
-
-    @Override
-    public @NotNull Map<String, Object> getUnresolvedBatchProperties()
-    {
-        return _unresolvedBatchProperties;
     }
 
     @Override
@@ -207,43 +197,28 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _unresolvedRunProperties;
     }
 
-    @Override
-    public boolean validateUnresolvedProperties()
-    {
-        return true;
-    }
-
     private Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
     {
         Map<DomainProperty, String> properties = new HashMap<>();
         if (rawProperties != null)
         {
-            CaseInsensitiveHashSet resolvedProperties = new CaseInsensitiveHashSet();
             for (DomainProperty prop : domain.getProperties())
             {
                 Object value;
                 if (rawProperties.containsKey(prop.getName()))
-                {
                     value = rawProperties.get(prop.getName());
-                    resolvedProperties.add(prop.getName());
-                }
                 else
                     value = rawProperties.get(prop.getPropertyURI());
                 properties.put(prop, Objects.toString(value, null));
             }
 
-            addVocabularyAndUnresolvedRunProperties(properties, rawProperties, unresolvedProperties, resolvedProperties);
+            addVocabularyAndUnresolvedRunProperties(properties, rawProperties, unresolvedProperties);
         }
 
         return unmodifiableMap(properties);
     }
 
-    private void addVocabularyAndUnresolvedRunProperties(
-        Map<DomainProperty, String> properties,
-        Map<String, Object> rawProperties,
-        Map<String, Object> unresolvedProperties,
-        Set<String> resolvedProperties
-    )
+    private void addVocabularyAndUnresolvedRunProperties(Map<DomainProperty, String> properties, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
     {
         // 1. Properties belonging to a VocabularyDomain will be added to the run properties.
         // 2. This is the only implementation of AssayRunUploadContext for adding these properties as importRuns Api uses this implementation.
@@ -251,9 +226,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         for (Map.Entry<String, Object> property : rawProperties.entrySet())
         {
-            if (resolvedProperties.contains(property.getKey()))
-                continue;
-
             if (URIUtil.hasURICharacters(property.getKey()))
             {
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
@@ -276,7 +248,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     properties.put(dp, property.getValue().toString());
                 }
             }
-            else
+            else if (null != unresolvedProperties)
             {
                 unresolvedProperties.put(property.getKey(),property.getValue());
             }

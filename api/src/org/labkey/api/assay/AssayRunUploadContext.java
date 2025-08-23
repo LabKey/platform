@@ -225,19 +225,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     {
     }
 
-    default @NotNull Map<String, Object> getUnresolvedBatchProperties()
-    {
-        return emptyMap();
-    }
-
     default @NotNull Map<String, Object> getUnresolvedRunProperties()
     {
         return emptyMap();
-    }
-
-    default boolean validateUnresolvedProperties()
-    {
-        return false;
     }
 
     /**

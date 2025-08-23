@@ -153,61 +153,6 @@ describe('assay-importRun.api', () => {
     });
 
     describe('file fields', () => {
-        it('errors with invalid file field name', async () => {
-            // Arrange
-            const batchFileName = 'batchFileError.txt';
-            const batchFilePath = `file://path/${batchFileName}`;
-            const runFileName = 'runFileError.txt';
-            const runFilePath = `file://path/${runFileName}`;
-            mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
-
-            const invalidBatchFieldName = 'invalid batch field name';
-            const invalidRunFieldName = 'invalid run field name';
-            const { editorUserOptions, topFolderOptions } = context;
-
-            // Act
-            // Fail to resolve the batch property
-            {
-                const payload: ImportRunOptions = {
-                    assayId: ASSAY_A_ID,
-                    batchProperties: { [invalidBatchFieldName]: batchFilePath },
-                    dataRows: [{ [RESULT_FIELD_NAME]: 'beep' }],
-                    properties: { [invalidRunFieldName]: runFilePath },
-                };
-                const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
-
-                // Assert
-                expect(response.body.success).toEqual(false);
-
-                const { errors } = response.body;
-                expect(errors).toHaveLength(1);
-                expect(errors[0].message).toEqual('Failed to resolve batch property');
-                expect(errors[0].field).toEqual(invalidBatchFieldName);
-
-                await verifyPropertiesFilesOnServer(server, [batchFileName, runFileName], false, topFolderOptions);
-            }
-
-            // Act
-            // Fail to resolve the run property
-            {
-                const payload: ImportRunOptions = {
-                    assayId: ASSAY_A_ID,
-                    dataRows: [{ [RESULT_FIELD_NAME]: 'beep' }],
-                    properties: { [invalidRunFieldName]: runFilePath },
-                };
-                const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
-
-                // Assert
-                expect(response.body.success).toEqual(false);
-
-                const { errors } = response.body;
-                expect(errors).toHaveLength(1);
-                expect(errors[0].message).toEqual('Failed to resolve run property');
-                expect(errors[0].field).toEqual(invalidRunFieldName);
-
-                await verifyPropertiesFilesOnServer(server, [runFileName], false, topFolderOptions);
-            }
-        });
         it('successfully imports with batch/run file fields', async () => {
             // Arrange
             const batchFileName = 'batchFileA.txt';
@@ -335,7 +280,6 @@ describe('assay-importRun.api', () => {
                     [riRunFilePath]: 'Reimport Run McRun',
                 });
 
-                const invalidRunPropName = 'invalidRunProp';
                 const payload: ImportRunOptions = {
                     assayId: ASSAY_A_ID,
                     batchProperties: {
@@ -346,9 +290,8 @@ describe('assay-importRun.api', () => {
                     properties: {
                         [RUN_FILE_FIELD_NAME]: riRunFilePath,
                         [RUN_FILE_FIELD_TWO_NAME]: runFilePath,
-                        [invalidRunPropName]: 'Beep boop clang',
                     },
-                    reRunId: runId,
+                    reRunId: runId * 2, // reimport with an invalid runId
                 };
                 const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
 

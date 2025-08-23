@@ -282,7 +282,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
         Map<String, Object> unresolvedRunProperties = context.getUnresolvedRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
-        Map<String, Object> unresolvedBatchProperties = context.getUnresolvedBatchProperties();
 
         Map<DomainProperty, String> allProperties = new HashMap<>();
         allProperties.putAll(runProperties);
@@ -381,12 +380,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
 
             if (saveBatchProps)
-                saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties, unresolvedBatchProperties);
+                saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties);
             if (null != transformResult.getAssayId())
                 run.setName(transformResult.getAssayId());
             if (null != transformResult.getComments())
                 run.setComments(transformResult.getComments());
-            saveProperties(context, run, transformResult.getRunProperties(), runProperties, unresolvedRunProperties);
+            saveProperties(context, run, transformResult.getRunProperties(), runProperties);
 
             AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
@@ -1094,33 +1093,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         final AssayRunUploadContext<ProviderType> context,
         ExpObject expObject,
         Map<DomainProperty, String> transformResultProperties,
-        Map<DomainProperty, String> properties,
-        Map<String, Object> unresolvedProperties
+        Map<DomainProperty, String> properties
     ) throws ValidationException
     {
         Map<DomainProperty, String> propsToSave = transformResultProperties.isEmpty() ? properties : transformResultProperties;
         List<ValidationError> errors = validateProperties(context, propsToSave);
-        if (!errors.isEmpty())
-            throw new ValidationException(errors);
-
-        if (context.validateUnresolvedProperties() && !unresolvedProperties.isEmpty())
-        {
-            String propertyType = "experiment";
-            if (expObject instanceof ExpExperiment)
-                propertyType = "batch";
-            else if (expObject instanceof ExpRun)
-                propertyType = "run";
-
-            for (var entry : unresolvedProperties.entrySet())
-            {
-                String propertyName = entry.getKey();
-                if (ProvenanceService.PROVENANCE_INPUT_PROPERTY.equalsIgnoreCase(propertyName))
-                    continue;
-
-                errors.add(new PropertyValidationError(String.format("Failed to resolve %s property", propertyType), propertyName));
-            }
-        }
-
         if (!errors.isEmpty())
             throw new ValidationException(errors);
 
