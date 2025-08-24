@@ -2200,10 +2200,7 @@ public class PropertyController extends SpringActionController
 
     public static class TestCase extends Assert
     {
-        private static Domain domain;
-
-        @BeforeClass
-        public static void initialSetUp() throws ValidationException
+        Domain createVocabDomain() throws ValidationException
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
@@ -2229,14 +2226,7 @@ public class PropertyController extends SpringActionController
 
             gwtDomain.setFields(gwtProps);
 
-            domain = DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
-        }
-
-        @AfterClass
-        public static void tearDown() throws DomainNotFoundException
-        {
-            User user = TestContext.get().getUser();
-            domain.delete(user);
+            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null, false);
         }
 
         @Test
@@ -2244,6 +2234,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = createVocabDomain();
 
             Set<String> domainKinds = new HashSet<>();
             domainKinds.add(VocabularyDomainKind.KIND_NAME);
@@ -2259,6 +2250,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = createVocabDomain();
 
             var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
 
@@ -2307,6 +2299,7 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
+            Domain domain = createVocabDomain();
 
             var intProp = domain.getPropertyByName("testIntField");
             var stringProp = domain.getPropertyByName("testStringField");
