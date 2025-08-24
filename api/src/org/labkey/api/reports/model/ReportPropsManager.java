@@ -34,6 +34,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -46,6 +47,7 @@ import org.labkey.data.xml.reportProps.PropertyList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -84,11 +86,6 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
         return properties;
     }
 
-    public void createProperty(Container container, User user, String name, String label, PropertyType type) throws Exception
-    {
-        ensureProperty(container, user, name, label, type);
-    }
-
     private Map<String, DomainProperty> getPropertyMap(Container container)
     {
         Domain domain = getDomain(container, false);
@@ -120,7 +117,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
                 prop.setName(name);
                 prop.setLabel(label);
                 prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-                prop.setPropertyURI(getPropertyURI(name, container));
+                prop.setPropertyURI(DomainUtil.createUniquePropertyURI(getDomainURI(container)));
 
                 dp = prop;
             }
@@ -207,11 +204,6 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     private String getDomainURI(@NotNull Container container)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
-    }
-
-    private String getPropertyURI(String propertyName, Container container)
-    {
-        return getDomainURI(container) + '#' + propertyName;
     }
 
     @Override

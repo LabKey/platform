@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -325,7 +326,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                 Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                 Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                 Map<DomainProperty, Object> defaultValues = new HashMap<>();
-                Set<String> propertyUris = new HashSet<>();
+                Set<String> propertyUris = new CaseInsensitiveHashSet();
 
                 for (GWTPropertyDescriptor pd : properties)
                 {
