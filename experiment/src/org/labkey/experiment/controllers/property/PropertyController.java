@@ -27,7 +27,9 @@ import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.Action;
@@ -42,6 +44,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
@@ -52,6 +55,7 @@ import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -548,7 +552,7 @@ public class PropertyController extends SpringActionController
                 {
                     try
                     {
-                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new HashSet<>(), results);
+                        DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new CaseInsensitiveHashSet(), results);
                         OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
                     }
                     catch (ChangePropertyDescriptorException e)
@@ -2230,15 +2234,14 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
-
-            Domain createdDomain = createVocabDomain();
+            Domain domain = createVocabDomain();
 
             Set<String> domainKinds = new HashSet<>();
             domainKinds.add(VocabularyDomainKind.KIND_NAME);
 
             List<? extends Domain> vocabDomains = PropertyService.get().getDomains(c, user, domainKinds, null, false);
 
-            boolean found = vocabDomains.stream().anyMatch(d -> d.getTypeId() == createdDomain.getTypeId());
+            boolean found = vocabDomains.stream().anyMatch(d -> d.getTypeId() == domain.getTypeId());
             assertTrue("Vocabulary Domain Not found.", found);
         }
 
@@ -2247,8 +2250,8 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
-
             Domain domain = createVocabDomain();
+
             var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
 
             // find by domainIds
@@ -2296,8 +2299,8 @@ public class PropertyController extends SpringActionController
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
-
             Domain domain = createVocabDomain();
+
             var intProp = domain.getPropertyByName("testIntField");
             var stringProp = domain.getPropertyByName("testStringField");
 

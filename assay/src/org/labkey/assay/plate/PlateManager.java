@@ -2349,7 +2349,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (existingProperties.contains(pd.getName()))
                         throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists.", pd.getName(), metadataDomain.getTypeURI()));
 
-                    DomainUtil.addProperty(metadataDomain, pd, new HashMap<>(), new HashSet<>(), null);
+                    DomainUtil.addProperty(metadataDomain, pd, new HashMap<>(), new CaseInsensitiveHashSet(), null);
                 }
                 metadataDomain.save(user);
                 tx.commit();
