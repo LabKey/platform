@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -106,7 +107,7 @@ public class LinkedSchema extends ExternalSchema
         Container sourceContainer = def.lookupSourceContainer();
         if (sourceContainer == null)
         {
-            LOG.warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
+            LOG.warn("Source container '{}' not found for linked schema {}", def.getSourceContainerId(), def.getUserSchemaName());
             return null;
         }
 
@@ -117,7 +118,7 @@ public class LinkedSchema extends ExternalSchema
         UserSchema sourceSchema = getSourceSchema(def, sourceSchemaName, sourceContainer, user);
         if (sourceSchema == null)
         {
-            LOG.warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
+            LOG.warn("Source schema '{}' not found in container '{}' for linked schema {}", sourceSchemaName, sourceContainer.getPath(), def.getUserSchemaName());
             return null;
         }
 
@@ -166,7 +167,7 @@ public class LinkedSchema extends ExternalSchema
         // Disallow recursive linked schema
         if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
         {
-            LOG.warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
+            LOG.warn("Disallowed recursive linked schema definition '{}' in container '{}'", sourceSchemaName, sourceContainer.getPath());
             return null;
         }
 
@@ -343,7 +344,7 @@ public class LinkedSchema extends ExternalSchema
         if (null != metaData && null != metaData.getIncludeColumnsList())
         {
             String cols = StringUtils.trim(metaData.getIncludeColumnsList());
-            if (!StringUtils.equals("*",cols))
+            if (!Strings.CS.equals("*",cols))
             {
                 includedFields = Arrays.stream(StringUtils.split(cols,";"))
                     .map((col)->new FieldKey(null,col))
@@ -483,7 +484,7 @@ public class LinkedSchema extends ExternalSchema
             for (QueryService.ParameterDecl decl : parameterDecls)
             {
                 sql.append(paramSep);
-                sql.append("  \"").append(decl.getName()).append("\" ").append(decl.getJdbcType().name());
+                sql.append(" ").append(FieldKey.fromParts(decl.getName()).toSQLString()).append(" ").append(decl.getJdbcType().name());
                 if (decl.getDefault() != null)
                     sql.append(" DEFAULT ").append(decl.getDefault());
                 paramSep = ",\n";
@@ -499,7 +500,7 @@ public class LinkedSchema extends ExternalSchema
             if (col.isAdditionalQueryColumn())
                 continue;
             sql.append(columnSep);
-            sql.append("\"").append(col.getName()).append("\"");
+            sql.append(col.getFieldKey().toSQLString());
             if (col.isHidden())
                 sql.append(" @hidden");
 
