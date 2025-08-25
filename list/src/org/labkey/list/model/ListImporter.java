@@ -291,7 +291,7 @@ public class ListImporter
 
                                     String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
                                     SQLFragment keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
-                                    keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(keyStorageColName)).append(")+1 FROM ").append(tableName);
+                                    keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
                                     keyupdate.append("), 1), false)");
                                     new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                 }
