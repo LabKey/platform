@@ -113,7 +113,7 @@ describe('assay-importRun.api', () => {
     });
     it('errors with invalid "assayId" parameter', async () => {
         let response = await server.post('assay', 'importRun.api', { assayId: -1 });
-        expect(response.body.exception).toEqual('assayId or both protocolName and providerName required');
+        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
 
         const invalidAssayId = 1234567890;
         response = await server.post('assay', 'importRun.api', { assayId: invalidAssayId });
@@ -121,10 +121,10 @@ describe('assay-importRun.api', () => {
     });
     it('errors with invalid "assayName" or "providerName" parameter', async () => {
         let response = await server.post('assay', 'importRun.api', { assayName: null });
-        expect(response.body.exception).toEqual('assayId or both protocolName and providerName required');
+        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
 
         response = await server.post('assay', 'importRun.api', { assayName: 'some assay', providerName: null });
-        expect(response.body.exception).toEqual('assayId or both protocolName and providerName required');
+        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
 
         const invalidProviderName = 'invalid provider name';
         response = await server.post('assay', 'importRun.api', {
@@ -135,9 +135,6 @@ describe('assay-importRun.api', () => {
     });
     it('requires data to create a run', async () => {
         let response = await server.post('assay', 'importRun.api', { assayId: ASSAY_A_ID });
-        expect(response.body.exception).toEqual('No data file was uploaded. Please select a file.');
-
-        response = await server.post('assay', 'importRun.api', { assayId: ASSAY_A_ID, dataRows: [] });
         expect(response.body.exception).toEqual('No data file was uploaded. Please select a file.');
 
         response = await server.post('assay', 'importRun.api', { assayId: ASSAY_A_ID, dataRows: [] });
@@ -242,10 +239,11 @@ describe('assay-importRun.api', () => {
         });
         it('successfully imports, fails to reimport, and retains files', async () => {
             // Arrange
-            const batchFileName = 'batchFileAA.txt';
-            const batchFilePath = `file://path/${batchFileName}`;
-            const runFileName = 'runFileAA.txt';
-            const runFilePath = `file://path/${runFileName}`;
+            // Upload files with the same name for two different fields. Expect the latter to be renamed.
+            const sameFileName = 'sameFileAA.txt';
+            const sameFileNameAgain = 'sameFileAA-1.txt';
+            const batchFilePath = `file://path/batch/${sameFileName}`;
+            const runFilePath = `file://path/run/${sameFileName}`;
             const { editorUserOptions, topFolderOptions } = context;
             let runId: number;
 
@@ -262,17 +260,15 @@ describe('assay-importRun.api', () => {
                 const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
                 expect(response.body.success).toEqual(true);
                 expect(response.body.runId).toBeGreaterThan(0);
-                await verifyPropertiesFilesOnServer(server, [batchFileName, runFileName], true, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameAgain], true, topFolderOptions);
                 runId = response.body.runId;
             }
 
             // Act
             // Fail to reimport the run, supplying new files
             {
-                const riBatchFileName = 'reimportBatchFileAA.txt';
-                const riBatchFilePath = `file://path/${riBatchFileName}`;
-                const riRunFileName = 'reimportRunFileAA.txt';
-                const riRunFilePath = `file://path/${riRunFileName}`;
+                const riBatchFilePath = `file://path/reimport/batch/${sameFileName}`;
+                const riRunFilePath = `file://path/reimport/run/${sameFileName}`;
                 mock({
                     [batchFilePath]: 'Batch McBatch',
                     [runFilePath]: 'Run McRun',
@@ -297,8 +293,8 @@ describe('assay-importRun.api', () => {
 
                 // Assert
                 expect(response.body.success).toEqual(false);
-                await verifyPropertiesFilesOnServer(server, [batchFileName, runFileName], true, topFolderOptions);
-                await verifyPropertiesFilesOnServer(server, [riBatchFileName, riRunFileName], false, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameAgain], true, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, ['sameFileAA-2.txt', 'sameFileAA-3.txt'], false, topFolderOptions);
             }
         });
     });

@@ -55,7 +55,7 @@ export function createDomainField(field: Partial<IDomainField>): Partial<IDomain
 }
 
 // TODO move getSourceDataByName to ExperimentCrudUtils
-export async function getSourceDataByName(server: IntegrationTestServer, sourceName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
+export async function getSourceDataByName(server: IntegrationTestServer, sourceName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions) : Promise<any> {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'exp.data',
         queryName,

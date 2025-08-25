@@ -90,7 +90,7 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
         String assayName = StringUtils.trimToNull(json.optString(AssayJSONConverter.ASSAY_NAME));
         String providerName = StringUtils.trimToNull(json.optString(AssayJSONConverter.PROVIDER_NAME));
         if (assayName == null || providerName == null)
-            throw new IllegalArgumentException("assayId or both protocolName and providerName required");
+            throw new IllegalArgumentException("Either \"assayId\" or both \"protocolName\" and \"providerName\" are required.");
 
         return getProtocolProvider(assayName, providerName, c);
     }

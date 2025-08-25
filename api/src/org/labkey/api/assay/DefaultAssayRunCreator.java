@@ -1121,7 +1121,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Treat the empty string as a null in the database, which is our normal behavior when receiving data
             // from HTML forms.
-            if ("".equals(value))
+            if (StringUtils.trimToNull(value) == null)
             {
                 value = null;
             }
