@@ -42,8 +42,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 {
@@ -208,8 +208,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         return (Map<String,Object>)get(existingColIndex);
     }
-
-
 
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys)
     {

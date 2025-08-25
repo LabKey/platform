@@ -4361,14 +4361,17 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
+        ExpSampleTypeImpl _sampleType;
+        boolean _isCrossTypeImport = false;
+
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
             _insertOption = queryForm.getInsertOption();
-            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
+            _isCrossTypeImport = getOptionParamValue(Params.crossTypeImport);
             _form.setSchemaName(getTargetSchemaName());
-            if (crossTypeImport)
+            if (_isCrossTypeImport)
             {
                 _form.setQueryName(getPipelineTargetQueryName());
             }
@@ -4377,10 +4380,10 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Sample type name is required");
             else
             {
-                if (!crossTypeImport)
+                if (!_isCrossTypeImport)
                 {
-                    ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
-                    if (sampleType == null)
+                    _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                    if (_sampleType == null)
                     {
                         errors.reject(ERROR_GENERIC, "Sample type '" + queryForm.getQueryName() + " not found.");
                     }
@@ -4449,6 +4452,9 @@ public class ExperimentController extends SpringActionController
             @Nullable String auditUserComment
         ) throws IOException
         {
+            // TODO remove if not required here
+//            SampleTypeUpdateServiceDI.confirmAmountAndUnitsColumns(Arrays.stream(dl.getColumns()).map(ColumnDescriptor::getColumnName).toList(), _insertOption.allowUpdate,  _sampleType != null && _sampleType.getMetricUnit() != null);
+
             initContext(dl, errors, auditBehaviorType, auditUserComment);
 
             TableInfo tInfo = _target;

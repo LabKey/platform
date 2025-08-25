@@ -579,7 +579,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 providedValues.add(new CaseInsensitiveHashMap<>());
-                row = coerceTypes(row, providedValues.get(i));
+                row = coerceTypes(row, providedValues.get(i), false);
                 if (hasTableScript)
                 {
                     getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
@@ -692,7 +692,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
     @Deprecated
-    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues)
+    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues, boolean isUpdate)
     {
         Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
         Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
@@ -811,7 +811,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             Map<String, Object> row = rows.get(i);
             providedValues.add(new CaseInsensitiveHashMap<>());
-            row = coerceTypes(row, providedValues.get(i));
+            row = coerceTypes(row, providedValues.get(i), true);
             try
             {
                 Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);

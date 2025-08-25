@@ -1252,8 +1252,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Put the raw amount and units into the stored amount and unit fields to override the conversion to display values that has happened via the expression columns
         if (existingRow != null && !existingRow.isEmpty())
         {
-            existingRow.put(StoredAmount.name(), existingRow.get(RawAmount.name()));
-            existingRow.put(Units.name(), existingRow.get(RawUnits.name()));
+            if (existingRow.containsKey(RawAmount.name()))
+                existingRow.put(StoredAmount.name(), existingRow.get(RawAmount.name()));
+            if (existingRow.containsKey(RawUnits.name()))
+                existingRow.put(Units.name(), existingRow.get(RawUnits.name()));
         }
 
         // Add providedValues to eventMetadata
