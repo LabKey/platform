@@ -4813,18 +4813,18 @@ public class QueryController extends SpringActionController
         }
 
         @NotNull
-        protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName) throws ValidationException
+        protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
         {
             if (null == schemaName || null == queryName)
-                throw new ValidationException("You must supply a schemaName and queryName!");
+                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
 
             UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
             if (null == schema)
-                throw new ValidationException("The schema '" + schemaName + "' does not exist.", "schemaName");
+                throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
 
             TableInfo table = schema.getTableForInsert(queryName);
             if (table == null)
-                throw new ValidationException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.", "queryName");
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
             return table;
         }
     }
