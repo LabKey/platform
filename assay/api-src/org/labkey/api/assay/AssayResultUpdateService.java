@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
@@ -286,6 +287,23 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         convertTypes(user, container, row, getDbTable(), assayResultsRunDir);
 
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
+        Map<String, Object> updatedValues = getRow(user, container, oldRow);
+
+        TableInfo table = getQueryTable();
+        for (Map.Entry<String, Object> entry : result.entrySet())
+        {
+            ColumnInfo col = table.getColumn(entry.getKey());
+
+            if (col != null)
+            {
+                Object oldValue = col.getValue(originalRow);
+                Object newValue = col.getValue(updatedValues);
+                boolean hasValueChanged = !Objects.equals(oldValue, newValue);
+
+                if (hasValueChanged)
+                    _assaySampleLookupContext.trackSampleLookupChange(container, user, table, col, run);
+            }
+        }
 
         incrementAuditRowCount(run);
 
