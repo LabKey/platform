@@ -421,7 +421,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
-            Set<String> propertyUris = new HashSet<>();
+            Set<String> propertyUris = new CaseInsensitiveHashSet();
             for (GWTPropertyDescriptor pd : properties)
             {
                 String propertyName = pd.getName().toLowerCase();

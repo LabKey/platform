@@ -1314,6 +1314,27 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
             }
+            if (form.getMaxBLOBSize() < 0)
+            {
+                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be negative");
+            }
+            int hardCap = Math.max(WriteableAppProps.SOFT_MAX_BLOB_SIZE, AppProps.getInstance().getMaxBLOBSize());
+            if (form.getMaxBLOBSize() > hardCap)
+            {
+                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be set higher than " + hardCap + " bytes");
+            }
+            if (form.getSslPort() < 1 || form.getSslPort() > 65535)
+            {
+                errors.reject(ERROR_MSG, "HTTPS port must be between 1 and 65,535");
+            }
+            if (form.getReadOnlyHttpRequestTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "HTTP timeout must be non-negative");
+            }
+            if (form.getMemoryUsageDumpInterval() < 0)
+            {
+                errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
+            }
         }
 
         @Override
