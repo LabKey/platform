@@ -1895,6 +1895,65 @@ public final class PlateManagerTest
 //        updateWells(List.of(wellC3, wellC4));
     }
 
+    @Test // Issue 53578
+    public void testDeleteSampleWellReferencesUponSampleDelete() throws Exception
+    {
+        // Arrange
+        var props = List.of(new GWTPropertyDescriptor("name", "string"));
+        var sampleTypeToBeDeleted = SampleTypeService.get().createSampleType(container, user, "SampleTypeDelete53578", null, props, emptyList(), -1, -1, -1, -1, "ST-${genId}", null);
+
+        // Create samples in two different sample types
+        var sampleRowIds = createSamples(3, sampleTypeToBeDeleted).stream().map(ExpObject::getRowId).sorted().toList();
+        var defaultSampleRowIds = createSamples(2).stream().map(ExpObject::getRowId).sorted().toList();
+
+        var pps = new PlateSetImpl();
+        pps.setType(PlateSetType.primary);
+
+        var wellData = List.of(
+            createWellRow("A1", "SAMPLE", sampleRowIds.get(0)),
+            createWellRow("A2", "SAMPLE", sampleRowIds.get(1)),
+            createWellRow("A3", "SAMPLE", sampleRowIds.get(2)),
+            createWellRow("B4", "SAMPLE", defaultSampleRowIds.get(0)),
+            createWellRow("C1", "SAMPLE", defaultSampleRowIds.get(1))
+        );
+
+        var plateData = List.of(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null, wellData));
+        var PPS = createPlateSet(pps, plateData, null);
+        var ppsPlateRowId = PPS.getPlates().get(0).getRowId();
+
+        var aps = new PlateSetImpl();
+        aps.setType(PlateSetType.assay);
+        var APS = createPlateSet(aps, plateData, PPS.getRowId());
+        var apsPlateRowId = APS.getPlates().get(0).getRowId();
+
+        // Act
+        // Formerly, this would result in a foreign key violation on the assay.well table
+        sampleTypeToBeDeleted.delete(user);
+
+        // Assert
+        // Verify sample references have been removed from every plate
+        for (var plateRowId : List.of(ppsPlateRowId, apsPlateRowId))
+        {
+            try (var r = getPlateWellResults(plateRowId))
+            {
+                while (r.next())
+                {
+                    var sampleId = r.getInt(FieldKey.fromParts("sampleId"));
+                    var wellPosition = r.getString(FieldKey.fromParts("position"));
+
+                    switch (wellPosition)
+                    {
+                        // Expect only samples from the default sample type to remain in wells as
+                        // the other sample type has been deleted.
+                        case "B4" -> assertEquals(defaultSampleRowIds.get(0).intValue(), sampleId);
+                        case "C1" -> assertEquals(defaultSampleRowIds.get(1).intValue(), sampleId);
+                        default -> assertEquals(0, sampleId);
+                    }
+                }
+            }
+        }
+    }
+
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
     {
         return createPlate(plateType, null, null, null);
@@ -1973,6 +2032,11 @@ public final class PlateManagerTest
     }
 
     private List<ExpMaterial> createSamples(int numSamples) throws Exception
+    {
+        return createSamples(numSamples, sampleType);
+    }
+
+    private List<ExpMaterial> createSamples(int numSamples, ExpSampleType sampleType) throws Exception
     {
         List<Map<String, Object>> rows = new ArrayList<>();
 
