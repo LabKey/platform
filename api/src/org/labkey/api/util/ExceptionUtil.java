@@ -632,6 +632,20 @@ public class ExceptionUtil
         }
     }
 
+    private static void logClientAbortException(Throwable ex)
+    {
+        String className = ex.getClass().getName();
+        String message = ex.getMessage();
+        Throwable cause = ex.getCause();
+
+        if (message != null) {
+            LOG.trace("Client abort exception: {} - {}", className, message);
+        } else if (cause != null) {
+            LOG.trace("Client abort exception: {} (cause: {})", className, cause.getClass().getName());
+        } else {
+            LOG.trace("Client abort exception: {}", className);
+        }
+    }
 
     public static boolean isClientAbortException(Throwable ex)
     {
@@ -643,6 +657,7 @@ public class ExceptionUtil
                 className.endsWith("ClientAbortException") ||
                 className.endsWith("FileUploadException"))
             {
+                logClientAbortException(ex);
                 return true;
             }
             if (ex.getClass().equals(IllegalStateException.class) && ex.getMessage() != null &&
@@ -651,20 +666,24 @@ public class ExceptionUtil
                             ex.getMessage().contains("Session already invalidated")))
 
             {
+                logClientAbortException(ex);
                 return true;
             }
             if (ex.getClass().equals(SocketException.class) && "Connection reset".equalsIgnoreCase(ex.getMessage()))
             {
+                logClientAbortException(ex);
                 return true;
             }
             // Bug 15371 and 34605
             if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && (ex.getMessage().contains("disconnected client") || ex.getMessage().contains("Socket read failed")))
             {
+                logClientAbortException(ex);
                 return true;
             }
             // Bug 32056
             if (ex.getClass().equals(EOFException.class))
             {
+                logClientAbortException(ex);
                 return true;
             }
 
