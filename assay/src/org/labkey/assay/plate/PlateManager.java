@@ -5017,13 +5017,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // Issue 53578: Clear foreign key references in the well table when materials are deleted
         var wellTable = PlateSchema.getWellTable(container, user, ContainerFilter.getUnsafeEverythingFilter());
-        var updateSql = new SQLFragment("UPDATE assay.Well")
-                .append(" SET SampleId = NULL WHERE SampleId ")
+        var updateSql = new SQLFragment("UPDATE assay.Well SET SampleId = NULL WHERE SampleId ")
                 .appendInClause(materials.stream().map(ExpObject::getRowId).toList(), wellTable.getSqlDialect());
-
-        // TODO: Should we audit this somehow?
-        // TODO: What do we do about the blatant business rules violations this can incur?
-        //  Should we prevent the delete? Could depend on if this is a container or sample type delete or a simple deletion of the samples.
 
         new SqlExecutor(wellTable.getSchema()).execute(updateSql);
     }
