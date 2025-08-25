@@ -207,9 +207,8 @@ public enum Unit
                 throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
             else
                 return u;
-        if (!(rawUnits instanceof String))
+        if (!(rawUnits instanceof String rawUnitsString))
             throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
-        String rawUnitsString = (String) rawUnits;
         if (!StringUtils.isBlank(rawUnitsString))
         {
             rawUnitsString = rawUnitsString.trim();
