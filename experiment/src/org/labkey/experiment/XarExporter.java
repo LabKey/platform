@@ -793,7 +793,8 @@ public class XarExporter
         queueDomain(dataClass.getDomain());
     }
 
-    // Return the "name" portion of the propertyURI after the hash
+    // Return the "name" portion of the propertyURI after the hash (Issue 30718)
+    @Deprecated
     private String getPropertyName(DomainProperty dp)
     {
         String name = dp.getName();

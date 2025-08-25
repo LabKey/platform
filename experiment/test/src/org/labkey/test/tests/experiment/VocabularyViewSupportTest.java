@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.exp.Lsid;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
@@ -117,6 +118,12 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, description, fields);
         int domainId = domainResponse.getDomain().getDomainId().intValue();
 
+        log("Verify vocab domain propertyURIs use field name in suffix (see changes for Issue 53586)");
+        List<PropertyDescriptor> domainFields = domainResponse.getDomain().getFields();
+        assertTrue("Domain field propertyURI suffix is incorrect: " + domainFields.get(0).getPropertyURI(), domainFields.get(0).getPropertyURI().endsWith("#" + prop1Name));
+        assertTrue("Domain field propertyURI suffix is incorrect: " + domainFields.get(1).getPropertyURI(), domainFields.get(1).getPropertyURI().endsWith("#" + prop2Name));
+        assertTrue("Domain field propertyURI suffix is incorrect: " + domainFields.get(2).getPropertyURI(), domainFields.get(2).getPropertyURI().endsWith("#" + prop3Name));
+
         log("Create a sampleset");
         String sampleSchemaName = "samples";
         String sampleSetName = "Cars";
@@ -132,11 +139,11 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         Map<String, Object> row = new HashMap<>();
         row.put("Name", "Tesla");
         // value for color vocabulary property
-        row.put(domainResponse.getDomain().getFields().get(0).getPropertyURI(), prop1Value);
+        row.put(domainFields.get(0).getPropertyURI(), prop1Value);
         // value for year vocabulary property
-        row.put(domainResponse.getDomain().getFields().get(1).getPropertyURI(), prop2Value);
+        row.put(domainFields.get(1).getPropertyURI(), prop2Value);
         // value for list lookup property
-        row.put(domainResponse.getDomain().getFields().get(2).getPropertyURI(), listRow1RowId);
+        row.put(domainFields.get(2).getPropertyURI(), listRow1RowId);
 
         insertRowsCommand.addRow(row);
         insertRowsCommand.execute(createDefaultConnection(), getProjectName());
@@ -223,6 +230,10 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         String vocabDomainPropURI1 = domainResponse.getDomain().getFields().get(0).getPropertyURI();
         String vocabDomainPropURI2 = domainResponse.getDomain().getFields().get(1).getPropertyURI();
+
+        log("Verify vocab domain propertyURIs use field name in suffix (see changes for Issue 53586)");
+        assertTrue("Vocabulary domain propertyURI suffix is incorrect: " + vocabDomainPropURI1, vocabDomainPropURI1.endsWith("#" + Lsid.encodePart(propNameLab)));
+        assertTrue("Vocabulary domain propertyURI suffix is incorrect: " + vocabDomainPropURI2, vocabDomainPropURI2.endsWith("#" + propNameLocation));
 
         Run run = new Run();
         run.setName("ViewSupportRun");

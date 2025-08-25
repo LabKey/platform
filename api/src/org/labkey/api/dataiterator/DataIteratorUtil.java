@@ -247,11 +247,7 @@ public class DataIteratorUtil
         {
             String uri = col.getPropertyURI();
             if (null != uri)
-            {
                 targetAliasesMap.put(uri, new Pair<>(col, MatchType.propertyuri));
-                String propName = uri.substring(uri.lastIndexOf('#')+1);
-                targetAliasesMap.put(propName, new Pair<>(col, MatchType.alias));
-            }
         }
 
         for (ColumnInfo col : cols)

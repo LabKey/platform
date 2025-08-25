@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1282,6 +1283,12 @@ public class DomainImpl implements Domain
     @Override
     public DomainProperty addProperty(PropertyStorageSpec spec)
     {
+        return addProperty(spec, null);
+    }
+
+    @Override
+    public DomainProperty addProperty(PropertyStorageSpec spec, @Nullable String propSuffix)
+    {
         PropertyDescriptor pd = new PropertyDescriptor();
         pd.setContainer(getContainer());
         pd.setDatabaseDefaultValue(spec.getDefaultValue());
@@ -1290,7 +1297,7 @@ public class DomainImpl implements Domain
         pd.setNullable(spec.isNullable());
 //        pd.setAutoIncrement(spec.isAutoIncrement());      // always false in PropertyDescriptor
         pd.setMvEnabled(spec.isMvEnabled());
-        pd.setPropertyURI(getTypeURI() + ":field-" + spec.getName());
+        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(getTypeURI(), propSuffix, new CaseInsensitiveHashSet())); // Issue 53586
         pd.setDescription(spec.getDescription());
         pd.setImportAliases(spec.getImportAliases());
         pd.setScale(spec.getSize());
