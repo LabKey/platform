@@ -7866,7 +7866,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             lowerReservedNames = emptySet();
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
-        Set<String> propertyUris = new HashSet<>();
+        Set<String> propertyUris = new CaseInsensitiveHashSet();
         List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         for (GWTPropertyDescriptor pd : properties)
         {

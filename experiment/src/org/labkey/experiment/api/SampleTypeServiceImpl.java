@@ -34,6 +34,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
@@ -793,7 +794,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         boolean hasNameProperty = false;
         String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
-        Set<String> propertyUris = new HashSet<>();
+        Set<String> propertyUris = new CaseInsensitiveHashSet();
         List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         for (int i = 0; i < properties.size(); i++)
         {

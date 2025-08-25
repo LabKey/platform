@@ -17,7 +17,7 @@ public enum KindOfQuantity
     Volume("volume", "ml")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
             return List.of(Unit.L, Unit.mL, Unit.uL);
         }
@@ -26,7 +26,7 @@ public enum KindOfQuantity
     Mass("mass", "g")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
             return List.of(Unit.kg, Unit.g, Unit.mg);
         }
@@ -36,7 +36,7 @@ public enum KindOfQuantity
     Count("", "unit")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
             return List.of(Unit.count, Unit.unit);
         }
@@ -82,7 +82,7 @@ public enum KindOfQuantity
         return getStorageUnit().base == unit.base;
     }
 
-    abstract List<Unit> getCommonUnits();
+    public abstract List<Unit> getCommonUnits();
 
     static KindOfQuantity getKindOfQuantity(String name)
     {

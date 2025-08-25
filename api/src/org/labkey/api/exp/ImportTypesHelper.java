@@ -29,6 +29,7 @@ import org.labkey.api.data.MutableColumnConceptProperties;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -49,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -244,7 +246,7 @@ public class ImportTypesHelper
             String propertyURI = StringUtils.trimToEmpty(pd.getPropertyURI());
             if (propertyURI.isEmpty())
             {
-                pd.setPropertyURI(domainURI + "." + Lsid.encodePart(columnName));
+                pd.setPropertyURI(DomainUtil.createUniquePropertyURI(domainURI));
             }
 
             // try use existing SystemProperty PropertyDescriptor from Shared container.
