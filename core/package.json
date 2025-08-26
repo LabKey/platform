@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.58.6-fb-assay-batch-run-files.1",
+    "@labkey/components": "6.58.7-fb-assay-batch-run-files.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
