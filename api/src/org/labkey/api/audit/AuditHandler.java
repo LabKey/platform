@@ -32,6 +32,7 @@ import java.util.Set;
 public interface AuditHandler
 {
     String PROVIDED_DATA_PREFIX = ":::provided:::";
+    String DELTA_PROVIDED_DATA_PREFIX = ":::delta_provided:::";
 
     void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment);
 

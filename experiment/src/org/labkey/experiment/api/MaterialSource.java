@@ -48,7 +48,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _aliquotNameExpression;
     private String _labelColor;
     private String _metricUnit;
-    private Unit _amountUnit;
+    private Unit _amountDisplayUnit;
     private GUID _autoLinkTargetContainerId;
     private String _autoLinkCategory;
 
@@ -159,15 +159,15 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         return _metricUnit;
     }
 
-    public Unit getAmountUnit()
+    public Unit getAmountDisplayUnit()
     {
-        return _amountUnit;
+        return _amountDisplayUnit;
     }
 
     public void setMetricUnit(String metricUnit)
     {
         _metricUnit = metricUnit;
-        _amountUnit = Unit.fromName(metricUnit);
+        _amountDisplayUnit = Unit.fromName(metricUnit);
     }
 
     public Container getAutoLinkTargetContainer()

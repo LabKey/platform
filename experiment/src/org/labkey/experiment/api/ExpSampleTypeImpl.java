@@ -364,14 +364,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getMetricUnit();
     }
 
-    public @Nullable Unit getDisplayUnit()
-    {
-        return _object.getAmountUnit();
-    }
-
+    @Override
     public @Nullable Unit getBaseUnit()
     {
-        return getDisplayUnit() == null ? null : getDisplayUnit().getBase();
+        return _object.getAmountDisplayUnit() == null ? null : _object.getAmountDisplayUnit().getBase();
     }
 
     public void setAutoLinkTargetContainer(Container autoLinkTargetContainerId)

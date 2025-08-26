@@ -1048,8 +1048,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         newProps.putAll(newProps_);
         oldProps.putAll(oldProps_);
 
-        boolean hasMetricUnitChanged = false;
-
         if (options != null)
         {
             String sampleIdPattern = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(options.getNameExpression()));
@@ -1067,11 +1065,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setAliquotNameExpression(aliquotIdPattern);
 
             st.setLabelColor(options.getLabelColor());
-            String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
-            String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
-            if (!Objects.equals(oldMetricUnit, newMetricUnit))
-                hasMetricUnitChanged = true;
-
             st.setMetricUnit(options.getMetricUnit());
 
             if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())
@@ -1127,23 +1120,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-
-                boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
-                transaction.addCommitTask(() -> {
-                    clearMaterialSourceCache(container);
-
-                    if (finalHasMetricUnitChanged)
-                    {
-                        try
-                        {
-                            recomputeSampleTypeRollup(st, container);
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
-                        }
-                    }
-                }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
@@ -1263,9 +1239,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Map<String, Object> eventMetadata = new HashMap<>();
         if (providedValues != null)
         {
-            providedValues.forEach((key, value) -> {
-                eventMetadata.put(PROVIDED_DATA_PREFIX + key, value);
-            });
+            eventMetadata.putAll(providedValues);
         }
         if (action != null)
         {

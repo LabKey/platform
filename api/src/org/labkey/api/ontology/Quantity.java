@@ -67,7 +67,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     }
 
     @Nullable
-    public static Quantity of(@Nullable Object value, @Nullable String unitsStr, @Nullable String defaultUnitsStr)
+    public static Quantity of(@Nullable Object value, @Nullable String unitsStr)
     {
         if (value == null)
             return null;
@@ -75,8 +75,6 @@ public class Quantity extends Number implements Comparable<Quantity>
             throw new IllegalArgumentException("Value must be a number");
         if (unitsStr != null)
             return Quantity.of((Number) value, unitsStr);
-        else if (defaultUnitsStr != null)
-            return Quantity.of((Number) value, defaultUnitsStr);
         else
             return Quantity.of((Number) value, Unit.unit);
     }
@@ -142,6 +140,14 @@ public class Quantity extends Number implements Comparable<Quantity>
     public @NotNull KindOfQuantity getKind()
     {
         return kind;
+    }
+
+    public Quantity add(Quantity delta)
+    {
+        if (delta.kind != kind)
+            throw new ConversionException("Cannot add " + delta + " to " + this + ".");
+
+        return new Quantity(this.kind, this.doubleValue() + delta.doubleValue());
     }
 
     public double doubleValue(@NotNull Unit unit)
@@ -286,7 +292,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         }
 
         if (StringUtils.isBlank(valuePart))
-            throw new ConversionException("Could not parse number");
+            throw new ConversionException("Could not parse number from '" + s + "'.");
 
         try
         {
@@ -295,14 +301,14 @@ public class Quantity extends Number implements Comparable<Quantity>
                     new BigDecimal(valuePart);
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
-                throw new ConversionException("Could not parse unit: " + unitPart);
+                throw new ConversionException("Could not parse unit '" + unitPart + "' from '" + s + "'.");
             if (!defaultUnit.kindOfQuantity.accept(unit))
                 throw new ConversionException("Quantity is of wrong type: expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
             return Quantity.of(value, unit);
         }
         catch (IllegalArgumentException x)
         {
-            throw new ConversionException("could not parse", x);
+            throw new ConversionException("Could not parse quantity from '" + s + "'.", x);
         }
     }
 
@@ -400,6 +406,27 @@ public class Quantity extends Number implements Comparable<Quantity>
             catch (ConversionException x)
             {
                 // YEAH
+            }
+        }
+
+        @Test
+        public void testAdd()
+        {
+            Quantity starting = Quantity.of(100, Unit.mg);
+            assertEquals(starting.add(Quantity.of(10, Unit.mg)), Quantity.of(110, Unit.mg));
+            assertEquals(starting.add(Quantity.of(-10, Unit.mg)), Quantity.of(0.09, Unit.g));
+            assertEquals(starting.add(Quantity.of(0, Unit.mg)), starting);
+            assertEquals(starting.add(Quantity.of(1, Unit.g)), Quantity.of(1100, Unit.mg));
+            assertEquals(starting.add(Quantity.of(200, Unit.ug)), Quantity.of(0.1002, Unit.g));
+            assertEquals(starting.add(Quantity.of(200, Unit.ug)), Quantity.of(100200, Unit.ug));
+            try
+            {
+                starting.add(Quantity.of(10, Unit.mL));
+                fail("Adding quantities of different kinds should throw an error.");
+            }
+            catch (ConversionException x)
+            {
+                assertEquals("", x.getMessage());
             }
         }
 

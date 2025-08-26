@@ -75,7 +75,7 @@ public enum Unit
             Quantity.Mass_pg.class,
             "picogram", "picograms");
 
-    private static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) cannot be converted to the default units (%s).";
+    private static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the display units (%s).";
 
     @Getter
     final @NotNull KindOfQuantity kindOfQuantity;
@@ -199,7 +199,7 @@ public enum Unit
     public static Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits)
     {
         if (rawUnits == null)
-            return defaultUnits;
+            return null;
         if (rawUnits instanceof Unit u)
             if (defaultUnits == null)
                 return u;
@@ -216,13 +216,14 @@ public enum Unit
             Unit mUnit = Unit.fromName(rawUnitsString);
             if (mUnit == null)
             {
+                // TODO supported values are a subset of the full set of units for now
                 throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
             }
             if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
                 throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
             return mUnit;
         }
-        return defaultUnits;
+        return null;
     }
 
     public static class TestCase extends Assert
