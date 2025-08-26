@@ -264,7 +264,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private DbSchema getExpSchema()
     {
-        return ExperimentServiceImpl.get().getExpSchema();
+        return ExperimentServiceImpl.getExpSchema();
     }
 
     @Override
@@ -397,7 +397,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return getSampleTypeByObjectId(legacyObjectId);
 
         boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, user, includeOtherContainers, sampleTypeName);
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, includeOtherContainers, sampleTypeName);
         if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
             return sampleType;
 
@@ -407,7 +407,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);
+        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         TreeSet<ExpSampleTypeImpl> result = new TreeSet<>();
@@ -425,31 +425,31 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull String sampleTypeName)
     {
-        return getSampleType(c, null, false, sampleTypeName);
+        return getSampleType(c, false, sampleTypeName);
     }
 
     // NOTE: This method used to not take a user or check permissions
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, @NotNull String sampleTypeName)
     {
-        return getSampleType(c, user, true, sampleTypeName);
+        return getSampleType(c, true, sampleTypeName);
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleTypeName)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, String sampleTypeName)
     {
-        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
+        return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
     }
 
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId)
     {
-        return getSampleType(c, null, rowId, false);
+        return getSampleType(c, rowId, false);
     }
 
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, long rowId)
     {
-        return getSampleType(c, user, rowId, true);
+        return getSampleType(c, rowId, true);
     }
 
     @Override
@@ -461,7 +461,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             c = ContainerManager.getForId(id);
         ExpSampleTypeImpl st = null;
         if (null != c)
-            st = getSampleType(c, null, false, ms -> lsid.equals(ms.getLSID()) );
+            st = getSampleType(c, false, ms -> lsid.equals(ms.getLSID()) );
         if (null == st)
             st = _getSampleType(lsid);
         if (null != st && null==id)
@@ -470,14 +470,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return st;
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, long rowId, boolean includeOtherContainers)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId, boolean includeOtherContainers)
     {
-        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
+        return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, user, includeOtherContainers);
+        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers);
         for (String containerId : containerIds)
         {
             Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(containerId);

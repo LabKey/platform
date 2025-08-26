@@ -40,6 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -139,7 +140,23 @@ public class AssayManager implements AssayService
     };
 
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, argument) ->
+    {
+        List<ExpProtocol> result = new ArrayList<>();
+
+        // Filter to just the ones that have an AssayProvider associated with them
+        for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
+        {
+            AssayProvider p = AssayManager.get().getProvider(protocol);
+            if (p != null)
+            {
+                // We don't want anyone editing our cached object
+                protocol.lock();
+                result.add(protocol);
+            }
+        }
+        return result.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(result);
+    });
 
     private static final List<AssayListener> _listeners = new CopyOnWriteArrayList<>();
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
@@ -365,23 +382,7 @@ public class AssayManager implements AssayService
 
         for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
         {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope, null, (c, argument) ->
-            {
-                List<ExpProtocol> result = new ArrayList<>();
-
-                // Filter to just the ones that have an AssayProvider associated with them
-                for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
-                {
-                    AssayProvider p = getProvider(protocol);
-                    if (p != null)
-                    {
-                        // We don't want anyone editing our cached object
-                        protocol.lock();
-                        result.add(protocol);
-                    }
-                }
-                return result.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(result);
-            });
+            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
             allProtocols.addAll(ids);
         }
 
