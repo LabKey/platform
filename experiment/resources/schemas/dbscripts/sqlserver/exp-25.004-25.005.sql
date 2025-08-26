@@ -1,3 +1,6 @@
+-- Viability no longer supports SQL Server, but its old schema may have been left behind. Ensure it and its FK to ObjectId are dropped.
+EXEC core.fn_dropifexists '*', 'viability', 'SCHEMA';
+
 -- Drop foreign keys that involve ObjectIds
 ALTER TABLE exp.Edge DROP CONSTRAINT FK_Edge_From_Object;
 ALTER TABLE exp.Edge DROP CONSTRAINT FK_Edge_To_Object;

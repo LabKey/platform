@@ -291,6 +291,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
      * a user must be provided to check for read permission of the containers in scope.
      */
+    // TODO: Remove user parameter (not used)
     List<? extends ExpDataClass> getDataClasses(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
 
     /**
@@ -302,6 +303,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by name within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
+    // TODO: Remove user parameter (not used)
     ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, @NotNull String dataClassName);
 
     /**
@@ -313,6 +315,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by rowId within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
+    // TODO: Remove user parameter (not used)
     ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, long rowId);
 
     /**
@@ -330,6 +333,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a DataClass with name at a specific time.
      */
+    // TODO: Remove user parameter (not used)
     @Nullable ExpDataClass getEffectiveDataClass(
         @NotNull Container definitionContainer,
         @NotNull User user,
@@ -341,6 +345,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a ExpProtocol with name at a specific time.
      */
+    // TODO: Delete?
     ExpProtocol getEffectiveProtocol(Container container, User user, String schemaName, Date effectiveDate, ContainerFilter dataTypeCF);
 
     /**
