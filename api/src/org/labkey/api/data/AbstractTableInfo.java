@@ -276,7 +276,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _schema = schema;
         _columnMap = constructColumnMap(); // This is just an empty map, not populating any columns yet
         setName(name);
-        _auditBehaviorType = getDefaultAuditBehavior();
         addTriggerFactory(new ScriptTriggerFactory());
         MemTracker.getInstance().put(this);
     }
@@ -285,7 +284,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public AuditBehaviorType getDefaultAuditBehavior()
     {
-        return AuditBehaviorType.NONE;
+        return _auditBehaviorType;
     }
 
     public void afterConstruct()
@@ -1473,7 +1472,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 catch (QueryParseException qpe)
                 {
                     warnings.add(qpe.setFieldName(xmlColumn.getColumnName()));
-                    continue;
                 }
             }
 
@@ -1501,7 +1499,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
             catch (IllegalArgumentException ignore)
             {
-
+                warnings.add(new QueryParseWarning("Invalid AuditLogging: " + auditBehavior,null,0,0));
             }
 
         }

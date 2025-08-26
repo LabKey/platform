@@ -89,9 +89,10 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
     private void addRunAuditSummary(User user, @Nullable Map<Enum, Object> configParameters, String verb)
     {
+        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+
         for (Long runId: dataChangeCount.keySet())
         {
-            String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
             var run = ExperimentService.get().getExpRun(runId);
             int deletedCount = dataChangeCount.get(runId);
 
@@ -119,7 +120,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        dataChangeCount = new HashMap<>();
+        dataChangeCount = new LinkedHashMap<>();
         // handle transform scripts
         rows = transform(container, user, rows, oldKeys);
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);

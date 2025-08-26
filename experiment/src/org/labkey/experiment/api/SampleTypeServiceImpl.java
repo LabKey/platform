@@ -103,6 +103,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -1245,11 +1246,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         else if (tInfo != null)
         {
-            ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, tInfo.getUserSchema().getUser(), tInfo.getName());
-            if (sampleType != null)
+            UserSchema schema = tInfo.getUserSchema();
+            if (schema != null)
             {
-                event.setSampleType(sampleType.getName());
-                event.setSampleTypeId(sampleType.getRowId());
+                ExpSampleType sampleType = getSampleType(c, schema.getUser(), tInfo.getName());
+                if (sampleType != null)
+                {
+                    event.setSampleType(sampleType.getName());
+                    event.setSampleTypeId(sampleType.getRowId());
+                }
             }
         }
 
