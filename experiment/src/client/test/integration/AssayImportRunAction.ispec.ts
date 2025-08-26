@@ -55,15 +55,14 @@ afterEach(() => {
     mock.restore();
 });
 
-/**
- * Verify audit event row matches expected values. Note: This function is case-insensitive for field names.
- */
-function verifyFileSystemAuditEvent(events: Row[], fieldName: string, expectedValues: Record<string, any>) {
-    const auditEvent = events.find(
-        event => caseInsensitive(event.data, 'FieldName')?.value.toLowerCase() === fieldName.toLowerCase()
-    );
-    expect(auditEvent).toBeDefined();
-    const eventValues = Object.entries(auditEvent.data).reduce((acc, event) => {
+function fileNameWithIncrement(fileName: string, increment: number): string {
+    return fileName.lastIndexOf('.') > 0
+        ? fileName.substring(0, fileName.lastIndexOf('.')) + '-' + increment + fileName.substring(fileName.lastIndexOf('.'))
+        : fileName + '-' + increment;
+}
+
+function verifyAuditEvent(event: Row, expectedValues: Record<string, any>): void {
+    const eventValues = Object.entries(event.data).reduce((acc, event) => {
         const [key, value] = event;
         acc[key.toLowerCase()] = value.value;
         return acc;
@@ -74,6 +73,29 @@ function verifyFileSystemAuditEvent(events: Row[], fieldName: string, expectedVa
         return acc;
     }, {});
     expect(eventValues).toEqual(expect.objectContaining(lowerExpectedValues));
+}
+
+function verifyExperimentAuditEvent(events: Row[], comment: string, expectedValues: Record<string, any>): void {
+    const auditEvent = events.find(
+        event => caseInsensitive(event.data, 'Comment')?.value.toLowerCase() === comment.toLowerCase()
+    );
+    if (!auditEvent) {
+        throw new Error(`Experiment audit event with comment '${comment}' not found`);
+    }
+    verifyAuditEvent(auditEvent, expectedValues);
+}
+
+/**
+ * Verify audit event row matches expected values. Note: This function is case-insensitive for field names.
+ */
+function verifyFileSystemAuditEvent(events: Row[], fieldName: string, expectedValues: Record<string, any>): void {
+    const auditEvent = events.find(
+        event => caseInsensitive(event.data, 'FieldName')?.value.toLowerCase() === fieldName.toLowerCase()
+    );
+    if (!auditEvent) {
+        throw new Error(`File system audit event with field name '${fieldName}' not found`);
+    }
+    verifyAuditEvent(auditEvent, expectedValues);
 }
 
 /**
@@ -241,7 +263,9 @@ describe('assay-importRun.api', () => {
             // Arrange
             // Upload files with the same name for two different fields. Expect the latter to be renamed.
             const sameFileName = 'sameFileAA.txt';
-            const sameFileNameAgain = 'sameFileAA-1.txt';
+            const sameFileNameOne = fileNameWithIncrement(sameFileName, 1);
+            const sameFileNameTwo = fileNameWithIncrement(sameFileName, 2);
+            const sameFileNameThree = fileNameWithIncrement(sameFileName, 3);
             const batchFilePath = `file://path/batch/${sameFileName}`;
             const runFilePath = `file://path/run/${sameFileName}`;
             const { editorUserOptions, topFolderOptions } = context;
@@ -260,7 +284,7 @@ describe('assay-importRun.api', () => {
                 const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
                 expect(response.body.success).toEqual(true);
                 expect(response.body.runId).toBeGreaterThan(0);
-                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameAgain], true, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameOne], true, topFolderOptions);
                 runId = response.body.runId;
             }
 
@@ -293,9 +317,121 @@ describe('assay-importRun.api', () => {
 
                 // Assert
                 expect(response.body.success).toEqual(false);
-                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameAgain], true, topFolderOptions);
-                await verifyPropertiesFilesOnServer(server, ['sameFileAA-2.txt', 'sameFileAA-3.txt'], false, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameOne], true, topFolderOptions);
+                await verifyPropertiesFilesOnServer(server, [sameFileNameTwo, sameFileNameThree], false, topFolderOptions);
             }
+        });
+        it('successfully reimports a run', async () => {
+            // Arrange
+            // Upload files with the same name for two different fields. Expect the latter to be renamed.
+            const batchFileName = 'batchFileAARI.txt';
+            const batchFileNameOne = fileNameWithIncrement(batchFileName, 1);
+            const batchFileNameTwo = fileNameWithIncrement(batchFileName, 2);
+            const runFileName = 'runFileBBRI.txt';
+            const runFileNameOne = fileNameWithIncrement(runFileName, 1);
+            const runFileNameTwo = fileNameWithIncrement(runFileName, 2);
+            const batchFilePath = `file://path/batch/${batchFileName}`;
+            const runFilePath = `file://path/run/${runFileName}`;
+            const { editorUserOptions, topFolderOptions } = context;
+            let runId: number;
+
+            // Successfully import a run with file properties
+            {
+                mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
+                const payload: ImportRunOptions = {
+                    assayId: ASSAY_A_ID,
+                    batchProperties: {
+                        [BATCH_FILE_FIELD_NAME]: batchFilePath,
+                        [BATCH_FILE_FIELD_TWO_NAME]: batchFilePath,
+                    },
+                    dataRows: [{ [RESULT_FIELD_NAME]: 'beep' }],
+                    properties: {
+                        [RUN_FILE_FIELD_NAME]: runFilePath,
+                        [RUN_FILE_FIELD_TWO_NAME]: runFilePath,
+                    },
+                };
+
+                const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
+                expect(response.body.success).toEqual(true);
+                expect(response.body.runId).toBeGreaterThan(0);
+                await verifyPropertiesFilesOnServer(server, [batchFileName, batchFileNameOne, runFileName, runFileNameOne], true, topFolderOptions);
+                runId = response.body.runId;
+            }
+
+            // Act
+            // Successfully reimport the run, supplying some new files and some original files
+            const riBatchFilePath = `file://path/reimport/batch/${batchFileName}`;
+            const riRunFile2Name = 'reimportRunFileBBRI.txt';
+            const riRunFile2Path = `file://path/reimport/run/${riRunFile2Name}`;
+            mock({
+                [riBatchFilePath]: 'Reimport Batch McBatch',
+                [riRunFile2Path]: 'Reimport Run McRun 2',
+                [runFilePath]: 'Run McRun',
+            });
+
+            const payload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                batchProperties: {
+                    [BATCH_FILE_FIELD_TWO_NAME]: riBatchFilePath,
+                },
+                dataRows: [{ [RESULT_FIELD_NAME]: 'beep' }],
+                properties: {
+                    [RUN_FILE_FIELD_NAME]: runFilePath,
+                    [RUN_FILE_FIELD_TWO_NAME]: riRunFile2Path,
+                },
+                reRunId: runId,
+            };
+            const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
+
+            // Assert
+            expect(response.body.success).toEqual(true);
+            expect(response.body.runId).toBeGreaterThan(0);
+            const auditTransactionId = response.body.auditTransactionId;
+            const reRunId = response.body.runId;
+
+            // Verify experiment audit events
+            expect(auditTransactionId).toBeGreaterThan(0);
+            let auditLogs = await getAuditLogsForTransaction(
+                server,
+                auditTransactionId,
+                EXPERIMENT_AUDIT_EVENT,
+                topFolderOptions
+            );
+            expect(auditLogs.length).toBe(3);
+            verifyExperimentAuditEvent(auditLogs, `Run id ${runId} was replaced by run id ${reRunId}`, {
+                createdBy: context.editorUser.userId,
+                transactionId: auditTransactionId,
+            });
+            verifyExperimentAuditEvent(auditLogs, `${ASSAY_A_NAME} run loaded`, {
+                createdBy: context.editorUser.userId,
+                transactionId: auditTransactionId,
+            });
+
+            // Verify file system audit events
+            auditLogs = await getAuditLogsForTransaction(server, auditTransactionId, 'filesystem', topFolderOptions);
+            expect(auditLogs.length).toBe(3);
+            verifyFileSystemAuditEvent(auditLogs, BATCH_FILE_FIELD_TWO_NAME, {
+                comment: 'Assay batch property file uploaded.',
+                createdBy: context.editorUser.userId,
+                file: batchFileNameTwo,
+                providedFileName: batchFileName,
+                transactionId: auditTransactionId,
+            });
+
+            verifyFileSystemAuditEvent(auditLogs, RUN_FILE_FIELD_NAME, {
+                comment: 'Assay run property file uploaded.',
+                createdBy: context.editorUser.userId,
+                file: runFileNameTwo,
+                providedFileName: runFileName,
+                transactionId: auditTransactionId,
+            });
+            verifyFileSystemAuditEvent(auditLogs, RUN_FILE_FIELD_TWO_NAME, {
+                comment: 'Assay run property file uploaded.',
+                createdBy: context.editorUser.userId,
+                file: riRunFile2Name,
+                providedFileName: riRunFile2Name,
+                transactionId: auditTransactionId,
+            });
         });
     });
 });
