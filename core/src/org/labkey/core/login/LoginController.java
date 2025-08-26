@@ -365,6 +365,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @IgnoresForbiddenProjectCheck
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
         @Override
