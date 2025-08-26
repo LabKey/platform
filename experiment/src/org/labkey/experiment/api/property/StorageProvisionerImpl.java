@@ -1008,8 +1008,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    @Override
-    public void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode)
+    private void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode)
     {
         DbScope scope = validateDomain(domain);
 
@@ -1042,8 +1041,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return scope;
     }
 
-    @Override
-    public void dropTableIndices(Domain domain, Set<String> indexNames)
+    private void dropTableIndices(Domain domain, Set<String> indexNames)
     {
         DbScope scope = validateDomain(domain);
 
@@ -1057,6 +1055,49 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             change.execute();
             transaction.commit();
+        }
+    }
+
+    @Override
+    public void ensureTableIndices(@NotNull Domain domain, @NotNull DomainKind<?> kind)
+    {
+        // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+        if (schemaTableInfo != null)
+        {
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
+            Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(kind.getPropertyIndices(domain));
+            Set<String> toRemove = new HashSet<>();
+            for (String name : existingIndices.keySet())
+            {
+                if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
+                    continue;
+                Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
+                String[] columnNames = new String[columnIndex.second.size()];
+                for (int i = 0; i < columnIndex.second.size(); i++)
+                {
+                    columnNames[i] = columnIndex.second.get(i).getColumnName();
+                }
+                PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+                boolean foundIt = false;
+                for (PropertyStorageSpec.Index propertyIndex : newIndices)
+                {
+                    if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
+                    {
+                        foundIt = true;
+                        newIndices.remove(propertyIndex);
+                        break;
+                    }
+                }
+
+                if (!foundIt)
+                    toRemove.add(name);
+            }
+
+            if (!toRemove.isEmpty())
+                dropTableIndices(domain, toRemove);
+            if (!newIndices.isEmpty())
+                addTableIndices(domain, newIndices, TableChange.IndexSizeMode.Normal);
         }
     }
 
@@ -1828,8 +1869,8 @@ renaming a property AND toggling mvindicator on in the same change.
             {
                 d = new DomainImpl(c, uri, "test", true)
                 {
-                    @Override @Nullable
-                    public DomainKind<?> getDomainKind()
+                    @Override
+                    public @NotNull DomainKind<?> getDomainKind()
                     {
                         return k;
                     }

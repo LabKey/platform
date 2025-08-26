@@ -55,13 +55,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/8/13
- */
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
-
     private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 

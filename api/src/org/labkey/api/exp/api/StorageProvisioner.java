@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -83,10 +82,13 @@ public interface StorageProvisioner
      */
     void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
 
+    @Deprecated // Call ensureTableIndices() instead
     void dropNotRequiredIndices(Domain domain);
+    @Deprecated // Call ensureTableIndices() instead
     void addMissingRequiredIndices(Domain domain);
-    void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode);
-    void dropTableIndices(Domain domain, Set<String> indexNames);
+
+    // Passing in DomainKind because domains can't be trusted to know the correct DomainKind. We might fix this...
+    void ensureTableIndices(@NotNull Domain domain, @NotNull DomainKind<?> kind);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 

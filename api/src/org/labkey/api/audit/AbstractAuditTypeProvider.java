@@ -23,7 +23,6 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -31,11 +30,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -55,14 +51,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.Time;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -145,51 +139,14 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         ensureProperties(user, domain);
     }
 
+    // TODO: eliminate this method... call StorageProvisioner directly
     private void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
     {
-        if (domain.getStorageTableName() == null)
-            return;
-
-        // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
-        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-        if (schemaTableInfo != null)
-        {
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
-            Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(domainKind.getPropertyIndices(domain));
-            Set<String> toRemove = new HashSet<>();
-            for (String name : existingIndices.keySet())
-            {
-                if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
-                    continue;
-                Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
-                String[] columnNames = new String[columnIndex.second.size()];
-                for (int i = 0; i < columnIndex.second.size(); i++)
-                {
-                    columnNames[i] = columnIndex.second.get(i).getColumnName();
-                }
-                PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
-                boolean foundIt = false;
-                for (PropertyStorageSpec.Index propertyIndex : newIndices)
-                {
-                    if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
-                    {
-                        foundIt = true;
-                        newIndices.remove(propertyIndex);
-                        break;
-                    }
-                }
-
-                if (!foundIt)
-                    toRemove.add(name);
-            }
-
-            if (!toRemove.isEmpty())
-                StorageProvisioner.get().dropTableIndices(domain, toRemove);
-            if (!newIndices.isEmpty())
-                StorageProvisioner.get().addTableIndices(domain, newIndices, TableChange.IndexSizeMode.Normal);
-        }
+        assert domain.getStorageTableName() != null;
+        assert domainKind != null;
+        assert domain.getDomainKind() != null;
+        StorageProvisioner.get().ensureTableIndices(domain, domainKind);
     }
-
 
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
     private void ensureProperties(User user, Domain domain)
