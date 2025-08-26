@@ -397,7 +397,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
                 String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
-                getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, auditUserComment);
+                boolean skipAuditLevelCheck = false;
+                if (context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
+                {
+                    if (getQueryTable().getEffectiveAuditBehavior(auditType) == AuditBehaviorType.DETAILED) // allow ETL to demote audit level for bulkLoad
+                        skipAuditLevelCheck = true;
+                }
+                getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, auditUserComment, skipAuditLevelCheck);
             }
             return count;
         }
