@@ -56,9 +56,12 @@ afterEach(() => {
 });
 
 function fileNameWithIncrement(fileName: string, increment: number): string {
-    return fileName.lastIndexOf('.') > 0
-        ? fileName.substring(0, fileName.lastIndexOf('.')) + '-' + increment + fileName.substring(fileName.lastIndexOf('.'))
-        : fileName + '-' + increment;
+    const lastDotIdx = fileName.lastIndexOf('.');
+    if (lastDotIdx > 0) {
+        return `${fileName.substring(0, lastDotIdx)}-${increment}${fileName.substring(lastDotIdx)}`;
+    }
+
+    return `${fileName}-${increment}`;
 }
 
 function verifyAuditEvent(event: Row, expectedValues: Record<string, any>): void {
@@ -135,7 +138,9 @@ describe('assay-importRun.api', () => {
     });
     it('errors with invalid "assayId" parameter', async () => {
         let response = await server.post('assay', 'importRun.api', { assayId: -1 });
-        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
+        expect(response.body.exception).toEqual(
+            'Either "assayId" or both "protocolName" and "providerName" are required.'
+        );
 
         const invalidAssayId = 1234567890;
         response = await server.post('assay', 'importRun.api', { assayId: invalidAssayId });
@@ -143,10 +148,14 @@ describe('assay-importRun.api', () => {
     });
     it('errors with invalid "assayName" or "providerName" parameter', async () => {
         let response = await server.post('assay', 'importRun.api', { assayName: null });
-        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
+        expect(response.body.exception).toEqual(
+            'Either "assayId" or both "protocolName" and "providerName" are required.'
+        );
 
         response = await server.post('assay', 'importRun.api', { assayName: 'some assay', providerName: null });
-        expect(response.body.exception).toEqual('Either "assayId" or both "protocolName" and "providerName" are required.');
+        expect(response.body.exception).toEqual(
+            'Either "assayId" or both "protocolName" and "providerName" are required.'
+        );
 
         const invalidProviderName = 'invalid provider name';
         response = await server.post('assay', 'importRun.api', {
@@ -318,7 +327,12 @@ describe('assay-importRun.api', () => {
                 // Assert
                 expect(response.body.success).toEqual(false);
                 await verifyPropertiesFilesOnServer(server, [sameFileName, sameFileNameOne], true, topFolderOptions);
-                await verifyPropertiesFilesOnServer(server, [sameFileNameTwo, sameFileNameThree], false, topFolderOptions);
+                await verifyPropertiesFilesOnServer(
+                    server,
+                    [sameFileNameTwo, sameFileNameThree],
+                    false,
+                    topFolderOptions
+                );
             }
         });
         it('successfully reimports a run', async () => {
@@ -354,7 +368,12 @@ describe('assay-importRun.api', () => {
                 const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
                 expect(response.body.success).toEqual(true);
                 expect(response.body.runId).toBeGreaterThan(0);
-                await verifyPropertiesFilesOnServer(server, [batchFileName, batchFileNameOne, runFileName, runFileNameOne], true, topFolderOptions);
+                await verifyPropertiesFilesOnServer(
+                    server,
+                    [batchFileName, batchFileNameOne, runFileName, runFileNameOne],
+                    true,
+                    topFolderOptions
+                );
                 runId = response.body.runId;
             }
 
