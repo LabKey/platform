@@ -412,13 +412,13 @@ public class Quantity extends Number implements Comparable<Quantity>
         @Test
         public void testAdd()
         {
-            Quantity starting = Quantity.of(100, Unit.mg);
-            assertEquals(starting.add(Quantity.of(10, Unit.mg)), Quantity.of(110, Unit.mg));
-            assertEquals(starting.add(Quantity.of(-10, Unit.mg)), Quantity.of(0.09, Unit.g));
-            assertEquals(starting.add(Quantity.of(0, Unit.mg)), starting);
-            assertEquals(starting.add(Quantity.of(1, Unit.g)), Quantity.of(1100, Unit.mg));
-            assertEquals(starting.add(Quantity.of(200, Unit.ug)), Quantity.of(0.1002, Unit.g));
-            assertEquals(starting.add(Quantity.of(200, Unit.ug)), Quantity.of(100200, Unit.ug));
+            Quantity starting = Quantity.of(1024, Unit.mg);
+            assertEquals(starting, starting.add(Quantity.of(0, Unit.mg)));
+            assertEquals(Quantity.of(1034, Unit.mg), starting.add(Quantity.of(10, Unit.mg)));
+            assertEquals(Quantity.of(1.022, Unit.g), starting.add(Quantity.of(-2, Unit.mg)));
+            assertEquals(Quantity.of(33024, Unit.mg), starting.add(Quantity.of(32, Unit.g)));
+            assertEquals(Quantity.of(1.024200, Unit.g), starting.add(Quantity.of(200, Unit.ug)));
+            assertEquals(Quantity.of(1023800, Unit.ug), starting.add(Quantity.of(-200, Unit.ug)));
             try
             {
                 starting.add(Quantity.of(10, Unit.mL));
@@ -426,7 +426,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             }
             catch (ConversionException x)
             {
-                assertEquals("", x.getMessage());
+                assertEquals("Cannot add 10.0mL to 1.024g.", x.getMessage());
             }
         }
 
