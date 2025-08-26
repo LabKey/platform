@@ -18,6 +18,8 @@ package org.labkey.test.tests.study;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.assay.AssayListCommand;
+import org.labkey.remoteapi.assay.AssayListResponse;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -40,8 +42,11 @@ import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
@@ -49,8 +54,10 @@ public class AssayTest extends AbstractAssayTest
     private static final String INVESTIGATOR = "Dr. No";
     private static final String GRANT = "SPECTRE";
     private static final String DESCRIPTION = "World Domination.";
+    private static final String ISSUE_53616_ASSAY = "Issue53616Assay";
+    private static final String ISSUE_53616_PROJECT = "Issue53616Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
-    private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project";
+    private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
 
     @Override
     protected String getProjectName()
@@ -65,10 +72,39 @@ public class AssayTest extends AbstractAssayTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         //should also delete the groups
-        _containerHelper.deleteProject(getProjectName(), afterTest);
-        _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, afterTest);
+        _containerHelper.deleteProject(getProjectName(), false);
+        _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, false);
+        _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
+    }
+
+    // Issue 53616: Assay creation attempt after an error results in "Assay protocol already exists for this name."
+    @Test
+    public void testFailedCreation() throws Exception
+    {
+        _containerHelper.createProject(ISSUE_53616_PROJECT, "Assay");
+        goToProjectHome(ISSUE_53616_PROJECT);
+
+        log("Create test assay");
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", ISSUE_53616_ASSAY)
+                .setDescription(TEST_ASSAY_DESC);
+
+        DomainFormPanel resultsPanel = assayDesignerPage.goToBatchFields().removeAllFields(false); //remove preset result fields
+        resultsPanel.addField("TooLongFieldName".repeat(20));
+
+        log("Save initial assay design with sample field set to 'All Samples'");
+        List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
+        assertEquals("Wrong number of errors", 1, errors.size());
+        assertTrue("Wrong error message: " + errors.get(0), errors.get(0).startsWith("Name cannot exceed 200 characters, but was"));
+
+        resultsPanel.removeAllFields(false);
+        resultsPanel.addField("ShortAndSweet");
+        assayDesignerPage.clickFinish();
+
+        AssayListCommand command = new AssayListCommand();
+        AssayListResponse response = command.execute(createDefaultConnection(), ISSUE_53616_PROJECT);
+        assertNotNull("Didn't find expected assay design", response.getDefinition(ISSUE_53616_ASSAY));
     }
 
     /**
@@ -95,9 +131,7 @@ public class AssayTest extends AbstractAssayTest
         viewCrossFolderData();
         verifyStudyList();
         verifyRunDeletionRecallsDatasetRows();
-        // TODO: Turn this on once file browser migration is complete.
-        //verifyWebdavTree();
-        goBack();
+        verifyWebdavTree();
     }
 
     @Test
@@ -227,8 +261,7 @@ public class AssayTest extends AbstractAssayTest
     private void verifyWebdavTree()
     {
         beginAt("_webdav");
-        _fileBrowserHelper.selectFileBrowserItem(getProjectName() + "/Studies/Study 1");
-        assertTextPresent("@pipeline", 2);
+        _fileBrowserHelper.selectFileBrowserItem(getProjectName() + "/Studies/Study 1/");
         Locator.XPathLocator l = Locator.xpath("//span[text()='@pipeline']");
         assertElementPresent(l,  1);
     }

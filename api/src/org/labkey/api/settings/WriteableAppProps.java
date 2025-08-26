@@ -39,6 +39,9 @@ public class WriteableAppProps extends AppPropsImpl
 {
     private final Container _container;
 
+    // Issue 53562: Cap max blob size
+    public static final int SOFT_MAX_BLOB_SIZE = 200 * 1024 * 1024;
+
     public WriteableAppProps(Container c)
     {
         _container = c;
@@ -72,21 +75,29 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setSSLPort(int port)
     {
+        if (port < 0 || port > 65535)
+            throw new IllegalArgumentException("Invalid port number: " + port);
         storeIntValue(sslPort, port);
     }
 
     public void setMemoryUsageDumpInterval(int interval)
     {
+        if (interval < 0)
+            throw new IllegalArgumentException("memoryUsageDumpInterval must be >= 0");
         storeIntValue(memoryUsageDumpInterval, interval);
     }
 
     public void setReadOnlyHttpRequestTimeout(int timeout)
     {
+        if (timeout < 0)
+            throw new IllegalArgumentException("readOnlyHttpRequestTimeout must be >= 0");
         storeIntValue(readOnlyHttpRequestTimeout, timeout);
     }
 
     public void setMaxBLOBSize(int maxSize)
     {
+        if (maxSize < 0)
+            throw new IllegalArgumentException("maxBLOBSize must be >= 0");
         storeIntValue(maxBLOBSize, maxSize);
     }
 
