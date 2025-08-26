@@ -26,6 +26,4 @@ public interface IAssayDomainType
     String getPrefix();
 
     String getLsidTemplate();
-
-    String getDomainName();
 }
