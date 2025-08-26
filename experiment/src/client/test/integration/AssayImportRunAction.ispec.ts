@@ -1,4 +1,4 @@
-import { hookServer, IntegrationTestServer, RequestOptions } from '@labkey/test';
+import { hookServer, IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 
 import {
@@ -10,6 +10,7 @@ import {
     ImportRunOptions,
     importRunToServer,
     initProject,
+    options,
 } from './utils';
 import { ASSAY_DESIGNER_ROLE, caseInsensitive, EXPERIMENT_AUDIT_EVENT, RANGE_URIS, Row } from '@labkey/components';
 
@@ -451,6 +452,76 @@ describe('assay-importRun.api', () => {
                 providedFileName: riRunFile2Name,
                 transactionId: auditTransactionId,
             });
+        });
+        it('works in conjunction with assay-assayFileUpload.api', async () => {
+            // Arrange
+            const batchFileName = 'uploadFileA.txt';
+            const batchFilePath = `file://path/${batchFileName}`;
+            const runFileName = 'uploadRunFileA.txt';
+            const runFilePath = `file://path/${runFileName}`;
+            mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
+            const { editorUserOptions, topFolderOptions } = context;
+
+            let batchFile;
+            let runFile;
+
+            // Upload files via assay-assayFileUpload.api so that we can reference those file paths when importing the run
+            {
+                const response = await server
+                    .request(
+                        'assay',
+                        'assayFileUpload.api',
+                        (agent, url) => agent.post(url).attach('file', batchFilePath).attach('file1', runFilePath),
+                        options(topFolderOptions, editorUserOptions)
+                    )
+                    .expect(successfulResponse);
+
+                const data = JSON.parse(response.text);
+                expect(data.success).toEqual(true);
+                expect(data.file).toBeDefined();
+                expect(data.file1).toBeDefined();
+                batchFile = data.file;
+                runFile = data.file1;
+            }
+
+            const payload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                batchProperties: { [BATCH_FILE_FIELD_TWO_NAME]: batchFile.absolutePath },
+                dataRows: [{ [RESULT_FIELD_NAME]: 'bop' }],
+                properties: { [RUN_FILE_FIELD_NAME]: runFile.absolutePath },
+            };
+
+            // Act
+            const response = await importRunToServer(server, payload, topFolderOptions, editorUserOptions);
+
+            // Assert
+            expect(response.body.success).toEqual(true);
+            const { auditTransactionId, runId } = response.body;
+            expect(runId).toBeGreaterThan(0);
+            expect(auditTransactionId).toBeGreaterThan(0);
+
+            // Verify files are available as expected
+            const run = await getRunQueryRow(server, ASSAY_A_NAME, runId, topFolderOptions);
+            const expectedUrl = `/${encodeURIComponent(PROJECT_NAME)}/core-downloadFileLink.view?propertyId=`;
+            const runBatchField = `Batch/${BATCH_FILE_FIELD_TWO_NAME}`;
+            expect(run[runBatchField].value).toEqual(`assaydata/${batchFileName}`);
+            expect(run[runBatchField].url).toContain(expectedUrl);
+            expect(run[RUN_FILE_FIELD_NAME].value).toEqual(`assaydata/${runFileName}`);
+            expect(run[RUN_FILE_FIELD_NAME].url).toContain(expectedUrl);
+
+            // Verify audit log
+            expect(auditTransactionId).toBeGreaterThan(0);
+            let auditLogs = await getAuditLogsForTransaction(
+                server,
+                auditTransactionId,
+                EXPERIMENT_AUDIT_EVENT,
+                topFolderOptions
+            );
+            expect(auditLogs.length).toBe(2);
+
+            // Verify file system audit events
+            auditLogs = await getAuditLogsForTransaction(server, auditTransactionId, 'filesystem', topFolderOptions);
+            expect(auditLogs.length).toBe(0);
         });
     });
 });

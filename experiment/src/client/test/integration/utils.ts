@@ -19,7 +19,7 @@ export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 const SAMPLE_TYPE_DOMAIN_KIND = 'SampleSet';
 const DATA_CLASS_DOMAIN_KIND = 'DataClass';
 
-function options(folderOptions?: RequestOptions, userOptions?: RequestOptions): RequestOptions {
+export function options(folderOptions?: RequestOptions, userOptions?: RequestOptions): RequestOptions {
     return folderOptions || userOptions ? { ...folderOptions, ...userOptions } : undefined;
 }
 
@@ -223,8 +223,12 @@ function serializeRunProperties(
 
     for (const [key, value] of Object.entries(properties)) {
         const propKey = `${prop}['${key}']`;
-        if (typeof value === 'string' && value.startsWith('file://')) {
-            attachments[propKey] = value;
+        if (typeof value === 'string') {
+            if (value.startsWith('file://')) {
+                attachments[propKey] = value;
+            } else {
+                fields[propKey] = value;
+            }
         } else {
             fields[propKey] = JSON.stringify(value);
         }
