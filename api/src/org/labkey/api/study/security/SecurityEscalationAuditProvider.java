@@ -15,8 +15,6 @@
  */
 package org.labkey.api.study.security;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -45,7 +43,6 @@ import java.util.Set;
 /**
  * This is an abstract class that represents an Audit Log for a Security Escalator.  To use it, you need to
  * extend it, and then register it with the AuditLogManager.
- *
  * <code>
  *     // Register the Security Escalation Audit Log
  *     AuditLogService.get().registerAuditType(new SecurityEscalatorAuditProvider());
@@ -53,8 +50,6 @@ import java.util.Set;
  */
 public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    private static final Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
-
     protected SecurityEscalationAuditProvider()
     {
         super();
@@ -92,10 +87,10 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         LEVEL             ("level",          "Level",           PropertyType.INTEGER)
         ;
 
-        String displayName;
-        String columnName;
+        final String displayName;
+        final String columnName;
         boolean isHidden = false;
-        PropertyType type;
+        final PropertyType type;
 
         CustomColumn(String columnName, String displayName, PropertyType type) {
             this.displayName = displayName;

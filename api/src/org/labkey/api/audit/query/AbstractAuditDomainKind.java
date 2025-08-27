@@ -15,11 +15,15 @@
  */
 package org.labkey.api.audit.query;
 
+import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -38,6 +42,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -50,9 +55,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
@@ -412,5 +420,34 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     public boolean isUserCreatedType()
     {
         return false;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void flagDuplicateNamespacePrefixes()
+        {
+            MultiValuedMap<String, String> mmap = PropertyService.get().getDomainKinds().stream()
+                .filter(AbstractAuditDomainKind.class::isInstance)
+                .map(AbstractAuditDomainKind.class::cast)
+                .collect(LabKeyCollectors.toMultiValuedMap(AbstractAuditDomainKind::getNamespacePrefix, dk -> dk.getClass().getSimpleName()));
+
+            Map<String, Collection<String>> map = mmap.asMap();
+            map.entrySet().stream()
+                .filter(e -> e.getValue().size() > 1)
+                .forEach(e -> LOG.warn("{} share the same namespace prefix: \"{}\"!", e.getValue(), e.getKey()));
+
+            for (Map.Entry<String, Collection<String>> e1 : map.entrySet())
+            {
+                String key1 = e1.getKey();
+                List<String> overlappers = map.entrySet().stream()
+                    .filter(e2 -> !e1.equals(e2) && e2.getKey().startsWith(key1))
+                    .map(e2 -> "\"" + e2.getKey() + "\"")
+                    .toList();
+
+                if (!overlappers.isEmpty())
+                    LOG.warn("Prefix \"{}\" ({}) overlaps with prefixes {})!", key1, e1.getValue(), overlappers);
+            }
+        }
     }
 }

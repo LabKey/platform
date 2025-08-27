@@ -47,7 +47,7 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
 
     public StudySecurityEscalationAuditProvider()
     {
-        super(new StudySecurityEscalationDomain());
+        super(new StudySecurityEscalationDomainKind());
     }
 
     public static class StudySecurityEscalationEvent extends SecurityEscalationEvent
@@ -67,8 +67,10 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
         }
     }
 
-    public static class StudySecurityEscalationDomain extends SecurityEscalationAuditDomainKind {
-        public StudySecurityEscalationDomain() {
+    public static class StudySecurityEscalationDomainKind extends SecurityEscalationAuditDomainKind
+    {
+        public StudySecurityEscalationDomainKind()
+        {
             super(EVENT_TYPE, StudySecurityEscalationEvent.class.getName());
         }
     }
