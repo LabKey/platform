@@ -1412,7 +1412,7 @@ public class DavController extends SpringActionController
                 {
                     if (is.available() > 0)
                     {
-                        DocumentBuilder documentBuilder = getDocumentBuilder();
+                        DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
                         Document document = documentBuilder.parse(is);
 
                         // Get the root element of the document
@@ -2839,7 +2839,7 @@ public class DavController extends SpringActionController
             {
                 if (is.available() > 0)
                 {
-                    DocumentBuilder documentBuilder = getDocumentBuilder();
+                    DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
                     try
                     {
                         // TODO : Process this request body
@@ -3976,7 +3976,7 @@ public class DavController extends SpringActionController
 
             Node lockInfoNode = null;
 
-            DocumentBuilder documentBuilder = getDocumentBuilder();
+            DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
 
             try
             {
@@ -5989,32 +5989,8 @@ public class DavController extends SpringActionController
         return null;
     }
 
-
     /**
-     * Return JAXP document builder instance.
-     */
-    private DocumentBuilder getDocumentBuilder()
-            throws DavException
-    {
-        DocumentBuilder documentBuilder;
-        DocumentBuilderFactory documentBuilderFactory;
-        try
-        {
-            documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        }
-        catch (ParserConfigurationException e)
-        {
-            throw new DavException(e);
-        }
-        return documentBuilder;
-    }
-
-
-
-    /**
-     * Holds a lock information.
+     * Holds lock information.
      */
     private static class LockInfo
     {

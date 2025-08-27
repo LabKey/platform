@@ -26,16 +26,18 @@ import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 
-/**
- * User: adam
- * Date: May 25, 2009
- * Time: 9:26:59 AM
- */
 public class XmlBeansUtil
 {
     private XmlBeansUtil()
@@ -119,5 +121,48 @@ public class XmlBeansUtil
         XmlCursor cursor = doc.newCursor();
         cursor.insertComment(comment);
         cursor.dispose();
+    }
+
+    /**
+     * Return JAXP document builder instance.
+     */
+    public static DocumentBuilder getDocumentBuilder()
+    {
+        DocumentBuilder documentBuilder;
+        DocumentBuilderFactory documentBuilderFactory;
+        try
+        {
+            documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            documentBuilderFactory.setNamespaceAware(true);
+            // Prevent XXE by disabling DTDs and external entities
+            documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            documentBuilderFactory.setXIncludeAware(false);
+            documentBuilderFactory.setExpandEntityReferences(false);
+            documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        }
+        catch (ParserConfigurationException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        return documentBuilder;
+    }
+
+    public static XMLInputFactory createStreamReaderFactory()
+    {
+        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        return inputFactory;
+    }
+
+    public static SAXParser createSAXParser() throws ParserConfigurationException, SAXException
+    {
+        SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
+        parser.getXMLReader().setFeature("http://xml.org/sax/features/validation", false);
+        parser.getXMLReader().setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        parser.getXMLReader().setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return parser;
     }
 }

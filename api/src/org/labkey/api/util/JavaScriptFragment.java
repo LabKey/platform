@@ -8,7 +8,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.view.UnauthorizedException;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
@@ -81,8 +80,7 @@ public class JavaScriptFragment implements SafeToRender, DOM.Renderable
     {
         try
         {
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
+            XMLStreamReader reader = XmlBeansUtil.createStreamReaderFactory().createXMLStreamReader(new StringReader(metadataText));
 
             // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
             // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag

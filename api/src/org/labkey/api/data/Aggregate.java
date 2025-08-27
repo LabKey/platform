@@ -567,13 +567,13 @@ public class Aggregate
         {
             o = rs.getObject(aggColName);
             // TODO: Handle BigDecimal values
-            if (o instanceof Number)
+            if (o instanceof Number n)
             {
-                double resultValue = ((Number)o).doubleValue();
+                double resultValue = n.doubleValue();
                 if (resultValue == Math.floor(resultValue))
-                    o = Long.valueOf((long) resultValue);
+                    o = n.longValue();
                 else
-                    o = Double.valueOf(resultValue);
+                    o = resultValue;
             }
         }
 
