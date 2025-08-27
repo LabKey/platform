@@ -1412,7 +1412,7 @@ public class DavController extends SpringActionController
                 {
                     if (is.available() > 0)
                     {
-                        DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
+                        DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                         Document document = documentBuilder.parse(is);
 
                         // Get the root element of the document
@@ -2839,14 +2839,14 @@ public class DavController extends SpringActionController
             {
                 if (is.available() > 0)
                 {
-                    DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
                     try
                     {
+                        DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                         // TODO : Process this request body
                         documentBuilder.parse(new InputSource(is));
                         throw new DavException(WebdavStatus.SC_NOT_IMPLEMENTED);
                     }
-                    catch (SAXException saxe)
+                    catch (SAXException | ParserConfigurationException e)
                     {
                         // Parse error - assume invalid content
                         throw new DavException(WebdavStatus.SC_UNSUPPORTED_MEDIA_TYPE);
@@ -3976,17 +3976,17 @@ public class DavController extends SpringActionController
 
             Node lockInfoNode = null;
 
-            DocumentBuilder documentBuilder = XmlBeansUtil.getDocumentBuilder();
 
             try
             {
+                DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                 Document document = documentBuilder.parse(new InputSource(getRequest().getInputStream()));
 
                 // Get the root element of the document
                 Element rootElement = document.getDocumentElement();
                 lockInfoNode = rootElement;
             }
-            catch (IOException | SAXException e)
+            catch (IOException | SAXException | ParserConfigurationException e)
             {
                 lockRequestType = LOCK_REFRESH;
             }
