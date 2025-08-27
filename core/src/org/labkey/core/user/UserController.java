@@ -252,15 +252,10 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getUserUpdateURL(Container c, URLHelper returnUrl, int userId)
         {
-            // issue 53750 : if the user doesn't have access to the folder from the redirect, just
-            // default to the home container for the profile update.
-            if (!SecurityManager.getFolderUserids(c).contains(userId))
-                c = ContainerManager.getHomeContainer();
-
             ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
             url.addParameter(QueryParam.schemaName.toString(), CoreQuerySchema.NAME);
-            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
             url.addReturnUrl(returnUrl);
 
             return url;
@@ -1600,13 +1595,11 @@ public class UserController extends SpringActionController
             if (schema == null)
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
-            // for the root container or if the user is site/app admin, use the site users table
-            String userTableName = c.isRoot() || c.hasPermission(currentUser, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
             // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
-            TableInfo table = schema.getTable(userTableName, null, true, true);
+            TableInfo table = schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME, null, true, true);
             if (table == null)
-                throw new NotFoundException(userTableName + " table");
+                throw new NotFoundException(CoreQuerySchema.SITE_USERS_TABLE_NAME + " table");
             else if (table instanceof AbstractTableInfo)
             {
                 // conditionally remove the email and groups columns only for this view
