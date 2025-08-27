@@ -21,7 +21,6 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -31,6 +30,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayFilePropertyWriter;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
@@ -104,7 +104,6 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.ImportRunApiForm>
 {
     static Logger LOG = LogManager.getLogger(ImportRunApiAction.class);
-    private final Set<FileLike> propertyFiles = new HashSet<>();
 
     @Override
     public ApiResponse execute(ImportRunApiForm form, BindException errors) throws Exception
@@ -316,23 +315,26 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
 
         boolean success = false;
+        AssayFilePropertyWriter<? extends AssayProvider> filePropertyWriter = new AssayFilePropertyWriter<>();
+
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
             AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
             Long auditTransactionId = transaction.getAuditId();
 
-            // bind file property values and persist files to the file system
+            // Bind file property values and persist files to the file system.
             {
                 Map<String, MultipartFile> fileMap = getFileMap();
-                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, auditTransactionId, "Assay batch property file uploaded.");
-                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, auditTransactionId, "Assay run property file uploaded.");
+                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay batch property file uploaded.");
+                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay run property file uploaded.");
             }
 
             AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.setOutputDatas(outputData)
                     .setRunProperties(runProperties)
                     .setBatchProperties(batchProperties)
                     .setTransactionAuditId(auditTransactionId)
+                    .setUploadedFiles(filePropertyWriter.getUploadedFiles())
                     .create();
 
             Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync);
@@ -363,8 +365,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         finally
         {
-            if (!success && !propertyFiles.isEmpty())
-                cleanFilePropertyFiles(propertyFiles, protocol.getName());
+            if (!success)
+                filePropertyWriter.cleanupPostedFiles(getContainer(), protocol.getName(), logger);
         }
 
         return null;
@@ -374,6 +376,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         String propertyName,
         CaseInsensitiveHashMap<Object> properties,
         Map<String, MultipartFile> fileMap,
+        AssayFilePropertyWriter<? extends AssayProvider> fileWriter,
         Long auditTransactionId,
         String auditComment
     ) throws ExperimentException, ValidationException
@@ -385,7 +388,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (filePropertyMap.isEmpty())
             return;
 
-        var fileProperties = persistFilePropertyFiles(filePropertyMap, auditTransactionId, auditComment);
+        var fileProperties = fileWriter.savePostedFiles(getContainer(), getUser(), filePropertyMap, auditTransactionId, auditComment);
         for (var entry : fileProperties.entrySet())
             properties.put(entry.getKey(), entry.getValue().toNioPathForRead().toString());
     }
@@ -418,72 +421,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
 
         return filePropertyMap;
-    }
-
-    private CaseInsensitiveHashMap<FileLike> persistFilePropertyFiles(
-        Map<String, MultipartFile> filePropertyMap,
-        Long auditTransactionId,
-        String auditComment
-    ) throws ExperimentException
-    {
-        FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-        CaseInsensitiveHashMap<FileLike> properties = new CaseInsensitiveHashMap<>();
-
-        try
-        {
-            for (Map.Entry<String, MultipartFile> entry : filePropertyMap.entrySet())
-            {
-                MultipartFile multipartFile = entry.getValue();
-                String originalName = multipartFile.getOriginalFilename();
-                String legalName = FileUtil.makeLegalName(originalName);
-                FileLike fileLike = FileUtil.findUniqueFileName(legalName, targetDirectory);
-                File file = toFileForWrite(fileLike);
-                multipartFile.transferTo(file);
-
-                // Record files that have been added so that they can be cleaned up if the import fails.
-                propertyFiles.add(fileLike);
-
-                DataType dataType = ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE);
-                ExpData data = ExperimentService.get().createData(getContainer(), dataType);
-                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
-                data.setName(originalName);
-                data.save(getUser());
-
-                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(getContainer(), auditComment);
-                event.setProvidedFileName(originalName);
-                event.setFile(file.getName());
-                event.setDirectory(file.getParent());
-                event.setTransactionId(auditTransactionId);
-                event.setFieldName(entry.getKey());
-                AuditLogService.get().addEvent(getUser(), event);
-
-                properties.put(entry.getKey(), data.getFileLike());
-            }
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException("Unable to write uploaded file.", e);
-        }
-
-        return properties;
-    }
-
-    private void cleanFilePropertyFiles(Set<FileLike> fileProps, String protocolName)
-    {
-        FileLike targetDir = AssayFileWriter.getUploadDirectory(getContainer());
-
-        for (var file : fileProps)
-        {
-            try
-            {
-                if (file.exists() && file.isFile() && targetDir.equals(file.getParent()))
-                    file.delete();
-            }
-            catch (IOException e)
-            {
-                logger.error("Failed to clean up file {} for protocol \"{}\" in folder {} after failed run import", file.getName(), protocolName, getContainer().getPath(), e);
-            }
-        }
     }
 
     protected ActionURL getUploadWizardCompleteURL(ExpProtocol protocol, ExpRun run)

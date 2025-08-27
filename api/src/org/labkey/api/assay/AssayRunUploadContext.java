@@ -38,8 +38,10 @@ import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 /**
  * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
@@ -230,6 +232,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         return emptyMap();
     }
 
+    default @NotNull Set<FileLike> getUploadedPropertyFiles()
+    {
+        return emptySet();
+    }
+
     /**
      * Builder pattern for creating an AssayRunUploadContext instance.
      */
@@ -252,6 +259,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected AssayRunUploadContext.ReImportOption _reImportOption;
         protected Map<String, Object> _rawRunProperties;
         protected Map<String, Object> _rawBatchProperties;
+        protected Set<FileLike> _uploadedFiles;
         protected Map<?, String> _inputDatas;
         protected Map<?, String> _outputDatas;
         protected Map<?, String> _inputMaterials;
@@ -436,6 +444,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setTransactionAuditId(Long transactionAuditId)
         {
             _transactionAuditId = transactionAuditId;
+            return self();
+        }
+
+        public FACTORY setUploadedFiles(Set<FileLike> propertyFiles)
+        {
+            _uploadedFiles = propertyFiles;
             return self();
         }
 

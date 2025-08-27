@@ -312,6 +312,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addOutputMaterials(context, outputMaterials, cache, materialCache);
         addOutputDatas(context, inputDatas, outputDatas);
 
+        boolean success = false;
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
@@ -426,6 +427,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
             transaction.commit();
+            success = true;
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
@@ -461,18 +463,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException | ConvertHelper.FileConversionException | BatchValidationException e)
+        catch (IOException | ConvertHelper.FileConversionException | BatchValidationException e)
         {
-            // TODO: This is better done as a post-rollback task on the transaction
-            // clean up the run results file dir here if it was created, for non-async imports
-            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
-            resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
-
-            cleanPrimaryFile(context);
-
-            if (e instanceof ExperimentException ee)
-                throw ee;
-
             // HACK: Rethrowing these as ApiUsageException avoids any upstream consequences of wrapping them in ExperimentException.
             // Namely, that they are logged to the server/mothership. There has to be a better way.
             if (e instanceof ConvertHelper.FileConversionException fce)
@@ -481,6 +473,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 throw new ApiUsageException(bve.getMessage(), bve);
 
             throw new ExperimentException(e);
+        }
+        finally
+        {
+            if (!success)
+            {
+                // clean up the run results file dir here if it was created, for non-async imports
+                AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
+                resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
+
+                cleanPrimaryFile(context);
+            }
         }
     }
 
