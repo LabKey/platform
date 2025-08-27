@@ -398,29 +398,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Map<String, Object> result = new HashMap<>();
         String unitsStr = "";
-        String amountKey;
-        String unitsKey;
-        if (dataRow.containsKey(DELTA_PROVIDED_DATA_PREFIX + StoredAmount.label()))
-        {
-            amountKey = DELTA_PROVIDED_DATA_PREFIX + StoredAmount.label();
-            unitsKey = DELTA_PROVIDED_DATA_PREFIX + Units.name();
-        }
+        String prefix;
+        if (dataRow.containsKey(DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name()))
+            prefix = DELTA_PROVIDED_DATA_PREFIX;
         else
         {
             // with no sample type display unit, no conversion will happen
             if (_sampleType == null || _sampleType.getMetricUnit() == null)
                 return null;
-            amountKey = PROVIDED_DATA_PREFIX + StoredAmount.label();
-            unitsKey = PROVIDED_DATA_PREFIX + Units.name();
+            prefix = PROVIDED_DATA_PREFIX;
         }
-        Object amountVal = dataRow.get(amountKey);
+        Object amountVal = dataRow.get(prefix + StoredAmount.name());
         if (amountVal == null)
             return null;
 
-        if (dataRow.get(unitsKey) != null)
-            unitsStr = dataRow.get(unitsKey).toString();
+        if (dataRow.get(prefix + Units.name()) != null)
+            unitsStr = dataRow.get(prefix + Units.name()).toString();
 
-        result.put(amountKey, amountVal + unitsStr);
+        result.put(prefix + StoredAmount.label(), amountVal + unitsStr);
 
         return result;
     }
@@ -668,7 +663,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             else if (_sampleType != null)
                 unitsStr = _sampleType.getMetricUnit();
 
-            providedValues.put(StoredAmount.label(),  amountVal + unitsStr);
+            providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
         }
 
 
