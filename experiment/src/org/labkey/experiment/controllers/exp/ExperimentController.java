@@ -4452,9 +4452,6 @@ public class ExperimentController extends SpringActionController
             @Nullable String auditUserComment
         ) throws IOException
         {
-            // TODO remove if not required here
-//            SampleTypeUpdateServiceDI.confirmAmountAndUnitsColumns(Arrays.stream(dl.getColumns()).map(ColumnDescriptor::getColumnName).toList(), _insertOption.allowUpdate,  _sampleType != null && _sampleType.getMetricUnit() != null);
-
             initContext(dl, errors, auditBehaviorType, auditUserComment);
 
             TableInfo tInfo = _target;
