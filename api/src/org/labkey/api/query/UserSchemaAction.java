@@ -20,6 +20,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
@@ -29,6 +30,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ButtonBuilder;
@@ -249,7 +251,24 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
             {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
+                QueryService.AuditAction auditAction = insert ? QueryService.AuditAction.INSERT : QueryService.AuditAction.UPDATE;
+
+                // transaction audit
                 BatchValidationException batchErrors = new BatchValidationException();
+
+                AuditBehaviorType auditBehaviorType = table.getEffectiveAuditBehavior();
+                if (auditBehaviorType != AuditBehaviorType.NONE)
+                {
+                    if (transaction.getAuditEvent() != null)
+                        auditEvent = transaction.getAuditEvent();
+                    else
+                    {
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), auditAction);
+                        AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                    }
+                }
+
                 if (insert)
                 {
                     ret = qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
@@ -280,7 +299,11 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                     batchErrors.addToErrors(errors);
 
                 if (!errors.hasErrors())
+                {
+                    auditEvent.addComment(auditAction, ret.size());
                     transaction.commit();       // Only commit if there were no errors
+                }
+
             }
             catch (SQLException x)
             {
