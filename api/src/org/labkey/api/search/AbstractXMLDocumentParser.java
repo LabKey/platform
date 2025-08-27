@@ -22,8 +22,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +42,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
     {
         try (BufferedInputStream buffered = new BufferedInputStream(stream))
         {
-            XmlBeansUtil.createSAXParser().parse(buffered, createSAXHandler(handler));
+            XmlBeansUtil.SAX_PARSER_FACTORY.newSAXParser().parse(buffered, createSAXHandler(handler));
         }
         catch (ParserConfigurationException e)
         {

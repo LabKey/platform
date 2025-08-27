@@ -28,10 +28,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import java.util.Collection;
@@ -123,46 +121,36 @@ public class XmlBeansUtil
         cursor.dispose();
     }
 
-    /**
-     * Return JAXP document builder instance.
-     */
-    public static DocumentBuilder getDocumentBuilder()
+    /** XML parsing factories preconfigured to prevent XML external entity references (XXE) */
+    public static final SAXParserFactory SAX_PARSER_FACTORY;
+    public static final XMLInputFactory XML_INPUT_FACTORY;
+    public static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
+
+    static
     {
-        DocumentBuilder documentBuilder;
-        DocumentBuilderFactory documentBuilderFactory;
+        XML_INPUT_FACTORY = XMLInputFactory.newInstance();
+        XML_INPUT_FACTORY.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        XML_INPUT_FACTORY.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+
+        SAX_PARSER_FACTORY = SAXParserFactory.newInstance();
         try
         {
-            documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-            // Prevent XXE by disabling DTDs and external entities
-            documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            documentBuilderFactory.setXIncludeAware(false);
-            documentBuilderFactory.setExpandEntityReferences(false);
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
+            SAX_PARSER_FACTORY.setNamespaceAware(true);
+            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/validation", false);
+            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+            DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+            DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setXIncludeAware(false);
+            DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
         }
-        catch (ParserConfigurationException e)
+        catch (ParserConfigurationException | SAXException e)
         {
             throw UnexpectedException.wrap(e);
         }
-        return documentBuilder;
-    }
-
-    public static XMLInputFactory createStreamReaderFactory()
-    {
-        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-        inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-        return inputFactory;
-    }
-
-    public static SAXParser createSAXParser() throws ParserConfigurationException, SAXException
-    {
-        SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-        parser.getXMLReader().setFeature("http://xml.org/sax/features/validation", false);
-        parser.getXMLReader().setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        parser.getXMLReader().setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        return parser;
     }
 }
