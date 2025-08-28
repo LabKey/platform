@@ -148,6 +148,7 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
@@ -521,12 +522,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     /**
      * This method is meant to help us ensure that every stored amount also has a unit. This checks only for the
      * presence or absence of columns in the incoming data. If both columns are present, no exception is thrown.
-     * If the units column is missing and this is for insert only and there is a default unit, no exception is thrown.
-     * @param columns The set of columns in the input
+     *
+     * @param columns      The set of columns in the input
      * @param allowsUpdate Whether the type of import supports updates or not
-     * @param hasDefaultUnit Whether the target sample type has a default (display) unit or not TODO remove or use
      */
-    public static void confirmAmountAndUnitsColumns(Collection<String> columns, boolean allowsUpdate, boolean hasDefaultUnit)
+    public static void confirmAmountAndUnitsColumns(Collection<String> columns, boolean allowsUpdate)
     {
         boolean hasUnits = columns.stream().anyMatch(column -> column.equalsIgnoreCase(Units.name()));
         boolean hasAmount = columns.stream().anyMatch(column -> StoredAmount.namesAndLabels().contains(column));
@@ -534,18 +534,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasUnits == hasAmount)
             return; // both columns are present or neither is
         if (!hasAmount)
-        {
-            if (allowsUpdate)
-                throw new ConversionExceptionWithMessage(String.format("When updating samples, the %s column must be provided when the %s column is.", StoredAmount.label(), Units.name()));
+            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
 
-            return; // have only a unit during insert; we will ignore that column
-        }
-        // have amount but no units
-//        if (allowsUpdate)
-//            throw new ConversionExceptionWithMessage(String.format("When updating samples, the %s column must be provided when the %s column is.", Units.name(), StoredAmount.label()));
-//
-//        // inserting with amount but no units
-        throw new ConversionExceptionWithMessage(String.format("When adding or updating samples, the %s column must be provided when the %s column is.", Units.name(), StoredAmount.label()));
+        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
     }
 
     @Override
@@ -554,7 +545,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
         if (rows != null && !rows.isEmpty())
-            confirmAmountAndUnitsColumns(rows.get(0).keySet(), true, _sampleType.getMetricUnit() != null);
+            confirmAmountAndUnitsColumns(rows.get(0).keySet(), true);
 
         boolean useDib = false;
         if (rows != null && !rows.isEmpty() && oldKeys == null)
@@ -660,8 +651,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             String unitsStr = "";
             if (unitsVal != null)
                 unitsStr = unitsVal.toString();
-            else if (_sampleType != null)
-                unitsStr = _sampleType.getMetricUnit();
 
             providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
         }
@@ -2108,7 +2097,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // when there's a units value but no amount column, this is an error
                 if (!haveAmountCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
 
                 // When an amount column is present but no amount value is provided, this is an error
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
@@ -2145,7 +2134,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // When there is an amount value, if there isn't a units column, this is an error.
                 if (!hasUnitsCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
 
                 // Have a units column, but no units value
                 if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
