@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Function;
 
 public enum Unit
@@ -216,8 +217,8 @@ public enum Unit
             Unit mUnit = Unit.fromName(rawUnitsString);
             if (mUnit == null)
             {
-                // TODO supported values are a subset of the full set of units for now
-                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
+                List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
             }
             if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
                 throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));

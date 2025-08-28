@@ -391,11 +391,7 @@ public class ExpSchema extends AbstractExpSchema
         if (MEASUREMENT_UNITS_TABLE.equalsIgnoreCase(name))
         {
             // Create an EnumSet of the KindOfQuantity getCommonUnits
-            List<Unit> commonUnits = new ArrayList<>();
-            commonUnits.addAll(KindOfQuantity.Volume.getCommonUnits());
-            commonUnits.addAll(KindOfQuantity.Mass.getCommonUnits());
-            commonUnits.addAll(KindOfQuantity.Count.getCommonUnits());
-
+            List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
             EnumTableInfo<Unit> table =  new EnumTableInfo<>(Unit.class, EnumSet.copyOf(commonUnits), this, Unit::name, Unit::ordinal, false, "Contains the list of available units for measurements such as sample stored amounts.");
             table.setPublicSchemaName(this.getName());
             table.setName(MEASUREMENT_UNITS_TABLE);

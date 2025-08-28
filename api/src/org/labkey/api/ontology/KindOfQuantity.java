@@ -2,6 +2,7 @@ package org.labkey.api.ontology;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -97,6 +98,15 @@ public enum KindOfQuantity
         if ("count".equalsIgnoreCase(name))
             return Count;
         return null;
+    }
+
+    public static List<Unit> getSupportedUnits()
+    {
+        List<Unit> supported = new ArrayList<>();
+        supported.addAll(Volume.getCommonUnits());
+        supported.addAll(Mass.getCommonUnits());
+        supported.addAll(Count.getCommonUnits());
+        return supported;
     }
 
     // other potentially useful KindOfQuantity
