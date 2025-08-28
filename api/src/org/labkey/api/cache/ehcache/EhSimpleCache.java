@@ -52,7 +52,7 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     public void put(@NotNull K key, V value, long timeToLive)
     {
         Element element = new Element(key, value);
-        element.setTimeToLive(IntegerUtils.asInteger(timeToLive) / 1000);
+        element.setTimeToLive(IntegerUtils.asInteger(timeToLive / 1000)); // Convert from ms to sec
         _cache.put(element);
     }
 
