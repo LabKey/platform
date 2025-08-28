@@ -280,8 +280,9 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
      */
     public static abstract class SecurityEscalationAuditDomainKind extends AbstractAuditDomainKind
     {
-        private static final String NAMESPACE_PREFIX = "Audit-";
         private static Set<PropertyDescriptor> _fields = null;
+
+        protected static final String NAMESPACE_PREFIX = "Audit-";
 
         private final String _eventType;
         private final String _tableName;
@@ -303,11 +304,6 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         @Override
         public String getKindName() {
             return _eventType;
-        }
-
-        @Override
-        protected String getNamespacePrefix() {
-            return NAMESPACE_PREFIX;
         }
 
         /**

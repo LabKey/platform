@@ -73,5 +73,11 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
         {
             super(EVENT_TYPE, StudySecurityEscalationEvent.class.getName());
         }
+
+        @Override
+        protected String getNamespacePrefix()
+        {
+            return NAMESPACE_PREFIX + "StudySecurityEscalationDomain";
+        }
     }
 }
