@@ -2116,7 +2116,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
 
                 Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
-                return validatedUnit == null ? null : validatedUnit.getBase().name();
+                // if there's a base unit, return the base unit name otherwise return the name of the given unit
+                return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
 
             @Override
@@ -2157,7 +2158,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
 
                 // Should always be non-null at this point.
-                if (unit != null)
+                if (unit != null && displayUnit != null)
                 {
                     if (amountObj instanceof Number)
                         return Quantity.of((Number) amountObj, unit).doubleValue();
@@ -2173,7 +2174,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
                 }
-                return amountObj; // have no given unit
+                return amountObj; // have no display unit, so we'll do no conversions
             }
 
             @Override
