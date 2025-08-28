@@ -300,7 +300,8 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
                 if (!errors.hasErrors())
                 {
-                    auditEvent.addComment(auditAction, ret.size());
+                    if (auditEvent != null)
+                        auditEvent.addComment(auditAction, ret.size());
                     transaction.commit();       // Only commit if there were no errors
                 }
 
