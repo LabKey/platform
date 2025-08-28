@@ -337,19 +337,19 @@ public enum Unit
             }
             try
             {
-                assertEquals(Unit.unit, Unit.getValidatedUnit(null, Unit.unit));
+                assertNull(Unit.getValidatedUnit(null, Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {
-                fail("null units should validate");
+                fail("null units should be null");
             }
             try
             {
-                assertEquals(Unit.unit, Unit.getValidatedUnit("", Unit.unit));
+                assertNull(Unit.getValidatedUnit("", Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {
-                fail("empty units should validate");
+                fail("empty units should be null");
             }
             try
             {
