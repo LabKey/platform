@@ -173,6 +173,10 @@ public class IssueValidation
         if (userId != null)
         {
             User user = UserManager.getUser(userId);
+            // ignore if we are assigning to the guest user
+            if (user != null && user.isGuest())
+                return;
+
             // TODO: consider exposing IssueManager.canAssignTo
             if (user == null || !user.isActive() || !container.hasPermission(user, UpdatePermission.class))
                 errors.reject(SpringActionController.ERROR_MSG, "An invalid user was set for the Assigned To");

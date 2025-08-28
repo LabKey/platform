@@ -282,8 +282,8 @@ public class IssueServiceImpl implements IssueService
         IssueValidation.validateRequiredFields(issueListDef, ccc, issueObject, user, errors);
         IssueValidation.validateNotifyList(issueObject, errors);
         // don't validate the assigned to field if we are in the process
-        // of closing it and we are assigning it to the guest user (otherwise validate)
-        if (action != Issue.action.close || UserManager.getGuestUser().getUserId() != issueObject.getAssignedTo())
+        // of closing it
+        if (action != Issue.action.close)
         {
             IssueValidation.validateAssignedTo(issueObject, container, errors);
         }
