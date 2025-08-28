@@ -78,7 +78,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
         if (kind != null && kind.isUserCreatedType())
         {
             Lsid domainLsid = new Lsid(domain.getTypeURI());
-            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, Lsid.decodePart(domainLsid.getObjectId()))).toString();
+            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domainLsid.getObjectId())).toString();
         }
         else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
