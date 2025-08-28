@@ -315,8 +315,6 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
-import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
-import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
@@ -6469,10 +6467,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
-                // if protocol exist, throw error
-                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
-                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+                // if protocol exists, throw error
+                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
