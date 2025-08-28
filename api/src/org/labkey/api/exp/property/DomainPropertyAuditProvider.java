@@ -124,9 +124,8 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            DomainAuditProvider provider = DomainAuditProvider.getInstance();
-                            TableInfo table = provider.createTableInfo(getUserSchema(), ContainerFilter.getUnsafeEverythingFilter());
-                            return table;
+                            DomainAuditProvider provider = new DomainAuditProvider();
+                            return provider.createTableInfo(getUserSchema(), ContainerFilter.getUnsafeEverythingFilter());
                         }
                     });
                 }

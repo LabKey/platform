@@ -97,8 +97,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         _domainKind = domainKind;
         // Register the DomainKind
         PropertyService.get().registerDomainKind(getDomainKind());
-
-        getDomainKind().validate();
     }
 
     protected AbstractAuditDomainKind getDomainKind()
@@ -110,9 +108,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     }
 
     @Override
-    public void initializeProvider(User user)
+    public final void initializeProvider(User user)
     {
         AbstractAuditDomainKind domainKind = getDomainKind();
+        domainKind.validate();
+
         Domain domain = getDomain(true);
 
         // if the domain doesn't exist, create it

@@ -520,7 +520,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerExperimentRunTypeSource(container -> Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE));
         ExperimentService.get().registerDataType(new LogDataType());
 
-        AuditLogService.get().registerAuditType(DomainAuditProvider.getInstance());
+        AuditLogService.get().registerAuditType(new DomainAuditProvider());
         AuditLogService.get().registerAuditType(new DomainPropertyAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleTypeAuditProvider());

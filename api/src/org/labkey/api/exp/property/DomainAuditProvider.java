@@ -54,7 +54,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     public static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-    private static final DomainAuditProvider INSTANCE = new DomainAuditProvider();
 
     static
     {
@@ -65,12 +64,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DOMAIN_URI));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
         defaultVisibleColumns.add(FieldKey.fromParts("UserComment"));
-    }
-
-    // This provider is referenced in a lookup. Ensure it's a singleton so validate() is invoked only once on its domain kind.
-    public static DomainAuditProvider getInstance()
-    {
-        return INSTANCE;
     }
 
     public DomainAuditProvider()

@@ -432,7 +432,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 
     private static final Set<String> PREFIXES = new HashSet<>();
 
-    // Called once per AbstractAuditDomainKind at audit provider creation time
+    // Called at audit provider initialization time to forbid domain kinds with shared and overlapping namespace prefixes
     public void validate()
     {
         String prefix = getNamespacePrefix();
