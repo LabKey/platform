@@ -40,7 +40,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -84,9 +83,9 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
     public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
-    final AbstractAuditDomainKind _domainKind;
+    private final AbstractAuditDomainKind _domainKind;
 
-
+    @Deprecated // Call the other constructor and stop overriding getDomainKind()
     public AbstractAuditTypeProvider()
     {
         this(null);
@@ -94,11 +93,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
-        // TODO : consolidate domain kind initialization to either this constructor or to override
-        // getDomainKind.
+        // TODO: consolidate domain kind initialization to this constructor and stop overriding getDomainKind()
         _domainKind = domainKind;
         // Register the DomainKind
         PropertyService.get().registerDomainKind(getDomainKind());
+
+        getDomainKind().validate();
     }
 
     protected AbstractAuditDomainKind getDomainKind()
@@ -137,15 +137,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         // adjust potential domain kind changes
         ensureProperties(user, domain);
-    }
-
-    // TODO: eliminate this method... call StorageProvisioner directly
-    private void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
-    {
-        assert domain.getStorageTableName() != null;
-        assert domainKind != null;
-        assert domain.getDomainKind() != null;
-        StorageProvisioner.get().ensureTableIndices(domain, domainKind);
     }
 
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
@@ -211,7 +202,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.save(user);
                 }
 
-                updateIndices(domain, domainKind);
+                assert domain.getStorageTableName() != null;
+                assert domain.getDomainKind() != null;
+                assert domain.getDomainKind().getClass().equals(domainKind.getClass());
+
+                StorageProvisioner.get().ensureTableIndices(domain);
                 transaction.commit();
             }
             catch (ChangePropertyDescriptorException e)
@@ -258,7 +253,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public final Domain getDomain(boolean forUpdate)
     {
-        DomainKind domainKind = getDomainKind();
+        AbstractAuditDomainKind domainKind = getDomainKind();
 
         String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
 

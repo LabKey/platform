@@ -88,7 +88,7 @@ public interface StorageProvisioner
     void addMissingRequiredIndices(Domain domain);
 
     // Passing in DomainKind because domains can't be trusted to know the correct DomainKind. We might fix this...
-    void ensureTableIndices(@NotNull Domain domain, @NotNull DomainKind<?> kind);
+    void ensureTableIndices(@NotNull Domain domain);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 

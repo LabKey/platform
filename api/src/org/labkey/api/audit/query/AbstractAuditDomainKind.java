@@ -430,13 +430,32 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         return false;
     }
 
+    private static final Set<String> PREFIXES = new HashSet<>();
+
+    // Called once per AbstractAuditDomainKind at audit provider creation time
+    public void validate()
+    {
+        String prefix = getNamespacePrefix();
+        if (prefix.length() < 12)
+            throw new IllegalStateException("Namespace prefix must be unique and longer than this: " + prefix);
+
+        List<String> overlappers = PREFIXES.stream()
+            .filter(p -> p.startsWith(prefix) || prefix.startsWith(p))
+            .map(p -> "\"" + p + "\"")
+            .toList();
+
+        if (overlappers.isEmpty())
+            PREFIXES.add(prefix);
+        else
+            throw new IllegalStateException("Namespace prefix \"" + prefix + "\" overlaps with " + overlappers);
+    }
+
     public static class TestCase extends Assert
     {
         // Also see AuditDomainUriTest which tests the DomainURIs in the database
         @Test
         public void flagDuplicateNamespacePrefixes()
         {
-            // For now, simply log domain kinds that share the same prefix and those that are overlapping
             MultiValuedMap<String, String> mmap = PropertyService.get().getDomainKinds().stream()
                 .filter(AbstractAuditDomainKind.class::isInstance)
                 .map(AbstractAuditDomainKind.class::cast)

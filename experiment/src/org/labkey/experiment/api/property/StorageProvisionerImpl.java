@@ -1059,12 +1059,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
     }
 
     @Override
-    public void ensureTableIndices(@NotNull Domain domain, @NotNull DomainKind<?> kind)
+    public void ensureTableIndices(@NotNull Domain domain)
     {
         // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
         if (schemaTableInfo != null)
         {
+            DomainKind<?> kind = domain.getDomainKind();
+            if (null == kind)
+                throw new IllegalStateException("Domain kind is null!");
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
             Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(kind.getPropertyIndices(domain));
             Set<String> toRemove = new HashSet<>();
