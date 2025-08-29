@@ -817,7 +817,7 @@ public class IssuesController extends SpringActionController
                     Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();
 
                     Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
-                    for (PropertyStorageSpec prop : kind.getRequiredProperties())
+                    for (DomainProperty prop : issueListDef.getDomain(getUser()).getProperties())
                     {
                         if (!IssueDefDomainKind.RESOLUTION_LOOKUP.equalsIgnoreCase(prop.getName()))
                             stringMap.computeIfAbsent(prop.getName(), (propName) -> Objects.toString(prevIssueProps.get(propName), null));
