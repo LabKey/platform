@@ -104,6 +104,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -1029,8 +1030,12 @@ public class UserController extends SpringActionController
             {
                 ButtonBar bb = createSubmitCancelButtonBar(form);
                 bb.addContextualRole(OwnerRole.class);
+                bb.addContextualRole(CanAccessLockedProjectsPermission.class);
                 for (DisplayElement button : bb.getList())
+                {
                     button.addContextualRole(OwnerRole.class);
+                    button.addContextualRole(CanAccessLockedProjectsPermission.class);
+                }
                 view = new UpdateView(form, errors);
 
                 DataRegion rgn = ((UpdateView)view).getDataRegion();
