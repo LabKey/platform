@@ -15,13 +15,13 @@
  */
 package org.labkey.api.audit.query;
 
-import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
@@ -42,7 +42,6 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -456,12 +455,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         @Test
         public void flagDuplicateNamespacePrefixes()
         {
-            MultiValuedMap<String, String> mmap = PropertyService.get().getDomainKinds().stream()
-                .filter(AbstractAuditDomainKind.class::isInstance)
-                .map(AbstractAuditDomainKind.class::cast)
-                .collect(LabKeyCollectors.toMultiValuedMap(AbstractAuditDomainKind::getNamespacePrefix, dk -> dk.getClass().getSimpleName()));
-
-            Map<String, Collection<String>> map = mmap.asMap();
+            Map<String, Collection<String>> map = AuditLogService.get().getAuditProviders().stream()
+                .filter(AbstractAuditTypeProvider.class::isInstance)
+                .map(p -> ((AbstractAuditTypeProvider)p).getAuditDomainKind())
+                .collect(LabKeyCollectors.toMultiValuedMap(AbstractAuditDomainKind::getNamespacePrefix, dk -> dk.getClass().getSimpleName()))
+                .asMap();
 
             List<String> failures = map.entrySet().stream()
                 .filter(e -> e.getValue().size() > 1)

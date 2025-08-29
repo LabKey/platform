@@ -107,6 +107,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return _domainKind;
     }
 
+    // Expose the domain kind to AbstractAuditDomainKind$TestCase without touching every subclass
+    public AbstractAuditDomainKind getAuditDomainKind()
+    {
+        return getDomainKind();
+    }
+
     @Override
     public final void initializeProvider(User user)
     {
