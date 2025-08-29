@@ -38,14 +38,16 @@ import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 /**
  * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
  * into which the run should be inserted, etc. Specific assay implementations may need to extend the basic interface
  * to include assay-specific metadata that they require. Different implementations can get the information from
- * different sources. Examples include HTTP POST data, a run that's already in the database, or from files that are
+ * different sources. Examples include HTTP POST data, a run already in the database, or from files that are
  * already on the server.
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
@@ -54,7 +56,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     enum ReImportOption
     {
         REPLACE,                // existing behavior where all results are replaced with new incoming data
-        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate based assays merge on a plate boundary within the same plate set
+        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate-based assays merge on a plate boundary within the same plate set
     }
 
     @NotNull
@@ -70,7 +72,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
-    default @Nullable Long getWorkflowTask() {
+    default @Nullable Long getWorkflowTask()
+    {
         return null;
     }
 
@@ -150,11 +153,19 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getTargetStudy();
 
-    default Long getTransactionAuditId() { return null; }
+    default Long getTransactionAuditId()
+    {
+        return null;
+    }
 
-    default void setTransactionAuditId(Long transactionAuditId) { }
+    default void setTransactionAuditId(Long transactionAuditId)
+    {
+    }
 
-    default String getAuditUserComment() { return null; }
+    default String getAuditUserComment()
+    {
+        return null;
+    }
 
     TransformResult getTransformResult();
 
@@ -187,13 +198,14 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     default void setPipelineJobGUID(String jobGUID)
     {
-
     }
 
     @Nullable
     Logger getLogger();
 
-    default void init() throws ExperimentException {}
+    default void init() throws ExperimentException
+    {
+    }
 
     /**
      * For files that already existed on the server's file system prior to import, and which have been copied
@@ -201,7 +213,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * @return null if the file was uploaded as part of the import
      */
     @Nullable
-    default File getOriginalFileLocation() { return null; }
+    default File getOriginalFileLocation()
+    {
+        return null;
+    }
 
     default boolean shouldAutoFillDefaultResultColumns()
     {
@@ -212,8 +227,18 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     {
     }
 
+    default @NotNull Map<String, Object> getUnresolvedRunProperties()
+    {
+        return emptyMap();
+    }
+
+    default @NotNull Set<FileLike> getUploadedPropertyFiles()
+    {
+        return emptySet();
+    }
+
     /**
-     * Builder pattern for creating a AssayRunUploadContext instance.
+     * Builder pattern for creating an AssayRunUploadContext instance.
      */
     abstract class Factory<ProviderType extends AssayProvider, FACTORY extends Factory<ProviderType, FACTORY>>
     {
@@ -234,6 +259,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected AssayRunUploadContext.ReImportOption _reImportOption;
         protected Map<String, Object> _rawRunProperties;
         protected Map<String, Object> _rawBatchProperties;
+        protected Set<FileLike> _uploadedFiles;
         protected Map<?, String> _inputDatas;
         protected Map<?, String> _outputDatas;
         protected Map<?, String> _inputMaterials;
@@ -378,7 +404,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         }
 
         /**
-         * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
+         * Map of file name to an uploaded file that will be parsed and imported by the assay's DataHandler.
          * One of either uploadedData or rawData can be used, not both.
          */
         public final FACTORY setUploadedData(Map<String, FileLike> uploadedData)
@@ -421,11 +447,15 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
+        public FACTORY setUploadedFiles(Set<FileLike> propertyFiles)
+        {
+            _uploadedFiles = propertyFiles;
+            return self();
+        }
+
         /** FACTORY and self() make it easier to chain setters while returning the correct subclass type. */
         public abstract FACTORY self();
 
         public abstract AssayRunUploadContext<ProviderType> create();
     }
-
-    default Map<String, Object> getUnresolvedRunProperties() { return  emptyMap(); }
 }

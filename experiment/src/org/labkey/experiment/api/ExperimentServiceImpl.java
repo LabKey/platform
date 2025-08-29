@@ -284,6 +284,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -2081,9 +2082,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public DbScope.Transaction ensureTransaction()
+    public DbScope.Transaction ensureTransaction(Lock... locks)
     {
-        return getExpSchema().getScope().ensureTransaction();
+        return getExpSchema().getScope().ensureTransaction(locks);
     }
 
     @Override

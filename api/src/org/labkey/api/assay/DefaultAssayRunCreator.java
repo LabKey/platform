@@ -232,7 +232,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
 
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), null, pipelineJob.getJobGUID());
+            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), null, pipelineJob.getJobGUID());
             resultsFileWriter.savePostedFiles(context);
 
             // Don't queue the job until the transaction is committed, since otherwise the thread
@@ -312,6 +312,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addOutputMaterials(context, outputMaterials, cache, materialCache);
         addOutputDatas(context, inputDatas, outputDatas);
 
+        boolean success = false;
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
@@ -370,7 +371,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
-            List<ExpData> insertedDatas = new ArrayList<>();
 
             if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm<ProviderType> uploadForm)
             {
@@ -381,35 +381,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
 
             if (saveBatchProps)
-            {
-                if (!transformResult.getBatchProperties().isEmpty())
-                {
-                    Map<DomainProperty, String> props = transformResult.getBatchProperties();
-                    List<ValidationError> errors = validateProperties(context, props);
-                    if (!errors.isEmpty())
-                        throw new ValidationException(errors);
-                    savePropertyObject(batch, container, props, context.getUser());
-                }
-                else
-                    savePropertyObject(batch, container, batchProperties, context.getUser());
-            }
-
+                saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties);
             if (null != transformResult.getAssayId())
                 run.setName(transformResult.getAssayId());
             if (null != transformResult.getComments())
                 run.setComments(transformResult.getComments());
-            if (!transformResult.getRunProperties().isEmpty())
-            {
-                Map<DomainProperty, String> props = transformResult.getRunProperties();
-                List<ValidationError> errors = validateProperties(context, props);
-                if (!errors.isEmpty())
-                    throw new ValidationException(errors);
-                savePropertyObject(run, container, props, context.getUser());
-            }
-            else
-                savePropertyObject(run, container, runProperties, context.getUser());
+            saveProperties(context, run, transformResult.getRunProperties(), runProperties);
 
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
             Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
@@ -419,7 +398,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (assayResultFileRoot != null)
                     QueryService.get().setEnvironment(QueryService.Environment.ASSAYFILESPATH, assayResultFileRoot);
             }
-            importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
+
+            importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult);
 
             var reRunId = context.getReRunId();
             if (reRunId != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
@@ -447,6 +427,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
             transaction.commit();
+            success = true;
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
@@ -482,18 +463,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException | IOException | ConvertHelper.FileConversionException | BatchValidationException e)
+        catch (IOException | ConvertHelper.FileConversionException | BatchValidationException e)
         {
-            // TODO: This is better done as a post-rollback task on the transaction
-            // clean up the run results file dir here if it was created, for non-async imports
-            AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
-            resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
-
-            cleanPrimaryFile(context);
-
-            if (e instanceof ExperimentException ee)
-                throw ee;
-
             // HACK: Rethrowing these as ApiUsageException avoids any upstream consequences of wrapping them in ExperimentException.
             // Namely, that they are logged to the server/mothership. There has to be a better way.
             if (e instanceof ConvertHelper.FileConversionException fce)
@@ -503,16 +474,30 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             throw new ExperimentException(e);
         }
+        finally
+        {
+            if (!success)
+            {
+                // clean up the run results file dir here if it was created, for non-async imports
+                AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
+                resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
+
+                cleanPrimaryFile(context);
+            }
+        }
     }
 
     private void cleanPrimaryFile(AssayRunUploadContext<ProviderType> context) throws ExperimentException
     {
+        // Do not clear the primary file for run re-imports
+        if (context.getReRunId() != null)
+            return;
+
         try
         {
             // Issue 51300: don't keep the primary file if the new run failed to save
-            boolean isReRun = context.getReRunId() != null;
             FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            if (!isReRun && primaryFile != null && primaryFile.exists())
+            if (primaryFile != null && primaryFile.exists())
                 primaryFile.delete();
         }
         catch (IOException e)
@@ -528,7 +513,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> outputMaterials,
         Map<ExpData, String> outputDatas,
         Map<DomainProperty, String> allProperties,
-        ParticipantVisitResolverType resolverType
+        @Nullable ParticipantVisitResolverType resolverType
     ) throws ExperimentException
     {
         try
@@ -572,11 +557,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> inputDatas,
         Map<ExpData, String> outputDatas,
         ViewBackgroundInfo info,
-        XarContext xarContext,
-        List<ExpData> insertedDatas
+        XarContext xarContext
     ) throws ExperimentException, BatchValidationException
     {
         DataIteratorBuilder rawData = context.getRawData();
+        List<ExpData> insertedDatas = new ArrayList<>();
+
         if (rawData != null)
         {
             insertedDatas.addAll(outputDatas.keySet());
@@ -630,13 +616,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> outputDatas,
         ViewBackgroundInfo info,
         XarContext xarContext,
-        TransformResult transformResult,
-        List<ExpData> insertedDatas
+        TransformResult transformResult
     ) throws ExperimentException, BatchValidationException
     {
         if (transformResult.getTransformedData().isEmpty())
         {
-            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext, insertedDatas);
+            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext);
             return;
         }
 
@@ -1107,46 +1092,54 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void savePropertyObject(ExpObject object, Container container, Map<DomainProperty, String> properties, User user) throws ExperimentException
+    private void saveProperties(
+        final AssayRunUploadContext<ProviderType> context,
+        ExpObject expObject,
+        Map<DomainProperty, String> transformResultProperties,
+        Map<DomainProperty, String> properties
+    ) throws ValidationException
     {
-        try
+        Map<DomainProperty, String> propsToSave = transformResultProperties.isEmpty() ? properties : transformResultProperties;
+        List<ValidationError> errors = validateProperties(context, propsToSave);
+        if (!errors.isEmpty())
+            throw new ValidationException(errors);
+
+        savePropertyObject(expObject, propsToSave, context.getUser());
+    }
+
+    protected void savePropertyObject(ExpObject object, Map<DomainProperty, String> properties, User user) throws ValidationException
+    {
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
+            DomainProperty pd = entry.getKey();
+            String value = entry.getValue();
+
+            // resolve any file links for batch or run properties
+            if (PropertyType.FILE_LINK.getTypeUri().equals(pd.getType().getTypeURI()))
             {
-                DomainProperty pd = entry.getKey();
-                String value = entry.getValue();
-
-                // resolve any file links for batch or run properties
-                if (pd.getType().getTypeURI().equals(PropertyType.FILE_LINK.getTypeUri()))
-                {
-                    File resolvedFile = ExpDataFileConverter.convert(value);
-                    if (resolvedFile != null)
-                        value = resolvedFile.getAbsolutePath();
-                }
-
-                // Treat the empty string as a null in the database, which is our normal behavior when receiving data
-                // from HTML forms.
-                if ("".equals(value))
-                {
-                    value = null;
-                }
-                if (value != null)
-                {
-                    object.setProperty(user, pd.getPropertyDescriptor(), value);
-                }
-                else
-                {
-                    // We still need to validate blanks
-                    List<ValidationError> errors = new ArrayList<>();
-                    OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), new ObjectProperty(object.getLSID(), object.getContainer(), pd.getPropertyDescriptor(), value), errors, new ValidatorContext(pd.getContainer(), user));
-                    if (!errors.isEmpty())
-                        throw new ValidationException(errors);
-                }
+                File resolvedFile = ExpDataFileConverter.convert(value);
+                if (resolvedFile != null)
+                    value = resolvedFile.getAbsolutePath();
             }
-        }
-        catch (ValidationException ve)
-        {
-            throw new ExperimentException(ve.getMessage(), ve);
+
+            // Treat the empty string as a null in the database, which is our normal behavior when receiving data
+            // from HTML forms.
+            if (StringUtils.trimToNull(value) == null)
+            {
+                value = null;
+            }
+            if (value != null)
+            {
+                object.setProperty(user, pd.getPropertyDescriptor(), value);
+            }
+            else
+            {
+                // We still need to validate blanks
+                List<ValidationError> errors = new ArrayList<>();
+                OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), new ObjectProperty(object.getLSID(), object.getContainer(), pd.getPropertyDescriptor(), value), errors, new ValidatorContext(pd.getContainer(), user));
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
+            }
         }
     }
 
@@ -1199,7 +1192,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         String label,
         Boolean required,
         Lookup lookup,
-        Class type,
+        Class<?> type,
         RemapCache cache,
         List<ValidationError> errors
     )

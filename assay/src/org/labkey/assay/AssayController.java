@@ -801,15 +801,15 @@ public class AssayController extends SpringActionController
 
     public static class AssayFileUploadForm extends AbstractFileUploadAction.FileUploadForm
     {
-        private Integer _protocolId;
+        private Long _protocolId;
 
-        public Integer getProtocolId()
+        public Long getProtocolId()
         {
             return _protocolId;
         }
 
         @SuppressWarnings("unused")
-        public void setProtocolId(Integer protocolId)
+        public void setProtocolId(Long protocolId)
         {
             _protocolId = protocolId;
         }

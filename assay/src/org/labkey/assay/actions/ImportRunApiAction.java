@@ -17,6 +17,7 @@
 package org.labkey.assay.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -29,31 +30,43 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayFilePropertyWriter;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,22 +74,29 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.assay.FileBasedModuleDataHandler;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
 import static org.labkey.api.assay.AssayFileWriter.createFile;
+import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 @ActionNames("importRun")
 @RequiresPermission(InsertPermission.class)
@@ -95,8 +115,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         String name;
         Long workflowTask;
         String comments;
-        Map<String, Object> runProperties = null;
-        Map<String, Object> batchProperties = null;
+        CaseInsensitiveHashMap<Object> runProperties = null;
+        CaseInsensitiveHashMap<Object> batchProperties = null;
         String targetStudy;
         Long reRunId;
         AssayRunUploadContext.ReImportOption reImportOption = null;
@@ -109,12 +129,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         boolean allowCrossRunFileInputs;
         boolean allowLookupByAlternateKey;
         String auditUserComment;
-
-        // TODO: support additional input/output data/materials
-        Map<Object, String> inputData = new HashMap<>();
         Map<Object, String> outputData = new HashMap<>();
-        Map<Object, String> inputMaterial = new HashMap<>();
-        Map<Object, String> outputMaterial = new HashMap<>();
 
         // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
@@ -142,11 +157,11 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             allowCrossRunFileInputs = json.optBoolean("allowCrossRunFileInputs");
             allowLookupByAlternateKey = json.optBoolean("allowLookupByAlternateKey");
 
-            JSONObject runPropertiesJson = json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+            JSONObject runPropertiesJson = json.optJSONObject(AssayJSONConverter.RUN_PROPERTIES);
             if (runPropertiesJson != null)
                 runProperties = new CaseInsensitiveHashMap<>(runPropertiesJson.toMap());
 
-            JSONObject batchPropertiesJson = json.optJSONObject("batchProperties");
+            JSONObject batchPropertiesJson = json.optJSONObject(AssayJSONConverter.BATCH_PROPERTIES);
             if (batchPropertiesJson != null)
                 batchProperties = new CaseInsensitiveHashMap<>(batchPropertiesJson.toMap());
 
@@ -172,12 +187,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             name = form.getName();
             workflowTask = form.getWorkflowTask();
             comments = form.getComment();
-            runProperties = form.getProperties();
-            batchProperties = form.getBatchProperties();
+            runProperties = new CaseInsensitiveHashMap<>(form.getProperties());
+            batchProperties = new CaseInsensitiveHashMap<>(form.getBatchProperties());
             targetStudy = form.getTargetStudy();
             reRunId = form.getReRunId();
             reImportOption = form.getReImportOption();
-            runFilePath = PageFlowUtil.decode(form.getRunFilePath()); // GitHub Issue 794
+            runFilePath = form.getRunFilePath();
             moduleName = form.getModule();
             JSONArray dataRows = form.getDataRows();
             if (dataRows != null)
@@ -238,12 +253,13 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
         }
 
-        AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory = provider.createRunUploadFactory(protocol, getViewContext())
+        if (file != null && rawData != null)
+            throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
+
+        AssayRunUploadContext.Factory<?, ?> factory = provider.createRunUploadFactory(protocol, getViewContext())
                 .setName(name)
                 .setWorkflowTask(workflowTask)
                 .setComments(comments)
-                .setRunProperties(runProperties)
-                .setBatchProperties(batchProperties)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)
                 .setReImportOption(reImportOption)
@@ -253,9 +269,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setJobNotificationProvider(jobNotificationProvider)
                 .setAllowCrossRunFileInputs(allowCrossRunFileInputs)
                 .setAllowLookupByAlternateKey(allowLookupByAlternateKey);
-
-        if (file != null && rawData != null)
-            throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
 
         if (file != null)
         {
@@ -294,30 +307,48 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             if (!saveDataAsFile)
             {
                 factory.setRawData(MapDataIterator.of(rawData));
-                factory.setUploadedData(Collections.emptyMap());
+                factory.setUploadedData(emptyMap());
 
                 // Create an ExpData for the results if none exists in the outputData map
                 DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData, null);
             }
         }
 
-        factory.setInputDatas(inputData)
-                .setOutputDatas(outputData)
-                .setInputMaterials(inputMaterial)
-                .setOutputMaterials(outputMaterial);
+        boolean success = false;
+        AssayFilePropertyWriter<? extends AssayProvider> filePropertyWriter = new AssayFilePropertyWriter<>();
 
-        AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.create();
-
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+            AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
+            Long auditTransactionId = transaction.getAuditId();
+
+            // Bind file property values and persist files to the file system.
+            {
+                Map<String, MultipartFile> fileMap = getFileMap();
+                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay batch property file uploaded.");
+                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay run property file uploaded.");
+            }
+
+            AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.setOutputDatas(outputData)
+                    .setRunProperties(runProperties)
+                    .setBatchProperties(batchProperties)
+                    .setTransactionAuditId(auditTransactionId)
+                    .setUploadedFiles(filePropertyWriter.getUploadedFiles())
+                    .create();
+
             Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync);
             ExpRun run = result.second;
+
+            transaction.commit();
+            success = true;
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("successurl", getUploadWizardCompleteURL(protocol, run));
             resp.put("assayId", protocol.getRowId());
             resp.put("batchId", result.first.getRowId());
+            resp.put("auditTransactionId", auditTransactionId);
             // Run id may be null if the import is performed in a background job
             if (run != null)
                 resp.put("runId", run.getRowId());
@@ -332,8 +363,64 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }
+        finally
+        {
+            if (!success)
+                filePropertyWriter.cleanupPostedFiles(getContainer(), protocol.getName(), logger);
+        }
 
         return null;
+    }
+
+    private void bindAndPersistFilePropertyValues(
+        String propertyName,
+        CaseInsensitiveHashMap<Object> properties,
+        Map<String, MultipartFile> fileMap,
+        AssayFilePropertyWriter<? extends AssayProvider> fileWriter,
+        Long auditTransactionId,
+        String auditComment
+    ) throws ExperimentException, ValidationException
+    {
+        if (properties == null || fileMap == null || fileMap.isEmpty())
+            return;
+
+        var filePropertyMap = bindFilePropertyValues(propertyName, properties, fileMap);
+        if (filePropertyMap.isEmpty())
+            return;
+
+        var fileProperties = fileWriter.savePostedFiles(getContainer(), getUser(), filePropertyMap, auditTransactionId, auditComment);
+        for (var entry : fileProperties.entrySet())
+            properties.put(entry.getKey(), entry.getValue().toNioPathForRead().toString());
+    }
+
+    private CaseInsensitiveHashMap<MultipartFile> bindFilePropertyValues(
+        String propertyName,
+        @NotNull CaseInsensitiveHashMap<Object> properties,
+        @NotNull Map<String, MultipartFile> fileMap
+    ) throws ValidationException
+    {
+        String propertyPrefix = propertyName + "[";
+        String propertySuffix = "]";
+
+        CaseInsensitiveHashMap<MultipartFile> filePropertyMap = new CaseInsensitiveHashMap<>();
+
+        for (Map.Entry<String, MultipartFile> entry : fileMap.entrySet())
+        {
+            if (!Strings.CI.startsWith(entry.getKey(), propertyPrefix) || !Strings.CI.endsWith(entry.getKey(), propertySuffix))
+                continue;
+
+            String key = entry.getKey().substring(propertyPrefix.length(), entry.getKey().length() - propertySuffix.length());
+            key = ImportRunApiForm.parsePropertiesKey(key.trim());
+            if (key == null || key.isEmpty())
+                continue;
+
+            if (properties.containsKey(key) || filePropertyMap.containsKey(key))
+                throw new ValidationException(String.format("Multiple values for %s['%s'] is not supported.", propertyName, key));
+
+            filePropertyMap.put(key, entry.getValue());
+        }
+
+        return filePropertyMap;
     }
 
     protected ActionURL getUploadWizardCompleteURL(ExpProtocol protocol, ExpRun run)
@@ -626,7 +713,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             return springBindParameters(this, "form", propertyValues);
         }
 
-        private String parsePropertiesKey(String key)
+        private static String parsePropertiesKey(String key)
         {
             if (key == null || key.isEmpty())
                 return null;

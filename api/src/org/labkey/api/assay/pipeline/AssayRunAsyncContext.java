@@ -52,9 +52,7 @@ import java.util.Set;
 
 /**
  * Context about an assay run import/upload that can be serialized out as part of a pipeline job and used
- * asynchronously to run the transform and/or validation scripts, and actually create the run.
- * User: jeckels
- * Date: Feb 13, 2012
+ * asynchronously to run the transform and/or validation scripts and actually create the run.
  */
 public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>, Serializable
 {
@@ -69,6 +67,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private Long _runWorkflowTask;
     private ActionURL _actionURL;
     private Map<String, FileLike> _uploadedData;
+    private Set<FileLike> _uploadedPropertyFiles;
     /** propertyId -> value */
     private Map<Integer, String> _runPropertiesById;
     /** propertyId -> value */
@@ -122,6 +121,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _reRunId = originalContext.getReRunId();
         _reImportOption = originalContext.getReImportOption();
         _originalFileLocation = originalContext.getOriginalFileLocation();
+        _uploadedPropertyFiles = originalContext.getUploadedPropertyFiles();
 
         _batchProperties = originalContext.getBatchProperties();
         _batchPropertiesById = convertPropertiesToIds(_batchProperties);
@@ -439,4 +439,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         return _jobNotificationProvider;
     }
 
+    @Override
+    public @NotNull Set<FileLike> getUploadedPropertyFiles()
+    {
+        return _uploadedPropertyFiles;
+    }
 }
