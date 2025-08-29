@@ -2548,7 +2548,8 @@ public class ContainerManager
         MODULE_DEPENDENCY_PROVIDERS.forEach(action);
     }
 
-    // Compliance module adds a locked project handler that checks permissions; without that, projects are never locked
+    // Compliance module adds a locked project handler that checks permissions; without that, this implementation
+    // is used, and projects are never locked
     static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, contextualRoles, lockState) -> false;
 
     // Replaces any previously set LockedProjectHandler
