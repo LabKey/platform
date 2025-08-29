@@ -126,7 +126,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _importTemplates = _rootTable.getRawImportTemplates();
         _buttonBarConfig = BUTTON_BAR_NOT_SET;        // lazy copy button bar when asked
         if (_rootTable.supportsAuditTracking())
-            _auditBehaviorType = _rootTable.getAuditBehavior();
+        {
+            _auditBehaviorType = _rootTable.getDefaultAuditBehavior();
+            _xmlAuditBehaviorType = _rootTable.getXmlAuditBehaviorType();
+        }
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.

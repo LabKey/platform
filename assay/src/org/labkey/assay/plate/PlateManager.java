@@ -88,6 +88,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -5006,6 +5007,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return new HydratedResult(plates, context.platedSampleIds().isEmpty() ? null : context.platedSampleIds().size(), existingPlates);
+    }
+
+    @Override
+    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
+    {
+        if (materials == null || materials.isEmpty())
+            return;
+
+        // Issue 53578: Clear foreign key references in the well table when materials are deleted
+        var wellTable = PlateSchema.getWellTable(container, user, ContainerFilter.getUnsafeEverythingFilter());
+        var updateSql = new SQLFragment("UPDATE assay.Well SET SampleId = NULL WHERE SampleId ")
+                .appendInClause(materials.stream().map(ExpObject::getRowId).toList(), wellTable.getSqlDialect());
+
+        new SqlExecutor(wellTable.getSchema()).execute(updateSql);
     }
 
     private class BulkPlateIndexer extends Thread

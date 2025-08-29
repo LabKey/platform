@@ -315,8 +315,6 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
-import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
-import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
@@ -1699,7 +1697,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, user, includeProjectAndShared);
+        List<String> containerIds = createContainerList(container, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -1713,7 +1711,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName)
     {
-        return getDataClass(c, null, false, dataClassName);
+        return getDataClass(c, false, dataClassName);
     }
 
     public ExpDataClassImpl getDataClassByObjectId(Long objectId)
@@ -1754,7 +1752,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return getDataClassByObjectId(legacyObjectId);
 
         boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeProjectAndShared, dataClassName);
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, includeProjectAndShared, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1764,34 +1762,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, @NotNull String dataClassName)
     {
-        return getDataClass(c, user, true, dataClassName);
+        return getDataClass(c, true, dataClassName);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, String dataClassName)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, String dataClassName)
     {
-        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
+        return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
     }
 
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, long rowId)
     {
-        return getDataClass(c, null, rowId, false);
+        return getDataClass(c, rowId, false);
     }
 
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, long rowId)
     {
-        return getDataClass(c, user, rowId, true);
+        return getDataClass(c, rowId, true);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, long rowId, boolean includeProjectAndShared)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, long rowId, boolean includeProjectAndShared)
     {
-        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
+        return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, Predicate<DataClass> predicate)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, user, includeProjectAndShared);
+        List<String> containerIds = createContainerList(c, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -3967,27 +3965,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         throw new IllegalStateException("Found multiple matching LSID types for '" + lsid + "': " + types);
     }
 
-    public List<String> createContainerList(@NotNull Container container, @Nullable User user, boolean includeProjectAndShared)
+    public List<String> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
         if (includeProjectAndShared)
         {
-            if (user == null)
-            {
-                throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
-            }
-            
             Container project = container.getProject();
-            if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
+            if (project != null)
             {
                 containerIds.add(project.getId());
             }
-            Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(user, ReadPermission.class))
-            {
-                containerIds.add(shared.getId());
-            }
+            containerIds.add(ContainerManager.getSharedContainer().getId());
         }
         return containerIds;
     }
@@ -3995,13 +3984,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches)
     {
-        return getExperiments(container, user, includeProjectAndShared, includeBatches, false);
+        return getExperiments(container, includeProjectAndShared, includeBatches, false);
     }
 
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
+    public List<ExpExperimentImpl> getExperiments(Container container, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts("Container"), createContainerList(container, user, includeProjectAndShared));
+        filter.addInClause(FieldKey.fromParts("Container"), createContainerList(container, includeProjectAndShared));
 
         if (!includeHidden)
         {
@@ -5471,7 +5460,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
-        List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
+        List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
         List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
@@ -6478,10 +6467,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
-                // if protocol exist, throw error
-                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
-                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+                // if protocol exists, throw error
+                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
@@ -9138,7 +9126,36 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         metrics.put("nameexpression", getNameExpressionMetrics());
         metrics.put("parentalias", getParentAliasMetrics());
         metrics.put("importTemplates", getImportTemplatesMetrics());
+        metrics.put("auditLevelOverride", getAuditLevelOverrideMetrics());
         return metrics;
+    }
+
+    private Map<String, Object> getAuditLevelOverrideMetrics()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<auditLogging>%'");
+        Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
+        Map<String, Long> counts = new HashMap<>();
+        final String auditNone = "<auditlogging>none";
+        final String auditSummary = "<auditlogging>summary";
+        for (Map<String, Object> result : results)
+        {
+            String schema = (String) result.get("schema");
+            String metadata = (String) result.get("metadata");
+            metadata = metadata.toLowerCase();
+            if (schema.toLowerCase().startsWith("assay.general."))
+                schema = "assay";
+            if (schema.equals("assay") || schema.equals("exp.data") || schema.equals("samples"))
+            {
+                if (!metadata.contains(auditNone) && !metadata.contains(auditSummary))
+                    continue;
+                long count = counts.get(schema) == null ? 0L : counts.get(schema);
+                counts.put(schema, ++count);
+            }
+        }
+        return Map.of("SampleType", counts.getOrDefault("samples", 0L),
+                "DataClass", counts.getOrDefault("exp.data", 0L),
+                "AssayDesign", counts.getOrDefault("assay", 0L));
     }
 
     private Map<String, Object> getImportTemplatesMetrics()
@@ -9309,7 +9326,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         else
         {
-            ExpDataClass dataClass = getDataClass(container, user, parentDataTypeRowId, true);
+            ExpDataClass dataClass = getDataClass(container, parentDataTypeRowId, true);
             if (dataClass != null)
                 parentDataTypeName = dataClass.getName();
         }
@@ -9565,10 +9582,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
-                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment, true);
 
                 // create new detailed events for each data object that was moved
-                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getEffectiveAuditBehavior(auditBehavior);
                 if (dcAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     List<Map<String, Object>> oldRows = new ArrayList<>();
@@ -9601,12 +9618,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return updateCounts;
-    }
-
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
-    {
-        QueryService queryService = QueryService.get();
-        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
