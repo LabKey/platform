@@ -1369,7 +1369,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
             /* HACK, we don't do this anywhere else, but we need to get a block of continuous IDS to make this work */
             // row_number() starts at 1 so subtract 1
-            long start = DbSequenceManager.reserveSequentialBlock(seq, (int)count);
+            long start = DbSequenceManager.reserveSequentialBlock(seq, count);
             start -= 1;
 
             SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, start, start, info.getContainer().getId(), cpasType, createdTimestamp);

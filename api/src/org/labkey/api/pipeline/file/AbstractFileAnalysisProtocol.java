@@ -28,12 +28,13 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -105,7 +106,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
             String line;
             while ((line = reader.readLine()) != null)
                 stripped.append(line.trim());
-            DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DocumentBuilder db = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
             DOMSource xmlInput = new DOMSource(db.parse(new InputSource(new StringReader(stripped.toString()))));
             StreamResult xmlOutput = new StreamResult(new StringWriter());
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
@@ -254,7 +255,15 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     protected ParamParser parse()
     {
         ParamParser parser = getFactory().createParamParser();
-        parser.parse(new ReaderInputStream(new StringReader(xml), Charset.defaultCharset()));
+        try
+        {
+            parser.parse(new ReaderInputStream.Builder().setReader(new StringReader(xml)).setCharset(Charset.defaultCharset()).get());
+        }
+        catch (IOException e)
+        {
+            // Shouldn't happen since we already had the content in-memory as a String
+            throw UnexpectedException.wrap(e);
+        }
         return parser;
     }
 
@@ -277,7 +286,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract List<FileType> getInputTypes();
     
     @Override
-    public abstract AbstractFileAnalysisProtocolFactory getFactory();
+    public abstract AbstractFileAnalysisProtocolFactory<?> getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
                                           PipeRoot root, List<Path> filesInput,

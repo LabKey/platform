@@ -62,7 +62,7 @@ public class HttpsUtil
 
 
     /** Attempts a connection to the testURL, returning null on success and a Pair with error message and (possibly null) response code on failure */
-    public static @Nullable Pair<String, Integer> testSslUrl(URL testURL, String advice)
+    public static @Nullable Pair<String, Integer> testHttpsUrl(URL testURL, String advice)
     {
         try
         {
@@ -152,7 +152,7 @@ public class HttpsUtil
 
                 // Now switch to a URL, since that's what testSslUrl() requires
                 URL testURL = new URL(helper.getURIString());
-                Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(testURL,
+                Pair<String, Integer> sslResult = HttpsUtil.testHttpsUrl(testURL,
                     "This LabKey Server instance is configured to require secure connections on port " + redirectPort + ", but it does not appear to be responding " +
                     "to HTTPS requests at " + testURL + ". Please see " + new HelpTopic("stagingServerTips").getHelpTopicHref() + " for " +
                     "details about how to turn off the SSL redirect settings in the database.");
