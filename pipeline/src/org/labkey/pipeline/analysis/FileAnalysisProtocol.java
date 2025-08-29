@@ -21,7 +21,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
-import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -50,7 +49,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     @Override
-    public AbstractFileAnalysisProtocolFactory getFactory()
+    public FileAnalysisProtocolFactory getFactory()
     {
         return _factory;
     }

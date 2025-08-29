@@ -595,18 +595,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
     {
         String redirectUrl = (!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString();
-        return redirect(redirectUrl);
+        throw new RedirectException(redirectUrl);
     }
 
     public static HttpView<?> redirect(ActionURL url)
     {
-        return redirect(url.getLocalURIString());
-    }
-
-    @Deprecated(forRemoval = true) // Use ActionURL or URLHelper variant instead. TODO: Remove
-    public static HttpView<?> redirect(String url)
-    {
-        throw new RedirectException(url);
+        throw new RedirectException(url.getLocalURIString());
     }
 
     /**

@@ -1346,7 +1346,7 @@ public class AdminController extends SpringActionController
             if (form.isSslRequired() && !(request.isSecure() && (form.getSslPort() == request.getServerPort())))
             {
                 URL testURL = new URL("https", request.getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-                Pair<String, Integer> sslResponse = HttpsUtil.testSslUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
+                Pair<String, Integer> sslResponse = HttpsUtil.testHttpsUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
 
                 if (sslResponse != null)
                 {

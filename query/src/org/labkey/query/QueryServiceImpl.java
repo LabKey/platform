@@ -3201,9 +3201,9 @@ public class QueryServiceImpl implements QueryService
     {
         if (table.supportsAuditTracking())
         {
-            AuditBehaviorType auditBehavior = table.getAuditBehavior();
+            AuditBehaviorType auditBehavior = table.getEffectiveAuditBehavior();
 
-            if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
+            if (auditBehavior != AuditBehaviorType.NONE)
             {
                 return new ActionURL(QueryController.AuditHistoryAction.class, c).
                         addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
@@ -3219,7 +3219,7 @@ public class QueryServiceImpl implements QueryService
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            if (auditConfigurable.getAuditBehavior() != AuditBehaviorType.NONE)
+            if (auditConfigurable.getEffectiveAuditBehavior() != AuditBehaviorType.NONE)
             {
                 FieldKey rowPk = auditConfigurable.getAuditRowPk();
 

@@ -105,6 +105,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -1143,13 +1144,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues)
     {
-        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
+        return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
     }
 
     @Override
     protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), userComment, row);
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
 
     @Override
@@ -1166,9 +1167,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         });
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable Map<String, Object> row)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, userComment, null, row, null, null);
+        return createAuditRecord(c, tInfo, comment, userComment, null, row, null, null);
     }
 
     private boolean isInputFieldKey(String fieldKey)
@@ -1178,7 +1179,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && Strings.CI.startsWith(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -1224,6 +1225,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
             row.put(ROW_ID,staticsRow.get(ROW_ID));
+        }
+        else if (tInfo != null)
+        {
+            UserSchema schema = tInfo.getUserSchema();
+            if (schema != null)
+            {
+                ExpSampleType sampleType = getSampleType(c, schema.getUser(), tInfo.getName());
+                if (sampleType != null)
+                {
+                    event.setSampleType(sampleType.getName());
+                    event.setSampleTypeId(sampleType.getRowId());
+                }
+            }
         }
 
         // Put the raw amount and units into the stored amount and unit fields to override the conversion to display values that has happened via the expression columns
@@ -1876,7 +1890,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = samplesTable.getEffectiveAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {

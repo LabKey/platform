@@ -23,12 +23,18 @@ public abstract class AbstractAuditHandler implements AuditHandler
     @Override
     public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment)
     {
+        addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType, userComment, false);
+    }
+
+    @Override
+    public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment, boolean skipAuditLevelCheck)
+    {
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) table;
-            AuditBehaviorType auditType = auditBehaviorType == null ? auditConfigurable.getAuditBehavior() : auditBehaviorType;
+            AuditBehaviorType auditType = auditConfigurable.getEffectiveAuditBehavior(auditBehaviorType);
 
-            if (auditType == SUMMARY)
+            if (auditType == SUMMARY || skipAuditLevelCheck)
             {
                 AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, dataRowCount, null);
 
@@ -69,7 +75,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            auditType = auditConfigurable.getAuditBehavior(auditType);
+            auditType = auditConfigurable.getEffectiveAuditBehavior(auditType);
 
             // Truncate audit event doesn't accept any params
             if (action == QueryService.AuditAction.TRUNCATE)
@@ -100,6 +106,8 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
 
                     AuditLogService.get().addEvent(user, event);
+
+                    return;
                 }
                 case DETAILED:
                 {

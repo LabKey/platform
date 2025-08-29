@@ -15,25 +15,43 @@
  */
 package org.labkey.api.gwt.client;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * User: klum
  * Date: 10/17/12
  */
 public enum AuditBehaviorType
 {
-    NONE("None"),
-    DETAILED("Detailed"),
-    SUMMARY("Summary");
+    NONE("None", 1),
+    DETAILED("Detailed", 3),
+    SUMMARY("Summary", 2);
 
     private final String _label;
+    private final int _priority;
 
-    AuditBehaviorType(String label)
+    AuditBehaviorType(String label, int priority)
     {
         _label = label;
+        _priority = priority;
     }
 
     public String getLabel()
     {
         return _label;
+    }
+
+    public int getPriority()
+    {
+        return _priority;
+    }
+
+    public static AuditBehaviorType getEffectiveAuditLevel(@Nullable AuditBehaviorType apiOverride, @NotNull AuditBehaviorType tableAuditBehaviorType)
+    {
+        if (apiOverride == null || apiOverride._priority < tableAuditBehaviorType._priority)
+            return tableAuditBehaviorType;
+
+        return apiOverride;
     }
 }

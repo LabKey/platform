@@ -1742,7 +1742,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         @Override
         public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditTypeOverride, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
         {
-            switch (table.getAuditBehavior(auditTypeOverride))
+            switch (table.getEffectiveAuditBehavior(auditTypeOverride))
             {
                 case NONE,SUMMARY -> {}
                 case DETAILED ->
@@ -1846,7 +1846,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         {
             TableInfo table = _dataset.getTableInfo(user);
-            if (table != null && table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
+            if (table != null && table.getEffectiveAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
                 return;
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, comment, _dataset.getDatasetId());

@@ -229,7 +229,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             {
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
-                    auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
+                    auditType = target.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 boolean detailed = auditType == DETAILED;
                 if (useGetRows)
                     return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
