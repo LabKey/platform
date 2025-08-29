@@ -3607,8 +3607,7 @@ public class DavController extends SpringActionController
     {
         try
         {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            SAXParser saxParser = factory.newSAXParser();
+            SAXParser saxParser = XmlBeansUtil.SAX_PARSER_FACTORY.newSAXParser();
             final List<StringBuilder> lastModifieds = new ArrayList<>();
 
             saxParser.parse(new InputSource(in), new DefaultHandler()
