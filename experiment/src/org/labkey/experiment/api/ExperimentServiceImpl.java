@@ -9126,7 +9126,36 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         metrics.put("nameexpression", getNameExpressionMetrics());
         metrics.put("parentalias", getParentAliasMetrics());
         metrics.put("importTemplates", getImportTemplatesMetrics());
+        metrics.put("auditLevelOverride", getAuditLevelOverrideMetrics());
         return metrics;
+    }
+
+    private Map<String, Object> getAuditLevelOverrideMetrics()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<auditLogging>%'");
+        Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
+        Map<String, Long> counts = new HashMap<>();
+        final String auditNone = "<auditlogging>none";
+        final String auditSummary = "<auditlogging>summary";
+        for (Map<String, Object> result : results)
+        {
+            String schema = (String) result.get("schema");
+            String metadata = (String) result.get("metadata");
+            metadata = metadata.toLowerCase();
+            if (schema.toLowerCase().startsWith("assay.general."))
+                schema = "assay";
+            if (schema.equals("assay") || schema.equals("exp.data") || schema.equals("samples"))
+            {
+                if (!metadata.contains(auditNone) && !metadata.contains(auditSummary))
+                    continue;
+                long count = counts.get(schema) == null ? 0L : counts.get(schema);
+                counts.put(schema, ++count);
+            }
+        }
+        return Map.of("SampleType", counts.getOrDefault("samples", 0L),
+                "DataClass", counts.getOrDefault("exp.data", 0L),
+                "AssayDesign", counts.getOrDefault("assay", 0L));
     }
 
     private Map<String, Object> getImportTemplatesMetrics()
@@ -9553,10 +9582,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
-                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment, true);
 
                 // create new detailed events for each data object that was moved
-                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getEffectiveAuditBehavior(auditBehavior);
                 if (dcAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     List<Map<String, Object>> oldRows = new ArrayList<>();
@@ -9589,12 +9618,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return updateCounts;
-    }
-
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
-    {
-        QueryService queryService = QueryService.get();
-        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)

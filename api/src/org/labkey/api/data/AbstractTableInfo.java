@@ -280,6 +280,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         MemTracker.getInstance().put(this);
     }
 
+    @NotNull
+    @Override
+    public AuditBehaviorType getDefaultAuditBehavior()
+    {
+        return _auditBehaviorType;
+    }
 
     public void afterConstruct()
     {
@@ -1466,7 +1472,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 catch (QueryParseException qpe)
                 {
                     warnings.add(qpe.setFieldName(xmlColumn.getColumnName()));
-                    continue;
                 }
             }
 
@@ -1487,7 +1492,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.getAuditLogging() != null)
         {
             AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
-            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+            try
+            {
+                AuditBehaviorType auditBehaviorType = AuditBehaviorType.valueOf(auditBehavior.toString());
+                setAuditBehavior(auditBehaviorType);
+            }
+            catch (IllegalArgumentException ignore)
+            {
+                warnings.add(new QueryParseWarning("Invalid AuditLogging: " + auditBehavior,null,0,0));
+            }
+
         }
 
         _warnings.addAll(warnings);
@@ -1998,12 +2012,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         checkLocked();
         _auditBehaviorType = type;
         _xmlAuditBehaviorType = type;
-    }
-
-    @Override
-    public AuditBehaviorType getAuditBehavior()
-    {
-        return _auditBehaviorType;
     }
 
     @Override

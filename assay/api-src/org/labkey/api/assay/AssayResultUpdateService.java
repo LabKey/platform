@@ -16,8 +16,6 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,6 +75,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     private final AssaySampleLookupContext _assaySampleLookupContext;
     private final AssayProtocolSchema _schema;
 
+    private Map<Long, Integer> dataChangeCount;
+
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
         super(table, table.getRealTable(), createMVMapping(schema.getProvider().getResultsDomain(schema.getProtocol())));
@@ -85,6 +85,28 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         _assaySampleLookupContext = new AssaySampleLookupContext();
         _schema = schema;
+    }
+
+    private void addRunAuditSummary(User user, @Nullable Map<Enum, Object> configParameters, String verb)
+    {
+        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+
+        for (Long runId: dataChangeCount.keySet())
+        {
+            var run = ExperimentService.get().getExpRun(runId);
+            int deletedCount = dataChangeCount.get(runId);
+
+            ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, deletedCount + " data row" + (deletedCount > 1 ? "s have" : " has") + " been " + verb + " in " + run.getProtocol().getName() + ".", userComment);
+
+        }
+        dataChangeCount = null;
+    }
+
+    private void incrementAuditRowCount(ExpRun run)
+    {
+        long runId = run.getRowId();
+        dataChangeCount.putIfAbsent(runId, 0);
+        dataChangeCount.put(runId, dataChangeCount.get(runId) + 1);
     }
 
     @Override
@@ -98,6 +120,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        dataChangeCount = new LinkedHashMap<>();
         // handle transform scripts
         rows = transform(container, user, rows, oldKeys);
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
@@ -106,6 +129,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         if (errors.hasErrors())
             throw errors;
+
+        addRunAuditSummary(user, configParameters, "edited");
 
         return result;
     }
@@ -265,11 +290,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
 
-        StringBuilder sb = new StringBuilder("Data row, id " + oldRow.get("RowId") + ", edited in " + run.getProtocol().getName() + ".");
+        TableInfo table = getQueryTable();
         for (Map.Entry<String, Object> entry : result.entrySet())
         {
-            // Also check for properties
-            TableInfo table = getQueryTable();
             ColumnInfo col = table.getColumn(entry.getKey());
 
             if (col != null)
@@ -280,53 +303,14 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
                 if (hasValueChanged)
                     _assaySampleLookupContext.trackSampleLookupChange(container, user, table, col, run);
-
-                TableInfo fkTableInfo = col.getFkTableInfo();
-                // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
-                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
-                {
-                    // Do type conversion in case there's a mismatch in the lookup source and target columns
-                    ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
-                    newValue = lookupDisplayValue(newValue, fkTableInfo, fkTablePkCol);
-                    oldValue = lookupDisplayValue(oldValue, fkTableInfo, fkTablePkCol);
-                }
-                appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
 
-        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
+        incrementAuditRowCount(run);
 
         return result;
     }
 
-    private Object lookupDisplayValue(Object o, @NotNull TableInfo fkTableInfo, ColumnInfo fkTablePkCol)
-    {
-        if (o == null)
-            return null;
-
-        if (fkTablePkCol == null)
-            return o;
-
-        if (!fkTablePkCol.getJavaClass().isAssignableFrom(o.getClass()))
-        {
-            try
-            {
-                o = ConvertUtils.convert(o.toString(), fkTablePkCol.getJavaClass());
-                Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(o);
-                if (newLookupTarget != null)
-                {
-                    o = newLookupTarget.get(fkTableInfo.getTitleColumn());
-                }
-            }
-            catch (ConversionException ex)
-            {
-                // ok - just use the value as is
-            }
-        }
-
-        return o;
-    }
 
     private ExpRun getRun(Map<String, Object> row, User user, Class<? extends Permission> perm) throws InvalidKeyException
     {
@@ -369,8 +353,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row, id " + oldRowMap.get("RowId"), userComment);
+        incrementAuditRowCount(run);
 
         if (null != dataObjectMap)
         {
@@ -397,6 +380,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        dataChangeCount = new HashMap<>();
         var result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
 
         BatchValidationException errors = new BatchValidationException();
@@ -405,21 +389,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
+        addRunAuditSummary(user, configParameters, "deleted");
+
         return result;
-    }
-
-    private void appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
-    {
-        if (Objects.equals(oldValue, newValue))
-            return;
-
-        sb.append(" ");
-        sb.append(label);
-        sb.append(" changed from ");
-        sb.append(oldValue == null ? "blank" : "'" + oldValue + "'");
-        sb.append(" to ");
-        sb.append(newValue == null ? "blank" : "'" + newValue + "'");
-        sb.append(".");
     }
 
     /**

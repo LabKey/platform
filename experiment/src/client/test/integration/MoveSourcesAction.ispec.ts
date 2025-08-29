@@ -469,7 +469,7 @@ describe('Move Sources', () => {
             expect(success).toBe(true);
             expect(updateCounts.sources).toBe(1);
             expect(updateCounts.sourceAliases).toBe(0);
-            expect(updateCounts.sourceAuditEvents).toBe(0);
+            expect(updateCounts.sourceAuditEvents).toBe(1);
 
             const existsInTop = await _sourceExists(sourceRowId, topFolderOptions);
             expect(existsInTop).toBe(false);
@@ -481,7 +481,9 @@ describe('Move Sources', () => {
             const eventsInTop = await getDetailedQueryUpdateAuditLogs(sourceRowId, topFolderOptions);
             expect(eventsInTop).toHaveLength(0);
             const eventsInSub1 = await getDetailedQueryUpdateAuditLogs(sourceRowId, subfolder1Options);
-            expect(eventsInSub1).toHaveLength(0);
+            expect(eventsInSub1).toHaveLength(2);
+            expect(caseInsensitive(eventsInSub1[0], 'Comment')).toEqual("A row was updated.");
+            expect(caseInsensitive(eventsInSub1[1], 'Comment')).toEqual("A row was inserted.");
         });
 
         it('success, move from parent project to subfolder, detailed audit logging', async () => {
@@ -554,7 +556,7 @@ describe('Move Sources', () => {
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
-                auditBehavior: 'SUMMARY',
+                auditBehavior: 'SUMMARY', // sample default audit level is DETAILS, api override have no effect
                 auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
@@ -575,8 +577,9 @@ describe('Move Sources', () => {
             const eventsInTop = await getDetailedQueryUpdateAuditLogs(sourceRowId, topFolderOptions);
             expect(eventsInTop).toHaveLength(0);
             const eventsInSub1 = await getDetailedQueryUpdateAuditLogs(sourceRowId, subfolder1Options);
-            expect(eventsInSub1).toHaveLength(1);
-            expect(caseInsensitive(eventsInSub1[0], 'Comment')).toEqual("A row was inserted.");
+            expect(eventsInSub1).toHaveLength(2);
+            expect(caseInsensitive(eventsInSub1[0], 'Comment')).toEqual("A row was updated.");
+            expect(caseInsensitive(eventsInSub1[1], 'Comment')).toEqual("A row was inserted.");
         });
 
         it('success, move from subfolder to parent project', async () => {

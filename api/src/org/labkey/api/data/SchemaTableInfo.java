@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -51,6 +52,7 @@ import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
@@ -111,6 +113,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     private FieldKey _auditRowPk;
 
     protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
+
+    private static final Logger LOG = LogHelper.getLogger(SchemaTableInfo.class, "TableInfo construction");
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName)
     {
@@ -527,14 +531,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public void setAuditBehavior(AuditBehaviorType type)
+    public void setAuditBehavior(@NotNull AuditBehaviorType type)
      {
          _auditBehaviorType = type;
          _xmlAuditBehaviorType = type;
      }
 
-    @Override
-    public AuditBehaviorType getAuditBehavior()
+     @Override
+     @NotNull
+     public AuditBehaviorType getDefaultAuditBehavior()
      {
          return _auditBehaviorType;
      }
@@ -629,7 +634,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         if (xmlTable.getAuditLogging() != null)
         {
             AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
-            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+            try
+            {
+                AuditBehaviorType auditBehaviorType = AuditBehaviorType.valueOf(auditBehavior.toString());
+                setAuditBehavior(auditBehaviorType);
+            }
+            catch (IllegalArgumentException ignore)
+            {
+                LOG.warn("Invalid AuditLogging: " + auditBehavior);
+            }
         }
 
         // Stash so we can overlay ColumnInfo properties later

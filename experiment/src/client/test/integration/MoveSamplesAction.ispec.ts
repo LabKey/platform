@@ -478,13 +478,14 @@ describe('Move Samples', () => {
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
+                auditBehavior: "NONE", // sample default audit level is DETAILS, api override have no effect
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
             const {updateCounts} = response.body;
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
@@ -496,7 +497,9 @@ describe('Move Samples', () => {
             const sampleEventsInTop = await getSampleTimelineAuditLogs(sampleRowId, topFolderOptions);
             expect(sampleEventsInTop).toHaveLength(0);
             const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
-            expect(sampleEventsInSub1).toHaveLength(0);
+            expect(sampleEventsInSub1).toHaveLength(2);
+            expect(caseInsensitive(sampleEventsInSub1[0], 'Comment')).toEqual("Sample folder was updated.");
+            expect(caseInsensitive(sampleEventsInSub1[1], 'Comment')).toEqual("Sample was registered.");
         });
 
         it('success, move sample from parent project to subfolder, detailed audit logging', async () => {
@@ -567,7 +570,7 @@ describe('Move Samples', () => {
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
-                auditBehavior: 'SUMMARY',
+                auditBehavior: 'SUMMARY', // sample default audit level is DETAILS, api override of 'SUMMARY' have no effect
                 auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
@@ -587,8 +590,9 @@ describe('Move Samples', () => {
             const sampleEventsInTop = await getSampleTimelineAuditLogs(sampleRowId, topFolderOptions);
             expect(sampleEventsInTop).toHaveLength(0);
             const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
-            expect(sampleEventsInSub1).toHaveLength(1);
-            expect(caseInsensitive(sampleEventsInSub1[0], 'Comment')).toEqual("Sample was registered.");
+            expect(sampleEventsInSub1).toHaveLength(2);
+            expect(caseInsensitive(sampleEventsInSub1[0], 'Comment')).toEqual("Sample folder was updated.");
+            expect(caseInsensitive(sampleEventsInSub1[1], 'Comment')).toEqual("Sample was registered.");
         });
 
         it('success, move sample from subfolder to parent project', async () => {
