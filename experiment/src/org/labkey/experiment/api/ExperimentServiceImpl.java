@@ -6470,10 +6470,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
-                // if protocol exist, throw error
-                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
-                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+                // if protocol exists, throw error
+                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
