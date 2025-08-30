@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -45,10 +46,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>
 {
@@ -71,6 +75,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final ReImportOption _reImportOption;
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
+    private final Set<FileLike> _uploadedFiles;
     private final DataIteratorBuilder _rawData;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
@@ -79,7 +84,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final boolean _allowCrossRunFileInputs;
     private final boolean _allowLookupByAlternateKey;
     private final String _auditUserComment;
-
 
     // Lazily created fields
     private Map<String, FileLike> _uploadedData;
@@ -115,6 +119,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         _rawRunProperties = factory._rawRunProperties == null ? emptyMap() : unmodifiableMap(factory._rawRunProperties);
         _rawBatchProperties = factory._rawBatchProperties == null ? emptyMap() : unmodifiableMap(factory._rawBatchProperties);
+        _uploadedFiles = factory._uploadedFiles == null ? emptySet() : unmodifiableSet(factory._uploadedFiles);
 
         _inputDatas = factory._inputDatas == null ? emptyMap() : unmodifiableMap(factory._inputDatas);
         _inputMaterials = factory._inputMaterials == null ? emptyMap() : unmodifiableMap(factory._inputMaterials);
@@ -174,7 +179,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_runProperties == null)
         {
             Domain runDomain = _provider.getRunDomain(_protocol);
-            _unresolvedRunProperties = new HashMap<>();
+            _unresolvedRunProperties = new CaseInsensitiveHashMap<>();
             _runProperties = propertiesFromRawValues(runDomain, _rawRunProperties, _unresolvedRunProperties);
         }
         return _runProperties;
@@ -192,9 +197,15 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public Map<String, Object> getUnresolvedRunProperties()
+    public @NotNull Map<String, Object> getUnresolvedRunProperties()
     {
         return _unresolvedRunProperties;
+    }
+
+    @Override
+    public @NotNull Set<FileLike> getUploadedPropertyFiles()
+    {
+        return _uploadedFiles;
     }
 
     private Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
@@ -252,7 +263,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
             {
                 unresolvedProperties.put(property.getKey(),property.getValue());
             }
-
         }
     }
 
@@ -300,7 +310,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     /**
-     * Map of file name to uploaded file that will be imported by the assay's DataHandler.
+     * Map of file name to an uploaded file that will be imported by the assay's DataHandler.
      * The uploaded file is expected to be POSTed as a form-data parameter named '<code>file</code>'.
      * The file will be added as an output ExpData to the imported assay run.
      *
@@ -400,9 +410,16 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public Long getTransactionAuditId() { return _transactionAuditId; }
+    public Long getTransactionAuditId()
+    {
+        return _transactionAuditId;
+    }
+
     @Override
-    public String getAuditUserComment() { return _auditUserComment; }
+    public String getAuditUserComment()
+    {
+        return _auditUserComment;
+    }
 
     @Override
     public TransformResult getTransformResult()
@@ -419,7 +436,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     @Override
     public void uploadComplete(ExpRun run)
     {
-        // no-op
     }
 
     @Override

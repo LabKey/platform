@@ -440,16 +440,14 @@ public class ExpSchema extends AbstractExpSchema
      */
     public enum DataClassCategoryType
     {
-        registry(null, null),
-        media(null, null),
-        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURCES_AUDIT_FIELDS);
+        registry(null),
+        media(null),
+        sources(ADDITIONAL_SOURCES_AUDIT_FIELDS);
 
-        public final AuditBehaviorType defaultBehavior;
         public final Set<String> additionalAuditFields;
 
-        DataClassCategoryType(@Nullable AuditBehaviorType defaultBehavior, @Nullable Set<String> addlAuditFields)
+        DataClassCategoryType(@Nullable Set<String> addlAuditFields)
         {
-            this.defaultBehavior = defaultBehavior;
             this.additionalAuditFields = addlAuditFields;
         }
 

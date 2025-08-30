@@ -53,7 +53,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
@@ -3202,9 +3201,9 @@ public class QueryServiceImpl implements QueryService
     {
         if (table.supportsAuditTracking())
         {
-            AuditBehaviorType auditBehavior = table.getAuditBehavior();
+            AuditBehaviorType auditBehavior = table.getEffectiveAuditBehavior();
 
-            if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
+            if (auditBehavior != AuditBehaviorType.NONE)
             {
                 return new ActionURL(QueryController.AuditHistoryAction.class, c).
                         addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
@@ -3220,7 +3219,7 @@ public class QueryServiceImpl implements QueryService
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            if (auditConfigurable.getAuditBehavior() != AuditBehaviorType.NONE)
+            if (auditConfigurable.getEffectiveAuditBehavior() != AuditBehaviorType.NONE)
             {
                 FieldKey rowPk = auditConfigurable.getAuditRowPk();
 
