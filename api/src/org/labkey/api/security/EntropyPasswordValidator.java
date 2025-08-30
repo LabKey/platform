@@ -55,7 +55,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     public static double score(String password, User user)
     {
         // Score only the first 100 characters, Issue 53814
-        String shorter = password.substring(0, 100);
+        String shorter = StringUtils.truncate(password, 100);
         return calculateEntropy(filter(shorter.toCharArray(), user));
     }
 
