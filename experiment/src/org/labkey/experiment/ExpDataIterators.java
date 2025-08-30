@@ -830,6 +830,8 @@ public class ExpDataIterators
         {
             ContainerFilter cf;
 
+            // If this is changed from AllInProjectPlusShared consider how this will affect
+            // Issue 53803 -- see the corresponding change in PropertyColumn.
             if (container.isProject())
                 cf = new ContainerFilter.AllInProjectPlusShared(container, user);
             else

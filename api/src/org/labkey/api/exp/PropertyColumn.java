@@ -188,7 +188,8 @@ public class PropertyColumn extends LookupColumn
             var lookupCf = cf;
 
             // Issue 52504: Use proper container filter for lookups
-            if (pd.isLookup())
+            // HACK: Issue 53803: Only apply lookup for insert when container filter is AllInProjectPlusShared
+            if (pd.isLookup() && lookupCf instanceof ContainerFilter.AllInProjectPlusShared)
             {
                 var _cf = QueryService.get().getContainerFilterForLookups(container, user);
                 if (_cf != null)
