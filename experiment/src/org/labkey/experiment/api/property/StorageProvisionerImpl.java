@@ -45,6 +45,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -98,6 +99,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -203,7 +205,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
             }
 
-            List<PropertyStorageSpec.Index> indices = new ArrayList<>();
+            List<Index> indices = new ArrayList<>();
             indices.addAll(kind.getPropertyIndices(domain));
             indices.addAll(domain.getPropertyIndices());
             change.setIndexedColumns(domain, indices);
@@ -858,7 +860,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         Drop
         {
             @Override
-            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
             {
                 provisioner.dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
             }
@@ -866,13 +868,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
         Add
         {
             @Override
-            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
             {
                 provisioner.addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
             }
         };
 
-        public abstract void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
+        public abstract void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap);
     }
 
     @Override
@@ -896,19 +898,19 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         SqlDialect sqlDialect = getSqlDialect(domain);
 
-        Map<String, PropertyStorageSpec.Index> requiredIndicesMap = getRequiredIndices(domain, sqlDialect);
+        Map<String, Index> requiredIndicesMap = getRequiredIndices(domain, sqlDialect);
 
         requiredIndicesAction.doOperation(this, domain, schemaTableInfo, requiredIndicesMap);
     }
 
     @NotNull
-    private Map<String, PropertyStorageSpec.Index> getRequiredIndices(Domain domain, SqlDialect sqlDialect)
+    private Map<String, Index> getRequiredIndices(Domain domain, SqlDialect sqlDialect)
     {
-        Collection<PropertyStorageSpec.Index> requiredIndices = new ArrayList<>();
+        Collection<Index> requiredIndices = new ArrayList<>();
         requiredIndices.addAll(domain.getDomainKind().getPropertyIndices(domain));
         requiredIndices.addAll(domain.getPropertyIndices());
 
-        Map<String,PropertyStorageSpec.Index> requiredIndicesMap = new CaseInsensitiveMapWrapper<>(new HashMap<>());
+        Map<String, Index> requiredIndicesMap = new CaseInsensitiveMapWrapper<>(new HashMap<>());
 
         String storageTableName = domain.getStorageTableName();
 
@@ -917,7 +919,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             storageTableName = makeTableName(getDomainKind(domain),domain);
         }
 
-        for (PropertyStorageSpec.Index index : requiredIndices)
+        for (Index index : requiredIndices)
         {
             // TODO: Bad!! Shouldn't be making up an index name here! Ideally, we use the AbstractAuditTypeProvider.updateIndices() approach instead.
             requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
@@ -925,7 +927,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return requiredIndicesMap;
     }
 
-    private void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
     {
         Set<String> indicesToDrop = new HashSet<>();
 
@@ -955,13 +957,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    private void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
     {
-        Set<PropertyStorageSpec.Index> indicesToAdd = new HashSet<>();
+        Set<Index> indicesToAdd = new HashSet<>();
 
         // Build the list of indices to add
         CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
-        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
+        for (Map.Entry<String, Index> requiredIndexEntry : requiredIndicesMap.entrySet())
         {
             boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
             if (requiredIndexNotFoundInTable)
@@ -993,7 +995,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry)
+    private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, Index> requiredIndexEntry)
     {
         for (String indexColumnName : requiredIndexEntry.getValue().columnNames)
         {
@@ -1008,7 +1010,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    private void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode)
+    private void addTableIndices(Domain domain, Set<Index> indices, TableChange.IndexSizeMode sizeMode)
     {
         DbScope scope = validateDomain(domain);
 
@@ -1069,7 +1071,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (null == kind)
                 throw new IllegalStateException("Domain kind is null!");
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
-            Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(kind.getPropertyIndices(domain));
+            // Determine the desired indexes. Note that the Domain and the DomainKind index lists may overlap, so we need
+            // to uniquify the list. Domain never specifies "clustered" but DomainKind does (e.g., DatasetDomainKind),
+            // so we compare using only column names and give preference to the DomainKind.
+            Set<Index> newIndices = new TreeSet<>(Comparator.comparing(index -> String.join("_", index.columnNames)));
+            newIndices.addAll(domain.getPropertyIndices());
+            newIndices.addAll(kind.getPropertyIndices(domain));
             Set<String> toRemove = new HashSet<>();
             for (String name : existingIndices.keySet())
             {
@@ -1081,11 +1088,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 {
                     columnNames[i] = columnIndex.second.get(i).getColumnName();
                 }
-                PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+                Index existingIndex = new Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
                 boolean foundIt = false;
-                for (PropertyStorageSpec.Index propertyIndex : newIndices)
+                for (Index propertyIndex : newIndices)
                 {
-                    if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
+                    if (Index.isSameIndex(propertyIndex, existingIndex))
                     {
                         foundIt = true;
                         newIndices.remove(propertyIndex);

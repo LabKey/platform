@@ -774,7 +774,7 @@ public class DomainUtil
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
-        // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a paritially updated state
+        // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a partially updated state
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI(), true);
         if (null == d)
         {
@@ -973,12 +973,16 @@ public class DomainUtil
                         updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
                 }
 
-                // update indices - add missing and drop those that aren't include with domain info
+                // update indices - add missing and drop those that aren't included in domain info
                 if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
                 {
                     d.setPropertyIndices(update.getIndices(), null);
                     StorageProvisioner.get().addMissingRequiredIndices(d);
                     StorageProvisioner.get().dropNotRequiredIndices(d);
+                    var indices1 = getExistingIndices(d);
+                    StorageProvisioner.get().ensureTableIndices(d);
+                    var indices2 = getExistingIndices(d);
+                    assert indices1.equals(indices2);
                 }
             }
         }
@@ -988,6 +992,19 @@ public class DomainUtil
         }
 
         return validationException;
+    }
+
+    public static Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getExistingIndices(Domain domain)
+    {
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+        if (schemaTableInfo != null)
+        {
+            DomainKind<?> dk = domain.getDomainKind();
+            if (null == dk)
+                throw new IllegalStateException("Domain kind is null!");
+            return schemaTableInfo.getAllIndices();
+        }
+        return Map.of();
     }
 
     // Issue 51321: check reserved domain name: First, All
