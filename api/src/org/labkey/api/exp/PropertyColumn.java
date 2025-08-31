@@ -188,12 +188,15 @@ public class PropertyColumn extends LookupColumn
             var lookupCf = cf;
 
             // Issue 52504: Use proper container filter for lookups
-            // HACK: Issue 53803: Only apply lookup for insert when container filter is AllInProjectPlusShared
-            if (pd.isLookup() && lookupCf instanceof ContainerFilter.AllInProjectPlusShared)
+            if (pd.isLookup())
             {
-                var _cf = QueryService.get().getContainerFilterForLookups(container, user);
-                if (_cf != null)
-                    lookupCf = _cf;
+                // Issue 53803: Only apply lookup for insert/import -- see setContainerFilterForImport()
+                if (lookupCf instanceof ContainerFilter.AllInProjectPlusShared || lookupCf instanceof ContainerFilter.CurrentPlusProjectAndShared)
+                {
+                    var _cf = QueryService.get().getContainerFilterForLookups(container, user);
+                    if (_cf != null)
+                        lookupCf = _cf;
+                }
             }
 
             to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, lookupCf));
