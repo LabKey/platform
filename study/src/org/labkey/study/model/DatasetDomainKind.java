@@ -522,6 +522,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
 
+                    // Calling ensureTableIndices(newDomain) should result in no changes. TODO: Remove addMissingRequiredIndices() call above.
+                    var indices1 = DomainUtil.getExistingIndices(newDomain);
+                    StorageProvisioner.get().ensureTableIndices(newDomain);
+                    var indices2 = DomainUtil.getExistingIndices(newDomain);
+                    assert indices1.equals(indices2);
+
                     QueryService.get().saveCalculatedFieldsMetadata("study", name, null, domain.getCalculatedFields(), false, user, container);
                 }
                 else

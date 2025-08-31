@@ -133,7 +133,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     }
 
     // #42641: Track recently created tables in a cache to limit size and duration
-    private static final Cache<String, StackTraceElement[]> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
+    private static final Cache<@NotNull String, StackTraceElement @NotNull []> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
         .maximumSize(10000)
         .expireAfterWrite(1, TimeUnit.DAYS)
         .build();
@@ -1071,10 +1071,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (null == kind)
                 throw new IllegalStateException("Domain kind is null!");
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
-            // Determine the desired indexes. Note that the Domain and the DomainKind index lists may overlap, so we need
-            // to uniquify the list. Domain never specifies "clustered" but DomainKind does (e.g., DatasetDomainKind),
-            // so we compare using only column names and give preference to the DomainKind.
-            Set<Index> newIndices = new TreeSet<>(Comparator.comparing(index -> String.join("_", index.columnNames)));
+            // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
+            // so we need to uniquify. Domain never specifies "clustered" but DomainKind does (e.g., DatasetDomainKind),
+            // so compare using only column names and give preference to DomainKind.
+            Set<Index> newIndices = new TreeSet<>(Comparator.comparing(index -> String.join("_", index.columnNames), String.CASE_INSENSITIVE_ORDER));
             newIndices.addAll(domain.getPropertyIndices());
             newIndices.addAll(kind.getPropertyIndices(domain));
             Set<String> toRemove = new HashSet<>();
