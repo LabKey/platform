@@ -1,14 +1,13 @@
 package org.labkey.api.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.view.UnauthorizedException;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.StringReader;
@@ -42,7 +41,7 @@ public class JavaScriptFragment implements SafeToRender
             return EMPTY;
         // even with unsafe() a javascript fragment can never contain the sequence "</[Ss][Cc][Rr][Ii][Pp][Tt]>"
         // since </ is not legal javascript syntax we escape it
-        s = StringUtils.replace(s, "</", "<\\/");
+        s = Strings.CS.replace(s, "</", "<\\/");
         return new JavaScriptFragment(s);
     }
 
@@ -52,7 +51,7 @@ public class JavaScriptFragment implements SafeToRender
         if (null == s)
             return JavaScriptFragment.NULL;
         var js = PageFlowUtil.jsString(s);
-        assert !StringUtils.contains(js, "</");
+        assert !Strings.CS.contains(js, "</");
         return new JavaScriptFragment(js);
     }
 
@@ -64,7 +63,7 @@ public class JavaScriptFragment implements SafeToRender
         try
         {
             String s = JsonUtil.DEFAULT_MAPPER.writeValueAsString(value);
-            if (StringUtils.contains(s, "</"))
+            if (Strings.CS.contains(s, "</"))
                 throw new IllegalStateException("Error encoding JSON object");
             return new JavaScriptFragment(s);
         }
@@ -80,8 +79,7 @@ public class JavaScriptFragment implements SafeToRender
     {
         try
         {
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
+            XMLStreamReader reader = XmlBeansUtil.XML_INPUT_FACTORY.createXMLStreamReader(new StringReader(metadataText));
 
             // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
             // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag

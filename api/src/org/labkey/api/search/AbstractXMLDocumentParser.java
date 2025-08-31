@@ -15,14 +15,14 @@
  */
 package org.labkey.api.search;
 
+import org.labkey.api.util.XmlBeansUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -40,12 +40,9 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
     @Override
     public void parseContent(InputStream stream, ContentHandler handler) throws IOException, SAXException
     {
-        try
+        try (BufferedInputStream buffered = new BufferedInputStream(stream))
         {
-            SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-            parser.getXMLReader().setFeature("http://xml.org/sax/features/validation", false);
-            parser.getXMLReader().setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            parser.parse(stream, createSAXHandler(handler));
+            XmlBeansUtil.SAX_PARSER_FACTORY.newSAXParser().parse(buffered, createSAXHandler(handler));
         }
         catch (ParserConfigurationException e)
         {

@@ -37,6 +37,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -106,8 +107,8 @@ public class DbSequenceManager
         return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
     }
 
-    /* This is not a recommended, but if you get stuck and need to reserve a block at once */
-    public static long reserveSequentialBlock(DbSequence seq, int count)
+    /* This is not recommended, but if you get stuck and need to reserve a block at once */
+    public static long reserveSequentialBlock(DbSequence seq, long count)
     {
         if (!(seq instanceof DbSequence.Preallocate))
             throw new IllegalStateException();
@@ -123,10 +124,7 @@ public class DbSequenceManager
     {
         Integer rowId = getRowId(c, name, id, withUpdateLock);
 
-        if (null != rowId)
-            return rowId;
-        else
-            return create(c, name, id, withUpdateLock);
+        return Objects.requireNonNullElseGet(rowId, () -> create(c, name, id, withUpdateLock));
     }
 
     public static @Nullable Integer getRowId(Container c, String name, int id)
@@ -284,7 +282,7 @@ public class DbSequenceManager
     // .first value returned is 'current', call to next() should return current+1
     // .second value is reserved for use by caller
     // in other words, next() should return values [pair.first+1, pair.second] inclusive
-    static Pair<Long,Long> reserve(DbSequence sequence, int count)
+    static Pair<Long,Long> reserve(DbSequence sequence, long count)
     {
         TableInfo tinfo = getTableInfo();
 
