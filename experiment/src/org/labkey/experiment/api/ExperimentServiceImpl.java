@@ -296,6 +296,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.GPAT_PROTOCOL_LSID_PREFIX;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -6469,8 +6470,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (newProtocol)
             {
                 // if protocol exists, throw error
-                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                if (GPAT_PROTOCOL_LSID_PREFIX.equals(protocol.getLSIDNamespacePrefix()) && AssayService.get() != null)
+                {
+                    ExpProtocol existingProtocol = AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName());
+                    if (existingProtocol != null && GPAT_PROTOCOL_LSID_PREFIX.equals(existingProtocol.getLSIDNamespacePrefix()))
+                        throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                }
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
