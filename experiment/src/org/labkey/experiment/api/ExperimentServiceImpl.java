@@ -6469,7 +6469,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (newProtocol)
             {
                 // if protocol exists, throw error
-                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
+                if (AssayService.get() != null && AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
                     throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
