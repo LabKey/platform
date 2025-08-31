@@ -139,11 +139,11 @@ public class DbSequence
         }
 
         /* package */
-        synchronized long reserveSequentialBlock(int count)
+        synchronized long reserveSequentialBlock(long count)
         {
             if (null == _lastReservedValue || _currentValue+count > _lastReservedValue)
             {
-                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, Math.max(count,_batchSize));
+                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, Math.max(count, _batchSize));
                 _currentValue = reserved.first;
                 _lastReservedValue = reserved.second;
             }
