@@ -102,6 +102,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -3598,12 +3599,20 @@ public class StudyManager
             buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
 
             // now that we actually have datasets, create/update the domains
-            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+            try
+            {
+                dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
 
-            if (!deleteAndSaveProperties(user, errors, domainChangeMap))
-                return false;
+                if (!deleteAndSaveProperties(user, errors, domainChangeMap))
+                    return false;
 
-            addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+                addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+            }
+            finally
+            {
+                // New method should succeed with no changes to indices. TODO: remove drop/add above
+                ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+            }
         }
 
         List<Integer> orderedIds = reader.getDatasetOrder();
@@ -3761,6 +3770,24 @@ public class StudyManager
                         domainChangeMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), new _DatasetDomainChange(domain));
                 }
             }
+        }
+    }
+
+    private void ensureRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
+    {
+        for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
+        {
+            DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
+            if (datasetDefinitionEntry.datasetDefinition.isShared())
+            {
+                continue;
+            }
+            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
+            domain.setPropertyIndices(datasetImportInfo.indices);
+            var indices1 = DomainUtil.getExistingIndices(domain);
+            StorageProvisioner.get().ensureTableIndices(domain);
+            var indices2 = DomainUtil.getExistingIndices(domain);
+            assert indices1.equals(indices2);
         }
     }
 

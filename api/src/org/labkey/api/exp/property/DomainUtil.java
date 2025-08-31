@@ -977,10 +977,12 @@ public class DomainUtil
                 if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
                 {
                     d.setPropertyIndices(update.getIndices(), null);
+                    StorageProvisioner.get().ensureTableIndices(d);
+
+                    // Verify that running the old code path produces no change to the indices. TODO: Remove
+                    var indices1 = getExistingIndices(d);
                     StorageProvisioner.get().addMissingRequiredIndices(d);
                     StorageProvisioner.get().dropNotRequiredIndices(d);
-                    var indices1 = getExistingIndices(d);
-                    StorageProvisioner.get().ensureTableIndices(d);
                     var indices2 = getExistingIndices(d);
                     assert indices1.equals(indices2);
                 }
