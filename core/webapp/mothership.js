@@ -1,4 +1,3 @@
-/* eslint-disable */
 /*
  * Copyright (c) 2012-2017 LabKey Corporation
  *
@@ -844,5 +843,5 @@ LABKEY.Mothership = (function () {
         /** Render a little window displaying the 10 most recent errors collected. */
         renderLastErrors : renderLastErrors,
     };
-})() = LABKEY.Mothership;
+})();
 
