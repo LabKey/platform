@@ -37,7 +37,6 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -59,6 +58,10 @@ import java.util.function.Consumer;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Created;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CreatedBy;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Modified;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ModifiedBy;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
@@ -193,18 +196,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        ModuleUpgrader.getLogger().info("Starting upgrade of amounts and units");
+        LOG.info("Starting upgrade of amounts and units");
         LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
         // create a single transaction event at the root container for use in tying all updates together
         TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
         {
-            LOG.info("** Starting upgrade in folder: {}", c.getPath());
             convertAmountsToBaseUnits(c, admin, transactionEvent);
-            LOG.info("** Finished upgrade in folder: {}", c.getPath());
         });
-//        convertAmountsToBaseUnits(ContainerManager.getForPath("Sam Man Quant 2"), admin, transactionEvent);
-        ModuleUpgrader.getLogger().info("Finished upgrade of amounts and units");
+        LOG.info("Finished upgrade of amounts and units");
     }
 
     // Converts amounts for all sample types defined in the given container.
@@ -218,7 +218,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 transaction.setAuditEvent(transactionEvent);
-                LOG.info("**** Starting upgrade for sample type: {}", sampleType.getName());
+                LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
                 Map<String, Integer> sampleCounts = new HashMap<>();
                 Map<String, Integer> aliquotCounts = new HashMap<>();
 
@@ -354,15 +354,21 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         event.setSampleType(sampleType.getName());
                         event.setSampleTypeId(sampleType.getRowId());
                         event.setLineageUpdate(false);
+                        // remove fields that are normally excluded when creating the detailed audit log since they either never change or always change
+                        newDataMap.remove(RowId.name());
+                        newDataMap.remove(Created.name());
+                        newDataMap.remove(CreatedBy.name());
+                        newDataMap.remove(Modified.name());
+                        newDataMap.remove(ModifiedBy.name());
                         event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
                         event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
                         AuditLogService.get().addEvent(user, event);
                     }
                 });
                 transaction.commit();
-                LOG.info("      Sample data update counts {}", sampleCounts);
-                LOG.info("      Aliquot data update counts {}", aliquotCounts);
-                LOG.info("**** Finished upgrade for sample type: {}", sampleType.getName());
+                LOG.debug("    Sample data update counts {}", sampleCounts);
+                LOG.debug("    Aliquot data update counts {}", aliquotCounts);
+                LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
             }
         }
 
