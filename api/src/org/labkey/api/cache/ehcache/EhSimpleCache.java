@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
+import org.labkey.api.util.IntegerUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,7 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     public void put(@NotNull K key, V value, long timeToLive)
     {
         Element element = new Element(key, value);
-        element.setTimeToLive((int)timeToLive / 1000);
+        element.setTimeToLive(IntegerUtils.asInteger(timeToLive / 1000)); // Convert from ms to sec
         _cache.put(element);
     }
 

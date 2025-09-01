@@ -21,8 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 
 import java.net.MalformedURLException;
@@ -35,7 +37,7 @@ import java.net.URL;
  */
 public abstract class RedirectReport extends AbstractReport
 {
-    private static final Logger LOG = LogManager.getLogger(RedirectReport.class);
+    private static final Logger LOG = LogHelper.getLogger(RedirectReport.class, "Reports that send the user to some other URL");
 
     public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
     public static final String TARGET = "target";
@@ -45,7 +47,7 @@ public abstract class RedirectReport extends AbstractReport
     }
 
     @Override
-    public HttpView renderReport(ViewContext context)
+    public HttpView<?> renderReport(ViewContext context)
     {
         String url = getUrl(context.getContainer());
 
@@ -53,7 +55,7 @@ public abstract class RedirectReport extends AbstractReport
         if (context.get(renderParam.reportWebPart.name()) != null)
             return new JspView<>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
 
-        return HttpView.redirect(url);
+        throw new RedirectException(url);
     }
 
     @Override
