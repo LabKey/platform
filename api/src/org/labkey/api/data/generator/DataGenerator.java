@@ -75,7 +75,12 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 {
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";
-    private static final List<String> UNITS = List.of("g", "mg", "uL", "mL", "unit");
+    private static final List<String> UNITS = List.of("g", "mg", "kg", "uL", "mL", "L", "unit");
+    private static final Map<Measurement.Kind, List<String>> UNIT_KINDS = Map.of(
+            Measurement.Kind.Mass, List.of("g", "mg", "kg"),
+            Measurement.Kind.Count, List.of("units"),
+            Measurement.Kind.Volume, List.of("uL", "mL", "L")
+    );
     private static final List<String> LABEL_COLORS = new ArrayList<>();
     static {
         LABEL_COLORS.add("#800000"); // maroon,
