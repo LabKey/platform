@@ -26,16 +26,16 @@ import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 
-/**
- * User: adam
- * Date: May 25, 2009
- * Time: 9:26:59 AM
- */
 public class XmlBeansUtil
 {
     private XmlBeansUtil()
@@ -119,5 +119,38 @@ public class XmlBeansUtil
         XmlCursor cursor = doc.newCursor();
         cursor.insertComment(comment);
         cursor.dispose();
+    }
+
+    /** XML parsing factories preconfigured to prevent XML external entity references (XXE) */
+    public static final SAXParserFactory SAX_PARSER_FACTORY;
+    public static final XMLInputFactory XML_INPUT_FACTORY;
+    public static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
+
+    static
+    {
+        XML_INPUT_FACTORY = XMLInputFactory.newInstance();
+        XML_INPUT_FACTORY.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        XML_INPUT_FACTORY.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+
+        SAX_PARSER_FACTORY = SAXParserFactory.newInstance();
+        try
+        {
+            SAX_PARSER_FACTORY.setNamespaceAware(true);
+            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/validation", false);
+            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+            DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+            DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setXIncludeAware(false);
+            DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
+        }
+        catch (ParserConfigurationException | SAXException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 }
