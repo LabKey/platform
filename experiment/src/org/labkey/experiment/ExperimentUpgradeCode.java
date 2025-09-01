@@ -320,7 +320,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                                 }
                                 else // in base unit but not explicitly set
                                     aliquotCounts.put("setUnitsWithoutConvert", aliquotCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
-                                newDataMap.put(AliquotUnit.name(), baseUnit.name());
+                                if (aliquotUnit != baseUnit)
+                                    newDataMap.put(AliquotUnit.name(), baseUnit.name());
                             }
                         }
                     }
