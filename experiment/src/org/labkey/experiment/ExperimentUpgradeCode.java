@@ -299,7 +299,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                                 LOG.info("Aliquot unit '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", aliquotUnit.name(), sampleMap.get(Name.name()), baseUnit);
                                 aliquotCounts.put("invalidUnits", aliquotCounts.getOrDefault("invalidUnits", 0) + 1);
                             }
-                            else if (!isInBaseUnits || aliquotUnit != currentDisplayUnit)
+                            else if (!isInBaseUnits || aliquotUnit == null)
                             {
                                 if (!isInBaseUnits)
                                 {
