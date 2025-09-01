@@ -520,11 +520,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
                     List<GWTIndex> indices = domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
-                    StorageProvisioner.get().addMissingRequiredIndices(newDomain);
-
-                    // Calling ensureTableIndices(newDomain) should result in no changes. TODO: Remove addMissingRequiredIndices() call above.
-                    var indices1 = DomainUtil.getExistingIndices(newDomain);
                     StorageProvisioner.get().ensureTableIndices(newDomain);
+
+                    // Calling addMissingRequiredIndices(newDomain) should result in no changes. TODO: Remove the below check.
+                    var indices1 = DomainUtil.getExistingIndices(newDomain);
+                    StorageProvisioner.get().addMissingRequiredIndices(newDomain);
                     var indices2 = DomainUtil.getExistingIndices(newDomain);
                     assert indices1.equals(indices2);
 

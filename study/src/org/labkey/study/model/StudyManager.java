@@ -3599,20 +3599,15 @@ public class StudyManager
             buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
 
             // now that we actually have datasets, create/update the domains
-            try
-            {
-                dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+            ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
 
-                if (!deleteAndSaveProperties(user, errors, domainChangeMap))
-                    return false;
+            // Test that the old drop/add methods result in no-ops. TODO: Remove
+            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
 
-                addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
-            }
-            finally
-            {
-                // New method should succeed with no changes to indices. TODO: remove drop/add above
-                ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
-            }
+            if (!deleteAndSaveProperties(user, errors, domainChangeMap))
+                return false;
+
+            addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
 
         List<Integer> orderedIds = reader.getDatasetOrder();
@@ -3791,6 +3786,7 @@ public class StudyManager
         }
     }
 
+    @Deprecated
     private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
@@ -3802,10 +3798,16 @@ public class StudyManager
             }
             Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
+
+            // Test that the below is a no-op
+            var indices1 = DomainUtil.getExistingIndices(domain);
             StorageProvisioner.get().addMissingRequiredIndices(domain);
+            var indices2 = DomainUtil.getExistingIndices(domain);
+            assert indices1.equals(indices2);
         }
     }
 
+    @Deprecated
     private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
