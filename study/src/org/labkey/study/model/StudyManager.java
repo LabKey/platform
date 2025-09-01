@@ -223,7 +223,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -3596,20 +3595,19 @@ public class StudyManager
         // optional param to control whether field additions or deletions are permitted
         if (allowDomainUpdates)
         {
-            // generate dataset domain changes for new datasets
+            // Generate dataset domain changes for new datasets
             domainChangeMap.clear();
             buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
 
-            // now that we actually have datasets, create/update the domains. Supplier ensures that all domains and
+            // Now that we actually have datasets, create or update the domains. This ensures that all domains and
             // property changes are saved before adding indices.
-            ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap, () -> deleteAndSaveProperties(user, errors, domainChangeMap));
+            ensurePropertiesAndRequiredIndices(reader, datasetDefEntryMap, domainChangeMap, user, errors);
 
-            // Test that the old drop/add methods result in no-ops. TODO: Remove
-            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
-
-            if (!deleteAndSaveProperties(user, errors, domainChangeMap))
+            if (errors.hasErrors())
                 return false;
 
+            // Test that calling the old drop/add methods result in no-ops. TODO: Remove
+            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
             addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
 
@@ -3623,25 +3621,23 @@ public class StudyManager
         return true;
     }
 
-    private boolean deleteAndSaveProperties(User user, BindException errors, Map<String, _DatasetDomainChange> domainChangeMap)
+    // see if we need to delete any columns from an existing domain and create the domain if it doesn't already exist
+    private boolean deleteAndSaveProperties(User user, BindException errors, _DatasetDomainChange domainChange)
     {
-        // see if we need to delete any columns from an existing domain
-        for (_DatasetDomainChange domainChange : domainChangeMap.values())
+        // see if we need to delete any columns from the domain
+        for (DomainProperty p : domainChange.propsToDelete)
         {
-            for (DomainProperty p : domainChange.propsToDelete)
-            {
-                p.delete();
-            }
+            p.delete();
+        }
 
-            try
-            {
-                domainChange.domain.save(user);
-            }
-            catch (ChangePropertyDescriptorException ex)
-            {
-                errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
-                return false;
-            }
+        try
+        {
+            domainChange.domain.save(user);
+        }
+        catch (ChangePropertyDescriptorException ex)
+        {
+            errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
+            return false;
         }
         return true;
     }
@@ -3771,7 +3767,7 @@ public class StudyManager
         }
     }
 
-    private void ensureRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap, Supplier<Boolean> afterAddSupplier)
+    private void ensurePropertiesAndRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap, User user, BindException errors)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
@@ -3780,9 +3776,22 @@ public class StudyManager
             {
                 continue;
             }
-            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
+            _DatasetDomainChange domainChange = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
+            Domain domain = domainChange.domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.get().ensureTableIndices(domain);
+
+            if (domain.isProvisioned())
+            {
+                // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
+                // We need to drop the indices first, adjust the properties, and then add the new indices. This method
+                // allows for that.
+                StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
+            }
+            else
+            {
+                // deleteAndSaveProperties() calls domain.save() which ensures all the indices after provisioning the new domain
+                deleteAndSaveProperties(user, errors, domainChange);
+            }
         }
     }
 
@@ -3819,7 +3828,12 @@ public class StudyManager
             }
             Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
+
+            // Test that the below is a no-op
+            var indices1 = DomainUtil.getExistingIndices(domain);
             StorageProvisioner.get().dropNotRequiredIndices(domain);
+            var indices2 = DomainUtil.getExistingIndices(domain);
+            assert indices1.equals(indices2);
         }
     }
 

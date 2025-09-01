@@ -89,7 +89,7 @@ public interface StorageProvisioner
     void addMissingRequiredIndices(Domain domain);
 
     void ensureTableIndices(@NotNull Domain domain);
-//    void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
+    void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 

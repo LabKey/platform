@@ -1063,6 +1063,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public void ensureTableIndices(@NotNull Domain domain)
     {
+        ensureTableIndices(domain, () -> true);
+    }
+
+    @Override
+    public void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier)
+    {
+        // TODO: throw instead -- shouldn't be called on an unprovisioned domain
         if (!domain.isProvisioned())
             return;
 
@@ -1109,7 +1116,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             if (!toRemove.isEmpty())
                 dropTableIndices(domain, toRemove);
-            if (!newIndices.isEmpty())
+
+            boolean successfulAdd = afterAddSupplier.get();
+
+            if (successfulAdd && !newIndices.isEmpty())
                 addTableIndices(domain, newIndices, TableChange.IndexSizeMode.Normal);
         }
     }
