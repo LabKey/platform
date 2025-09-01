@@ -76,6 +76,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";
     private static final List<String> UNITS = List.of("g", "mg", "kg", "uL", "mL", "L", "unit");
+    // TODO use KindOfQuantity
     private static final Map<Measurement.Kind, List<String>> UNIT_KINDS = Map.of(
             Measurement.Kind.Mass, List.of("g", "mg", "kg"),
             Measurement.Kind.Count, List.of("units"),
