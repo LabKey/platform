@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -88,6 +89,7 @@ public interface StorageProvisioner
     void addMissingRequiredIndices(Domain domain);
 
     void ensureTableIndices(@NotNull Domain domain);
+//    void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 

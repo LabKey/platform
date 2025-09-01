@@ -535,7 +535,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
-        // should be in a transaction with propertydescriptor changes
+        // should be in a transaction with property descriptor changes
         if (!scope.isTransactionActive())
             throw new ChangePropertyDescriptorException("Unable to change property size. Transaction is not active within change scope");
 
@@ -676,7 +676,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         @Override
         public String toString()
         {
-            // really shouldn't be doing this any more, use getSelectName()?
+            // really shouldn't be doing this anymore, use getSelectName()?
             return _inner.toString();
         }
 
@@ -1063,6 +1063,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public void ensureTableIndices(@NotNull Domain domain)
     {
+        if (!domain.isProvisioned())
+            return;
+
         // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
         if (schemaTableInfo != null)

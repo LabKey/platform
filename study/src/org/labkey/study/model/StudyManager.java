@@ -178,6 +178,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -222,6 +223,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -237,7 +239,7 @@ public class StudyManager
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Datasets");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subjects");
 
-    private static final Logger _log = LogManager.getLogger(StudyManager.class);
+    private static final Logger _log = LogHelper.getLogger(StudyManager.class, "Dataset operations");
     private static final StudyManager _instance = new StudyManager();
     private static final StudySchema SCHEMA = StudySchema.getInstance();
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
@@ -3598,8 +3600,9 @@ public class StudyManager
             domainChangeMap.clear();
             buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
 
-            // now that we actually have datasets, create/update the domains
-            ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
+            // now that we actually have datasets, create/update the domains. Supplier ensures that all domains and
+            // property changes are saved before adding indices.
+            ensureRequiredIndices(reader, datasetDefEntryMap, domainChangeMap, () -> deleteAndSaveProperties(user, errors, domainChangeMap));
 
             // Test that the old drop/add methods result in no-ops. TODO: Remove
             dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
@@ -3768,7 +3771,7 @@ public class StudyManager
         }
     }
 
-    private void ensureRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
+    private void ensureRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap, Supplier<Boolean> afterAddSupplier)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
@@ -3779,10 +3782,7 @@ public class StudyManager
             }
             Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
-            var indices1 = DomainUtil.getExistingIndices(domain);
             StorageProvisioner.get().ensureTableIndices(domain);
-            var indices2 = DomainUtil.getExistingIndices(domain);
-            assert indices1.equals(indices2);
         }
     }
 
