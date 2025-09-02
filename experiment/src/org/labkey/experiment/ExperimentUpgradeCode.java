@@ -34,6 +34,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -49,6 +50,7 @@ import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
@@ -201,6 +203,51 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LOG.info("Finished upgrade of amounts and units");
     }
 
+    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, ExpMaterialTable.Column unitsCol, Set<ExpMaterialTable.Column> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean isAliquot)
+    {
+        Unit baseUnit = currentDisplayUnit.getBase();
+        String unitsStr = (String) sampleMap.get(unitsCol.name());
+        Unit materialUnit = Unit.fromName(unitsStr);
+        boolean isInBaseUnits = materialUnit == null ? currentDisplayUnit.isBase() : materialUnit.isBase();
+        // have a unit value, but it did not convert to a known unit
+        if (materialUnit == null && !StringUtils.isEmpty(unitsStr))
+        {
+            // invalid unit stored with sample. Leave as is.
+            LOG.info("Found invalid {} '{}' for sample '{}'. No conversion done.", isAliquot ? "aliquot unit" : "unit", unitsStr, sampleMap.get(Name.name()));
+            sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
+        }
+        else if (materialUnit != null && !materialUnit.isCompatible(baseUnit))
+        {
+            LOG.info("{} '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", isAliquot ? "Aliquot unit" : "Unit", materialUnit.name(), sampleMap.get(Name.name()), baseUnit);
+            sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
+        }
+        else if (!isInBaseUnits || materialUnit == null)
+        {
+            if (!isInBaseUnits)
+            {
+                amountCols.forEach(amountCol -> {
+                    if (sampleMap.get(amountCol.name()) != null)
+                    {
+                        oldDataMap.put(amountCol.name(), sampleMap.get(amountCol.name()));
+                        newDataMap.put(amountCol.name(), Unit.convert((Double) sampleMap.get(amountCol.name()), materialUnit == null ? currentDisplayUnit : materialUnit, baseUnit));
+                        sampleCounts.put("converted", sampleCounts.getOrDefault("converted", 0) + 1);
+                    }
+                });
+                sampleCounts.put("converted", sampleCounts.getOrDefault("converted", 0) + 1);
+            }
+            else // in base unit, but not explicitly stored
+                sampleCounts.put("setUnitsWithoutConvert", sampleCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
+            if (!baseUnit.name().equals(unitsStr))
+                newDataMap.put(unitsCol.name(), baseUnit.name());
+        }
+        else if (!unitsStr.equals(baseUnit.name()))
+        {
+            oldDataMap.put(unitsCol.name(), unitsStr);
+            newDataMap.put(unitsCol.name(), baseUnit.name());
+            sampleCounts.put("changeUnitsLabel", sampleCounts.getOrDefault("changeUnitsLabel", 0) + 1);
+        }
+    }
+
     // Converts amounts for all sample types defined in the given container.
     // Picks up samples from all containers for each sample type.
     private static void convertAmountsToBaseUnits(Container container, User user, TransactionAuditProvider.TransactionAuditEvent transactionEvent)
@@ -243,77 +290,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
                     if (hasDisplayUnit)
                     {
-                        Unit baseUnit = currentDisplayUnit.getBase();
-
                         if (sampleMap.get(StoredAmount.name()) != null)
                         {
-                            Unit materialUnit = Unit.fromName((String) sampleMap.get(Units.name()));
-                            boolean isInBaseUnits = materialUnit == null ? currentDisplayUnit.isBase() : materialUnit.isBase();
-                            // have a unit value, but it did not convert to a known unit
-                            if (materialUnit == null && !StringUtils.isEmpty((String) sampleMap.get(Units.name())))
-                            {
-                                // invalid unit stored with sample. Leave as is.
-                                LOG.info("Found invalid unit '{}' for sample '{}'. No conversion done.", sampleMap.get(Units.name()), sampleMap.get(Name.name()));
-                                sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
-                            }
-                            else if (materialUnit != null && !materialUnit.isCompatible(baseUnit))
-                            {
-                                LOG.info("Unit '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", materialUnit.name(), sampleMap.get(Name.name()), baseUnit);
-                                sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
-                            }
-                            else if (!isInBaseUnits || materialUnit == null)
-                            {
-                                if (!isInBaseUnits)
-                                {
-                                    oldDataMap.put(StoredAmount.name(), sampleMap.get(StoredAmount.name()));
-                                    newDataMap.put(StoredAmount.name(), Unit.convert((Double) sampleMap.get(StoredAmount.name()), materialUnit == null ? currentDisplayUnit : materialUnit, baseUnit));
-                                    sampleCounts.put("converted", sampleCounts.getOrDefault("converted", 0) + 1);
-                                }
-                                else // in base unit, but not explicitly stored
-                                    sampleCounts.put("setUnitsWithoutConvert", sampleCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
-                                newDataMap.put(Units.name(), baseUnit.name());
-                            }
+                            getAmountAndUnitUpdates(sampleMap, Units, Set.of(StoredAmount), currentDisplayUnit, oldDataMap, newDataMap, sampleCounts, false);
                         }
                         if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
                         {
-                            Unit aliquotUnit = Unit.fromName((String) sampleMap.get(AliquotUnit.name()));
-                            boolean isInBaseUnits = aliquotUnit == null ? currentDisplayUnit.isBase() : aliquotUnit.isBase();
-                            // have a unit value, but it did not convert to a known unit
-                            if (aliquotUnit == null && !StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())))
-                            {
-                                // invalid unit stored with sample. Leave as is, but log
-                                LOG.info("Found invalid aliquot unit '{}' for sample '{}'. No conversion done.", sampleMap.get(AliquotUnit.name()), sampleMap.get(Name.name()));
-                                aliquotCounts.put("invalidUnits", aliquotCounts.getOrDefault("invalidUnits", 0) + 1);
-                            }
-                            else if (aliquotUnit != null && !aliquotUnit.isCompatible(baseUnit))
-                            {
-                                LOG.info("Aliquot unit '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", aliquotUnit.name(), sampleMap.get(Name.name()), baseUnit);
-                                aliquotCounts.put("invalidUnits", aliquotCounts.getOrDefault("invalidUnits", 0) + 1);
-                            }
-                            else if (!isInBaseUnits || aliquotUnit == null)
-                            {
-                                if (!isInBaseUnits)
-                                {
-                                    int increment = 0;
-                                    if (sampleMap.get(AliquotVolume.name()) != null)
-                                    {
-                                        oldDataMap.put(AliquotVolume.name(), sampleMap.get(AliquotVolume.name()));
-                                        newDataMap.put(AliquotVolume.name(), Unit.convert((Double) sampleMap.get(AliquotVolume.name()), aliquotUnit == null ? currentDisplayUnit : aliquotUnit, baseUnit));
-                                        increment = 1;
-                                    }
-                                    if (sampleMap.get(AvailableAliquotVolume.name()) != null)
-                                    {
-                                        oldDataMap.put(AvailableAliquotVolume.name(), sampleMap.get(AvailableAliquotVolume.name()));
-                                        newDataMap.put(AvailableAliquotVolume.name(), Unit.convert((Double) sampleMap.get(AvailableAliquotVolume.name()), aliquotUnit == null ? currentDisplayUnit : aliquotUnit, baseUnit));
-                                        increment = 1;
-                                    }
-                                    aliquotCounts.put("converted", aliquotCounts.getOrDefault("converted", 0) + increment);
-                                }
-                                else // in base unit but not explicitly set
-                                    aliquotCounts.put("setUnitsWithoutConvert", aliquotCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
-                                if (aliquotUnit != baseUnit)
-                                    newDataMap.put(AliquotUnit.name(), baseUnit.name());
-                            }
+                            getAmountAndUnitUpdates(sampleMap, AliquotUnit, Set.of(AliquotVolume, AvailableAliquotVolume), currentDisplayUnit, oldDataMap, newDataMap, aliquotCounts, true);
                         }
                     }
                     else // no display unit
