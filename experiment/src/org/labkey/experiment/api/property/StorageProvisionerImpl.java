@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -853,25 +852,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
     public void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope)
     {
         _create(scope, kind, domain, true);
-    }
-
-    // The old addMissingRequiredIndices() method called this to ensure no index used any column in the PK. Why so
-    // strict? An index that *starts with* the same column(s) as another index or PK is likely redundant, but that's
-    // not unique to PKs and could be valid when a column in the middle of a composite PK is indexed. TODO: Decide
-    // if this should be removed or incorporated into ensureTableIndices().
-    private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, Index> requiredIndexEntry)
-    {
-        for (String indexColumnName : requiredIndexEntry.getValue().columnNames)
-        {
-            for (String primaryKeyName : schemaTableInfo.getPkColumnNames())
-            {
-                if (indexColumnName.equalsIgnoreCase(primaryKeyName))
-                {
-                    throw new UnsupportedOperationException(
-                            "Adding an index with primary key columns is not supported. Primary keys are " + String.join(",", schemaTableInfo.getPkColumnNames()));
-                }
-            }
-        }
     }
 
     private void addTableIndices(Domain domain, Set<Index> indices, TableChange.IndexSizeMode sizeMode)

@@ -38,6 +38,7 @@ import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -1167,13 +1168,12 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         // TODO: This loop should not guess the name of the old indices; instead, it should look them up.
         // TableChange.setIndexedColumns() could set _indexRenames providing the name, and then this code uses that info.
-        // Or maybe schemaTableInfo.getAllIndices() and then use Index.isSameIndex() to find names.
-        // Or maybe we don't bother renaming the indices since (on PostgreSQL) we always look them up when dropping them.
-        for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
+        // Or maybe schemaTableInfo.getAllIndices() and then use Index.isSameIndex() to find names. Issue 53838.
+        for (Map.Entry<Index, Index> oldToNew : change.getIndexRenames().entrySet())
         {
-            PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
-            PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
+            Index oldIndex = oldToNew.getKey();
+            Index newIndex = oldToNew.getValue();
+            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames); // TODO: Look up name
             String newName = nameIndex(change.getTableName(), newIndex.columnNames);
             if (!oldName.equals(newName))
             {
@@ -1323,7 +1323,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private void addCreateIndexStatements(List<String> statements, TableChange change)
     {
-        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        for (Index index : change.getIndexedColumns())
         {
             String newIndexName = nameIndex(change.getTableName(), index.columnNames);
             statements.add(String.format("CREATE %sINDEX %s ON %s (%s);",

@@ -435,6 +435,8 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     public void validate()
     {
         String prefix = getNamespacePrefix();
+        // This check for length >= 12 is arbitrary, meant to prevent "Audit-" and other trivial namespace prefixes that
+        // are likely to overlap and cause domain URIs to resolve to the wrong domain kinds.
         if (prefix.length() < 12)
             throw new IllegalStateException("Namespace prefix must be unique and longer than this: " + prefix);
 

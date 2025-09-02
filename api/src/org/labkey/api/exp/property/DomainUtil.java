@@ -989,19 +989,6 @@ public class DomainUtil
         return validationException;
     }
 
-    public static Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getExistingIndices(Domain domain)
-    {
-        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-        if (schemaTableInfo != null)
-        {
-            DomainKind<?> dk = domain.getDomainKind();
-            if (null == dk)
-                throw new IllegalStateException("Domain kind is null!");
-            return schemaTableInfo.getAllIndices();
-        }
-        return Map.of();
-    }
-
     // Issue 51321: check reserved domain name: First, All
     public static @Nullable String validateReservedName(@NotNull String domainName, @NotNull String kindName)
     {
