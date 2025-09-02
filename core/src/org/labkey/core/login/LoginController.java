@@ -21,6 +21,7 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -364,6 +365,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @IgnoresForbiddenProjectCheck
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
         @Override
@@ -420,6 +422,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public static class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
         @Override
@@ -719,6 +722,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public static class GetPasswordRulesInfoAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -738,6 +742,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class ChangePasswordApiAction extends MutatingApiAction<SetPasswordForm>
     {
         protected User _user = null;
@@ -775,6 +780,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class SetPasswordApiAction extends MutatingApiAction<SetPasswordForm>
     {
         @Override
@@ -805,6 +811,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class ResetPasswordApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -932,6 +939,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class AcceptTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
@@ -968,6 +976,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class GetTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
@@ -985,6 +994,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public static class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -1006,6 +1016,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public static class GetRegistrationConfigApiAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -1021,6 +1032,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @IgnoresForbiddenProjectCheck
     // @AllowedDuringUpgrade
     public static class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
@@ -1521,6 +1533,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    // Always invoked in the root, so no need to ignore locked projects
     public static class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
         @Override
@@ -1688,13 +1701,14 @@ public class LoginController extends SpringActionController
         // TODO: This is unreliable... e.g., the "change password via email validation" scenario isn't considered a
         // change, so messaging and audit text is off. Actions should explicitly determine whether this is a change
         // operation vs. an initial password. Need a flag or perhaps separate actions.
-        boolean changeOperation = StringUtils.startsWithIgnoreCase(auditMessage, "change");
+        boolean changeOperation = Strings.CI.startsWith(auditMessage, "change");
 
         return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, affectedUser, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
     }
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class SetPasswordAction extends AbstractSetPasswordAction
     {
         @Override
@@ -1953,6 +1967,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     // @CSRF don't need CSRF for actions that require a password
     public class ChangePasswordAction extends AbstractSetPasswordAction
     {
@@ -2133,6 +2148,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
         private JspView<?> _finishView = null;
@@ -2620,6 +2636,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
+    @IgnoresForbiddenProjectCheck
     public static class GetPasswordScoreAction extends ReadOnlyApiAction<PasswordForm>
     {
         @Override

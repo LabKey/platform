@@ -83,6 +83,7 @@ public class TestSsoController extends SpringActionController
 
     @AllowedDuringUpgrade
     @RequiresNoPermission
+    // NOTE: Always invoked in the root, so no need for @IgnoresForbiddenProjectCheck
     public static class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
     {
         @Override
