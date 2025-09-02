@@ -26,12 +26,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -39,13 +37,11 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
@@ -201,9 +197,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // create a single transaction event at the root container for use in tying all updates together
         TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
-        {
-            convertAmountsToBaseUnits(c, admin, transactionEvent);
-        });
+                convertAmountsToBaseUnits(c, admin, transactionEvent));
         LOG.info("Finished upgrade of amounts and units");
     }
 
@@ -225,13 +219,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 Unit currentDisplayUnit = Unit.fromName(sampleType.getMetricUnit());
                 boolean hasDisplayUnit = currentDisplayUnit != null;
 
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition(FieldKey.fromParts("cpastype"), sampleType.getLSID());
-                TableSelector selector = new TableSelector(
-                        tInfo,
-                        PageFlowUtil.set(RowId.name(), Name.name(), StoredAmount.name(), Units.name(), AliquotVolume.name(), AliquotUnit.name(), AvailableAliquotVolume.name()),
-                        filter,
-                        null);
+                SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume FROM ")
+                        .append(tInfo, "m")
+                        .append(" WHERE cpastype = ?").add(sampleType.getLSID());
+                SqlSelector selector = new SqlSelector(scope, sql);
                 selector.mapStream().forEach(sampleMap -> {
                     Map<String, Object> oldDataMap = new HashMap<>();
                     Map<String, Object> newDataMap = new HashMap<>();
@@ -367,8 +358,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     }
                 });
                 transaction.commit();
-                LOG.debug("    Sample data update counts {}", sampleCounts);
-                LOG.debug("    Aliquot data update counts {}", aliquotCounts);
+                LOG.info("    Sample data update counts {}", sampleCounts);
+                LOG.info("    Aliquot data update counts {}", aliquotCounts);
                 LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
             }
         }
