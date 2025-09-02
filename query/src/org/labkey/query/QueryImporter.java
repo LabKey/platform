@@ -280,6 +280,8 @@ public class QueryImporter implements FolderImporter
 
         queryDef.setDescription(queryXml.getDescription());
         queryDef.setMetadataXml(metadataXml);
+        queryDef.setIsHidden(queryXml.getHidden());
+        queryDef.setCanInherit(queryXml.getInherit());
 
         Collection<QueryPropertyChange> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
         if (created)
