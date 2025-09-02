@@ -144,6 +144,8 @@ public interface AppProps
 
     String getBaseServerUrl();
 
+    String getHomePageUrl();
+
     ActionURL getHomePageActionURL();
 
     String getSiteWelcomePageUrlString();

@@ -851,7 +851,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                throw new RedirectException(returnUrl, false);
+                throw new RedirectException(returnUrl);
 
             return false;
         }
@@ -1286,7 +1286,7 @@ public class AnnouncementsController extends SpringActionController
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
             URLHelper urlHelper = form.getReturnUrlHelper();
-            throw new RedirectException(Objects.requireNonNullElseGet(urlHelper, () -> getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId())), false);
+            throw new RedirectException(Objects.requireNonNullElseGet(urlHelper, () -> getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId())));
         }
 
         @Override
