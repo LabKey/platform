@@ -16,7 +16,7 @@ import {
     sourceExists
 } from './utils';
 
-
+// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'MoveSourcesTest Project';
 

@@ -677,7 +677,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     DataType getDataType(String namespacePrefix);
 
-    DbScope.Transaction ensureTransaction();
+    DbScope.Transaction ensureTransaction(Lock... locks);
 
     ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 

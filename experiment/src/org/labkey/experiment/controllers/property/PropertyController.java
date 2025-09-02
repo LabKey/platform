@@ -480,7 +480,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class ValidateNameExpressionsAction extends MutatingApiAction<DomainApiForm>
+    public static class ValidateNameExpressionsAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -509,7 +509,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class ValidateDomainAndFieldNamesAction extends MutatingApiAction<DomainApiForm>
+    public static class ValidateDomainAndFieldNamesAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -552,6 +552,7 @@ public class PropertyController extends SpringActionController
                 {
                     try
                     {
+                        field.setPropertyURI(DomainUtil.createUniquePropertyURI(typeURI, "1000", new CaseInsensitiveHashSet()));
                         DomainProperty dp = DomainUtil.addProperty(domain, field, new HashMap<>(), new CaseInsensitiveHashSet(), results);
                         OntologyManager.validatePropertyDescriptor(dp.getPropertyDescriptor());
                     }

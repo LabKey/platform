@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -17,6 +16,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -69,14 +69,19 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.util.IntegerUtils.asLong;
 
 public class DataGenerator<T extends DataGenerator.Config> implements ContainerUser
 {
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";
-    private static final List<String> UNITS = List.of("g", "mg", "uL", "mL", "unit");
+    private static final List<String> UNITS = List.of("g", "mg", "kg", "uL", "mL", "L", "unit");
+    // TODO use KindOfQuantity
+    private static final Map<Measurement.Kind, List<String>> UNIT_KINDS = Map.of(
+            Measurement.Kind.Mass, List.of("g", "mg", "kg"),
+            Measurement.Kind.Count, List.of("units"),
+            Measurement.Kind.Volume, List.of("uL", "mL", "L")
+    );
     private static final List<String> LABEL_COLORS = new ArrayList<>();
     static {
         LABEL_COLORS.add("#800000"); // maroon,
@@ -404,7 +409,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             }
         }
 
-        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain(), _container);
+        numGenerated += generateSampleData(numSamples - numDerived, svc, sampleType, _container);
         int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
@@ -728,7 +733,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         while (totalImported < quantity && dataChanged)
         {
             int numRows = Math.min(batchSize, quantity - totalImported);
-            List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
+            List<Map<String, Object>> rows = createSampleRows(numRows, sampleType);
+
             Map<String, List<Map<String, Object>>> parentLists = new HashMap<>();
             int minParentsSize = -1;
             for (ExpObject parentObject : parentObjects)
@@ -807,6 +813,22 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         return numImported;
     }
 
+    private int generateSampleData(int totalRows, QueryUpdateService service, ExpSampleType sampleType, Container container) throws BatchValidationException, SQLException
+    {
+        checkAlive(_job);
+        _log.info(String.format("Generating %d rows of data ...", totalRows));
+        int numImported = 0;
+        int batchSize = Math.min(MAX_BATCH_SIZE, totalRows);
+        BatchValidationException errors = new BatchValidationException();
+        while (numImported < totalRows)
+        {
+            List<Map<String, Object>> rows = createSampleRows(Math.min(batchSize, totalRows - numImported), sampleType);
+            numImported += importRows(rows, errors, service, container);
+            _log.info("... " + numImported);
+        }
+        return numImported;
+    }
+
     protected void addDomainProperties(List<GWTPropertyDescriptor> props, int numFields)
     {
         for (int i = 0; i < numFields; i++)
@@ -817,28 +839,79 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         }
     }
 
+    private static String getUnitsValue(ExpSampleType sampleType)
+    {
+        String units = null;
+        if (randomInt(0, 4) < 3) // add a unit for 75% (TODO This choice should be removed when fb_amountsAndUnits is merged)
+        {
+            if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
+            {
+                Measurement.Unit unit = Measurement.Unit.getUnit(sampleType.getMetricUnit());
+                units = randomIndex(UNIT_KINDS.get(unit.getKind()));
+            }
+            else
+                units = randomIndex(UNITS);
+        }
+        return units;
+    }
+
+    public static Map<String, Object> createSampleRow(ExpSampleType sampleType, int rowNum)
+    {
+        Map<String, Object> row = createRow(sampleType.getDomain(), rowNum);
+        if (randomInt(0, 4) < 3) // set amount for 75% - TODO parameterize
+        {
+            row.put("StoredAmount", randomDouble(0, 100));
+            // add a unit for some percentage
+            String units = getUnitsValue(sampleType);
+            if (units != null)
+                row.put("Units", units);
+        } else if (randomInt(0, 4) == 2) // set unit without amount for 25% of remaining (TODO This should be removed when fb_amountsAndUnits is merged)
+        {
+            String units = getUnitsValue(sampleType);
+            if (units != null)
+                row.put("Units", units);
+        }
+        return row;
+    }
+
+    public static Map<String, Object> createRow(Domain domain, int rowNum)
+    {
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        List<? extends DomainProperty> properties = domain.getProperties();
+        for (int p = 0; p < properties.size(); p++)
+        {
+            DomainProperty property = properties.get(p);
+            int dataNum = p + (rowNum % 15);
+            Object value = switch (property.getRangeURI())
+            {
+                case "string" -> "Text " + dataNum;
+                case "int" -> dataNum;
+                case "float" -> dataNum * 1.5;
+                case "date" -> randomDate();
+                default -> null;
+            };
+            row.put(property.getName(), value);
+        }
+        return row;
+    }
+
     protected List<Map<String, Object>> createRows(int numRows, Domain domain)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int i = 1; i <= numRows; i++)
         {
-            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-            List<? extends DomainProperty> properties = domain.getProperties();
-            for (int p = 0; p < properties.size(); p++)
-            {
-                DomainProperty property = properties.get(p);
-                int dataNum = p + (i % 15);
-                Object value = switch (property.getRangeURI())
-                        {
-                            case "string" -> "Text " + dataNum;
-                            case "int" -> dataNum;
-                            case "float" -> dataNum * 1.5;
-                            case "date" -> randomDate();
-                            default -> null;
-                        };
-                row.put(property.getName(), value);
-            }
-            rows.add(row);
+            rows.add(createRow(domain, i));
+        }
+        return rows;
+    }
+
+
+    protected List<Map<String, Object>> createSampleRows(int numRows, ExpSampleType sampleType)
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int i = 1; i <= numRows; i++)
+        {
+            rows.add(createSampleRow(sampleType, i));
         }
         return rows;
     }
