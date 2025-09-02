@@ -697,7 +697,6 @@ public class ExceptionUtil
         }
     }
 
-
     public static boolean isClientAbortException(Throwable ex)
     {
         if (ex != null)
@@ -708,6 +707,7 @@ public class ExceptionUtil
                 className.endsWith("ClientAbortException") ||
                 className.endsWith("FileUploadException"))
             {
+                LOG.trace("Client abort exception", ex);
                 return true;
             }
             if (ex.getClass().equals(IllegalStateException.class) && ex.getMessage() != null &&
@@ -716,20 +716,24 @@ public class ExceptionUtil
                             ex.getMessage().contains("Session already invalidated")))
 
             {
+                LOG.trace("Client abort exception", ex);
                 return true;
             }
             if (ex.getClass().equals(SocketException.class) && "Connection reset".equalsIgnoreCase(ex.getMessage()))
             {
+                LOG.trace("Client abort exception", ex);
                 return true;
             }
             // Bug 15371 and 34605
             if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && (ex.getMessage().contains("disconnected client") || ex.getMessage().contains("Socket read failed")))
             {
+                LOG.trace("Client abort exception", ex);
                 return true;
             }
             // Bug 32056
             if (ex.getClass().equals(EOFException.class))
             {
+                LOG.trace("Client abort exception", ex);
                 return true;
             }
 

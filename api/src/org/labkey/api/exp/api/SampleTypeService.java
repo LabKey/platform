@@ -159,6 +159,7 @@ public interface SampleTypeService
     /**
      * @param includeOtherContainers whether sample types from the shared container or the container's project should be included
      */
+    // TODO: Remove user parameter (not used)
     List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
 
     /**
@@ -168,6 +169,7 @@ public interface SampleTypeService
 
     /** Get the sample type with name at a specific time */
     @Nullable
+    // TODO: Remove user parameter (not used)
     ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
 
     /**
@@ -190,6 +192,7 @@ public interface SampleTypeService
      * Get a SampleType by rowId within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
+    // TODO: Remove user parameter (not used)
     ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
 
     Lsid getSampleTypeLsid(String name, Container container);
