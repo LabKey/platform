@@ -157,17 +157,12 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>URL settings (<%=bean.getSiteSettingsHelpLink("url")%>)</td>
-
+    <td colspan=2>URL setting (<%=bean.getSiteSettingsHelpLink("url")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=baseServerURL%>">Base server URL (used to create links in emails sent by the system)</label></td>
     <td><input type="text" name="<%=baseServerURL%>" id="<%=baseServerURL%>" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=useContainerRelativeURL%>">Use "path first" urls (/home/project-begin.view)</label></td>
-    <td><labkey:checkbox id="<%=useContainerRelativeURL.name()%>" name="<%=useContainerRelativeURL.name()%>" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

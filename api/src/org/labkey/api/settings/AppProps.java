@@ -50,6 +50,7 @@ public interface AppProps
     String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
+    String CONTROLLER_FIRST_URLS = "controllerFirstUrls";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
@@ -142,8 +143,6 @@ public interface AppProps
     boolean isSetBaseServerUrl();
 
     String getBaseServerUrl();
-
-    String getHomePageUrl();
 
     ActionURL getHomePageActionURL();
 

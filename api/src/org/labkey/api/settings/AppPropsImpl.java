@@ -223,12 +223,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
 
     @Override
-    public String getHomePageUrl()
-    {
-        return getHomePageActionURL().getLocalURIString();
-    }
-
-    @Override
     public ActionURL getHomePageActionURL()
     {
         //noinspection ConstantConditions
@@ -550,7 +544,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean getUseContainerRelativeURL()
     {
-        return lookupBooleanValue(useContainerRelativeURL, true);
+        return !OptionalFeatureService.get().isFeatureEnabled(AppProps.CONTROLLER_FIRST_URLS);
     }
 
     @Override

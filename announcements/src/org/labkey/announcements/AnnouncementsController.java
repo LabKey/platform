@@ -107,11 +107,11 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.SelectBuilder;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -137,7 +137,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -852,7 +851,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                throw new RedirectException(returnUrl);
+                throw new RedirectException(returnUrl, false);
 
             return false;
         }
@@ -1287,7 +1286,7 @@ public class AnnouncementsController extends SpringActionController
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
             URLHelper urlHelper = form.getReturnUrlHelper();
-            throw new RedirectException(Objects.requireNonNullElseGet(urlHelper, () -> getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId())));
+            throw new RedirectException(Objects.requireNonNullElseGet(urlHelper, () -> getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId())), false);
         }
 
         @Override
