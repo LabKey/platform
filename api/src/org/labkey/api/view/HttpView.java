@@ -594,13 +594,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
     {
-        String redirectUrl = (!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString();
-        throw new RedirectException(redirectUrl);
+        throw new RedirectException(url, allowAbsoluteUrl);
     }
 
     public static HttpView<?> redirect(ActionURL url)
     {
-        throw new RedirectException(url.getLocalURIString());
+        throw new RedirectException(url);
     }
 
     /**

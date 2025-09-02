@@ -1,5 +1,7 @@
 package org.labkey.devtools;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -7,6 +9,8 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -16,6 +20,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -43,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -688,7 +694,7 @@ public class ToolsController extends SpringActionController
                 .map(Module::getName)
                 .toList();
 
-            return new HtmlView(HtmlString.of(names.toString()));
+            return new HtmlView(HtmlString.of(names.isEmpty() ? "None" : names.toString()));
         }
 
         @Override
@@ -696,6 +702,109 @@ public class ToolsController extends SpringActionController
         {
             addBeginNavTrail(root);
             root.addChild("PostgreSQL-Only Modules That Still Have SQL Server Scripts");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class OverlappingIndicesAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            MultiValuedMap<OverlapType, Row> mmap = new ArrayListValuedHashMap<>();
+            DbScope scope = DbScope.getLabKeyScope();
+
+            ModuleLoader.getInstance().getModules().stream()
+                .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .map(name -> scope.getSchema(name, DbSchemaType.Module))
+                .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
+                .forEach(table -> {
+                    var indices = table.getAllIndices();
+                    indices.forEach((key1, value1) -> indices.forEach((key2, value2) -> {
+                        if (value1 != value2)
+                        {
+                            OverlapType type = overlap(value1.getValue(), value2.getValue());
+
+                            if (type != null)
+                            {
+                                switch (type)
+                                {
+                                    case Identical -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " vs. " + key2 + ": " + join(value1.getValue())));
+                                    case Overlap -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " " + join(value1.getValue()) + " vs. " + key2 + " " + join(value2.getValue())));
+                                }
+                            }
+                        }
+                    }));
+                });
+
+            return new HtmlView(DOM.createHtmlFragment(
+                Arrays.stream(OverlapType.values()).flatMap(type ->
+                    Stream.of(
+                        type == OverlapType.Overlap ? DOM.BR() : null,
+                        DOM.STRONG(StringUtilsLabKey.pluralize(mmap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
+                        DOM.TABLE(
+                            mmap.get(type).stream()
+                                .map(row -> DOM.TR(
+                                    DOM.TD(row.schemaName(), HtmlString.NBSP, HtmlString.NBSP),
+                                    DOM.TD(row.message()))
+                                )
+                        )
+                    )
+                ))
+            );
+        }
+
+        private record Row(String schemaName, String message) {}
+
+        private enum OverlapType
+        {
+            Identical("identical column sets"),
+            Overlap("column sets that overlap at the start");
+
+            private final String _description;
+
+            OverlapType(String description)
+            {
+                _description = description;
+            }
+
+            public String getDescription()
+            {
+                return _description;
+            }
+        }
+
+        private @Nullable OverlapType overlap(List<ColumnInfo> cols1, List<ColumnInfo> cols2)
+        {
+            String key1 = getKey(cols1);
+            String key2 = getKey(cols2);
+            if (key1.equals(key2))
+                return OverlapType.Identical;
+            if (key2.startsWith(key1))
+                return OverlapType.Overlap;
+            return null;
+        }
+
+        private String getKey(List<ColumnInfo> cols)
+        {
+            return cols.stream()
+                .map(col -> col.getName().toLowerCase())
+                .collect(Collectors.joining("_")) + "_";
+        }
+
+        private List<String> join(List<ColumnInfo> cols)
+        {
+            return cols.stream()
+                .map(ColumnInfo::getName)
+                .toList();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("Overlapping Indices");
         }
     }
 }

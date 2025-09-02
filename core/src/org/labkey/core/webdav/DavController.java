@@ -18,6 +18,12 @@
 
 package org.labkey.core.webdav;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.FileUtils;
@@ -72,7 +78,28 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CSRFException;
+import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ErrorRenderer;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HttpUtil;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DefaultModelAndView;
@@ -115,14 +142,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.Part;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -194,8 +214,6 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 
 /**
- * User: matthewb
- * Date: Oct 3, 2007
  * Derived from Tomcat's WebdavServlet
  */
 public class DavController extends SpringActionController
@@ -873,7 +891,7 @@ public class DavController extends SpringActionController
                     throw x;
                 // NOTE: AppProps.getInstance().getSiteWelcomePageUrlString() is handled before we even get here.  See WebdavServlet.
                 if (c.isRoot())
-                    throw new RedirectException(AppProps.getInstance().getHomePageUrl());
+                    throw new RedirectException(AppProps.getInstance().getHomePageActionURL());
                 throw new RedirectException(c.getStartURL(getUser()));
             }
         }
