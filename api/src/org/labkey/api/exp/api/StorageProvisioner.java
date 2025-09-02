@@ -83,11 +83,6 @@ public interface StorageProvisioner
      */
     void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
 
-    @Deprecated // Call ensureTableIndices() instead
-    void dropNotRequiredIndices(Domain domain);
-    @Deprecated // Call ensureTableIndices() instead
-    void addMissingRequiredIndices(Domain domain);
-
     void ensureTableIndices(@NotNull Domain domain);
     void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
 

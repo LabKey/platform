@@ -31,14 +31,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * User: newton
- * Date: Aug 24, 2010
- * Time: 4:08:39 PM
- *
  * The reason that we have this class, instead of doing something like reusing PropertyDescriptor, is that we also need
  * a storage spec like this when there is not a full property descriptor such as for the base properties of DomainKinds.
  * ColumnInfo and SqlColumn are also mismatched for various reasons.
- *
  */
 public class PropertyStorageSpec
 {
@@ -470,7 +465,7 @@ public class PropertyStorageSpec
 
         /**
          * Determines if two indices are the same modulo the isClustered setting. This is useful for updating indices
-         * when an audit domain type changes, for example.
+         * when a domain changes, for example.
          */
         public static boolean isSameIndex(Index propertyIndex, Index tableIndex)
         {

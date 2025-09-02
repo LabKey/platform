@@ -855,146 +855,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
         _create(scope, kind, domain, true);
     }
 
-    enum RequiredIndicesAction
-    {
-        Drop
-        {
-            @Override
-            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
-            {
-                provisioner.dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-            }
-        },
-        Add
-        {
-            @Override
-            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
-            {
-                provisioner.addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-            }
-        };
-
-        public abstract void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap);
-    }
-
-    @Override
-    public void dropNotRequiredIndices(Domain domain)
-    {
-        if (!domain.isProvisioned()){
-            return;
-        }
-        updateTableIndices(domain, RequiredIndicesAction.Drop);
-    }
-
-    @Override
-    public void addMissingRequiredIndices(Domain domain)
-    {
-        updateTableIndices(domain, RequiredIndicesAction.Add);
-    }
-
-    private void updateTableIndices(Domain domain, @NotNull RequiredIndicesAction requiredIndicesAction)
-    {
-        SchemaTableInfo schemaTableInfo = getSchemaTableInfo(domain);
-
-        SqlDialect sqlDialect = getSqlDialect(domain);
-
-        Map<String, Index> requiredIndicesMap = getRequiredIndices(domain, sqlDialect);
-
-        requiredIndicesAction.doOperation(this, domain, schemaTableInfo, requiredIndicesMap);
-    }
-
-    @NotNull
-    private Map<String, Index> getRequiredIndices(Domain domain, SqlDialect sqlDialect)
-    {
-        Collection<Index> requiredIndices = new ArrayList<>();
-        requiredIndices.addAll(domain.getDomainKind().getPropertyIndices(domain));
-        requiredIndices.addAll(domain.getPropertyIndices());
-
-        Map<String, Index> requiredIndicesMap = new CaseInsensitiveMapWrapper<>(new HashMap<>());
-
-        String storageTableName = domain.getStorageTableName();
-
-        if (storageTableName == null)
-        {
-            storageTableName = makeTableName(getDomainKind(domain),domain);
-        }
-
-        for (Index index : requiredIndices)
-        {
-            // TODO: Bad!! Shouldn't be making up an index name here! Ideally, we use the AbstractAuditTypeProvider.updateIndices() approach instead.
-            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
-        }
-        return requiredIndicesMap;
-    }
-
-    private void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
-    {
-        Set<String> indicesToDrop = new HashSet<>();
-
-        // Determine indices to drop
-        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
-        {
-            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
-            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
-
-            if (!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices)
-            {
-                indicesToDrop.add(index.getKey());
-            }
-        }
-
-        if (!indicesToDrop.isEmpty())
-        {
-            TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
-
-            change.setIndicesToBeDroppedByName(indicesToDrop);
-
-            try (Transaction transaction = getScope(domain).ensureTransaction())
-            {
-                change.execute();
-                transaction.commit();
-            }
-        }
-    }
-
-    private void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, Index> requiredIndicesMap)
-    {
-        Set<Index> indicesToAdd = new HashSet<>();
-
-        // Build the list of indices to add
-        CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
-        for (Map.Entry<String, Index> requiredIndexEntry : requiredIndicesMap.entrySet())
-        {
-            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
-            if (requiredIndexNotFoundInTable)
-            {
-                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
-                indicesToAdd.add(requiredIndexEntry.getValue());
-            }
-        }
-
-        if (!indicesToAdd.isEmpty())
-        {
-            TableChange change;
-            if (domain.getStorageTableName() == null)
-            {
-                change = new TableChange(domain, ChangeType.AddIndices, makeTableName(getDomainKind(domain),domain));
-            }
-            else
-            {
-                change = new TableChange(domain, ChangeType.AddIndices);
-            }
-
-            change.getIndexedColumns().addAll(indicesToAdd);
-
-            try (Transaction transaction = getScope(domain).ensureTransaction())
-            {
-                change.execute();
-                transaction.commit();
-            }
-        }
-    }
-
+    // The old addMissingRequiredIndices() method called this to ensure no index used any column in the PK. Why so
+    // strict? An index that *starts with* the same column(s) as another index or PK is likely redundant, but that's
+    // not unique to PKs and could be valid when a column in the middle of a composite PK is indexed. TODO: Decide
+    // if this should be removed or incorporated into ensureTableIndices().
     private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, Index> requiredIndexEntry)
     {
         for (String indexColumnName : requiredIndexEntry.getValue().columnNames)
@@ -1069,9 +933,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier)
     {
-        // TODO: throw instead -- shouldn't be called on an unprovisioned domain
         if (!domain.isProvisioned())
-            return;
+            throw new IllegalStateException("Domain " + domain.getName() + " is not provisioned!");
 
         // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
@@ -1079,11 +942,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
-                throw new IllegalStateException("Domain kind is null!");
+                throw new IllegalStateException("Domain kind of " + domain.getName() + " is null!");
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
             // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
-            // so we need to uniquify. Domain never specifies "clustered" but DomainKind does (e.g., DatasetDomainKind),
-            // so compare using only column names and give preference to DomainKind.
+            // so we need to uniquify. Domain indices never specify "clustered" but DomainKind indices may (e.g.,
+            // DatasetDomainKind), so compare using only column names and give preference to DomainKind.
             Set<Index> newIndices = new TreeSet<>(Comparator.comparing(index -> String.join("_", index.columnNames), String.CASE_INSENSITIVE_ORDER));
             newIndices.addAll(domain.getPropertyIndices());
             newIndices.addAll(kind.getPropertyIndices(domain));

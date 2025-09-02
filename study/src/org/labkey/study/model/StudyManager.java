@@ -3605,10 +3605,6 @@ public class StudyManager
 
             if (errors.hasErrors())
                 return false;
-
-            // Test that calling the old drop/add methods result in no-ops. TODO: Remove
-            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
-            addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
 
         List<Integer> orderedIds = reader.getDatasetOrder();
@@ -3794,49 +3790,6 @@ public class StudyManager
             }
         }
     }
-
-    @Deprecated
-    private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
-    {
-        for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
-        {
-            DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
-            if (datasetDefinitionEntry.datasetDefinition.isShared())
-            {
-                continue;
-            }
-            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
-            domain.setPropertyIndices(datasetImportInfo.indices);
-
-            // Test that the below is a no-op
-            var indices1 = DomainUtil.getExistingIndices(domain);
-            StorageProvisioner.get().addMissingRequiredIndices(domain);
-            var indices2 = DomainUtil.getExistingIndices(domain);
-            assert indices1.equals(indices2);
-        }
-    }
-
-    @Deprecated
-    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
-    {
-        for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
-        {
-            DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
-            if (datasetDefinitionEntry.datasetDefinition.isShared())
-            {
-                continue;
-            }
-            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
-            domain.setPropertyIndices(datasetImportInfo.indices);
-
-            // Test that the below is a no-op
-            var indices1 = DomainUtil.getExistingIndices(domain);
-            StorageProvisioner.get().dropNotRequiredIndices(domain);
-            var indices2 = DomainUtil.getExistingIndices(domain);
-            assert indices1.equals(indices2);
-        }
-    }
-
 
     public String getDomainURI(Container c, User u, Dataset def)
     {
