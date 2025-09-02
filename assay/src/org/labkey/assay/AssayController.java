@@ -364,6 +364,8 @@ public class AssayController extends SpringActionController
 
     public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
+        AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
+
         Map<String, Object> assayProperties = new HashMap<>();
         assayProperties.put("type", provider.getName());
         assayProperties.put("projectLevel", protocol.getContainer().isProject());
@@ -372,7 +374,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("name", protocol.getName());
         assayProperties.put("id", protocol.getRowId());
         assayProperties.put("status", protocol.getStatus());
-        assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
+        assayProperties.put("protocolSchemaName", schema.getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
         assayProperties.put("reRunSupport", provider.getReRunSupport());
@@ -383,7 +385,6 @@ public class AssayController extends SpringActionController
         assayProperties.put("plateEnabled", provider.isPlateMetadataEnabled(protocol));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
-        AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
         Set<String> tableNames = schema.getTableNames();
         Map<String, TableInfo> tableInfoMap = new HashMap<>();
         for (String tableName : tableNames)
