@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.util.Formats;
 
@@ -303,7 +304,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             if (null == unit)
                 throw new ConversionException("Could not parse unit '" + unitPart + "' from '" + s + "'.");
             if (!defaultUnit.kindOfQuantity.accept(unit))
-                throw new ConversionException("Quantity is of wrong type: expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
+                throw new ConversionException("Quantity is of the wrong type. Expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
             return Quantity.of(value, unit);
         }
         catch (IllegalArgumentException x)
@@ -407,6 +408,12 @@ public class Quantity extends Number implements Comparable<Quantity>
             {
                 // YEAH
             }
+        }
+
+        @BeforeClass
+        public static void setup()
+        {
+            registerQuantityConverters();
         }
 
         @Test
@@ -521,7 +528,6 @@ public class Quantity extends Number implements Comparable<Quantity>
         public void testConversion()
         {
             Quantity q;
-            registerQuantityConverters();
 
             q = (Quantity)ConvertUtils.convert("1.234kg", Quantity.Mass_g.class);
             assertEquals(Quantity.class, q.getClass());
