@@ -460,7 +460,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (null == st)
             st = _getSampleType(lsid);
         if (null != st && null==id)
-        if (null != st && null==id)
             sampleTypeCache.put(lsid,st.getContainer().getId());
         return st;
     }
