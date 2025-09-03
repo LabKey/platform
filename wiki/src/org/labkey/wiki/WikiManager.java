@@ -900,7 +900,7 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public WebPartView getView(Container c, String name, boolean contentOnly)
+    public WebPartView<?> getView(Container c, String name, boolean contentOnly)
     {
         try
         {
@@ -913,8 +913,7 @@ public class WikiManager implements WikiService
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
-            WikiView view = new WikiView(wiki, version, true);
-            return view;
+            return new WikiView(wiki, version, true);
         }
         catch (Exception x)
         {
@@ -923,14 +922,13 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public WebPartView getHistoryView(Container c, String name)
+    public WikiVersionsGrid getHistoryView(Container c, String name)
     {
         Wiki wiki = WikiSelectManager.getWiki(c, name);
         if (null == wiki)
             return null;
         WikiVersion version = wiki.getLatestVersion();
-        WikiVersionsGrid view = new WikiVersionsGrid(wiki, version, null);
-        return view;
+        return new WikiVersionsGrid(wiki, version, null);
     }
 
     @Override

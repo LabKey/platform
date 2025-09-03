@@ -291,5 +291,4 @@ public class LogManager
         else
             return type;
     }
-
 }

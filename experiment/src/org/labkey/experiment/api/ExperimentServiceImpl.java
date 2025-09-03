@@ -58,6 +58,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
@@ -74,6 +75,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
@@ -305,6 +307,7 @@ import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
+import static org.labkey.api.exp.OntologyManager.getTinfoDomainDescriptor;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -312,11 +315,11 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
-import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
@@ -10339,6 +10342,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
             TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
+        }
+    }
+
+    @SuppressWarnings("JUnitMalformedDeclaration")
+    public static class AuditDomainUriTest extends Assert
+    {
+        @Test
+        public void testAuditDomainUris()
+        {
+            // Each audit domain URI in the database should resolve to a unique DomainKind. A failure here indicates a
+            // problem with a DomainKind's namespace prefix or the resolution mechanism. Test lives here because it
+            // queries exp tables. See related test AbstractAuditDomainKind$TestCase.flagDuplicateNamespacePrefixes().
+            TableInfo dd = getTinfoDomainDescriptor();
+            Filter filter = new SimpleFilter(FieldKey.fromParts("StorageSchemaName"), "audit");
+            PropertyService svc = PropertyService.get();
+            Set<DomainKind<?>> retrievedKinds = new HashSet<>();
+            // This domain kind changed names at some point, so old deployments could have two rows that map to it -- tolerate
+            Set<String> ignore = Set.of("StudySecurityEscalationEvent");
+            List<String> failures = new TableSelector(dd, new CsvSet("Name, DomainURI"), filter, new Sort("Name")).mapStream()
+                .map(map -> {
+                    String name = (String)map.get("Name");
+                    String uri = (String)map.get("DomainURI");
+                    DomainKind<?> kind = svc.getDomainKind(uri);
+                    String ret = null;
+                    if (null == kind)
+                        LOG.info("{} ({}) did not resolve", uri, name);
+                    else if (!ignore.contains(kind.getKindName()) && !retrievedKinds.add(kind))
+                        ret = name + ": " + uri + " ==> " + kind;
+                    return ret;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+            if (!failures.isEmpty())
+                Assert.fail(StringUtilsLabKey.pluralize(failures.size(), "duplicate domain kind") + "! " + failures);
         }
     }
 
