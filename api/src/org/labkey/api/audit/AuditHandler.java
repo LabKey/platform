@@ -101,7 +101,10 @@ public interface AuditHandler
                 String dataType = parts[1];
                 // MaterialInputs/datypeTypeEncoded
                 if (row.containsKey(prefix + "/" + QueryKey.encodePart(dataType)))
+                {
                     isExpInput = true;
+                    nameFromAlias = prefix + "/" + QueryKey.encodePart(dataType);
+                }
             }
             else
                 nameFromAlias = lcName;
