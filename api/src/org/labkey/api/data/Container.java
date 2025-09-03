@@ -534,17 +534,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
-    public boolean isForbiddenProject(User user)
+    public boolean isForbiddenProject(User user, Set<Role> contextualRoles)
     {
-        return handleForbiddenProject(user, false);
+        return handleForbiddenProject(user, contextualRoles, false);
     }
 
     public void throwIfForbiddenProject(User user)
     {
-        handleForbiddenProject(user, true);
+        handleForbiddenProject(user, Set.of(), true);
     }
 
-    private boolean handleForbiddenProject(User user, boolean shouldThrow)
+    private boolean handleForbiddenProject(User user, Set<Role> contextualRoles, boolean shouldThrow)
     {
         if (null != user && !user.isSearchUser())
         {
@@ -565,7 +565,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             {
                 LockState lockState = currentProject.getLockState();
 
-                if (lockState.isLocked() && ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState))
+                if (lockState.isLocked() && ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, contextualRoles, lockState))
                 {
                     if (shouldThrow)
                         throw new ForbiddenProjectException("You are not allowed to access this folder; it is " + lockState.getDescription() + ".");

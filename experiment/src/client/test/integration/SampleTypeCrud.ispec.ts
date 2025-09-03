@@ -10,6 +10,8 @@ import {
     verifyRequiredLineageInsertUpdate
 } from './utils';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
+
+// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
 

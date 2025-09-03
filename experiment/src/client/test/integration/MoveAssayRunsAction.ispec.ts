@@ -1,17 +1,19 @@
 import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { hookServer, RequestOptions } from '@labkey/test';
 import {
-    getAssayDesignPayload,
+    AssayDesignFieldOptions,
+    createAssayDesign,
+    createDomainField,
     getAssayResults,
     getAssayRunMovedAuditLogs,
     importRun,
     runExists,
     uploadAssayFile,
 } from './utils';
-import { caseInsensitive } from '@labkey/components';
+import { caseInsensitive, RANGE_URIS } from '@labkey/components';
 
-
+// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'MoveAssayRunsTest Project';
 
@@ -61,46 +63,24 @@ beforeAll(async () => {
     const noPermsUser = await server.createUser('test_no_perms@expctrltest.com');
     noPermsUserOptions = { requestContext: await server.createRequestContext(noPermsUser) };
 
-    const runFileField = {
-        "defaultValueType": "LAST_ENTERED",
-        "name": "RunFileField",
-        "rangeURI": "http://cpas.fhcrc.org/exp/xml#fileLink",
-        shownInDetailsView: true,
-        shownInInsertView: true,
-        shownInUpdateView: true,
-        "scale": 4000,
-    }
-
-    const resultFileField = {
-        "defaultValueType": "LAST_ENTERED",
-        "name": "ResultFileField",
-        "rangeURI": "http://cpas.fhcrc.org/exp/xml#fileLink",
-        shownInDetailsView: true,
-        shownInInsertView: true,
-        shownInUpdateView: true,
-        "scale": 4000,
-    }
-
-    const resultPropField = {
-        conditionalFormats: [],
-        name: "Prop",
-        scale: 4000,
-        shownInDetailsView: true,
-        shownInInsertView: true,
-        shownInUpdateView: true,
-        isPrimaryKey: false,
-    }
+    const runFileField = createDomainField({ name: 'RunFileField', rangeURI: RANGE_URIS.FILELINK });
+    const resultFileField = createDomainField({ name: 'ResultFileField', rangeURI: RANGE_URIS.FILELINK });
+    const resultPropField = createDomainField({ name: 'Prop' });
 
     // create an assay design at project container for use in tests
-    const assayA = await server.post('assay', 'saveProtocol.api', getAssayDesignPayload('assayA', [], [resultPropField]), topFolderOptions).expect(successfulResponse);
-    assayAId = assayA.body['data']['protocolId'];
+    let fields: AssayDesignFieldOptions = { resultFields: [resultPropField] };
+    const assayA = await createAssayDesign(server, 'assayA', fields, topFolderOptions);
+    assayAId = assayA.protocolId;
+
     // create a second assay design with run file property at project container for use in tests
-    const assayWithRunFile = await server.post('assay', 'saveProtocol.api', getAssayDesignPayload('assayWithRunFile', [runFileField], [resultPropField]), topFolderOptions).expect(successfulResponse);
-    assayWithRunFileId = assayWithRunFile.body['data']['protocolId'];
+    fields = { resultFields: [resultPropField], runFields: [runFileField] };
+    const assayWithRunFile = await createAssayDesign(server, 'assayWithRunFile', fields, topFolderOptions);
+    assayWithRunFileId = assayWithRunFile.protocolId;
 
     // create a third assay design with result file property at project container for use in tests
-    const assayWithResultFile = await server.post('assay', 'saveProtocol.api', getAssayDesignPayload('assayWithResultFile', [runFileField], [resultPropField, resultFileField]), topFolderOptions).expect(successfulResponse);
-    assayWithResultFileId = assayWithResultFile.body['data']['protocolId'];
+    fields = { resultFields: [resultPropField, resultFileField], runFields: [runFileField] };
+    const assayWithResultFile = await createAssayDesign(server, 'assayWithResultFile', fields, topFolderOptions);
+    assayWithResultFileId = assayWithResultFile.protocolId;
 });
 
 afterAll(async () => {
@@ -110,7 +90,6 @@ afterAll(async () => {
 afterEach(() => {
     mock.restore();
 });
-
 
 describe('Move Assay Runs', () => {
 
