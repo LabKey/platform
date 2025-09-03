@@ -58,6 +58,7 @@ import java.util.regex.Pattern;
 public class Quantity extends Number implements Comparable<Quantity>
 {
     public static final int DEFAULT_PRECISION_SCALE = 6;
+    public static final String DEFAULT_FORMAT = "0.######";
     public final @NotNull KindOfQuantity kind;
     public final Number value;
     private final boolean isDouble;

@@ -75,6 +75,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
@@ -328,6 +329,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 else
                 {
                     var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                    if (columnInfo.getFormat() == null)
+                        columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(Set.of(label));
                     return columnInfo;
