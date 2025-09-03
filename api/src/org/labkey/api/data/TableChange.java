@@ -234,7 +234,7 @@ public class TableChange
         addColumn(new PropertyStorageSpec(prop));
     }
 
-    /** Add the property to the set of columns tracked in this change along with it's old scale. */
+    /** Add the property to the set of columns tracked in this change along with its old scale. */
     public void addColumnResize(PropertyDescriptor prop, Integer oldScale)
     {
         addColumn(prop);
@@ -248,7 +248,7 @@ public class TableChange
 
     /**
      * Index will be renamed using the columns listed in the Index.
-     * The columns used by the index won't be changed.  We need to
+     * The columns used by the index won't be changed. We need to
      * pass the list of columns since the index name is created by the dialect.
      *
      * @param oldIndex Old index to be renamed.
@@ -309,7 +309,8 @@ public class TableChange
         _indices = indices.stream().map(i -> i.translateToStorageNames(domain)).toList();
     }
 
-    public Set<String> getIndicesToBeDroppedByName(){
+    public Set<String> getIndicesToBeDroppedByName()
+    {
         return _indicesToBeDroppedByName;
     }
 

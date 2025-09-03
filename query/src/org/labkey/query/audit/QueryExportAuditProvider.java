@@ -41,9 +41,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: klum
- * Date: 7/21/13
- *
  * UNDONE: Fancy QueryAuditViewFactory.QueryDetailsColumn
  */
 public class QueryExportAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
@@ -219,7 +216,7 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static class QueryExportAuditDomainKind extends AbstractAuditDomainKind
     {
-        public static final String NAME = "QueryAuditDomain";
+        public static final String NAME = "QueryExportAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;

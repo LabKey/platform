@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -36,6 +35,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -83,10 +83,8 @@ public interface StorageProvisioner
      */
     void createStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
 
-    void dropNotRequiredIndices(Domain domain);
-    void addMissingRequiredIndices(Domain domain);
-    void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode);
-    void dropTableIndices(Domain domain, Set<String> indexNames);
+    void ensureTableIndices(@NotNull Domain domain);
+    void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 
