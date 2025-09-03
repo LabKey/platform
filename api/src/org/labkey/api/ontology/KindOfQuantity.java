@@ -34,7 +34,7 @@ public enum KindOfQuantity
     },
 
     // Not a real unit per UCUM, but useful for annotation of "storage amount" for instance.
-    Count("", "unit")
+    Count("count", "unit")
     {
         @Override
         public List<Unit> getCommonUnits()
