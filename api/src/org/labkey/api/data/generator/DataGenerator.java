@@ -77,10 +77,10 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";
     private static final List<String> UNITS = List.of("g", "mg", "kg", "uL", "mL", "L", "unit");
-    private static final Map<KindOfQuantity, List<String>> UNIT_KINDS = Map.of(
-            KindOfQuantity.Mass, List.of("g", "mg", "kg"),
-            KindOfQuantity.Count, List.of("units"),
-            KindOfQuantity.Volume, List.of("uL", "mL", "L")
+    private static final Map<KindOfQuantity, List<Unit>> UNIT_KINDS = Map.of(
+            KindOfQuantity.Mass, KindOfQuantity.Mass.getCommonUnits(),
+            KindOfQuantity.Count, KindOfQuantity.Count.getCommonUnits(),
+            KindOfQuantity.Volume, KindOfQuantity.Volume.getCommonUnits()
     );
     private static final List<String> LABEL_COLORS = new ArrayList<>();
     static {
@@ -847,7 +847,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
             {
                 Unit unit = Unit.fromName(sampleType.getMetricUnit());
-                units = randomIndex(UNIT_KINDS.get(unit.getKindOfQuantity()));
+                units = randomIndex(UNIT_KINDS.get(unit.getKindOfQuantity())).name();
             }
             else
                 units = randomIndex(UNITS);
