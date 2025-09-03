@@ -796,9 +796,10 @@ public class ToolsController extends SpringActionController
 
         private String getKey(List<ColumnInfo> cols)
         {
+            String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
             return cols.stream()
                 .map(col -> col.getName().toLowerCase())
-                .collect(Collectors.joining("_")) + "_";
+                .collect(Collectors.joining(delim)) + delim;
         }
 
         private List<String> join(List<ColumnInfo> cols)
