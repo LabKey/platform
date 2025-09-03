@@ -520,7 +520,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
                     List<GWTIndex> indices = domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
-                    StorageProvisioner.get().addMissingRequiredIndices(newDomain);
+                    StorageProvisioner.get().ensureTableIndices(newDomain);
 
                     QueryService.get().saveCalculatedFieldsMetadata("study", name, null, domain.getCalculatedFields(), false, user, container);
                 }

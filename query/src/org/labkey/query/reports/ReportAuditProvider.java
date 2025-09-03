@@ -25,11 +25,10 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
     private static final String COLUMN_NAME_REPORT_NAME = "ReportName";
     private static final String COLUMN_NAME_REPORT_KEY = "ReportKey";
     private static final String COLUMN_NAME_REPORT_TYPE = "ReportType";
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-
-    static {
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
@@ -41,10 +40,9 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ReportAuditProvider()
     {
-        return new ReportAuditDomainKind();
+        super(new ReportAuditDomainKind());
     }
 
     @Override

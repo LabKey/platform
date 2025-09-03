@@ -50,11 +50,10 @@ import java.util.Set;
 public class DomainAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EVENT_TYPE = "DomainAuditEvent";
-
     public static final String COLUMN_NAME_DOMAIN_URI = "DomainUri";
     public static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
 
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static
     {

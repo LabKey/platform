@@ -200,8 +200,8 @@ import java.util.Objects;
 
     static protected boolean contains(String[] strs, String s)
     {
-        for (int i = 0; i < strs.length; i++)
-            if (strs[i].equals(s))
+        for (String str : strs)
+            if (str.equals(s))
                 return true;
 
         return false;
@@ -221,7 +221,7 @@ import java.util.Objects;
         _hash = _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
     }
 
-    protected QueryKey(QueryKey<T> parent, Enum name)
+    protected QueryKey(QueryKey<T> parent, Enum<?> name)
     {
         this(parent, name.toString());
     }
@@ -251,7 +251,7 @@ import java.util.Objects;
     {
         if (other == null || !(getClass().equals(other.getClass())))
             return false;
-        QueryKey that = (QueryKey) other;
+        QueryKey<?> that = (QueryKey<?>) other;
         return strEqualsIgnoreCase(_name, that._name) &&
                 Objects.equals(_parent, that._parent);
     }
@@ -349,7 +349,7 @@ import java.util.Objects;
         return true;
     }
 
-    public boolean startsWith(@NotNull QueryKey<? extends QueryKey> prefix)
+    public boolean startsWith(@NotNull QueryKey<? extends QueryKey<?>> prefix)
     {
         if (size() < prefix.size())
             return false;

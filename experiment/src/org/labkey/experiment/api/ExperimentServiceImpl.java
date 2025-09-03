@@ -58,6 +58,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
@@ -74,6 +75,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
@@ -296,6 +298,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.GPAT_PROTOCOL_LSID_PREFIX;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -304,6 +307,7 @@ import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
+import static org.labkey.api.exp.OntologyManager.getTinfoDomainDescriptor;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -311,11 +315,11 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
-import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
@@ -4229,6 +4233,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            AssayService assayService = AssayService.get();
             // This can be slightly expensive to fetch, so don't do it multiple times if runs share protocols
             Map<ExpProtocol, ProtocolImplementation> protocolImpls = new HashMap<>();
 
@@ -4264,18 +4269,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                             }
 
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null)
+                            if (assayService != null)
                             {
-                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                                AssayProvider provider = assayService.getProvider(protocol);
+                                if (provider != null)
+                                {
+                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                                // Add an audit event to the link to study history
-                                publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
+                                    // Add an audit event to the link to study history
+                                    publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
 
-                                // Do the actual delete on the dataset for the rows in question
-                                dataset.deleteDatasetRows(user, lsids);
+                                    // Do the actual delete on the dataset for the rows in question
+                                    dataset.deleteDatasetRows(user, lsids);
+                                }
                             }
                         }
                     }
@@ -4339,12 +4347,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 //  ideally this would be transacted as a commit task but we decided against it due to complications
                 run.archiveDataFiles(user);
                 // Re-index replaced run if replacing run is deleted
-                if (run.getReplacesRuns() != null)
+                if (assayService != null && run.getReplacesRuns() != null)
                 {
                     List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
                     transaction.addCommitTask(() ->
                         replacedRuns.forEach(replacedRun ->
-                                AssayService.get().indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
+                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
                         ),
                         DbScope.CommitTaskOption.POSTCOMMIT
                     );
@@ -6469,8 +6477,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (newProtocol)
             {
                 // if protocol exists, throw error
-                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                if (GPAT_PROTOCOL_LSID_PREFIX.equals(protocol.getLSIDNamespacePrefix()) && AssayService.get() != null)
+                {
+                    ExpProtocol existingProtocol = AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName());
+                    if (existingProtocol != null && GPAT_PROTOCOL_LSID_PREFIX.equals(existingProtocol.getLSIDNamespacePrefix()))
+                        throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                }
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
@@ -9793,26 +9805,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
+            AssayService assayService = AssayService.get();
+            if (assayService != null)
             {
-                ExpProtocol protocol = entry.getKey();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                List<ExpRun> runs = entry.getValue();
-                if (provider != null)
+                for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
                 {
-                    provider.moveRuns(runs, targetContainer, user, assayMoveData);
-                    Map<String, Integer> counts = assayMoveData.counts();
-                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
-                    counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
-                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+                    ExpProtocol protocol = entry.getKey();
+                    AssayProvider provider = assayService.getProvider(protocol);
+                    List<ExpRun> runs = entry.getValue();
+                    if (provider != null)
                     {
-                        for (ExpRun run : runs)
+                        provider.moveRuns(runs, targetContainer, user, assayMoveData);
+                        Map<String, Integer> counts = assayMoveData.counts();
+                        int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
+                        counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
+                        if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
                         {
-                            run.setContainer(targetContainer);
+                            for (ExpRun run : runs)
+                            {
+                                run.setContainer(targetContainer);
 
-                            // Issue 52570: include source and target containers in the audit event message
-                            String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
-                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                                // Issue 52570: include source and target containers in the audit event message
+                                String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
+                                auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                            }
                         }
                     }
                 }
@@ -10326,6 +10342,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
             TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
+        }
+    }
+
+    @SuppressWarnings("JUnitMalformedDeclaration")
+    public static class AuditDomainUriTest extends Assert
+    {
+        @Test
+        public void testAuditDomainUris()
+        {
+            // Each audit domain URI in the database should resolve to a unique DomainKind. A failure here indicates a
+            // problem with a DomainKind's namespace prefix or the resolution mechanism. Test lives here because it
+            // queries exp tables. See related test AbstractAuditDomainKind$TestCase.flagDuplicateNamespacePrefixes().
+            TableInfo dd = getTinfoDomainDescriptor();
+            Filter filter = new SimpleFilter(FieldKey.fromParts("StorageSchemaName"), "audit");
+            PropertyService svc = PropertyService.get();
+            Set<DomainKind<?>> retrievedKinds = new HashSet<>();
+            // This domain kind changed names at some point, so old deployments could have two rows that map to it -- tolerate
+            Set<String> ignore = Set.of("StudySecurityEscalationEvent");
+            List<String> failures = new TableSelector(dd, new CsvSet("Name, DomainURI"), filter, new Sort("Name")).mapStream()
+                .map(map -> {
+                    String name = (String)map.get("Name");
+                    String uri = (String)map.get("DomainURI");
+                    DomainKind<?> kind = svc.getDomainKind(uri);
+                    String ret = null;
+                    if (null == kind)
+                        LOG.info("{} ({}) did not resolve", uri, name);
+                    else if (!ignore.contains(kind.getKindName()) && !retrievedKinds.add(kind))
+                        ret = name + ": " + uri + " ==> " + kind;
+                    return ret;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+            if (!failures.isEmpty())
+                Assert.fail(StringUtilsLabKey.pluralize(failures.size(), "duplicate domain kind") + "! " + failures);
         }
     }
 
