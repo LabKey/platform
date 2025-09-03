@@ -723,17 +723,17 @@ public class ToolsController extends SpringActionController
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
                 .forEach(table -> {
                     var indices = table.getAllIndices();
-                    indices.forEach((key1, value1) -> indices.forEach((key2, value2) -> {
-                        if (value1 != value2)
+                    indices.forEach((indexName1, indexDef1) -> indices.forEach((indexName2, indexDef2) -> {
+                        if (indexDef1 != indexDef2)
                         {
-                            OverlapType type = overlap(value1.getKey(), value1.getValue(), value2.getKey(), value2.getValue());
+                            OverlapType type = overlap(indexDef1.getKey(), indexDef1.getValue(), indexDef2.getKey(), indexDef2.getValue());
 
                             if (type != null)
                             {
                                 switch (type)
                                 {
-                                    case Identical -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " vs. " + key2 + ": " + join(value1.getValue())));
-                                    case Overlap, UniqueOverlappingNonUnique -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " " + join(value1.getValue()) + " vs. " + key2 + " " + join(value2.getValue())));
+                                    case Identical -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " vs. " + indexName2 + ": " + join(indexDef1.getValue())));
+                                    case Overlap, UniqueOverlappingNonUnique -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " " + join(indexDef1.getValue()) + " vs. " + indexName2 + " " + join(indexDef2.getValue())));
                                 }
                             }
                         }
