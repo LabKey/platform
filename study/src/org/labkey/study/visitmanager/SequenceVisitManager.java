@@ -144,7 +144,7 @@ public class SequenceVisitManager extends VisitManager
                     sql.append("SELECT ").append(selectCols);
                     sql.append("\nFROM ").append(studyData.getFromSQL(alias));
                     sql.append(" INNER JOIN study.ParticipantVisit PV ON (")
-                            .append(container.getValueSql(alias)).append(" = ? AND \n\tPV.ParticipantId = ").append(participant.getValueSql(alias)).append(" AND \n\tPV.SequenceNum = ")
+                            .append("PV.ParticipantId = ").append(participant.getValueSql(alias)).append(" AND \n\tPV.SequenceNum = ")
                             .append(sequencenum.getValueSql(alias)).append(" AND\n\t").append(container.getValueSql(alias)).append("=PV.Container AND \n" + "\tPV.CohortID = ?)\n");
                     sql.add(cohortFilter.getCohortId());
                     sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
