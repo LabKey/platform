@@ -153,7 +153,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public TsvAssayProvider()
     {
-        this("GeneralAssayProtocol", "GeneralAssayRun", "General" + RESULT_LSID_PREFIX_PART, ModuleLoader.getInstance().getModule(assayModuleClass));
+        this(GPAT_PROTOCOL_LSID_PREFIX, "GeneralAssayRun", "General" + RESULT_LSID_PREFIX_PART, ModuleLoader.getInstance().getModule(assayModuleClass));
     }
 
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, Module declaringModule)
