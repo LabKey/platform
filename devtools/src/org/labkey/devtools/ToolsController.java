@@ -12,6 +12,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SupportedDatabase;
@@ -61,6 +62,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class ToolsController extends SpringActionController
@@ -709,7 +711,7 @@ public class ToolsController extends SpringActionController
     public class OverlappingIndicesAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             MultiValuedMap<OverlapType, Row> mmap = new ArrayListValuedHashMap<>();
             DbScope scope = DbScope.getLabKeyScope();
@@ -724,14 +726,14 @@ public class ToolsController extends SpringActionController
                     indices.forEach((key1, value1) -> indices.forEach((key2, value2) -> {
                         if (value1 != value2)
                         {
-                            OverlapType type = overlap(value1.getValue(), value2.getValue());
+                            OverlapType type = overlap(value1.getKey(), value1.getValue(), value2.getKey(), value2.getValue());
 
                             if (type != null)
                             {
                                 switch (type)
                                 {
                                     case Identical -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " vs. " + key2 + ": " + join(value1.getValue())));
-                                    case Overlap -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " " + join(value1.getValue()) + " vs. " + key2 + " " + join(value2.getValue())));
+                                    case Overlap, UniqueOverlappingNonUnique -> mmap.put(type, new Row(table.getSchema().getName(), key1 + " " + join(value1.getValue()) + " vs. " + key2 + " " + join(value2.getValue())));
                                 }
                             }
                         }
@@ -741,12 +743,12 @@ public class ToolsController extends SpringActionController
             return new HtmlView(DOM.createHtmlFragment(
                 Arrays.stream(OverlapType.values()).flatMap(type ->
                     Stream.of(
-                        type == OverlapType.Overlap ? DOM.BR() : null,
+                        type != OverlapType.Identical ? DOM.BR() : null,
                         DOM.STRONG(StringUtilsLabKey.pluralize(mmap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
                         DOM.TABLE(
                             mmap.get(type).stream()
                                 .map(row -> DOM.TR(
-                                    DOM.TD(row.schemaName(), HtmlString.NBSP, HtmlString.NBSP),
+                                    DOM.TD(DOM.at(style, "width:120px;"), row.schemaName()),
                                     DOM.TD(row.message()))
                                 )
                         )
@@ -760,7 +762,8 @@ public class ToolsController extends SpringActionController
         private enum OverlapType
         {
             Identical("identical column sets"),
-            Overlap("column sets that overlap at the start");
+            Overlap("column sets that overlap at the start"),
+            UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint");
 
             private final String _description;
 
@@ -775,14 +778,19 @@ public class ToolsController extends SpringActionController
             }
         }
 
-        private @Nullable OverlapType overlap(List<ColumnInfo> cols1, List<ColumnInfo> cols2)
+        private @Nullable OverlapType overlap(IndexType type1, List<ColumnInfo> cols1, IndexType type2, List<ColumnInfo> cols2)
         {
             String key1 = getKey(cols1);
             String key2 = getKey(cols2);
             if (key1.equals(key2))
                 return OverlapType.Identical;
             if (key2.startsWith(key1))
-                return OverlapType.Overlap;
+            {
+                if (type2 == IndexType.NonUnique && (type1 == IndexType.Primary || type1 == IndexType.Unique))
+                    return OverlapType.UniqueOverlappingNonUnique;
+                else
+                    return OverlapType.Overlap;
+            }
             return null;
         }
 
