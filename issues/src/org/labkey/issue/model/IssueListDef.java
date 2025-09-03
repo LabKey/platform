@@ -38,6 +38,7 @@ import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -46,7 +47,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -158,7 +158,7 @@ public class IssueListDef extends Entity
 
     private static String generateDomainURI(Container c, User user, String name, String kindName)
     {
-        DomainKind domainKind = PropertyService.get().getDomainKindByName(kindName);
+        DomainKind<?> domainKind = PropertyService.get().getDomainKindByName(kindName);
         return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
     }
 
@@ -296,7 +296,7 @@ public class IssueListDef extends Entity
             if (foreignKeyMap.containsKey(spec.getName()))
             {
                 PropertyStorageSpec.ForeignKey fk = foreignKeyMap.get(spec.getName());
-                Lookup lookup = new Lookup(domain.getContainer(), fk.getSchemaName(), domainKind.getLookupTableName(getName(), fk.getTableName()));
+                Lookup lookup = new Lookup(domain.getContainer(), SchemaKey.fromString(fk.getSchemaName()), domainKind.getLookupTableName(getName(), fk.getTableName()));
 
                 prop.setLookup(lookup);
             }
