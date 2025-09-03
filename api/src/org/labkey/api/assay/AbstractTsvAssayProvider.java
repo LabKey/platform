@@ -41,6 +41,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     public static final String ASSAY_SCHEMA_NAME = "assayresult";
     public static final String ROW_ID_COLUMN_NAME = "RowId";
     public static final String DATA_ID_COLUMN_NAME = "DataId";
+    public static final String GPAT_PROTOCOL_LSID_PREFIX = "GeneralAssayProtocol";
 
     public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {

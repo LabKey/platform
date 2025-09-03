@@ -296,6 +296,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.GPAT_PROTOCOL_LSID_PREFIX;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -4229,6 +4230,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            AssayService assayService = AssayService.get();
             // This can be slightly expensive to fetch, so don't do it multiple times if runs share protocols
             Map<ExpProtocol, ProtocolImplementation> protocolImpls = new HashMap<>();
 
@@ -4264,18 +4266,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                             }
 
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null)
+                            if (assayService != null)
                             {
-                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                                AssayProvider provider = assayService.getProvider(protocol);
+                                if (provider != null)
+                                {
+                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                                // Add an audit event to the link to study history
-                                publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
+                                    // Add an audit event to the link to study history
+                                    publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
 
-                                // Do the actual delete on the dataset for the rows in question
-                                dataset.deleteDatasetRows(user, lsids);
+                                    // Do the actual delete on the dataset for the rows in question
+                                    dataset.deleteDatasetRows(user, lsids);
+                                }
                             }
                         }
                     }
@@ -4339,12 +4344,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 //  ideally this would be transacted as a commit task but we decided against it due to complications
                 run.archiveDataFiles(user);
                 // Re-index replaced run if replacing run is deleted
-                if (run.getReplacesRuns() != null)
+                if (assayService != null && run.getReplacesRuns() != null)
                 {
                     List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
                     transaction.addCommitTask(() ->
                         replacedRuns.forEach(replacedRun ->
-                                AssayService.get().indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
+                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
                         ),
                         DbScope.CommitTaskOption.POSTCOMMIT
                     );
@@ -6469,8 +6474,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (newProtocol)
             {
                 // if protocol exists, throw error
-                if (AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName()) != null)
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                if (GPAT_PROTOCOL_LSID_PREFIX.equals(protocol.getLSIDNamespacePrefix()) && AssayService.get() != null)
+                {
+                    ExpProtocol existingProtocol = AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName());
+                    if (existingProtocol != null && GPAT_PROTOCOL_LSID_PREFIX.equals(existingProtocol.getLSIDNamespacePrefix()))
+                        throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                }
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
@@ -9793,26 +9802,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
+            AssayService assayService = AssayService.get();
+            if (assayService != null)
             {
-                ExpProtocol protocol = entry.getKey();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                List<ExpRun> runs = entry.getValue();
-                if (provider != null)
+                for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
                 {
-                    provider.moveRuns(runs, targetContainer, user, assayMoveData);
-                    Map<String, Integer> counts = assayMoveData.counts();
-                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
-                    counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
-                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+                    ExpProtocol protocol = entry.getKey();
+                    AssayProvider provider = assayService.getProvider(protocol);
+                    List<ExpRun> runs = entry.getValue();
+                    if (provider != null)
                     {
-                        for (ExpRun run : runs)
+                        provider.moveRuns(runs, targetContainer, user, assayMoveData);
+                        Map<String, Integer> counts = assayMoveData.counts();
+                        int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
+                        counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
+                        if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
                         {
-                            run.setContainer(targetContainer);
+                            for (ExpRun run : runs)
+                            {
+                                run.setContainer(targetContainer);
 
-                            // Issue 52570: include source and target containers in the audit event message
-                            String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
-                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                                // Issue 52570: include source and target containers in the audit event message
+                                String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
+                                auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                            }
                         }
                     }
                 }

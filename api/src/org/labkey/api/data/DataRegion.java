@@ -1911,7 +1911,7 @@ public class DataRegion extends DisplayElement
                 // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
                 checkboxValue.append(and);
                 if (null != v)
-                    checkboxValue.append(PageFlowUtil.filter(v.toString()));
+                    checkboxValue.append(v);
                 and = ",";
             }
         }
@@ -1924,7 +1924,7 @@ public class DataRegion extends DisplayElement
                 // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
                 checkboxValue.append(and);
                 if (null != v)
-                    checkboxValue.append(PageFlowUtil.filter(v.toString()));
+                    checkboxValue.append(v);
                 and = ",";
             }
         }
