@@ -63,6 +63,9 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     @Override
     public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
+        if (!property.equals(QueryProperty.SchemaName) && !property.equals(QueryProperty.Name)) // Issue 53846
+            return;
+
         // is there any other schema change other than assay renaming?
         boolean isSchemaChange = schema.toString().toLowerCase().startsWith("assay.general.");
 
