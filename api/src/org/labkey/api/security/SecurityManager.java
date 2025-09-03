@@ -3075,9 +3075,18 @@ public class SecurityManager
         if (null == resource || null == principal)
             return Set.of();
 
-        if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user))
+        if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
             return Set.of();
 
+        return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
+    }
+
+    /**
+     * This method exists to allow isForbiddenProject() to check permissions on the project without reentrancy loops.
+     * Do not call this method unless you're isForbiddenProject().
+     */
+    public static Set<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
+    {
         Stream<Role> roles = principal.getAssignedRoles(resource)
             .filter(Objects::nonNull);
 
