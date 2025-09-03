@@ -38,6 +38,7 @@ import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -1070,13 +1071,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         for (String indexName : change.getIndicesToBeDroppedByName())
         {
-            statements.add(getDropIndexCommand(indexName, change));
+            statements.add(getDropIndexCommand(change, indexName));
         }
-    }
-
-    private String getDropIndexCommand(String indexName, TableChange change)
-    {
-        return getDropIndexCommand(change,indexName);
     }
 
     private String getDropIndexCommand(TableChange change, String indexName)
@@ -1140,7 +1136,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 else
                 {
                     dbType = getSqlTypeName(column.getJdbcType());
-
                 }
 
                 //Postgres retains the existing null behavior
@@ -1171,11 +1166,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             }
         }
 
-        for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
+        // TODO: This loop should not guess the name of the old indices; instead, it should look them up.
+        // TableChange.setIndexedColumns() could set _indexRenames providing the name, and then this code uses that info.
+        // Or maybe schemaTableInfo.getAllIndices() and then use Index.isSameIndex() to find names. Issue 53838.
+        for (Map.Entry<Index, Index> oldToNew : change.getIndexRenames().entrySet())
         {
-            PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
-            PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
+            Index oldIndex = oldToNew.getKey();
+            Index newIndex = oldToNew.getValue();
+            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames); // TODO: Look up name
             String newName = nameIndex(change.getTableName(), newIndex.columnNames);
             if (!oldName.equals(newName))
             {
@@ -1325,18 +1323,19 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private void addCreateIndexStatements(List<String> statements, TableChange change)
     {
-        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        for (Index index : change.getIndexedColumns())
         {
+            String newIndexName = nameIndex(change.getTableName(), index.columnNames);
             statements.add(String.format("CREATE %sINDEX %s ON %s (%s);",
                 index.isUnique ? "UNIQUE " : "",
-                nameIndex(change.getTableName(), index.columnNames),
+                newIndexName,
                 makeTableIdentifier(change),
                 makePropertyIdentifiers(index.columnNames)));
 
             if (index.isClustered)
             {
                 statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
-                        change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
+                        change.getTableName(), newIndexName));
             }
         }
     }

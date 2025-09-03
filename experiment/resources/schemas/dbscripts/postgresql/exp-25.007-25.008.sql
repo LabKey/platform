@@ -1,0 +1,10 @@
+-- Update all "security escalation" domains with a proper namespace prefix
+UPDATE exp.domainDescriptor SET DomainURI = REPLACE(DomainURI, '--', '-StudySecurityEscalationDomain-') WHERE StorageSchemaName = 'audit' AND (DomainURI ILIKE '%StudySecurityEscalationAuditProvider' OR DomainURI ILIKE '%StudySecurityEscalationEvent');
+UPDATE exp.domainDescriptor SET DomainURI = REPLACE(DomainURI, '--', '-EHRSecurityEscalationDomain-') WHERE StorageSchemaName = 'audit' AND DomainURI ILIKE '%EHRSecurityEscalationEvent';
+
+-- Update LDAP sync domain with a unique namespace prefix so it doesn't overlap with the ONPRC version
+UPDATE exp.domainDescriptor SET DomainURI = REPLACE(DomainURI, 'LdapSyncAuditDomain', 'PremiumLdapSyncAuditDomain') WHERE StorageSchemaName = 'audit' AND DomainURI ILIKE '%PremiumLdapAuditEvent';
+
+-- Update query audit events that advertised the same generic namespace prefix
+UPDATE exp.domainDescriptor SET DomainURI = REPLACE(DomainURI, 'QueryAuditDomain', 'QueryExportAuditDomain') WHERE StorageSchemaName = 'audit' AND DomainURI ILIKE '%QueryExportAuditEvent';
+UPDATE exp.domainDescriptor SET DomainURI = REPLACE(DomainURI, 'QueryAuditDomain', 'LoggedQueryAuditDomain') WHERE StorageSchemaName = 'audit' AND DomainURI ILIKE '%LoggedQuery';
