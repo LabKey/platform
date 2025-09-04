@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.Serializable;
@@ -92,7 +93,7 @@ import java.util.Objects;
         return ret;
     }
 
-    static protected <T extends QueryKey<T>> T fromString(Factory<T> factory, String divider, String str)
+    static protected <T extends QueryKey<T>> T fromString(Factory<T> factory, String divider, @Nullable String str)
     {
         if (str == null)
             return null;
