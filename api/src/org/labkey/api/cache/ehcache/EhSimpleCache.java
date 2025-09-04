@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.IntegerUtils;
 
 import java.util.HashSet;
