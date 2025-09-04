@@ -18,8 +18,12 @@ package org.labkey.api.audit.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -45,23 +49,27 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * User: klum
- * Date: 7/8/13
- */
+import static org.labkey.api.audit.query.DefaultAuditTypeTable.LEGACY_UNION_AUDIT_TABLE;
+
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
-
     private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 
@@ -393,7 +401,9 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         // omit the legacy auditlog table, this can be removed once the
         // table is dropped after migration
         Set<String> tables = new CaseInsensitiveHashSet();
-        tables.add("auditlog");
+
+        if (OptionalFeatureService.get().isFeatureEnabled(LEGACY_UNION_AUDIT_TABLE))
+            tables.add("auditlog");
 
         return tables;
     }
@@ -417,5 +427,62 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     public boolean isUserCreatedType()
     {
         return false;
+    }
+
+    private static final Set<String> PREFIXES = new HashSet<>();
+
+    // Called at audit provider initialization time to forbid domain kinds with shared and overlapping namespace prefixes
+    public void validate()
+    {
+        String prefix = getNamespacePrefix();
+        // This check for length >= 12 is arbitrary, meant to prevent "Audit-" and other trivial namespace prefixes that
+        // are likely to overlap and cause domain URIs to resolve to the wrong domain kinds.
+        if (prefix.length() < 12)
+            throw new IllegalStateException("Namespace prefix must be unique and longer than this: " + prefix);
+
+        List<String> overlappers = PREFIXES.stream()
+            .filter(p -> p.startsWith(prefix) || prefix.startsWith(p))
+            .map(p -> "\"" + p + "\"")
+            .toList();
+
+        if (overlappers.isEmpty())
+            PREFIXES.add(prefix);
+        else
+            throw new IllegalStateException("Namespace prefix \"" + prefix + "\" overlaps with " + overlappers);
+    }
+
+    public static class TestCase extends Assert
+    {
+        // Also see AuditDomainUriTest which tests the DomainURIs in the database
+        @Test
+        public void flagDuplicateNamespacePrefixes()
+        {
+            Map<String, Collection<String>> map = AuditLogService.get().getAuditProviders().stream()
+                .filter(AbstractAuditTypeProvider.class::isInstance)
+                .map(p -> ((AbstractAuditTypeProvider)p).getAuditDomainKind())
+                .collect(LabKeyCollectors.toMultiValuedMap(AbstractAuditDomainKind::getNamespacePrefix, dk -> dk.getClass().getSimpleName()))
+                .asMap();
+
+            List<String> failures = map.entrySet().stream()
+                .filter(e -> e.getValue().size() > 1)
+                .map(e -> e.getValue() + " share the same namespace prefix: \"" + e.getKey() + "\"!")
+                .collect(Collectors.toCollection(LinkedList::new));
+
+            failures.addAll(map.entrySet().stream()
+                .map(e1 -> {
+                    String key1 = e1.getKey();
+                    List<String> overlappers = map.entrySet().stream()
+                        .filter(e2 -> !e1.equals(e2) && e2.getKey().startsWith(key1))
+                        .map(e2 -> "\"" + e2.getKey() + "\"")
+                        .toList();
+
+                    return overlappers.isEmpty() ? null : "Prefix " + key1 + " (" + e1.getValue() + ") overlaps with prefixes " + overlappers + ")!";
+                })
+                .filter(Objects::nonNull)
+                .toList());
+
+            if (!failures.isEmpty())
+                Assert.fail(failures.toString());
+        }
     }
 }

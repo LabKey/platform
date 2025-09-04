@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -463,6 +464,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
+            AbstractAuditDomainKind.TestCase.class,
             AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
             ActionURL.TestCase.class,

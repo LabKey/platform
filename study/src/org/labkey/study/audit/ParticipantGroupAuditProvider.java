@@ -38,11 +38,10 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
     private static final String EVENT_NAME = "ParticipantGroupEvent";
     private static final String PARTICIPANT_CATEGORY_ID_COLUMN_NAME = "ParticipantCategory";
     private static final String PARTICIPANT_GROUP_ID_COLUMN_NAME = "ParticipantGroup";
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-
-    static {
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
@@ -51,6 +50,11 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         defaultVisibleColumns.add(FieldKey.fromParts(PARTICIPANT_GROUP_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DATA_CHANGES));
+    }
+
+    public ParticipantGroupAuditProvider()
+    {
+        super(new ParticipantGroupAuditDomainKind());
     }
 
     @Override
@@ -110,12 +114,6 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         appendValueMapColumns(table, null, true);
 
         return table;
-    }
-
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
-    {
-        return new ParticipantGroupAuditDomainKind();
     }
 
     public static class ParticipantGroupAuditEvent extends DetailedAuditTypeEvent
