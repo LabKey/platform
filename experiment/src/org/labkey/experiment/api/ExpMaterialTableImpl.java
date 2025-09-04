@@ -316,9 +316,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    // TODO check on the case for issue 52745
-                    // TODO check on Issue 48500: For the MultiValuedDisplayColumn this may be an empty string when the actual value is null
-
                     SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, typeUnit);
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
