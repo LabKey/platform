@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
  */
 public class Quantity extends Number implements Comparable<Quantity>
 {
-    private static final Logger LOG = LogHelper.getLogger(Quantity.class, "Quantity operations");
+    public static final Logger LOG = LogHelper.getLogger(Quantity.class, "Quantity operations");
     public static final int DEFAULT_PRECISION_SCALE = 6;
     public static final String DEFAULT_FORMAT = "0.######";
     public final @NotNull KindOfQuantity kind;
@@ -139,7 +139,9 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     protected Quantity(@NotNull KindOfQuantity kind, Double value, @NotNull Unit from)
     {
+        LOG.info("Quantity constructor with kind {}, double {}, unit {}", kind, value, from);
         this.kind = kind;
+        LOG.info("Before calling toStorageUnitValue from {} with value {}", from, value);
         this.value = from.toStorageUnitValue(value);
         this.isDouble = this.value instanceof Double;
         assert isDouble || this.value instanceof BigDecimal;
