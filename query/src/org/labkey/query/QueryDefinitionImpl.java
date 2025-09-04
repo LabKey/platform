@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -93,7 +94,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
-    protected List<QueryPropertyChange> _changes = null;
+    protected List<QueryPropertyChange<?>> _changes = null;
 
     protected boolean _dirty;
     private ContainerFilter _containerFilter;
@@ -699,13 +700,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     @Override
-    public Collection<QueryPropertyChange> save(User user, Container container)
+    public Collection<QueryPropertyChange<?>> save(User user, Container container)
     {
         return save(user, container, true);
     }
 
     @Override
-    public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
+    public Collection<QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent)
     {
         setDefinitionContainer(container);
         if (!_dirty)
@@ -732,7 +733,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
-        Collection<QueryPropertyChange> changes = _changes;
+        Collection<QueryPropertyChange<?>> changes = _changes;
         _changes = null;
         _dirty = false;
         return changes;
@@ -841,21 +842,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             TableInfo table = getTable(null, true);
             if (table != null)
             {
-                switch (action)
+                url = switch (action)
                 {
-                    case insertQueryRow:
-                        url = table.getInsertURL(container);
-                        break;
-                    case deleteQueryRows:
-                        url = table.getDeleteURL(container);
-                        break;
-                    case executeQuery:
-                        url = table.getGridURL(container);
-                        break;
-                    case importData:
-                        url = table.getImportDataURL(container);
-                        break;
-                }
+                    case insertQueryRow -> table.getInsertURL(container);
+                    case deleteQueryRows -> table.getDeleteURL(container);
+                    case executeQuery -> table.getGridURL(container);
+                    case importData -> table.getImportDataURL(container);
+                    default -> url;
+                };
             }
 
             if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
@@ -890,17 +884,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             table = getTable(null, true);
             if (table != null)
             {
-                switch (action)
+                expr = switch (action)
                 {
-                    case detailsQueryRow:
-                        expr = table.getDetailsURL(null, container);
-                        break;
-
-                    case updateQueryRow:
-                    case updateQueryRows:
-                        expr = table.getUpdateURL(null, container);
-                        break;
-                }
+                    case detailsQueryRow -> table.getDetailsURL(null, container);
+                    case updateQueryRow, updateQueryRows -> table.getUpdateURL(null, container);
+                    default -> expr;
+                };
 
                 if (expr == AbstractTableInfo.LINK_DISABLER)
                     return null;
@@ -956,7 +945,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public void setDescription(String description)
     {
-        if (StringUtils.equals(getDescription(), description))
+        if (Strings.CS.equals(getDescription(), description))
             return;
         String oldDescription = getDescription();
         edit().setDescription(description);

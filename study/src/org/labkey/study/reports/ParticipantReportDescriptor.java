@@ -74,7 +74,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
     }
 
     @Override
-    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange<?>> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getProperty(ParticipantReport.MEASURES_PROP) != null)
         {
@@ -108,13 +108,13 @@ public class ParticipantReportDescriptor extends ReportDescriptor
         return false;
     }
 
-    private boolean updateJSONObjectQueryNameReference(JSONObject json, Collection<QueryChangeListener.QueryPropertyChange> changes, boolean isSchemaUpdate)
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, Collection<QueryChangeListener.QueryPropertyChange<?>> changes, boolean isSchemaUpdate)
     {
         String queryName = json.getString("queryName");
         String schemaName = json.getString("schemaName");
         if ((queryName != null && !isSchemaUpdate) || (schemaName != null && isSchemaUpdate))
         {
-            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            for (QueryChangeListener.QueryPropertyChange<?> qpc : changes)
             {
                 if (isSchemaUpdate)
                 {
@@ -139,7 +139,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> d = super.getClientDependencies();
-        JspView v = new JspView<>(getViewClass());
+        JspView<?> v = new JspView<>(getViewClass());
         d.addAll(v.getClientDependencies());
         return d;
     }

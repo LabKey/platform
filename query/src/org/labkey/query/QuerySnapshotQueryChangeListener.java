@@ -44,7 +44,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
@@ -68,11 +68,11 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         return Collections.emptyList();
     }
 
-    private void _updateQuerySnapshotQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private void _updateQuerySnapshotQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange<?>> changes)
     {
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             String oldVal = (String)qpc.getOldValue();
             String newVal = (String)qpc.getNewValue();
@@ -108,10 +108,10 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         }
     }
 
-    private void _updateQuerySnapshotSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    private void _updateQuerySnapshotSchemaNameChange(User user, Container container, Collection<QueryPropertyChange<?>> changes)
     {
         Map<String, String> schemaNameChangeMap = new HashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             if (qpc.getOldValue().equals(qpc.getNewValue()))
                 continue;
