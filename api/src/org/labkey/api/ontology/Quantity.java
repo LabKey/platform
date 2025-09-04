@@ -74,7 +74,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     @Nullable
     public static Quantity of(@Nullable Object value, @Nullable String unitsStr)
     {
-        LOG.info("Getting quantity of {} for unitsStr {}", value, unitsStr);
+        LOG.debug("Getting quantity of {} for unitsStr {}", value, unitsStr);
         if (value == null)
             return null;
         if (!(value instanceof Number))
@@ -100,7 +100,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     @NotNull
     public static Quantity of(@NotNull Number value, @NotNull Unit unit)
     {
-        LOG.info("Creating quantity of {} for unit {}", value, unit);
+        LOG.debug("Creating quantity of {} for unit {}", value, unit);
         if (value instanceof Quantity q)
         {
             if (unit.kindOfQuantity != q.kind)
@@ -111,7 +111,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             return new Quantity(unit.kindOfQuantity, bd, unit);
         if (value instanceof Long l && (l > Integer.MAX_VALUE || l < Integer.MIN_VALUE))
             return new Quantity(unit.kindOfQuantity, BigDecimal.valueOf(l), unit);
-        LOG.info("Creating new Quantity of kind {}, double {}, unit {}", unit.kindOfQuantity, value, unit);
+        LOG.debug("Creating new Quantity of kind {}, double {}, unit {}", unit.kindOfQuantity, value, unit);
         return new Quantity(unit.kindOfQuantity, value.doubleValue(), unit);
     }
 
@@ -139,9 +139,8 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     protected Quantity(@NotNull KindOfQuantity kind, Double value, @NotNull Unit from)
     {
-        LOG.info("Quantity constructor with kind {}, double {}, unit {}", kind, value, from);
+        LOG.debug("Quantity constructor with kind {}, double {}, unit {}", kind, value, from);
         this.kind = kind;
-        LOG.info("Before calling toStorageUnitValue from {} with value {}", from, value);
         this.value = from.toStorageUnitValue(value);
         this.isDouble = this.value instanceof Double;
         assert isDouble || this.value instanceof BigDecimal;
@@ -196,7 +195,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     public String toString()
     {
         var ret = format(kind.getStorageUnit());
-        // TODO currently this call to ConvertUtils.convert does not behave as expected.
+        // FIXME currently this call to ConvertUtils.convert does not behave as expected.
         // When ret is something like "10mL", it is using a converter for Unit.unit
         // (The theory is it's either the first or last one that was registered).
 //        assert this == ConvertUtils.convert(ret, this.getClass());
@@ -270,7 +269,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     private static Quantity parse(@NotNull String s) throws ConversionException
     {
-        LOG.info("Parsing quantity {} as Unit.unit", s);
+        LOG.debug("Parsing quantity {} as Unit.unit", s);
         return parse(s, Unit.unit);
     }
 
@@ -278,7 +277,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     /** The defaultUnit has two purposes 1) define the expected KindOfQuantity 2) select a Unit if it is not explicit in the source */
     private static Quantity parse(@NotNull String s, @NotNull Unit defaultUnit) throws ConversionException
     {
-        LOG.info("Parsing quantity of {} with default unit {}", s, defaultUnit);
+        LOG.debug("Parsing quantity of {} with default unit {}", s, defaultUnit);
         // We could probably create a real lexer/parser here, but we only need to be able to parse units we support
         // FIRST, check if there is a space
         s = s.trim();
@@ -354,7 +353,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     // convert (ala BeanUtils.Converter to Quantity
     public static Quantity convert(@Nullable Object o, Unit unit)
     {
-        LOG.info("Converting quantity {} to unit {}", o, unit);
+        LOG.debug("Converting quantity {} to unit {}", o, unit);
         if (null == o)
             return null;
         if (o instanceof Quantity q)
@@ -378,7 +377,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             @Override
             public <T> T convert(Class<T> aClass, Object o)
             {
-                LOG.info("In convertedFor.convert with object {} and unit {}", o, unit);
+                LOG.debug("In convertedFor.convert with object {} and unit {}", o, unit);
                 return (T)Quantity.convert(o, unit);
             }
         };
@@ -436,12 +435,12 @@ public class Quantity extends Number implements Comparable<Quantity>
         public void testAdd()
         {
             Quantity starting = Quantity.of(1024, Unit.mg);
-//            assertEquals(starting, starting.add(Quantity.of(0, Unit.mg)));
-//            assertEquals(Quantity.of(1034, Unit.mg), starting.add(Quantity.of(10, Unit.mg)));
-//            assertEquals(Quantity.of(1.022, Unit.g), starting.add(Quantity.of(-2, Unit.mg)));
-//            assertEquals(Quantity.of(33024, Unit.mg), starting.add(Quantity.of(32, Unit.g)));
-//            assertEquals(Quantity.of(1.024200, Unit.g), starting.add(Quantity.of(200, Unit.ug)));
-//            assertEquals(Quantity.of(1023800, Unit.ug), starting.add(Quantity.of(-200, Unit.ug)));
+            assertEquals(starting, starting.add(Quantity.of(0, Unit.mg)));
+            assertEquals(Quantity.of(1034, Unit.mg), starting.add(Quantity.of(10, Unit.mg)));
+            assertEquals(Quantity.of(1.022, Unit.g), starting.add(Quantity.of(-2, Unit.mg)));
+            assertEquals(Quantity.of(33024, Unit.mg), starting.add(Quantity.of(32, Unit.g)));
+            assertEquals(Quantity.of(1.024200, Unit.g), starting.add(Quantity.of(200, Unit.ug)));
+            assertEquals(Quantity.of(1023800, Unit.ug), starting.add(Quantity.of(-200, Unit.ug)));
             try
             {
                 starting.add(Quantity.of(10, "mL"));
