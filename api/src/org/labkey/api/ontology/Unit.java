@@ -131,7 +131,7 @@ public enum Unit
 
     public Number toStorageUnitValue(@NotNull Number v)
     {
-        Quantity.LOG.info("In toStorageUnitValue");
+        Quantity.LOG.info("In toStorageUnitValue with value {}", v);
         if (this == kindOfQuantity.getStorageUnit())
             return v;
         Quantity.LOG.info("in toStorageUnitValue with value {} ", v);

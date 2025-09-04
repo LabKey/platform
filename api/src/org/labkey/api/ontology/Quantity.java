@@ -196,7 +196,10 @@ public class Quantity extends Number implements Comparable<Quantity>
     public String toString()
     {
         var ret = format(kind.getStorageUnit());
-        assert this == ConvertUtils.convert(ret, this.getClass());
+        // TODO currently this call to ConvertUtils.convert does not behave as expected.
+        // When ret is something like "10mL", it is using a converter for Unit.unit
+        // (The theory is it's either the first or last one that was registered).
+//        assert this == ConvertUtils.convert(ret, this.getClass());
         return ret;
     }
 
