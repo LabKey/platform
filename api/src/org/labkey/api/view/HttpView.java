@@ -603,6 +603,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         return new HttpRedirectView(url.getLocalURIString());
     }
 
+    @Deprecated(forRemoval = true) // Use ActionURL or URLHelper variant instead. TODO: Remove
     public static HttpView<?> redirect(String url)
     {
         return new HttpRedirectView(url);
