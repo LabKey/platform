@@ -253,7 +253,6 @@ api/src/org/labkey/api/assay/AssaySaveHandler.java -text
 api/src/org/labkey/api/assay/AssaySchema.java -text
 api/src/org/labkey/api/assay/AssayService.java -text
 api/src/org/labkey/api/assay/AssayTableMetadata.java -text
-api/src/org/labkey/api/assay/AssayUploadFileResolver.java -text
 api/src/org/labkey/api/assay/AssayUploadXarContext.java -text
 api/src/org/labkey/api/assay/AssayUrls.java -text
 api/src/org/labkey/api/assay/AssayView.java -text
@@ -618,7 +617,6 @@ api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/api/AbstractExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/AbstractProtocolInputCriteria.java -text
-api/src/org/labkey/api/exp/api/AssayDomainType.java -text
 api/src/org/labkey/api/exp/api/AssayJSONConverter.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
