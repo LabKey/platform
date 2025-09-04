@@ -31,6 +31,7 @@ import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.admin.ExportFolderPage;
 import org.labkey.test.pages.core.admin.BaseSettingsPage;
 import org.labkey.test.pages.files.FileContentPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
@@ -60,6 +61,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -212,17 +214,16 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/data_states.xml");
 
         log("QC States: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("QC States");
+        createSubfolderAndImportFolderFromPipeline("QC States");
 
         log("QC States: verify imported settings");
         clickFolder("QC States");
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Dataset QC States"));
         ManageDatasetQCStatesPage statesPage = new ManageDatasetQCStatesPage(getDriver());
-        List<QCStateTableRow> states = statesPage.getStateRows();
 
         QCStateTableRow noneRow = statesPage.getStateRow("[none]");
-        assertEquals(true, noneRow.getPublicData());
+        assertTrue(noneRow.getPublicData());
 
         QCStateTableRow firstRow = statesPage.getStateRow("First QC State");
         assertEquals("The first qc state description", firstRow.getDescription());
@@ -258,7 +259,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Field Validators: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Field Validators");
+        createSubfolderAndImportFolderFromPipeline("Field Validators");
 
         goToProjectHome();
         clickFolder("Field Validators");
@@ -308,7 +309,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/study/datasets/datasets_manifest.xml");
 
         log("Default Formats: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Default Dataset Formats");
+        createSubfolderAndImportFolderFromPipeline("Default Dataset Formats");
 
         log("Default Formats: verify imported settings");
         clickFolder("Default Dataset Formats");
@@ -442,7 +443,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/study/views/participant.html");
 
         log("Custom Ptid View: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Custom Participant View");
+        createSubfolderAndImportFolderFromPipeline("Custom Participant View");
 
         log("Custom Ptid View: verify imported settings");
         clickFolder("Custom Participant View");
@@ -499,7 +500,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/study/visit_map.xml");
 
         log("Visit Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Visit Properties");
+        createSubfolderAndImportFolderFromPipeline("Visit Properties");
 
         log("Visit Properties: verify imported settings");
         clickFolder("Visit Properties");
@@ -586,7 +587,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Study Properties Folder");
+        createSubfolderAndImportFolderFromPipeline("Study Properties Folder");
 
         log("Study Properties: verify imported settings");
         clickFolder("Study Properties Folder");
@@ -651,7 +652,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/study/cohorts.xml");
 
         log("Cohort Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Cohort Properties");
+        createSubfolderAndImportFolderFromPipeline("Cohort Properties");
 
         log("Cohort Properties: verify imported settings");
         clickFolder("Cohort Properties");
@@ -844,7 +845,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("StudyDesign Tables: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline(FOLDER_NAME);
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME);
 
         log("StudyDesign Tables: verify imported settings preserve existing project level data");
         verifyTableData(tableData, FOLDER_NAME, FOLDER_SCOPE);
@@ -865,7 +866,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         }
 
         log("StudyDesign Tables: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline(FOLDER_NAME_2);
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME_2);
 
         log("StudyDesign Tables: verify imported settings insert both project and folder level data");
         verifyTableData(tableData, FOLDER_NAME_2, null);
@@ -1039,7 +1040,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("StudyDesign Extensible Tables: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline(FOLDER_NAME);
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME);
 
         log("StudyDesign Extensible Tables: verify imported settings");
         verifyTableData(tableData, FOLDER_NAME, null);
@@ -1060,7 +1061,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _customizeViewsHelper.saveCustomView("", true);
     }
 
-    private void createSubfolderAndImportStudyFromPipeline(String subfolderName)
+    private void createSubfolderAndImportFolderFromPipeline(String subfolderName)
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
@@ -1145,7 +1146,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("StudyDesign Extensible Tables: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline(FOLDER_NAME);
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME);
 
         log("Verify specimen request settings");
         goToProjectHome();
@@ -1239,7 +1240,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Study Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline(FOLDER_NAME);
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME);
 
         log("Study Properties: verify imported settings");
         goToProjectHome();
@@ -1268,5 +1269,59 @@ public class StudySimpleExportTest extends StudyBaseTest
             else
                 fail("Unable to locate form element: " + name);
         }
+    }
+
+    @Test
+    public void verifyQueryProperties()
+    {
+        final String FOLDER_NAME = "Query Properties";
+
+        log("Export queries to test property round tripping");
+        goToProjectHome();
+        clickFolder(getFolderName());
+
+        createQuery("Normal", false, false);
+        createQuery("Inherit", true, false);
+        createQuery("Hidden", false, true);
+        createQuery("Inherit & Hidden", true, true);
+
+        log("Export folder archive");
+        ExportFolderPage.beginAt(this)
+            .clearAllObjects()
+            .includeObject(ExportFolderPage.QUERIES, true)
+            .exportToPipelineAsIndividualFiles();
+
+        log("Import folder archive");
+        createSubfolderAndImportFolderFromPipeline(FOLDER_NAME);
+
+        log("Verify imported query properties");
+        clickFolder(FOLDER_NAME);
+
+        verifyQuery("Normal", false, false);
+        verifyQuery("Inherit", true, false);
+        verifyQuery("Hidden", false, true);
+        verifyQuery("Inherit & Hidden", true, true);
+    }
+
+    private void createQuery(String name, boolean inherit, boolean hidden)
+    {
+        // Note: Finish + re-navigate is actually faster than clickSave() followed by "Edit Properties"
+        createQuery(getCurrentContainerPath(), name, "core").clickSaveAndFinish();
+        if (inherit || hidden)
+        {
+            editQueryProperties("core", name);
+            if (inherit)
+                selectOptionByValue(Locator.name("inheritable"), "true");
+            if (hidden)
+                selectOptionByValue(Locator.name("hidden"), "true");
+            clickButton("Save");
+        }
+    }
+
+    private void verifyQuery(String name, boolean inherit, boolean hidden)
+    {
+        editQueryProperties("core", name);
+        assertEquals(String.valueOf(inherit), getSelectedOptionValue(Locator.name("inheritable")));
+        assertEquals(String.valueOf(hidden), getSelectedOptionValue(Locator.name("hidden")));
     }
 }
