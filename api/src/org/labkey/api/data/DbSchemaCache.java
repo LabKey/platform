@@ -26,12 +26,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.module.ModuleLoader;
 
-/*
-* User: adam
-* Date: Mar 20, 2011
-* Time: 2:53:51 PM
-*/
-
 // Every scope has its own cache of DbSchemas
 public class DbSchemaCache
 {
@@ -42,7 +36,6 @@ public class DbSchemaCache
 
     // Ask the DbSchemaType how long to cache each schema
     private final CacheTimeChooser<String> SCHEMA_CACHE_TIME_CHOOSER = (key, argument) -> {
-        @SuppressWarnings({"unchecked"})
         SchemaDetails details = (SchemaDetails)argument;
         return details.getType().getCacheTimeToLive();
     };
@@ -69,7 +62,7 @@ public class DbSchemaCache
 
     void remove(String schemaName, DbSchemaType type)
     {
-        LOG.debug("remove " + type + " schema: " + schemaName);
+        LOG.debug("remove {} schema: {}", type, schemaName);
         _cache.removeUsingFilter(new Cache.StringPrefixFilter(getKey(schemaName, type)));
     }
 

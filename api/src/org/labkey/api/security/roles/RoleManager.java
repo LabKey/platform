@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -122,6 +123,7 @@ public class RoleManager
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new ProjectCreatorRole());
+        registerRole(new CanAccessLockedProjectsPermission());
 
         // Project and folder roles
         registerRole(new EditorRole());

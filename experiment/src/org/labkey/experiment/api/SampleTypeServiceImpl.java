@@ -103,6 +103,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -258,7 +259,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private DbSchema getExpSchema()
     {
-        return ExperimentServiceImpl.get().getExpSchema();
+        return ExperimentServiceImpl.getExpSchema();
     }
 
     @Override
@@ -391,7 +392,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return getSampleTypeByObjectId(legacyObjectId);
 
         boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, user, includeOtherContainers, sampleTypeName);
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, includeOtherContainers, sampleTypeName);
         if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
             return sampleType;
 
@@ -401,7 +402,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);
+        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         TreeSet<ExpSampleTypeImpl> result = new TreeSet<>();
@@ -419,31 +420,31 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull String sampleTypeName)
     {
-        return getSampleType(c, null, false, sampleTypeName);
+        return getSampleType(c, false, sampleTypeName);
     }
 
     // NOTE: This method used to not take a user or check permissions
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, @NotNull String sampleTypeName)
     {
-        return getSampleType(c, user, true, sampleTypeName);
+        return getSampleType(c, true, sampleTypeName);
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleTypeName)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, String sampleTypeName)
     {
-        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
+        return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
     }
 
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId)
     {
-        return getSampleType(c, null, rowId, false);
+        return getSampleType(c, rowId, false);
     }
 
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, long rowId)
     {
-        return getSampleType(c, user, rowId, true);
+        return getSampleType(c, rowId, true);
     }
 
     @Override
@@ -455,23 +456,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             c = ContainerManager.getForId(id);
         ExpSampleTypeImpl st = null;
         if (null != c)
-            st = getSampleType(c, null, false, ms -> lsid.equals(ms.getLSID()) );
+            st = getSampleType(c, false, ms -> lsid.equals(ms.getLSID()) );
         if (null == st)
             st = _getSampleType(lsid);
-        if (null != st && null==id)
         if (null != st && null==id)
             sampleTypeCache.put(lsid,st.getContainer().getId());
         return st;
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, long rowId, boolean includeOtherContainers)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId, boolean includeOtherContainers)
     {
-        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
+        return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
 
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, user, includeOtherContainers);
+        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers);
         for (String containerId : containerIds)
         {
             Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(containerId);
@@ -1161,13 +1161,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
-        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
+        return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
     }
 
     @Override
     protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), userComment, row);
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
 
     @Override
@@ -1184,9 +1184,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         });
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable Map<String, Object> row)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, userComment, null, row, null);
+        return createAuditRecord(c, tInfo, comment, userComment, null, row, null);
     }
 
     private boolean isInputFieldKey(String fieldKey)
@@ -1196,7 +1196,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -1242,6 +1242,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
             row.put(ROW_ID,staticsRow.get(ROW_ID));
+        }
+        else if (tInfo != null)
+        {
+            UserSchema schema = tInfo.getUserSchema();
+            if (schema != null)
+            {
+                ExpSampleType sampleType = getSampleType(c, schema.getUser(), tInfo.getName());
+                if (sampleType != null)
+                {
+                    event.setSampleType(sampleType.getName());
+                    event.setSampleTypeId(sampleType.getRowId());
+                }
+            }
         }
 
         if (action != null)
@@ -1895,7 +1908,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = samplesTable.getEffectiveAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {

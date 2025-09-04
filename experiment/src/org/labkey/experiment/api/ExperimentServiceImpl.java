@@ -58,6 +58,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
@@ -74,6 +75,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
@@ -284,6 +286,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -295,6 +298,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.GPAT_PROTOCOL_LSID_PREFIX;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -303,6 +307,7 @@ import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
+import static org.labkey.api.exp.OntologyManager.getTinfoDomainDescriptor;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -310,13 +315,11 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
-import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
-import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
-import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
+import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
@@ -1699,7 +1702,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, user, includeProjectAndShared);
+        List<String> containerIds = createContainerList(container, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -1713,7 +1716,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName)
     {
-        return getDataClass(c, null, false, dataClassName);
+        return getDataClass(c, false, dataClassName);
     }
 
     public ExpDataClassImpl getDataClassByObjectId(Long objectId)
@@ -1754,7 +1757,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return getDataClassByObjectId(legacyObjectId);
 
         boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeProjectAndShared, dataClassName);
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, includeProjectAndShared, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1764,34 +1767,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, @NotNull String dataClassName)
     {
-        return getDataClass(c, user, true, dataClassName);
+        return getDataClass(c, true, dataClassName);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, String dataClassName)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, String dataClassName)
     {
-        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
+        return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
     }
 
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, long rowId)
     {
-        return getDataClass(c, null, rowId, false);
+        return getDataClass(c, rowId, false);
     }
 
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, long rowId)
     {
-        return getDataClass(c, user, rowId, true);
+        return getDataClass(c, rowId, true);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, long rowId, boolean includeProjectAndShared)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, long rowId, boolean includeProjectAndShared)
     {
-        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
+        return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, Predicate<DataClass> predicate)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, user, includeProjectAndShared);
+        List<String> containerIds = createContainerList(c, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -2083,9 +2086,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public DbScope.Transaction ensureTransaction()
+    public DbScope.Transaction ensureTransaction(Lock... locks)
     {
-        return getExpSchema().getScope().ensureTransaction();
+        return getExpSchema().getScope().ensureTransaction(locks);
     }
 
     @Override
@@ -3967,27 +3970,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         throw new IllegalStateException("Found multiple matching LSID types for '" + lsid + "': " + types);
     }
 
-    public List<String> createContainerList(@NotNull Container container, @Nullable User user, boolean includeProjectAndShared)
+    public List<String> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
         if (includeProjectAndShared)
         {
-            if (user == null)
-            {
-                throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
-            }
-            
             Container project = container.getProject();
-            if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
+            if (project != null)
             {
                 containerIds.add(project.getId());
             }
-            Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(user, ReadPermission.class))
-            {
-                containerIds.add(shared.getId());
-            }
+            containerIds.add(ContainerManager.getSharedContainer().getId());
         }
         return containerIds;
     }
@@ -3995,13 +3989,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches)
     {
-        return getExperiments(container, user, includeProjectAndShared, includeBatches, false);
+        return getExperiments(container, includeProjectAndShared, includeBatches, false);
     }
 
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
+    public List<ExpExperimentImpl> getExperiments(Container container, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts("Container"), createContainerList(container, user, includeProjectAndShared));
+        filter.addInClause(FieldKey.fromParts("Container"), createContainerList(container, includeProjectAndShared));
 
         if (!includeHidden)
         {
@@ -4239,6 +4233,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            AssayService assayService = AssayService.get();
             // This can be slightly expensive to fetch, so don't do it multiple times if runs share protocols
             Map<ExpProtocol, ProtocolImplementation> protocolImpls = new HashMap<>();
 
@@ -4274,18 +4269,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                             }
 
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null)
+                            if (assayService != null)
                             {
-                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                                AssayProvider provider = assayService.getProvider(protocol);
+                                if (provider != null)
+                                {
+                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                                // Add an audit event to the link to study history
-                                publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
+                                    // Add an audit event to the link to study history
+                                    publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
 
-                                // Do the actual delete on the dataset for the rows in question
-                                dataset.deleteDatasetRows(user, lsids);
+                                    // Do the actual delete on the dataset for the rows in question
+                                    dataset.deleteDatasetRows(user, lsids);
+                                }
                             }
                         }
                     }
@@ -4349,12 +4347,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 //  ideally this would be transacted as a commit task but we decided against it due to complications
                 run.archiveDataFiles(user);
                 // Re-index replaced run if replacing run is deleted
-                if (run.getReplacesRuns() != null)
+                if (assayService != null && run.getReplacesRuns() != null)
                 {
                     List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
                     transaction.addCommitTask(() ->
                         replacedRuns.forEach(replacedRun ->
-                                AssayService.get().indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
+                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
                         ),
                         DbScope.CommitTaskOption.POSTCOMMIT
                     );
@@ -5471,7 +5469,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
-        List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
+        List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
         List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
@@ -6478,10 +6476,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
-                // if protocol exist, throw error
-                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
-                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
-                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+                // if protocol exists, throw error
+                if (GPAT_PROTOCOL_LSID_PREFIX.equals(protocol.getLSIDNamespacePrefix()) && AssayService.get() != null)
+                {
+                    ExpProtocol existingProtocol = AssayService.get().getAssayProtocolByName(protocol.getContainer(), protocol.getName());
+                    if (existingProtocol != null && GPAT_PROTOCOL_LSID_PREFIX.equals(existingProtocol.getLSIDNamespacePrefix()))
+                        throw new RuntimeSQLException(new SQLException("Assay design with name '" + protocol.getName() + "' already exists."));
+                }
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
@@ -9138,7 +9139,36 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         metrics.put("nameexpression", getNameExpressionMetrics());
         metrics.put("parentalias", getParentAliasMetrics());
         metrics.put("importTemplates", getImportTemplatesMetrics());
+        metrics.put("auditLevelOverride", getAuditLevelOverrideMetrics());
         return metrics;
+    }
+
+    private Map<String, Object> getAuditLevelOverrideMetrics()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<auditLogging>%'");
+        Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
+        Map<String, Long> counts = new HashMap<>();
+        final String auditNone = "<auditlogging>none";
+        final String auditSummary = "<auditlogging>summary";
+        for (Map<String, Object> result : results)
+        {
+            String schema = (String) result.get("schema");
+            String metadata = (String) result.get("metadata");
+            metadata = metadata.toLowerCase();
+            if (schema.toLowerCase().startsWith("assay.general."))
+                schema = "assay";
+            if (schema.equals("assay") || schema.equals("exp.data") || schema.equals("samples"))
+            {
+                if (!metadata.contains(auditNone) && !metadata.contains(auditSummary))
+                    continue;
+                long count = counts.get(schema) == null ? 0L : counts.get(schema);
+                counts.put(schema, ++count);
+            }
+        }
+        return Map.of("SampleType", counts.getOrDefault("samples", 0L),
+                "DataClass", counts.getOrDefault("exp.data", 0L),
+                "AssayDesign", counts.getOrDefault("assay", 0L));
     }
 
     private Map<String, Object> getImportTemplatesMetrics()
@@ -9309,7 +9339,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         else
         {
-            ExpDataClass dataClass = getDataClass(container, user, parentDataTypeRowId, true);
+            ExpDataClass dataClass = getDataClass(container, parentDataTypeRowId, true);
             if (dataClass != null)
                 parentDataTypeName = dataClass.getName();
         }
@@ -9565,10 +9595,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
-                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+                QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, sourceContainer, dataClassTable, QueryService.AuditAction.UPDATE, updateCount, AuditBehaviorType.SUMMARY, userComment, true);
 
                 // create new detailed events for each data object that was moved
-                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getEffectiveAuditBehavior(auditBehavior);
                 if (dcAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     List<Map<String, Object>> oldRows = new ArrayList<>();
@@ -9601,12 +9631,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return updateCounts;
-    }
-
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
-    {
-        QueryService queryService = QueryService.get();
-        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
@@ -9781,26 +9805,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
+            AssayService assayService = AssayService.get();
+            if (assayService != null)
             {
-                ExpProtocol protocol = entry.getKey();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                List<ExpRun> runs = entry.getValue();
-                if (provider != null)
+                for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
                 {
-                    provider.moveRuns(runs, targetContainer, user, assayMoveData);
-                    Map<String, Integer> counts = assayMoveData.counts();
-                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
-                    counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
-                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+                    ExpProtocol protocol = entry.getKey();
+                    AssayProvider provider = assayService.getProvider(protocol);
+                    List<ExpRun> runs = entry.getValue();
+                    if (provider != null)
                     {
-                        for (ExpRun run : runs)
+                        provider.moveRuns(runs, targetContainer, user, assayMoveData);
+                        Map<String, Integer> counts = assayMoveData.counts();
+                        int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
+                        counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
+                        if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
                         {
-                            run.setContainer(targetContainer);
+                            for (ExpRun run : runs)
+                            {
+                                run.setContainer(targetContainer);
 
-                            // Issue 52570: include source and target containers in the audit event message
-                            String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
-                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                                // Issue 52570: include source and target containers in the audit event message
+                                String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
+                                auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
+                            }
                         }
                     }
                 }
@@ -10314,6 +10342,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
             TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
+        }
+    }
+
+    @SuppressWarnings("JUnitMalformedDeclaration")
+    public static class AuditDomainUriTest extends Assert
+    {
+        @Test
+        public void testAuditDomainUris()
+        {
+            // Each audit domain URI in the database should resolve to a unique DomainKind. A failure here indicates a
+            // problem with a DomainKind's namespace prefix or the resolution mechanism. Test lives here because it
+            // queries exp tables. See related test AbstractAuditDomainKind$TestCase.flagDuplicateNamespacePrefixes().
+            TableInfo dd = getTinfoDomainDescriptor();
+            Filter filter = new SimpleFilter(FieldKey.fromParts("StorageSchemaName"), "audit");
+            PropertyService svc = PropertyService.get();
+            Set<DomainKind<?>> retrievedKinds = new HashSet<>();
+            // This domain kind changed names at some point, so old deployments could have two rows that map to it -- tolerate
+            Set<String> ignore = Set.of("StudySecurityEscalationEvent");
+            List<String> failures = new TableSelector(dd, new CsvSet("Name, DomainURI"), filter, new Sort("Name")).mapStream()
+                .map(map -> {
+                    String name = (String)map.get("Name");
+                    String uri = (String)map.get("DomainURI");
+                    DomainKind<?> kind = svc.getDomainKind(uri);
+                    String ret = null;
+                    if (null == kind)
+                        LOG.info("{} ({}) did not resolve", uri, name);
+                    else if (!ignore.contains(kind.getKindName()) && !retrievedKinds.add(kind))
+                        ret = name + ": " + uri + " ==> " + kind;
+                    return ret;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+            if (!failures.isEmpty())
+                Assert.fail(StringUtilsLabKey.pluralize(failures.size(), "duplicate domain kind") + "! " + failures);
         }
     }
 

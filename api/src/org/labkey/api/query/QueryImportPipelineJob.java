@@ -296,12 +296,12 @@ public class QueryImportPipelineJob extends PipelineJob
 
             AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases());
 
-            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
-
-            if (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE)
-                auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
-
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
+
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
+            if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
+                auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction);
+
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())

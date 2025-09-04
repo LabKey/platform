@@ -1,5 +1,4 @@
 import { hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
-import mock from 'mock-fs';
 
 import {
     deleteAssayDesign,
@@ -11,6 +10,7 @@ import {
 } from './utils';
 import { ASSAY_DESIGNER_ROLE } from '@labkey/components';
 
+// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
 
@@ -54,40 +54,35 @@ afterAll(async () => {
     return server.teardown();
 });
 
-afterEach(() => {
-    mock.restore();
-});
-
 const resultPropField = {
-    conditionalFormats: [],
     name: "Prop",
     scale: 4000,
     shownInDetailsView: true,
     shownInInsertView: true,
     shownInUpdateView: true,
     isPrimaryKey: false,
-}
+};
 
 describe('Assay Designer - Permissions', () => {
     it('Lack designer or Reader permission', async () => {
         await server.post(
             'assay',
             'saveProtocol.api',
-            getAssayDesignPayload('Failed', [], []),
+            getAssayDesignPayload('Failed'),
             {...topFolderOptions, ...readerUserOptions}
         ).expect(403);
 
         await server.post(
             'assay',
             'saveProtocol.api',
-            getAssayDesignPayload('Failed', [], []),
+            getAssayDesignPayload('Failed'),
             {...topFolderOptions, ...editorUserOptions}
         ).expect(403);
 
         await server.post(
             'assay',
             'saveProtocol.api',
-            getAssayDesignPayload('Failed', [], []),
+            getAssayDesignPayload('Failed'),
             {...topFolderOptions, ...designerOptions}
         ).expect(403);
 
@@ -98,15 +93,11 @@ describe('Assay Designer - Permissions', () => {
         const badDomainNameResp = await server.post(
             'assay',
             'saveProtocol.api',
-            getAssayDesignPayload(badDomainName, [], []),
+            getAssayDesignPayload(badDomainName),
             {...topFolderOptions, ...designerReaderOptions}
         ).expect((resp) => {
             exception = JSON.parse(resp.text).exception;
         })
-
-        if (exception !== error)
-            console.log(badDomainName);
-
         expect(exception).toBe(error.replace('REPLACE', badDomainName));
     }
 
@@ -140,7 +131,7 @@ describe('Assay Designer - Permissions', () => {
         for (let i = 0; i < badNameKeys.length; i++)
             await verifyAssayDesignCreateFailure(badNameKeys[i], badNames[badNameKeys[i]]);
         
-        let assayDesignPayload = getAssayDesignPayload('good', [], []);
+        let assayDesignPayload = getAssayDesignPayload('good');
 
         await server.post(
             'assay',
@@ -168,7 +159,7 @@ describe('Assay Designer - Permissions', () => {
     describe('Create/update/delete designs', () => {
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design.', async () => {
             const dataType = "ToBeDeleted";
-            const assayDesignPayload = getAssayDesignPayload(dataType, [], []);
+            const assayDesignPayload = getAssayDesignPayload(dataType);
 
             await server.post(
                 'assay',
@@ -242,11 +233,11 @@ describe('Assay Designer - Permissions', () => {
         //
         it('Designer can update non-empty design but cannot delete non-empty design, admin can delete non-empty design', async () => {
             const dataType = "FailedDelete";
-            const assayDesignPayload = getAssayDesignPayload(dataType, [], []);
+            const assayDesignPayload = getAssayDesignPayload(dataType);
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                getAssayDesignPayload(dataType, [], []),
+                getAssayDesignPayload(dataType),
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect((res) => {
                 const result = JSON.parse(res.text);

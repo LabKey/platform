@@ -1412,7 +1412,7 @@ public class DavController extends SpringActionController
                 {
                     if (is.available() > 0)
                     {
-                        DocumentBuilder documentBuilder = getDocumentBuilder();
+                        DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                         Document document = documentBuilder.parse(is);
 
                         // Get the root element of the document
@@ -2839,14 +2839,14 @@ public class DavController extends SpringActionController
             {
                 if (is.available() > 0)
                 {
-                    DocumentBuilder documentBuilder = getDocumentBuilder();
                     try
                     {
+                        DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                         // TODO : Process this request body
                         documentBuilder.parse(new InputSource(is));
                         throw new DavException(WebdavStatus.SC_NOT_IMPLEMENTED);
                     }
-                    catch (SAXException saxe)
+                    catch (SAXException | ParserConfigurationException e)
                     {
                         // Parse error - assume invalid content
                         throw new DavException(WebdavStatus.SC_UNSUPPORTED_MEDIA_TYPE);
@@ -3607,8 +3607,7 @@ public class DavController extends SpringActionController
     {
         try
         {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            SAXParser saxParser = factory.newSAXParser();
+            SAXParser saxParser = XmlBeansUtil.SAX_PARSER_FACTORY.newSAXParser();
             final List<StringBuilder> lastModifieds = new ArrayList<>();
 
             saxParser.parse(new InputSource(in), new DefaultHandler()
@@ -3976,17 +3975,17 @@ public class DavController extends SpringActionController
 
             Node lockInfoNode = null;
 
-            DocumentBuilder documentBuilder = getDocumentBuilder();
 
             try
             {
+                DocumentBuilder documentBuilder = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                 Document document = documentBuilder.parse(new InputSource(getRequest().getInputStream()));
 
                 // Get the root element of the document
                 Element rootElement = document.getDocumentElement();
                 lockInfoNode = rootElement;
             }
-            catch (IOException | SAXException e)
+            catch (IOException | SAXException | ParserConfigurationException e)
             {
                 lockRequestType = LOCK_REFRESH;
             }
@@ -5989,32 +5988,8 @@ public class DavController extends SpringActionController
         return null;
     }
 
-
     /**
-     * Return JAXP document builder instance.
-     */
-    private DocumentBuilder getDocumentBuilder()
-            throws DavException
-    {
-        DocumentBuilder documentBuilder;
-        DocumentBuilderFactory documentBuilderFactory;
-        try
-        {
-            documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        }
-        catch (ParserConfigurationException e)
-        {
-            throw new DavException(e);
-        }
-        return documentBuilder;
-    }
-
-
-
-    /**
-     * Holds a lock information.
+     * Holds lock information.
      */
     private static class LockInfo
     {

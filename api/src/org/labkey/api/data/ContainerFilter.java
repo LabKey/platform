@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -1205,6 +1206,46 @@ public abstract class ContainerFilter
         }
     }
 
+    /**
+     * This container filter type is uniquely specified for the scenario of importing data cross-folder.
+     * - When importing in a project, the scope of the data is the project, and all subfolders plus shared.
+     * - When importing into a subfolder, the scope of the data is the subfolder, and the project plus shared.
+     * - However, when resolving the scope of a lookup within that data during an import, we retain the behavior from
+     *  {@link QueryService#getContainerFilterForLookups}.
+     * See Issue 52504, Issue 53803
+     */
+    public static class ProductFolderImport extends ContainerFilterWithPermission
+    {
+        ContainerFilterWithPermission _cf;
+
+        public ProductFolderImport(Container c, User user)
+        {
+            super(c, user);
+
+            if (c.isProject())
+                _cf = new AllInProjectPlusShared(c, user);
+            else
+                _cf = new CurrentPlusProjectAndShared(c, user);
+        }
+
+        @Override
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        {
+            return _cf.generateIds(currentContainer, permission, roles);
+        }
+
+        public @NotNull ContainerFilter getContainerFilterForLookups(Container container, User user)
+        {
+            var cf = QueryService.get().getContainerFilterForLookups(container, user);
+            return cf == null ? this : cf;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return null;
+        }
+    }
 
     public static class InternalNoContainerFilter extends ContainerFilter
     {

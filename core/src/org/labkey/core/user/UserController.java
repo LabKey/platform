@@ -61,6 +61,7 @@ import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -103,6 +104,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -254,7 +256,7 @@ public class UserController extends SpringActionController
             ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
             url.addParameter(QueryParam.schemaName.toString(), CoreQuerySchema.NAME);
-            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
             url.addReturnUrl(returnUrl);
 
             return url;
@@ -1004,6 +1006,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
+    @IgnoresForbiddenProjectCheck // Users should be able to complete required fields if they're logging in to a locked project
     public static class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
@@ -1027,8 +1030,12 @@ public class UserController extends SpringActionController
             {
                 ButtonBar bb = createSubmitCancelButtonBar(form);
                 bb.addContextualRole(OwnerRole.class);
+                bb.addContextualRole(CanAccessLockedProjectsPermission.class);
                 for (DisplayElement button : bb.getList())
+                {
                     button.addContextualRole(OwnerRole.class);
+                    button.addContextualRole(CanAccessLockedProjectsPermission.class);
+                }
                 view = new UpdateView(form, errors);
 
                 DataRegion rgn = ((UpdateView)view).getDataRegion();
@@ -1100,7 +1107,6 @@ public class UserController extends SpringActionController
             if (userId == null)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "UserId parameter must be provided.");
-                return;
             }
         }
 
@@ -1594,13 +1600,11 @@ public class UserController extends SpringActionController
             if (schema == null)
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
-            // for the root container or if the user is site/app admin, use the site users table
-            String userTableName = c.isRoot() || c.hasPermission(currentUser, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
             // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
-            TableInfo table = schema.getTable(userTableName, null, true, true);
+            TableInfo table = schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME, null, true, true);
             if (table == null)
-                throw new NotFoundException(userTableName + " table");
+                throw new NotFoundException(CoreQuerySchema.SITE_USERS_TABLE_NAME + " table");
             else if (table instanceof AbstractTableInfo)
             {
                 // conditionally remove the email and groups columns only for this view

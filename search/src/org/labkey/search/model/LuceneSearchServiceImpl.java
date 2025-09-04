@@ -1881,7 +1881,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         // expectations are invalid (e.g., expecting body length > 0 but specifying no substrings to search for).
         public void testTikaParsing() throws IOException, TikaException, SAXException
         {
-            boolean strict = false;
+            boolean strict = true;
 
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
             assertNotNull(sampledata);
@@ -2017,7 +2017,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array");
             add(map, "mov_sample.mov", 0);
-            add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
+            add(map, "msg_outlook_sample.msg", 1797, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
@@ -2027,7 +2027,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
-            add(map, "tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
+            add(map, "tgz_sample.tgz", 7823, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);
             add(map, "tsv_sample.tsv", 2986, "1264.5", "10JAN07_plate_1.xls");
             add(map, "vsd_sample.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");

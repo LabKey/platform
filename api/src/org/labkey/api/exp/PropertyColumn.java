@@ -35,7 +35,6 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
@@ -43,15 +42,11 @@ import org.labkey.api.util.CachingSupplier;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
-
 
 /**
  * {@link ColumnInfo} which is specified via an ontology-managed property, and may be persisted in exp.ObjectProperty or
  * in a hard table managed by {@link org.labkey.api.exp.api.StorageProvisioner}.
- * User: migra
- * Date: Sep 20, 2005
  */
 public class PropertyColumn extends LookupColumn
 {
@@ -188,12 +183,8 @@ public class PropertyColumn extends LookupColumn
             var lookupCf = cf;
 
             // Issue 52504: Use proper container filter for lookups
-            if (pd.isLookup())
-            {
-                var _cf = QueryService.get().getContainerFilterForLookups(container, user);
-                if (_cf != null)
-                    lookupCf = _cf;
-            }
+            if (pd.isLookup() && lookupCf instanceof ContainerFilter.ProductFolderImport pfi)
+                lookupCf = pfi.getContainerFilterForLookups(container, user);
 
             to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, lookupCf));
         }
@@ -385,5 +376,4 @@ public class PropertyColumn extends LookupColumn
     {
         return _pd.isVocabulary();
     }
-
 }

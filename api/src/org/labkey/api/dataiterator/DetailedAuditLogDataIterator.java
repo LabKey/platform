@@ -70,9 +70,10 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _auditAction = auditAction;
         _auditHandler = table.getAuditHandler(DETAILED);
 
-        assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
+        assert DETAILED == table.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad);
+        assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit);
 
         _existingRows = _data.supportsGetExistingRecord() ? new ArrayList<>() : null;
     }
@@ -129,10 +130,10 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         {
             AuditBehaviorType auditType = AuditBehaviorType.NONE;
             if (queryTable.supportsAuditTracking())
-                auditType = queryTable.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
+                auditType = queryTable.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
 
             // Detailed auditing and not set to bulk load in ETL
-            if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
+            if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad) && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit))
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
