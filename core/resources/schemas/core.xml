@@ -68,7 +68,6 @@
   <table tableName="Logins" tableDbType="TABLE">
     <columns>
       <column columnName="UserId"/>
-      <column columnName="Email"/>
       <column columnName="Crypt"/>
       <column columnName="Verification"/>
       <column columnName="LastChanged"/>
