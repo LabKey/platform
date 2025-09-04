@@ -829,15 +829,7 @@ public class ExpDataIterators
     public static void setContainerFilterForImport(QueryDefinition qDef, Container container, User user)
     {
         if (container.isProductFoldersEnabled())
-        {
-            ContainerFilter cf;
-
-            if (container.isProject())
-                cf = new ContainerFilter.AllInProjectPlusShared(container, user);
-            else
-                cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
-            qDef.setContainerFilter(cf);
-        }
+            qDef.setContainerFilter(new ContainerFilter.ProductFolderImport(container, user));
     }
 
     /* setup mini dataiterator pipeline to process lineage */
