@@ -168,13 +168,13 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container)
+    public Collection<QueryChangeListener.QueryPropertyChange<?>> save(User user, Container container)
     {
         return save(user, container, true);
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
+    public Collection<QueryChangeListener.QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent)
     {
         if (!getContainer().equals(container))
             throw new UnauthorizedException("Can only be saved in the linked schema container");
@@ -218,7 +218,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
             }
         }
 
-        Collection<QueryChangeListener.QueryPropertyChange> changes = _changes;
+        Collection<QueryChangeListener.QueryPropertyChange<?>> changes = _changes;
         _changes = null;
         _dirty = false;
         return changes;
