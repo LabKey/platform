@@ -2501,7 +2501,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (geom.dashed) {
-            // TODO - differentiate left and right
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
         }
 
