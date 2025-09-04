@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.SimpleAction;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -538,6 +539,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
         if (path.isEmpty())
             throw new IllegalArgumentException(path.toString());
+        Path savedPath = path;
         String action = path.get(path.size()-1);
         path = path.getParent();
 
@@ -553,6 +555,8 @@ public class ActionURL extends URLHelper implements Cloneable
         }
         else
         {
+            if (OptionalFeatureService.get().isFeatureEnabled(AppProps.REJECT_CONTROLLER_FIRST_URLS))
+                throw new IllegalArgumentException("Controller-first URLs are not allowed! (" + savedPath +")");
             setIsCanonical(!useContainerRelativeURL());
         }
 

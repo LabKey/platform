@@ -548,11 +548,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Treat backslash '\\' character as an escape character when loading data from file.",
             false, false, OptionalFeatureService.FeatureType.Deprecated
         ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.CONTROLLER_FIRST_URLS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
             "Restore controller-first URLS",
             "Generate URLs in a legacy format the puts the controller before the folder path. This option will be removed in LabKey Server 26.3.",
             false, false, OptionalFeatureService.FeatureType.Deprecated
         ));
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
+            "Reject controller-first URLs",
+            "Require standard path-first URLs.",
+            false
+        );
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

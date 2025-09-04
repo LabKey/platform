@@ -550,7 +550,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean getUseContainerRelativeURL()
     {
-        return !OptionalFeatureService.get().isFeatureEnabled(AppProps.CONTROLLER_FIRST_URLS);
+        return !OptionalFeatureService.get().isFeatureEnabled(AppProps.GENERATE_CONTROLLER_FIRST_URLS);
     }
 
     @Override
