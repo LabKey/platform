@@ -100,6 +100,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     @NotNull
     public static Quantity of(@NotNull Number value, @NotNull Unit unit)
     {
+        LOG.info("Creating quantity of {} for unit {}", value, unit);
         if (value instanceof Quantity q)
         {
             if (unit.kindOfQuantity != q.kind)
@@ -110,6 +111,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             return new Quantity(unit.kindOfQuantity, bd, unit);
         if (value instanceof Long l && (l > Integer.MAX_VALUE || l < Integer.MIN_VALUE))
             return new Quantity(unit.kindOfQuantity, BigDecimal.valueOf(l), unit);
+        LOG.info("Creating new Quantity of kind {}, double {}, unit {}", unit.kindOfQuantity, value, unit);
         return new Quantity(unit.kindOfQuantity, value.doubleValue(), unit);
     }
 
@@ -347,6 +349,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     // convert (ala BeanUtils.Converter to Quantity
     public static Quantity convert(@Nullable Object o, Unit unit)
     {
+        LOG.info("Converting quantity {} to unit {}", o, unit);
         if (null == o)
             return null;
         if (o instanceof Quantity q)
@@ -370,6 +373,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             @Override
             public <T> T convert(Class<T> aClass, Object o)
             {
+                LOG.info("In convertedFor.convert with object {} and unit {}", o, unit);
                 return (T)Quantity.convert(o, unit);
             }
         };
@@ -435,7 +439,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 //            assertEquals(Quantity.of(1023800, Unit.ug), starting.add(Quantity.of(-200, Unit.ug)));
             try
             {
-                starting.add(Quantity.of((Number) 10, "mL"));
+                starting.add(Quantity.of(10, "mL"));
                 fail("Adding quantities of different kinds should throw an error.");
             }
             catch (ConversionException x)
