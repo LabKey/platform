@@ -59,7 +59,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
     // for batching
     final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
-    final ArrayList<Map<String, Object>> _providedValues = new ArrayList<>(); // TODO
+    final ArrayList<Map<String, Object>> _providedValues = new ArrayList<>();
     final ArrayList<Map<String,Object>> _existingRows;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c, @Nullable Function<Map<String, Object>, Map<String, Object>> extractProvidedValues)
