@@ -206,6 +206,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("ExpirationDate", "MaterialExpDate");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Expiration Date", "MaterialExpDate");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
     }
@@ -1707,7 +1708,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isExpMaterialColumn(ExpMaterialTable.Column column, String name)
         {
-            return column.name().equalsIgnoreCase(name);
+            return column.name().equalsIgnoreCase(name) || (column.label() != null && column.label().equalsIgnoreCase(name));
         }
 
         private static boolean isNameHeader(String name)
