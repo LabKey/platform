@@ -2502,7 +2502,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (geom.dashed) {
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
-            layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
         }
 
         bindMouseEvents(pathSel, geom, layer);
