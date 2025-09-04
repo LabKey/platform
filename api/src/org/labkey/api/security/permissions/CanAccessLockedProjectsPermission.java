@@ -12,6 +12,7 @@ public class CanAccessLockedProjectsPermission extends AbstractPermission
         super("Can Access Locked Projects", "Allows admins to access locked projects");
     }
 
+    // This prevents the dataset security UI (datasets.jsp) from attempting to examine this role
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
