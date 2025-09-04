@@ -19,11 +19,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
@@ -47,10 +51,14 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
@@ -203,17 +211,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
             TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
             transaction.setAuditEvent(transactionEvent);
             ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
-                    convertAmountsToBaseUnits(c, admin));
+                    convertAmountsToBaseUnits(c, admin)
+            );
             transaction.commit();
             LOG.info("Finished upgrade of amounts and units");
         }
 
     }
 
-    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, ExpMaterialTable.Column unitsCol, Set<ExpMaterialTable.Column> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean isAliquot)
+    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean isAliquot)
     {
         Unit baseUnit = currentDisplayUnit.getBase();
-        String unitsStr = (String) sampleMap.get(unitsCol.name());
+        String unitsStr = (String) sampleMap.get(unitsCol.getName());
         Unit materialUnit = Unit.fromName(unitsStr);
         boolean isInBaseUnits = materialUnit == null ? currentDisplayUnit.isBase() : materialUnit.isBase();
         // have a unit value, but it did not convert to a known unit
@@ -233,10 +242,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (!isInBaseUnits)
             {
                 amountCols.forEach(amountCol -> {
-                    if (sampleMap.get(amountCol.name()) != null)
+                    if (sampleMap.get(amountCol.getName()) != null && !(sampleMap.get(amountCol.getName())).equals(0.0))
                     {
-                        oldDataMap.put(amountCol.name(), sampleMap.get(amountCol.name()));
-                        newDataMap.put(amountCol.name(), Unit.convert((Double) sampleMap.get(amountCol.name()), materialUnit == null ? currentDisplayUnit : materialUnit, baseUnit));
+                        oldDataMap.put(amountCol.getName(), sampleMap.get(amountCol.getName()));
+                        newDataMap.put(amountCol.getName(), Unit.convert((Double) sampleMap.get(amountCol.getName()), materialUnit == null ? currentDisplayUnit : materialUnit, baseUnit));
+                        amountCol.setValue(newDataMap.get(amountCol.getName()));
                         sampleCounts.put("converted", sampleCounts.getOrDefault("converted", 0) + 1);
                     }
                 });
@@ -245,12 +255,16 @@ public class ExperimentUpgradeCode implements UpgradeCode
             else // in base unit, but not explicitly stored
                 sampleCounts.put("setUnitsWithoutConvert", sampleCounts.getOrDefault("setUnitsWithoutConvert", 0) + 1);
             if (!baseUnit.name().equals(unitsStr))
-                newDataMap.put(unitsCol.name(), baseUnit.name());
+            {
+                unitsCol.setValue(baseUnit.name());
+                newDataMap.put(unitsCol.getName(), baseUnit.name());
+            }
         }
         else if (!unitsStr.equals(baseUnit.name()))
         {
-            oldDataMap.put(unitsCol.name(), unitsStr);
-            newDataMap.put(unitsCol.name(), baseUnit.name());
+            oldDataMap.put(unitsCol.getName(), unitsStr);
+            newDataMap.put(unitsCol.getName(), baseUnit.name());
+            unitsCol.setValue(baseUnit.name());
             sampleCounts.put("changeUnitsLabel", sampleCounts.getOrDefault("changeUnitsLabel", 0) + 1);
         }
     }
@@ -261,93 +275,133 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo tInfo = ExperimentService.get().getTinfoMaterial();
-        for (ExpSampleType sampleType :SampleTypeService.get().getSampleTypes(container, user, false))
+        try (Connection c = scope.getConnection())
         {
-            LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
-            Map<String, Integer> sampleCounts = new HashMap<>();
-            Map<String, Integer> aliquotCounts = new HashMap<>();
+            Parameter rowId = new Parameter("rowId", JdbcType.INTEGER);
+            Parameter units = new Parameter(Units.name(), JdbcType.VARCHAR);
+            Parameter amount = new Parameter(StoredAmount.name(), JdbcType.DOUBLE);
+            Parameter aliquotUnits = new Parameter(AliquotUnit.name(), JdbcType.VARCHAR);
+            Parameter aliquotAmount = new Parameter(AliquotVolume.name(), JdbcType.DOUBLE);
+            Parameter availableAliquotAmount = new Parameter(AvailableAliquotVolume.name(), JdbcType.DOUBLE);
+            ParameterMapStatement updateStmt = new ParameterMapStatement(scope, c,
+                    new SQLFragment("UPDATE ")
+                            .append(tInfo)
+                            .append(" SET Units = ?, StoredAmount = ?, AliquotUnit = ?, AliquotVolume = ?, AvailableAliquotVolume = ? WHERE RowId = ?")
+                            .addAll(units, amount, aliquotUnits, aliquotAmount, availableAliquotAmount, rowId), null);
 
-            Unit currentDisplayUnit = Unit.fromName(sampleType.getMetricUnit());
-            boolean hasDisplayUnit = currentDisplayUnit != null;
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, false))
+            {
+                LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
+                Map<String, Integer> sampleCounts = new HashMap<>();
+                Map<String, Integer> aliquotCounts = new HashMap<>();
 
-            SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume FROM ")
-                    .append(tInfo, "m")
-                    .append(" WHERE cpastype = ?").add(sampleType.getLSID());
-            SqlSelector selector = new SqlSelector(scope, sql);
-            selector.mapStream().forEach(sampleMap -> {
-                Map<String, Object> oldDataMap = new HashMap<>();
-                Map<String, Object> newDataMap = new HashMap<>();
-                if (!StringUtils.isEmpty((String) sampleMap.get(Units.name())) && sampleMap.get(StoredAmount.name()) == null)
-                {
-                    // remove the unit if we had a unit but no amount
-                    oldDataMap.put(Units.name(), sampleMap.get(Units.name()));
-                    newDataMap.put(Units.name(), null);
-                    sampleCounts.put("unitsWithoutAmounts", sampleCounts.getOrDefault("unitsWithoutAmounts", 0) + 1);
-                }
-                if (!StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())) && sampleMap.get(AliquotVolume.name()) == null && sampleMap.get(AvailableAliquotVolume.name()) == null)
-                {
-                    // remove the aliquot unit if we had a unit but no amount
-                    oldDataMap.put(AliquotUnit.name(), sampleMap.get(AliquotUnit.name()));
-                    newDataMap.put(AliquotUnit.name(), null);
-                    aliquotCounts.put("unitsWithoutAmounts", aliquotCounts.getOrDefault("unitsWithoutAmounts", 0) + 1);
-                }
+                Unit currentDisplayUnit = Unit.fromName(sampleType.getMetricUnit());
+                boolean hasDisplayUnit = currentDisplayUnit != null;
 
-                if (hasDisplayUnit)
-                {
-                    if (sampleMap.get(StoredAmount.name()) != null)
+                AtomicInteger batchCount = new AtomicInteger();
+                List<AuditTypeEvent> auditEvents = new ArrayList<>();
+                SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume FROM ")
+                        .append(tInfo, "m")
+                        .append(" WHERE cpastype = ?").add(sampleType.getLSID());
+                SqlSelector selector = new SqlSelector(scope, sql);
+
+                selector.mapStream().forEach(sampleMap -> {
+
+                    Map<String, Object> oldDataMap = new HashMap<>();
+                    Map<String, Object> newDataMap = new HashMap<>();
+                    // start out using the data already in the row
+                    rowId.setValue(sampleMap.get(RowId.name()));
+                    units.setValue(sampleMap.get(Units.name()));
+                    amount.setValue(sampleMap.get(StoredAmount.name()));
+                    aliquotUnits.setValue(sampleMap.get(AliquotUnit.name()));
+                    aliquotAmount.setValue(sampleMap.get(AliquotVolume.name()));
+                    availableAliquotAmount.setValue(sampleMap.get(AvailableAliquotVolume.name()));
+                    if (!StringUtils.isEmpty((String) sampleMap.get(Units.name())) && sampleMap.get(StoredAmount.name()) == null)
                     {
-                        getAmountAndUnitUpdates(sampleMap, Units, Set.of(StoredAmount), currentDisplayUnit, oldDataMap, newDataMap, sampleCounts, false);
+                        // remove the unit if we had a unit but no amount
+                        oldDataMap.put(Units.name(), sampleMap.get(Units.name()));
+                        newDataMap.put(Units.name(), null);
+                        units.setValue(null);
+                        sampleCounts.put("unitsWithoutAmounts", sampleCounts.getOrDefault("unitsWithoutAmounts", 0) + 1);
                     }
-                    if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
+                    if (!StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())) && sampleMap.get(AliquotVolume.name()) == null && sampleMap.get(AvailableAliquotVolume.name()) == null)
                     {
-                        getAmountAndUnitUpdates(sampleMap, AliquotUnit, Set.of(AliquotVolume, AvailableAliquotVolume), currentDisplayUnit, oldDataMap, newDataMap, aliquotCounts, true);
+                        // remove the aliquot unit if we had a unit but no amount
+                        oldDataMap.put(AliquotUnit.name(), sampleMap.get(AliquotUnit.name()));
+                        newDataMap.put(AliquotUnit.name(), null);
+                        aliquotUnits.setValue(null);
+                        aliquotCounts.put("unitsWithoutAmounts", aliquotCounts.getOrDefault("unitsWithoutAmounts", 0) + 1);
                     }
-                }
-                else // no display unit
-                {
-                    // Have an amount and no unit, update to a Unit.unit type
-                    if (sampleMap.get(StoredAmount.name()) != null && StringUtils.isEmpty((String) sampleMap.get(Units.name())))
+
+                    if (hasDisplayUnit)
                     {
-                        newDataMap.put(Units.name(), Unit.unit.name());
-                        sampleCounts.put("amountWithoutMaterialOrDisplayUnits", sampleCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
-                    }
-                    if (StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())))
-                    {
+                        if (sampleMap.get(StoredAmount.name()) != null)
+                        {
+                            getAmountAndUnitUpdates(sampleMap, units, Set.of(amount), currentDisplayUnit, oldDataMap, newDataMap, sampleCounts, false);
+                        }
                         if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
                         {
-                            newDataMap.put(AliquotUnit.name(), Unit.unit.name());
-                            aliquotCounts.put("amountWithoutMaterialOrDisplayUnits", aliquotCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
+                            getAmountAndUnitUpdates(sampleMap, aliquotUnits, Set.of(aliquotAmount, availableAliquotAmount), currentDisplayUnit, oldDataMap, newDataMap, aliquotCounts, true);
                         }
                     }
-                    // for rows with an amount and a unit when there is no display unit, no conversion is done
-                }
+                    else // no display unit
+                    {
+                        // Have an amount and no unit, update to a Unit.unit type
+                        if (sampleMap.get(StoredAmount.name()) != null && StringUtils.isEmpty((String) sampleMap.get(Units.name())))
+                        {
+                            newDataMap.put(Units.name(), Unit.unit.name());
+                            units.setValue(Unit.unit.name());
+                            sampleCounts.put("amountWithoutMaterialOrDisplayUnits", sampleCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
+                        }
+                        if (StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())))
+                        {
+                            if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
+                            {
+                                newDataMap.put(AliquotUnit.name(), Unit.unit.name());
+                                aliquotUnits.setValue(Unit.unit.name());
+                                aliquotCounts.put("amountWithoutMaterialOrDisplayUnits", aliquotCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
+                            }
+                        }
+                        // for rows with an amount and a unit when there is no display unit, no conversion is done
+                    }
 
 
-                if (!newDataMap.isEmpty())
+                    if (!newDataMap.isEmpty())
+                    {
+                        updateStmt.addBatch();
+                        batchCount.getAndIncrement();
+                        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, "Storage amount unit conversion to base unit during upgrade script.");
+                        event.setSampleId((Integer) sampleMap.get(RowId.name()));
+                        event.setSampleName((String) sampleMap.get(Name.name()));
+                        event.setSampleType(sampleType.getName());
+                        event.setSampleTypeId(sampleType.getRowId());
+                        event.setLineageUpdate(false);
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
+                        auditEvents.add(event);
+                    }
+                    if (batchCount.get() > 1000)
+                    {
+                        updateStmt.executeBatch();
+                        AuditLogService.get().addEvents(user, auditEvents);
+                        auditEvents.clear();
+                        batchCount.set(0);
+                    }
+                });
+                if (batchCount.get() > 0)
                 {
-                    newDataMap.put(RowId.name(), sampleMap.get(RowId.name()));
-                    Table.update(user, tInfo, newDataMap, sampleMap.get(RowId.name()));
-                    SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, "Storage amount unit conversion to base unit during upgrade script.");
-                    event.setSampleId((Integer) sampleMap.get(RowId.name()));
-                    event.setSampleName((String) sampleMap.get(Name.name()));
-                    event.setSampleType(sampleType.getName());
-                    event.setSampleTypeId(sampleType.getRowId());
-                    event.setLineageUpdate(false);
-                    // remove fields that are normally excluded when creating the detailed audit log since they either never change or always change
-                    newDataMap.remove(RowId.name());
-                    newDataMap.remove(Created.name());
-                    newDataMap.remove(CreatedBy.name());
-                    newDataMap.remove(Modified.name());
-                    newDataMap.remove(ModifiedBy.name());
-                    event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
-                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
-                    AuditLogService.get().addEvent(user, event);
+                    updateStmt.executeBatch();
+                    AuditLogService.get().addEvents(user, auditEvents);
                 }
-            });
 
-            LOG.info("    Sample data update counts {}", sampleCounts);
-            LOG.info("    Aliquot data update counts {}", aliquotCounts);
-            LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
+                LOG.info("    Sample data update counts {}", sampleCounts);
+                LOG.info("    Aliquot data update counts {}", aliquotCounts);
+                LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
         }
 
     }
