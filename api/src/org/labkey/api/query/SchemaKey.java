@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,7 +54,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
      * parts of the SchemaKey, and will enable us to maintain flexibility to change the
      * escaping algorithm.
      */
-    static public SchemaKey fromString(String str)
+    static public SchemaKey fromString(@Nullable String str)
     {
         return QueryKey.fromString(FACTORY, DIVIDER, str);
     }

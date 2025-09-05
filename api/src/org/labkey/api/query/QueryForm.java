@@ -248,9 +248,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
 
         String schemaName = getSchemaName();
-        UserSchema baseSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
-
-        return baseSchema;
+        return QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
     }
 
 
@@ -333,7 +331,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             }
             if (_queryView == null && _schema != null && _querySettings != null)
             {
-                _queryView = _schema.createView(getViewContext(), _querySettings);
+                _queryView = _schema.createView(getViewContext(), _querySettings, null);
                 // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
                 // on some other schema or query name. Therefore, remember the correct names so that we're using them
                 // consistently within this request

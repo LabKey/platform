@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
@@ -245,7 +246,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         UserSchema qs = table.getUserSchema();
         boolean isSampleSchema = s.getScope()==CoreSchema.getInstance().getScope() &&
                 ExpSchema.SCHEMA_NAME.equalsIgnoreCase(s.getName()) &&
-                null != qs && StringUtils.equalsIgnoreCase(qs.getName(), SamplesSchema.SCHEMA_NAME);
+                null != qs && Strings.CI.equals(qs.getName(), SamplesSchema.SCHEMA_NAME);
         if (isSampleSchema && _pd.getJdbcType().isText())
         {
             if (null != table.getColumn("Name"))

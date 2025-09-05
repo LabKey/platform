@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -476,7 +477,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 var entry = _sortEntries.get(i);
                 if (entry.expr() instanceof QIdentifier qId)
                 {
-                    _sortEntries.set(i, new QOrder.SortEntry(entry.expr(), entry.direction(), entry.expr().getTokenText()));
+                    _sortEntries.set(i, new QOrder.SortEntry(qId, entry.direction(), qId.getTokenText()));
                 }
                 else if (entry.expr() instanceof QNumber qNum)
                 {
@@ -1410,7 +1411,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             var aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
 
-            if (StringUtils.equalsIgnoreCase(aliasedColumn.getName(),key))
+            if (Strings.CI.equals(aliasedColumn.getName(),key))
                 aliasedColumn.setKeyField(true);
         }
         ret.afterInitializeColumns();

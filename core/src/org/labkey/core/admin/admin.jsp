@@ -39,6 +39,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -189,25 +190,25 @@
                             int count = 0;
                             for (Map.Entry<String, String> entry : new TreeMap<>(properties).entrySet())
                             {
-                                if (StringUtils.equals("Source Path", entry.getKey()))
+                                if (Strings.CS.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && (!sourcePathMatched || !enlistmentIdMatched)) ? helpPopup(!sourcePathMatched ? "source path not found" : "enlistmentId not found/matched") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h(!devMode?"":enlistmentIdMatched?"green":sourcePathMatched?"yellow":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
-                        else if (StringUtils.equals("Enlistment ID", entry.getKey()))
+                        else if (Strings.CS.equals("Enlistment ID", entry.getKey()))
                         {%>
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;font-family:monospace"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
-                        else if (StringUtils.equals("OrganizationURL", entry.getKey()) || StringUtils.equals("LicenseURL", entry.getKey()))
+                        else if (Strings.CS.equals("OrganizationURL", entry.getKey()) || Strings.CS.equals("LicenseURL", entry.getKey()))
                         {
                             continue;
                         }
-                        else if (StringUtils.equals("Organization", entry.getKey()) || StringUtils.equals("License", entry.getKey()))
+                        else if (Strings.CS.equals("Organization", entry.getKey()) || Strings.CS.equals("License", entry.getKey()))
                         {
                             String url = properties.get(entry.getKey() + "URL"); %>
                             <tr class="<%=getShadeRowClass(count)%>">

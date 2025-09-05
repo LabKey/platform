@@ -15,7 +15,7 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -428,7 +428,7 @@ public class CohortController extends BaseStudyController
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
                     boolean subjectCountChanged = !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount);
-                    boolean desciprtionChanged = !StringUtils.equals(cohort.getDescription(), newDescription);
+                    boolean desciprtionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
 
                     if (labelChanged || enrolledChanged || subjectCountChanged || desciprtionChanged)
                     {

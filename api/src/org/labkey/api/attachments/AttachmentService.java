@@ -62,9 +62,9 @@ public interface AttachmentService
 
     void download(HttpServletResponse response, AttachmentParent parent, String name, boolean inlineIfPossible) throws ServletException, IOException;
 
-    HttpView getHistoryView(ViewContext context, AttachmentParent parent);
+    HttpView<?> getHistoryView(ViewContext context, AttachmentParent parent, BindException errors);
 
-    HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
+    HttpView<?> getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
     void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
 
@@ -132,9 +132,9 @@ public interface AttachmentService
 
     void registerAttachmentType(AttachmentType type);
 
-    HttpView getAdminView(ActionURL currentUrl);
+    HttpView<?> getAdminView(ActionURL currentUrl);
 
-    HttpView getFindAttachmentParentsView();
+    HttpView<?> getFindAttachmentParentsView();
 
     class DuplicateFilenameException extends IOException
     {
@@ -170,7 +170,7 @@ public interface AttachmentService
 
     class FileTooLargeException extends IOException
     {
-        private List<String> _errors = new ArrayList<>();
+        private final List<String> _errors = new ArrayList<>();
 
         public FileTooLargeException(Collection<AttachmentFile> files, int maxSize) throws IOException
         {

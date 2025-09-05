@@ -16,7 +16,7 @@
 
 package org.labkey.pipeline.api;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -93,7 +93,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             job.getLogger().info("Retrying job.");
             job.getLogger().debug("Database indicates active task ID is " + job.getActiveTaskId() + (sf.getActiveHostName() == null ? "" : ", assigned to host '" + sf.getActiveHostName() + "'"));
             job.getLogger().debug("Retry details: Old Job ID: " + oldJobId +
-                    (StringUtils.equalsIgnoreCase(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
+                    (Strings.CI.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (PipelineValidationException e)
         {

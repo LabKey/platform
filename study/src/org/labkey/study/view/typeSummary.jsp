@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.exp.OntologyManager"%>
@@ -28,6 +27,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = HttpView.currentView();
@@ -112,7 +112,7 @@
 
     for (ColumnInfo col : userColumns)
     {
-        boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
+        boolean isKeyColumn = (Strings.CI.equals(col.getName(), dataset.getKeyPropertyName()));
 %>
         <tr class="<%=getShadeRowClass(rowIndex)%>">
             <td><%=unsafe(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=unsafe(isKeyColumn ? "</b>" : "")%></td>

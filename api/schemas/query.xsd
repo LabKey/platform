@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q="http://labkey.org/data/xml/query" targetNamespace="http://labkey.org/data/xml/query"
-        elementFormDefault="qualified" attributeFormDefault="unqualified">
+        elementFormDefault="qualified">
 
     <xsd:element name="query" type="q:queryType"/>
 
@@ -12,7 +12,7 @@
         <xsd:attribute name="name" type="xsd:string"/>
         <xsd:attribute name="schemaName" type="xsd:string"/>
         <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
-        <xsd:attribute name="schemaVersion" type="xsd:double"/>
+        <xsd:attribute name="inherit" type="xsd:boolean" default="false"/>
     </xsd:complexType>
 </xsd:schema>
 

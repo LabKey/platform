@@ -25,6 +25,7 @@ import org.apache.commons.collections4.map.AbstractMapDecorator;
 import org.apache.commons.collections4.map.UnmodifiableEntrySet;
 import org.apache.commons.collections4.set.UnmodifiableSet;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -449,7 +450,7 @@ public class PropertyManager
         {
             if (null != _removedKeys)
                 _removedKeys.remove(key);
-            if (!StringUtils.equals(value, get(key)))
+            if (!Strings.CS.equals(value, get(key)))
                 _modified = true;
             return super.put(key, value);
         }

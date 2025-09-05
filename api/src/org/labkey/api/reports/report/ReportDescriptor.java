@@ -588,7 +588,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     // Let subclasses decide how they need to handle query/schema name changes, return true if changes have been made to the
     // descriptor. It is up to the caller to save the report changes
-    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange<?>> changes, User user, Container container, boolean isSchemaUpdate)
     {
         return false;
     }

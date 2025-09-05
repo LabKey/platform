@@ -752,7 +752,7 @@ public class IssuesController extends SpringActionController
                         for (String prop : rec.keySet())
                         {
                             Object value = rec.get(prop);
-                            stringMap.put(prop, value.toString());
+                            stringMap.put(prop, JSONObject.NULL.equals(value) ? null : value.toString());
                         }
                         form.setStrings(stringMap);
                         _issueForms.add(form);
@@ -817,11 +817,13 @@ public class IssuesController extends SpringActionController
                     Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();
 
                     Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
-                    for (PropertyStorageSpec prop : kind.getRequiredProperties())
+                    for (DomainProperty prop : issueListDef.getDomain(getUser()).getProperties())
                     {
                         if (!IssueDefDomainKind.RESOLUTION_LOOKUP.equalsIgnoreCase(prop.getName()))
                             stringMap.computeIfAbsent(prop.getName(), (propName) -> Objects.toString(prevIssueProps.get(propName), null));
                     }
+                    // Be sure that the posted values take precedence, even if they're null
+                    stringMap.putAll(issuesForm.getStrings());
                     issuesForm.setStrings(stringMap);
                 }
                 IssueObject issue = issuesForm.getBean();
@@ -844,7 +846,7 @@ public class IssuesController extends SpringActionController
                 {
                     Issue.action action = getAction(issuesForm);
 
-                    if (action !=  Issue.action.insert)
+                    if (action != Issue.action.insert)
                     {
                         // if we are updating an existing issue pull in existing values
                         IssueObject prevIssue = IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId());

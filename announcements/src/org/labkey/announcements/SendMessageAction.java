@@ -17,6 +17,7 @@
 package org.labkey.announcements;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -224,11 +225,11 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
                 if (!_recipientMap.containsKey(type))
                     _recipientMap.put(type, new HashSet<>());
                 
-                if (StringUtils.equalsIgnoreCase(type, "TO"))
+                if (Strings.CI.equals(type, "TO"))
                     rtype = Message.RecipientType.TO;
-                else if (StringUtils.equalsIgnoreCase(type, "CC"))
+                else if (Strings.CI.equals(type, "CC"))
                     rtype = Message.RecipientType.CC;
-                else if (StringUtils.equalsIgnoreCase(type, "BCC"))
+                else if (Strings.CI.equals(type, "BCC"))
                     rtype = Message.RecipientType.BCC;
 
                 for (String email : resolveEmailAddress(recipient))

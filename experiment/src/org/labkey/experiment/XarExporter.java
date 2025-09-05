@@ -18,6 +18,7 @@ package org.labkey.experiment;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
@@ -1004,7 +1005,7 @@ public class XarExporter
         // so that it's easier to figure out links between files later, since
         // the URLs have all been rewritten
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
-        if (!StringUtils.isBlank(data.getDataFileUrl()) && !StringUtils.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
+        if (!StringUtils.isBlank(data.getDataFileUrl()) && !Strings.CS.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
             dataProperties = addOriginalURLProperty(dataProperties, data.getDataFileUrl());
         if (dataProperties != null)
             xData.setProperties(dataProperties);

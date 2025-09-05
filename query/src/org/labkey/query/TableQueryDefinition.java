@@ -278,7 +278,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
+    public Collection<QueryChangeListener.QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent)
     {
         if (getMetadataXml() == null)
         {

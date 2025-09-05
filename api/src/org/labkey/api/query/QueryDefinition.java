@@ -155,8 +155,8 @@ public interface QueryDefinition
      * TableQueryDefinition and file-based queries cannot be deleted.
      * Fires the {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryProperty, Collection)} event.
      */
-    Collection<QueryPropertyChange> save(User user, Container container) throws SQLException;
-    Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException;
+    Collection<QueryPropertyChange<?>> save(User user, Container container) throws SQLException;
+    Collection<QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent) throws SQLException;
 
     /**
      * Delete the QueryDefinition.

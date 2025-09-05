@@ -16,6 +16,7 @@
 package org.labkey.query.reports;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +58,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
             for (Report report : ReportService.get().getReports(null, view.getContainer(), key))
             {
-                if (StringUtils.equals(view.getName(), report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName)))
+                if (Strings.CS.equals(view.getName(), report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName)))
                     report.clearCache();
             }
         }
@@ -74,7 +75,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
@@ -122,13 +123,13 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         return Collections.emptyList();
     }
 
-    private void _updateReportQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private void _updateReportQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange<?>> changes)
     {
         Logger logger = LogManager.getLogger(ReportQueryChangeListener.class);
 
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             String oldVal = (String)qpc.getOldValue();
             String newVal = (String)qpc.getNewValue();
@@ -195,12 +196,12 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         }
     }
 
-    private void _updateReportSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    private void _updateReportSchemaNameChange(User user, Container container, Collection<QueryPropertyChange<?>> changes)
     {
         Logger logger = LogManager.getLogger(ReportQueryChangeListener.class);
 
         Map<String, String> schemaNameChangeMap = new HashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             if (qpc.getOldValue().equals(qpc.getNewValue()))
                 continue;

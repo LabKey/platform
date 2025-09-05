@@ -15,7 +15,7 @@
  */
 package org.labkey.core.webdav;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
@@ -381,8 +381,8 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                                 for (java.nio.file.Path p : list.toList())
                                 {
                                     String pathFileName = FileUtil.getFileName(p);
-                                    if ((Files.isDirectory(p) && StringUtils.equals(rawFolderName, pathFileName)) ||
-                                        (!Files.isDirectory(p) && StringUtils.equals(name, pathFileName)))
+                                    if ((Files.isDirectory(p) && Strings.CS.equals(rawFolderName, pathFileName)) ||
+                                        (!Files.isDirectory(p) && Strings.CS.equals(name, pathFileName)))
                                     {
                                         if (!FileUtil.hasCloudScheme(p))
                                         {

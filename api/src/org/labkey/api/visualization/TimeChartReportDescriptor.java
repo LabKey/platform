@@ -173,7 +173,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
-    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange<?>> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getJSON() != null)
         {
@@ -188,7 +188,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
             // most property updates only care about the query name old value string and new value string
             Map<String, String> nameChangeMap = new HashMap<>();
-            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            for (QueryChangeListener.QueryPropertyChange<?> qpc : changes)
             {
                 nameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
             }
@@ -331,13 +331,13 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         return false;
     }
 
-    private boolean updateJSONObjectQueryNameReference(JSONObject json, boolean isSchemaChange, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, boolean isSchemaChange, Collection<QueryChangeListener.QueryPropertyChange<?>> changes)
     {
         String propName = isSchemaChange ? "schemaName" : "queryName";
         String oldValue = json.optString(propName, null);
         if (oldValue != null)
         {
-            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            for (QueryChangeListener.QueryPropertyChange<?> qpc : changes)
             {
                 if (oldValue.equals(qpc.getOldValue()))
                 {

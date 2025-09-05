@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -102,7 +103,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -720,7 +720,7 @@ public class StudyManager
         if (old != null)
         {
             return old.isDemographicData() != datasetDefinition.isDemographicData() ||
-                    !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName()) ||
+                    !Strings.CS.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName()) ||
                     old.getUseTimeKeyField() != datasetDefinition.getUseTimeKeyField();
         }
         return false;
@@ -830,7 +830,7 @@ public class StudyManager
             ensureDatasetDefinitionDomain(user, datasetDefinition);
             _datasetHelper.update(user, datasetDefinition, pk);
 
-            QueryChangeListener.QueryPropertyChange nameChange = null;
+            QueryChangeListener.QueryPropertyChange<?> nameChange = null;
             if (!old.getName().equals(datasetDefinition.getName()))
             {
                 nameChange = new QueryChangeListener.QueryPropertyChange<>(
@@ -840,7 +840,7 @@ public class StudyManager
                     datasetDefinition.getName()
                 );
             }
-            final QueryChangeListener.QueryPropertyChange change = nameChange;
+            final QueryChangeListener.QueryPropertyChange<?> change = nameChange;
 
             transaction.addCommitTask(() ->
             {
@@ -2162,7 +2162,7 @@ public class StudyManager
             if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
                 return o1.getDisplayOrder() - o2.getDisplayOrder();
 
-            if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
+            if (Strings.CS.equals(o1.getCategory(), o2.getCategory()))
                 return o1.getDatasetId() - o2.getDatasetId();
 
             if (o1.getCategory() != null && o2.getCategory() == null)
@@ -2360,7 +2360,7 @@ public class StudyManager
                 if (null != study)
                 {
                     DatasetDefinition ret = StudyManager.getInstance().getDatasetDefinition(study, p.second);
-                    if (null != ret && null != ret.getDomain() && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
+                    if (null != ret && null != ret.getDomain() && Strings.CI.equals(ret.getDomain().getTypeURI(), domainURI))
                         return ret;
                 }
             }
@@ -3893,7 +3893,7 @@ public class StudyManager
                     // name, label, description, visitdatepropertyname, category
                     if (def.getKeyManagementType() != info.keyManagementType)
                         errors.reject("ERROR_MSG", "Key type is not compatible with shared dataset: " + def.getName());
-                    if (!StringUtils.equalsIgnoreCase(def.getKeyPropertyName(), info.keyPropertyName))
+                    if (!Strings.CI.equals(def.getKeyPropertyName(), info.keyPropertyName))
                         errors.reject("ERROR_MSG", "Key property name is not compatible with shared dataset: " + def.getName());
                     if (def.isDemographicData() != info.demographicData)
                         errors.reject("ERROR_MSG", "Demographic type is not compatible with shared dataset: " + def.getName());
@@ -3916,7 +3916,7 @@ public class StudyManager
         String oldURI = def.getTypeURI();
         String newURI = getDomainURI(def.getContainer(), user, def);
 
-        if (StringUtils.equals(oldURI, newURI))
+        if (Strings.CS.equals(oldURI, newURI))
             return;
 
         // This dataset has the old uri so upgrade it to use the new URI format
@@ -4263,7 +4263,7 @@ public class StudyManager
         props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
         String name = dsd.getName();
-        String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
+        String label = Strings.CS.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
         String description = dsd.getDescription();
         String tag = dsd.getTag();
         String keywords = StringUtilsLabKey.joinNonBlank(" ", name, label, description, tag);

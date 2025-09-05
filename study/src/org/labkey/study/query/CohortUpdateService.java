@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -139,7 +140,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
             if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled)
                 || !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount)
-                || !StringUtils.equals(cohort.getDescription(), newDescription))
+                || !Strings.CS.equals(cohort.getDescription(), newDescription))
             {
                 cohort = cohort.createMutable();
 
@@ -155,7 +156,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
                 {
                     cohort.setSubjectCount(newSubjectCount);
                 }
-                if (!StringUtils.equals(cohort.getDescription(), newDescription))
+                if (!Strings.CS.equals(cohort.getDescription(), newDescription))
                 {
                     cohort.setDescription(newDescription);
                 }
