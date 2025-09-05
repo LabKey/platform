@@ -39,7 +39,7 @@ public class Lookup
     public Lookup(Container c, String schema, String query)
     {
         _container = c;
-        _schemaKey = null == schema ? null : SchemaKey.fromString(schema);
+        _schemaKey = SchemaKey.fromString(schema);
         _queryName = query;
     }
 

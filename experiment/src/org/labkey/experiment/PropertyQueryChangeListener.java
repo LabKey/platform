@@ -61,13 +61,13 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         // is there any other schema change other than assay renaming?
         boolean isSchemaChange = schema.toString().toLowerCase().startsWith("assay.general.");
 
         Map<String, String> queryNameChangeMap = new CaseInsensitiveHashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             String oldVal = qpc.getOldValue() != null ? qpc.getOldValue().toString() : null;
             String newVal = qpc.getNewValue() != null ? qpc.getNewValue().toString() : null;

@@ -12,6 +12,7 @@
         <xsd:attribute name="name" type="xsd:string"/>
         <xsd:attribute name="schemaName" type="xsd:string"/>
         <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="inherit" type="xsd:boolean" default="false"/>
         <xsd:attribute name="schemaVersion" type="xsd:double"/>
     </xsd:complexType>
 </xsd:schema>

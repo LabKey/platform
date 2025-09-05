@@ -17,26 +17,13 @@ package org.labkey.api.visualization;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -83,7 +70,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
-    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange<?>> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getJSON() != null)
         {
@@ -95,7 +82,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
             String schemaName = queryJson.optString("schemaName", null);
             if ((queryName != null && !isSchemaUpdate) || (schemaName != null && isSchemaUpdate))
             {
-                for (QueryChangeListener.QueryPropertyChange qpc : changes)
+                for (QueryChangeListener.QueryPropertyChange<?> qpc : changes)
                 {
                     if (isSchemaUpdate)
                     {
@@ -203,65 +190,5 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         newJson.put("chartConfig", newChartConfig);
 
         return newJson.toString();
-    }
-
-    public QueryView getSourceQueryView(ViewContext viewContext, String schemaName, String queryName, String viewName, String dataRegionName) throws ValidationException
-    {
-        UserSchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(), schemaName);
-        if (schema == null)
-        {
-            throw new ValidationException("Invalid schema name: " + schemaName + ". ");
-        }
-        QuerySettings settings = schema.getSettings(viewContext, dataRegionName == null ? "query" : dataRegionName, queryName, viewName);
-        QueryView queryView = schema.createView(viewContext, settings, null);
-        if (queryView == null)
-        {
-            throw new ValidationException("Invalid query/view.");
-        }
-
-        return queryView;
-    }
-
-    // TODO: Delete?
-    private List<DisplayColumn> getDisplayColumns(ContainerUser context, String schemaName, String queryName, String viewName) throws ValidationException
-    {
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
-        if (schema == null)
-        {
-            throw new ValidationException("Invalid schema name: " + schemaName + ". ");
-        }
-        QueryDefinition queryDefinition = schema.getQueryDef(queryName);
-        if (queryDefinition == null)
-            queryDefinition = QueryService.get().createQueryDefForTable(schema, queryName);
-
-        if (queryDefinition != null)
-        {
-            List<QueryException> errors = new ArrayList<>();
-            TableInfo tableInfo = queryDefinition.getTable(schema, errors, true);
-            if (tableInfo != null)
-            {
-                if (errors.isEmpty())
-                {
-                    CustomView customView = QueryService.get().getCustomView(context.getUser(), context.getContainer(), null, schemaName, queryName, viewName);
-                    return queryDefinition.getDisplayColumns(customView, tableInfo);
-                }
-                else
-                {
-                    StringBuilder sb = new StringBuilder();
-                    String delim = "";
-
-                    for (QueryException error : errors)
-                    {
-                        sb.append(delim).append(error.getMessage());
-                        delim = "\n";
-                    }
-                    throw new ValidationException("Unable to get table or query: " + sb);
-                }
-            }
-            else
-                throw new ValidationException("Unable to create the source table: " + queryName + " it may no longer exist, or you don't have access to it.");
-        }
-        else
-            throw new ValidationException("Unable to get a query definition for table : " + queryName);
     }
 }

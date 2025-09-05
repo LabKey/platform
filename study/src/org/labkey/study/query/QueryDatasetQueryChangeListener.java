@@ -25,11 +25,11 @@ public class QueryDatasetQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
-            for (QueryPropertyChange change : changes)
+            for (QueryPropertyChange<?> change : changes)
             {
                 String oldVal = (String)change.getOldValue();
                 String newVal = (String)change.getNewValue();

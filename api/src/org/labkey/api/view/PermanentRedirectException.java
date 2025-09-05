@@ -5,12 +5,12 @@ import org.labkey.api.util.URLHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-/** Use when we want search engines, browsers, etc to assume that the redirecting URL is defunct and the target URL should be used going forward */
+/** Use when we want search engines, browsers, etc. to assume that the redirecting URL is defunct and the target URL should be used going forward */
 public class PermanentRedirectException extends RedirectException
 {
     public PermanentRedirectException(@NotNull URLHelper url)
     {
-        super(url);
+        super(url, false);
     }
 
     @Override

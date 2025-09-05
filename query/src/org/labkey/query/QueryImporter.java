@@ -130,7 +130,7 @@ public class QueryImporter implements FolderImporter
 
             // Map of new and updated queries by schema
             Map<SchemaKey, List<String>> createdQueries = new LinkedHashMap<>();
-            Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> changedQueries = new LinkedHashMap<>();
+            Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries = new LinkedHashMap<>();
 
             // import custom queries along with metadata xml
             for (String sqlFileName : sqlFileNames)
@@ -191,11 +191,11 @@ public class QueryImporter implements FolderImporter
             }
 
             // fire query changed events (one set of changes per container/schema/queryproperty)
-            for (Map.Entry<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> entry : changedQueries.entrySet())
+            for (Map.Entry<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> entry : changedQueries.entrySet())
             {
                 SchemaKey schemaKey = entry.getKey().first;
                 QueryProperty property = entry.getKey().second;
-                List<QueryPropertyChange> changes = entry.getValue();
+                List<QueryPropertyChange<?>> changes = entry.getValue();
                 QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, schemaKey, property, changes);
             }
 
@@ -206,7 +206,7 @@ public class QueryImporter implements FolderImporter
 
     private void createQueryDef(FolderImportContext ctx,
                                 Map<SchemaKey, List<String>> createdQueries,
-                                Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> changedQueries,
+                                Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries,
                                 @NotNull String metaFileName, @NotNull QueryDocument queryDoc,
                                 @Nullable String sqlFileName, @Nullable String sql)
             throws SQLException
@@ -280,8 +280,10 @@ public class QueryImporter implements FolderImporter
 
         queryDef.setDescription(queryXml.getDescription());
         queryDef.setMetadataXml(metadataXml);
+        queryDef.setIsHidden(queryXml.getHidden());
+        queryDef.setCanInherit(queryXml.getInherit());
 
-        Collection<QueryPropertyChange> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
+        Collection<QueryPropertyChange<?>> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
         if (created)
         {
             List<String> queries = createdQueries.computeIfAbsent(schemaKey, k -> new ArrayList<>());
@@ -289,11 +291,11 @@ public class QueryImporter implements FolderImporter
         }
         else if (changes != null)
         {
-            for (QueryPropertyChange change : changes)
+            for (QueryPropertyChange<?> change : changes)
             {
                 // Group changed queries by schemaKey/QueryProperty
                 Pair<SchemaKey, QueryProperty> key = Pair.of(schemaKey, change.getProperty());
-                List<QueryPropertyChange> changesBySchemaProperty = changedQueries.computeIfAbsent(key, k -> new ArrayList<>());
+                List<QueryPropertyChange<?>> changesBySchemaProperty = changedQueries.computeIfAbsent(key, k -> new ArrayList<>());
                 changesBySchemaProperty.add(change);
             }
         }

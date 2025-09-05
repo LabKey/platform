@@ -17,7 +17,6 @@
 package org.labkey.devtools;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
@@ -72,8 +71,6 @@ public class DevtoolsModule extends CodeOnlyModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(new DevtoolsContainerListener());
     }
 
     @Override

@@ -3249,7 +3249,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
     {
         QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
     }
@@ -3431,7 +3431,7 @@ public class QueryServiceImpl implements QueryService
         if (to instanceof QueryTableInfo)
             return true;
 
-         DomainKind dk = to.getDomainKind();
+         DomainKind<?> dk = to.getDomainKind();
          if (dk != null && dk.isUserCreatedType())
              return true;
 
