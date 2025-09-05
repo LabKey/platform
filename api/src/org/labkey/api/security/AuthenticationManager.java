@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -910,7 +911,7 @@ public class AuthenticationManager
     {
         String key = user.getUserId() + "/" + ((null==request||null==request.getLocalAddr())?"":request.getLocalAddr());
         String prevMessage = AUTH_MESSAGES.get(key);
-        if (StringUtils.equals(prevMessage, msg))
+        if (Strings.CS.equals(prevMessage, msg))
             return;
         AUTH_MESSAGES.put(key, msg);
         if (user.isGuest())

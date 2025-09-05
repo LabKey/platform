@@ -16,6 +16,7 @@
 package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -69,7 +70,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -190,14 +190,14 @@ public class VisualizationCDSGenerator
         {
             VisDataRequest.Measure m = mi.getMeasure();
             boolean isDataset = false;
-            if (null != study && equalsIgnoreCase("study", m.getSchemaName()))
+            if (null != study && Strings.CI.equals("study", m.getSchemaName()))
             {
                 Dataset d = study.getDatasetByName(m.getQueryName());
                 if (null != d && !d.isDemographicData())
                     isDataset = true;
             }
-            else if (equalsIgnoreCase("vis_junit", m.getSchemaName()) &&
-                    (equalsIgnoreCase("flow", m.getQueryName()) || equalsIgnoreCase("ics", m.getQueryName())))
+            else if (Strings.CI.equals("vis_junit", m.getSchemaName()) &&
+                    (Strings.CI.equals("flow", m.getQueryName()) || Strings.CI.equals("ics", m.getQueryName())))
             {
                 isDataset = true;
             }
@@ -291,11 +291,11 @@ public class VisualizationCDSGenerator
                 boolean isDatasetMeasure = measurePath.equals(datasetPath);
                 if (isDatasetMeasure)
                 {
-                    if (equalsIgnoreCase(m.getName(), containerColumnName))
+                    if (Strings.CI.equals(m.getName(), containerColumnName))
                         container = mi;
-                    else if (equalsIgnoreCase(m.getName(), subjectColumnName))
+                    else if (Strings.CI.equals(m.getName(), subjectColumnName))
                         participant = mi;
-                    else if (equalsIgnoreCase(m.getName(), sequenceNumColumnName))
+                    else if (Strings.CI.equals(m.getName(), sequenceNumColumnName))
                         sequencenum = mi;
                     else
                         datasetMeasures.add(mi);
@@ -382,9 +382,9 @@ public class VisualizationCDSGenerator
                     continue;
 
                 String columnName = vcol.getOriginalName();
-                boolean isContainer = equalsIgnoreCase(columnName, containerColumnName);
-                boolean isSubject = equalsIgnoreCase(columnName, subjectColumnName);
-                boolean isSequenceNum = equalsIgnoreCase(columnName, sequenceNumColumnName);
+                boolean isContainer = Strings.CI.equals(columnName, containerColumnName);
+                boolean isSubject = Strings.CI.equals(columnName, subjectColumnName);
+                boolean isSequenceNum = Strings.CI.equals(columnName, sequenceNumColumnName);
                 boolean isAllowListQuery = "GridBase".equalsIgnoreCase(vcol.getQueryName());
 
                 if ((!isContainer && !isSubject && !isSequenceNum) || isAllowListQuery)
@@ -425,11 +425,11 @@ public class VisualizationCDSGenerator
 
                 if (datasetPath.startsWith(new Path(schemaName,queryName)))
                 {
-                    if (equalsIgnoreCase(columnName, containerColumnName))
+                    if (Strings.CI.equals(columnName, containerColumnName))
                         containerColumnAlias = alias;
-                    else if (equalsIgnoreCase(columnName, subjectColumnName))
+                    else if (Strings.CI.equals(columnName, subjectColumnName))
                         participantColumnAlias = alias;
-                    else if (equalsIgnoreCase(columnName, sequenceNumColumnName))
+                    else if (Strings.CI.equals(columnName, sequenceNumColumnName))
                         sequenceColumnAlias = alias;
                 }
                 aliasInCurrentSet.add(alias);
@@ -508,7 +508,7 @@ public class VisualizationCDSGenerator
 
     private String string_quote(String s)
     {
-        return "'" + StringUtils.replace(s, "'", "''") + "'";
+        return "'" + Strings.CS.replace(s, "'", "''") + "'";
     }
 
 
@@ -709,11 +709,11 @@ public class VisualizationCDSGenerator
                     ColumnInfo dsCol = r.getColumnInfo(r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#Dataset")));
                     List<Map<String, Object>> list = toList(r);
                     assertTrue(list.stream()
-                            .filter(m -> StringUtils.equals((String) dsCol.getValue(m), "x"))
-                            .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD4")));
+                            .filter(m -> Strings.CS.equals((String) dsCol.getValue(m), "x"))
+                            .allMatch(m -> Strings.CS.equals((String) m.get("vis_junit_flow_population"), "CD4")));
                     assertTrue(list.stream()
-                            .filter(m -> StringUtils.equals((String) dsCol.getValue(m), "y"))
-                            .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD8")));
+                            .filter(m -> Strings.CS.equals((String) dsCol.getValue(m), "y"))
+                            .allMatch(m -> Strings.CS.equals((String) m.get("vis_junit_flow_population"), "CD8")));
                 }
             }
         }

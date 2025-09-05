@@ -224,7 +224,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getHistoryView(ViewContext context, AttachmentParent parent)
+    public HttpView<?> getHistoryView(ViewContext context, AttachmentParent parent, BindException errors)
     {
         UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
         if (schema != null)
@@ -238,7 +238,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             settings.setBaseFilter(filter);
             settings.setQueryName(AttachmentService.ATTACHMENT_AUDIT_EVENT);
 
-            QueryView view = schema.createView(context, settings);
+            QueryView view = schema.createView(context, settings, errors);
             view.setTitle("Attachments History:");
 
             return view;

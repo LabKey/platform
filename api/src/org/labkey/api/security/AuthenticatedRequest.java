@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -419,7 +420,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                     return true;
 
                 // check for recycled session object?
-                if (!StringUtils.equals(id, marker._session.getId()))
+                if (!Strings.CS.equals(id, marker._session.getId()))
                     return true;
 
                 // expire the session if the nursery is overflowing
@@ -471,7 +472,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         /* try to not flood the log with repeat messages if we have a badly behaved client (e.g. not remembering JSESSIONID) */
         ip = Objects.toString(ip,"unknown");
         String prevMessage = logMessages.get(ip);
-        if (StringUtils.equals(prevMessage, msg))
+        if (Strings.CS.equals(prevMessage, msg))
             return;
         logMessages.put(ip, msg);
         _log.debug(msg);
@@ -497,11 +498,11 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             {
                 String name = e.nextElement();
                 String lower = name.toLowerCase();
-                if (!StringUtils.startsWith(lower, "x-"))
+                if (!Strings.CS.startsWith(lower, "x-"))
                     continue;
-                if (StringUtils.startsWith(lower,"x-amzn-"))
+                if (Strings.CS.startsWith(lower,"x-amzn-"))
                     continue;
-                if (StringUtils.startsWith(lower,"x-forwarded-"))
+                if (Strings.CS.startsWith(lower,"x-forwarded-"))
                     continue;
                 _info.put(name, r.getHeader(name));
             }

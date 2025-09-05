@@ -22,6 +22,7 @@ package org.labkey.core.webdav;
  */
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,7 +99,7 @@ public class WebdavServlet extends HttpServlet
             String m = request.getHeader("Method");
             if (m == null)
                 m = helper.getParameter("method");
-            if (!StringUtils.isEmpty(m) && !StringUtils.equals(method,m))
+            if (!StringUtils.isEmpty(m) && !Strings.CS.equals(method,m))
             {
                 // POST can map to mutating methods, but GET can not
                 m = m.toUpperCase();

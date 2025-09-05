@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.plate;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -312,7 +312,7 @@ public class PlateUtils
             if (cell != null)
             {
                 String indexString = String.valueOf(start++);
-                if (!StringUtils.equals(String.valueOf(cell), indexString))
+                if (!Strings.CS.equals(String.valueOf(cell), indexString))
                     return null;
             }
             else

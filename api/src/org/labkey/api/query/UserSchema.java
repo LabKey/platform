@@ -324,11 +324,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return torq;
     }
 
-    protected void overlayTableMetadata(TableInfo table, String name, Collection<QueryException> errors)
-    {
-        table.overlayMetadata(name, this, errors);
-    }
-
     @Deprecated // TODO ContainerFilter - remove. Schemas that still override or call this method have not been converted yet.
     public final @Nullable TableInfo createTable(String name)
     {
@@ -401,7 +396,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     @Nullable @Override
-    public VisualizationProvider createVisualizationProvider()
+    public VisualizationProvider<?> createVisualizationProvider()
     {
         return null;
     }
@@ -438,13 +433,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public ActionURL urlSchemaDesigner()
     {
         return PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), getSchemaName());
-    }
-
-    @Deprecated
-    // Use createView(ViewContext, QuerySettings, BindException) instead.
-    public final QueryView createView(ViewContext context, QuerySettings settings)
-    {
-        return createView(context, settings, null);
     }
 
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */

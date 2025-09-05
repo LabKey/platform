@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -35,7 +36,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 /**
@@ -131,9 +131,9 @@ public class Lsid
         String[] parts = StringUtils.split(s,':');
         if (parts.length < 5 || parts.length > 6)
             return null;
-        if (!equalsIgnoreCase("urn",parts[0]))
+        if (!Strings.CI.equals("urn",parts[0]))
             return null;
-        if (!equalsIgnoreCase("lsid",parts[1]))
+        if (!Strings.CI.equals("lsid",parts[1]))
             return null;
         return new String[] {parts[2], parts[3], parts[4], parts.length < 6 ? null : parts[5]};
     }
@@ -215,16 +215,16 @@ public class Lsid
 
     public boolean equals(Object o)
     {
-        if (null == o || !(o instanceof Lsid lsid))
+        if (!(o instanceof Lsid lsid))
             return false;
 
         if (!valid)
-            return StringUtils.equals(toString(),lsid.toString());
+            return Strings.CS.equals(toString(),lsid.toString());
 
-        return  StringUtils.equals(authority,lsid.authority) &&
-                StringUtils.equals(namespace,lsid.namespace) &&
-                StringUtils.equals(objectId, lsid.objectId) &&
-                StringUtils.equals(version, lsid.version);
+        return  Strings.CS.equals(authority,lsid.authority) &&
+                Strings.CS.equals(namespace,lsid.namespace) &&
+                Strings.CS.equals(objectId, lsid.objectId) &&
+                Strings.CS.equals(version, lsid.version);
     }
 
     public int hashCode()

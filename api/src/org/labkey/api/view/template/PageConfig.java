@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -735,7 +736,7 @@ public class PageConfig
             {
                 final String eventId = h.getKey();
                 EventHandler prev = eventMap.put(eventId, h);
-                if (null != prev && !StringUtils.equals(prev.handler, h.handler))
+                if (null != prev && !Strings.CS.equals(prev.handler, h.handler))
                     LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': " + eventId);
             }
         }

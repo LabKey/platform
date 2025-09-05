@@ -18,6 +18,7 @@ package org.labkey.api.data.dialect;
 
 import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -334,13 +335,11 @@ public abstract class SqlDialect
     @Nullable
     public String getSqlTypeName(JdbcType type)
     {
-        switch (type)
+        if (Objects.requireNonNull(type) == JdbcType.GUID)
         {
-            case GUID:
-                return getGuidType();
-            default:
-                return _sqlTypeIntMap.get(type.sqlType);
+            return getGuidType();
         }
+        return _sqlTypeIntMap.get(type.sqlType);
     }
 
     // Override for alternative behavior
@@ -1708,14 +1707,14 @@ public abstract class SqlDialect
 
     public static boolean isGUIDType(String sqlTypeName)
     {
-        return StringUtils.equalsIgnoreCase("entityid", sqlTypeName) ||
-                StringUtils.equalsIgnoreCase("uniqueidentifier", sqlTypeName);
+        return Strings.CI.equals("entityid", sqlTypeName) ||
+                Strings.CI.equals("uniqueidentifier", sqlTypeName);
     }
 
     public static boolean isJSONType(String sqlTypeName)
     {
-        return StringUtils.equalsIgnoreCase("json", sqlTypeName) ||
-                StringUtils.equalsIgnoreCase("jsonb", sqlTypeName);
+        return Strings.CI.equals("json", sqlTypeName) ||
+                Strings.CI.equals("jsonb", sqlTypeName);
     }
 
     public JdbcType getJdbcType(int type, String typeName)
@@ -1992,7 +1991,7 @@ public abstract class SqlDialect
     // Simple check. Subclasses can override to provide better checks.
     public boolean isRds(DbScope scope)
     {
-        return StringUtils.containsIgnoreCase(scope.getDatabaseUrl(), "rds.amazonaws.com");
+        return Strings.CI.equals(scope.getDatabaseUrl(), "rds.amazonaws.com");
     }
 
     public static final class MetadataParameterInfo

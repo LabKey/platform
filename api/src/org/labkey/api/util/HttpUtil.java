@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
@@ -199,9 +200,9 @@ public class HttpUtil
      */
     public static boolean isApiLike(@NotNull HttpServletRequest request, Controller action)
     {
-        boolean throwUnauthorized = StringUtils.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
-        boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
-        boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
+        boolean throwUnauthorized = Strings.CS.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
+        boolean xmlhttp = Strings.CS.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
+        boolean json = Strings.CS.startsWith(request.getHeader("Content-Type"), "application/json");
         boolean apiClass = action instanceof BaseApiAction;
         boolean clientLibrary = getClientLibrary(request) != null;
         return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || clientLibrary);
@@ -222,13 +223,13 @@ public class HttpUtil
     public static boolean isChrome(@NotNull HttpServletRequest request)
     {
         String userAgent = getUserAgent(request);
-        return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
+        return Strings.CS.contains(userAgent, "Chrome/") || Strings.CS.contains(userAgent, "Chromium/");
     }
 
     public static boolean isSafari(@NotNull HttpServletRequest request)
     {
         String userAgent = getUserAgent(request);
-        return !isChrome(request) && StringUtils.containsIgnoreCase(userAgent, "safari");
+        return !isChrome(request) && Strings.CI.contains(userAgent, "safari");
     }
 
     /** @return best guess if the request came from the OSX integrated WebDAV client */

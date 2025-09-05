@@ -16,6 +16,7 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
@@ -226,7 +227,7 @@ public class CohortFilterFactory
         int start = 0;
         if (name.contains("."))
         {
-            if (!StringUtils.startsWithIgnoreCase(name, dataregion + "."))
+            if (!Strings.CI.startsWith(name, dataregion + "."))
                 return null;
             start = dataregion.length()+1;
         }
@@ -333,13 +334,13 @@ public class CohortFilterFactory
         if (!parts.isEmpty())
         {
             String first = parts.get(0);
-            if (StringUtils.equalsIgnoreCase(first, subject))
+            if (Strings.CI.equals(first, subject))
             {
                 ArrayList<String> t = new ArrayList<>(parts);
                 t.set(0, "ParticipantId");
                 fk = FieldKey.fromParts(t);
             }
-            else if (StringUtils.equalsIgnoreCase(first, subjectVisit))
+            else if (Strings.CI.equals(first, subjectVisit))
             {
                 ArrayList<String> t = new ArrayList<>(parts);
                 t.set(0, "ParticipantVisit");

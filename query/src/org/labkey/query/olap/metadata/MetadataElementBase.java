@@ -16,6 +16,7 @@
 package org.labkey.query.olap.metadata;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,8 +45,8 @@ public abstract class MetadataElementBase implements MetadataElement, Named
             this.uniqueName = new UniqueName(parent.uniqueName, null==cc ? mde.getName() : cc.intern(mde.getName()));
 
         // NOTE Properties don't always use the [ ] syntax
-        assert StringUtils.equalsIgnoreCase(uniqueName.toString(), mde.getUniqueName())
-                || null==uniqueName.getParent() && StringUtils.equalsIgnoreCase(getName(), mde.getName());
+        assert Strings.CI.equals(uniqueName.toString(), mde.getUniqueName())
+                || null==uniqueName.getParent() && Strings.CI.equals(getName(), mde.getName());
 
         name = uniqueName.getName().equals(mde.getName()) ? uniqueName.getName() : mde.getName();
     }
