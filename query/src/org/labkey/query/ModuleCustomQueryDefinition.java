@@ -125,7 +125,7 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container)
+    public Collection<QueryChangeListener.QueryPropertyChange<?>> save(User user, Container container)
     {
         return save(user, container, true);
     }
@@ -137,7 +137,7 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
+    public Collection<QueryChangeListener.QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent)
     {
         if (!_dirty)
             return null;
@@ -199,7 +199,7 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
             QueryServiceImpl.get().uncacheModuleResources(ModuleLoader.getInstance().getModule(_moduleName));
         }
 
-        Collection<QueryChangeListener.QueryPropertyChange> changes = _changes;
+        Collection<QueryChangeListener.QueryPropertyChange<?>> changes = _changes;
         _changes = null;
         _dirty = false;
         return changes;

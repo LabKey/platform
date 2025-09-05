@@ -30,11 +30,6 @@ import org.labkey.api.view.WebPartView;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * User: Mark Igra
- * Date: Jun 12, 2006
- * Time: 2:48:54 PM
- */
 public interface WikiService
 {
     static @Nullable WikiService get()
@@ -47,8 +42,8 @@ public interface WikiService
         ServiceRegistry.get().registerService(WikiService.class, impl);
     }
 
-    WebPartView getView(Container c, String name, boolean renderContentOnly);
-    WebPartView getHistoryView(Container c, String name);
+    WebPartView<?> getView(Container c, String name, boolean renderContentOnly);
+    WebPartView<?> getHistoryView(Container c, String name);
 
     HtmlString getHtml(Container c, String name);
 

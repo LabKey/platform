@@ -1805,7 +1805,7 @@ public class StudyController extends BaseStudyController
             QueryUpdateService qus = studyProperties.getUpdateService();
             if (null == qus)
                 throw new UnauthorizedException();
-            try (DbScope.Transaction transaction = studyProperties.getSchema().getScope().ensureTransaction())
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 BatchValidationException batchErrors = new BatchValidationException();
                 qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), batchErrors, null, null);
@@ -2216,7 +2216,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ManageStudyPermission.class)
-    public class StudyScheduleAction extends SimpleViewAction
+    public class StudyScheduleAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2942,7 +2942,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             UploadLog ul = StudyPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
-            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()), true);
+            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()).toPath(), true);
 
             return null;
         }

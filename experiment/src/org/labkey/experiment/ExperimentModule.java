@@ -191,7 +191,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.007;
+        return 25.008;
     }
 
     @Nullable
@@ -630,6 +630,20 @@ public class ExperimentModule extends SpringModule
                     assayMetrics.put("standardAssayRunsWithPlateTemplate", new SqlSelector(schema, new SQLFragment(runsWithPlateSQL).add("PlateTemplate").add("PlateTemplate")).getObject(Long.class));
                     assayMetrics.put("standardAssayRunsWithPlateSet", new SqlSelector(schema, new SQLFragment(runsWithPlateSQL).add("PlateSet").add("PlateSet")).getObject(Long.class));
 
+                    assayMetrics.put("assayRunsFileColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.domainUri LIKE ? AND D.rangeURI = ?""", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+
+                    assayMetrics.put("assayResultsFileColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.domainUri LIKE ? AND D.rangeURI = ?""", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
 
@@ -1004,6 +1018,7 @@ public class ExperimentModule extends SpringModule
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
+            ExperimentServiceImpl.AuditDomainUriTest.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,

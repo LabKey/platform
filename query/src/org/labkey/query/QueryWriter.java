@@ -104,6 +104,8 @@ public class QueryWriter extends BaseFolderWriter
 
                 if (query.isHidden())
                     queryXml.setHidden(true);
+                if (query.canInherit())
+                    queryXml.setInherit(true);
 
                 queryXml.setSchemaName(query.getSchemaName());
 

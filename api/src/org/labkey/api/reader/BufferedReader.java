@@ -35,6 +35,7 @@ This implementation has only been changed as follows
  */
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.IntegerUtils;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -476,7 +477,7 @@ public class BufferedReader extends Reader {
                 return 0;
             }
             if (count - pos >= amount) {
-                pos += amount;
+                pos = IntegerUtils.asInteger(pos + amount);
                 return amount;
             }
 
@@ -487,7 +488,7 @@ public class BufferedReader extends Reader {
                     return read;
                 }
                 if (count - pos >= amount - read) {
-                    pos += amount - read;
+                    pos = IntegerUtils.asInteger(pos + amount - read);
                     return amount;
                 }
                 // Couldn't get all the characters, skip what we read

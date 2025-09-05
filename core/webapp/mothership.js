@@ -128,7 +128,10 @@ LABKEY.Mothership = (function () {
 
             // Non-fatal ResizeObserver loop detection
             'ResizeObserver loop limit exceeded',
-            'ResizeObserver loop completed with undelivered notifications.'
+            'ResizeObserver loop completed with undelivered notifications.',
+
+            // Issue 53517: suppress TypeError in Safari
+            'TypeError: null is not an object (evaluating \'document.body.scrollHeight\')'
         ];
 
         for (i = 0; i < ignoreMsgs.length; i++) {
