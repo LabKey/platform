@@ -27,12 +27,6 @@ import org.labkey.query.persist.QueryDef;
 import java.io.IOException;
 import java.io.InputStream;
 
-/*
-* User: Dave
-* Date: Jan 16, 2009
-* Time: 11:44:38 AM
-*/
-
 /**
  * Bean that represents a query definition that is defined in file(s) in a module.
  * This is separate from ModuleCustomQueryDefinition so that it can be cached and
@@ -90,7 +84,7 @@ public class ModuleQueryDef
 
     public boolean isHidden()
     {
-        return _metadataDef == null ? false : _metadataDef.isHidden();
+        return _metadataDef != null && _metadataDef.isHidden();
     }
 
     public String getSql()
@@ -111,11 +105,6 @@ public class ModuleQueryDef
     public String getDescription()
     {
         return _metadataDef == null ? null : _metadataDef.getDescription();
-    }
-
-    public double getSchemaVersion()
-    {
-        return _metadataDef == null ? 0 : _metadataDef.getSchemaVersion();
     }
 
     public QueryDef toQueryDef(Container container, SchemaKey schemaKey)
