@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -708,12 +709,65 @@ public class ToolsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class OverlappingIndicesAction extends SimpleViewAction<Object>
+    public class OverlappingIndicesAction extends AbstractOverlappingIndicesAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
-            MultiValuedMap<OverlapType, Row> mmap = new ArrayListValuedHashMap<>();
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+
+            return new VBox(
+                new HtmlView(DOM.createHtmlFragment(
+                    Arrays.stream(OverlapType.values()).flatMap(type ->
+                        Stream.of(
+                            type != OverlapType.UniqueOverlappingNonUnique ? DOM.BR() : null,
+                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
+                            DOM.TABLE(
+                                multiMap.get(type).stream()
+                                    .map(overlap -> DOM.TR(
+                                        DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
+                                        DOM.TD(overlap.message()))
+                                    )
+                            )
+                        )
+                    )
+                )),
+                new HtmlView(DOM.createHtmlFragment(
+                    DOM.BR(), new ButtonBuilder("Create SQL Scripts").href(OverlappingIndicesAction.class, getContainer()).usePost())
+                )
+            );
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("Overlapping Indices");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+
+    protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<Object>
+    {
+        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices()
+        {
+            MultiValuedMap<OverlapType, Overlap> multiMap = new ArrayListValuedHashMap<>();
             DbScope scope = DbScope.getLabKeyScope();
 
             ModuleLoader.getInstance().getModules().stream()
@@ -732,50 +786,27 @@ public class ToolsController extends SpringActionController
                             {
                                 switch (type)
                                 {
-                                    case Identical -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " vs. " + indexName2 + ": " + join(indexDef1.getValue())));
-                                    case Overlap, UniqueOverlappingNonUnique -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " " + join(indexDef1.getValue()) + " vs. " + indexName2 + " " + join(indexDef2.getValue())));
+                                    case Identical -> {
+                                        if (alreadySeen(indexName1, indexName2))
+                                            multiMap.put(type, new Overlap(table.getSchema().getName(), indexName1 + " vs. " + indexName2 + ": " + join(indexDef1.getValue())));
+                                    }
+                                    case Overlap, UniqueOverlappingNonUnique -> multiMap.put(type, new Overlap(table.getSchema().getName(), indexName1 + " " + join(indexDef1.getValue()) + " vs. " + indexName2 + " " + join(indexDef2.getValue())));
                                 }
                             }
                         }
                     }));
                 });
 
-            return new HtmlView(DOM.createHtmlFragment(
-                Arrays.stream(OverlapType.values()).flatMap(type ->
-                    Stream.of(
-                        type != OverlapType.Identical ? DOM.BR() : null,
-                        DOM.STRONG(StringUtilsLabKey.pluralize(mmap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
-                        DOM.TABLE(
-                            mmap.get(type).stream()
-                                .map(row -> DOM.TR(
-                                    DOM.TD(DOM.at(style, "width:120px;"), row.schemaName()),
-                                    DOM.TD(row.message()))
-                                )
-                        )
-                    )
-                ))
-            );
+            return multiMap;
         }
 
-        private record Row(String schemaName, String message) {}
+        private final Set<String> _alreadySeen = new HashSet<>();
 
-        private enum OverlapType
+        // Keep track of the identical indexes we've seen so we don't repeat them for both directions
+        private boolean alreadySeen(String name1, String name2)///
         {
-            Identical("identical column sets"),
-            Overlap("column sets that overlap at the start"),
-            UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint");
-
-            private final String _description;
-
-            OverlapType(String description)
-            {
-                _description = description;
-            }
-
-            public String getDescription()
-            {
-                return _description;
-            }
+            String key = name1.compareTo(name2) < 0 ? name1 + delim + name2 : name2 + delim + name1;
+            return !_alreadySeen.add(key);
         }
 
         private @Nullable OverlapType overlap(IndexType type1, List<ColumnInfo> cols1, IndexType type2, List<ColumnInfo> cols2)
@@ -794,9 +825,10 @@ public class ToolsController extends SpringActionController
             return null;
         }
 
+        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
+
         private String getKey(List<ColumnInfo> cols)
         {
-            String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
             return cols.stream()
                 .map(col -> col.getName().toLowerCase())
                 .collect(Collectors.joining(delim)) + delim;
@@ -808,12 +840,26 @@ public class ToolsController extends SpringActionController
                 .map(ColumnInfo::getName)
                 .toList();
         }
+    }
 
-        @Override
-        public void addNavTrail(NavTree root)
+    protected record Overlap(String schemaName, String message) {}
+
+    protected enum OverlapType
+    {
+        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid"),
+        Identical("identical column sets"),
+        Overlap("column sets that overlap at the start");
+
+        private final String _description;
+
+        OverlapType(String description)
         {
-            addBeginNavTrail(root);
-            root.addChild("Overlapping Indices");
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
         }
     }
 }
