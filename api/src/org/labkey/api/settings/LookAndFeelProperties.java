@@ -277,7 +277,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getUnsubstitutedLogoHref()
     {
-        return lookupStringValue(logoHref, AppProps.getInstance().getHomePageUrl().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
+        return lookupStringValue(logoHref, AppProps.getInstance().getHomePageActionURL().getLocalURIString().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
     }
 
     public String getUnsubstitutedLogoHrefStored()

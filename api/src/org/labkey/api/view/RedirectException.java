@@ -29,7 +29,18 @@ public class RedirectException extends RuntimeException implements SkipMothershi
 {
     private final String _url;
 
+    @Deprecated // Call the variant that takes allowAbsoluteUrl
     public RedirectException(@NotNull URLHelper url)
+    {
+        this(url, false);
+    }
+
+    public RedirectException(@NotNull URLHelper url, boolean allowAbsoluteUrl)
+    {
+        this(!allowAbsoluteUrl || url.isLocalUri(HttpView.getRootContext()) ? url.getLocalURIString() : url.getURIString());
+    }
+
+    public RedirectException(@NotNull ActionURL url)
     {
         this(url.getLocalURIString());
     }

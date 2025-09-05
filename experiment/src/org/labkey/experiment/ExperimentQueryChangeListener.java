@@ -63,7 +63,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         boolean isSamples = schema.toString().equalsIgnoreCase("samples");
         boolean isData = schema.toString().equalsIgnoreCase("exp.data");
@@ -74,7 +74,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
             return;
 
         Map<String, String> queryNameChangeMap = new CaseInsensitiveHashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             String oldVal = (String)qpc.getOldValue();
             String newVal = (String)qpc.getNewValue();

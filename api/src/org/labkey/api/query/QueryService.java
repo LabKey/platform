@@ -409,11 +409,11 @@ public interface QueryService
                 "%s was inserted or updated.",
                 "inserted or updated");
 
-        String _commentDetailed;
-        String _commentDetailedFormat;
-        String _commentSummary;
-        String _verbPastTense;
-        static String vowels = "aeiou";
+        final String _commentDetailed;
+        final String _commentDetailedFormat;
+        final String _commentSummary;
+        final String _verbPastTense;
+        final static String vowels = "aeiou";
 
         AuditAction(String commentSummary, String commentDetailedFormat, String verbPastTense)
         {
@@ -476,7 +476,7 @@ public interface QueryService
 
     Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
     void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-    void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
+    void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
     void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
 
 

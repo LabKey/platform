@@ -55,7 +55,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
@@ -150,7 +150,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         return sb.toString();
     }
 
-    private void _updateCustomViewQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private void _updateCustomViewQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange<?>> changes)
     {
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new CaseInsensitiveHashMap<>();
@@ -191,10 +191,10 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         }
     }
 
-    private void _updateCustomViewSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    private void _updateCustomViewSchemaNameChange(User user, Container container, Collection<QueryPropertyChange<?>> changes)
     {
         Map<String, String> schemaNameChangeMap = new CaseInsensitiveHashMap<>();
-        for (QueryPropertyChange qpc : changes)
+        for (QueryPropertyChange<?> qpc : changes)
         {
             if (qpc.getOldValue().equals(qpc.getNewValue()))
                 continue;

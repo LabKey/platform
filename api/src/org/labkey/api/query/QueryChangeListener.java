@@ -61,7 +61,7 @@ public interface QueryChangeListener
      * @param property The QueryProperty that has changed.
      * @param changes The set of change events.  Each QueryPropertyChange is associated with a single table or query.
      */
-    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes);
+    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes);
 
     /**
      * This method is called when a set of tables or queries are deleted from the given container and schema.

@@ -35,6 +35,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
@@ -457,6 +458,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class));
                 metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
                 metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
+
+                metric.put("datasetsWithFileColumnCount", new SqlSelector(StudySchema.getInstance().getSchema(), """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", StudySchema.getInstance().getDatasetSchemaName(), PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
 
                 // grab the counts of report and dataset notification settings (by notification option)
                 Collection<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
