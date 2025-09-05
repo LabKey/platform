@@ -131,10 +131,8 @@ public enum Unit
 
     public Number toStorageUnitValue(@NotNull Number v)
     {
-        Quantity.LOG.info("In toStorageUnitValue with value {}", v);
         if (this == kindOfQuantity.getStorageUnit())
             return v;
-        Quantity.LOG.info("in toStorageUnitValue with value {} ", v);
         return convert(v.doubleValue(), this, kindOfQuantity.storageUnit);
     }
 
@@ -142,7 +140,6 @@ public enum Unit
     {
         if (this == kindOfQuantity.getStorageUnit())
             return v;
-        Quantity.LOG.info("in fromStorageUnitValue with value {} ", v);
         return convert(v.doubleValue(), kindOfQuantity.storageUnit, this);
     }
 
@@ -190,7 +187,7 @@ public enum Unit
 
     public static double convert(double value, @NotNull Unit from, @NotNull Unit to)
     {
-        Quantity.LOG.info("Converting value {} from {} to {}", value, from.name(), to.name());
+        Quantity.LOG.debug("Converting value {} from {} to {}", value, from.name(), to.name());
         if (from.base != to.base)
             throw new IllegalArgumentException("Can't convert " + from.name() + " to " + to.name());
         return from==to ? value : to.fromBaseUnitValue(from.toBaseUnitValue(value));
