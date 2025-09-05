@@ -308,7 +308,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RawAmount ->
             {
-                return wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                return columnInfo;
             }
             case StoredAmount ->
             {
@@ -335,7 +338,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RawUnits ->
             {
-                return wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                return columnInfo;
             }
             case Units ->
             {
