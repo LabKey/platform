@@ -876,7 +876,7 @@ public class ToolsController extends SpringActionController
                             if (type != null)
                             {
                                 if (type != OverlapType.Identical || !alreadySeen(indexName1, indexName2))
-                                    multiMap.put(type, new Overlap(table.getSchema().getName(), indexName1, indexDef1, indexName2, indexDef2));
+                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexName1, indexDef1, indexName2, indexDef2));
                             }
                         }
                     }));
@@ -927,7 +927,7 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    protected record Overlap(String schemaName, String indexName1, Pair<IndexType, List<ColumnInfo>> indexDef1, String indexName2, Pair<IndexType, List<ColumnInfo>> indexDef2) {}
+    protected record Overlap(String schemaName, String tableName, String indexName1, Pair<IndexType, List<ColumnInfo>> indexDef1, String indexName2, Pair<IndexType, List<ColumnInfo>> indexDef2) {}
 
     protected enum OverlapType
     {
@@ -973,13 +973,13 @@ public class ToolsController extends SpringActionController
 
                 if (dropIndex != null)
                 {
-                    dropIndex(writer, overlap.schemaName, dropIndex, otherIndex);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
                 }
                 else
                 {
                     writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
-                    dropIndex(writer, overlap.schemaName, overlap.indexName1, overlap.indexName2);
-                    dropIndex(writer, overlap.schemaName, overlap.indexName2, overlap.indexName1);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName2, overlap.indexName1);
                     writer.write('\n');
                 }
             }
@@ -995,7 +995,7 @@ public class ToolsController extends SpringActionController
             @Override
             void writeScript(Writer writer, Overlap overlap) throws IOException
             {
-                dropIndex(writer, overlap.schemaName, overlap.indexName1, overlap.indexName2);
+                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
             }
         };
 
@@ -1025,10 +1025,15 @@ public class ToolsController extends SpringActionController
                 .toList();
         }
 
-        protected void dropIndex(Writer writer, String schemaName, String dropIndex, String otherIndex) throws IOException
+        protected void dropIndex(Writer writer, String schemaName, String tableName, String dropIndex, String otherIndex) throws IOException
         {
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
             writer.write("-- This index overlaps with " + otherIndex + "\n");
-            writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
+
+            if (dialect.isPostgreSQL())
+                writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
+            else
+                writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
         }
     }
 }
