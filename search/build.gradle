@@ -341,7 +341,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.commons:commons-csv:1.14.0",
+            "org.apache.commons:commons-csv:1.14.1",
             "Commons CSV ™",
             "Apache",
             "http://commons.apache.org/proper/commons-csv/",
