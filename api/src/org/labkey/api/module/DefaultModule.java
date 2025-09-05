@@ -1040,7 +1040,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         for (String script : dir.listNames())
         {
-            if ((Strings.CI.endsWith(script, ".sql") || Strings.CI.endsWith(script, ".jsp")) && Strings.CI.endsWith(script, schema.getResourcePrefix() + "-"))
+            if ((Strings.CI.endsWith(script, ".sql") || Strings.CI.endsWith(script, ".jsp")) && Strings.CI.startsWith(script, schema.getResourcePrefix() + "-"))
                 fileNames.add(script);
         }
 

@@ -142,7 +142,7 @@ public class WikiVersion
     public String getTitle()
     {
         if (null == _title)
-            _title = (null == _wikiName || Strings.CS.equals(_wikiName, "default")) ? "Wiki" : _wikiName;
+            _title = (null == _wikiName || "default".equals(_wikiName)) ? "Wiki" : _wikiName;
         return _title;
     }
 

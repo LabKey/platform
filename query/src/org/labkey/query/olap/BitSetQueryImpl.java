@@ -1318,7 +1318,7 @@ public class BitSetQueryImpl
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
             Hierarchy h = r.getHierarchy();
-            if (null == h || (null != hierarchyName && !Strings.CS.equals(hierarchyName, h.getUniqueName())))
+            if (null == h || (null != hierarchyName && !hierarchyName.equals(h.getUniqueName())))
                 return new UnionResult(results);
             hierarchyName = h.getUniqueName();
         }

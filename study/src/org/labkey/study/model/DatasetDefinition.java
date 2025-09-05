@@ -633,7 +633,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     /**
      * For consistency, now return the equivalent of
      *    StudyUserSchema().createSchema().getSchema("Datasets").getTable(_dataset.getLabel());
-     @*
+     *
      * Internal study code can still use the DatasetSchemaTableInfo methods, however, we should try hard to
      * remove usages of DatasetSchemaTableInfo.
      */

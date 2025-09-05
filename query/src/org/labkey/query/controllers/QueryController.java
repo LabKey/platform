@@ -3283,7 +3283,7 @@ public class QueryController extends SpringActionController
             if (isBlank(str))
                 str = form.getReturnUrl();
 
-            if (Strings.CS.equals(str, "details.view"))
+            if ("details.view".equals(str))
             {
                 if (null == insertedRow)
                     return super.getSuccessURL(form);
@@ -8290,7 +8290,7 @@ public class QueryController extends SpringActionController
             return rowFiles;
         }
 
-        private List<Pair<String, String>> getUploadedTemplates(QueryImportTemplateForm form, DomainKind kind) throws ValidationException, QueryUpdateServiceException, ExperimentException
+        private List<Pair<String, String>> getUploadedTemplates(QueryImportTemplateForm form, DomainKind<?> kind) throws ValidationException, QueryUpdateServiceException, ExperimentException
         {
             FileContentService fcs = FileContentService.get();
             if (fcs == null)
