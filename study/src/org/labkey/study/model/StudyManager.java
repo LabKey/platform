@@ -3768,19 +3768,15 @@ public class StudyManager
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
             DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
-            if (datasetDefinitionEntry.datasetDefinition.isShared())
-            {
-                continue;
-            }
             _DatasetDomainChange domainChange = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             Domain domain = domainChange.domain;
-            domain.setPropertyIndices(datasetImportInfo.indices);
 
-            if (domain.isProvisioned())
+            if (domain.isProvisioned() && !datasetDefinitionEntry.datasetDefinition.isShared())
             {
                 // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
                 // We need to drop the indices first, adjust the properties, and then add the new indices. This method
                 // allows for that.
+                domain.setPropertyIndices(datasetImportInfo.indices);
                 StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
             }
             else
