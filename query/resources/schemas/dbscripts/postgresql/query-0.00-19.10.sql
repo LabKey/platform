@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* query-0.00-12.10.sql */
-
 CREATE SCHEMA query;
 
 CREATE TABLE query.QueryDef
@@ -29,7 +27,7 @@ CREATE TABLE query.QueryDef
 
     Container ENTITYID NOT NULL,
     Name VARCHAR(200) NOT NULL,
-    Schema VARCHAR(50) NOT NULL,
+    Schema VARCHAR(200) NOT NULL,
     Sql TEXT,
     MetaData TEXT,
     Description TEXT,
@@ -47,7 +45,7 @@ CREATE TABLE query.CustomView
     CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
-    Schema VARCHAR(50) NOT NULL,
+    Schema VARCHAR(200) NOT NULL,
     QueryName VARCHAR(200) NOT NULL,
 
     Container ENTITYID NOT NULL,
@@ -72,17 +70,31 @@ CREATE TABLE query.ExternalSchema
     Container ENTITYID NOT NULL,
     DataSource VARCHAR(50) NOT NULL,
     UserSchemaName VARCHAR(50) NOT NULL,
-    DbSchemaName VARCHAR(50) NOT NULL,
+    SourceSchemaName VARCHAR(50) NULL,
 
     Editable BOOLEAN NOT NULL DEFAULT '0',
     MetaData TEXT NULL,
     Indexable BOOLEAN NOT NULL DEFAULT TRUE,
-    Tables VARCHAR(8000) NOT NULL DEFAULT '*',
+    Tables VARCHAR(8000) NULL,  -- Comma-separated list of tables to expose; null represents all tables
 
     CONSTRAINT PK_DbUserSchema PRIMARY KEY(ExternalSchemaId)
 );
 
 CREATE UNIQUE INDEX UQ_ExternalSchema ON query.ExternalSchema (Container, LOWER(UserSchemaName));
+
+ALTER TABLE query.ExternalSchema
+    ADD COLUMN SchemaType VARCHAR(50) NOT NULL DEFAULT 'external';
+
+ALTER TABLE query.ExternalSchema
+    ADD COLUMN SchemaTemplate VARCHAR(50);
+
+-- Require NOT NULL SourceSchemaName and Tables when SchemaTemplate IS NULL
+ALTER TABLE query.ExternalSchema
+    ADD CONSTRAINT "CK_SchemaTemplate"
+    CHECK (SchemaTemplate IS NOT NULL OR (SchemaTemplate IS NULL AND SourceSchemaName IS NOT NULL AND Tables IS NOT NULL));
+
+ALTER TABLE query.ExternalSchema
+    ADD COLUMN FastCacheRefresh BOOLEAN NOT NULL DEFAULT '0';
 
 CREATE TABLE query.QuerySnapshotDef
 (
@@ -110,53 +122,7 @@ CREATE TABLE query.QuerySnapshotDef
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
 
-/* query-12.20-12.30.sql */
-
-ALTER TABLE query.querydef ALTER COLUMN schema TYPE VARCHAR(200);
-
-/* query-12.301-13.10.sql */
-
-ALTER TABLE query.ExternalSchema
-    ADD COLUMN SchemaType VARCHAR(50) NOT NULL DEFAULT 'external';
-
-ALTER TABLE query.ExternalSchema
-    ADD COLUMN SchemaTemplate VARCHAR(50);
-
-ALTER TABLE query.ExternalSchema
-    RENAME DbSchemaName TO SourceSchemaName;
-
-ALTER TABLE query.ExternalSchema
-    ALTER COLUMN SourceSchemaName DROP NOT NULL;
-
--- SchemaTemplate is not compatible with the SourceSchemaName, Tables, and Metadata columns
-ALTER TABLE query.ExternalSchema
-    ADD CONSTRAINT "CK_SchemaTemplate"
-    CHECK ((SchemaTemplate IS NULL     AND SourceSchemaName IS NOT NULL AND Tables IS NOT NULL) OR
-           (SchemaTemplate IS NOT NULL AND SourceSchemaName IS NULL     AND Tables IS NULL     AND MetaData IS NULL));
-
--- Remove default '*' and allow null Tables column
-ALTER TABLE query.ExternalSchema ALTER COLUMN Tables DROP DEFAULT;
-ALTER TABLE query.ExternalSchema ALTER COLUMN Tables DROP NOT NULL;
-
--- Also checked in as query-12.30-12.301 since it's safe to rerun.
--- BE SURE TO CONSOLIDATE QUERY MODULE SCRIPTS STARTING WITH 12.301 for the 13.1 release.
-
-ALTER TABLE query.customview ALTER COLUMN schema TYPE VARCHAR(200);
-
--- Remove check constraint to allow overriding the schema template,
--- but continue to require NOT NULL SourceSchemaName and Tables when SchemaTemplate IS NULL.
-ALTER TABLE query.ExternalSchema
-   DROP CONSTRAINT "CK_SchemaTemplate";
-
-ALTER TABLE query.ExternalSchema
-    ADD CONSTRAINT "CK_SchemaTemplate"
-    CHECK (SchemaTemplate IS NOT NULL OR (SchemaTemplate IS NULL AND SourceSchemaName IS NOT NULL AND Tables IS NOT NULL));
-
-/* query-13.10-13.20.sql */
-
 ALTER TABLE query.QuerySnapshotDef ADD COLUMN OptionsId INT NULL;
-
-/* query-14.20-14.30.sql */
 
 CREATE TABLE query.OlapDef
 (
@@ -174,8 +140,3 @@ CREATE TABLE query.OlapDef
     CONSTRAINT PK_OlapDef PRIMARY KEY (RowId),
     CONSTRAINT UQ_OlapDef UNIQUE (Container, Name)
 );
-
-/* query-17.20-17.30.sql */
-
-ALTER TABLE query.ExternalSchema
-  ADD COLUMN FastCacheRefresh BOOLEAN NOT NULL DEFAULT '0';
