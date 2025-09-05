@@ -14,6 +14,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -33,6 +34,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -743,7 +746,7 @@ public class ToolsController extends SpringActionController
                 )),
                 new HtmlView(DOM.createHtmlFragment(
                     DOM.BR(),
-                    new ButtonBuilder("Create SQL Scripts").href(OverlappingIndicesAction.class, getContainer()).usePost())
+                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(OverlappingIndicesAction.class, getContainer()).usePost())
                 )
             );
         }
@@ -791,34 +794,26 @@ public class ToolsController extends SpringActionController
 
                 DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                 Module module = schema.getModule();
-                SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-                String scriptsPath = module.getSqlScriptsPath(dialect);
                 Double schemaVersion = module.getSchemaVersion();
-
-                if (scriptsPath == null)
-                    throw new IllegalStateException("No scripts path found for " + module.getName());
                 if (schemaVersion == null)
                     throw new IllegalStateException("Schema version was null for " + module.getName());
 
-                String otherScriptsPath = dialect.isPostgreSQL() ? scriptsPath.replace("postgresql", "sqlserver") : scriptsPath.replace("sqlserver", "postgresql");
-                String testFilename = getScriptFilename(schemaName, schemaVersion);
-                final String filename;
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+                File scriptDirectory = provider.getScriptDirectory(dialect);
+                if (scriptDirectory == null)
+                    throw new IllegalStateException("No scripts path found for " + module.getName());
 
-                // If the file already exists in the scripts directory for the other database then don't bump the schema version
-                if (!new File(otherScriptsPath, testFilename).exists())
-                {
-                    filename = testFilename;
-                }
-                else
-                {
-                    filename = getScriptFilename(schemaName, schemaVersion - 0.001);
-                }
-
-                // TODO: Create in the scripts directory and add to git
-                File file = new File("c:\\temp\\dbscripts\\" + filename);
+                String filename = getScriptFilename(schemaName, schemaVersion);
 
                 try
                 {
+                    // Create script file and add to VCS
+                    File file = FileUtil.appendName(scriptDirectory, filename);
+                    FileUtil.createNewFile(file);
+                    Vcs vcs = VcsService.get().getVcs(scriptDirectory);
+                    if (null != vcs)
+                        vcs.addFile(filename);
                     return new BufferedWriter(new FileWriter(file, StringUtilsLabKey.DEFAULT_CHARSET));
                 }
                 catch (IOException e)
