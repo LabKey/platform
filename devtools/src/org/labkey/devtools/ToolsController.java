@@ -41,10 +41,13 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,9 +55,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -717,24 +722,24 @@ public class ToolsController extends SpringActionController
             MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
 
             return new VBox(
-                new HtmlView(DOM.createHtmlFragment(
-                    Arrays.stream(OverlapType.values()).flatMap(type ->
-                        Stream.of(
-                            type != OverlapType.UniqueOverlappingNonUnique ? DOM.BR() : null,
-                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
-                            DOM.TABLE(
-                                multiMap.get(type).stream()
-                                    .map(overlap -> DOM.TR(
-                                        DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
-                                        DOM.TD(overlap.message()))
+                    new HtmlView(DOM.createHtmlFragment(
+                            Arrays.stream(OverlapType.values()).flatMap(type ->
+                                    Stream.of(
+                                            type != OverlapType.UniqueOverlappingNonUnique ? DOM.BR() : null,
+                                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
+                                            DOM.TABLE(
+                                                    multiMap.get(type).stream()
+                                                            .map(overlap -> DOM.TR(
+                                                                    DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
+                                                                    DOM.TD(overlap.message()))
+                                                            )
+                                            )
                                     )
                             )
-                        )
+                    )),
+                    new HtmlView(DOM.createHtmlFragment(
+                            DOM.BR(), new ButtonBuilder("Create SQL Scripts").href(OverlappingIndicesAction.class, getContainer()).usePost())
                     )
-                )),
-                new HtmlView(DOM.createHtmlFragment(
-                    DOM.BR(), new ButtonBuilder("Create SQL Scripts").href(OverlappingIndicesAction.class, getContainer()).usePost())
-                )
             );
         }
 
@@ -748,7 +753,44 @@ public class ToolsController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors)
         {
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+
+            Arrays.stream(OverlapType.values()).forEach(type -> multiMap.get(type).forEach(overlap -> {
+                try (Writer writer = getFileWriter(overlap.schemaName()))
+                {
+                    type.writeScript(writer, overlap);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }));
+
             return true;
+        }
+
+        private final Map<String, File> _fileMap = new HashMap<>();
+
+        private Writer getFileWriter(String schemaName) throws IOException
+        {
+            File file = _fileMap.computeIfAbsent(schemaName, n -> new File("c:\\temp\\dbscripts\\" + n + ".sql"));
+
+            /* TODO
+
+            double schemaVersion = associated module's schema version
+            if (!existing script for other database is at that version)
+            {
+                schemaVersion = schemaVersion + 0.001;
+                update module schemaVersion
+            }
+
+            create file in appropriate dbscripts directory
+            add to git
+            put in map
+
+             */
+            FileWriter fileWriter = new FileWriter(file, StringUtilsLabKey.DEFAULT_CHARSET);
+            return new BufferedWriter(fileWriter);
         }
 
         @Override
@@ -846,9 +888,30 @@ public class ToolsController extends SpringActionController
 
     protected enum OverlapType
     {
-        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid"),
-        Identical("identical column sets"),
-        Overlap("column sets that overlap at the start");
+        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid")
+        {
+            @Override
+            void writeScript(Writer writer, Overlap overlap)
+            {
+                // Do nothing
+            }
+        },
+        Identical("identical column sets")
+        {
+            @Override
+            void writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                writer.write(overlap.message);
+            }
+        },
+        Overlap("column sets that overlap at the start")
+        {
+            @Override
+            void writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                writer.write(overlap.message);
+            }
+        };
 
         private final String _description;
 
@@ -861,5 +924,7 @@ public class ToolsController extends SpringActionController
         {
             return _description;
         }
+
+        abstract void writeScript(Writer writer, Overlap overlap) throws IOException;
     }
 }
