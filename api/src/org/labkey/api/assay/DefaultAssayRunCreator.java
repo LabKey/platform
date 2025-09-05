@@ -1223,11 +1223,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             catch (ConversionException e)
             {
-                String message = ConvertHelper.getStandardConversionErrorMessage(value, label, type);
-                if (e.getCause() instanceof ArithmeticException)
-                    message += ": " + e.getCause().getLocalizedMessage();
+                String message;
+                if (e instanceof ConvertHelper.FileConversionException fce)
+                    message = fce.getMessage();
                 else
-                    message += ".";
+                {
+                    message = ConvertHelper.getStandardConversionErrorMessage(value, label, type);
+                    if (e.getCause() instanceof ArithmeticException)
+                        message += ": " + e.getCause().getLocalizedMessage();
+                    else
+                        message += ".";
+                }
 
                 // Attempt to resolve lookups by display value
                 boolean skipError = false;
