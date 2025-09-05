@@ -1,6 +1,6 @@
 package org.labkey.study.view;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
@@ -61,7 +61,7 @@ public class StudyToolsWebPartFactory extends ToolsWebPartFactory
         {
             for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
             {
-                if (StringUtils.equalsIgnoreCase(folderTab.getName(), StudyFolderTabs.ParticipantsPage.PAGE_ID))
+                if (Strings.CI.equals(folderTab.getName(), StudyFolderTabs.ParticipantsPage.PAGE_ID))
                 {
                     ActionURL url = folderTab.getURL(context.getContainer(), context.getUser());
                     return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", url);

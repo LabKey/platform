@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -6250,7 +6251,7 @@ public class AdminController extends SpringActionController
                 {
                     for (String storeName : form.getEnabledCloudStore())
                     {
-                        if (StringUtils.equalsIgnoreCase(cloudRootName, storeName))
+                        if (Strings.CI.equals(cloudRootName, storeName))
                             return;
                     }
                 }
@@ -6442,7 +6443,7 @@ public class AdminController extends SpringActionController
             if (null != fileRootPath)
             {
                 String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath);
-                if (StringUtils.equalsIgnoreCase(absolutePath, form.getFolderRootPath()))
+                if (Strings.CI.equals(absolutePath, form.getFolderRootPath()))
                 {
                     if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
                         throw new UnauthorizedException("Only site admins can change file roots");

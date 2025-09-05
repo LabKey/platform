@@ -15,7 +15,7 @@
  */
 package org.labkey.query.olap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1318,7 +1318,7 @@ public class BitSetQueryImpl
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
             Hierarchy h = r.getHierarchy();
-            if (null == h || (null != hierarchyName && !StringUtils.equals(hierarchyName, h.getUniqueName())))
+            if (null == h || (null != hierarchyName && !Strings.CS.equals(hierarchyName, h.getUniqueName())))
                 return new UnionResult(results);
             hierarchyName = h.getUniqueName();
         }

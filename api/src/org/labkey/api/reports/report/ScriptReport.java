@@ -119,7 +119,7 @@ public abstract class ScriptReport extends AbstractReport
                 // need to reset the report id since we want to render the data grid, not the report
                 settings.setReportId(null);
 
-                UserSchema schema = base.createView(context, settings).getSchema();
+                UserSchema schema = base.createView(context, settings, null).getSchema();
                 return new ReportQueryView(schema, settings);
             }
         }

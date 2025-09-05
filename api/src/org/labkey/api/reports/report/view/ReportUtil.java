@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -587,7 +588,7 @@ public class ReportUtil
 
         for (Report report : ReportService.get().getReports(user, c, key))
         {
-            if (StringUtils.equalsIgnoreCase(trimmedName, report.getDescriptor().getReportName().trim()))
+            if (Strings.CI.equals(trimmedName, report.getDescriptor().getReportName().trim()))
                 return true;
         }
         return false;

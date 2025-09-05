@@ -23,6 +23,7 @@ import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -929,7 +930,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             for (Report existingReport : getReports(ctx.getUser(), ctx.getContainer(), key))
             {
-                if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
+                if (Strings.CI.equals(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
                 {
                     // Don't delete reports we just added. This can happen if the reportKey is not unique and
                     // we have two or more reports with the same name. This also works in the reload case since
@@ -979,7 +980,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             for (Report report : getReports(context.getUser(), context.getContainer(), key))
             {
-                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
+                if (Strings.CS.equals(reportName, report.getDescriptor().getReportName()))
                     return true;
             }
             return false;

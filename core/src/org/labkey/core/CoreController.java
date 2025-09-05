@@ -2389,7 +2389,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public static class DismissWarningsAction extends MutatingApiAction
+    public static class DismissWarningsAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -2402,7 +2402,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public static class DisplayWarningsAction extends MutatingApiAction
+    public static class DisplayWarningsAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2582,7 +2582,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandlerAbstract)
         {
             CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
 
@@ -2608,7 +2608,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel.");
         }
@@ -2620,7 +2620,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandler)
         {
             HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
             panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
@@ -2678,12 +2678,6 @@ public class CoreController extends SpringActionController
         {
             super();
             _dataStateHandler = new CoreQCStateHandler();
-        }
-
-        @Override
-        public DataStateHandler getDataStateHandler()
-        {
-            return _dataStateHandler;
         }
 
         @Override
@@ -2746,7 +2740,7 @@ public class CoreController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             String newBody = form.getBody();
 
-            if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
+            if (WikiRendererType.HTML.name().equals(form.getToFormat()))
             {
                 WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
                 newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody, null).toString();

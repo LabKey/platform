@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<StudyController.ViewPrefsBean> me = HttpView.currentView();
@@ -80,7 +81,7 @@
 <%!
     HtmlString getLabel(Pair<String, String> view, String defaultView)
     {
-        if (StringUtils.equals(view.getValue(), defaultView))
+        if (Strings.CS.equals(view.getValue(), defaultView))
             return HtmlStringBuilder.of().startTag("b").append(view.getKey()).endTag("b").getHtmlString();
 
         return h(view.getKey());

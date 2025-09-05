@@ -30,6 +30,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -822,7 +823,7 @@ public class QueryController extends SpringActionController
                             .map(def -> TR(TD(
                                 at(DOM.Attribute.style, "padding-left:20px"),
                                 hasRead ? LinkBuilder.simpleLink(def.getUserSchemaName() +
-                                    (!StringUtils.equals(def.getSourceSchemaName(), def.getUserSchemaName()) ? " (" + def.getSourceSchemaName() + ")" : ""), urls.urlUpdateExternalSchema(c, def))
+                                    (!Strings.CS.equals(def.getSourceSchemaName(), def.getUserSchemaName()) ? " (" + def.getSourceSchemaName() + ")" : ""), urls.urlUpdateExternalSchema(c, def))
                                     : def.getUserSchemaName()
                             )))
                     )))
@@ -3282,7 +3283,7 @@ public class QueryController extends SpringActionController
             if (isBlank(str))
                 str = form.getReturnUrl();
 
-            if (StringUtils.equals(str, "details.view"))
+            if (Strings.CS.equals(str, "details.view"))
             {
                 if (null == insertedRow)
                     return super.getSuccessURL(form);

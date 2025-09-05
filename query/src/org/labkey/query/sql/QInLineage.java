@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -57,7 +57,7 @@ final public class QInLineage extends QExpr
         ColumnInfo lhsCol = null;
         if (LHS instanceof QueryServiceImpl.QColumnInfo || LHS instanceof QMethodCall)
             lhsCol = LHS.createColumnInfo(sqlti, "_", query);
-        if (lhsCol == null || !StringUtils.equals(lhsCol.getConceptURI(), BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
+        if (lhsCol == null || !Strings.CS.equals(lhsCol.getConceptURI(), BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
         {
             query.getParseErrors().add(new QueryParseException(operator() + " requires argument to be a lineage object", null, getLine(), getColumn()));
             return;
@@ -70,7 +70,7 @@ final public class QInLineage extends QExpr
         BaseColumnInfo rhsCol = new BaseColumnInfo("_", JdbcType.INTEGER);
         if (null != col)
             col.copyColumnAttributesTo(rhsCol);
-        if (!StringUtils.equals(rhsCol.getConceptURI(), BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
+        if (!Strings.CS.equals(rhsCol.getConceptURI(), BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
         {
             query.getParseErrors().add(new QueryParseException(operator() + " requires argument to be a lineage object", null, getLine(), getColumn()));
             return;

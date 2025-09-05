@@ -15,7 +15,7 @@
  */
 package org.labkey.api.security;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +47,7 @@ public class DummyAntiVirusService implements AntiVirusService
             if (len >= TEST_VIRUS_CONTENT.length() && len <= TEST_VIRUS_CONTENT.length()+2)
             {
                 String s = PageFlowUtil.getStreamContentsAsString(scannable.getInputStream());
-                if (StringUtils.equals(TEST_VIRUS_CONTENT, s.trim()))
+                if (Strings.CS.equals(TEST_VIRUS_CONTENT, s.trim()))
                 {
                     String logmessage = "File failed virus scan: LABKEY test virus detected";
                     warnAndAuditLog(LOG, logmessage, info, originalName);

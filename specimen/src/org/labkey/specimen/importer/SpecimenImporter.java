@@ -2274,9 +2274,9 @@ public class SpecimenImporter extends SpecimenTableManager
         SpecimenColumn _participantIdCol = null;
         for (SpecimenColumn sc : _specimenColumns)
         {
-            if (StringUtils.equals("VisitValue", sc.getDbColumnName()))
+            if ("VisitValue".equals(sc.getDbColumnName()))
                 _visitCol = sc;
-            else if (StringUtils.equals("Ptid", sc.getDbColumnName()))
+            else if ("Ptid".equals(sc.getDbColumnName()))
                 _participantIdCol = sc;
         }
 

@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.view.ViewContext;
 
@@ -52,7 +53,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
             @Override
             public boolean check(String method)
             {
-                return !StringUtils.equalsIgnoreCase("GET", method);
+                return !Strings.CI.equals("GET", method);
             }
         },
 

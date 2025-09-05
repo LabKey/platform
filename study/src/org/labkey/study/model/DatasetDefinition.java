@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -556,7 +557,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public void setTypeURI(String typeURI, boolean isUpgrade)
     {
         verifyMutability();
-        if (StringUtils.equals(typeURI, _typeURI))
+        if (Strings.CS.equals(typeURI, _typeURI))
             return;
         if (null != _typeURI && !isUpgrade)
             throw new IllegalStateException("TypeURI is already set");
@@ -632,7 +633,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     /**
      * For consistency, now return the equivalent of
      *    StudyUserSchema().createSchema().getSchema("Datasets").getTable(_dataset.getLabel());
-     *
+     @*
      * Internal study code can still use the DatasetSchemaTableInfo methods, however, we should try hard to
      * remove usages of DatasetSchemaTableInfo.
      */

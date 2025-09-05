@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
+import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 
@@ -60,20 +61,15 @@ public class VisTestSchema extends UserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        switch (name.toLowerCase())
+        return switch (name.toLowerCase())
         {
-            case "demographics":
-                return createDemographics();
-            case "study":
-                return createStudy();
-            case "visit":
-                return createVisit();
-            case "flow":
-                return createAssay("Flow", "cellcount", 10000, "lin");
-            case "ics":
-                return createAssay("ICS", "MFI", 1000, "log");
-        }
-        return null;
+            case "demographics" -> createDemographics();
+            case "study" -> createStudy();
+            case "visit" -> createVisit();
+            case "flow" -> createAssay("Flow", "cellcount", 10000, "lin");
+            case "ics" -> createAssay("ICS", "MFI", 1000, "log");
+            default -> null;
+        };
     }
 
 
@@ -174,13 +170,6 @@ public class VisTestSchema extends UserSchema
     public static final List<String> humans = Arrays.asList(
             "P001001","P001002","P001003","P001004","P001005","P001006","P001007","P001008",
             "P002001","P002002","P002003","P002004","P002005","P002006","P002007","P002008"
-    );
-    public static final List<String> males = Arrays.asList(
-            "P001001","P001003","P001005","P001007",
-            "P002001","P002003","P002005","P002007",
-            "P003001","P003003","P003005","P003007",
-            "P004001","P004003","P004005","P004007",
-            "P005001","P005003","P005005","P005007"
     );
 
     TableInfo createDemographics()
@@ -370,7 +359,7 @@ public class VisTestSchema extends UserSchema
 
     @Nullable
     @Override
-    public VisualizationProvider createVisualizationProvider()
+    public VisualizationProvider<?> createVisualizationProvider()
     {
         return new _VisualizationProvider();
     }
@@ -412,7 +401,7 @@ public class VisTestSchema extends UserSchema
         }
 
         @Override
-        public void appendAggregates(StringBuilder sql, Map columnAliases, Map intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
+        public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
         {
 
         }
@@ -424,13 +413,13 @@ public class VisTestSchema extends UserSchema
         }
 
         @Override
-        public void addExtraResponseProperties(Map extraProperties)
+        public void addExtraResponseProperties(Map<String, Object> extraProperties)
         {
 
         }
 
         @Override
-        public void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map props)
+        public void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map<String, Object> props)
         {
 
         }
