@@ -2,6 +2,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -177,6 +178,29 @@ public interface AuditHandler
                 modifiedRow.put(nameFromAlias, entry.getValue());
             }
         }
+
+        // we want to include the fields that indicate parent lineage has changed.
+        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
+        Set<String> originalEncodedInputColumns = new CaseInsensitiveHashSet();
+        for (String fieldName : row.keySet())
+        {
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+            {
+                // Issue 53825: LKSM/LKB: Sample Timeline entries for lineage updates with domains containing & or . may be incorrect
+                String[] parts = fieldName.split("/", 2);
+                String prefix = parts[0];
+                String dataType = parts[1];
+                originalEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
+            }
+        }
+        row.forEach((fieldName, value) -> {
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+                if (!originalRow.containsKey(fieldName) && !originalEncodedInputColumns.contains(fieldName))
+                {
+                    modifiedRow.put(fieldName, value);
+                }
+        });
+
         return new Pair<>(originalRow, modifiedRow);
     }
 }
