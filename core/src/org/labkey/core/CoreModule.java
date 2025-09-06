@@ -550,12 +550,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
             "Restore controller-first URLS",
-            "Generate URLs in a legacy format the puts the controller before the folder path. This option will be removed in LabKey Server 26.3.",
+            "Generate URLs in a legacy format that puts the controller name before the folder path. This option will be removed in LabKey Server 26.3.",
             false, false, OptionalFeatureService.FeatureType.Deprecated
         ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
-            "Require standard path-first URLs.",
+            "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
             false
         );
 

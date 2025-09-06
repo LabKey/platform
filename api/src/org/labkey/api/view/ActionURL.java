@@ -555,7 +555,8 @@ public class ActionURL extends URLHelper implements Cloneable
         }
         else
         {
-            if (OptionalFeatureService.get().isFeatureEnabled(AppProps.REJECT_CONTROLLER_FIRST_URLS))
+            // Reject controller-first URLs if that experimental feature is enabled AND the generate controller-first URLs option is NOT enabled. Otherwise, admin would end up in a very bad state.
+            if (OptionalFeatureService.get().isFeatureEnabled(AppProps.REJECT_CONTROLLER_FIRST_URLS) && !OptionalFeatureService.get().isFeatureEnabled(AppProps.GENERATE_CONTROLLER_FIRST_URLS))
                 throw new IllegalArgumentException("Controller-first URLs are not allowed! (" + savedPath +")");
             setIsCanonical(!useContainerRelativeURL());
         }
