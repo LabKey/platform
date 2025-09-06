@@ -1380,7 +1380,6 @@ public class AdminController extends SpringActionController
             props.setRibbonMessage(form.getRibbonMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
-            props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
             props.setAllowApiKeys(form.isAllowApiKeys());
             props.setApiKeyExpirationSeconds(form.getApiKeyExpirationSeconds());
             props.setAllowSessionKeys(form.isAllowSessionKeys());
@@ -2349,7 +2348,6 @@ public class AdminController extends SpringActionController
 
         private String _baseServerURL;
         private String _callbackPassword;
-        private boolean _useContainerRelativeURL;
         private boolean _allowApiKeys;
         private int _apiKeyExpirationSeconds;
         private boolean _allowSessionKeys;
@@ -2556,16 +2554,6 @@ public class AdminController extends SpringActionController
         public void setRibbonMessage(String ribbonMessage)
         {
             _ribbonMessage = ribbonMessage;
-        }
-
-        public boolean getUseContainerRelativeURL()
-        {
-            return _useContainerRelativeURL;
-        }
-
-        public void setUseContainerRelativeURL(boolean useContainerRelativeURL)
-        {
-            _useContainerRelativeURL = useContainerRelativeURL;
         }
 
         public boolean isAllowApiKeys()

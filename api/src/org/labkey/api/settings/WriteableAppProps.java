@@ -215,7 +215,7 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setUseContainerRelativeURL(boolean b)
     {
-        storeBooleanValue(useContainerRelativeURL, b);
+        OptionalFeatureService.get().setFeatureEnabled(GENERATE_CONTROLLER_FIRST_URLS, !b, null);
     }
 
     public void setAllowApiKeys(boolean b)
