@@ -36,6 +36,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * NOTE: This class only exists to use internal classes of the remoteapi package that we haven't exposed to the public yet.
@@ -78,15 +80,15 @@ public class SelectRowsStreamHack
                     final InputStream is;
                     if (saveResponseToTempFile)
                     {
-                        final File tempFile = FileUtil.createTempFile("SelectRows-", ".tmp");
+                        final File tempFile = FileUtil.createTempFile("SelectRows-", ".tmp.gz");
                         _log.debug("Downloading SelectRows JSON to file: " + tempFile);
 
-                        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile)); InputStream ris = new BufferedInputStream(response.getInputStream()))
+                        try (OutputStream os = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tempFile))); InputStream ris = new BufferedInputStream(response.getInputStream()))
                         {
                             IOUtils.copy(ris, os);
                         }
 
-                        is = new BufferedInputStream(new FileInputStream(tempFile))
+                        is = new BufferedInputStream(new GZIPInputStream(new FileInputStream(tempFile)))
                         {
                             @Override
                             public void close() throws IOException
