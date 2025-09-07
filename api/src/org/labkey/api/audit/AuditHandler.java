@@ -181,8 +181,8 @@ public interface AuditHandler
 
         // we want to include the fields that indicate parent lineage has changed.
         // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
-        Set<String> originalEncodedInputColumns = new CaseInsensitiveHashSet();
-        for (String fieldName : row.keySet())
+        Set<String> existingEncodedInputColumns = new CaseInsensitiveHashSet();
+        for (String fieldName : existingRow.keySet())
         {
             if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
             {
@@ -190,12 +190,12 @@ public interface AuditHandler
                 String[] parts = fieldName.split("/", 2);
                 String prefix = parts[0];
                 String dataType = parts[1];
-                originalEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
+                existingEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
             }
         }
         row.forEach((fieldName, value) -> {
             if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
-                if (!originalRow.containsKey(fieldName) && !originalEncodedInputColumns.contains(fieldName))
+                if (!originalRow.containsKey(fieldName) && !existingEncodedInputColumns.contains(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
                 }
