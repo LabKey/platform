@@ -16,6 +16,7 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -23,10 +24,18 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.JSONDataLoader;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * NOTE: This class only exists to use internal classes of the remoteapi package that we haven't exposed to the public yet.
@@ -39,6 +48,8 @@ import java.io.InputStream;
  */
 public class SelectRowsStreamHack
 {
+    private static final Logger _log = LogHelper.getLogger(SelectRowsStreamHack.class, "Information related to streaming of SelectRows results");
+
     public static DataIteratorBuilder go(Connection cn, String container, SelectRowsCommand cmd, Container targetContainer) throws IOException, CommandException
     {
         return new DataIteratorBuilder()
@@ -58,9 +69,47 @@ public class SelectRowsStreamHack
                 {
                     throw new RuntimeException("Failed to execute remote query", e);
                 }
+
+                // NOTE: this is just a placeholder for a configurable parameter. Or maybe it should just be the default?
+                boolean saveResponseToTempFile = true;
+
                 try
                 {
-                    final InputStream is = response.getInputStream();
+                    final InputStream is;
+                    if (saveResponseToTempFile)
+                    {
+                        final File tempFile = FileUtil.createTempFile("SelectRows-", ".tmp");
+                        _log.debug("Downloading SelectRows JSON to file: " + tempFile);
+
+                        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile)); InputStream ris = new BufferedInputStream(response.getInputStream()))
+                        {
+                            IOUtils.copy(ris, os);
+                        }
+
+                        is = new BufferedInputStream(new FileInputStream(tempFile))
+                        {
+                            @Override
+                            public void close() throws IOException
+                            {
+                                super.close();
+
+                                if (tempFile.exists())
+                                {
+                                    _log.debug("Deleting temporary file used to download SelectRows results: " + tempFile);
+                                    if (!tempFile.delete())
+                                    {
+                                        _log.warn("Unable to delete SelectRowsStreamHack temp file: " + tempFile);
+                                    }
+                                }
+                            }
+                        };
+                        _log.debug("Finished saving SelectRows results");
+                    }
+                    else
+                    {
+                        is = response.getInputStream();
+                    }
+
                     final JSONDataLoader loader = new JSONDataLoader(is, targetContainer);
                     WrapperDataIterator wrapper = new WrapperDataIterator(loader.getDataIterator(context))
                     {
@@ -88,5 +137,4 @@ public class SelectRowsStreamHack
             }
         };
     }
-
 }
