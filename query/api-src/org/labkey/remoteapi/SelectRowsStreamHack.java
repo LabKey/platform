@@ -101,7 +101,7 @@ public class SelectRowsStreamHack
                                     _log.debug("Deleting temporary file used to download SelectRows results: " + tempFile);
                                     if (!tempFile.delete())
                                     {
-                                        _log.warn("Unable to delete SelectRowsStreamHack temp file: " + tempFile);
+                                        _log.error("Unable to delete SelectRowsStreamHack temp file: " + tempFile);
                                     }
                                 }
                             }
