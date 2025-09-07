@@ -81,11 +81,12 @@ public class SelectRowsStreamHack
                     if (saveResponseToTempFile)
                     {
                         final File tempFile = FileUtil.createTempFile("SelectRows-", ".tmp.gz");
-                        _log.debug("Downloading SelectRows JSON to file: " + tempFile);
-
                         try (OutputStream os = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tempFile))); InputStream ris = new BufferedInputStream(response.getInputStream()))
                         {
+                            _log.debug("Downloading SelectRows JSON to file: " + tempFile);
                             IOUtils.copy(ris, os);
+                            _log.debug("Finished saving SelectRows results");
+
                         }
 
                         is = new BufferedInputStream(new GZIPInputStream(new FileInputStream(tempFile)))
@@ -105,7 +106,6 @@ public class SelectRowsStreamHack
                                 }
                             }
                         };
-                        _log.debug("Finished saving SelectRows results");
                     }
                     else
                     {
