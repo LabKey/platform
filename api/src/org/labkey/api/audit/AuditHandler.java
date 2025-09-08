@@ -184,7 +184,7 @@ public interface AuditHandler
         Set<String> existingEncodedInputColumns = new CaseInsensitiveHashSet();
         for (String fieldName : existingRow.keySet())
         {
-            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
             {
                 // Issue 53825: LKSM/LKB: Sample Timeline entries for lineage updates with domains containing & or . may be incorrect
                 String[] parts = fieldName.split("/", 2);
@@ -197,7 +197,7 @@ public interface AuditHandler
             }
         }
         row.forEach((fieldName, value) -> {
-            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
                 if (!originalRow.containsKey(fieldName) && !existingEncodedInputColumns.contains(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
