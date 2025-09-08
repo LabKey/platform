@@ -188,9 +188,12 @@ public interface AuditHandler
             {
                 // Issue 53825: LKSM/LKB: Sample Timeline entries for lineage updates with domains containing & or . may be incorrect
                 String[] parts = fieldName.split("/", 2);
-                String prefix = parts[0];
-                String dataType = parts[1];
-                existingEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
+                if (parts.length == 2)
+                {
+                    String prefix = parts[0];
+                    String dataType = parts[1];
+                    existingEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
+                }
             }
         }
         row.forEach((fieldName, value) -> {
