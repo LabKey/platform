@@ -98,8 +98,11 @@ public interface AuditHandler
             String encodedInputColumn = ExperimentService.getEncodedLineageKey(lcName);
             if (encodedInputColumn != null)
             {
-                isExpInput = true;
-                nameFromAlias = encodedInputColumn;
+                if (row.containsKey(encodedInputColumn))
+                {
+                    isExpInput = true;
+                    nameFromAlias = encodedInputColumn;
+                }
             }
             else
                 nameFromAlias = lcName;
