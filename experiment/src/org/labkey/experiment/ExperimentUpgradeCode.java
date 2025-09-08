@@ -196,7 +196,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        LOG.info("Starting upgrade of amounts and units");
         DbScope scope = ExperimentService.get().getSchema().getScope();
         LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -208,7 +207,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     convertAmountsToBaseUnits(c, admin)
             );
             transaction.commit();
-            LOG.info("Finished upgrade of amounts and units");
         }
 
     }
@@ -366,6 +364,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     {
                         updateStmt.addBatch();
                         batchCount.getAndIncrement();
+                        // All samples default to a 0 for AliquotVolume and a blank AliquotUnit. If the only
+                        // change being made is to replace the blank AliquotUnit with the base unit, we do not
+                        // need to audit that change here since these aliquot values are calculated values anyway.
                         if (newDataMap.size() > 1 || !newDataMap.containsKey(AliquotUnit.name()))
                         {
                             Container sampleContainer = ContainerManager.getForId((String) sampleMap.get("Container"));
