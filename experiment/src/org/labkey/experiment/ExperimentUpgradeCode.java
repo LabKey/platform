@@ -287,9 +287,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, false))
             {
-                // skip specimen types as they don't require the same amount and unit treatments
-//                if (sampleType.getName().equals(SpecimenService.SAMPLE_TYPE_NAME))
-//                    continue;
                 LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
                 Map<String, Integer> sampleCounts = new HashMap<>();
                 Map<String, Integer> aliquotCounts = new HashMap<>();
@@ -301,7 +298,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 List<AuditTypeEvent> auditEvents = new ArrayList<>();
                 SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume, m.container FROM ")
                         .append(tInfo, "m")
-                        .append(" WHERE cpastype = ?").add(sampleType.getLSID());
+                        .append(" WHERE cpastype = ?").add(sampleType.getLSID())
+                        .append(" AND (m.StoredAmount IS NOT NULL OR m.Units IS NOT NULL OR m.AliquotVolume IS NOT NULL OR m.AliquotUnit IS NOT NULL OR m.AvailableAliquotVolume IS NOT NULL)");
                 SqlSelector selector = new SqlSelector(scope, sql);
 
                 selector.mapStream().forEach(sampleMap -> {
