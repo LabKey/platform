@@ -8175,13 +8175,15 @@ public class ExperimentController extends SpringActionController
         @Override
         public Set<Long> getIds(boolean clear)
         {
-            if (_rowIds != null)
-                return _rowIds;
             Set<Long> selectedIds;
-            if (isUseSnapshotSelection())
+
+            if (_rowIds != null)
+                selectedIds = _rowIds;
+            else if (isUseSnapshotSelection())
                 selectedIds = new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
             else
                 selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+
             if (_picklistName != null)
             {
                 User user = getViewContext().getUser();
