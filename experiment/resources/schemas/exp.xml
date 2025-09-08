@@ -298,11 +298,8 @@
       </column>
       <column columnName="StoredAmount">
           <columnTitle>Amount</columnTitle>
-          <description>The amount of this sample currently on hand</description>
       </column>
-      <column columnName="Units">
-          <description>The units associated with the StoredAmount for this sample</description>
-      </column>
+      <column columnName="Units"/>
       <column columnName="AliquotCount">
           <columnTitle>Aliquots Created Count</columnTitle>
           <isUserEditable>false</isUserEditable>

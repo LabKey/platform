@@ -309,6 +309,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAmount ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                columnInfo.setLabel("Stored Amount");
+                columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 return columnInfo;
@@ -320,6 +322,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (typeUnit != null)
                 {
                     SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, typeUnit);
+                    columnInfo.setDescription("The amount of this sample, in the display unit for the sample type, currently on hand.");
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
                     columnInfo.setUserEditable(true);
@@ -333,12 +336,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(Set.of(label));
+                    columnInfo.setDescription("The amount of this sample currently on hand.");
                     return columnInfo;
                 }
             }
             case RawUnits ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
+                columnInfo.setLabel("Stored Units");
+                columnInfo.setDescription("The units associated with the Stored Amount for this sample.");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 return columnInfo;
@@ -359,6 +365,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     SampleTypeUnitDisplayColumn columnInfo = new SampleTypeUnitDisplayColumn(this, Column.Units.name(), typeUnit);
                     columnInfo.setFk(fk);
+                    columnInfo.setDescription("The sample type display units associated with the Amount for this sample.");
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
                     columnInfo.setUserEditable(true);
@@ -369,6 +376,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
                     columnInfo.setFk(fk);
+                    columnInfo.setDescription("The units associated with the Stored Amount for this sample.");
                     return columnInfo;
                 }
             }
