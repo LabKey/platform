@@ -32,13 +32,11 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -47,6 +45,7 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
@@ -64,10 +63,6 @@ import java.util.function.Consumer;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Created;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.CreatedBy;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Modified;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.ModifiedBy;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
@@ -257,6 +252,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (!baseUnit.name().equals(unitsStr))
             {
                 unitsCol.setValue(baseUnit.name());
+                oldDataMap.put(unitsCol.getName(), unitsStr);
                 newDataMap.put(unitsCol.getName(), baseUnit.name());
             }
         }
@@ -291,6 +287,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, false))
             {
+                // skip specimen types as they don't require the same amount and unit treatments
+                if (sampleType.getName().equals(SpecimenService.SAMPLE_TYPE_NAME))
+                    continue;
                 LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
                 Map<String, Integer> sampleCounts = new HashMap<>();
                 Map<String, Integer> aliquotCounts = new HashMap<>();
@@ -300,7 +299,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
                 AtomicInteger batchCount = new AtomicInteger();
                 List<AuditTypeEvent> auditEvents = new ArrayList<>();
-                SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume FROM ")
+                SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume, m.container FROM ")
                         .append(tInfo, "m")
                         .append(" WHERE cpastype = ?").add(sampleType.getLSID());
                 SqlSelector selector = new SqlSelector(scope, sql);
@@ -370,7 +369,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     {
                         updateStmt.addBatch();
                         batchCount.getAndIncrement();
-                        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, "Storage amount unit conversion to base unit during upgrade script.");
+                        Container sampleContainer = ContainerManager.getForId((String) sampleMap.get("Container"));
+                        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(sampleContainer != null ? sampleContainer : container, "Storage amount unit conversion to base unit during upgrade script.");
                         event.setSampleId((Integer) sampleMap.get(RowId.name()));
                         event.setSampleName((String) sampleMap.get(Name.name()));
                         event.setSampleType(sampleType.getName());
