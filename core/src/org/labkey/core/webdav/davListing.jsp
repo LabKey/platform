@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
-<%@ page import="org.labkey.api.premium.PremiumService" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -48,14 +47,14 @@
         var loginAction = new Ext4.Action({
             text : 'Login',
             handler : function () {
-                window.location = LABKEY.contextPath + '/login/home/login.view?returnUrl=' + returnUrl;
+                window.location = LABKEY.contextPath + '/home/login-login.view?returnUrl=' + returnUrl;
             }
         });
 
         var logoutAction = new Ext4.Action({
             text : 'Logout',
             handler : function () {
-                window.location = LABKEY.contextPath + '/login/home/logout.view?returnUrl=' + returnUrl;
+                LABKEY.Utils.postToAction(LABKEY.contextPath + '/home/login-logout.view?returnUrl=' + returnUrl);
             }
         });
 

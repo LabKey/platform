@@ -21,6 +21,11 @@ package org.labkey.core.webdav;
  * Date: Apr 17, 2008
  */
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.hc.core5.http.HttpStatus;
@@ -38,11 +43,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
@@ -134,7 +134,7 @@ public class WebdavServlet extends HttpServlet
             try {response.reset();}catch(IllegalStateException x){/*pass*/}
         }
 
-        ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");
+        ActionURL dispatchUrl = new ActionURL(DavController.name, method.toLowerCase(), null);
         dispatchUrl.addParameters(helper.getParameters());
         dispatchUrl.replaceParameter("path",fullPath);
         dispatchUrl.setScheme(request.getScheme());
