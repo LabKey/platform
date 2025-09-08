@@ -73,7 +73,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     private static final Logger _log = LogHelper.getLogger(AuditLogImpl.class, "Audit service interactions.");
 
-    private final Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
+    private final Queue<Pair<User, List<? extends AuditTypeEvent>>> _eventTypeQueue = new LinkedList<>();
     private final AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
 
@@ -122,8 +122,8 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
         while (!_eventTypeQueue.isEmpty())
         {
-            Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
-            addEvents(event.first, List.of(event.second));
+            Pair<User, List<? extends AuditTypeEvent>> event = _eventTypeQueue.remove();
+            addEvents(event.first, event.second);
         }
     }
 
@@ -199,8 +199,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 databaseReady = _logToDatabase.get();
                 if (!databaseReady)
                 {
-                    for (var event : events)
-                        _eventTypeQueue.add(new Pair<>(user, event));
+                    _eventTypeQueue.add(new Pair<>(user, events));
                 }
             }
 
