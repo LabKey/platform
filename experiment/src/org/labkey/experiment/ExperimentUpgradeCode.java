@@ -45,7 +45,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
@@ -214,7 +213,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     }
 
-    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean isAliquot)
+    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
     {
         Unit baseUnit = currentDisplayUnit.getBase();
         String unitsStr = (String) sampleMap.get(unitsCol.getName());
@@ -224,12 +223,12 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (materialUnit == null && !StringUtils.isEmpty(unitsStr))
         {
             // invalid unit stored with sample. Leave as is.
-            LOG.info("Found invalid {} '{}' for sample '{}'. No conversion done.", isAliquot ? "aliquot unit" : "unit", unitsStr, sampleMap.get(Name.name()));
+            LOG.info("Found invalid {} '{}' for sample '{}'. No conversion done.", aliquotFields ? "aliquot unit" : "unit", unitsStr, sampleMap.get(Name.name()));
             sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
         }
         else if (materialUnit != null && !materialUnit.isCompatible(baseUnit))
         {
-            LOG.info("{} '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", isAliquot ? "Aliquot unit" : "Unit", materialUnit.name(), sampleMap.get(Name.name()), baseUnit);
+            LOG.info("{} '{}' for sample '{}' is not compatible with the base unit '{}'. No conversion done.", aliquotFields ? "Aliquot unit" : "Unit", materialUnit.name(), sampleMap.get(Name.name()), baseUnit);
             sampleCounts.put("invalidUnits", sampleCounts.getOrDefault("invalidUnits", 0) + 1);
         }
         else if (!isInBaseUnits || materialUnit == null)
@@ -367,21 +366,24 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     {
                         updateStmt.addBatch();
                         batchCount.getAndIncrement();
-                        Container sampleContainer = ContainerManager.getForId((String) sampleMap.get("Container"));
-                        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(sampleContainer != null ? sampleContainer : container, "Storage amount unit conversion to base unit during upgrade script.");
-                        event.setSampleId((Integer) sampleMap.get(RowId.name()));
-                        event.setSampleName((String) sampleMap.get(Name.name()));
-                        event.setSampleType(sampleType.getName());
-                        event.setSampleTypeId(sampleType.getRowId());
-                        event.setLineageUpdate(false);
-                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
-                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
-                        auditEvents.add(event);
+                        if (newDataMap.size() > 1 || !newDataMap.containsKey(AliquotUnit.name()))
+                        {
+                            Container sampleContainer = ContainerManager.getForId((String) sampleMap.get("Container"));
+                            SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(sampleContainer != null ? sampleContainer : container, "Storage amount unit conversion to base unit during upgrade script.");
+                            event.setSampleId((Integer) sampleMap.get(RowId.name()));
+                            event.setSampleName((String) sampleMap.get(Name.name()));
+                            event.setSampleType(sampleType.getName());
+                            event.setSampleTypeId(sampleType.getRowId());
+                            event.setLineageUpdate(false);
+                            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
+                            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
+                            auditEvents.add(event);
+                        }
                     }
                     if (batchCount.get() > 1000)
                     {
                         updateStmt.executeBatch();
-                        AuditLogService.get().addEvents(user, auditEvents);
+                        AuditLogService.get().addEvents(user, auditEvents, false);
                         auditEvents.clear();
                         batchCount.set(0);
                     }
