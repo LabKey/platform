@@ -95,17 +95,11 @@ public interface AuditHandler
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false;
-            if (lcName.startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || lcName.startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
+            String encodedInputColumn = ExperimentService.getEncodedLineageKey(lcName);
+            if (encodedInputColumn != null)
             {
-                String[] parts = nameFromAlias.split("/", 2);
-                String prefix = parts[0];
-                String dataType = parts[1];
-                // MaterialInputs/datypeTypeEncoded
-                if (row.containsKey(prefix + "/" + QueryKey.encodePart(dataType)))
-                {
-                    isExpInput = true;
-                    nameFromAlias = prefix + "/" + QueryKey.encodePart(dataType);
-                }
+                isExpInput = true;
+                nameFromAlias = encodedInputColumn;
             }
             else
                 nameFromAlias = lcName;
@@ -184,20 +178,12 @@ public interface AuditHandler
         Set<String> existingEncodedInputColumns = new CaseInsensitiveHashSet();
         for (String fieldName : existingRow.keySet())
         {
-            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
-            {
-                // Issue 53825: LKSM/LKB: Sample Timeline entries for lineage updates with domains containing & or . may be incorrect
-                String[] parts = fieldName.split("/", 2);
-                if (parts.length == 2)
-                {
-                    String prefix = parts[0];
-                    String dataType = parts[1];
-                    existingEncodedInputColumns.add(prefix + "/" + QueryKey.encodePart(dataType));
-                }
-            }
+            String existingEncodedInputColumn = ExperimentService.getEncodedLineageKey(fieldName);
+            if (existingEncodedInputColumn != null)
+                existingEncodedInputColumns.add(existingEncodedInputColumn);
         }
         row.forEach((fieldName, value) -> {
-            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX_LC) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX_LC))
                 if (!originalRow.containsKey(fieldName) && !existingEncodedInputColumns.contains(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
