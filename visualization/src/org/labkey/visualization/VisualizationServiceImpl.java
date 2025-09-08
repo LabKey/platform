@@ -18,6 +18,7 @@ package org.labkey.visualization;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.NullSafeBindException;
@@ -223,7 +224,7 @@ public class VisualizationServiceImpl implements VisualizationService
 
     private static boolean isDemographicQueryDefinition(QueryDefinition q)
     {
-        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || q.isUserDefined())
+        if (!Strings.CI.equals("study", q.getSchemaName()) || q.isUserDefined())
             return false;
 
         try

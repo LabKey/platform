@@ -30,8 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-@JsonSerialize(using = PairSerializer.class)
 /** Simple wrapper around two other objects */
+@JsonSerialize(using = PairSerializer.class)
 public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Serializable
 {
     // For deserialization
@@ -89,7 +89,7 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
 
     public String toString()
     {
-        return "(" + String.valueOf(first) + ", " + String.valueOf(second) + ")";
+        return "(" + first + ", " + second + ")";
     }
 
     public Pair<Type1, Type2> copy()

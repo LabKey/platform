@@ -15,7 +15,7 @@
  */
 package org.labkey.query;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -342,7 +342,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetRecommendedVariable();
             }
 
-            if (!StringUtils.equals(metadataColumnJSON.getDefaultScale(), rawColumnInfo.getDefaultScale().name()))
+            if (!Strings.CS.equals(metadataColumnJSON.getDefaultScale(), rawColumnInfo.getDefaultScale().name()))
             {
                 xmlColumn.setDefaultScale(DefaultScaleType.Enum.forString(metadataColumnJSON.getDefaultScale()));
             }
@@ -351,7 +351,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetDefaultScale();
             }
 
-            if (!calculatedFieldsOnly && !StringUtils.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
+            if (!calculatedFieldsOnly && !Strings.CS.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
             {
                 xmlColumn.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(metadataColumnJSON.getDerivationDataScope()));
             }
@@ -361,7 +361,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
 
             /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
-            if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
+            if (!Strings.CS.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
             {
                 xmlColumn.setPhi(PHIType.Enum.forString(gwtColumnInfo.getPHI()));
             }

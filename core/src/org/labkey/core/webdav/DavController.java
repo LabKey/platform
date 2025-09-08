@@ -28,6 +28,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -1327,9 +1328,9 @@ public class DavController extends SpringActionController
         try
         {
             // handle webdav style
-            if (StringUtils.equals("T",v))
+            if ("T".equals(v))
                 return Boolean.TRUE;
-            if (StringUtils.equals("F",v))
+            if ("F".equals(v))
                 return Boolean.FALSE;
             return ConvertHelper.convert(v, Boolean.class);
         }
@@ -4940,7 +4941,7 @@ public class DavController extends SpringActionController
             return null;
 
         String contentDisposition = getRequest().getParameter("contentDisposition");
-        if (!StringUtils.equals("attachment",contentDisposition) && !StringUtils.equals("inline",contentDisposition))
+        if (!"attachment".equals(contentDisposition) && !"inline".equals(contentDisposition))
             contentDisposition = null;
         // default is to let the browser decide whether render inline or download, unless resource does not want to support "inline"
         if (!resource.allowInline())
@@ -5319,7 +5320,7 @@ public class DavController extends SpringActionController
             String str = getUrlResourcePathStr();
             Path p = Path.parse(str).normalize();
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
-            if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
+            if (Strings.CI.equals("GET",getViewContext().getActionURL().getAction()))
             {
                 String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
                 if (null != filename)
@@ -5329,7 +5330,7 @@ public class DavController extends SpringActionController
                         String oldname = p.getName();
                         String oldExt = oldname.substring(oldname.lastIndexOf('.')+1);
                         String newExt = filename.substring(filename.lastIndexOf('.')+1);
-                        if (!StringUtils.equalsIgnoreCase(oldExt,newExt))
+                        if (!Strings.CI.equals(oldExt,newExt))
                             filename = null;
                     }
                     if (null != filename)
@@ -5433,7 +5434,7 @@ public class DavController extends SpringActionController
         log("Dest path: " + path);
 
         // some user agents incorrectly double encode!  check here
-        if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
+        if (destinationPath.contains("%") && Strings.CS.contains(request.getHeader("User-Agent"),"cadaver"))
         {
             Resource r = resolvePath(path);
             if (null == r || r instanceof WebdavResolverImpl.UnboundResource)

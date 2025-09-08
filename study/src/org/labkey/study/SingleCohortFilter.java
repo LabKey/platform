@@ -16,6 +16,7 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -86,7 +87,7 @@ public class SingleCohortFilter extends BaseCohortFilter
 
         if (_cohortId != that._cohortId) return false;
         if (_type != that._type) return false;
-        return StringUtils.equals(_label, that._label);
+        return Strings.CS.equals(_label, that._label);
     }
 
     @Override

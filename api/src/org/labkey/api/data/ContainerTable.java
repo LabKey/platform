@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
@@ -232,7 +233,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        if (StringUtils.equalsIgnoreCase("iconurl",name))
+        if (Strings.CI.equals("iconurl",name))
         {
             var iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
             iconCol.setDisplayColumnFactory(IconDisplayColumn::new);

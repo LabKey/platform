@@ -16,6 +16,7 @@
 package org.labkey.query.olap.rolap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -747,7 +748,7 @@ public class RolapCubeDef
             String schemaName = null;
             if (null != jt)
             {
-                if (StringUtils.equalsIgnoreCase(jt.tableName,table))
+                if (Strings.CI.equals(jt.tableName,table))
                     schemaName = jt.schemaName;
                 else
                 {

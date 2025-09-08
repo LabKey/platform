@@ -15,7 +15,7 @@
  */
 package org.labkey.query.olap.metadata;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -183,7 +183,7 @@ public class RolapCachedCubeFactory
                 {
                     String name = levelDefList.get(l).getMembeNameFromResult(rs);
                     namesCurrent.set(l, name);
-                    if (breakLevel == 0 && !StringUtils.equalsIgnoreCase(namesCurrent.get(l), namesPrevious.get(l)))
+                    if (breakLevel == 0 && !Strings.CI.equals(namesCurrent.get(l), namesPrevious.get(l)))
                         breakLevel = l;
                 }
 
@@ -218,17 +218,17 @@ public class RolapCachedCubeFactory
                     // need to create a new member! yeah
 
                     m = new CachedCube._Member(cube, level, parent, name, levelDef.isLeaf());
-                    m.keyValue = (Comparable)levelDef.getKeyValue(rs);
-                    if (m.keyValue instanceof String)
-                        m.keyValue = cube.intern((String)m.keyValue);
-                    m.ordinalValue = (Comparable)levelDef.getOrindalValue(rs);
+                    m.keyValue = (Comparable<?>)levelDef.getKeyValue(rs);
+                    if (m.keyValue instanceof String s)
+                        m.keyValue = cube.intern(s);
+                    m.ordinalValue = (Comparable<?>)levelDef.getOrindalValue(rs);
 
                     uniqueNameMap.put(uniqueName, m);
                     membersCurrent.set(l, m);
                     level.members.add(m);
                 }
 
-                ArrayList t = namesPrevious;
+                ArrayList<String> t = namesPrevious;
                 namesPrevious = namesCurrent;
                 namesCurrent = t;
             }
@@ -365,9 +365,9 @@ public class RolapCachedCubeFactory
     {
         if (null != nullString)
         {
-            if (k1 instanceof String && StringUtils.equals((String)k1,nullString))
+            if (k1 instanceof String s && Strings.CS.equals(s,nullString))
                 k1 = null;
-            if (k2 instanceof String && StringUtils.equals((String)k2,nullString))
+            if (k2 instanceof String s && Strings.CS.equals(s,nullString))
                 k2 = null;
         }
 
@@ -377,9 +377,9 @@ public class RolapCachedCubeFactory
             return -1;
         if (k2 == null)
             return 1;
-        if (k1 instanceof String && k2 instanceof String)
+        if (k1 instanceof String s1 && k2 instanceof String s2)
         {
-            return ((String) k1).compareToIgnoreCase((String) k2);
+            return s1.compareToIgnoreCase(s2);
         }
         if (k1.getClass() == k2.getClass())
         {

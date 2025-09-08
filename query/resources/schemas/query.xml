@@ -31,7 +31,6 @@
       <column columnName="Schema"/>
       <column columnName="Sql"/>
       <column columnName="MetaData"/>
-      <column columnName="SchemaVersion"/>
       <column columnName="Flags"/>
       <column columnName="Description"/>
     </columns>

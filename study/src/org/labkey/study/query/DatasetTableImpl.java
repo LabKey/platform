@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -560,7 +561,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         Set<FieldKey> loggingColumns = new HashSet<>(1);
         for (ColumnInfo col : getColumns())
         {
-            if (StringUtils.equalsIgnoreCase(subjectColName, col.getName()))
+            if (Strings.CI.equals(subjectColName, col.getName()))
             {
                 loggingColumns.add(col.getFieldKey());
                 break;

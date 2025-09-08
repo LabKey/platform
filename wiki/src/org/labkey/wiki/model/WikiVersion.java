@@ -16,7 +16,7 @@
 
 package org.labkey.wiki.model;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
@@ -142,7 +142,7 @@ public class WikiVersion
     public String getTitle()
     {
         if (null == _title)
-            _title = (null == _wikiName || StringUtils.equals(_wikiName, "default")) ? "Wiki" : _wikiName;
+            _title = (null == _wikiName || "default".equals(_wikiName)) ? "Wiki" : _wikiName;
         return _title;
     }
 

@@ -48,7 +48,6 @@ public class QueryDef extends Entity implements Cloneable
     // Hold the ParsedMetadata reference here so that it can be shared across wrappers of this QueryDef
     @NotNull
     private ParsedMetadata _parsedMetadata = EMPTY_METADATA;
-    private double _schemaVersion;
     private int _flags;
     private String _name;
     private String _description;
@@ -79,14 +78,6 @@ public class QueryDef extends Entity implements Cloneable
     public void setMetaData(String tableInfo)
     {
         _parsedMetadata = new ParsedMetadata(tableInfo);
-    }
-    public double getSchemaVersion()
-    {
-        return _schemaVersion;
-    }
-    public void setSchemaVersion(double schemaVersion)
-    {
-        _schemaVersion = schemaVersion;
     }
     public int getFlags()
     {

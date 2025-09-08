@@ -17,7 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,7 +117,7 @@ public class PipelineEmailPreferences
 
     public void setNotifyUsersOnSuccess(String value, Container c)
     {
-        if (!StringUtils.equals(getNotifyUsersOnSuccess(c), value))
+        if (!Strings.CS.equals(getNotifyUsersOnSuccess(c), value))
             _setProperty(c, PREF_NOTIFY_USERS_ON_SUCCESS, value);
     }
 
@@ -128,7 +128,7 @@ public class PipelineEmailPreferences
 
     public void setNotifyUsersOnError(String value, Container c)
     {
-        if (!StringUtils.equals(getNotifyUsersOnError(c), value))
+        if (!Strings.CS.equals(getNotifyUsersOnError(c), value))
             _setProperty(c, PREF_NOTIFY_USERS_ON_ERROR, value);
     }
 
@@ -140,12 +140,12 @@ public class PipelineEmailPreferences
     public void setSuccessNotificationInterval(String value, String startTime, Container c)
     {
         boolean dirty = false;
-        if (!StringUtils.equals(getSuccessNotificationInterval(c), value))
+        if (!Strings.CS.equals(getSuccessNotificationInterval(c), value))
         {
             _setProperty(c, PREF_SUCCESS_INTERVAL, value);
             dirty = true;
         }
-        if (!StringUtils.equals(getSuccessNotifyStart(c), startTime))
+        if (!Strings.CS.equals(getSuccessNotifyStart(c), startTime))
         {
             _setProperty(c, PREF_SUCCESS_NOTIFY_START, startTime);
             dirty = true;
@@ -163,12 +163,12 @@ public class PipelineEmailPreferences
     public void setFailureNotificationInterval(String value, String startTime, Container c)
     {
         boolean dirty = false;
-        if (!StringUtils.equals(getFailureNotificationInterval(c), value))
+        if (!Strings.CS.equals(getFailureNotificationInterval(c), value))
         {
             _setProperty(c, PREF_FAILURE_INTERVAL, value);
             dirty = true;
         }
-        if (!StringUtils.equals(getFailureNotifyStart(c), startTime))
+        if (!Strings.CS.equals(getFailureNotifyStart(c), startTime))
         {
             _setProperty(c, PREF_FAILURE_NOTIFY_START, startTime);
             dirty = true;

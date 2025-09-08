@@ -16,7 +16,7 @@
 
 package org.labkey.study.importer;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -262,12 +262,12 @@ public class VisitMapImporter
             {
                 assert visitStudy.getContainer().equals(visit.getContainer()) : "Existing visit should have been created in shared visit study container";
 
-                if (!StringUtils.equals(visit.getLabel(), record.getVisitLabel()))
+                if (!Strings.CS.equals(visit.getLabel(), record.getVisitLabel()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setLabel(record.getVisitLabel());
                 }
-                if (!StringUtils.equals(visit.getDescription(), record.getVisitDescription()))
+                if (!Strings.CS.equals(visit.getDescription(), record.getVisitDescription()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setDescription(record.getVisitDescription());

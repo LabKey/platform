@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -33,6 +32,7 @@
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyManager manager = StudyManager.getInstance();
@@ -94,7 +94,7 @@
         List<DOM.Renderable> tds = new ArrayList<>();
         //Print a column header if necessary
         Dataset firstDataset = datasets.get(startIndex);
-        if (!StringUtils.equals(category, firstDataset.getCategory()))
+        if (!Strings.CS.equals(category, firstDataset.getCategory()))
         {
             category = firstDataset.getCategory();
             // don't need extra padding (labkey-announcement-title) on first row
@@ -109,7 +109,7 @@
 
         for (Dataset dataset : datasets.subList(startIndex, endIndex))
         {
-            if (!StringUtils.equals(category, dataset.getCategory()))
+            if (!Strings.CS.equals(category, dataset.getCategory()))
             {
                 category = dataset.getCategory();
                 tds.add(TR(TD(cl("labkey-announcement-title"), SPAN(category == null ? "Uncategorized" : category))));

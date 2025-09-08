@@ -17,6 +17,7 @@ package org.labkey.experiment;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -154,7 +155,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.dataiterator.ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
@@ -659,7 +659,7 @@ public class ExpDataIterators
 
             for (String name : nameMap.keySet())
             {
-                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase(ALIQUOTED_FROM_INPUT, name))
+                if (ExperimentService.isInputOutputColumn(name) || Strings.CI.equals("parent", name) || Strings.CI.equals(ALIQUOTED_FROM_INPUT, name))
                 {
                     _parentCols.add(nameMap.get(name));
                 }
@@ -962,7 +962,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (ExperimentService.isInputOutputColumn(name) || isSample() && equalsIgnoreCase("parent", name))
+                if (ExperimentService.isInputOutputColumn(name) || isSample() && Strings.CI.equals("parent", name))
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                     if (requiredParents.contains(name))

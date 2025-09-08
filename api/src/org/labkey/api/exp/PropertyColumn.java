@@ -15,7 +15,7 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -318,8 +318,8 @@ public class PropertyColumn extends LookupColumn
     {
         // hack: issue 16263, on sql server entityid is a uniqueidentifier type, we need to force a cast
         // when using an entityid to join to an objecturi
-        boolean addEntityIdCast = StringUtils.equalsIgnoreCase("entityid", fk.getSqlTypeName()) &&
-                StringUtils.equalsIgnoreCase("lsidtype", pk.getSqlTypeName()) &&
+        boolean addEntityIdCast = Strings.CI.equals("entityid", fk.getSqlTypeName()) &&
+                Strings.CI.equals("lsidtype", pk.getSqlTypeName()) &&
                 getSqlDialect().isSqlServer();
 
         if (addEntityIdCast)

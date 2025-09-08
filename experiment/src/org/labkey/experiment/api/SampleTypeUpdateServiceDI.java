@@ -147,10 +147,10 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;

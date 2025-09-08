@@ -17,6 +17,7 @@ package org.labkey.study.dataset;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -239,14 +240,14 @@ public class DatasetViewProvider implements DataViewProvider
                         if (props.containsKey(Property.viewName.name()))
                         {
                             String newLabel = StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name())));
-                            dirty = dirty || !StringUtils.equals(dsDef.getLabel(), newLabel);
+                            dirty = dirty || !Strings.CS.equals(dsDef.getLabel(), newLabel);
                             dsDef.setLabel(newLabel);
                         }
 
                         if (props.containsKey(Property.description.name()))
                         {
                             String newDescription = StringUtils.trimToNull(String.valueOf(props.get(Property.description.name())));
-                            dirty = dirty || !StringUtils.equals(dsDef.getDescription(), newDescription);
+                            dirty = dirty || !Strings.CS.equals(dsDef.getDescription(), newDescription);
                             dsDef.setDescription(newDescription);
                         }
 

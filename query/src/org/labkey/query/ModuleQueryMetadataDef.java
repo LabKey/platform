@@ -15,7 +15,6 @@
  */
 package org.labkey.query;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
@@ -23,6 +22,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.w3c.dom.Document;
@@ -35,19 +35,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
 
-/**
- * User: jeckels
- * Date: May 12, 2010
- */
 public class ModuleQueryMetadataDef
 {
-    private static final Logger LOG = LogManager.getLogger(ModuleQueryMetadataDef.class);
+    private static final Logger LOG = LogHelper.getLogger(ModuleQueryMetadataDef.class, "Query metadata warnings");
 
     private String _name;
     private final Path _path;
     private QueryDef.ParsedMetadata _queryMetaData = QueryDef.createParsedMetadata(null);
     private String _description;
-    private double _schemaVersion;
     private boolean _hidden = false;
 
     public ModuleQueryMetadataDef(Resource resource)
@@ -85,7 +80,6 @@ public class ModuleQueryMetadataDef
                 {
                     _name = DOMUtil.getAttributeValue(docElem, "name", _name);
                     _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
-                    _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
 
                     //description
                     Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
@@ -102,7 +96,7 @@ public class ModuleQueryMetadataDef
                 }
                 else
                 {
-                    LOG.warn("Query metadata XML does not have <query> or <tables> as its root element, its contents will be ignored: " + resource);
+                    LOG.warn("Query metadata XML does not have <query> or <tables> as its root element, its contents will be ignored: {}", resource);
                 }
             }
             else
@@ -112,7 +106,7 @@ public class ModuleQueryMetadataDef
         }
         catch (IOException | TransformerException | ParserConfigurationException | SAXException e)
         {
-            LOG.warn("Unable to load meta-data from module query file " + resource, e);
+            LOG.warn("Unable to load meta-data from module query file {}", resource, e);
         }
     }
 
@@ -145,11 +139,6 @@ public class ModuleQueryMetadataDef
         return _description;
     }
 
-    public double getSchemaVersion()
-    {
-        return _schemaVersion;
-    }
-
     public boolean isHidden()
     {
         return _hidden;
@@ -161,7 +150,6 @@ public class ModuleQueryMetadataDef
         ret.setContainer(container.getId());
         ret.setName(getName());
         ret.setDescription(getDescription());
-        ret.setSchemaVersion(getSchemaVersion());
         ret.setSchemaPath(schemaPath);
         ret.setParsedMetadata(_queryMetaData);
         if (isHidden())

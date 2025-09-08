@@ -17,6 +17,7 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUpdateForm;
@@ -148,7 +149,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Partic
                         String oldComment = String.valueOf(valueMap.get(commentProperty));
                         String newComment = form.getComment();
 
-                        if (!StringUtils.isBlank(oldComment) && !StringUtils.equals(oldComment, form.getComment()))
+                        if (!StringUtils.isBlank(oldComment) && !Strings.CS.equals(oldComment, form.getComment()))
                             newComment = oldComment + " : " + form.getComment();
                         valueMap.put(commentProperty, newComment);
                     }

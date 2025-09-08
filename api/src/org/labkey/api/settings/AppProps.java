@@ -50,6 +50,8 @@ public interface AppProps
     String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
+    String GENERATE_CONTROLLER_FIRST_URLS = "generateControllerFirstUrls";
+    String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 

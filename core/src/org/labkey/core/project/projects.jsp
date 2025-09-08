@@ -137,13 +137,13 @@
         boolean details = false;
         HtmlString faX;
         HtmlString width;
-        if (StringUtils.equals("small",properties.get("iconSize")))
+        if ("small".equals(properties.get("iconSize")))
         {
             faX = HtmlString.of("fa-lg");
             width = HtmlString.of("67px");
-            details = StringUtils.equals("side",properties.get("labelPosition"));
+            details = "side".equals(properties.get("labelPosition"));
         }
-        else if (StringUtils.equals("medium",properties.get("iconSize")))
+        else if ("medium".equals(properties.get("iconSize")))
         {
             faX = HtmlString.of("fa-3x");
             width = HtmlString.of("67px");
@@ -188,7 +188,7 @@
 
         if (Boolean.TRUE != hideCreateButton)
         {
-            boolean isProject = StringUtils.equals("project",properties.get("containerTypes"));
+            boolean isProject = "project".equals(properties.get("containerTypes"));
             Container c = isProject ? ContainerManager.getRoot() : target;
             if ((c.isRoot() && getUser().hasRootAdminPermission()) ||
                 (!c.isRoot() && c.hasPermission(getUser(), AdminPermission.class)))

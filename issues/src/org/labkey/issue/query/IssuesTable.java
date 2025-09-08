@@ -17,6 +17,7 @@
 package org.labkey.issue.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -335,7 +336,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                     {
                         ((BaseColumnInfo)col).setFk(new IssuesPdLookupForeignKey(schema, pd));
                         TableInfo target = col.getFk().getLookupTableInfo();
-                        if (null != target && target.getPkColumnNames().size() == 1 && StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                        if (null != target && target.getPkColumnNames().size() == 1 && Strings.CI.equals(target.getTitleColumn(),target.getPkColumnNames().get(0)))
                         {
                             ((BaseColumnInfo)col).setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
                         }

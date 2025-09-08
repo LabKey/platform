@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -833,7 +834,7 @@ public class Portal implements ModuleChangeListener
         int index = pages.size() + 1;           // new index must be at least this big
         for (PortalPage p : pages.values())
         {
-            if (StringUtils.equalsIgnoreCase(pageId, p.getPageId()))
+            if (Strings.CI.equals(pageId, p.getPageId()))
             {
                 _setHidden(p, false);
                 return;
@@ -1404,7 +1405,7 @@ public class Portal implements ModuleChangeListener
         List<WebPart> parts = getParts(context.getContainer(), id, context);
 
         // Initialize content for non-default portal pages that are folder tabs
-        if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
+        if (parts.isEmpty() && !Strings.CI.equals(DEFAULT_PORTAL_PAGE_ID,id))
         {
             FolderTab folderTab = getFolderTabFromId(context, id);
             if (null != folderTab)

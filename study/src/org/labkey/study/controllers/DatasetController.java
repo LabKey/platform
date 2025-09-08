@@ -16,7 +16,7 @@
 
 package org.labkey.study.controllers;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogService;
@@ -145,7 +145,7 @@ public class DatasetController extends BaseStudyController
                 {
                     String oldLsid = oldData.get("lsid");
                     String newLsid = newData.get("lsid");
-                    if (null != oldLsid && null != newLsid && !StringUtils.equalsIgnoreCase(oldLsid, newLsid) && null != eventContainer)
+                    if (null != oldLsid && null != newLsid && !Strings.CI.equals(oldLsid, newLsid) && null != eventContainer)
                     {
                         ActionURL history = new ActionURL("audit", "begin", eventContainer);
                         history.addParameter("view","DatasetAuditEvent");

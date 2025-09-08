@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Table;
@@ -66,7 +67,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     @Override
     public void setName(String name)
     {
-        if (StringUtils.equals(name, getName()))
+        if (Strings.CS.equals(name, getName()))
             return;
 
         edit().setName(name);
@@ -81,7 +82,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     @Override
     public void setDescription(String description)
     {
-        if (StringUtils.equals(description, getDescription()))
+        if (Strings.CS.equals(description, getDescription()))
             return;
         edit().setDescription(description);
     }
@@ -106,7 +107,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     @Override
     public void setExpressionValue(String expression)
     {
-        if (StringUtils.equals(getExpressionValue(), expression))
+        if (Strings.CS.equals(getExpressionValue(), expression))
             return;
 
         edit().setExpression(expression);
@@ -149,7 +150,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     @Override
     public void setErrorMessage(String message)
     {
-        if (StringUtils.equals(getErrorMessage(), message))
+        if (Strings.CS.equals(getErrorMessage(), message))
             return;
 
         edit().setErrorMessage(message);
@@ -159,7 +160,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     public void setProperty(String key, String value)
     {
         Map<String, String> props = getProperties();
-        if (StringUtils.equals(props.get(key), value))
+        if (Strings.CS.equals(props.get(key), value))
             return;
 
         props.put(key, value);

@@ -288,8 +288,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, false))
             {
                 // skip specimen types as they don't require the same amount and unit treatments
-                if (sampleType.getName().equals(SpecimenService.SAMPLE_TYPE_NAME))
-                    continue;
+//                if (sampleType.getName().equals(SpecimenService.SAMPLE_TYPE_NAME))
+//                    continue;
                 LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
                 Map<String, Integer> sampleCounts = new HashMap<>();
                 Map<String, Integer> aliquotCounts = new HashMap<>();

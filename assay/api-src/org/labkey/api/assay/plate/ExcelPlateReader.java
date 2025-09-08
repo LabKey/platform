@@ -16,7 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -80,7 +80,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
         {
             for (Cell cell : sheetRow)
             {
-                if (cell.getCellType() == CellType.STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
+                if (cell.getCellType() == CellType.STRING && Strings.CI.equals(cell.getStringCellValue(), "A"))
                 {
                     int col = cell.getColumnIndex();
                     char start = 'B';
@@ -91,7 +91,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
                         if (r != null)
                         {
                             Cell c = r.getCell(col);
-                            if (c == null || cell.getCellType() == CellType.STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
+                            if (c == null || cell.getCellType() == CellType.STRING || !Strings.CI.equals(c.getStringCellValue(), val))
                                 return false;
                         }
                         else

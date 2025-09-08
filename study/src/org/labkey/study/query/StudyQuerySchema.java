@@ -16,8 +16,7 @@
 
 package org.labkey.study.query;
 
-import com.google.common.collect.Iterables;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
@@ -54,7 +52,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.writer.AbstractStudyContext;
-import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -225,11 +222,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     @Override
     public QuerySchema getSchema(String name)
     {
-        if (StringUtils.equalsIgnoreCase(DATASETS_SCHEMA_NAME,name))
+        if (Strings.CI.equals(DATASETS_SCHEMA_NAME,name))
             return new DatasetSchema(this);
-        if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
+        if (Strings.CI.equals(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (Strings.CI.equals(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -683,17 +680,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         }
         
         return null;
-    }
-
-    @NotNull
-    private Domain ensureDomain(AbstractStudyDesignDomainKind kind, String tableName)
-    {
-        Domain result = kind.getDomain(getContainer(), tableName);
-        if (result == null)
-        {
-            throw new IllegalStateException("Could not find a domain for " + tableName + " in " + getContainer().getPath());
-        }
-        return result;
     }
 
     @Override

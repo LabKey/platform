@@ -544,10 +544,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
             false, false, OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(TabLoader.FEATUREFLAG_UNESCAPE_BACKSLASH,
-                "Unescape backslash character on import",
-                "Treat backslash '\\' character as an escape character when loading data from file.",
-                false, false, OptionalFeatureService.FeatureType.Deprecated));
-
+            "Unescape backslash character on import",
+            "Treat backslash '\\' character as an escape character when loading data from file.",
+            false, false, OptionalFeatureService.FeatureType.Deprecated
+        ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
+            "Restore controller-first URLS",
+            "Generate URLs in a legacy format that puts the controller name before the folder path. This option will be removed in LabKey Server 26.3.",
+            false, false, OptionalFeatureService.FeatureType.Deprecated
+        ));
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
+            "Reject controller-first URLs",
+            "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
+            false
+        );
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
