@@ -672,7 +672,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         // Now that we know if this is a new install...
-        setDatabaseMigrationConfiguration();
+        setDatabaseMigrationConfiguration(labkeyRoot);
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
@@ -2063,9 +2063,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return _newInstall;
     }
 
-    private void setDatabaseMigrationConfiguration()
+    private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)
     {
-        _databaseMigrationConfiguration = DatabaseMigrationService.get().getDatabaseMigrationConfiguration(_migration);
+        _databaseMigrationConfiguration = DatabaseMigrationService.get().getDatabaseMigrationConfiguration(labkeyRoot, _migration);
     }
 
     // Are we bootstrapping a PostgreSQL database with empty schemas?

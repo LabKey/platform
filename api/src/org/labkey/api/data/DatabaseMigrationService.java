@@ -2,10 +2,12 @@ package org.labkey.api.data;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,7 +31,7 @@ public interface DatabaseMigrationService
         ServiceRegistry.get().registerService(DatabaseMigrationService.class, impl);
     }
 
-    default DatabaseMigrationConfiguration getDatabaseMigrationConfiguration(String migration)
+    default DatabaseMigrationConfiguration getDatabaseMigrationConfiguration(FileLike labkeyRoot, @Nullable String migration)
     {
         return new DefaultDatabaseMigrationConfiguration();
     }
