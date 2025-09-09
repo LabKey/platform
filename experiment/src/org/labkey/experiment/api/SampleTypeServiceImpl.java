@@ -1562,6 +1562,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             totalUnitsStr = sampleTypeUnitsStr;
         else if (!StringUtils.isEmpty(sampleItemUnitsStr))
             totalUnitsStr = sampleItemUnitsStr;
+        else // use the unit of the first aliquot if there are no other indications
+            totalUnitsStr = volumeUnits.get(0).unit;
         if (!StringUtils.isEmpty(totalUnitsStr))
         {
             try
