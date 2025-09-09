@@ -4508,6 +4508,8 @@ public class ExperimentController extends SpringActionController
         @Override
         protected void configureLoader(DataLoader loader) throws IOException
         {
+            if (getOptionParamValue(Params.crossTypeImport))
+                loader.setInferTypes(false);
             configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
         }
     }
