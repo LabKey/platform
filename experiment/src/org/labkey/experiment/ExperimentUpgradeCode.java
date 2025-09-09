@@ -211,7 +211,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     }
 
-    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
+    private static void  getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
     {
         Unit baseUnit = currentDisplayUnit.getBase();
         String unitsStr = (String) sampleMap.get(unitsCol.getName());
@@ -337,26 +337,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         {
                             getAmountAndUnitUpdates(sampleMap, aliquotUnits, Set.of(aliquotAmount, availableAliquotAmount), currentDisplayUnit, oldDataMap, newDataMap, aliquotCounts, true);
                         }
-                    }
-                    else // no display unit
-                    {
-                        // Have an amount and no unit, update to a Unit.unit type
-                        if (sampleMap.get(StoredAmount.name()) != null && StringUtils.isEmpty((String) sampleMap.get(Units.name())))
-                        {
-                            newDataMap.put(Units.name(), Unit.unit.name());
-                            units.setValue(Unit.unit.name());
-                            sampleCounts.put("amountWithoutMaterialOrDisplayUnits", sampleCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
-                        }
-                        if (StringUtils.isEmpty((String) sampleMap.get(AliquotUnit.name())))
-                        {
-                            if (sampleMap.get(AliquotVolume.name()) != null || sampleMap.get(AvailableAliquotVolume.name()) != null)
-                            {
-                                newDataMap.put(AliquotUnit.name(), Unit.unit.name());
-                                aliquotUnits.setValue(Unit.unit.name());
-                                aliquotCounts.put("amountWithoutMaterialOrDisplayUnits", aliquotCounts.getOrDefault("amountWithoutMaterialOrDisplayUnits", 0) + 1);
-                            }
-                        }
-                        // for rows with an amount and a unit when there is no display unit, no conversion is done
                     }
 
 
