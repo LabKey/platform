@@ -3,6 +3,7 @@ package org.labkey.test.tests.study;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,6 +25,7 @@ import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
+import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.PasswordUtil;
@@ -38,18 +40,13 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-/*
-Added the test to provide additional test coverage for below mentioned issue
-https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=42309
- */
-
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {
     private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
     private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
-    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate) + "\\";
     private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
     private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
     private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
@@ -93,7 +90,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         _containerHelper.deleteProject(IMPORT_PROJECT, false);
     }
 
-    @Test
+    @Test // Issue 42309
     public void testFileField() throws IOException, CommandException
     {
         new ApiPermissionsHelper(this)
@@ -122,7 +119,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         log("Edit the dataset");
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
-        setFormElement(Locator.name("quf_" + TEXT_FIELD), "Welcome..!");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(TEXT_FIELD)), "Welcome..!");
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
         clickButton("Submit");
 
@@ -152,13 +149,9 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         String expectedText;
 
         if (SystemUtils.IS_OS_WINDOWS)
-        {
             expectedText = "datasetdata\\sample.txt";
-        }
         else
-        {
             expectedText = "datasetdata/sample.txt";
-        }
 
         assertElementPresent("Did not find the expected sample.txt from the imported dataset.", Locator.tagContainingText("a", expectedText), 1);
         downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
@@ -172,23 +165,23 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         table = new DataRegionTable("Dataset", getDriver());
         table.clickEditRow(0);
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
-        setFormElement(Locator.name("quf_" + INT_FIELD), "NOT A NUMBER");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(INT_FIELD)), "NOT A NUMBER");
         clickButton("Submit");
 
         // assert correct reshow with error
         assertTextPresent("Could not convert value:");
         checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
 
-        // Issue : 53320. Update a file field with a different file
+        // Issue 53320: Update a file field with a different file
         click(Locator.linkContainingText("remove"));
         File updateFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
-        setFormElement(Locator.name("quf_" + INT_FIELD), "2");
-        setFormElement(Locator.name("quf_" + FILE_FIELD_1), updateFile.toString());
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(INT_FIELD)), "2");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(FILE_FIELD_1)), updateFile.toString());
         clickButton("Submit");
 
-        FileBrowserHelper.FileDetailInfo fileInfoImportedFile = _fileBrowserHelper.getFileDetailInfo(IMPORT_PROJECT, "sample.txt");
+        FileBrowserHelper.FileDetailInfo fileInfoImportedFile = FileBrowserHelper.getFileDetailInfo(IMPORT_PROJECT, "sample.txt");
 
-        // error case: import, update, merge with invalid file path
+        // error case: import, update, merge with an invalid file path
         ViewDatasetDataPage datasetDataPage = new ViewDatasetDataPage(getDriver());
         ImportDataPage importDataPage = datasetDataPage.importBulkData();
         importDataPage.setCopyPasteMerge(false, false);

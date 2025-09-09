@@ -47,6 +47,7 @@ import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PasswordUtil;
@@ -944,8 +945,8 @@ public class StudyTest extends StudyBaseTest
 
         int datasetAuditEventCount = getDatasetAuditEventCount(); //inserting a new event should increase this by 1;
         DataRegionTable.findDataRegion(this).clickInsertNewRow();
-        setFormElement(Locator.name("quf_MouseId"), "999320812");
-        setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Mouse Comment");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName("MouseId")), "999320812");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(COMMENT_FIELD_NAME)), "Mouse Comment");
         clickButton("Submit");
         //Issue 14894: Datasets no longer audit row insertion
         verifyAuditEventAdded(datasetAuditEventCount);
@@ -970,7 +971,7 @@ public class StudyTest extends StudyBaseTest
         checkCheckbox(Locator.name(".toggle"));
         BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
         BootstrapMenu.find(getDriver(),"Copy or Move Comment(s)").clickSubMenu(true, "Copy", "To Mouse", "999320812");
-        setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Copied PTID Comment");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(COMMENT_FIELD_NAME)), "Copied PTID Comment");
         clickButton("Submit");
         assertTextPresent("Copied PTID Comment");
 
@@ -981,7 +982,7 @@ public class StudyTest extends StudyBaseTest
             BootstrapMenu.find(getDriver(), "Copy or Move Comment(s)").clickSubMenu(false, "Move", "To Mouse", "999320812");
             acceptAlert();
         });
-        setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Moved PTID Comment");
+        setFormElement(Locator.name(EscapeUtil.getFormFieldName(COMMENT_FIELD_NAME)), "Moved PTID Comment");
         clickButton("Submit");
         assertElementPresent(Locator.tagContainingText("td", "Moved PTID Comment"));
         assertElementNotPresent(Locator.tagContainingText("td", "Mouse Comment"));
