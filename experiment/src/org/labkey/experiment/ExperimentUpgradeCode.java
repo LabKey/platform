@@ -24,6 +24,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ClosureQueryHelper;
@@ -117,7 +118,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     @SuppressWarnings("unused")
     public static void ensureBigObjectIds(ModuleContext context)
     {
-        if (AppProps.getInstance().isDevMode())
+        if (AppProps.getInstance().isDevMode() && ModuleLoader.getInstance().shouldInsertData())
         {
             DbScope primary = DbScope.getLabKeyScope();
             String schemaName = "exp";

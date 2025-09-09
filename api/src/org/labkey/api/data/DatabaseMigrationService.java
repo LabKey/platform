@@ -2,7 +2,7 @@ package org.labkey.api.data;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.logging.LogHelper;
@@ -29,8 +29,13 @@ public interface DatabaseMigrationService
         ServiceRegistry.get().registerService(DatabaseMigrationService.class, impl);
     }
 
+    default DatabaseMigrationConfiguration getDatabaseMigrationConfiguration(String migration)
+    {
+        return new DefaultDatabaseMigrationConfiguration();
+    }
+
     // By default, no-op implementation that simply logs
-    default void migrate(boolean shouldInsertData, @Nullable String migrationDataSource)
+    default void migrate(DatabaseMigrationConfiguration configuration)
     {
         LOG.warn("Database migration service is not present; database migration is a premium feature.");
     }
