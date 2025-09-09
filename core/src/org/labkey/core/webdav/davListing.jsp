@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
+<%@ page import="java.lang.Override" %>
+<%@ page import="java.lang.String" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -41,20 +43,17 @@
 
     Ext4.onReady(function() {
 
-        var url = new URL(document.URL);
-        var returnUrl = encodeURIComponent(url.pathname + url.search);
-
         var loginAction = new Ext4.Action({
             text : 'Login',
             handler : function () {
-                window.location = LABKEY.contextPath + '/home/login-login.view?returnUrl=' + returnUrl;
+                window.location = LABKEY.ActionURL.buildURL('login', 'login', null, {returnUrl: window.location});
             }
         });
 
         var logoutAction = new Ext4.Action({
             text : 'Logout',
             handler : function () {
-                LABKEY.Utils.postToAction(LABKEY.contextPath + '/home/login-logout.view?returnUrl=' + returnUrl);
+                LABKEY.Utils.postToAction(LABKEY.ActionURL.buildURL('login', 'logout', null, {returnUrl: window.location}));
             }
         });
 
