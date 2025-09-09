@@ -1568,7 +1568,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             try
             {
-                totalUnit = Unit.valueOf(totalUnitsStr).getBase();
+                if (!StringUtils.isEmpty(sampleTypeUnitsStr))
+                    totalUnit = Unit.valueOf(totalUnitsStr).getBase();
+                else
+                    totalUnit = Unit.valueOf(totalUnitsStr);
             }
             catch (IllegalArgumentException e)
             {
