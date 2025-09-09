@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -225,7 +226,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             String prevResult = result.get();
             String newResult = new SqlSelector(mqh._scope, mqh._uptodateQuery).getObject(String.class);
-            if (StringUtils.equals(prevResult,newResult))
+            if (Strings.CS.equals(prevResult,newResult))
                 return true;
             result.set(newResult);
             return false;
@@ -265,7 +266,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             String prevResult = _result.get();
             String newResult = _supplier.get();
-            if (StringUtils.equals(prevResult,newResult))
+            if (Strings.CS.equals(prevResult,newResult))
                 return true;
             _result.set(newResult);
             return false;

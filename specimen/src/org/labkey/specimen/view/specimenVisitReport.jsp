@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -28,6 +27,7 @@
 <%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = HttpView.currentView();
@@ -108,7 +108,7 @@ The request has produced no records.
             {
                 for (int col=0 ; col < width ; col++)
                 {
-                    if (!StringUtils.equals(rowtitles[row][col].first.getValue(), rowtitles[row-1][col].first.getValue()))
+                    if (!Strings.CS.equals(rowtitles[row][col].first.getValue(), rowtitles[row-1][col].first.getValue()))
                         break;
                     rowtitles[row-1][col].second += rowtitles[row][col].second;
                     rowtitles[row][col].second = 0;

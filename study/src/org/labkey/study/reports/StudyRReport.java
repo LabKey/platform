@@ -47,7 +47,7 @@ public class StudyRReport extends RReport
     }
 
     @Override
-    public HttpView renderDataView(ViewContext context)
+    public HttpView<?> renderDataView(ViewContext context)
     {
         return createQueryView(context, getDescriptor());
     }
@@ -62,10 +62,10 @@ public class StudyRReport extends RReport
     }
 
     @Override
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
         // Special handling for study R report -- from old StudyRunRReportView
-        HttpView reportView = super.getRunReportView(context);
+        HttpView<?> reportView = super.getRunReportView(context);
 
         boolean isParticipantChart = PARTICIPANT_KEY.equals(getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
 

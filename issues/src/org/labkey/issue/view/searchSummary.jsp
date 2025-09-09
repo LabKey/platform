@@ -22,14 +22,15 @@
 <%@ page import="org.labkey.issue.model.IssueObject"%>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssueObject> me = HttpView.currentView();
     final IssueObject issue = me.getModelBean();
     final User user = getUser();
-    final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");
-    final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
+    final boolean isClosed = Strings.CI.equals(issue.getStatus(),"closed");
+    final boolean isOpen = Strings.CI.equals(issue.getStatus(),"open");
 %>
 <table style="min-width:150pt;margin-bottom:15px;">
     <tr><td style="color: #777777"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>

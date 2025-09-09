@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1592,7 +1593,7 @@ public class WikiController extends SpringActionController
 
             Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (wiki != null)
-                view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki.getAttachmentParent()));
+                view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki.getAttachmentParent(), errors));
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
             setHelpTopic("wikiUserGuide#history");
@@ -2297,7 +2298,7 @@ public class WikiController extends SpringActionController
             if (null != name && !name.isEmpty())
             {
                 Wiki existingWiki = WikiSelectManager.getWiki(container, name);
-                if (null != existingWiki && (null == form.getEntityId() || !StringUtils.equalsIgnoreCase(existingWiki.getEntityId(), form.getEntityId().toString())))
+                if (null != existingWiki && (null == form.getEntityId() || !Strings.CI.equals(existingWiki.getEntityId(), form.getEntityId().toString())))
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
 

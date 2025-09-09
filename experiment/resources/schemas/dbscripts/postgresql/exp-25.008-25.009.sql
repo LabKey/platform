@@ -1,0 +1,1 @@
+ALTER TABLE exp.list ALTER COLUMN keyname TYPE VARCHAR(200);

@@ -17,6 +17,7 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -260,7 +261,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setName(String name)
     {
-        if (StringUtils.equals(name, getName()))
+        if (Strings.CS.equals(name, getName()))
             return;
         edit().setName(name);
     }
@@ -268,7 +269,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setDescription(String description)
     {
-        if (StringUtils.equals(description, getDescription()))
+        if (Strings.CS.equals(description, getDescription()))
             return;
         edit().setDescription(description);
     }
@@ -282,7 +283,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setPropertyURI(String uri)
     {
-        if (StringUtils.equals(uri, getPropertyURI()))
+        if (Strings.CS.equals(uri, getPropertyURI()))
             return;
         edit().setPropertyURI(uri);
     }
@@ -290,7 +291,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setRangeURI(String rangeURI)
     {
-        if (StringUtils.equals(rangeURI, getRangeURI()))
+        if (Strings.CS.equals(rangeURI, getRangeURI()))
             return;
         editSchema().setRangeURI(rangeURI);
     }
@@ -304,7 +305,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setFormat(String s)
     {
-        if (StringUtils.equals(s, getFormat()))
+        if (Strings.CS.equals(s, getFormat()))
             return;
         edit().setFormat(s);
     }
@@ -312,7 +313,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setLabel(String caption)
     {
-        if (StringUtils.equals(caption, getLabel()))
+        if (Strings.CS.equals(caption, getLabel()))
             return;
         edit().setLabel(caption);
     }
@@ -320,7 +321,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConceptURI(String conceptURI)
     {
-        if (StringUtils.equals(conceptURI, getConceptURI()))
+        if (Strings.CS.equals(conceptURI, getConceptURI()))
             return;
         edit().setConceptURI(conceptURI);
     }
@@ -453,7 +454,7 @@ public class DomainPropertyImpl implements DomainProperty
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String aliases)
     {
-        if (StringUtils.equals(aliases, getImportAliases()))
+        if (Strings.CS.equals(aliases, getImportAliases()))
             return;
         edit().setImportAliases(aliases);
     }
@@ -469,7 +470,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         String current = getImportAliases();
         String newAliases = ColumnRenderPropertiesImpl.convertToString(aliases);
-        if (StringUtils.equals(current, newAliases))
+        if (Strings.CS.equals(current, newAliases))
             return;
         edit().setImportAliasesSet(aliases);
     }
@@ -483,7 +484,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setURL(String url)
     {
-        if (StringUtils.equals(getURL(), url))
+        if (Strings.CS.equals(getURL(), url))
             return;
 
         if (null == url)
@@ -663,7 +664,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setPrincipalConceptCode(String code)
     {
-        if (!StringUtils.equals(code, getPrincipalConceptCode()))
+        if (!Strings.CS.equals(code, getPrincipalConceptCode()))
             edit().setPrincipalConceptCode(code);
     }
 
@@ -682,7 +683,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setSourceOntology(String sourceOntology)
     {
-        if (!StringUtils.equals(sourceOntology, getSourceOntology()))
+        if (!Strings.CS.equals(sourceOntology, getSourceOntology()))
             edit().setSourceOntology(sourceOntology);
     }
 
@@ -695,7 +696,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConceptSubtree(String path)
     {
-        if (!StringUtils.equals(path, getConceptSubtree()))
+        if (!Strings.CS.equals(path, getConceptSubtree()))
             edit().setConceptSubtree(path);
     }
 
@@ -708,7 +709,7 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConceptImportColumn(String conceptImportColumn)
     {
-        if (!StringUtils.equals(conceptImportColumn, getConceptImportColumn()))
+        if (!Strings.CS.equals(conceptImportColumn, getConceptImportColumn()))
             edit().setConceptImportColumn(conceptImportColumn);
     }
 
@@ -721,14 +722,14 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConceptLabelColumn(String conceptLabelColumn)
     {
-        if (!StringUtils.equals(conceptLabelColumn, getConceptLabelColumn()))
+        if (!Strings.CS.equals(conceptLabelColumn, getConceptLabelColumn()))
             edit().setConceptLabelColumn(conceptLabelColumn);
     }
 
     @Override
     public void setDerivationDataScope(String scope)
     {
-        if (!StringUtils.equals(scope, getDerivationDataScope()))
+        if (!Strings.CS.equals(scope, getDerivationDataScope()))
             edit().setDerivationDataScope(scope);
     }
 
@@ -1238,7 +1239,7 @@ public class DomainPropertyImpl implements DomainProperty
             assertTrue(_dp.isDirty());
             assertTrue(_dp._schemaChanged);
             assertFalse(_dp.isRecreateRequired());
-            assertTrue(StringUtils.equals(_dp.getRangeURI(), _pd.getRangeURI()));
+            assertTrue(Strings.CS.equals(_dp.getRangeURI(), _pd.getRangeURI()));
 
             // setting schema import to true will enable the _schemaChanged flag to toggle
             // so it should be set true here
@@ -1249,7 +1250,7 @@ public class DomainPropertyImpl implements DomainProperty
             assertTrue(_dp.isDirty());
             assertTrue(_dp._schemaChanged);
             assertTrue(_dp.isRecreateRequired());
-            assertTrue(StringUtils.equals(_dp.getRangeURI(), _pd.getRangeURI()));
+            assertTrue(Strings.CS.equals(_dp.getRangeURI(), _pd.getRangeURI()));
 
             // verify no change when setting value to the same value as it was
             resetProperties(d, domainURI, c);
@@ -1309,10 +1310,10 @@ public class DomainPropertyImpl implements DomainProperty
             else
             {
                 if (containerId != null)
-                    assertTrue(StringUtils.equals(l.getContainer().getId(), _pd.getLookupContainer()));
+                    assertTrue(Strings.CS.equals(l.getContainer().getId(), _pd.getLookupContainer()));
 
-                assertTrue(StringUtils.equals(l.getQueryName(), _pd.getLookupQuery()));
-                assertTrue(StringUtils.equals(l.getSchemaKey().toString(), _pd.getLookupSchema()));
+                assertTrue(Strings.CS.equals(l.getQueryName(), _pd.getLookupQuery()));
+                assertTrue(Strings.CS.equals(l.getSchemaKey().toString(), _pd.getLookupSchema()));
             }
         }
 

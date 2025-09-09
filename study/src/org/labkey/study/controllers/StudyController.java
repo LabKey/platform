@@ -494,7 +494,7 @@ public class StudyController extends BaseStudyController
         StringBuilder sb = new StringBuilder("Manage ");
 
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
-        if (visitStudy != null && visitStudy.getShareVisitDefinitions() == Boolean.TRUE)
+        if (visitStudy.getShareVisitDefinitions() == Boolean.TRUE)
             sb.append("Shared ");
 
         sb.append(getVisitLabelPlural());
@@ -512,8 +512,8 @@ public class StudyController extends BaseStudyController
         {
             _study = getStudy();
 
-            WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), StudyModule.manageStudyPartFactory.createWebPart());
-            WebPartView views = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
+            WebPartView<?> overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), StudyModule.manageStudyPartFactory.createWebPart());
+            WebPartView<?> views = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
 			return new VBox(overview, views);
         }
 
@@ -1041,7 +1041,7 @@ public class StudyController extends BaseStudyController
                 {
                     // discuss the report
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    HttpView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
+                    HttpView<?> discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     if (discussion != null)
                         view.addView(discussion);
                 }
@@ -1049,7 +1049,7 @@ public class StudyController extends BaseStudyController
                 {
                     // discuss the dataset
                     String title = "Discuss dataset - " + def.getLabel();
-                    HttpView discussion = service.getDiscussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
+                    HttpView<?> discussion = service.getDiscussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     if (discussion != null)
                         view.addView(discussion);
                 }
@@ -1078,7 +1078,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresNoPermission
-    public static class ExpandStateNotifyAction extends SimpleViewAction
+    public static class ExpandStateNotifyAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1221,22 +1221,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class Participant2Form
-    {
-        String participantId;
-
-        public String getParticipantId()
-        {
-            return participantId;
-        }
-
-        public void setParticipantId(String participantId)
-        {
-            this.participantId = participantId;
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class Participant2Action extends SimpleViewAction<ParticipantForm>
     {
@@ -1254,8 +1238,6 @@ public class StudyController extends BaseStudyController
         {
             ViewContext context = getViewContext();
             Study study = getStudyRedirectIfNull();
-            ActionURL previousParticipantURL = null;
-            ActionURL nextParticipantURL = null;
 
             if (form.getParticipantId() == null)
             {
@@ -1284,7 +1266,7 @@ public class StudyController extends BaseStudyController
             String pageId = Participant.class.getName();
             boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
 
-            HttpView template = PageConfig.Template.Home.getTemplate(getViewContext(), new VBox(), page);
+            HttpView<?> template = PageConfig.Template.Home.getTemplate(getViewContext(), new VBox(), page);
             int parts = Portal.populatePortalView(getViewContext(), pageId, template, isPrint(), canCustomize, false, true, Portal.STUDY_PARTICIPANT_PORTAL_PAGE);
 
             if (parts == 0 && canCustomize)
@@ -1490,7 +1472,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ManageStudyPermission.class)
-    public class ManageStudyAction extends SimpleViewAction
+    public class ManageStudyAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2098,11 +2080,8 @@ public class StudyController extends BaseStudyController
 
             //check for overlapping visits that the target num is within the range
             VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-            if (null != visitMgr)
-            {
-                if (visitMgr.isVisitOverlapping(visitBean))
-                    errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
-            }
+            if (visitMgr.isVisitOverlapping(visitBean))
+                errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
         }
 
         @Override
@@ -2299,7 +2278,7 @@ public class StudyController extends BaseStudyController
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            Collection<VisitImpl> visits = getUnusedVisits(study);
+            Collection<VisitImpl> visits = getUnusedVisits();
             HtmlStringBuilder sb = HtmlStringBuilder.of();
 
             if (visits.isEmpty())
@@ -2334,14 +2313,14 @@ public class StudyController extends BaseStudyController
             long start = System.currentTimeMillis();
             StudyImpl study = getStudyThrowIfNull();
 
-            StudyManager.getInstance().deleteVisits(study, getUnusedVisits(study), getUser(), true);
+            StudyManager.getInstance().deleteVisits(study, getUnusedVisits(), getUser(), true);
 
             _log.info("Delete unused visits took: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
 
             return true;
         }
 
-        private @NotNull Collection<VisitImpl> getUnusedVisits(final StudyImpl study)
+        private @NotNull Collection<VisitImpl> getUnusedVisits()
         {
             return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment(
                 "SELECT * FROM study.Visit v WHERE Container = ? AND rowid NOT IN (SELECT DISTINCT VisitRowId FROM study.ParticipantVisit pv WHERE pv.Container = ?)",
@@ -2501,11 +2480,8 @@ public class StudyController extends BaseStudyController
 
             //check for overlapping visits
             VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-            if (null != visitMgr)
-            {
-                if (visitMgr.isVisitOverlapping(target.getBean()))
-                    errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
-            }
+            if (visitMgr.isVisitOverlapping(target.getBean()))
+                errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
         }
 
         @Override
@@ -2569,12 +2545,9 @@ public class StudyController extends BaseStudyController
 
             //check for overlapping visits
             VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-            if (null != visitMgr)
-            {
-                String range = isDateBased ? "day range" : "sequence range";
-                if (visitMgr.isVisitOverlapping(form.getBean()))
-                    errors.reject(null, "The visit " + range + " provided overlaps with an existing visit in this study. Please enter a different " + range + ".");
-            }
+            String range = isDateBased ? "day range" : "sequence range";
+            if (visitMgr.isVisitOverlapping(form.getBean()))
+                errors.reject(null, "The visit " + range + " provided overlaps with an existing visit in this study. Please enter a different " + range + ".");
         }
 
         @Override
@@ -3689,7 +3662,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandler)
         {
             _study = StudyController.getStudyThrowIfNull(container);
 
@@ -3723,7 +3696,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandler)
         {
             HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
             panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
@@ -3753,7 +3726,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler<ManageQCStatesForm> qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a requires comment panel.");
         }
@@ -3766,12 +3739,6 @@ public class StudyController extends BaseStudyController
         {
             super();
             _dataStateHandler = new StudyQCStateHandler();
-        }
-
-        @Override
-        public DataStateHandler getDataStateHandler()
-        {
-            return _dataStateHandler;
         }
 
         @Override
@@ -4271,7 +4238,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class TypeNotFoundAction extends SimpleViewAction
+    public class TypeNotFoundAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -4287,7 +4254,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateParticipantVisitsAction extends FormViewAction
+    public class UpdateParticipantVisitsAction extends FormViewAction<Object>
     {
         private int _count;
 
@@ -4721,7 +4688,7 @@ public class StudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public static class DeleteDatasetPropertyOverrideAction extends MutatingApiAction
+    public static class DeleteDatasetPropertyOverrideAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -4828,48 +4795,48 @@ public class StudyController extends BaseStudyController
 
 
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
-            "<div id=\"participantData\">Loading...</div>\n" +
-            "\n" +
-            "<script type=\"text/javascript\" nonce=\"<%=scriptNonce%>\">\n" +
-            "    LABKEY.requiresClientAPI(function() {\n" +
-            "       /* get the participant id from the request URL: this parameter is required. */\n" +
-            "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
-            "       /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +
-            "           state per-dataset. This parameter is optional; we use -1 if it isn't provided. */\n" +
-            "       var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
-            "       if (!datasetId)\n" +
-            "           datasetId = -1;\n" +
-            "       var dataType = 'ALL';\n" +
-            "       /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */" +
-            "\n" +
-            "       var QCState = LABKEY.ActionURL.getParameter('QCState');\n" +
-            "\n" +
-            "       /* create the participant details webpart: */\n" +
-            "       var participantWebPart = new LABKEY.WebPart({\n" +
-            "       partName: 'Participant Details',\n" +
-            "       renderTo: 'participantData',\n" +
-            "       frame : 'false',\n" +
-            "       partConfig: {\n" +
-            "           participantId: participantId,\n" +
-            "           datasetId: datasetId,\n" +
-            "           dataType: dataType,\n" +
-            "           QCState: QCState,\n" +
-            "           currentUrl: '' + window.location\n" +
-            "           }\n" +
-            "       });\n" +
-            "\n" +
-            "       /* place the webpart into the 'participantData' div: */\n" +
-            "       participantWebPart.render();\n" +
-            "   });\n" +
-            "</script>\n" +
-            "/* Adjust width of first column: */\n" +
-            "<style>\n" +
-            "  .labkey-data-region tr td:first-child {width: 300px}\n" +
-            "</style>";
+            """
+                    <div id="participantData">Loading...</div>
+                    
+                    <script type="text/javascript" nonce="<%=scriptNonce%>">
+                        LABKEY.requiresClientAPI(function() {
+                           /* get the participant id from the request URL: this parameter is required. */
+                           var participantId = LABKEY.ActionURL.getParameter('participantId');
+                           /* get the dataset id from the request URL: this is used to remember expand/collapse
+                               state per-dataset. This parameter is optional; we use -1 if it isn't provided. */
+                           var datasetId = LABKEY.ActionURL.getParameter('datasetId');
+                           if (!datasetId)
+                               datasetId = -1;
+                           var dataType = 'ALL';
+                           /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */\
+                    
+                           var QCState = LABKEY.ActionURL.getParameter('QCState');
+                    
+                           /* create the participant details webpart: */
+                           var participantWebPart = new LABKEY.WebPart({
+                           partName: 'Participant Details',
+                           renderTo: 'participantData',
+                           frame : 'false',
+                           partConfig: {
+                               participantId: participantId,
+                               datasetId: datasetId,
+                               dataType: dataType,
+                               QCState: QCState,
+                               currentUrl: '' + window.location
+                               }
+                           });
+                    
+                           /* place the webpart into the 'participantData' div: */
+                           participantWebPart.render();
+                       });
+                    </script>
+                    /* Adjust width of first column: */
+                    <style>
+                      .labkey-data-region tr td:first-child {width: 300px}
+                    </style>""";
 
     public static class CustomizeParticipantViewForm extends ReturnUrlForm
     {
-        private String _returnUrl;
         private String _customScript;
         private String _participantId;
         private boolean _useCustomView;
@@ -5394,7 +5361,7 @@ public class StudyController extends BaseStudyController
             _map = map;
         }
 
-        private static final Pattern pat =  Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
+        private static final Pattern pat =  Pattern.compile("dataset\\[(\\d*)]\\.(\\w*)");
 
         @Override
         public Predicate<String> allowBindParameter()
@@ -5405,9 +5372,7 @@ public class StudyController extends BaseStudyController
                     name = name.substring(SpringActionController.FIELD_MARKER.length());
                 if (HasAllowBindParameter.getDefaultPredicate().test(name))
                     return true;
-                if (pat.matcher(name).matches())
-                    return true;
-                return false;
+                return pat.matcher(name).matches();
             };
         }
     }
@@ -5971,32 +5936,10 @@ public class StudyController extends BaseStudyController
         public void setSourceLsid(String sourceLsid) {_sourceLsid = sourceLsid;}
     }
 
-    public static class ReportHeader extends HttpView
-    {
-        private final Report _report;
-
-        public ReportHeader(Report report)
-        {
-            _report = report;
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
-            {
-                out.print("<table>");
-                out.print("<tr><td><span class='navPageHeader'>Report Description:</span>&nbsp;</td>");
-                out.print("<td>" + _report.getDescriptor().getReportDescription() + "</td></tr>");
-                out.print("</table>");
-            }
-        }
-    }
-
     /**
      * Adds next and prev buttons to the participant view
      */
-    public static class ParticipantNavView extends HttpView
+    public static class ParticipantNavView extends HttpView<Object>
     {
         private final ActionURL _prevURL;
         private final ActionURL _nextURL;
@@ -6010,11 +5953,6 @@ public class StudyController extends BaseStudyController
             _nextURL = nextURL;
             _display = display;
             _currentParticipantId = currentParticipantId;
-        }
-
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId)
-        {
-            this(prevURL, nextURL, currentParticipantId,  null);
         }
 
         @Override
@@ -6039,7 +5977,7 @@ public class StudyController extends BaseStudyController
 
             SearchService ss = SearchService.get();
 
-            if (null != _currentParticipantId && null != ss)
+            if (null != _currentParticipantId)
             {
                 ActionURL search = urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
                 LinkBuilder.labkeyLink("Search for '" + id(_currentParticipantId, c, user) + "'", search).appendTo(out);
@@ -6521,7 +6459,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowVisitImportMappingAction extends SimpleViewAction
+    public class ShowVisitImportMappingAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -6650,7 +6588,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ClearVisitAliasesAction extends ConfirmAction
+    public class ClearVisitAliasesAction extends ConfirmAction<Object>
     {
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
@@ -7125,6 +7063,7 @@ public class StudyController extends BaseStudyController
                 switch (form.getType())
                 {
                     case defineManually:
+                    {
                         def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
                                 .setStudy(_study)
                                 .setDemographicData(false)
@@ -7134,6 +7073,7 @@ public class StudyController extends BaseStudyController
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
+                    }
                     case placeHolder:
                         def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
                                 .setStudy(_study)
@@ -7156,7 +7096,7 @@ public class StudyController extends BaseStudyController
                             // add a cancel url to rollback either the manual link or import from file link
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, form.getExpectationDataset());
+                            ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, form.getExpectationDataset());
                             redirect.addCancelURL(cancelURL);
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }

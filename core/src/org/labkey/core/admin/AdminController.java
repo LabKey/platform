@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1379,7 +1380,6 @@ public class AdminController extends SpringActionController
             props.setRibbonMessage(form.getRibbonMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
-            props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
             props.setAllowApiKeys(form.isAllowApiKeys());
             props.setApiKeyExpirationSeconds(form.getApiKeyExpirationSeconds());
             props.setAllowSessionKeys(form.isAllowSessionKeys());
@@ -2348,7 +2348,6 @@ public class AdminController extends SpringActionController
 
         private String _baseServerURL;
         private String _callbackPassword;
-        private boolean _useContainerRelativeURL;
         private boolean _allowApiKeys;
         private int _apiKeyExpirationSeconds;
         private boolean _allowSessionKeys;
@@ -2555,16 +2554,6 @@ public class AdminController extends SpringActionController
         public void setRibbonMessage(String ribbonMessage)
         {
             _ribbonMessage = ribbonMessage;
-        }
-
-        public boolean getUseContainerRelativeURL()
-        {
-            return _useContainerRelativeURL;
-        }
-
-        public void setUseContainerRelativeURL(boolean useContainerRelativeURL)
-        {
-            _useContainerRelativeURL = useContainerRelativeURL;
         }
 
         public boolean isAllowApiKeys()
@@ -6250,7 +6239,7 @@ public class AdminController extends SpringActionController
                 {
                     for (String storeName : form.getEnabledCloudStore())
                     {
-                        if (StringUtils.equalsIgnoreCase(cloudRootName, storeName))
+                        if (Strings.CI.equals(cloudRootName, storeName))
                             return;
                     }
                 }
@@ -6442,7 +6431,7 @@ public class AdminController extends SpringActionController
             if (null != fileRootPath)
             {
                 String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath);
-                if (StringUtils.equalsIgnoreCase(absolutePath, form.getFolderRootPath()))
+                if (Strings.CI.equals(absolutePath, form.getFolderRootPath()))
                 {
                     if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
                         throw new UnauthorizedException("Only site admins can change file roots");

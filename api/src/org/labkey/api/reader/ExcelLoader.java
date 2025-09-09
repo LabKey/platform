@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -324,7 +325,7 @@ public class ExcelLoader extends DataLoader
     public boolean sheetMatches(int index, String name)
     {
         if (sheetName != null)
-            return StringUtils.equals(sheetName, name);
+            return Strings.CS.equals(sheetName, name);
         else if (sheetIndex != null)
             return  sheetIndex == index;
         else

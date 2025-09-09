@@ -15,7 +15,7 @@
  */
 package org.labkey.api.docker;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Builder;
 import org.labkey.api.security.User;
@@ -225,9 +225,9 @@ public interface DockerService
          */
         public boolean matches(ImageConfig ic)
         {
-            return StringUtils.equals(imageName,ic.imageName) && httpPort == ic.httpPort;
+            return Strings.CS.equals(imageName,ic.imageName) && httpPort == ic.httpPort;
             // TODO need to check that VOLUME is specified in image so it gets picked up by inspectImage
-            // && StringUtils.equals(mountHomeDirectory,ic.mountHomeDirectory);
+            // && Strings.CS.equals(mountHomeDirectory,ic.mountHomeDirectory);
         }
 
 

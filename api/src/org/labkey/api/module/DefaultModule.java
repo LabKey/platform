@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1039,7 +1040,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         for (String script : dir.listNames())
         {
-            if ((StringUtils.endsWithIgnoreCase(script, ".sql") || StringUtils.endsWithIgnoreCase(script, ".jsp")) && StringUtils.startsWithIgnoreCase(script, schema.getResourcePrefix() + "-"))
+            if ((Strings.CI.endsWith(script, ".sql") || Strings.CI.endsWith(script, ".jsp")) && Strings.CI.startsWith(script, schema.getResourcePrefix() + "-"))
                 fileNames.add(script);
         }
 

@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -313,7 +314,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
-                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
+                    if (c.getPropertyURI() == null || Strings.CI.equals("lsid", c.getName()) || Strings.CI.equals("genId", c.getName()))
                         continue;
                     if (c.isMvIndicatorColumn())
                         continue;

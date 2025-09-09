@@ -36,15 +36,15 @@ import java.util.Set;
 public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDataStatesForm> extends FormViewAction<FORM>
 {
     public abstract boolean hasQcStateDefaultsPanel();
-    public abstract HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler<FORM> qcStateHandler);
     public abstract boolean hasDataVisibilityPanel();
-    public abstract HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getDataVisibilityPanel(Container container, DataStateHandler<FORM> qcStateHandler);
     public abstract boolean hasRequiresCommentPanel();
-    public abstract HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getRequiresCommentPanel(Container container, DataStateHandler<FORM> qcStateHandler);
 
-    protected DataStateHandler _dataStateHandler;
+    protected DataStateHandler<FORM> _dataStateHandler;
 
-    public AbstractManageQCStatesAction(DataStateHandler dataStateHandler, Class<FORM> commandClass)
+    public AbstractManageQCStatesAction(DataStateHandler<FORM> dataStateHandler, Class<FORM> commandClass)
     {
         super(commandClass);
         _dataStateHandler = dataStateHandler;
@@ -160,7 +160,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
         return true;
     }
 
-    public ActionURL getSuccessURL(FORM manageQCStatesForm, Class<? extends AbstractManageQCStatesAction> manageActionClass, Class<? extends SimpleViewAction> defaultActionClass)
+    public ActionURL getSuccessURL(FORM manageQCStatesForm, Class<? extends AbstractManageQCStatesAction<FORM>> manageActionClass, Class<? extends SimpleViewAction<?>> defaultActionClass)
     {
         if (manageQCStatesForm.isReshowPage())
         {
@@ -175,15 +175,14 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
             return new ActionURL(defaultActionClass, getContainer());
     }
 
-    protected HtmlString getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Long qcStateId)
+    protected HtmlString getQcStateHtml(Container container, DataStateHandler<FORM> qcStateHandler, String selectName, Long qcStateId)
     {
         HtmlStringBuilder qcStateHtml = HtmlStringBuilder.of();
         qcStateHtml.unsafeAppend("          <td>");
         qcStateHtml.unsafeAppend("              <select name=\"").append(selectName).unsafeAppend("\">");
         qcStateHtml.unsafeAppend("                  <option value=\"\">[none]</option>");
-        for (Object stateObj : qcStateHandler.getStates(container))
+        for (DataState state : qcStateHandler.getStates(container))
         {
-            DataState state = (DataState) stateObj;
             boolean selected = (qcStateId != null) && (qcStateId == state.getRowId());
             String selectedText = (selected) ? " selected" : "";
             qcStateHtml.unsafeAppend("              <option value=\"").append(state.getRowId()).unsafeAppend("\"").append(selectedText).unsafeAppend(">").append(state.getLabel()).unsafeAppend("</option>");

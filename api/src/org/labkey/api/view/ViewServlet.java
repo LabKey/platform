@@ -16,7 +16,7 @@
 package org.labkey.api.view;
 
 import datadog.trace.api.CorrelationIdentifier;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
@@ -567,7 +567,7 @@ public class ViewServlet extends HttpServlet
             @Override
             public @NotNull String getContentAsString() throws UnsupportedEncodingException
             {
-                if (StringUtils.equals(getHeader("Content-Encoding"),"gzip"))
+                if (Strings.CS.equals(getHeader("Content-Encoding"),"gzip"))
                     return Compress.decompressGzip(getContentAsByteArray());
                 else
                     return super.getContentAsString();

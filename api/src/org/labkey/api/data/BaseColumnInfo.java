@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1102,7 +1103,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         {
             String conceptURI = xmlCol.getConceptURI();
             // User can not set this concepturi, it only applies to exp.object.objectid
-            if (!StringUtils.equalsIgnoreCase(conceptURI,BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
+            if (!Strings.CI.equals(conceptURI,BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
                 setConceptURI(conceptURI);
         }
         if (xmlCol.isSetRangeURI())

@@ -96,7 +96,7 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         List<FieldKey> defaultCols = new ArrayList<>(table.getDefaultVisibleColumns());
         defaultCols.add(FieldKey.fromParts("Changes"));
         table.setDefaultVisibleColumns(defaultCols);
-        DetailsURL url = DetailsURL.fromString("audit/showSiteSettingsAuditDetails.view?id=${rowId}");
+        DetailsURL url = DetailsURL.fromString("audit-showSiteSettingsAuditDetails.view?id=${rowId}");
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
 

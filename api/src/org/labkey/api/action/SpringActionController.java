@@ -593,7 +593,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         // THEN ask the caller to retry.
         if (x instanceof Exception && SqlDialect.isTransactionException((Exception)x) && "GET".equals(request.getMethod()) && !response.isCommitted())
         {
-            if (!StringUtils.equals("1",getViewContext().getActionURL().getParameter("_retry_")))
+            if (!"1".equals(getViewContext().getActionURL().getParameter("_retry_")))
             {
                 ActionURL url = getViewContext().cloneActionURL().addParameter("_retry_", "1");
                 ExceptionUtil.doErrorRedirect(response, url.getLocalURIString());

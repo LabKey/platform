@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -132,7 +133,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
@@ -1132,7 +1132,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
-                    if (ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    if (ExperimentService.isInputOutputColumn(col) || Strings.CI.equals("parent",col) || importAliases.containsKey(col))
                     {
                         hasParentInput = true;
                         break;

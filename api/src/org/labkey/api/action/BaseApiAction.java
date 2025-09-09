@@ -37,7 +37,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BadRequestException;
@@ -91,13 +90,13 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         Marshal marshal = getClass().getAnnotation(Marshal.class);
         if (marshal == null)
         {
-            Class superClass = getClass().getSuperclass();
+            Class<?> superClass = getClass().getSuperclass();
             if (null != superClass)
                 marshal = (Marshal) superClass.getAnnotation(Marshal.class);
         }
         if (marshal == null)
         {
-            Class declaringClass = getClass().getDeclaringClass();
+            Class<?> declaringClass = getClass().getDeclaringClass();
             if (declaringClass != null)
                 marshal = (Marshal)declaringClass.getAnnotation(Marshal.class);
         }
@@ -123,17 +122,13 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
-        switch (getViewContext().getMethod())
+        return switch (getViewContext().getMethod())
         {
-            case POST:
-            case PUT:
-            case DELETE:
-            case PATCH:
-                return handlePost();
-            case GET:
-                return handleGet();
-        }
-        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            case POST, PUT, DELETE, PATCH -> handlePost();
+            case GET -> handleGet();
+            default ->
+                    throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        };
     }
 
     @Override
@@ -176,7 +171,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
         try
         {
-            Pair<FORM, BindException> pair;
+            FormAndErrors<FORM> pair;
 
             try
             {
@@ -188,8 +183,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 return null;
             }
 
-            FORM form = pair.first;
-            BindException errors = pair.second;
+            FORM form = pair.form;
+            BindException errors = pair.errors;
 
             if (form != null)
             {
@@ -309,7 +304,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
 
     @NotNull
-    private Pair<FORM, BindException> populateForm() throws Exception
+    private FormAndErrors<FORM> populateForm() throws Exception
     {
         try (Timing ignored = MiniProfiler.step("bind"))
         {
@@ -330,7 +325,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     // CONSIDER: Extract ApiRequestReader similar to the ApiResponseWriter
     // CONSIDER: Something like Jersey's MessageBodyReader? https://jax-rs-spec.java.net/nonav/2.0/apidocs/javax/ws/rs/ext/MessageBodyReader.html
     @NotNull
-    private Pair<FORM, BindException> populateJsonForm() throws Exception
+    private FormAndErrors<FORM> populateJsonForm() throws Exception
     {
         if (_marshaller == Marshaller.Jackson)
             return populateJacksonForm();
@@ -340,14 +335,18 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
 
     @NotNull
-    private Pair<FORM, BindException> defaultPopulateForm() throws Exception
+    private FormAndErrors<FORM> defaultPopulateForm() throws Exception
     {
         saveRequestedApiVersion(getViewContext().getRequest(), null);
 
         BindException errors = defaultBindParameters(getCommand(), getPropertyValues());
         FORM form = (FORM)errors.getTarget();
 
-        return Pair.of(form, errors);
+        return new FormAndErrors<>(form, errors);
+    }
+
+    public record FormAndErrors<FORM>(FORM form, BindException errors)
+    {
     }
 
     /**
@@ -355,14 +354,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
      */
     @NotNull
     // Leave this protected; client-developed action classes override it. See #38307
-    protected Pair<FORM, BindException> populateJacksonForm() throws Exception
+    protected FormAndErrors<FORM> populateJacksonForm() throws Exception
     {
         FORM form = null;
         BindException errors;
 
         try
         {
-            Class c = getCommandClass();
+            Class<?> c = getCommandClass();
             // Ideally, ObjectReader would handle the Object case as well, but currently readValue() throws with "end-of-input" exception
             if (Object.class != c)
             {
@@ -393,7 +392,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         }
 
         saveRequestedApiVersion(getViewContext().getRequest(), form);
-        return Pair.of(form, errors);
+        return new FormAndErrors<>(form, errors);
     }
 
     private ObjectMapper getRequestObjectMapper()
@@ -431,7 +430,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return JsonUtil.DEFAULT_MAPPER;
     }
 
-    protected ObjectReader getObjectReader(Class c)
+    protected ObjectReader getObjectReader(Class<?> c)
     {
         return getRequestObjectMapper().readerFor(c);
     }
@@ -440,7 +439,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
      * Parse POST body as JSONObject then use either ApiJsonForm or spring form binding to populate the FORM instance.
      */
     @NotNull
-    private Pair<FORM, BindException> populateJSONObjectForm() throws Exception
+    private FormAndErrors<FORM> populateJSONObjectForm() throws Exception
     {
         JSONObject jsonObj;
         try
@@ -460,7 +459,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
         FORM form = getCommand();
         BindException errors = populateForm(jsonObj, form);
-        return Pair.of(form, errors);
+        return new FormAndErrors<>(form, errors);
     }
 
 
@@ -651,16 +650,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     public static <T> SimpleResponse<T> success(String message, T data)
     {
         return new SimpleResponse<>(true, message, data);
-    }
-
-    void notFound() throws NotFoundException
-    {
-        throw new NotFoundException();
-    }
-
-    void notFound(String message) throws NotFoundException
-    {
-        throw new NotFoundException(message);
     }
 }
 

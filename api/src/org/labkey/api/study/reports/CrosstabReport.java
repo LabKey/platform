@@ -84,7 +84,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
                 settings.setQueryName(queryName);
                 settings.setViewName(viewName);
 
-                UserSchema schema = base.createView(context, settings).getSchema();
+                UserSchema schema = base.createView(context, settings, null).getSchema();
                 return new ReportQueryView(schema, settings);
             }
         }

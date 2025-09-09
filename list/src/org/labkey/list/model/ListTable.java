@@ -16,7 +16,7 @@
 
 package org.labkey.list.model;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -606,7 +606,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             for (int c = 1; c <= input.getColumnCount(); c++)
             {
                 ColumnInfo col = input.getColumnInfo(c);
-                if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
+                if (Strings.CI.equals(_list.getKeyName(), col.getName()))
                 {
                     keyColumnInput = c;
                     if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger && !context.supportsAutoIncrementKey())

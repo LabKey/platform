@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -150,7 +151,7 @@ public class DomainUtil
             }
             catch (Exception e)
             {
-                LogManager.getLogger(DomainUtil.class).debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
+                LOG.debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
                 // And then fall through below to return defaultValue.toString();
             }
         }
@@ -222,10 +223,7 @@ public class DomainUtil
             tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
         }
 
-        if (tableNames.contains(p.getLookupQuery()))
-            return true;
-
-        return false;
+        return tableNames.contains(p.getLookupQuery());
     }
 
     @Nullable
@@ -839,7 +837,7 @@ public class DomainUtil
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
         // applying the diff's the matching Domain version.
         String currentTs = JdbcUtil.rowVersionToString(d.get_Ts());
-        if (!StringUtils.equalsIgnoreCase(currentTs,orig.get_Ts()))
+        if (!Strings.CI.equals(currentTs,orig.get_Ts()))
         {
             validationException.addError(new SimpleValidationError("The domain has been edited by another user, you may need to refresh and try again."));
             return validationException;
