@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -49,7 +50,7 @@ public class MVDisplayColumn extends DataColumn
     {
         Object mvIndicatorObject = mvIndicatorColumn.getValue(ctx);
         if (null == mvIndicatorObject)
-            mvIndicatorObject = ctx.get("quf_" + mvIndicatorColumn.getName());
+            mvIndicatorObject = ctx.get(QueryUpdateForm.PREFIX + mvIndicatorColumn.getName());
         if (mvIndicatorObject != null)
             return mvIndicatorObject.toString();
         return null;
