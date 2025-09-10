@@ -74,9 +74,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
@@ -104,6 +102,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JobRunner;
@@ -1008,57 +1007,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
         if (null == seed)
             return sampleRow;
-        Set<ExpMaterial> parentSamples = experimentService.getParentMaterials(container, user, seed);
-        if (!parentSamples.isEmpty())
-            addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
-        Set<ExpData> parentDatas = experimentService.getParentDatas(container, user, seed);
-        if (!parentDatas.isEmpty())
-            addParentFields(sampleRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
+
+        ExperimentServiceImpl.get().addParentsFields(seed, sampleRow, user, container);
 
         return sampleRow;
-    }
-
-    private <T extends ExpRunItem> void addParentFields(Map<String, Object> sampleRow, Set<T> parents, String parentPrefix, User user)
-    {
-        Map<String, List<String>> parentByType = new HashMap<>();
-        for (ExpRunItem parent : parents)
-        {
-            String type = "";
-            if (parent instanceof ExpData dataParent)
-            {
-                ExpDataClass dataClass = dataParent.getDataClass(user);
-                if (dataClass == null)
-                    continue;
-                type = dataClass.getName();
-            }
-            else if (parent instanceof ExpMaterial materialParent)
-            {
-                ExpSampleType sampleType = materialParent.getSampleType();
-                if (sampleType == null)
-                    continue;
-                type = sampleType.getName();
-            }
-
-            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
-            String parentName = parent.getName();
-            if (parentName.contains(","))
-                parentName = "\"" + parentName + "\"";
-            parentByType.get(type).add(parentName);
-        }
-
-        for (String type : parentByType.keySet())
-        {
-            String key = parentPrefix + type;
-            String value = String.join(",", parentByType.get(type));
-            sampleRow.put(key, value);
-        }
-    }
-
-    @Override
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
-            throws QueryUpdateServiceException
-    {
-        return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
     }
 
     @Override
@@ -1082,13 +1034,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
 
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
-    }
-
-    @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
-            throws InvalidKeyException, QueryUpdateServiceException
-    {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
     private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
@@ -1147,8 +1092,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
-            throws QueryUpdateServiceException, InvalidKeyException
+    @Override
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
+            throws InvalidKeyException, QueryUpdateServiceException
     {
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
         TableInfo queryTableInfo = existingRowSelect.tableInfo;
@@ -1242,7 +1188,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        if (checkCrossFolderData && !allKeys.isEmpty())
+        if (verifyNoCrossFolderData && !allKeys.isEmpty())
         {
             // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
             ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
@@ -1282,37 +1228,27 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!existingRowSelect.includeParent)
             return sampleRows;
 
-        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLsid(rowNumLsid.values());
+        Set<String> lsids = new HashSet<>();
+        for (Map<String, Object> sampleRow : sampleRows.values())
+            lsids.add((String) sampleRow.get("lsid"));
+        List<ExpMaterialImpl> seeds = ExperimentServiceImpl.get().getExpMaterialsByLsid(lsids);
 
-        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
-
-        for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
-        {
-            Integer rowNum = rowNumSampleRow.getKey();
-            String lsidKey = rowNumLsid.get(rowNum);
-            Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!parents.containsKey(lsidKey))
-                continue;
-
-            Pair<Set<ExpMaterial>, Set<ExpData>> sampleParents = parents.get(lsidKey);
-
-            if (!sampleParents.first.isEmpty())
-                addParentFields(sampleRow, sampleParents.first, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
-            if (!sampleParents.second.isEmpty())
-                addParentFields(sampleRow, sampleParents.second, ExpData.DATA_INPUT_PARENT + "/", user);
-        }
+        ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), sampleRows, user, container);
 
         return sampleRows;
     }
 
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws QueryUpdateServiceException
     {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs);
+            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, false);
             if (materialMap != null)
                 result.add(materialMap);
         }

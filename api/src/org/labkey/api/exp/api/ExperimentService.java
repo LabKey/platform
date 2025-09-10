@@ -593,33 +593,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
-
-    /**
-     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
-     */
-    @NotNull
-    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
-     */
-    @NotNull
-    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
-     * stopping at the first parent generation (no grandparents.)
-     */
-    @NotNull
-    Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find all parent ExpMaterial that are parents of the <code>start</code> ExpMaterial,
-     * stopping at the first parent generation (no grandparents.)
-     */
-    @NotNull
-    Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start);
-
     /**
      * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
      * a ExpData (in a DataClass), or an ExpRun.

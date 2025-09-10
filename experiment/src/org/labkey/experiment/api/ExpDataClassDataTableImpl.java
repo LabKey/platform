@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1232,9 +1233,63 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
+        {
+            Map<Integer, Map<String, Object>> dataRows = getExistingRows(user, container, keys, verifyNoCrossFolderData, verifyExisting, columns);
+            boolean hasParentInput = false;
+            if (_dataClass != null && columns != null && !columns.isEmpty())
+            {
+                try
+                {
+                    Map<String, String> importAliases = _dataClass.getImportAliases();
+                    for (String col : columns)
+                    {
+                        if (ExperimentService.isInputOutputColumn(col) || Strings.CI.equals("parent",col) || importAliases.containsKey(col))
+                        {
+                            hasParentInput = true;
+                            break;
+                        }
+                    }
+                }
+                catch (IOException ignored)
+                {
+                }
+            }
+
+            if (!hasParentInput)
+                return dataRows;
+
+            Set<String> lsids = new HashSet<>();
+            for (Map<String, Object> dataRow : dataRows.values())
+                lsids.add((String) dataRow.get("lsid"));
+            List<ExpDataImpl> seeds = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);
+
+            ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), dataRows, user, container);
+
+            return dataRows;
+        }
+
+        @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, SQLException
         {
             return getRow(user, container, keys, false);
+        }
+
+        @Override
+        public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
+                throws SQLException
+        {
+            if (!hasPermission(user, ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to read data from this table.");
+
+            List<Map<String, Object>> result = new ArrayList<>(keys.size());
+            for (Map<String, Object> row : keys)
+            {
+                Map<String, Object> materialMap = getDataMap(row, user, container,  true,false);
+                if (materialMap != null)
+                    result.add(materialMap);
+            }
+            return result;
         }
 
         /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
@@ -1254,7 +1309,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            return _select(container, rowId, lsid, name, classId, allowCrossContainer);
+            return getDataMap(keys, user, container, allowCrossContainer, true);
         }
 
         @Override
@@ -1263,8 +1318,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Long rowId, String lsid, String name, Long classId, boolean allowCrossContainer) throws SQLException
+        protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException
         {
+            Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
+            String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
+            String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
+            Long classId = (Long)JdbcType.BIGINT.convert(keys.get(Column.ClassId.name()));
+
+            if (classId == null)
+                classId = _dataClass.getRowId();
+
             if (null == rowId && null == lsid && (null == name || null == classId))
                 return null;
 
@@ -1284,13 +1347,25 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             TableInfo queryTable = getQueryTable();
             TableSelector selector = new TableSelector(queryTable, filter, null);
 
+            Map<String, Object> dataRow = null;
             try (var results = selector.getResults()) {
                 if (results.next())
                 {
-                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                    dataRow = FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
                 }
             }
-            return null;
+
+            if (!addInputs)
+                return dataRow;
+
+            ExperimentService experimentService = ExperimentService.get();
+            ExpData seed = lsid != null ? experimentService.getExpData(lsid) : experimentService.getExpData(_dataClass, rowId);
+            if (null == seed)
+                return dataRow;
+
+            ExperimentServiceImpl.get().addParentsFields(seed, dataRow, user, container);
+
+            return dataRow;
         }
 
         @Override
