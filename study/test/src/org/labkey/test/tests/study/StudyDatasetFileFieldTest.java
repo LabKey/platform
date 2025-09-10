@@ -3,7 +3,6 @@ package org.labkey.test.tests.study;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +45,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {
     private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
     private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
+    // Include a "\" character at the end of the file field name to verify it round trips with escaped form field characters
     private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate) + "\\";
     private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
     private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);

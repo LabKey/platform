@@ -561,7 +561,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
-     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * Returns a case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
      * @param includeUntyped The result map will include the String value that wasn't converted.
      * @return CaseInsensitiveHashMap of typed values.
      */
@@ -572,18 +572,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         for (ColumnInfo column : getTable().getColumns())
         {
             if (hasTypedValue(column))
-            {
                 values.put(column.getName(), getTypedValue(column));
-                continue;
-            }
-
-            if (includeUntyped && contains(column))
-            {
+            else if (includeUntyped && contains(column))
                 values.put(column.getName(), get(column));
-                continue;
-            }
-
-            if (getRequest() instanceof MultipartHttpServletRequest request)
+            else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
                 String fieldName = getMultiPartFormFieldName(column);
                 Object typedValue = getTypedValues().get(fieldName);
@@ -594,18 +586,24 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 {
                     MultipartFile file = request.getFile(fieldName);
                     if (file != null)
-                        values.put(column.getName(), (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) ? null : file);
+                    {
+                        // Check if the file was removed
+                        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty())
+                            values.put(column.getName(), null);
+                        else
+                            values.put(column.getName(), file);
+                    }
                 }
             }
 
             if (column.isMvEnabled())
             {
                 ColumnInfo mvColumn = getTable().getColumn(column.getMvColumnName());
-                if (mvColumn != null)
+                if (null != mvColumn)
                 {
                     if (hasTypedValue(mvColumn))
                         values.put(mvColumn.getName(), getTypedValue(mvColumn));
-                    else if (includeUntyped && contains(column))
+                    else if (includeUntyped && contains(mvColumn))
                         values.put(mvColumn.getName(), get(mvColumn));
                 }
             }
@@ -615,7 +613,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
-     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * Returns a case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
      * @return CaseInsensitiveHashMap of typed values.
      */
     public CaseInsensitiveHashMap<Object> getTypedColumns()
