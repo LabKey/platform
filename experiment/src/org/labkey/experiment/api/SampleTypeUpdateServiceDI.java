@@ -1948,8 +1948,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         void init(TableInfo target, boolean useImportAliases, boolean initRollupCounts)
         {
             Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
-            Set<String> amountImportAliasSet = ImportAliasable.Helper.createImportMap(target.getColumn(StoredAmount.name()));
-            Set<String> unitsImportAliasSet = ImportAliasable.Helper.createImportMap(target.getColumn(Units.name()));
+            Set<String> amountImportAliasSet = ImportAliasable.Helper.createImportSet(target.getColumn(StoredAmount.name()));
+            Set<String> unitsImportAliasSet = ImportAliasable.Helper.createImportSet(target.getColumn(Units.name()));
             DataIterator di = getInput();
             int count = di.getColumnCount();
 

@@ -2812,7 +2812,7 @@ public class ExpDataIterators
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
                 {
-                    validFields.addAll(ImportAliasable.Helper.createImportMap(column));
+                    validFields.addAll(ImportAliasable.Helper.createImportSet(column));
                 }
             });
             Map<String, String> aliasMap = sampleType.getImportAliases();

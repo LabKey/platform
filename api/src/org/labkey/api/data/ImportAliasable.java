@@ -48,9 +48,9 @@ public interface ImportAliasable
     class Helper
     {
         /**
-         * Creates a mapping of the different possible aliases for import (name, label, import aliases) for a single column.
+         * Creates a set of the different possible aliases for import (name, label, import aliases) for a single column.
          */
-        public static <T extends ImportAliasable> Set<String> createImportMap(T property)
+        public static <T extends ImportAliasable> Set<String> createImportSet(T property)
         {
             if (property == null)
                 return Collections.emptySet();

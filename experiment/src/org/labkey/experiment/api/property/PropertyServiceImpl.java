@@ -739,7 +739,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public Set<String> getDomainPropertyImportAliases(DomainProperty property)
     {
-        return ImportAliasable.Helper.createImportMap(property);
+        return ImportAliasable.Helper.createImportSet(property);
     }
 
     @Override
