@@ -105,6 +105,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
+import static org.labkey.api.assay.AssayFileWriter.TEMP_DIR_NAME;
 
 public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> implements AssayRunCreator<ProviderType>
 {
@@ -497,7 +498,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             // Issue 51300: don't keep the primary file if the new run failed to save
             FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            if (primaryFile != null && primaryFile.exists())
+
+            // If the uploaded file is in the temp directory, then do not delete it as it may be reused in the next import attempt.
+            if (primaryFile != null && primaryFile.exists() && !primaryFile.getPath().contains(TEMP_DIR_NAME))
                 primaryFile.delete();
         }
         catch (IOException e)
