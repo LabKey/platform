@@ -3769,20 +3769,24 @@ public class StudyManager
         {
             DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
             _DatasetDomainChange domainChange = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
-            Domain domain = domainChange.domain;
 
-            if (domain.isProvisioned() && !datasetDefinitionEntry.datasetDefinition.isShared())
+            if (domainChange != null)
             {
-                // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
-                // We need to drop the indices first, adjust the properties, and then add the new indices. This method
-                // allows for that.
-                domain.setPropertyIndices(datasetImportInfo.indices);
-                StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
-            }
-            else
-            {
-                // deleteAndSaveProperties() calls domain.save() which ensures all the indices after provisioning the new domain
-                deleteAndSaveProperties(user, errors, domainChange);
+                Domain domain = domainChange.domain;
+
+                if (domain.isProvisioned() && !datasetDefinitionEntry.datasetDefinition.isShared())
+                {
+                    // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
+                    // We need to drop the indices first, adjust the properties, and then add the new indices. This method
+                    // allows for that.
+                    domain.setPropertyIndices(datasetImportInfo.indices);
+                    StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
+                }
+                else
+                {
+                    // deleteAndSaveProperties() calls domain.save() which ensures all the indices after provisioning the new domain
+                    deleteAndSaveProperties(user, errors, domainChange);
+                }
             }
         }
     }
