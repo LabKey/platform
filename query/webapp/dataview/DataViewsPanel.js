@@ -510,9 +510,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     handler.call(scope || this, json);
                 }
             },
-            failure : function() {
-                Ext4.Msg.alert('Failure');
-            },
+            failure : LABKEY.Utils.getCallbackWrapper(function(json) {
+                Ext4.Msg.alert('Get Configuration Failure', LABKEY.Utils.encodeHtml(json.exception));
+            }, null, true),
             scope : this
         });
     },
@@ -1403,9 +1403,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 else
                                     this.getFullStore().load();
                             },
-                            failure : function() {
-                                Ext4.Msg.alert('Failure');
-                            },
+                            failure : LABKEY.Utils.getCallbackWrapper(function(json) {
+                                Ext4.Msg.alert('Customize View Failure', LABKEY.Utils.encodeHtml(json.exception));
+                            }, null, true),
                             scope : this
                         });
                     }

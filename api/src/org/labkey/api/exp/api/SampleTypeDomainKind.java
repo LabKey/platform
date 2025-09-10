@@ -487,6 +487,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
             Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
             Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
+            reservedNames.add("Parent"); // Issue 52627: Don't allow "Parent" to be used for lineage parent import alias
             Set<String> existingAliases = new CaseInsensitiveHashSet();
 
             try

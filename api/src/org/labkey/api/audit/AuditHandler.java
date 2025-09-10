@@ -2,6 +2,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -104,14 +105,14 @@ public interface AuditHandler
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false;
-            if (lcName.startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || lcName.startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
+            String encodedInputColumn = ExperimentService.getEncodedLineageKey(lcName);
+            if (encodedInputColumn != null)
             {
-                String[] parts = nameFromAlias.split("/", 2);
-                String prefix = parts[0];
-                String dataType = parts[1];
-                // MaterialInputs/datypeTypeEncoded
-                if (row.containsKey(prefix + "/" + QueryKey.encodePart(dataType)))
+                if (row.containsKey(encodedInputColumn))
+                {
                     isExpInput = true;
+                    nameFromAlias = encodedInputColumn;
+                }
             }
             else
                 nameFromAlias = lcName;
@@ -184,6 +185,24 @@ public interface AuditHandler
                 modifiedRow.put(nameFromAlias, entry.getValue());
             }
         }
+
+        // we want to include the fields that indicate parent lineage has changed.
+        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
+        Set<String> existingEncodedInputColumns = new CaseInsensitiveHashSet();
+        for (String fieldName : existingRow.keySet())
+        {
+            String existingEncodedInputColumn = ExperimentService.getEncodedLineageKey(fieldName);
+            if (existingEncodedInputColumn != null)
+                existingEncodedInputColumns.add(existingEncodedInputColumn);
+        }
+        row.forEach((fieldName, value) -> {
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX_LC) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX_LC))
+                if (!originalRow.containsKey(fieldName) && !existingEncodedInputColumns.contains(fieldName))
+                {
+                    modifiedRow.put(fieldName, value);
+                }
+        });
+
         return new Pair<>(originalRow, modifiedRow);
     }
 }
