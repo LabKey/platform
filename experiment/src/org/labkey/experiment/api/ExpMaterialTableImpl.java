@@ -311,6 +311,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
                 columnInfo.setLabel("Stored Amount");
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
+                if (columnInfo.getFormat() == null)
+                    columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 return columnInfo;
