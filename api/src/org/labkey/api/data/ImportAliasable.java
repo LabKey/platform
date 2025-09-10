@@ -16,10 +16,12 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +47,23 @@ public interface ImportAliasable
 
     class Helper
     {
+        /**
+         * Creates a mapping of the different possible aliases for import (name, label, import aliases) for a single column.
+         */
+        public static <T extends ImportAliasable> Set<String> createImportMap(T property)
+        {
+            if (property == null)
+                return Collections.emptySet();
+
+            Set<String> aliases = new CaseInsensitiveHashSet();
+            aliases.add(property.getName());
+            if (property.getLabel() != null)
+                aliases.add(property.getLabel());
+            if (!property.getImportAliasSet().isEmpty())
+                aliases.addAll(property.getImportAliasSet());
+            return aliases;
+        }
+
         /**
          * Creates a mapping of many different possible names (actual name, label/caption, property URI, etc).
          * for a column to the column itself. Useful to provide flexibility in how the data is labeled during imports.

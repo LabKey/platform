@@ -1948,6 +1948,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         void init(TableInfo target, boolean useImportAliases, boolean initRollupCounts)
         {
             Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
+            Set<String> amountImportAliasSet = ImportAliasable.Helper.createImportMap(target.getColumn(StoredAmount.name()));
+            Set<String> unitsImportAliasSet = ImportAliasable.Helper.createImportMap(target.getColumn(Units.name()));
             DataIterator di = getInput();
             int count = di.getColumnCount();
 
@@ -1968,9 +1970,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
                         aliquotedFromDataColInd = i;
-                    else if (Units.name().equalsIgnoreCase(from.getName()))
+                    else if (unitsImportAliasSet.contains(from.getName()))
                         unitDataColInd = i;
-                    else if (StoredAmount.name().equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
+                    else if (amountImportAliasSet.contains(from.getName()))
                         amountDataColInd = i;
                 }
             }

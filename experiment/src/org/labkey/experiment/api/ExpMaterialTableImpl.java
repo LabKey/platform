@@ -309,7 +309,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAmount ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
-                columnInfo.setLabel("Stored Amount");
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
                 if (columnInfo.getFormat() == null)
                     columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
@@ -320,10 +319,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case StoredAmount ->
             {
                 String label = StoredAmount.label();
+                Set<String> importAliases = Set.of(label, "Stored Amount");
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, typeUnit);
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, importAliases, typeUnit);
                     columnInfo.setDescription("The amount of this sample, in the display unit for the sample type, currently on hand.");
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
@@ -337,7 +337,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     if (columnInfo.getFormat() == null)
                         columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                     columnInfo.setLabel(label);
-                    columnInfo.setImportAliasesSet(Set.of(label));
+                    columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
                     return columnInfo;
                 }
@@ -345,7 +345,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawUnits ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
-                columnInfo.setLabel("Stored Units");
                 columnInfo.setDescription("The units associated with the Stored Amount for this sample.");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
@@ -1572,7 +1571,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private static class SampleTypeAmountDisplayColumn extends ExprColumn
     {
-        public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Unit typeUnit)
+        public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Set<String> importAliases, Unit typeUnit)
         {
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
@@ -1588,7 +1587,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     JdbcType.DOUBLE);
 
             setLabel(label);
-            setImportAliasesSet(Set.of(label));
+            setImportAliasesSet(importAliases);
         }
     }
 

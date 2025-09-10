@@ -39,6 +39,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -2811,9 +2812,7 @@ public class ExpDataIterators
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
                 {
-                    validFields.add(column.getName());
-                    validFields.addAll(column.getImportAliasSet());
-                    validFields.add(column.getLabel());
+                    validFields.addAll(ImportAliasable.Helper.createImportMap(column));
                 }
             });
             Map<String, String> aliasMap = sampleType.getImportAliases();
