@@ -18,11 +18,13 @@ package org.labkey.test.tests.study;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.assay.AssayListCommand;
 import org.labkey.remoteapi.assay.AssayListResponse;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
@@ -35,12 +37,14 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SampleTypeHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -267,7 +271,7 @@ public class AssayTest extends AbstractAssayTest
     }
 
     @LogMethod
-    private void editResults()
+    private void editResults() throws IOException, CommandException
     {
         // Verify that the results aren't editable by default
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
@@ -310,15 +314,13 @@ public class AssayTest extends AbstractAssayTest
         });
 
         // Verify that the edit was audited
+        AuditLogHelper auditLogHelper = new AuditLogHelper(this, () -> WebTestHelper.getRemoteApiConnection(false));
+        auditLogHelper.checkAuditEventDiffCount(getProjectName(), AuditLogHelper.AuditEvent.QUERY_UPDATE_AUDIT_EVENT, List.of(0/*delete*/, 4/*edit*/));
+
         goToSchemaBrowser();
         viewQueryData("auditLog", "ExperimentAuditEvent");
-        assertTextPresent(
-                "Data row, id ",
-                ", edited in " + TEST_ASSAY + ".",
-                "Specimen ID changed from 'AAA07XK5-05' to 'EditedSpecimenID'",
-                "Visit ID changed from '601.0' to '601.5",
-                "testAssayDataProp5 changed from blank to '514801'",
-                "Deleted data row, id ");
+        assertTextPresent("1 data row has been edited in " + TEST_ASSAY + ".");
+
     }
 
     /**

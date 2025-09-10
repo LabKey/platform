@@ -100,6 +100,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -1168,20 +1169,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
         return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
-    }
-
-    @Override
-    protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
-    {
-        // we want to include the fields that indicate parent lineage has changed.
-        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
-        updatedRow.forEach((fieldName, value) -> {
-            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
-                if (!originalRow.containsKey(fieldName))
-                {
-                    modifiedRow.put(fieldName, value);
-                }
-        });
     }
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable Map<String, Object> row)
