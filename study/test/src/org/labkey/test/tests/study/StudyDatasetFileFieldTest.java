@@ -130,7 +130,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         File downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
         checker().verifyTrue("Incorrect file name ", FileUtils.contentEquals(downloadedFile, inputFile));
 
-        FileBrowserHelper.FileDetailInfo fileInfoOriginalFile = _fileBrowserHelper.getFileDetailInfo(getProjectName(), "sample.txt");
+        FileBrowserHelper.FileDetailInfo fileInfoOriginalFile = FileBrowserHelper.getFileDetailInfo(getProjectName(), "sample.txt");
 
         goToFolderManagement().goToExportTab();
         new Checkbox(Locator.tagWithText("label", "Files").precedingSibling("input").findElement(getDriver())).check();

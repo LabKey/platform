@@ -202,7 +202,7 @@ public final class DomainDescriptor
     public Container getProject()
     {
         var c = getContainer();
-        return null == c ? null : c.getProject();
+        return null == c ? null : (c.getProject() != null ? c.getProject() : c);
     }
 
     public int getTitlePropertyId()
