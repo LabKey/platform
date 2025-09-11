@@ -207,6 +207,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     convertAmountsToBaseUnits(c, admin)
             );
             transaction.commit();
+            ExperimentService.get().clearCaches();
         }
 
     }
@@ -268,6 +269,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo tInfo = ExperimentService.get().getTinfoMaterial();
+
         try (Connection c = scope.getConnection())
         {
             Parameter rowId = new Parameter("rowId", JdbcType.INTEGER);
