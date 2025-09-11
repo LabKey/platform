@@ -2132,6 +2132,13 @@ public abstract class SqlDialect
         return null;
     }
 
+    // Returns a SQL query that selects the last auto-increment values where they're non-null. Required columns are:
+    // SchemaName, TableName, ColumnName, and LastValue.
+    public String getSelectSequencesSql()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
     public static class DialectTestCase
     {
         DbScope s;
