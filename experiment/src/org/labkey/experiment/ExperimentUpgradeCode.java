@@ -352,7 +352,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         if (newDataMap.size() > 1 || !newDataMap.containsKey(AliquotUnit.name()))
                         {
                             Container sampleContainer = ContainerManager.getForId((String) sampleMap.get("Container"));
-                            SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(sampleContainer != null ? sampleContainer : container, "Storage amount unit conversion to base unit during upgrade script.");
+                            SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(sampleContainer != null ? sampleContainer : container, SampleTimelineAuditEvent.AMOUNT_AND_UNIT_UPGRADE_COMMENT);
                             event.setSampleId((Integer) sampleMap.get(RowId.name()));
                             event.setSampleName((String) sampleMap.get(Name.name()));
                             event.setSampleType(sampleType.getName());

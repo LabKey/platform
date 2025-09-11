@@ -23,6 +23,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
+    public static final String AMOUNT_AND_UNIT_UPGRADE_COMMENT = "Storage amount unit conversion to base unit during upgrade script.";
 
     public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of(
             "AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit",
