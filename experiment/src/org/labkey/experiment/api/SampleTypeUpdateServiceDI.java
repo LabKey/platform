@@ -415,7 +415,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return null;
 
         if (dataRow.get(prefix + Units.name()) != null)
-            unitsStr = dataRow.get(prefix + Units.name()).toString();
+            unitsStr = " " + dataRow.get(prefix + Units.name()).toString();
 
         result.put(prefix + StoredAmount.label(), amountVal + unitsStr);
 
@@ -651,7 +651,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             String unitsStr = "";
             if (unitsVal != null)
-                unitsStr = unitsVal.toString();
+                unitsStr = " " + unitsVal;
 
             providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
         }
