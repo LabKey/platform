@@ -1257,7 +1257,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             remap = CaseInsensitiveHashMap.of();
 
         // AliquotRollupDataIterator needs "samplestate", "storedamount", "rootmaterialrowId", "units" for MERGE option
-        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name(), RawAmount.name(), RawUnits.name());
+        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name());
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))
@@ -1270,6 +1270,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(Enum::name)
                 .collect(Collectors.toSet()))
                 .containsAll(includedColumns);
+
+        // only include RawAmount and Raw units if no isAllFromMaterialTable,
+        // needed to replace converted amount and unit values with raw values so audit difference is accurate
+        if (!isAllFromMaterialTable)
+        {
+            includedColumns.add(RawAmount.name());
+            includedColumns.add(RawUnits.name());
+        }
+
         TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
         if (isAllFromMaterialTable)
         {
