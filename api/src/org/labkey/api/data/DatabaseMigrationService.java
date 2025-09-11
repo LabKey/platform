@@ -53,6 +53,8 @@ public interface DatabaseMigrationService
 
         List<TableInfo> getTablesToCopy(DbSchema targetSchema);
 
+        TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames);
+
         void afterSchema(DbSchema targetSchema);
     }
 
@@ -87,6 +89,12 @@ public interface DatabaseMigrationService
                 // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
                 .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
                 .collect(Collectors.toCollection(ArrayList::new)); // Ensure mutable
+        }
+
+        @Override
+        public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames)
+        {
+            return new TableSelector(sourceTable, selectColumnNames);
         }
 
         @Override

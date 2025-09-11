@@ -35,6 +35,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -884,6 +885,16 @@ public class ExperimentModule extends SpringModule
             {
                 // Yes, the FK name is misspelled
                 new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+            }
+
+            @Override
+            public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames)
+            {
+                // Need to ensure parents are selected before children (BIGINT upgrade resulted in random row ordering)
+                if ("Object".equalsIgnoreCase(sourceTable.getName()))
+                    return new TableSelector(sourceTable, selectColumnNames, null, new Sort("ObjectId"));
+                else
+                    return super.getTableSelector(sourceTable, selectColumnNames);
             }
 
             @Override
