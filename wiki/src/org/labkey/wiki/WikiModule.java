@@ -130,6 +130,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             public void beforeSchema(DbSchema targetSchema)
             {
                 new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
             }
 
             @Override
@@ -146,6 +147,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             public void afterSchema(DbSchema targetSchema)
             {
                 new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
             }
         });
     }

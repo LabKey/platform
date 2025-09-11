@@ -1298,6 +1298,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
 
             @Override
+            public void beforeSchema(DbSchema targetSchema)
+            {
+                new SqlExecutor(targetSchema).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
+                new SqlExecutor(targetSchema).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
+            }
+
+            @Override
             public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
             {
                 List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
@@ -1306,6 +1313,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 tablesToCopy.remove(targetSchema.getTable("UpgradeSteps"));
 
                 return tablesToCopy;
+            }
+
+            @Override
+            public void afterSchema(DbSchema targetSchema)
+            {
+                super.afterSchema(targetSchema);
+
+                new SqlExecutor(targetSchema).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
+                new SqlExecutor(targetSchema).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
             }
         });
     }

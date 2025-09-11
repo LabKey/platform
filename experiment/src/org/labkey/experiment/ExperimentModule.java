@@ -35,7 +35,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -885,22 +884,14 @@ public class ExperimentModule extends SpringModule
             {
                 // Yes, the FK name is misspelled
                 new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
-            }
-
-            @Override
-            public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames)
-            {
-                // Need to ensure parents are selected before children (BIGINT upgrade resulted in random row ordering)
-                if ("Object".equalsIgnoreCase(sourceTable.getName()))
-                    return new TableSelector(sourceTable, selectColumnNames, null, new Sort("ObjectId"));
-                else
-                    return super.getTableSelector(sourceTable, selectColumnNames);
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
             }
 
             @Override
             public void afterSchema(DbSchema targetSchema)
             {
                 new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
             }
         });
     }
