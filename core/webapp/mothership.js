@@ -282,7 +282,7 @@ LABKEY.Mothership = (function () {
         // CONSIDER: Remove the _mothership flag and use a site-setting to suppress mothership reporting of client-side exceptions.
         if (_mothership) {
             try {
-                send(LABKEY.contextPath + '/admin/logClientException.api', {
+                send(LABKEY.ActionURL.buildURL('admin', 'logClientException.api'), {
                     username: LABKEY.user ? LABKEY.user.email : 'Unknown',
                     //site: window.location.host,
                     //version: LABKEY.versionString || 'Unknown',

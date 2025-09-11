@@ -56,7 +56,17 @@ public class CachedResultSets
                 list.add(factory.getRowMap(rs));
 
             // If we have another row, then we're not complete
-            boolean isComplete = !rs.next();
+            boolean isComplete = true;
+
+            // TODO: Remove this try/catch once SQL Server driver fixes getIndexInfo()
+            try
+            {
+                isComplete = !rs.next();
+            }
+            catch (SQLException ignored)
+            {
+                // tolerate this for now
+            }
 
             return new CachedResultSet(md, list, isComplete, stackTrace);
         }

@@ -213,7 +213,7 @@ LABKEY.FileSystem.Util = new function(){
                     var name = record.get("name");
                     var i = name.lastIndexOf(".");
                     var ext = i >= 0 ? name.substring(i) : name;
-                    value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
+                    value = LABKEY.contextPath + "/project-icon.view?name=" + ext;
                 }
             }
             var img = {tag:'img', width:16, height:16, src:value, id:'img'+(++imgSeed)};

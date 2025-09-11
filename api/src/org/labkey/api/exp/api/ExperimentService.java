@@ -71,6 +71,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -502,6 +503,22 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(prefix) ||
                ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
+    }
+
+    // convert MaterialInputs/Blood/Type to MaterialInputs/Blood$SType
+    static @Nullable String getEncodedLineageKey(String inputColumn /*not encoded*/)
+    {
+        if (inputColumn.toLowerCase().startsWith(ExpData.DATA_INPUTS_PREFIX_LC) || inputColumn.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX_LC))
+        {
+            String[] parts = inputColumn.split("/", 2);
+            if (parts.length != 2)
+                return null;
+            String prefix = parts[0];
+            String dataType = parts[1];
+            return prefix + "/" + QueryKey.encodePart(dataType);
+        }
+
+        return null;
     }
 
     static Pair<String, String> parseInputOutputAlias(String columnName)

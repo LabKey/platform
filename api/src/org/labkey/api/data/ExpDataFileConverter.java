@@ -364,8 +364,8 @@ public class ExpDataFileConverter
 
         // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
         // MAKE sure that the security is in place - figure out what container it is in
-        String webdav = value.toString();
-        if (null != StringUtils.trimToNull(webdav))
+        String rootSubstitutedPath = getFileRootSubstitutedFilePath(value.toString(), fileRootPath);;
+        if (null != StringUtils.trimToNull(rootSubstitutedPath))
         {
             if (assayResultFileRoot != null)
             {
@@ -373,7 +373,7 @@ public class ExpDataFileConverter
                 {
                     for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
                     {
-                        String resultsFileName = FileUtil.getAppendedFileName(webdav, i);
+                        String resultsFileName = FileUtil.getAppendedFileName(rootSubstitutedPath, i);
                         FileLike assayResultFile = assayResultFileRoot.resolveChild(resultsFileName);
 
                         if (!assayResultFile.isFile())
@@ -390,7 +390,9 @@ public class ExpDataFileConverter
 
             }
 
-            webdav = getFileRootSubstitutedFilePath(webdav, fileRootPath);
+            String webdav = rootSubstitutedPath;
+            if (webdav.startsWith(AppProps.getInstance().getContextPath()))
+                webdav = webdav.substring(AppProps.getInstance().getContextPath().length());
             Path path = Path.decode(FileUtil.encodeForURL(webdav, true /*Issue 51207*/).replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
             if (resource != null && resource.isFile())
@@ -440,7 +442,7 @@ public class ExpDataFileConverter
         }
 
         // Otherwise, treat it as a plain path (processed by getFileRootSubstitutedFilePath)
-        return FILE_CONVERTER.convert(File.class, webdav);
+        return FILE_CONVERTER.convert(File.class, rootSubstitutedPath);
     }
 
     // if two files were uploaded with the same name but different casing, then the file system will uniquify the names

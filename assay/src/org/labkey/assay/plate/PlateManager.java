@@ -3671,7 +3671,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         else
         {
             ArrayExcelWriter xlWriter = new ArrayExcelWriter(rows, cols);
-            xlWriter.setFullFileName(fileName);
+            xlWriter.setFullFileName(fileName + ".xlsx");
             xlWriter.renderWorkbook(response);
         }
     }
