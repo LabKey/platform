@@ -1284,12 +1284,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerHandler(CoreSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
-            public void beforeVerification(DbSchema targetSchema)
+            public void beforeVerification()
             {
-                super.beforeVerification(targetSchema);
+                super.beforeVerification();
 
                 // Delete root and shared containers that were needed for bootstrapping
                 TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
@@ -1299,26 +1299,19 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
 
             @Override
-            public void beforeSchema(DbSchema targetSchema)
+            public void beforeSchema()
             {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
-                new SqlExecutor(targetSchema).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
             }
 
             @Override
-            public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+            public List<TableInfo> getTablesToCopy()
             {
-                List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
-
-                switch(targetSchema.getName())
-                {
-                    case "core" -> {
-                        tablesToCopy.remove(targetSchema.getTable("Modules"));
-                        tablesToCopy.remove(targetSchema.getTable("SqlScripts"));
-                        tablesToCopy.remove(targetSchema.getTable("UpgradeSteps"));
-                    }
-                    case "test" -> tablesToCopy.clear();
-                }
+                List<TableInfo> tablesToCopy = super.getTablesToCopy();
+                tablesToCopy.remove(getSchema().getTable("Modules"));
+                tablesToCopy.remove(getSchema().getTable("SqlScripts"));
+                tablesToCopy.remove(getSchema().getTable("UpgradeSteps"));
 
                 return tablesToCopy;
             }
@@ -1326,16 +1319,39 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
-                return sourceTable.getName().equals("Report") ? FieldKey.fromParts("ContainerId") : super.getContainerFieldKey(sourceTable);
+                return switch (sourceTable.getName())
+                {
+                    case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId/EntityId");
+                    case "Containers" -> FieldKey.fromParts("EntityId");
+                    case "Report" -> FieldKey.fromParts("ContainerId");
+                    case "APIKeys", "AuthenticationConfigurations", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
+                    default -> super.getContainerFieldKey(sourceTable);
+                };
             }
 
             @Override
-            public void afterSchema(DbSchema targetSchema)
+            public void afterSchema()
             {
-                super.afterSchema(targetSchema);
+                super.afterSchema();
 
-                new SqlExecutor(targetSchema).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
-                new SqlExecutor(targetSchema).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+            }
+        });
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(PropertySchema.getInstance().getSchema()){
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return sourceTable.getName().equals("PropertySets") ? FieldKey.fromParts("ObjectId") : super.getContainerFieldKey(sourceTable);
+            }
+        });
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(TestSchema.getInstance().getSchema()){
+            @Override
+            public List<TableInfo> getTablesToCopy()
+            {
+                return List.of(); // Skip all test tables
             }
         });
     }

@@ -877,21 +877,21 @@ public class ExperimentModule extends SpringModule
         }
 
         // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
-        DatabaseMigrationService.get().registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(OntologyManager.getExpSchema())
         {
             @Override
-            public void beforeSchema(DbSchema targetSchema)
+            public void beforeSchema()
             {
                 // Yes, the FK name is misspelled
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
             }
 
             @Override
-            public void afterSchema(DbSchema targetSchema)
+            public void afterSchema()
             {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
             }
         });
     }

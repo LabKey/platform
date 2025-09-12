@@ -83,6 +83,10 @@
       </column>
       <column columnName="GroupId">
           <description>The unique id of the group the user belongs to.</description>
+          <fk>
+              <fkColumnName>UserId</fkColumnName>
+              <fkTable>Principals</fkTable>
+          </fk>
       </column>
     </columns>
   </table>
@@ -544,7 +548,12 @@
   <table tableName="ContainerAliases" tableDbType="TABLE">
     <columns>
       <column columnName="Path"/>
-      <column columnName="ContainerRowId"/>
+        <column columnName="ContainerRowId">
+            <fk>
+                <fkTable>Containers</fkTable>
+                <fkColumnName>ObjectId</fkColumnName>
+            </fk>
+        </column>
     </columns>
   </table>
 

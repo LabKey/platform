@@ -44,7 +44,7 @@ public interface DatabaseMigrationService
     }
 
     // By default, no-op implementation
-    default void registerHandler(DbSchema schema, MigrationHandler handler) {}
+    default void registerHandler(MigrationHandler handler) {}
 
     default MigrationHandler getHandler(DbSchema schema)  // TODO: temporary to give JspTestCase access
     {
@@ -53,38 +53,56 @@ public interface DatabaseMigrationService
 
     interface MigrationHandler
     {
-        void beforeVerification(DbSchema targetSchema);
+        // Marker for tables to declare themselves as site-wide (no container filtering)
+        FieldKey SITE_WIDE_TABLE = FieldKey.fromParts("site-wide");
 
-        void beforeSchema(DbSchema targetSchema);
+        DbSchema getSchema();
 
-        List<TableInfo> getTablesToCopy(DbSchema targetSchema);
+        void beforeVerification();
+
+        void beforeSchema();
+
+        List<TableInfo> getTablesToCopy();
 
         TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames);
 
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
-        void afterSchema(DbSchema targetSchema);
+        void afterSchema();
     }
 
     class DefaultMigrationHandler implements MigrationHandler
     {
+        private final DbSchema _schema;
+
+        public DefaultMigrationHandler(DbSchema schema)
+        {
+            _schema = schema;
+        }
+
         @Override
-        public void beforeVerification(DbSchema targetSchema)
+        public DbSchema getSchema()
+        {
+            return _schema;
+        }
+
+        @Override
+        public void beforeVerification()
         {
         }
 
         @Override
-        public void beforeSchema(DbSchema targetSchema)
+        public void beforeSchema()
         {
         }
 
         @Override
-        public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+        public List<TableInfo> getTablesToCopy()
         {
-            Set<TableInfo> sortedTables = new LinkedHashSet<>(TableSorter.sort(targetSchema, true));
+            Set<TableInfo> sortedTables = new LinkedHashSet<>(TableSorter.sort(getSchema(), true));
 
-            Set<TableInfo> allTables = targetSchema.getTableNames().stream()
-                .map(targetSchema::getTable)
+            Set<TableInfo> allTables = getSchema().getTableNames().stream()
+                .map(getSchema()::getTable)
                 .collect(Collectors.toCollection(HashSet::new));
             allTables.removeAll(sortedTables);
 
@@ -112,7 +130,7 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void afterSchema(DbSchema targetSchema)
+        public void afterSchema()
         {
         }
     }
