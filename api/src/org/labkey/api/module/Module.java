@@ -347,7 +347,7 @@ public interface Module
     Set<String> getSqlScripts(@NotNull DbSchema schema);
 
     /**
-     * Returns the file path for this modules sql scripts
+     * Returns the file path for this module's sql scripts
      * @param dialect The sql dialect for the scripts
      * @return The script file path
      */

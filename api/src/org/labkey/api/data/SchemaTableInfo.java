@@ -101,6 +101,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     private String _importMsg;
     private List<Pair<String, StringExpression>> _importTemplates;
     private Boolean _hasDbTriggers;
+    private String _primaryKeyName = null;
 
     // Column-related
     private TableType _xmlTable = null;
@@ -1137,8 +1138,18 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             list.add(Pair.of(t.getLabel(), url));
         }
 
-
         _importTemplates = list;
+    }
+
+    public @Nullable String getPrimaryKeyName()
+    {
+        return _primaryKeyName;
+    }
+
+    public void setPrimaryKeyName(String primaryKeyName)
+    {
+        checkLocked();
+        _primaryKeyName = primaryKeyName;
     }
 
     @Override
