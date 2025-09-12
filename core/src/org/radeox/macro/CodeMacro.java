@@ -136,7 +136,8 @@ public class CodeMacro extends LocalePreserved {
 
     FilterContext context = new BaseFilterContext();
     context.setRenderContext(initialContext);
-    String result = formatter.filter(params.getContent(), context);
+    String input = params.getContent();
+    String result = input == null ? "" : formatter.filter(input, context);
 
     writer.write(start);
     writer.write(replace(result.trim()));
