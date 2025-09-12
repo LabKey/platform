@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.logging.LogHelper;
@@ -45,6 +46,11 @@ public interface DatabaseMigrationService
     // By default, no-op implementation
     default void registerHandler(DbSchema schema, MigrationHandler handler) {}
 
+    default MigrationHandler getHandler(DbSchema schema)  // TODO: temporary to give JspTestCase access
+    {
+        return null;
+    }
+
     interface MigrationHandler
     {
         void beforeVerification(DbSchema targetSchema);
@@ -54,6 +60,8 @@ public interface DatabaseMigrationService
         List<TableInfo> getTablesToCopy(DbSchema targetSchema);
 
         TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames);
+
+        @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
         void afterSchema(DbSchema targetSchema);
     }
@@ -95,6 +103,12 @@ public interface DatabaseMigrationService
         public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames)
         {
             return new TableSelector(sourceTable, selectColumnNames);
+        }
+
+        @Override
+        public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+        {
+            return sourceTable.getContainerFieldKey();
         }
 
         @Override

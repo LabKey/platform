@@ -107,6 +107,7 @@ import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -1308,11 +1309,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
             {
                 List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
-                tablesToCopy.remove(targetSchema.getTable("Modules"));
-                tablesToCopy.remove(targetSchema.getTable("SqlScripts"));
-                tablesToCopy.remove(targetSchema.getTable("UpgradeSteps"));
+
+                switch(targetSchema.getName())
+                {
+                    case "core" -> {
+                        tablesToCopy.remove(targetSchema.getTable("Modules"));
+                        tablesToCopy.remove(targetSchema.getTable("SqlScripts"));
+                        tablesToCopy.remove(targetSchema.getTable("UpgradeSteps"));
+                    }
+                    case "test" -> tablesToCopy.clear();
+                }
 
                 return tablesToCopy;
+            }
+
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return sourceTable.getName().equals("Report") ? FieldKey.fromParts("ContainerId") : super.getContainerFieldKey(sourceTable);
             }
 
             @Override
