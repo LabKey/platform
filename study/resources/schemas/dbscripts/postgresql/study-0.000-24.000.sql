@@ -841,6 +841,9 @@ CREATE TABLE study.VisitTagMap
   CONSTRAINT VisitTagMap_Container_VisitTag_Key UNIQUE (Container, VisitTag, VisitId, CohortId)
 );
 
+-- This is NOT redundant with the VisitTagMap_Container_VisitTag_Key constraint above since the above allows multiple
+-- rows with the same Container, VisitTag, and VisitId as long as they all have a null CohortId. PostgreSQL 15 added
+-- a NULLS NOT DISTINCT option; once we require PostgreSQL 15, we could switch to using that option and remove the below.
 CREATE UNIQUE INDEX VisitTagMap_container_tag_visit_idx ON study.VisitTagMap (Container, VisitTag, VisitId) WHERE CohortId IS NULL;
 
 CREATE TABLE study.DoseAndRoute
