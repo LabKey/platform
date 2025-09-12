@@ -68,6 +68,8 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.experiment.ExperimentModule.AMOUNT_AND_UNIT_UPGRADE_PROP;
+import static org.labkey.experiment.ExperimentModule.AUDIT_COUNT_PROP;
+import static org.labkey.experiment.ExperimentModule.TRANSACTION_ID_PROP;
 
 public class ExperimentUpgradeCode implements UpgradeCode
 {
@@ -215,8 +217,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (auditCount.get() > 0)
             {
                 PropertyManager.WritablePropertyMap props = PropertyManager.getWritableProperties(AMOUNT_AND_UNIT_UPGRADE_PROP, true);
-                props.put("AuditRecordCount", auditCount.toString());
-                props.put("AuditTransactionId", transactionId == null ? null : transactionId.toString());
+                props.put(AUDIT_COUNT_PROP, auditCount.toString());
+                props.put(TRANSACTION_ID_PROP, transactionId == null ? null : transactionId.toString());
                 props.save();
             }
             ExperimentService.get().clearCaches();

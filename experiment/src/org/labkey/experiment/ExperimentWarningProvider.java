@@ -20,37 +20,41 @@ import org.labkey.api.view.template.Warnings;
 
 public class ExperimentWarningProvider implements WarningProvider
 {
+    private Long _actualRecordCount;
+
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
         PropertyManager.WritablePropertyMap props = PropertyManager.getWritableProperties(ExperimentModule.AMOUNT_AND_UNIT_UPGRADE_PROP, false);
         if (props == null || props.isEmpty())
             return;
-        String expectedCount = props.get("AuditRecordCount");
-        String transactionIdStr = props.get("AuditTransactionId");
+        String expectedCount = props.get(ExperimentModule.AUDIT_COUNT_PROP);
+        String transactionIdStr = props.get(ExperimentModule.TRANSACTION_ID_PROP);
         if (StringUtils.isEmpty(expectedCount) || StringUtils.isEmpty(transactionIdStr))
             return;
 
-        UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(User.getAdminServiceUser(), ContainerManager.getRoot());
-        if (auditLogSchema == null)
-            return;
-        ContainerFilter cf = ContainerFilter.Type.AllFolders.create(ContainerManager.getRoot(), User.getAdminServiceUser());
-        TableInfo timelineTable = auditLogSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, cf);
-        if (timelineTable == null)
-            return;
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) from ").append(timelineTable)
-                .append(" WHERE transactionId = ?").add(Long.valueOf(transactionIdStr));
-        SqlSelector selector = new SqlSelector(auditLogSchema.getDbSchema().getScope(), sql);
-        Long actualCount = selector.getObject(Long.class);
-        if (Long.valueOf(expectedCount).equals(actualCount))
+        if (_actualRecordCount == null)
         {
-            props.delete();
+            UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(User.getAdminServiceUser(), ContainerManager.getRoot());
+            if (auditLogSchema == null)
+                return;
+            ContainerFilter cf = ContainerFilter.Type.AllFolders.create(ContainerManager.getRoot(), User.getAdminServiceUser());
+            TableInfo timelineTable = auditLogSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, cf);
+            if (timelineTable == null)
+                return;
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) from ").append(timelineTable)
+                    .append(" WHERE transactionId = ?").add(Long.valueOf(transactionIdStr));
+            SqlSelector selector = new SqlSelector(auditLogSchema.getDbSchema().getScope(), sql);
+            _actualRecordCount = selector.getObject(Long.class);
         }
+
+        if (Long.valueOf(expectedCount).equals(_actualRecordCount))
+            props.delete();
         else
         {
             // TODO Revise text?
             String upgradeMessage = "The number of audit logs created during the upgrade of the Experiment Module is not as expected. Expected "
-                    + expectedCount + " but got " + actualCount + ". The upgrade succeeded but not all audit logs were created, likely due to a premature server shutdown.";
+                    + expectedCount + " but got " + _actualRecordCount + ". The upgrade succeeded but not all audit logs were created, likely due to a premature server shutdown.";
             warnings.add(HtmlString.of(upgradeMessage));
         }
 

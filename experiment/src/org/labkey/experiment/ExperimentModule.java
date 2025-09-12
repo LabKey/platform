@@ -179,6 +179,8 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 public class ExperimentModule extends SpringModule
 {
     public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
+    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
+    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
