@@ -152,9 +152,7 @@ public class WikiController extends SpringActionController
         {
             VBox vbox = new VBox();
 
-            SearchService ss = SearchService.get();
-            if (null != ss)
-                vbox.addView(ss.getSearchView(false, 0, false, true));
+            vbox.addView(SearchService.get().getSearchView(false, 0, false, true));
 
             for (WikiPartFactory factory : WikiManager.get().getWikiPartFactories())
             {
@@ -1185,9 +1183,7 @@ public class WikiController extends SpringActionController
                 //set new page title to be the name.
                 _wikiversion.setTitle(name);
                 // check if this is a search result hit
-                SearchService ss = SearchService.get();
-                if (ss != null)
-                    ss.notFound(getViewContext().getActionURL());
+                SearchService.get().notFound(getViewContext().getActionURL());
             }
             else
             {

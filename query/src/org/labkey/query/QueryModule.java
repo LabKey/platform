@@ -276,12 +276,9 @@ public class QueryModule extends DefaultModule
         }
 
         SearchService ss = SearchService.get();
+        ss.addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
+        ss.addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
 
-        if (null != ss)
-        {
-            ss.addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
-            ss.addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
-        }
         if (null != PropertyService.get())
             PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
 

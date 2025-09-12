@@ -764,7 +764,7 @@ public class ExceptionUtil
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log, ViewContext context, @Nullable PageConfig pageConfig)
+        @NotNull SearchService ss, Logger log, ViewContext context, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -880,8 +880,7 @@ public class ExceptionUtil
             URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
             if (null != url && null != url.getParameter(ActionURL.Param._docid.name()))
             {
-                if (null != ss)
-                    ss.notFound(url);
+                ss.notFound(url);
             }
             unhandledException = null;
         }

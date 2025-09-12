@@ -281,10 +281,6 @@ public class SearchController extends SpringActionController
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors)
         {
             SearchService ss = SearchService.get();
-
-            if (null == ss)
-                throw new ConfigurationException("Search is misconfigured");
-
             @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
             Throwable t = ss.getConfigurationError();
 
@@ -324,11 +320,6 @@ public class SearchController extends SpringActionController
         public boolean handlePost(AdminForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
-            if (null == ss)
-            {
-                errors.reject(ERROR_MSG, "Indexing service is not running");
-                return false;
-            }
 
             if (form.isStart())
             {
@@ -789,8 +780,6 @@ public class SearchController extends SpringActionController
             _scope = form.getSearchScope();
             _form = form;
 
-            SearchService ss = SearchService.get();
-
             if (null == _scope || null == _scope.getRoot(getContainer()))
             {
                 throw new NotFoundException();
@@ -842,9 +831,8 @@ public class SearchController extends SpringActionController
         @Override
         public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            SearchService ss = SearchService.get();
             long startTime = System.currentTimeMillis();
-            boolean success = ss.drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
+            boolean success = SearchService.get().drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
 
             LOG.info("Spent {}ms draining the search indexer queue at priority {}. Success: {}", System.currentTimeMillis() - startTime, form.getPriority(), success);
 

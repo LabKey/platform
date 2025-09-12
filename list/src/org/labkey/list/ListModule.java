@@ -138,11 +138,8 @@ public class ListModule extends SpringModule
         }
 
         SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            ss.addDocumentProvider(ListManager.get());
-            ss.addSearchCategory(ListManager.listCategory);
-        }
+        ss.addDocumentProvider(ListManager.get());
+        ss.addSearchCategory(ListManager.listCategory);
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->
         {

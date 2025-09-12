@@ -388,7 +388,7 @@ public interface SearchService extends SearchMXBean
 
     DbSchema getSchema();
 
-    WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
+    WebPartView<?> getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
     SearchResult search(SearchOptions options) throws IOException;
 

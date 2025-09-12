@@ -4224,9 +4224,7 @@ public class StudyManager
     private void unindexDataset(DatasetDefinition ds)
     {
         String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId()));
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            ss.deleteResource(docid);
+        SearchService.get().deleteResource(docid);
     }
 
     public static void indexDatasets(SearchService.TaskIndexingQueue queue, Date modifiedSince)

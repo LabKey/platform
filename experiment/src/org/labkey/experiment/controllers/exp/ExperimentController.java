@@ -7423,8 +7423,6 @@ public class ExperimentController extends SpringActionController
         public Object execute(Object o, BindException errors) throws Exception
         {
             SearchService search = SearchService.get();
-            if (search == null)
-                return null;
 
             List<Map<String, Object>> notInIndex = new ArrayList<>(100);
 

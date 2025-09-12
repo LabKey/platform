@@ -177,12 +177,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
         SearchService ss = SearchService.get();
-
-        if (null != ss)
-        {
-            ss.addSearchCategory(AnnouncementManager.searchCategory);
-            ss.addDocumentProvider(this);
-        }
+        ss.addSearchCategory(AnnouncementManager.searchCategory);
+        ss.addDocumentProvider(this);
 
         FolderSerializationRegistry fsr = FolderSerializationRegistry.get();
         if (null != fsr)

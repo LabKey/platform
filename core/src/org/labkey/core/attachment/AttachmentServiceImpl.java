@@ -438,9 +438,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void deleteIndexedAttachment(String parent, String name)
     {
-        SearchService ss = SearchService.get();
-        if (ss != null)
-            ss.deleteResource(makeDocId(parent, name));
+        SearchService.get().deleteResource(makeDocId(parent, name));
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
             "UPDATE core.Documents SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL AND Parent = ? AND DocumentName = ?", parent, name)
         );
@@ -549,7 +547,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     @Override
     public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
-        SearchService ss = SearchService.get();
         for (AttachmentParent parent : parents)
         {
             checkSecurityPolicy(auditUser, parent);

@@ -27,22 +27,15 @@
 <%
 SearchService ss = SearchService.get();
 
-if (null == ss)
-{
-    %>Indexing service is not configured.<%
-}
-else
-{
-    %><table><%
+    %>
+<table><%
     if (ss instanceof AbstractSearchService)
     {
         renderMap(out, ((AbstractSearchService) ss).getIndexerStats());
     }
 
     renderMap(out, DavCrawler.getInstance().getStats());
-    %></table><%
-}
-%>
+    %></table>
 <%=link("Export index contents", SearchController.IndexContentsAction.class)%>
 <%!
     private void renderMap(JspWriter out, Map<String, Object> m) throws IOException

@@ -45,12 +45,6 @@ String indexDirectoryPath = null != indexDirectory ? indexDirectory.getPath() : 
         <table><tr><td><span style="color:green;"><br><%=h(form.getMessage())%><br></span></td></tr></table><%
     }
 
-if (null == ss)
-{
-    %>Indexing service is not configured.<%
-}
-else
-{
     HtmlString indexPathHelp = HtmlStringBuilder.of("The index path setting supports string substitution of specific server properties. For example, the value:")
         .unsafeAppend("<br><br><code>&nbsp;&nbsp;./temp/${serverGuid}/labkey_full_text_index</code><br><br>")
         .append("will currently result in this path:")
@@ -90,7 +84,7 @@ else
     <td colspan="2">Current Index Properties:</td>
 </tr>
     <%
-        for (Map.Entry e : ss.getIndexFormatProperties().entrySet())
+        for (Map.Entry<String, String> e : ss.getIndexFormatProperties().entrySet())
         {
     %>
     <tr>
@@ -179,6 +173,4 @@ else
             }
         %>
         </table>
-    </labkey:form></p><%
-}
-%>
+    </labkey:form></p>

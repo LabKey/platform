@@ -3716,12 +3716,8 @@ public class AdminController extends SpringActionController
             Introspector.flushCaches();
             LOG.info("Purging all caches");
             CacheManager.clearAllKnownCaches();
-            SearchService ss = SearchService.get();
-            if (null != ss)
-            {
-                LOG.info("Purging SearchService queues");
-                ss.purgeQueues();
-            }
+            LOG.info("Purging SearchService queues");
+            SearchService.get().purgeQueues();
         }
 
         @Override

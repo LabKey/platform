@@ -26,12 +26,6 @@
 <%
 SearchService ss = SearchService.get();
 
-if (null == ss)
-{
-    %>Indexing service is not configured.<%
-}
-else
-{
     %><table><%
     if (ss instanceof AbstractSearchService)
     {
@@ -49,6 +43,4 @@ else
         <tr><td valign="top"><%=label%></td><td align="right">&nbsp;&nbsp;<%=v%></td><td width="100%" align="right">&nbsp;</td></tr><%
         }
     }
-    %></table><%
-}
-%>
+    %></table>

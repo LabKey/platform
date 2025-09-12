@@ -1546,7 +1546,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
+    public SearchWebPart getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
     }
