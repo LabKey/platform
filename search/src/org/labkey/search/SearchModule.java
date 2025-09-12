@@ -23,6 +23,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -54,6 +56,7 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.PlainTextDocumentParser;
+import org.labkey.search.model.SearchSchema;
 import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
@@ -187,6 +190,15 @@ public class SearchModule extends DefaultModule
 
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
+        });
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(SearchSchema.getInstance().getSchema())
+        {
+            @Override
+            public List<TableInfo> getTablesToCopy()
+            {
+                return List.of(); // Leave empty -- target server needs to index all documents
+            }
         });
     }
 

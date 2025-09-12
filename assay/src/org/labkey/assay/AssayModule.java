@@ -38,6 +38,9 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
 import org.labkey.api.exp.ExperimentRunType;
@@ -52,6 +55,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.search.SearchService;
@@ -283,6 +287,15 @@ public class AssayModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
         }
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(AssayDbSchema.getInstance().getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return "PlateType".equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
+            }
+        });
     }
 
     @Override
