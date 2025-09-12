@@ -52,9 +52,9 @@ public class ExperimentWarningProvider implements WarningProvider
             props.delete();
         else
         {
-            // TODO Revise text?
             String upgradeMessage = "The number of audit logs created during the upgrade of the Experiment Module is not as expected. Expected "
-                    + expectedCount + " but got " + _actualRecordCount + ". The upgrade succeeded but not all audit logs were created, likely due to a premature server shutdown.";
+                    + expectedCount + " but got " + _actualRecordCount + ". The upgrade succeeded but not all audit logs were created, likely due to a premature server shutdown." +
+                    " It is recommended that you restore the DB from backup and rerun the upgrade or contact your account manager.";
             warnings.add(HtmlString.of(upgradeMessage));
         }
 
