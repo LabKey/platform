@@ -28,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
@@ -66,6 +67,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.experiment.ExperimentModule.AMOUNT_AND_UNIT_UPGRADE_PROP;
 
 public class ExperimentUpgradeCode implements UpgradeCode
 {
@@ -203,16 +205,26 @@ public class ExperimentUpgradeCode implements UpgradeCode
             // create a single transaction event at the root container for use in tying all updates together
             TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
             transaction.setAuditEvent(transactionEvent);
+            Long transactionId = transaction.getAuditId();
+            AtomicInteger auditCount = new AtomicInteger();
             ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
-                    convertAmountsToBaseUnits(c, admin)
+                    auditCount.addAndGet(convertAmountsToBaseUnits(c, admin))
             );
             transaction.commit();
+            LOG.info("{} Total audit events expected", auditCount);
+            if (auditCount.get() > 0)
+            {
+                PropertyManager.WritablePropertyMap props = PropertyManager.getWritableProperties(AMOUNT_AND_UNIT_UPGRADE_PROP, true);
+                props.put("AuditRecordCount", auditCount.toString());
+                props.put("AuditTransactionId", transactionId == null ? null : transactionId.toString());
+                props.save();
+            }
             ExperimentService.get().clearCaches();
         }
 
     }
 
-    private static void  getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
+    private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
     {
         Unit baseUnit = currentDisplayUnit.getBase();
         String unitsStr = (String) sampleMap.get(unitsCol.getName());
@@ -265,13 +277,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     // Converts amounts for all sample types defined in the given container.
     // Picks up samples from all containers for each sample type.
-    private static void convertAmountsToBaseUnits(Container container, User user)
+    private static int convertAmountsToBaseUnits(Container container, User user)
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo tInfo = ExperimentService.get().getTinfoMaterial();
 
         try (Connection c = scope.getConnection())
         {
+            AtomicInteger auditCount = new AtomicInteger();
             Parameter rowId = new Parameter("rowId", JdbcType.INTEGER);
             Parameter units = new Parameter(Units.name(), JdbcType.VARCHAR);
             Parameter amount = new Parameter(StoredAmount.name(), JdbcType.DOUBLE);
@@ -361,6 +374,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                             event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldDataMap));
                             event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newDataMap));
                             auditEvents.add(event);
+                            auditCount.getAndIncrement();
                         }
                     }
                     if (batchCount.get() > 1000)
@@ -381,6 +395,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 LOG.info("    Aliquot data update counts {}", aliquotCounts);
                 LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
             }
+            LOG.info("{} Audit events expected for container {}", auditCount, container.getPath());
+            return auditCount.get();
         }
         catch (SQLException e)
         {
