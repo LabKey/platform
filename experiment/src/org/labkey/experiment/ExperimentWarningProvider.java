@@ -3,6 +3,7 @@ package org.labkey.experiment;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.ContainerFilter;
@@ -49,7 +50,13 @@ public class ExperimentWarningProvider implements WarningProvider
         }
 
         if (Long.valueOf(expectedCount).equals(_actualRecordCount))
-            props.delete();
+        {
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                props.delete();
+            }
+            _actualRecordCount = null;
+        }
         else
         {
             String upgradeMessage = "The number of audit logs created during the upgrade of the Experiment Module is not as expected. Expected "
