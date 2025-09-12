@@ -1,7 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="zipjs/zip.js"/>
-        <script path="zipjs/z-worker.js"/>
-        <script path="zipjs/deflate.js"/>
     </library>
 </libraries>
