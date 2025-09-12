@@ -6,13 +6,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.TableInfo.IndexType;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SupportedDatabase;
@@ -23,11 +27,15 @@ import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -40,10 +48,13 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,9 +62,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -708,12 +721,144 @@ public class ToolsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class OverlappingIndicesAction extends SimpleViewAction<Object>
+    public class OverlappingIndicesAction extends AbstractOverlappingIndicesAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
-            MultiValuedMap<OverlapType, Row> mmap = new ArrayListValuedHashMap<>();
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+
+            return new VBox(
+                new HtmlView(DOM.createHtmlFragment(
+                    Arrays.stream(OverlapType.values()).flatMap(type ->
+                        Stream.of(
+                            type != OverlapType.UniqueOverlappingNonUnique ? DOM.BR() : null,
+                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
+                            DOM.TABLE(
+                                multiMap.get(type).stream()
+                                    .map(overlap -> DOM.TR(
+                                        DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
+                                        DOM.TD(type.getMessage(overlap)))
+                                    )
+                            )
+                        )
+                    )
+                )),
+                new HtmlView(DOM.createHtmlFragment(
+                    DOM.BR(),
+                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(OverlappingIndicesAction.class, getContainer()).usePost())
+                )
+            );
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("Overlapping Indices");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+
+            try
+            {
+                Arrays.stream(OverlapType.values()).forEach(type -> multiMap.get(type).forEach(overlap -> {
+                    try
+                    {
+                        // All writers are closed below
+                        Writer writer = getFileWriter(overlap.schemaName());
+                        type.writeScript(writer, overlap);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }));
+            }
+            finally
+            {
+                closeAllWriters();
+            }
+
+            return true;
+        }
+
+        private final Map<String, Writer> _writerMap = new HashMap<>();
+
+        private Writer getFileWriter(String schemaName) throws IOException
+        {
+            return _writerMap.computeIfAbsent(schemaName, n -> {
+
+                DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
+                Module module = schema.getModule();
+                Double schemaVersion = module.getSchemaVersion();
+                if (schemaVersion == null)
+                    throw new IllegalStateException("Schema version was null for " + module.getName());
+
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+                File scriptDirectory = provider.getScriptDirectory(dialect);
+                if (scriptDirectory == null)
+                    throw new IllegalStateException("No scripts path found for " + module.getName());
+
+                String filename = getScriptFilename(schemaName, schemaVersion);
+
+                try
+                {
+                    // Create script file and add to VCS
+                    File file = FileUtil.appendName(scriptDirectory, filename);
+                    FileUtil.createNewFile(file);
+                    Vcs vcs = VcsService.get().getVcs(scriptDirectory);
+                    if (null != vcs)
+                        vcs.addFile(filename);
+                    return new BufferedWriter(new FileWriter(file, StringUtilsLabKey.DEFAULT_CHARSET));
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        private String getScriptFilename(String schemaName, double startVersion)
+        {
+            return schemaName + "-" + Formats.f3.format(startVersion) + "-" + Formats.f3.format(startVersion + 0.001) + ".sql";
+        }
+
+        private void closeAllWriters()
+        {
+            _writerMap.values().forEach(writer -> {
+                try
+                {
+                    writer.close();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+
+    protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<Object>
+    {
+        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices()
+        {
+            MultiValuedMap<OverlapType, Overlap> multiMap = new ArrayListValuedHashMap<>();
             DbScope scope = DbScope.getLabKeyScope();
 
             ModuleLoader.getInstance().getModules().stream()
@@ -730,52 +875,23 @@ public class ToolsController extends SpringActionController
 
                             if (type != null)
                             {
-                                switch (type)
-                                {
-                                    case Identical -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " vs. " + indexName2 + ": " + join(indexDef1.getValue())));
-                                    case Overlap, UniqueOverlappingNonUnique -> mmap.put(type, new Row(table.getSchema().getName(), indexName1 + " " + join(indexDef1.getValue()) + " vs. " + indexName2 + " " + join(indexDef2.getValue())));
-                                }
+                                if (type != OverlapType.Identical || !alreadySeen(indexName1, indexName2))
+                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexName1, indexDef1, indexName2, indexDef2));
                             }
                         }
                     }));
                 });
 
-            return new HtmlView(DOM.createHtmlFragment(
-                Arrays.stream(OverlapType.values()).flatMap(type ->
-                    Stream.of(
-                        type != OverlapType.Identical ? DOM.BR() : null,
-                        DOM.STRONG(StringUtilsLabKey.pluralize(mmap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
-                        DOM.TABLE(
-                            mmap.get(type).stream()
-                                .map(row -> DOM.TR(
-                                    DOM.TD(DOM.at(style, "width:120px;"), row.schemaName()),
-                                    DOM.TD(row.message()))
-                                )
-                        )
-                    )
-                ))
-            );
+            return multiMap;
         }
 
-        private record Row(String schemaName, String message) {}
+        private final Set<String> _alreadySeen = new HashSet<>();
 
-        private enum OverlapType
+        // Keep track of the identical indexes we've seen so we don't repeat them for both directions
+        private boolean alreadySeen(String name1, String name2)
         {
-            Identical("identical column sets"),
-            Overlap("column sets that overlap at the start"),
-            UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint");
-
-            private final String _description;
-
-            OverlapType(String description)
-            {
-                _description = description;
-            }
-
-            public String getDescription()
-            {
-                return _description;
-            }
+            String key = name1.compareTo(name2) < 0 ? name1 + delim + name2 : name2 + delim + name1;
+            return !_alreadySeen.add(key);
         }
 
         private @Nullable OverlapType overlap(IndexType type1, List<ColumnInfo> cols1, IndexType type2, List<ColumnInfo> cols2)
@@ -794,9 +910,10 @@ public class ToolsController extends SpringActionController
             return null;
         }
 
+        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
+
         private String getKey(List<ColumnInfo> cols)
         {
-            String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
             return cols.stream()
                 .map(col -> col.getName().toLowerCase())
                 .collect(Collectors.joining(delim)) + delim;
@@ -808,12 +925,115 @@ public class ToolsController extends SpringActionController
                 .map(ColumnInfo::getName)
                 .toList();
         }
+    }
 
-        @Override
-        public void addNavTrail(NavTree root)
+    protected record Overlap(String schemaName, String tableName, String indexName1, Pair<IndexType, List<ColumnInfo>> indexDef1, String indexName2, Pair<IndexType, List<ColumnInfo>> indexDef2) {}
+
+    protected enum OverlapType
+    {
+        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid")
         {
-            addBeginNavTrail(root);
-            root.addChild("Overlapping Indices");
+            @Override
+            void writeScript(Writer writer, Overlap overlap)
+            {
+                // Do nothing -- these are valid
+            }
+        },
+        Identical("identical column sets")
+        {
+            @Override
+            void writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                IndexType type1 = overlap.indexDef1.getKey();
+                IndexType type2 = overlap.indexDef2.getKey();
+                String dropIndex = null;
+                String otherIndex = null;
+
+                // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
+                if (type1 == IndexType.Primary)
+                {
+                    dropIndex = overlap.indexName2;
+                    otherIndex = overlap.indexName1;
+                }
+                else if (type2 == IndexType.Primary)
+                {
+                    dropIndex = overlap.indexName1;
+                    otherIndex = overlap.indexName2;
+                }
+                else if (type1 == IndexType.Unique && type2 == IndexType.NonUnique)
+                {
+                    dropIndex = overlap.indexName2;
+                    otherIndex = overlap.indexName1;
+                }
+                else if (type2 == IndexType.Unique && type1 == IndexType.NonUnique)
+                {
+                    dropIndex = overlap.indexName1;
+                    otherIndex = overlap.indexName2;
+                }
+
+                if (dropIndex != null)
+                {
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
+                }
+                else
+                {
+                    writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName2, overlap.indexName1);
+                    writer.write('\n');
+                }
+            }
+
+            @Override
+            String getMessage(Overlap overlap)
+            {
+                return overlap.indexName1 + " vs. " + overlap.indexName2 + ": " + join(overlap.indexDef1.getValue());
+            }
+        },
+        Overlap("column sets that overlap at the start")
+        {
+            @Override
+            void writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
+            }
+        };
+
+        private final String _description;
+
+        OverlapType(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        abstract void writeScript(Writer writer, Overlap overlap) throws IOException;
+
+        String getMessage(Overlap overlap)
+        {
+            return overlap.indexName1 + " " + join(overlap.indexDef1.getValue()) + " vs. " + overlap.indexName2 + " " + join(overlap.indexDef2.getValue());
+        }
+
+        protected List<String> join(List<ColumnInfo> cols)
+        {
+            return cols.stream()
+                .map(ColumnInfo::getName)
+                .toList();
+        }
+
+        protected void dropIndex(Writer writer, String schemaName, String tableName, String dropIndex, String otherIndex) throws IOException
+        {
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            writer.write("-- This index overlaps with " + otherIndex + "\n");
+
+            if (dialect.isPostgreSQL())
+                writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
+            else
+                writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
         }
     }
 }
