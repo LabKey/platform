@@ -3773,19 +3773,28 @@ public class StudyManager
             if (domainChange != null)
             {
                 Domain domain = domainChange.domain;
+                boolean shared = datasetDefinitionEntry.datasetDefinition.isShared();
 
-                if (domain.isProvisioned() && !datasetDefinitionEntry.datasetDefinition.isShared())
+                if (!domain.isProvisioned() || shared)
                 {
-                    // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
-                    // We need to drop the indices first, adjust the properties, and then add the new indices. This method
-                    // allows for that.
-                    domain.setPropertyIndices(datasetImportInfo.indices);
-                    StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
+                    deleteAndSaveProperties(user, errors, domainChange);
+                    if (!datasetDefinitionEntry.datasetDefinition.isShared())
+                    {
+                        // Refresh the domain, now that it's provisioned
+                        domain = PropertyService.get().getDomain(domain.getContainer(), domain.getTypeURI());
+                        if (null == domain)
+                            throw new IllegalStateException("Domain should not be null");
+                        domain.setPropertyIndices(datasetImportInfo.indices);
+                        StorageProvisioner.get().ensureTableIndices(domain);
+                    }
                 }
                 else
                 {
-                    // deleteAndSaveProperties() calls domain.save() which ensures all the indices after provisioning the new domain
-                    deleteAndSaveProperties(user, errors, domainChange);
+                    // If we're changing an existing domain, we may be dropping a column that has an admin-configured
+                    // index. We need to drop the indices first, adjust the properties, and then add the new indices.
+                    // This method allows for that.
+                    domain.setPropertyIndices(datasetImportInfo.indices);
+                    StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
                 }
             }
         }
