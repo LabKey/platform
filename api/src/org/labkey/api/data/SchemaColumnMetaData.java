@@ -293,6 +293,8 @@ public class SchemaColumnMetaData
 
                 while (rs.next())
                 {
+                    if (columnCount == 0)
+                        ti.setPrimaryKeyName(reader.getKeyName()); // Stash for use in loadIndices()
                     columnCount++;
                     String colName = reader.getName();
                     BaseColumnInfo colInfo = (BaseColumnInfo)getColumn(colName);
@@ -376,16 +378,17 @@ public class SchemaColumnMetaData
 
                 Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
                 Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndexMap = new HashMap<>();
+                String primaryKeyName = ti.getPrimaryKeyName();
 
-                // Search for the primary index and change the index type to Primary
+                // Search for the primary key and change that index type to Primary
                 for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : indexMap.entrySet())
                 {
-                    List<ColumnInfo> cols = entry.getValue().getValue();
-                    if (getPkColumns().equals(cols))
+                    if (entry.getKey().equals(primaryKeyName))
                     {
+                        List<ColumnInfo> cols = entry.getValue().getValue();
                         Pair<TableInfo.IndexType, List<ColumnInfo>> indexTypeListPair = Pair.of(TableInfo.IndexType.Primary, cols);
-                        uniqueIndexMap.put(entry.getKey(),indexTypeListPair);
-                        allIndexMap.put(entry.getKey(),indexTypeListPair);
+                        uniqueIndexMap.put(entry.getKey(), indexTypeListPair);
+                        allIndexMap.put(entry.getKey(), indexTypeListPair);
                     }
                     else
                     {
