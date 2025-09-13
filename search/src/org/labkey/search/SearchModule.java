@@ -188,7 +188,7 @@ public class SearchModule extends DefaultModule
     {
         // Execute any reindexing operations in the background to not block startup, Issue #48960
         JobRunner.getDefault().execute(() -> {
-            _searchIndexStartupHandler.reindexIfNeeded(ss);
+            _searchIndexStartupHandler.reindexIfNeeded(SearchService.get());
             SearchService.get().start();
             DavCrawler.getInstance().start();
         });
