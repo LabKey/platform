@@ -1,7 +1,9 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseMigrationService.MigrationHandler;
 
+import java.util.Set;
 import java.util.function.Predicate;
 
 public interface DatabaseMigrationConfiguration
@@ -9,8 +11,8 @@ public interface DatabaseMigrationConfiguration
     boolean shouldInsertData();
     DbScope getSourceScope();
     DbScope getTargetScope();
-    DbScope getMetadataScope();
     Predicate<String> getColumnNameFilter();
+    @Nullable TableSelector getTableSelector(TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationHandler handler);
 
     class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationConfiguration
     {
@@ -33,13 +35,13 @@ public interface DatabaseMigrationConfiguration
         }
 
         @Override
-        public DbScope getMetadataScope()
+        public Predicate<String> getColumnNameFilter()
         {
             return null;
         }
 
         @Override
-        public Predicate<String> getColumnNameFilter()
+        public TableSelector getTableSelector(TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationHandler handler)
         {
             return null;
         }

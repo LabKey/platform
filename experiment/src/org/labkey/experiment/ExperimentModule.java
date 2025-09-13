@@ -82,6 +82,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -885,6 +886,12 @@ public class ExperimentModule extends SpringModule
                 // Yes, the FK name is misspelled
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
+            }
+
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo table)
+            {
+                return table.getName().equals("DataTypeExclusion") ? FieldKey.fromParts("ExcludedContainer") : super.getContainerFieldKey(table);
             }
 
             @Override

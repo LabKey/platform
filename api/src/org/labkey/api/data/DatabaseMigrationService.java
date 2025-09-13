@@ -4,6 +4,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
@@ -64,7 +66,7 @@ public interface DatabaseMigrationService
 
         List<TableInfo> getTablesToCopy();
 
-        TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames);
+        FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers);
 
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
@@ -118,9 +120,9 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames)
+        public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
         {
-            return new TableSelector(sourceTable, selectColumnNames);
+            return new InClause(containerFieldKey, containers);
         }
 
         @Override
@@ -141,21 +143,19 @@ public interface DatabaseMigrationService
                     {
                         fKey = lookupTableInfo.getContainerFieldKey();
 
-                        if (null != fKey)
+                        if (null == fKey)
                         {
-                            return FieldKey.fromParts(col.getFieldKey(), fKey);
-                        }
-                        else
-                        {
+                            // Ignore self joins
                             if (!lookupTableInfo.getName().equalsIgnoreCase(table.getName()))
                             {
                                 if (!lookupTableInfo.getSchema().getName().equalsIgnoreCase(table.getSchema().getName()))
                                     LOG.warn("Different schemas!");
                                 fKey = getContainerFieldKey(lookupTableInfo);
-                                if (fKey != null)
-                                    return FieldKey.fromParts(col.getFieldKey(), fKey);
                             }
                         }
+
+                        if (fKey != null)
+                            return FieldKey.fromParts(col.getFieldKey(), fKey);
                     }
                 }
             }

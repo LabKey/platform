@@ -48,6 +48,8 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -69,6 +71,8 @@ import org.labkey.api.data.OutOfRangeDisplayColumn;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
@@ -1328,6 +1332,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     case "APIKeys", "AuthenticationConfigurations", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
                     default -> super.getContainerFieldKey(sourceTable);
                 };
+            }
+
+            @Override
+            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            {
+                FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+
+                // Users and root groups have container == null, so add that as an OR clause
+                if (sourceTable.getName().equals("Principals")) // TODO: Or "Members", since that joins to Principals
+                {
+                    OrClause orClause = new OrClause();
+                    orClause.addClause(containerClause);
+                    orClause.addClause(new CompareClause(containerFieldKey, CompareType.ISBLANK, null));
+                    containerClause = orClause;
+                }
+
+                return containerClause;
             }
 
             @Override
