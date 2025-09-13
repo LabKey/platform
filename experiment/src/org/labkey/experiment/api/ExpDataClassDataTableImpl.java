@@ -1235,7 +1235,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
         {
-            Map<Integer, Map<String, Object>> dataRows = getExistingRows(user, container, keys, verifyNoCrossFolderData, verifyExisting, columns);
+            Map<Integer, Map<String, Object>> dataRows = super.getExistingRows(user, container, keys, verifyNoCrossFolderData, verifyExisting, columns);
             boolean hasParentInput = false;
             if (_dataClass != null && columns != null && !columns.isEmpty())
             {
