@@ -97,7 +97,7 @@ public final class TableSorter
 
         try
         {
-            // Ensure we can resolve the table from the FK
+            // Ensure attempting to resolve table doesn't throw. Note that TableInfo could be null.
             fk.getLookupTableInfo();
             return fk;
         }

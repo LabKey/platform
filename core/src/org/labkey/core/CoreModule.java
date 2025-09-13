@@ -60,6 +60,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MvUtil;
@@ -1321,7 +1322,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 return switch (sourceTable.getName())
                 {
-                    case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId/EntityId");
+                    case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId", "EntityId");
                     case "Containers" -> FieldKey.fromParts("EntityId");
                     case "Report" -> FieldKey.fromParts("ContainerId");
                     case "APIKeys", "AuthenticationConfigurations", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
@@ -1354,6 +1355,19 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 return List.of(); // Skip all test tables
             }
         });
+
+        // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
+        if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
+        {
+            DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            {
+                @Override
+                public List<TableInfo> getTablesToCopy()
+                {
+                    return List.of(); // Skip all vehicle tables
+                }
+            });
+        }
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate

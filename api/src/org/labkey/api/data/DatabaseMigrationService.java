@@ -124,9 +124,43 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+        public @Nullable FieldKey getContainerFieldKey(TableInfo table)
         {
-            return sourceTable.getContainerFieldKey();
+            FieldKey fKey = table.getContainerFieldKey();
+
+            if (fKey != null)
+                return fKey;
+
+            for (ColumnInfo col : table.getColumns())
+            {
+                ForeignKey fk = TableSorter.getForeignKey(table, col, true);
+                if (fk != null)
+                {
+                    TableInfo lookupTableInfo = fk.getLookupTableInfo();
+                    if (lookupTableInfo != null)
+                    {
+                        fKey = lookupTableInfo.getContainerFieldKey();
+
+                        if (null != fKey)
+                        {
+                            return FieldKey.fromParts(col.getFieldKey(), fKey);
+                        }
+                        else
+                        {
+                            if (!lookupTableInfo.getName().equalsIgnoreCase(table.getName()))
+                            {
+                                if (!lookupTableInfo.getSchema().getName().equalsIgnoreCase(table.getSchema().getName()))
+                                    LOG.warn("Different schemas!");
+                                fKey = getContainerFieldKey(lookupTableInfo);
+                                if (fKey != null)
+                                    return FieldKey.fromParts(col.getFieldKey(), fKey);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         @Override
