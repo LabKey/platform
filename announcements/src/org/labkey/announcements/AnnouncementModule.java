@@ -18,7 +18,6 @@ package org.labkey.announcements;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
-import org.labkey.announcements.api.TourServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
@@ -34,7 +33,6 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
-import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
@@ -100,7 +98,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public @Nullable Double getSchemaVersion()
     {
-        return 25.000;
+        return 25.001;
     }
 
     @Override
@@ -108,8 +106,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     {
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
-
-        addController("tours", ToursController.class);
 
         AnnouncementSchema.register(this);
         DiscussionService.setInstance(new DiscussionServiceImpl());
@@ -157,9 +153,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         UserManager.addUserListener(new AnnouncementUserListener());
         AuditLogService.get().registerAuditType(new MessageAuditProvider());
 
-        TourListener tourListener = new TourListener();
-        ContainerManager.addContainerListener(tourListener);
-
         // Editors can read and respond to secure message boards
         RoleManager.registerPermission(new SecureMessageBoardReadPermission());
         RoleManager.registerPermission(new SecureMessageBoardRespondPermission());
@@ -189,8 +182,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
-
-        TourService.setInstance(new TourServiceImpl());
 
         UsageMetricsService.get().registerUsageMetrics(NAME, () -> Map.of("discussions", Map.of(
             "rootEnabled", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).isDiscussionEnabled(),

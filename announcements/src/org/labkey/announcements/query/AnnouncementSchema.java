@@ -52,7 +52,6 @@ public class AnnouncementSchema extends UserSchema
     public static final String ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME = "AnnouncementSubscription";
     public static final String EMAIL_OPTION_TABLE_NAME = "EmailOption";
     public static final String RSS_FEEDS_TABLE_NAME = "RSSFeeds";
-    public static final String TOURS_TABLE_NAME = "Tours";
     public static final String THREADS_TABLE_NAME = "Threads";
 
     private static final Set<String> TABLE_NAMES;
@@ -65,7 +64,6 @@ public class AnnouncementSchema extends UserSchema
         names.add(ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME);
         names.add(EMAIL_OPTION_TABLE_NAME);
         names.add(RSS_FEEDS_TABLE_NAME);
-        names.add(TOURS_TABLE_NAME);
         names.add(THREADS_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
@@ -126,10 +124,6 @@ public class AnnouncementSchema extends UserSchema
         {
             return createRSSFeedsTable(cf);
         }
-        if (TOURS_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return createToursTable(cf);
-        }
         if (THREADS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createThreadsTable(cf);
@@ -139,7 +133,7 @@ public class AnnouncementSchema extends UserSchema
 
     public TableInfo createEmailOptionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(CoreSchema.getInstance().getTableInfoEmailOptions(), this, cf);
+        FilteredTable<?> result = new FilteredTable<>(CoreSchema.getInstance().getTableInfoEmailOptions(), this, cf);
         result.setName(EMAIL_OPTION_TABLE_NAME);
         result.addWrapColumn(result.getRealTable().getColumn("EmailOptionId"));
         result.addWrapColumn(result.getRealTable().getColumn("EmailOption"));
@@ -173,7 +167,7 @@ public class AnnouncementSchema extends UserSchema
         AnnouncementTable table = new AnnouncementTable(this, cf, filter);
 
         for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
-            table.getMutableColumn(name).setHidden(true);
+            table.getMutableColumnOrThrow(name).setHidden(true);
 
         return table;
     }
@@ -189,11 +183,6 @@ public class AnnouncementSchema extends UserSchema
         spamTable.setTitle("Spam");
 
         return spamTable;
-    }
-
-    private TableInfo createToursTable(ContainerFilter cf)
-    {
-        return new ToursTable(this, cf);
     }
 
     public TableInfo createThreadsTable(ContainerFilter cf)

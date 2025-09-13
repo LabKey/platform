@@ -16,18 +16,12 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.announcements.api.Tour;
-import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
-
-import java.util.List;
 
 /**
  * The Help menu item that appears in the user menu and lets the user navigate to relevant documentation and other resources.
@@ -59,28 +53,6 @@ public class PopupHelpView extends PopupMenuView
 
         if (laf.isHelpMenuEnabled())
             menu.addChild(topic.getNavTree("LabKey Documentation"));
-
-        if (c.hasPermission(user, ReadPermission.class))
-        {
-            TourService service = TourService.get();
-
-            if (null != service)
-            {
-                List<Tour> tours = service.getApplicableTours(c);
-
-                if (!tours.isEmpty())
-                {
-                    NavTree toursMenu = new NavTree("Tours");
-                    for (Tour t : tours)
-                    {
-                        NavTree tourLink = new NavTree(t.getTitle());
-                        tourLink.setScript("LABKEY.help.Tour.showFromDb(" + PageFlowUtil.jsString(t.getRowId().toString()) + ", 0)");
-                        toursMenu.addChild(tourLink);
-                    }
-                    menu.addChild(toursMenu);
-                }
-            }
-        }
 
         return menu;
     }
