@@ -12,7 +12,7 @@ public interface DatabaseMigrationConfiguration
     DbScope getSourceScope();
     DbScope getTargetScope();
     Predicate<String> getColumnNameFilter();
-    @Nullable TableSelector getTableSelector(TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationHandler handler);
+    @Nullable TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames, MigrationHandler handler);
 
     class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationConfiguration
     {
@@ -41,7 +41,7 @@ public interface DatabaseMigrationConfiguration
         }
 
         @Override
-        public TableSelector getTableSelector(TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationHandler handler)
+        public TableSelector getTableSelector(TableInfo sourceTable, Set<String> selectColumnNames, MigrationHandler handler)
         {
             return null;
         }
