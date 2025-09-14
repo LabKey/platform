@@ -61,6 +61,22 @@ public enum DbSchemaType
             return getAssociatedModule(scope, schemaName);
         }
     },
+    Migration("migration", CacheManager.YEAR, true)
+    {
+        @Override
+        public Module getModule(DbScope scope, String schemaName)
+        {
+            return getAssociatedModule(DbScope.getLabKeyScope(), schemaName);
+        }
+
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
+        {
+            Map<String, SchemaTableInfoFactory> metaDataTableNames = DbSchema.loadTableMetaData(DbScope.getLabKeyScope(), metaDataName);
+
+            return new MigrationDbSchema(metaDataName, this, scope, metaDataTableNames, module);
+        }
+    },
     Bare("bare", CacheManager.HOUR, false)
     {
         @Override
