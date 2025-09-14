@@ -18,13 +18,13 @@ import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
+import org.labkey.test.pages.query.UpdateQueryRowPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
-import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.PasswordUtil;
@@ -117,11 +117,11 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
                 AuditLogHelper.COL_FILE_AUDIT_PROVIDED_FILE, inputFile.getName()
         )));
         log("Edit the dataset");
-        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
-        table.clickEditRow(0);
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName(TEXT_FIELD)), "Welcome..!");
-        checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
-        clickButton("Submit");
+        UpdateQueryRowPage updatePage = new DataRegionTable("Dataset", getDriver())
+                .clickEditRow(0)
+                .setField(TEXT_FIELD, "Welcome..!");
+        checker().verifyTrue("File is not present ", isElementPresent(Locator.linkContainingText("remove")));
+        updatePage.submit();
 
         log("Verify file field is not deleted after edit");
         File downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
@@ -162,22 +162,22 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
                 .selectDatasetByName(datasetName)
                 .clickViewData();
 
-        table = new DataRegionTable("Dataset", getDriver());
-        table.clickEditRow(0);
-        checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName(INT_FIELD)), "NOT A NUMBER");
-        clickButton("Submit");
+        updatePage = new DataRegionTable("Dataset", getDriver())
+                .clickEditRow(0);
+        checker().verifyTrue("File is not present ", isElementPresent(Locator.linkContainingText("remove")));
+        updatePage.setField(INT_FIELD, "NOT A NUMBER");
+        updatePage.submitExpectingError();
 
         // assert correct reshow with error
         assertTextPresent("Could not convert value:");
-        checker().verifyTrue("File is not present ",  isElementPresent(Locator.linkContainingText("remove")));
+        checker().verifyTrue("File is not present ", isElementPresent(Locator.linkContainingText("remove")));
 
         // Issue 53320: Update a file field with a different file
         click(Locator.linkContainingText("remove"));
         File updateFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName(INT_FIELD)), "2");
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName(FILE_FIELD_1)), updateFile.toString());
-        clickButton("Submit");
+        updatePage.setField(INT_FIELD, "2");
+        updatePage.setField(FILE_FIELD_1, updateFile);
+        updatePage.submit();
 
         FileBrowserHelper.FileDetailInfo fileInfoImportedFile = FileBrowserHelper.getFileDetailInfo(IMPORT_PROJECT, "sample.txt");
 
@@ -209,8 +209,9 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         importFilePathError("1", "2", ".");
         importFilePathError("1", "2", "../..");
         // happy case, import/update/merge with valid file path
+        // TODO: This should verify the rows in the data region after import
         importDataPage.setCopyPasteMerge(false, false);
-        String header = "ParticipantId\tSequenceNum\tfileField\n";
+        String header = "ParticipantId\tSequenceNum\t" + FILE_FIELD_1 + "\n";
         String data =  "2\t3\t" + fileInfoImportedFile.absoluteFilePath() + "\n" +
                 "3\t4\t" + fileInfoImportedFile.dataFileUrl() + "\n" +
                 "4\t5\t" + fileInfoImportedFile.webDavUrl() + "\n" +
@@ -245,7 +246,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         {
             waitForElementToBeVisible(Locator.xpath("//div[contains(@class, 'labkey-error')][contains(text(),'Invalid file path: " + filePath + "')]"));
         }
-        catch(NoSuchElementException nse)
+        catch (NoSuchElementException nse)
         {
             checker().fatal().error("Invalid file path error not present.");
         }

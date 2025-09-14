@@ -250,7 +250,9 @@ public class StudyTest extends StudyBaseTest
     }
 
     protected String getHeaderName()
-    {return "DEMasian";}
+    {
+        return "DEMasian";
+    }
 
     protected void emptyParticipantPickerList()
     {
@@ -396,7 +398,6 @@ public class StudyTest extends StudyBaseTest
     protected static final String LABEL_FIELD = "groupLabel";
     protected static final String ID_FIELD = "participantIdentifiers";
 
-
     /**
      * This is a test of the participant picker/classification creation UI.
      */
@@ -446,7 +447,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         // verify warn on no selection
-        if(!isQuickTest())
+        if (!isQuickTest())
         {
             //nav trail check
             clickAndWait(Locator.linkContainingText("999320016"));
@@ -478,7 +479,7 @@ public class StudyTest extends StudyBaseTest
         setFormElement(Locator.name(LABEL_FIELD), "Participant Group from Grid");
         clickButtonContainingText("Save");
 
-        if(!isQuickTest())
+        if (!isQuickTest())
         {
             BootstrapMenu.find(getDriver(), "Groups").clickSubMenu(true, "Participant Group from Grid");
             waitForElement(Locator.paginationText(selectedIDs.length));
@@ -675,7 +676,7 @@ public class StudyTest extends StudyBaseTest
         setFormElement(Locator.name(LABEL_FIELD), listName);
         DataRegionTable table = DataRegion(getDriver()).withName("demoDataRegion").timeout(WAIT_FOR_PAGE).waitFor();
 
-        if(filtered)
+        if (filtered)
         {
             table.setFilter(getHeaderName(), "Equals", "0", 0);
             waitForElement(Locator.paginationText(21));
@@ -720,7 +721,7 @@ public class StudyTest extends StudyBaseTest
     @LogMethod
     protected void verifyStudyAndDatasets(boolean isVisitBased)
     {
-        if(isVisitBased)
+        if (isVisitBased)
         {
             goToProjectHome();
             verifyDemographics();
@@ -896,7 +897,7 @@ public class StudyTest extends StudyBaseTest
                 .setType(FieldDefinition.ColumnType.MultiLine);
         DatasetPropertiesPage propertiesPage = editDatasetPage.clickSave();
 
-        if(isVisitBased)
+        if (isVisitBased)
         {
             log("creating the participant/visit comment dataset");
             editDatasetPage = propertiesPage.clickManageDatasets()
@@ -929,7 +930,7 @@ public class StudyTest extends StudyBaseTest
         doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("participantCommentDatasetId"), PARTICIPANT_CMT_DATASET));
         selectOptionByText(Locator.name("participantCommentProperty"), PARTICIPANT_COMMENT_LABEL);
 
-        if(isVisitBased)
+        if (isVisitBased)
         {
             doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("participantVisitCommentDatasetId"), PARTICIPANT_VISIT_CMT_DATASET));
             selectOptionByText(Locator.name("participantVisitCommentProperty"), PARTICIPANT_VISIT_COMMENT_LABEL);
@@ -944,10 +945,11 @@ public class StudyTest extends StudyBaseTest
         BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true,"Manage Mouse Comments");
 
         int datasetAuditEventCount = getDatasetAuditEventCount(); //inserting a new event should increase this by 1;
-        DataRegionTable.findDataRegion(this).clickInsertNewRow();
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName("MouseId")), "999320812");
-        setFormElement(Locator.name(EscapeUtil.getFormFieldName(COMMENT_FIELD_NAME)), "Mouse Comment");
-        clickButton("Submit");
+        DataRegionTable.findDataRegion(this)
+                .clickInsertNewRow()
+                .setField("MouseId", "999320812")
+                .setField(COMMENT_FIELD_NAME, "Mouse Comment")
+                .submit();
         //Issue 14894: Datasets no longer audit row insertion
         verifyAuditEventAdded(datasetAuditEventCount);
 
