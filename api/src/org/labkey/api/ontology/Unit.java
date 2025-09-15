@@ -203,12 +203,14 @@ public enum Unit
         if (rawUnits == null)
             return null;
         if (rawUnits instanceof Unit u)
+        {
             if (defaultUnits == null)
                 return u;
             else if (u.kindOfQuantity != defaultUnits.kindOfQuantity)
                 throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
             else
                 return u;
+        }
         if (!(rawUnits instanceof String rawUnitsString))
             throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
         if (!StringUtils.isBlank(rawUnitsString))
