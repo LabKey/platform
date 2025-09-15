@@ -179,6 +179,7 @@ import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
@@ -9677,7 +9678,7 @@ public class QueryController extends SpringActionController
             {
                 var end = text.indexOf("```", sql+7);
                 if (end >= 0)
-                    return text.substring(7,end);
+                    return text.substring(sql+7,end);
             }
             return null;
         }
@@ -9788,6 +9789,8 @@ public class QueryController extends SpringActionController
         table.put("fullQuotedName", new SchemaKey(schema.getSchemaPath(), td.getName()).toSQLString());
         table.put("description", td.getDescription());
 
+        var pkColumns = td.getPkColumns();
+        var pk = pkColumns.size() == 1 ? pkColumns.get(0).getFieldKey() : null;
         JSONArray columns = new JSONArray();
         for (ColumnInfo col : td.getColumns())
         {
@@ -9796,8 +9799,32 @@ public class QueryController extends SpringActionController
             md.put("label", col.getLabel());
             md.put("type", col.getJdbcType().name());
             md.put("description", col.getDescription());
+            if (col.getFieldKey().equals(pk))
+                md.put("is_primary_key", Boolean.TRUE);
+            var fk = col.getFk();
+            if (null != fk)
+            {
+                if (fk instanceof QueryForeignKey qfk)
+                {
+                    SchemaKey qfkSchema = qfk.getLookupSchemaKey();
+                    SchemaKey qfkTable = new SchemaKey(qfkSchema, qfk.getLookupTableName());
+                    SchemaKey qfkColumn = new SchemaKey(qfkTable, qfk.getLookupColumnName());
+                    md.put("is_foreign_key", Boolean.TRUE);
+                    md.put("references", qfkColumn.toSQLString());
+                }
+                else
+                {
+                    TableDescription references = fk.getLookupTableDescription();
+                    if (null != references && references.isPublic())
+                    {
+                        SchemaKey qfkTable = SchemaKey.fromParts(td.getSchema().getQuerySchemaName(), td.getName());
+                        SchemaKey qfkColumn = new SchemaKey(qfkTable, fk.getLookupColumnName());
+                        md.put("is_foreign_key", Boolean.TRUE);
+                        md.put("references", qfkColumn.toSQLString());
+                    }
+                }
+            }
             columns.put(md);
-            // TODO PK/FK
         }
         table.put("columns",columns);
 
