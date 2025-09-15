@@ -185,9 +185,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public void setLastIndexed(long indexed, long modified)
     {
-        SearchService ss = SearchService.get();
-        if (isFile() && ss != null)
-            ss.setLastIndexedForPath(getPath(), indexed, modified);
+        if (isFile())
+            SearchService.get().setLastIndexedForPath(getPath(), indexed, modified);
     }
 
     @Override

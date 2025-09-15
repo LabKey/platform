@@ -353,9 +353,7 @@ public class ExperimentModule extends SpringModule
 
     private void addDataResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver()
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver()
         {
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
@@ -394,9 +392,7 @@ public class ExperimentModule extends SpringModule
 
     private void addDataClassResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
@@ -420,9 +416,7 @@ public class ExperimentModule extends SpringModule
 
     private void addSampleTypeResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
@@ -446,9 +440,7 @@ public class ExperimentModule extends SpringModule
 
     private void addSampleResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {

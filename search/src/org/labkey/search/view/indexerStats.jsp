@@ -27,7 +27,7 @@
 <%
 SearchService ss = SearchService.get();
 
-if (null == ss)
+if (ss == SearchService.NO_OP)
 {
     %>Indexing service is not configured.<%
 }
