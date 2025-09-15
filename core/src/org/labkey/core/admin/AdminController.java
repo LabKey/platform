@@ -5457,7 +5457,8 @@ public class AdminController extends SpringActionController
 
             // make sure the file is not empty and that it has a .zip extension
             MultipartFile zipFile = map.values().iterator().next();
-            if (0 == zipFile.getSize() || isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
+            String originalFilename = zipFile.getOriginalFilename();
+            if (0 == zipFile.getSize() || isBlank(originalFilename) || !originalFilename.toLowerCase().endsWith(".zip"))
             {
                 errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                 return null;
@@ -5466,7 +5467,14 @@ public class AdminController extends SpringActionController
             // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
             try
             {
-                Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
+                Path pipelineUnzipFile = pipelineUnzipDir.resolve(originalFilename);
+                // Check that the resolved file is under the pipelineUnzipDir
+                if (!pipelineUnzipFile.normalize().startsWith(pipelineUnzipDir.normalize()))
+                {
+                    errors.reject("folderImport", "Invalid file path - must be within the unzip directory");
+                    return null;
+                }
+
                 FileUtil.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
                 FileUtil.createFile(pipelineUnzipFile);
                 try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
@@ -5477,20 +5485,20 @@ public class AdminController extends SpringActionController
 
                 return new FolderImportConfig(
                     false,
-                    zipFile.getOriginalFilename(),
+                    originalFilename,
                     pipelineUnzipFile,
                     pipelineUnzipFile
                 );
             }
             catch (FileNotFoundException e)
             {
-                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
+                LOG.debug("Failed to import '" + originalFilename + "'.", e);
                 errors.reject("folderImport", "File not found.");
                 return null;
             }
             catch (IOException e)
             {
-                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
+                LOG.debug("Failed to import '" + originalFilename + "'.", e);
                 errors.reject("folderImport", "Unable to unzip folder archive.");
                 return null;
             }
