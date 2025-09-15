@@ -218,7 +218,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             {
                 PropertyManager.WritablePropertyMap props = PropertyManager.getWritableProperties(AMOUNT_AND_UNIT_UPGRADE_PROP, true);
                 props.put(AUDIT_COUNT_PROP, auditCount.toString());
-                props.put(TRANSACTION_ID_PROP, transactionId == null ? null : transactionId.toString());
+                props.put(TRANSACTION_ID_PROP, String.valueOf(transactionId));
                 props.save();
             }
             ExperimentService.get().clearCaches();
@@ -301,7 +301,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, false))
             {
-                LOG.info("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
+                LOG.debug("** Starting upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
                 Map<String, Integer> sampleCounts = new HashMap<>();
                 Map<String, Integer> aliquotCounts = new HashMap<>();
 
@@ -393,11 +393,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     AuditLogService.get().addEvents(user, auditEvents);
                 }
 
-                LOG.info("    Sample data update counts {}", sampleCounts);
-                LOG.info("    Aliquot data update counts {}", aliquotCounts);
-                LOG.info("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
+                LOG.debug("    Sample data update counts {}", sampleCounts);
+                LOG.debug("    Aliquot data update counts {}", aliquotCounts);
+                LOG.debug("** Finished upgrade for sample type {} in folder {}", sampleType.getName(), container.getPath());
             }
-            LOG.info("{} Audit events expected for container {}", auditCount, container.getPath());
+            LOG.debug("{} Audit events expected for container {}", auditCount, container.getPath());
             return auditCount.get();
         }
         catch (SQLException e)
