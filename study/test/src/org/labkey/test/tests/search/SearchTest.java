@@ -41,9 +41,11 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
+import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.WikiHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 import org.labkey.test.util.search.SearchResultsQueue;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.File;
 import java.io.IOException;
@@ -234,6 +236,7 @@ public abstract class SearchTest extends StudyBaseTest
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
         deleteFolderAndVerifyNoResults();
+        exportSearchIndexAndVerifyResults();
     }
 
     @LogMethod
@@ -455,6 +458,22 @@ public abstract class SearchTest extends StudyBaseTest
         SearchAdminAPIHelper.waitForIndexerBackground();
         goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
+    }
+
+    @LogMethod
+    private void exportSearchIndexAndVerifyResults()
+    {
+        goToAdminConsole()
+                .clickFullTextSearch();
+        clickAndWait(Locator.linkWithText("Export index contents"));
+        Locator exportTxtBtnLoc = Locator.tagWithClass("a", "labkey-button").withText("Export to Text");
+        shortWait().until(ExpectedConditions.elementToBeClickable(exportTxtBtnLoc));
+        var indexFile = clickAndWaitForDownload(exportTxtBtnLoc);
+
+        TextSearcher tsvSearcher = new TextSearcher(indexFile);
+        assertTextPresent(tsvSearcher, "Panda", "Black Bear", "Owlbear", "BoarQPine", "Folder Apple",  "pdf_sample.pdf",
+                "docx_sample.docx", "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
+                "12345", "Urinalysis");
     }
 
     @Override
