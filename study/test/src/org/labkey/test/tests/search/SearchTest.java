@@ -234,9 +234,9 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
         testAdvancedSearchScope();
         testAdvancedSearchCategoryFilters();
-//        renameFolderAndReSearch();
-//        moveFolderAlterListsAndReSearch();
-//        deleteFolderAndVerifyNoResults();
+        renameFolderAndReSearch();
+        moveFolderAlterListsAndReSearch();
+        deleteFolderAndVerifyNoResults();
         exportSearchIndexAndVerifyResults();
     }
 
