@@ -40,6 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -738,16 +739,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public Set<String> getDomainPropertyImportAliases(DomainProperty property)
     {
-        if (property == null)
-            return Collections.emptySet();
-
-        Set<String> aliases = new CaseInsensitiveHashSet();
-        aliases.add(property.getName());
-        if (property.getLabel() != null)
-            aliases.add(property.getLabel());
-        if (!property.getImportAliasSet().isEmpty())
-            aliases.addAll(property.getImportAliasSet());
-        return aliases;
+        return ImportAliasable.Helper.createImportSet(property);
     }
 
     @Override

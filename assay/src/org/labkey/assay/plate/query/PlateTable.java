@@ -319,7 +319,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet(Column.RowId.name(), Column.Lsid.name()));
             dib = LoggingDataIterator.wrap(dib);
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, null);
 
             return dib;
         }

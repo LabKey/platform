@@ -220,7 +220,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             DataIteratorBuilder insertBuilder = LoggingDataIterator.wrap(StandardDataIteratorBuilder.forInsert(getDbTable(), di, container, user, context));
             DataIteratorBuilder dib = new TableInsertDataIteratorBuilder(insertBuilder, plateSetTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId"));
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(plateSetTable, dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(plateSetTable, dib, context.getInsertOption(), user, container, null);
 
             return dib;
         }
