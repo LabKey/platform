@@ -1910,12 +1910,8 @@ public class ContainerManager
 
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
-        SearchService ss = SearchService.get();
-        if (ss != null)
-        {
-            // Tell the search indexer to drop work for the container that's about to be deleted
-            ss.purgeForContainer(c);
-        }
+        // Tell the search indexer to drop work for the container that's about to be deleted
+        SearchService.get().purgeForContainer(c);
 
         DbScope.RetryFn<Boolean> tryDeleteContainer = (tx) ->
         {

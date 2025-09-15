@@ -7425,10 +7425,6 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            SearchService search = SearchService.get();
-            if (search == null)
-                return null;
-
             List<Map<String, Object>> notInIndex = new ArrayList<>(100);
 
             List<? extends ExpDataClass> list = ExperimentService.get().getDataClasses(getContainer(), getUser(), false);
@@ -7439,7 +7435,7 @@ public class ExperimentController extends SpringActionController
                     String docId = d.getDocumentId();
                     if (docId != null)
                     {
-                        SearchService.SearchHit hit = search.find(docId);
+                        SearchService.SearchHit hit = SearchService.get().find(docId);
                         if (hit == null)
                         {
                             JSONObject props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);

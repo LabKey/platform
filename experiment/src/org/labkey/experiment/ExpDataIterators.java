@@ -2041,19 +2041,15 @@ public class ExpDataIterators
             }
             else
             {
-                final SearchService ss = SearchService.get();
-                if (null != ss)
-                {
-                    final ArrayList<String> lsids = new ArrayList<>(_lsids);
-                    final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
-                    Collections.sort(rowIds);
-                    final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
+                final ArrayList<String> lsids = new ArrayList<>(_lsids);
+                final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
+                Collections.sort(rowIds);
+                final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
-                    if (null != DbScope.getLabKeyScope())
-                        DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
-                    else
-                        indexTask.run();
-                }
+                if (null != DbScope.getLabKeyScope())
+                    DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
+                else
+                    indexTask.run();
             }
             return hasNext;
         }
