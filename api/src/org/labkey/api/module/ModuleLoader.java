@@ -192,11 +192,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
 
-    // This argument is used to specify a database migration operation. If specified, the server starts up in a special
-    // mode where it doesn't accept requests, and it shuts down once the migration is complete. Options include:
-    // - testEmptySchemas
-    // - migrateFromSqlServer
-    // - /path/to/a/properties_file
+    // This argument is used to specify a database migration configuration properties file. If specified, the server
+    // starts up in a special mode where it doesn't accept requests, and it shuts down once the migration is complete.
     private final String _migration = System.getProperty("migration");
     private DatabaseMigrationConfiguration _databaseMigrationConfiguration = null;
 
