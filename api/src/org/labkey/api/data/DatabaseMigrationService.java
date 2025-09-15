@@ -48,11 +48,6 @@ public interface DatabaseMigrationService
     // By default, no-op implementation
     default void registerHandler(MigrationHandler handler) {}
 
-    default MigrationHandler getHandler(DbSchema schema)  // TODO: temporary to give JspTestCase access
-    {
-        return null;
-    }
-
     interface MigrationHandler
     {
         // Marker for tables to declare themselves as site-wide (no container filtering)
