@@ -3817,7 +3817,7 @@ public class AdminController extends SpringActionController
                         String threadInfo = thread.getName();
                         TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
                         if (null != uri)
-                            threadInfo += "; processing URL " + uri;
+                            threadInfo += "; processing URL " + uri.toLogString();
                         activeThreads.add(threadInfo);
                     }
                 }
