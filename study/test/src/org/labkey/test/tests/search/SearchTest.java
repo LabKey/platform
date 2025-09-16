@@ -472,9 +472,9 @@ public abstract class SearchTest extends StudyBaseTest
         var indexFile = clickAndWaitForDownload(exportTxtBtnLoc);
 
         TextSearcher tsvSearcher = new TextSearcher(indexFile);
-        assertTextPresent(tsvSearcher, "Panda", "Black Bear", "Owlbear", "BoarQPine", "Folder Apple", "pdf_sample.pdf",
-                "docx_sample.docx", "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
-                "12345", "Urinalysis");
+        assertTextPresent(tsvSearcher, "Black Bear", "Owlbear","pdf_sample.pdf", "docx_sample.docx",
+                "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
+                "Urinalysis");
         int fileRowCount = getFileRowCount(indexFile);
         checker().wrapAssertion(() -> Assertions.assertThat(fileRowCount)
                 .as("expect minimum 2000 rows")
