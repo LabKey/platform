@@ -12,6 +12,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
@@ -26,9 +27,13 @@ public class ExperimentWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
+        if (!ModuleLoader.getInstance().isStartupComplete())
+            return;
+
         PropertyManager.WritablePropertyMap props = PropertyManager.getWritableProperties(ExperimentModule.AMOUNT_AND_UNIT_UPGRADE_PROP, false);
         if (props == null || props.isEmpty())
             return;
+
         String expectedCount = props.get(ExperimentModule.AUDIT_COUNT_PROP);
         String transactionIdStr = props.get(ExperimentModule.TRANSACTION_ID_PROP);
         if (StringUtils.isEmpty(expectedCount) || StringUtils.isEmpty(transactionIdStr))
