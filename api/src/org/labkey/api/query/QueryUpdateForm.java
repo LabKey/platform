@@ -69,25 +69,59 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
+    // RFC 2616 / RFC 7230: Escape characters inside the field name
+    private static final char BACKSLASH = '\\';
+    private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
+
     @Override
     @Nullable
-    public ColumnInfo getColumnByFormFieldName(@NotNull String name)
+    public ColumnInfo getColumnByFormFieldName(@NotNull String fieldName)
     {
-        if (!_ignorePrefix && name.length() < PREFIX.length())
+        if (!_ignorePrefix && fieldName.length() < PREFIX.length())
             return null;
 
-        return getTable().getColumn(_ignorePrefix ? name : name.substring(PREFIX.length()));
+        var columnName = _ignorePrefix ? fieldName : fieldName.substring(PREFIX.length());
+
+        StringBuilder sb = new StringBuilder(columnName.length());
+        boolean escaping = false;
+        for (char c : columnName.toCharArray())
+        {
+            if (escaping)
+            {
+                sb.append(c);
+                escaping = false;
+            }
+            else if (c == BACKSLASH)
+                escaping = true;
+            else
+                sb.append(c);
+        }
+
+        if (escaping)
+            throw new IllegalArgumentException("Invalid escape at end of encoded name: " + columnName);
+
+        return getTable().getColumn(sb.toString());
     }
 
     @Override
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return (_ignorePrefix ? "" : PREFIX) + column.getName();
+        String columnName = column.getName();
+        StringBuilder sb = new StringBuilder();
+        for (char c : columnName.toCharArray())
+        {
+            if (SPECIAL_CHARS.indexOf(c) >= 0)
+                sb.append(BACKSLASH);
+            sb.append(c);
+        }
+
+        String fieldName = sb.toString();
+        return _ignorePrefix ? fieldName : PREFIX + fieldName;
     }
 
     @Override
     public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
     {
-        return (_ignorePrefix ? "" : PREFIX) + DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(column.getName());
+        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldName(column));
     }
 }

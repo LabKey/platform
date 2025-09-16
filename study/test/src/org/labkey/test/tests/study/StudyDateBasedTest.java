@@ -21,26 +21,25 @@ import org.labkey.test.categories.Daily;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by RyanS on 5/18/2017.
- */
 @Category({Daily.class})
 public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
 {
-//    @Override
-//    protected String getProjectName()
-//    {
-//        return "DateBasedStudyVerifyProject";
-//    }
     @Override
-    protected int getDatasetCount(){return 35;}
+    protected int getDatasetCount()
+    {
+        return 35;
+    }
 
     @Override
     protected String getHeaderName()
-    {return "4b$PAsian";}
+    {
+        return "4b$PAsian";
+    }
 
     @Override
-    public void runApiTests(){}
+    public void runApiTests()
+    {
+    }
 
     @Override
     protected void doCreateSteps()

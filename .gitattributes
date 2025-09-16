@@ -11,8 +11,6 @@ announcements/src/org/labkey/announcements/announcementThread.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPartWithExpandos.jsp -text
 announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
 announcements/src/org/labkey/announcements/api/AnnouncementServiceImpl.java -text
-announcements/src/org/labkey/announcements/api/TourImpl.java -text
-announcements/src/org/labkey/announcements/api/TourServiceImpl.java -text
 announcements/src/org/labkey/announcements/config/AnnouncementEmailConfig.java -text
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
@@ -40,11 +38,6 @@ announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardRespondPermission.java -text
-announcements/src/org/labkey/announcements/model/TourAdministratorPermissions.java -text
-announcements/src/org/labkey/announcements/model/TourCache.java -text
-announcements/src/org/labkey/announcements/model/TourCollections.java -text
-announcements/src/org/labkey/announcements/model/TourManager.java -text
-announcements/src/org/labkey/announcements/model/TourModel.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsWriterFactory.java -text
 announcements/src/org/labkey/announcements/query/AbstractSubscriptionTable.java -text
@@ -54,16 +47,10 @@ announcements/src/org/labkey/announcements/query/AnnouncementTable.java -text
 announcements/src/org/labkey/announcements/query/ForumSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/RSSFeedsTable.java -text
 announcements/src/org/labkey/announcements/query/ThreadsTable.java -text
-announcements/src/org/labkey/announcements/query/ToursTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/SendMessageAction.java -text
-announcements/src/org/labkey/announcements/TourListener.java -text
-announcements/src/org/labkey/announcements/ToursController.java -text
 announcements/src/org/labkey/announcements/update.jsp -text
-announcements/src/org/labkey/announcements/view/editTour.jsp -text
-announcements/webapp/announcements/EditTour.css -text
-announcements/webapp/announcements/EditTour.js -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTPropertyDescriptorMixin.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
@@ -212,8 +199,6 @@ api/src/org/labkey/api/annotations/JavaRuntimeVersion.java -text
 api/src/org/labkey/api/annotations/TomcatVersion.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
-api/src/org/labkey/api/announcements/api/Tour.java -text
-api/src/org/labkey/api/announcements/api/TourService.java -text
 api/src/org/labkey/api/app/SinglePageAppUrls.java -text
 api/src/org/labkey/api/assay/AbstractAssayDataCollector.java -text
 api/src/org/labkey/api/assay/AbstractAssayProvider.java -text
