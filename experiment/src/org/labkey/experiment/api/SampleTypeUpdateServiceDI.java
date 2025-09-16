@@ -17,8 +17,8 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -39,8 +40,11 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConversionExceptionWithMessage;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -55,7 +59,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -88,6 +91,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
@@ -113,6 +118,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -133,15 +139,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
+import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
+import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -149,12 +159,15 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotC
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -180,13 +193,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
 
-    private static final Map<String, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
-            AliquotCount.toString(), JdbcType.INTEGER,
-            AvailableAliquotCount.toString(), JdbcType.INTEGER,
-            AliquotVolume.toString(), JdbcType.DOUBLE,
-            AvailableAliquotVolume.toString(), JdbcType.DOUBLE
+    private static final Map<ExpMaterialTable.Column, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
+            AliquotCount, JdbcType.INTEGER,
+            AvailableAliquotCount, JdbcType.INTEGER,
+            AliquotVolume, JdbcType.DOUBLE,
+            AvailableAliquotVolume, JdbcType.DOUBLE
     );
-
 
     static
     {
@@ -194,6 +206,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("ExpirationDate", "MaterialExpDate");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Expiration Date", "MaterialExpDate");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
     }
@@ -382,6 +395,33 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExperimentServiceImpl.get().checkDuplicateParentColumns(in, inputColumns, _sampleType);
     }
 
+    @Nullable
+    protected Map<String, Object> extractProvidedAmountsAndUnits(@NotNull Map<String, Object> dataRow)
+    {
+        Map<String, Object> result = new HashMap<>();
+        String unitsStr = "";
+        String prefix;
+        if (dataRow.containsKey(DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name()))
+            prefix = DELTA_PROVIDED_DATA_PREFIX;
+        else
+        {
+            // with no sample type display unit, no conversion will happen
+            if (_sampleType == null || _sampleType.getMetricUnit() == null)
+                return null;
+            prefix = PROVIDED_DATA_PREFIX;
+        }
+        Object amountVal = dataRow.get(prefix + StoredAmount.name());
+        if (amountVal == null)
+            return null;
+
+        if (dataRow.get(prefix + Units.name()) != null)
+            unitsStr = " " + dataRow.get(prefix + Units.name()).toString();
+
+        result.put(prefix + StoredAmount.label(), amountVal + unitsStr);
+
+        return result;
+    }
+
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -393,7 +433,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, this::extractProvidedAmountsAndUnits);
 
         UserSchema userSchema = getQueryTable().getUserSchema();
         if (userSchema != null)
@@ -480,10 +520,33 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return results;
     }
 
+    /**
+     * This method is meant to help us ensure that every stored amount also has a unit. This checks only for the
+     * presence or absence of columns in the incoming data. If both columns are present, no exception is thrown.
+     *
+     * @param columns      The set of columns in the input
+     * @param allowsUpdate Whether the type of import supports updates or not
+     */
+    public static void confirmAmountAndUnitsColumns(Collection<String> columns, boolean allowsUpdate)
+    {
+        boolean hasUnits = columns.stream().anyMatch(column -> column.equalsIgnoreCase(Units.name()));
+        boolean hasAmount = columns.stream().anyMatch(column -> StoredAmount.namesAndLabels().contains(column));
+
+        if (hasUnits == hasAmount)
+            return; // both columns are present or neither is
+        if (!hasAmount)
+            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+
+        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+    }
+
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+
+        if (rows != null && !rows.isEmpty())
+            confirmAmountAndUnitsColumns(rows.get(0).keySet(), true);
 
         boolean useDib = false;
         if (rows != null && !rows.isEmpty() && oldKeys == null)
@@ -555,6 +618,91 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return results;
+    }
+
+    /**
+     * Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion
+     */
+    @Deprecated
+    @Override
+    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues, boolean isUpdate)
+    {
+        Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
+        Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
+        Object unitsVal = null;
+        ColumnInfo unitsCol = null;
+        Object amountVal = null;
+        ColumnInfo amountCol = null;
+        if (row.containsKey(ExpMaterialTable.Column.Units.name()))
+        {
+            unitsVal = row.get(ExpMaterialTable.Column.Units.name());
+            unitsCol = columnMap.get(ExpMaterialTable.Column.Units.name());
+        }
+        for (String colName : ExpMaterialTable.Column.StoredAmount.namesAndLabels())
+        {
+            if (row.containsKey(colName))
+            {
+                amountVal = row.get(colName);
+                amountCol = columnMap.get(colName);
+                break;
+            }
+        }
+        if (amountVal != null)
+        {
+            String unitsStr = "";
+            if (unitsVal != null)
+                unitsStr = " " + unitsVal;
+
+            providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
+        }
+
+
+        Unit baseUnit = _sampleType != null ? _sampleType.getBaseUnit() : null;
+
+        for (Map.Entry<String, Object> entry : row.entrySet())
+        {
+            ColumnInfo col = columnMap.get(entry.getKey());
+
+            Object value = entry.getValue();
+            if (col != null && col == unitsCol)
+            {
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit);
+            }
+            else if (col != null && col == amountCol)
+            {
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit);
+            }
+            else if (col != null && value != null &&
+                    !col.getJavaObjectClass().isInstance(value) &&
+                    !(value instanceof AttachmentFile) &&
+                    !(value instanceof MultipartFile) &&
+                    !(value instanceof String[]) &&
+                    !(col.getFk() instanceof MultiValuedForeignKey))
+            {
+                try
+                {
+                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
+                        value = ExpDataFileConverter.convert(value);
+                    else if (col.getKindOfQuantity() != null)
+                    {
+                        providedValues.put(entry.getKey(), value);
+                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                    }
+                    else
+                        value = col.getConvertFn().apply(value);
+                }
+                catch (ConvertHelper.FileConversionException e)
+                {
+                    throw e;
+                }
+                catch (ConversionException e)
+                {
+                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
+                }
+            }
+            result.put(entry.getKey(), value);
+        }
+        return result;
     }
 
     @Override
@@ -728,10 +876,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
-                Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
+                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
+                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Quantity oldQuantity = null;
+                Quantity newQuantity = null;
+                if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
+                    oldQuantity = Quantity.of((Number) oldRow.get(StoredAmount.name()), oldRowUnits);
+                if (rowUnits != null && row.get(StoredAmount.name()) != null)
+                    newQuantity = Quantity.of((Number) row.get(StoredAmount.name()), rowUnits);
 
-                if (!oldAmount.equals(newAmount))
+                if (newQuantity != null && (oldQuantity == null || !oldQuantity.equals(newQuantity)))
                 {
                     if (aliquotRoot != null)
                         aliquotRollupRoot = aliquotRoot;
@@ -941,7 +1095,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
             audit(QueryService.AuditAction.DELETE);
-            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
+            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null, null);
         }
         return result;
     }
@@ -1116,6 +1270,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(Enum::name)
                 .collect(Collectors.toSet()))
                 .containsAll(includedColumns);
+
+        // only include RawAmount and Raw units if no isAllFromMaterialTable,
+        // needed to replace converted amount and unit values with raw values so audit difference is accurate
+        if (!isAllFromMaterialTable)
+        {
+            includedColumns.add(RawAmount.name());
+            includedColumns.add(RawUnits.name());
+        }
+
         TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
         if (isAllFromMaterialTable)
         {
@@ -1554,7 +1717,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isExpMaterialColumn(ExpMaterialTable.Column column, String name)
         {
-            return column.name().equalsIgnoreCase(name);
+            return column.name().equalsIgnoreCase(name) || (column.label() != null && column.label().equalsIgnoreCase(name));
         }
 
         private static boolean isNameHeader(String name)
@@ -1600,7 +1763,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliquotRollupHeader(String name)
         {
             Set<String> rollupFields = new CaseInsensitiveHashSet();
-            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet());
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet().stream().map(ExpMaterialTable.Column::name).toList());
             rollupFields.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
             return rollupFields.contains(name);
         }
@@ -1780,13 +1943,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
-        private final Measurement.Unit _metricUnit;
+        private final Unit _sampleTypeBaseUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
-            _metricUnit = _sampleType.getMetricUnit() != null ? Measurement.Unit.valueOf(_sampleType.getMetricUnit()) : null;
+            _sampleTypeBaseUnit = _sampleType.getBaseUnit();
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases, !context.getInsertOption().updateOnly);
         }
@@ -1794,6 +1957,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         void init(TableInfo target, boolean useImportAliases, boolean initRollupCounts)
         {
             Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
+            Set<String> amountImportAliasSet = ImportAliasable.Helper.createImportSet(target.getColumn(StoredAmount.name()));
+            Set<String> unitsImportAliasSet = ImportAliasable.Helper.createImportSet(target.getColumn(Units.name()));
             DataIterator di = getInput();
             int count = di.getColumnCount();
 
@@ -1814,9 +1979,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
                         aliquotedFromDataColInd = i;
-                    else if (Units.name().equalsIgnoreCase(from.getName()))
+                    else if (unitsImportAliasSet.contains(from.getName()))
                         unitDataColInd = i;
-                    else if (StoredAmount.name().equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
+                    else if (amountImportAliasSet.contains(from.getName()))
                         amountDataColInd = i;
                 }
             }
@@ -1857,11 +2022,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (Units.name().equalsIgnoreCase(name))
                     {
-                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
+                        addColumn(PROVIDED_DATA_PREFIX + Units.name(), i);
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType(), amountDataColInd, !_context.getInsertOption().allowUpdate));
                     }
                     else if (StoredAmount.name().equalsIgnoreCase(name))
                     {
-                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType()));
+                        addColumn(PROVIDED_DATA_PREFIX + StoredAmount.name(), i);
+                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType(), unitDataColInd));
                     }
                     else
                     {
@@ -1884,13 +2051,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (initRollupCounts)
             {
-                for (Map.Entry<String, JdbcType> entry : ALIQUOT_ROLLUP_FIELDS.entrySet())
+                for (Map.Entry<ExpMaterialTable.Column, JdbcType> entry : ALIQUOT_ROLLUP_FIELDS.entrySet())
                 {
-                    String fieldName = entry.getKey();
+                    ExpMaterialTable.Column field = entry.getKey();
                     JdbcType jdbcType = entry.getValue();
-                    var col = new BaseColumnInfo(fieldName, jdbcType);
+                    var col = new BaseColumnInfo(field.name(), jdbcType);
 
-                    addColumn(col, new AliquotRollupConvertColumn(fieldName, jdbcType, aliquotedFromDataColInd));
+                    addColumn(col, new AliquotRollupConvertColumn(field, jdbcType, aliquotedFromDataColInd));
                 }
             }
         }
@@ -1922,32 +2089,99 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            final int _storedAmountColInd;
+            final boolean _isInsert;
+
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, int storedAmountIdx, boolean isInsert)
             {
-                // TODO reconcile unit handling
                 super(fieldName, indexFrom, to, null, true);
+                _storedAmountColInd = storedAmountIdx;
+                _isInsert = isInsert;
+            }
+
+            // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
+            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit)
+            {
+                if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
+                {
+                    return null;
+                }
+
+                // when there's a units value but no amount column, this is an error
+                if (!haveAmountCol)
+                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+
+                // When an amount column is present but no amount value is provided, this is an error
+                if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
+                    throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
+
+
+                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                // if there's a base unit, return the base unit name otherwise return the name of the given unit
+                return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
 
             @Override
             protected Object convert(Object o)
             {
-                Measurement.validateUnits((String) o, _metricUnit);
-                return Measurement.Unit.getUnit((String) o);
+                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit);
             }
         }
 
         protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            final int _unitsColInd;
+            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to, int unitsColInd)
             {
-                // TODO reconcile unit handling
-                super(fieldName, indexFrom, to, null, true);
+                // should convert from the amount in the given unit into the sample type base unit, if we have one
+                super(fieldName, indexFrom, to, _sampleTypeBaseUnit, true);
+                _unitsColInd = unitsColInd;
+            }
+
+            // This should return a Number in the base units of the sample type.
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
+            {
+                if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).trim().isEmpty()))
+                    return null;
+
+                // When there is an amount value, if there isn't a units column, this is an error.
+                if (!hasUnitsCol)
+                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+
+                // Have a units column, but no units value
+                if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
+                {
+                    // N.B. It could be that we want to support users providing the amount and unit together in the amount column (e.g., 7g)
+                    // To support that we could try Quantity.convert here. Leaving this out for now, though.
+                    throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
+                }
+
+                Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
+
+                // Should always be non-null at this point.
+                if (unit != null && displayUnit != null)
+                {
+                    if (amountObj instanceof Number)
+                        return Quantity.of((Number) amountObj, unit).doubleValue();
+                    else if (amountObj instanceof String amountStr)
+                    {
+                        if (StringUtils.isEmpty(amountStr.trim()))
+                            return null;
+                        // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
+                        // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
+                        // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
+                        return Quantity.convert(amountObj, unit).doubleValue();
+                    }
+                    else
+                        throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
+                }
+                return amountObj; // have no display unit, so we'll do no conversions
             }
 
             @Override
             protected Object convert(Object amountObj)
             {
-                return Measurement.convertToAmount(amountObj);
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit);
             }
         }
 
@@ -1955,10 +2189,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             final int aliquotedFromColInd;
 
-            public AliquotRollupConvertColumn(String fieldName, @Nullable JdbcType to, int aliquotedFromColInd)
+            public AliquotRollupConvertColumn(ExpMaterialTable.Column field, @Nullable JdbcType to, int aliquotedFromColInd)
             {
-                // TODO reconcile unit handling
-                super(fieldName, 0, to, null, true);
+                super(field.name(),0, to, field.hasUnit() ? _sampleTypeBaseUnit : null, true);
                 this.aliquotedFromColInd = aliquotedFromColInd;
             }
 

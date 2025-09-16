@@ -2,6 +2,7 @@ package org.labkey.api.ontology;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,28 +18,28 @@ public enum KindOfQuantity
     Volume("volume", "ml")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
-            return List.of(Unit.l, Unit.ml, Unit.ul);
+            return List.of(Unit.L, Unit.mL, Unit.uL);
         }
     },
 
     Mass("mass", "g")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
-            return List.of(Unit.kg, Unit.g, Unit.mg ,Unit.ug);
+            return List.of(Unit.kg, Unit.g, Unit.mg);
         }
     },
 
     // Not a real unit per UCUM, but useful for annotation of "storage amount" for instance.
-    Count("", "unit")
+    Count("count", "unit")
     {
         @Override
-        List<Unit> getCommonUnits()
+        public List<Unit> getCommonUnits()
         {
-            return List.of(Unit.count, Unit.unit);
+            return List.of(Unit.unit);
         }
     };
 
@@ -64,7 +65,7 @@ public enum KindOfQuantity
     }
 
     /* unit used for database storage and in-memory representation of Quantity*/
-    Unit getStorageUnit()
+    public Unit getStorageUnit()
     {
         if (null == storageUnit)
             storageUnit = Unit.fromName(storageUnitName);
@@ -82,7 +83,7 @@ public enum KindOfQuantity
         return getStorageUnit().base == unit.base;
     }
 
-    abstract List<Unit> getCommonUnits();
+    public abstract List<Unit> getCommonUnits();
 
     static KindOfQuantity getKindOfQuantity(String name)
     {
@@ -97,6 +98,15 @@ public enum KindOfQuantity
         if ("count".equalsIgnoreCase(name))
             return Count;
         return null;
+    }
+
+    public static List<Unit> getSupportedUnits()
+    {
+        List<Unit> supported = new ArrayList<>();
+        supported.addAll(Volume.getCommonUnits());
+        supported.addAll(Mass.getCommonUnits());
+        supported.addAll(Count.getCommonUnits());
+        return supported;
     }
 
     // other potentially useful KindOfQuantity

@@ -97,7 +97,7 @@ public interface SearchService extends SearchMXBean
     // marker value for documents with indexing errors
     Date failDate = new Timestamp(DateUtil.parseISODateTime("1899-12-30"));
 
-    static final SearchService NO_OP = new NoopSearchService();
+    SearchService NO_OP = new NoopSearchService();
 
     static @NotNull SearchService get()
     {

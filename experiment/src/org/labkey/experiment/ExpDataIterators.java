@@ -39,6 +39,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -166,6 +167,8 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -474,7 +477,7 @@ public class ExpDataIterators
                         return needRecac.second;
                 }
 
-                // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or a amount/status update
+                // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or an amount/status update
                 // merge: either a new record, or detailed audit disabled
                 if (!_isUpdate)
                 {
@@ -2038,19 +2041,15 @@ public class ExpDataIterators
             }
             else
             {
-                final SearchService ss = SearchService.get();
-                if (null != ss)
-                {
-                    final ArrayList<String> lsids = new ArrayList<>(_lsids);
-                    final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
-                    Collections.sort(rowIds);
-                    final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
+                final ArrayList<String> lsids = new ArrayList<>(_lsids);
+                final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
+                Collections.sort(rowIds);
+                final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
-                    if (null != DbScope.getLabKeyScope())
-                        DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
-                    else
-                        indexTask.run();
-                }
+                if (null != DbScope.getLabKeyScope())
+                    DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
+                else
+                    indexTask.run();
             }
             return hasNext;
         }
@@ -2809,9 +2808,7 @@ public class ExpDataIterators
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
                 {
-                    validFields.add(column.getName());
-                    validFields.addAll(column.getImportAliasSet());
-                    validFields.add(column.getLabel());
+                    validFields.addAll(ImportAliasable.Helper.createImportSet(column));
                 }
             });
             Map<String, String> aliasMap = sampleType.getImportAliases();

@@ -16,7 +16,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -34,6 +33,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.ontology.KindOfQuantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.qc.DataState;
@@ -76,12 +77,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";
     private static final List<String> UNITS = List.of("g", "mg", "kg", "uL", "mL", "L", "unit");
-    // TODO use KindOfQuantity
-    private static final Map<Measurement.Kind, List<String>> UNIT_KINDS = Map.of(
-            Measurement.Kind.Mass, List.of("g", "mg", "kg"),
-            Measurement.Kind.Count, List.of("units"),
-            Measurement.Kind.Volume, List.of("uL", "mL", "L")
-    );
+
     private static final List<String> LABEL_COLORS = new ArrayList<>();
     static {
         LABEL_COLORS.add("#800000"); // maroon,
@@ -846,8 +842,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
             {
-                Measurement.Unit unit = Measurement.Unit.getUnit(sampleType.getMetricUnit());
-                units = randomIndex(UNIT_KINDS.get(unit.getKind()));
+                Unit unit = Unit.fromName(sampleType.getMetricUnit());
+                units = randomIndex(unit.getKindOfQuantity().getCommonUnits()).name();
             }
             else
                 units = randomIndex(UNITS);

@@ -139,27 +139,23 @@ public class SearchModule extends DefaultModule
                 @Override
                 public void handle(Map<SearchStartupProperties, StartupPropertyEntry> properties)
                 {
-                    SearchService ss = SearchService.get();
-                    if (null == ss)
-                        LOG.error("Search service is not present");
-                    else
-                        properties.forEach((ssp, sp) -> {
-                            try
-                            {
-                                ssp.setProperty(ss, _searchIndexStartupHandler, sp.getValue());
-                            }
-                            catch (Exception e)
-                            {
-                                LOG.error("Exception while attempting to set startup property", e);
-                            }
-                        });
+                    properties.forEach((ssp, sp) -> {
+                        try
+                        {
+                            ssp.setProperty(SearchService.get(), _searchIndexStartupHandler, sp.getValue());
+                        }
+                        catch (Exception e)
+                        {
+                            LOG.error("Exception while attempting to set startup property", e);
+                        }
+                    });
                 }
             }
         );
 
         final SearchService ss = SearchService.get();
 
-        if (null != ss)
+        if (ss != SearchService.NO_OP)
         {
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
@@ -195,15 +191,12 @@ public class SearchModule extends DefaultModule
     {
         SearchService ss = SearchService.get();
 
-        if (null != ss)
-        {
-            // Execute any reindexing operations in the background to not block startup, Issue #48960
-            JobRunner.getDefault().execute(() -> {
-                _searchIndexStartupHandler.reindexIfNeeded(ss);
-                ss.start();
-                DavCrawler.getInstance().start();
-            });
-        }
+        // Execute any reindexing operations in the background to not block startup, Issue #48960
+        JobRunner.getDefault().execute(() -> {
+            _searchIndexStartupHandler.reindexIfNeeded(ss);
+            ss.start();
+            DavCrawler.getInstance().start();
+        });
     }
 
     private final SearchIndexStartupHandler _searchIndexStartupHandler = new SearchIndexStartupHandler();

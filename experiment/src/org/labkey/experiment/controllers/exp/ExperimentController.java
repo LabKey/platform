@@ -4361,14 +4361,17 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
+        ExpSampleTypeImpl _sampleType;
+        boolean _isCrossTypeImport = false;
+
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
             _insertOption = queryForm.getInsertOption();
-            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
+            _isCrossTypeImport = getOptionParamValue(Params.crossTypeImport);
             _form.setSchemaName(getTargetSchemaName());
-            if (crossTypeImport)
+            if (_isCrossTypeImport)
             {
                 _form.setQueryName(getPipelineTargetQueryName());
             }
@@ -4377,10 +4380,10 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Sample type name is required");
             else
             {
-                if (!crossTypeImport)
+                if (!_isCrossTypeImport)
                 {
-                    ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
-                    if (sampleType == null)
+                    _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                    if (_sampleType == null)
                     {
                         errors.reject(ERROR_GENERIC, "Sample type '" + queryForm.getQueryName() + " not found.");
                     }
@@ -7422,10 +7425,6 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            SearchService search = SearchService.get();
-            if (search == null)
-                return null;
-
             List<Map<String, Object>> notInIndex = new ArrayList<>(100);
 
             List<? extends ExpDataClass> list = ExperimentService.get().getDataClasses(getContainer(), getUser(), false);
@@ -7436,7 +7435,7 @@ public class ExperimentController extends SpringActionController
                     String docId = d.getDocumentId();
                     if (docId != null)
                     {
-                        SearchService.SearchHit hit = search.find(docId);
+                        SearchService.SearchHit hit = SearchService.get().find(docId);
                         if (hit == null)
                         {
                             JSONObject props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);

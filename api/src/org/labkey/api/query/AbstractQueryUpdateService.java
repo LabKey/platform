@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -78,6 +77,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -128,7 +128,7 @@ import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    private final TableInfo _queryTable;
+    protected final TableInfo _queryTable;
 
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
@@ -291,7 +291,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, null);
         return dib;
     }
 
@@ -580,13 +580,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
+        List<Map<String, Object>> providedValues = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
             row = normalizeColumnNames(row);
             try
             {
-                row = coerceTypes(row);
+                providedValues.add(new CaseInsensitiveHashMap<>());
+                row = coerceTypes(row, providedValues.get(i), false);
                 if (hasTableScript)
                 {
                     getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
@@ -631,19 +633,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null, providedValues);
 
         return result;
     }
 
-    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, @Nullable List<Map<String, Object>> providedValues)
     {
         if (!isBulkLoad())
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
             getQueryTable().getAuditHandler(auditBehavior)
-                    .addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
+                    .addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows, providedValues);
         }
     }
 
@@ -699,7 +701,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
     @Deprecated
-    protected Map<String, Object> coerceTypes(Map<String, Object> row)
+    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues, boolean isUpdate)
     {
         Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
         Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
@@ -719,6 +721,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
                         value = ExpDataFileConverter.convert(value);
+                    else if (col.getKindOfQuantity() != null)
+                    {
+                        providedValues.put(entry.getKey(), value);
+                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                    }
                     else
                         value = col.getConvertFn().apply(value);
                 }
@@ -805,13 +812,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
+        List<Map<String, Object>> providedValues = new ArrayList<>(rows.size());
         // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
-            row = coerceTypes(row);
+            providedValues.add(new CaseInsensitiveHashMap<>());
+            row = coerceTypes(row, providedValues.get(i), true);
             try
             {
                 Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
@@ -857,7 +866,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows, providedValues);
 
         return result;
     }
@@ -970,7 +979,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
+        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null, null);
 
         return result;
     }
@@ -995,7 +1004,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         int result = truncateRows(user, container);
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
-        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters, null, null);
+        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters, null, null, null);
 
         return result;
     }

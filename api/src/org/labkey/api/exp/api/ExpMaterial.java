@@ -70,8 +70,10 @@ public interface ExpMaterial extends ExpRunItem
 
     // rollup - begin
     int getAliquotCount();
-    double getAliquotVolume();
+    Double getAliquotVolume();
     String getAliquotUnit();
+    void setAliquotUnit(String unit);
+    Double getAvailableAliquotVolume();
     // rollup - end
 
     boolean isOperationPermitted(SampleTypeService.SampleOperations operation);

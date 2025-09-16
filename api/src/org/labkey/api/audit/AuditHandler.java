@@ -32,6 +32,9 @@ import java.util.Set;
 
 public interface AuditHandler
 {
+    String PROVIDED_DATA_PREFIX = ":::provided:::";
+    String DELTA_PROVIDED_DATA_PREFIX = ":::delta_provided:::";
+
     void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment);
 
     default void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment, boolean skipAuditLevelCheck)
@@ -40,13 +43,20 @@ public interface AuditHandler
     }
 
     void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,
-                       @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache);
+                       @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, @Nullable List<Map<String, Object>> providedValues, boolean useTransactionAuditCache);
 
     /* In the case of update the 'existingRows' is the 'before' version of the record. Caller is not expected to provide existingRows without rows. */
     default void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,
-                       @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+                               @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
     {
-        addAuditEvent(user, c, table, auditType, userComment, action, rows, existingRows, false);
+        addAuditEvent(user, c, table, auditType, userComment, action, rows, existingRows, null, false);
+    }
+
+    /* In the case of update the 'existingRows' is the 'before' version of the record. Caller is not expected to provide existingRows without rows. */
+    default void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,
+                               @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, @Nullable List<Map<String, Object>> providedValues)
+    {
+        addAuditEvent(user, c, table, auditType, userComment, action, rows, existingRows, providedValues, false);
     }
 
 
