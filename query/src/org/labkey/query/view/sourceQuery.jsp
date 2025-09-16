@@ -256,8 +256,8 @@ Ext4.onReady(function(){
 
     const resizeFn = function(evt)
     {
-        console.log(evt);
-        console.log("window " + window.innerHeight + " " + window.innerWidth);
+        // console.log(evt);
+        // console.log("window " + window.innerHeight + " " + window.innerWidth);
         var el = document.getElementById("querySourceLayout");
         if (el)
         {
