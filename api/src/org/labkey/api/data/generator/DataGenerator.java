@@ -33,7 +33,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -837,17 +836,15 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
     private static String getUnitsValue(ExpSampleType sampleType)
     {
-        String units = null;
-        if (randomInt(0, 4) < 3) // add a unit for 75% (TODO This choice should be removed when fb_amountsAndUnits is merged)
+        String units;
+        if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
         {
-            if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
-            {
-                Unit unit = Unit.fromName(sampleType.getMetricUnit());
-                units = randomIndex(unit.getKindOfQuantity().getCommonUnits()).name();
-            }
-            else
-                units = randomIndex(UNITS);
+            Unit unit = Unit.fromName(sampleType.getMetricUnit());
+            units = randomIndex(unit.getKindOfQuantity().getCommonUnits()).name();
         }
+        else
+            units = randomIndex(UNITS);
+
         return units;
     }
 
@@ -858,11 +855,6 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             row.put("StoredAmount", randomDouble(0, 100));
             // add a unit for some percentage
-            String units = getUnitsValue(sampleType);
-            if (units != null)
-                row.put("Units", units);
-        } else if (randomInt(0, 4) == 2) // set unit without amount for 25% of remaining (TODO This should be removed when fb_amountsAndUnits is merged)
-        {
             String units = getUnitsValue(sampleType);
             if (units != null)
                 row.put("Units", units);
