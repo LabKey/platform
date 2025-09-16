@@ -236,8 +236,8 @@ public abstract class SearchTest extends StudyBaseTest
         testAdvancedSearchCategoryFilters();
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
-        deleteFolderAndVerifyNoResults();
         exportSearchIndexAndVerifyResults();
+        deleteFolderAndVerifyNoResults();
     }
 
     @LogMethod
