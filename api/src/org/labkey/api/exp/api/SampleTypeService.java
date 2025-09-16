@@ -54,6 +54,9 @@ import java.util.function.Function;
 
 public interface SampleTypeService
 {
+    String MISSING_COLUMN_ERROR_MESSAGE_PATTERN = "When adding or updating samples, the %s column must be provided when the %s column is.";
+    String MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN = "When adding or updating samples, a %s value must be provided when there is a value for %s.";
+    String UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN = "No %s value provided for %s %s.";
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";

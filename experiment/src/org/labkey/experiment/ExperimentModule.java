@@ -104,6 +104,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.WarningService;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -178,6 +179,9 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
+    public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
+    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
+    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -192,7 +196,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.009;
+        return 25.010;
     }
 
     @Nullable
@@ -274,6 +278,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
 
         addModuleProperty(new LineageMaximumDepthModuleProperty(this));
+        WarningService.get().register(new ExperimentWarningProvider());
     }
 
     @Override
@@ -354,9 +359,7 @@ public class ExperimentModule extends SpringModule
 
     private void addDataResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver()
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver()
         {
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
@@ -395,9 +398,7 @@ public class ExperimentModule extends SpringModule
 
     private void addDataClassResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
@@ -421,9 +422,7 @@ public class ExperimentModule extends SpringModule
 
     private void addSampleTypeResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
@@ -447,9 +446,7 @@ public class ExperimentModule extends SpringModule
 
     private void addSampleResourceResolver(String categoryName)
     {
-        SearchService ss = SearchService.get();
-
-        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+        SearchService.get().addResourceResolver(categoryName, new SearchService.ResourceResolver(){
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {

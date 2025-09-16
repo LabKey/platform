@@ -28,7 +28,6 @@ import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,6 +35,8 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
+import org.labkey.api.ontology.KindOfQuantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -54,6 +55,7 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -387,7 +389,9 @@ public class ExpSchema extends AbstractExpSchema
 
         if (MEASUREMENT_UNITS_TABLE.equalsIgnoreCase(name))
         {
-            EnumTableInfo<Measurement.Unit> table =  new EnumTableInfo<>(Measurement.Unit.class, this, Measurement.Unit::name, false, "Contains the list of available units for measurements such as sample stored amounts.");
+            // Create an EnumSet of the KindOfQuantity getCommonUnits
+            List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
+            EnumTableInfo<Unit> table =  new EnumTableInfo<>(Unit.class, EnumSet.copyOf(commonUnits), this, Unit::name, Unit::ordinal, false, "Contains the list of available units for measurements such as sample stored amounts.");
             table.setPublicSchemaName(this.getName());
             table.setName(MEASUREMENT_UNITS_TABLE);
             return table;

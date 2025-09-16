@@ -113,11 +113,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             bootstrap(moduleContext);
 
         SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            ss.addSearchCategory(WikiManager.searchCategory);
-            ss.addDocumentProvider(this);
-        }
+        ss.addSearchCategory(WikiManager.searchCategory);
+        ss.addDocumentProvider(this);
 
         FolderSerializationRegistry.get().addFactories(new WikiWriterFactory(), new WikiImporterFactory());
 

@@ -30,11 +30,7 @@ public class SearchContainerListener extends ContainerManager.AbstractContainerL
     @Override
     public void containerCreated(Container c, User user)
     {
-        SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
-        }
+        DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
     }
 
     @Override

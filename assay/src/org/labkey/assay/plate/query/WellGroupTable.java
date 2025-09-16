@@ -177,7 +177,7 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
             dib = new TableInsertDataIteratorBuilder(dib, wellGroupTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
             dib = LoggingDataIterator.wrap(dib);
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container, null);
 
             return dib;
         }

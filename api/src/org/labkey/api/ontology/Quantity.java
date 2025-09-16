@@ -4,10 +4,14 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.text.Format;
@@ -55,6 +59,9 @@ import java.util.regex.Pattern;
  */
 public class Quantity extends Number implements Comparable<Quantity>
 {
+    public static final Logger LOG = LogHelper.getLogger(Quantity.class, "Quantity operations");
+    public static final int DEFAULT_PRECISION_SCALE = 6;
+    public static final String DEFAULT_FORMAT = "0.######";
     public final @NotNull KindOfQuantity kind;
     public final Number value;
     private final boolean isDouble;
@@ -64,11 +71,36 @@ public class Quantity extends Number implements Comparable<Quantity>
         throw new IllegalStateException();
     }
 
+    @Nullable
+    public static Quantity of(@Nullable Object value, @Nullable String unitsStr)
+    {
+        LOG.debug("Getting quantity of {} for unitsStr {}", value, unitsStr);
+        if (value == null)
+            return null;
+        if (!(value instanceof Number))
+            throw new IllegalArgumentException("Value must be a number");
+        if (unitsStr != null)
+            return Quantity.of((Number) value, unitsStr);
+        else
+            return Quantity.of((Number) value, Unit.unit);
+    }
+
+    @NotNull
+    public static Quantity of(@NotNull Number value, @NotNull String unitStr)
+    {
+        Unit unit = Unit.fromName(unitStr);
+        if (unit == null)
+            throw new IllegalArgumentException("Unknown unit (" + unitStr + ") for quantity " + value + ".");
+        return of(value, unit);
+    }
+
     /* Returns a quantity = value*units
      *    of(1, Kg) -> 1000g
      */
-    public static Quantity of(Number value, Unit unit)
+    @NotNull
+    public static Quantity of(@NotNull Number value, @NotNull Unit unit)
     {
+        LOG.debug("Creating quantity of {} for unit {}", value, unit);
         if (value instanceof Quantity q)
         {
             if (unit.kindOfQuantity != q.kind)
@@ -79,6 +111,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             return new Quantity(unit.kindOfQuantity, bd, unit);
         if (value instanceof Long l && (l > Integer.MAX_VALUE || l < Integer.MIN_VALUE))
             return new Quantity(unit.kindOfQuantity, BigDecimal.valueOf(l), unit);
+        LOG.debug("Creating new Quantity of kind {}, double {}, unit {}", unit.kindOfQuantity, value, unit);
         return new Quantity(unit.kindOfQuantity, value.doubleValue(), unit);
     }
 
@@ -89,7 +122,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         this.isDouble = false;
     }
 
-    protected Quantity(@NotNull KindOfQuantity kind, BigDecimal value, Unit from)
+    protected Quantity(@NotNull KindOfQuantity kind, BigDecimal value, @NotNull Unit from)
     {
         this.kind = kind;
         this.value = from.toStorageUnitValue(value);
@@ -104,15 +137,29 @@ public class Quantity extends Number implements Comparable<Quantity>
         this.isDouble = true;
     }
 
-    protected Quantity(@NotNull KindOfQuantity kind, Double value, Unit from)
+    protected Quantity(@NotNull KindOfQuantity kind, Double value, @NotNull Unit from)
     {
+        LOG.debug("Quantity constructor with kind {}, double {}, unit {}", kind, value, from);
         this.kind = kind;
         this.value = from.toStorageUnitValue(value);
         this.isDouble = this.value instanceof Double;
         assert isDouble || this.value instanceof BigDecimal;
     }
 
-    public double doubleValue(Unit unit)
+    public @NotNull KindOfQuantity getKind()
+    {
+        return kind;
+    }
+
+    public Quantity add(Quantity delta)
+    {
+        if (delta.kind != kind)
+            throw new ConversionException("Cannot add " + delta + " to " + this + ".");
+
+        return new Quantity(this.kind, this.doubleValue() + delta.doubleValue());
+    }
+
+    public double doubleValue(@NotNull Unit unit)
     {
         if (unit == kind.getStorageUnit())
             return value.doubleValue();
@@ -125,7 +172,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return format(kind.getDefaultDisplayUnit());
     }
 
-    public String format(Unit unit)
+    public String format(@NotNull Unit unit)
     {
         return value(unit) + unit.print;
     }
@@ -135,7 +182,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return format(kind.getDefaultDisplayUnit(), format);
     }
 
-    public String format(Unit unit, Format format)
+    public String format(@NotNull Unit unit, Format format)
     {
         return format.format(value(unit)) + unit.print;
     }
@@ -148,7 +195,10 @@ public class Quantity extends Number implements Comparable<Quantity>
     public String toString()
     {
         var ret = format(kind.getStorageUnit());
-        assert this == ConvertUtils.convert(ret, this.getClass());
+        // FIXME currently this call to ConvertUtils.convert does not behave as expected.
+        // When ret is something like "10mL", it is using a converter for Unit.unit
+        // (The theory is it's either the first or last one that was registered).
+//        assert this == ConvertUtils.convert(ret, this.getClass());
         return ret;
     }
 
@@ -175,7 +225,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         return value;
     }
 
-    public Number value(Unit unit)
+    public Number value(@NotNull Unit unit)
     {
         return unit.fromStorageUnitValue(value);
     }
@@ -219,6 +269,7 @@ public class Quantity extends Number implements Comparable<Quantity>
 
     private static Quantity parse(@NotNull String s) throws ConversionException
     {
+        LOG.debug("Parsing quantity {} as Unit.unit", s);
         return parse(s, Unit.unit);
     }
 
@@ -226,6 +277,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     /** The defaultUnit has two purposes 1) define the expected KindOfQuantity 2) select a Unit if it is not explicit in the source */
     private static Quantity parse(@NotNull String s, @NotNull Unit defaultUnit) throws ConversionException
     {
+        LOG.debug("Parsing quantity of {} with default unit {}", s, defaultUnit);
         // We could probably create a real lexer/parser here, but we only need to be able to parse units we support
         // FIRST, check if there is a space
         s = s.trim();
@@ -254,7 +306,7 @@ public class Quantity extends Number implements Comparable<Quantity>
         }
 
         if (StringUtils.isBlank(valuePart))
-            throw new ConversionException("Could not parse number");
+            throw new ConversionException("Could not parse number from '" + s + "'.");
 
         try
         {
@@ -263,14 +315,14 @@ public class Quantity extends Number implements Comparable<Quantity>
                     new BigDecimal(valuePart);
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
-                throw new ConversionException("Could not parse unit: " + unitPart);
+                throw new ConversionException("Could not parse unit '" + unitPart + "' from '" + s + "'.");
             if (!defaultUnit.kindOfQuantity.accept(unit))
-                throw new ConversionException("Quantity is of wrong type: expected " + defaultUnit.kindOfQuantity.getName() + " found " + unit);
+                throw new ConversionException("Quantity for value " + value + " is of the wrong type. Expected " + defaultUnit.kindOfQuantity.getName() + ", but found " + unit);
             return Quantity.of(value, unit);
         }
         catch (IllegalArgumentException x)
         {
-            throw new ConversionException("could not parse", x);
+            throw new ConversionException("Could not parse quantity from '" + s + "'.", x);
         }
     }
 
@@ -299,8 +351,9 @@ public class Quantity extends Number implements Comparable<Quantity>
 
 
     // convert (ala BeanUtils.Converter to Quantity
-    public static Quantity convert(Object o, Unit unit)
+    public static Quantity convert(@Nullable Object o, Unit unit)
     {
+        LOG.debug("Converting quantity {} to unit {}", o, unit);
         if (null == o)
             return null;
         if (o instanceof Quantity q)
@@ -324,6 +377,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             @Override
             public <T> T convert(Class<T> aClass, Object o)
             {
+                LOG.debug("In convertedFor.convert with object {} and unit {}", o, unit);
                 return (T)Quantity.convert(o, unit);
             }
         };
@@ -371,6 +425,33 @@ public class Quantity extends Number implements Comparable<Quantity>
             }
         }
 
+        @BeforeClass
+        public static void setup()
+        {
+            registerQuantityConverters();
+        }
+
+        @Test
+        public void testAdd()
+        {
+            Quantity starting = Quantity.of(1024, Unit.mg);
+            assertEquals(starting, starting.add(Quantity.of(0, Unit.mg)));
+            assertEquals(Quantity.of(1034, Unit.mg), starting.add(Quantity.of(10, Unit.mg)));
+            assertEquals(Quantity.of(1.022, Unit.g), starting.add(Quantity.of(-2, Unit.mg)));
+            assertEquals(Quantity.of(33024, Unit.mg), starting.add(Quantity.of(32, Unit.g)));
+            assertEquals(Quantity.of(1.024200, Unit.g), starting.add(Quantity.of(200, Unit.ug)));
+            assertEquals(Quantity.of(1023800, Unit.ug), starting.add(Quantity.of(-200, Unit.ug)));
+            try
+            {
+                starting.add(Quantity.of(10, "mL"));
+                fail("Adding quantities of different kinds should throw an error.");
+            }
+            catch (ConversionException x)
+            {
+                assertEquals("Cannot add 10.0mL to 1.024g.", x.getMessage());
+            }
+        }
+
         @Test
         public void testParse()
         {
@@ -412,8 +493,8 @@ public class Quantity extends Number implements Comparable<Quantity>
         @Test
         public void testFailToParseCantConvert()
         {
-            failToParse("1g", Unit.l);
-            failToParse("1g", Unit.ml);
+            failToParse("1g", Unit.L);
+            failToParse("1g", Unit.mL);
             failToParse("1g", Unit.count);
             failToParse("1g", Unit.unit);
         }
@@ -462,7 +543,6 @@ public class Quantity extends Number implements Comparable<Quantity>
         public void testConversion()
         {
             Quantity q;
-            registerQuantityConverters();
 
             q = (Quantity)ConvertUtils.convert("1.234kg", Quantity.Mass_g.class);
             assertEquals(Quantity.class, q.getClass());

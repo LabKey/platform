@@ -1188,7 +1188,7 @@ public class UserController extends SpringActionController
         public Object execute(UpdateUserDetailsForm form, BindException errors) throws Exception
         {
             Container root = ContainerManager.getRoot();
-            UserSchema schema = form.getSchema();
+            UserSchema schema = new CoreQuerySchema(getUser(), getContainer());
             UsersTable table = (UsersTable)schema.getTable(CoreQuerySchema.USERS_TABLE_NAME, false);
             table.setMustCheckPermissions(form.mustCheckPermissions(getUser(), form.getUserId()));
 

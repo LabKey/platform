@@ -1136,17 +1136,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            ss.addDocumentParser(new TabLoader.CsvFactoryNoConversions());
-            ss.addDocumentProvider(this);
+        ss.addDocumentParser(new TabLoader.CsvFactoryNoConversions());
+        ss.addDocumentProvider(this);
 
-            // Register indexable DataLoaders with the search service
-            DataLoaderServiceImpl.get().getFactories()
-                .stream()
-                .filter(DataLoaderFactory::indexable)
-                .forEach(ss::addDocumentParser);
-        }
+        // Register indexable DataLoaders with the search service
+        DataLoaderServiceImpl.get().getFactories()
+            .stream()
+            .filter(DataLoaderFactory::indexable)
+            .forEach(ss::addDocumentParser);
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
             "No Guest Account",

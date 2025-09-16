@@ -801,9 +801,7 @@ public class DavController extends SpringActionController
                 setLastError(dex);
                 if (dex.getStatus().equals(WebdavStatus.SC_NOT_FOUND))
                 {
-                    SearchService ss = SearchService.get();
-                    if (null != ss)
-                        ss.notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
+                    SearchService.get().notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
                 }
                 getResponse().sendError(dex.getStatus(), dex.getMessage());
 
@@ -6503,9 +6501,7 @@ public class DavController extends SpringActionController
     private void removeFromIndex(WebdavResource r)
     {
         _log.debug("removeFromIndex: " + r.getPath());
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            ss.deleteResource(r.getDocumentId());
+        SearchService.get().deleteResource(r.getDocumentId());
     }
 
 

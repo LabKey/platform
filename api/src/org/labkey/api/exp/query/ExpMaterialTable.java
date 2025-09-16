@@ -16,8 +16,12 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
+
+import java.util.Set;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
@@ -26,10 +30,10 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Alias,
         AliquotCount,
         AliquotUnit,
-        AliquotVolume,
+        AliquotVolume(true),
         AliquotedFromLSID,
         AvailableAliquotCount,
-        AvailableAliquotVolume,
+        AvailableAliquotVolume(true),
         Created,
         CreatedBy,
         Description,
@@ -48,7 +52,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Properties,
         Property,
         QueryableInputs,
-        RawAmount,
+        RawAmount(true),
         RawUnits,
         RootMaterialRowId,
         RowId,
@@ -60,12 +64,50 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceApplicationInput,
         SourceProtocolApplication,
         SourceProtocolLSID,
-        StoredAmount,
+        StoredAmount(true, "Amount"),
         Units;
+
+        private boolean _hasUnit = false;
+        private final String _label;
+        Column() {
+            _label = ColumnInfo.labelFromName(name());
+        }
+
+        Column(boolean hasUnit)
+        {
+            this();
+            _hasUnit = hasUnit;
+        }
+
+        Column(boolean hasUnit, String label)
+        {
+            _hasUnit = hasUnit;
+            _label = label;
+        }
 
         public FieldKey fieldKey()
         {
             return FieldKey.fromParts(name());
+        }
+
+        public boolean hasUnit()
+        {
+            return _hasUnit;
+        }
+
+        public String label()
+        {
+            return _label;
+        }
+
+        public Set<String> namesAndLabels()
+        {
+            Set<String> values = new CaseInsensitiveHashSet();
+
+            values.add(this.name());
+            values.add(this.label());
+            values.add(this.label().replaceAll("\\s", ""));
+            return values;
         }
     }
 

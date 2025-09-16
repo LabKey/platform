@@ -45,7 +45,7 @@ String indexDirectoryPath = null != indexDirectory ? indexDirectory.getPath() : 
         <table><tr><td><span style="color:green;"><br><%=h(form.getMessage())%><br></span></td></tr></table><%
     }
 
-if (null == ss)
+if (ss == SearchService.NO_OP)
 {
     %>Indexing service is not configured.<%
 }
