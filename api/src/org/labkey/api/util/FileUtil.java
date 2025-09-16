@@ -873,7 +873,7 @@ public class FileUtil
         legalPathPartThrow(name);
         var ret = dir.resolve(name);
 
-        if (!dir.normalize().startsWith(ret.normalize()))
+        if (!ret.normalize().startsWith(dir.normalize()))
             throw new IllegalArgumentException(name);
         return ret;
     }
