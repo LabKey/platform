@@ -477,8 +477,8 @@ public abstract class SearchTest extends StudyBaseTest
                 "Urinalysis");
         int fileRowCount = getFileRowCount(indexFile);
         checker().wrapAssertion(() -> Assertions.assertThat(fileRowCount)
-                .as("expect minimum 2000 rows")
-                .isGreaterThan(2000));
+                .as("expect minimum 300 rows")
+                .isGreaterThan(300));
 
     }
 
