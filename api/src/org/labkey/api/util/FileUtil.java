@@ -353,7 +353,7 @@ public class FileUtil
     {
         // Regex encode the allowed extensions (escape periods and add '|' optional matcher)
         String allowedExtensions = appProps.getAllowedExtensions().stream().map(Pattern::quote).collect(Collectors.joining("|"));
-        // Allow any extension in the list unless it is preceeded by a '.' which we use as a proxy for double/multi extensions
+        // Allow any extension in the list unless it is preceded by a '.' which we use as a proxy for double/multi extensions
         extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
     }
 
@@ -825,7 +825,7 @@ public class FileUtil
             throw new IllegalArgumentException("Bad path: " + originalPath);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
-        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
+        if (ret.toPath().normalize().startsWith(dir.toPath().normalize()))
             throw new IllegalArgumentException(path.toString());
         return ret;
     }
@@ -862,7 +862,7 @@ public class FileUtil
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
-        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
+        if (ret.toPath().normalize().startsWith(dir.toPath().normalize()))
             throw new IllegalArgumentException(name);
         return ret;
     }
@@ -1619,6 +1619,7 @@ quickScan:
             parent = file.getParentFile();
         }
         // we don't need to use FileUtil.appendName() here
+        //noinspection SSBasedInspection
         return new File(resolveFile(parent), file.getName());
     }
 
@@ -1991,7 +1992,7 @@ quickScan:
                 boolean closed = false;
 
                 @Override
-                public void write(@NotNull char[] cbuf, int off, int len) throws IOException
+                public void write(char @NotNull [] cbuf, int off, int len) throws IOException
                 {
                     if (closed)
                         throw new IOException("Writer is closed");
@@ -2053,7 +2054,7 @@ quickScan:
             _reader = new Reader()
             {
                 @Override
-                public int read(@NotNull char[] cbuf, int off, int len) throws IOException
+                public int read(char @NotNull [] cbuf, int off, int len) throws IOException
                 {
                     _prepareToRead();
 
