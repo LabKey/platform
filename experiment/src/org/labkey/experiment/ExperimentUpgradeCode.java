@@ -193,7 +193,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // called from exp-25.007-25.008.sql
+    // called from exp-25.009-25.010.sql
+    // When this is removed, the ExperimentWarningProvider class can also be removed.
     @SuppressWarnings("unused")
     public static void upgradeAmountsAndUnits(ModuleContext context)
     {
