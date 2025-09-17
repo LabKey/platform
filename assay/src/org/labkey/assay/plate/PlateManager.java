@@ -178,6 +178,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -5105,28 +5106,31 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void addPlateCreatedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, @Nullable String additionalComment)
+    private void addPlateAuditEvents(User user, Collection<Plate> plates, Function<PlateImpl, PlateAuditEvent> eventFactory)
     {
         if (plates.isEmpty())
             return;
 
-        List<PlateAuditEvent> auditEvents = new ArrayList<>();
+        List<PlateAuditEvent> auditEvents = new ArrayList<>(plates.size());
         for (Plate plate : plates)
-            auditEvents.add(PlateAuditProvider.EventFactory.plateCreated(container, tx.getAuditId(), (PlateImpl) plate, additionalComment));
+            auditEvents.add(eventFactory.apply((PlateImpl) plate));
 
         AuditLogService.get().addEvents(user, auditEvents, true);
     }
 
+    private void addPlateCreatedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, @Nullable String additionalComment)
+    {
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateCreated(container, tx.getAuditId(), plate, additionalComment));
+    }
+
     public void addPlateDeletedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates)
     {
-        if (plates.isEmpty())
-            return;
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateDeleted(container, tx.getAuditId(), plate));
+    }
 
-        List<PlateAuditEvent> auditEvents = new ArrayList<>();
-        for (Plate plate : plates)
-            auditEvents.add(PlateAuditProvider.EventFactory.plateDeleted(container, tx.getAuditId(), (PlateImpl) plate));
-
-        AuditLogService.get().addEvents(user, auditEvents, true);
+    public void addPlateImportAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, ExpRun run, boolean isReimport)
+    {
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateImported(container, tx.getAuditId(), plate, run, isReimport));
     }
 
     public void ensureTransactionAuditId(DbScope.Transaction tx, Container container, User user, QueryService.AuditAction auditAction)

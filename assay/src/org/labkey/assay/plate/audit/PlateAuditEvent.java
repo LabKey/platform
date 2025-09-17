@@ -23,6 +23,8 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
     private Long _plateSetRowId;
     private Long _plateTypeRowId;
     private Long _sourcePlateRowId;
+    private Long _importRunId;
+    private Boolean _reimport;
     private boolean _template;
 
     public PlateAuditEvent()
@@ -116,6 +118,26 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
     public void setTemplate(boolean template)
     {
         _template = template;
+    }
+
+    public Long getImportRunId()
+    {
+        return _importRunId;
+    }
+
+    public void setImportRunId(Long importRunId)
+    {
+        _importRunId = importRunId;
+    }
+
+    public Boolean isReimport()
+    {
+        return _reimport;
+    }
+
+    public void setReimport(Boolean reimport)
+    {
+        _reimport = reimport;
     }
 
     private static final Set<String> EXCLUDED_PROPERTIES = CaseInsensitiveHashSet.of("ContainerId", PlateTable.Column.DataFileId.name(), "EntityId");

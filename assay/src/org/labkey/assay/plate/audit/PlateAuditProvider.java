@@ -10,6 +10,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.assay.plate.PlateImpl;
@@ -31,6 +32,8 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
         PlateRowId,
         PlateSetRowId,
         PlateTypeRowId,
+        Reimport,
+        ImportRunId,
         SourcePlateRowId,
         Template;
 
@@ -53,6 +56,8 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
         defaultVisibleColumns.add(Column.SourcePlateRowId.fieldKey());
         defaultVisibleColumns.add(Column.Template.fieldKey());
+        defaultVisibleColumns.add(Column.ImportRunId.fieldKey());
+        defaultVisibleColumns.add(Column.Reimport.fieldKey());
     }
 
     @Override
@@ -102,7 +107,8 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
     public enum PlateEventType
     {
         CREATE_PLATE("Plate was created.", "Created"),
-        DELETE_PLATE("Plate was deleted.", "Deleted");
+        DELETE_PLATE("Plate was deleted.", "Deleted"),
+        PLATE_IMPORT("Plate was imported into an assay run.", "Imported");
 
         private final String _actionLabel;
         private final String _comment;
@@ -140,10 +146,12 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
             // PlateAuditEvent fields
             _fields.add(createPropertyDescriptor(Column.PlateEventType.name(), PropertyType.STRING));
             _fields.add(createPropertyDescriptor(Column.PlateName.name(), PropertyType.STRING));
-            _fields.add(createPropertyDescriptor(Column.PlateRowId.name(), PropertyType.INTEGER));
-            _fields.add(createPropertyDescriptor(Column.PlateSetRowId.name(), PropertyType.INTEGER));
-            _fields.add(createPropertyDescriptor(Column.PlateTypeRowId.name(), PropertyType.INTEGER));
-            _fields.add(createPropertyDescriptor(Column.SourcePlateRowId.name(), PropertyType.INTEGER));
+            _fields.add(createPropertyDescriptor(Column.PlateRowId.name(), PropertyType.BIGINT));
+            _fields.add(createPropertyDescriptor(Column.PlateSetRowId.name(), PropertyType.BIGINT));
+            _fields.add(createPropertyDescriptor(Column.PlateTypeRowId.name(), PropertyType.BIGINT));
+            _fields.add(createPropertyDescriptor(Column.SourcePlateRowId.name(), PropertyType.BIGINT));
+            _fields.add(createPropertyDescriptor(Column.Reimport.name(), PropertyType.BOOLEAN));
+            _fields.add(createPropertyDescriptor(Column.ImportRunId.name(), PropertyType.BIGINT));
             _fields.add(createPropertyDescriptor(Column.Template.name(), PropertyType.BOOLEAN));
 
             // AbstractAuditTypeProvider fields
@@ -197,6 +205,15 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
         {
             var event = new PlateAuditEvent(PlateEventType.DELETE_PLATE, container, plate, transactionAuditId);
             event.setOldRecordMap(container, plate);
+
+            return event;
+        }
+
+        public static PlateAuditEvent plateImported(Container container, Long transactionAuditId, PlateImpl plate, ExpRun run, boolean isReimport)
+        {
+            var event = new PlateAuditEvent(PlateEventType.PLATE_IMPORT, container, plate, transactionAuditId);
+            event.setImportRunId(run.getRowId());
+            event.setReimport(isReimport);
 
             return event;
         }
