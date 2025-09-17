@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
@@ -67,7 +66,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
@@ -507,30 +505,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             }
 
             return null;
-        }
-
-        @Override
-        protected Map<String, Object> updateRow(
-            User user,
-            Container container,
-            Map<String, Object> row,
-            @NotNull Map<String, Object> oldRow,
-            @Nullable Map<Enum, Object> configParameters
-        ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
-        {
-            // TODO: Stop doing this check for each row. Instead perform once per plate that is a part of the update.
-            // enforce no updates if the plate has been imported in an assay run
-            if (oldRow.containsKey(Column.PlateId.name()))
-            {
-                Plate plate = PlateManager.get().getPlate(container, asInteger(oldRow.get(Column.PlateId.name())));
-                if (plate != null)
-                {
-                    int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
-                    if (runsInUse > 0)
-                        throw new QueryUpdateServiceException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
-                }
-            }
-            return super.updateRow(user, container, row, oldRow, configParameters);
         }
 
         @Override
