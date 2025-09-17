@@ -179,7 +179,7 @@ public abstract class SearchTest extends StudyBaseTest
     }
 
     @Test
-    public void testSearch() throws IOException, CommandException
+    public void testSearch() throws IOException
     {
         SearchAdminAPIHelper.setDirectoryType(directoryType(), getDriver());
         doCreateSteps();
@@ -229,7 +229,7 @@ public abstract class SearchTest extends StudyBaseTest
 
     @Override
     @LogMethod
-    protected void doVerifySteps() throws IOException, CommandException
+    protected void doVerifySteps() throws IOException
     {
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
         testAdvancedSearchScope();
@@ -474,8 +474,8 @@ public abstract class SearchTest extends StudyBaseTest
         TextSearcher tsvSearcher = new TextSearcher(indexFile);
         assertTextPresent(tsvSearcher, "CPS-1: Screening Chemistry Panel", "Black Bear", "Owlbear","pdf_sample.pdf", "docx_sample.docx",
                 "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
-                "Urinalysis");
-        int fileRowCount = getFileRowCount(indexFile);
+                "Urinalysis", "EVC-1: Enrollment Vaccination", "SIL-1: Social Impact Log");
+        var fileRowCount = getFileRowCount(indexFile);
         checker().wrapAssertion(() -> Assertions.assertThat(fileRowCount)
                 .as("expect minimum 300 rows")
                 .isGreaterThan(300));
