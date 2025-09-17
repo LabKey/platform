@@ -31,6 +31,8 @@ import org.labkey.api.view.ViewServlet;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +96,20 @@ public class StringUtilsLabKey
         .sorted()
         .collect(Collectors.toCollection(ArrayList::new));
 
-    private static final Random RANDOM = Encryption.SR;
+    private static final Random RANDOM;
+
+    static
+    {
+        try
+        {
+            RANDOM = SecureRandom.getInstanceStrong();
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new ConfigurationException("JVM doesn't have a SecureRandom available", e);
+        }
+    }
+
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
 
     public static String generateSpecialCharacterString(int length)
