@@ -441,7 +441,6 @@ public class FileUtil
                 checkAllowedFileName(parent.getName(), false);
             parent = parent.getParent();
         }
-        //noinspection SSBasedInspection
         file.mkdirs();
         return ret;
     }
@@ -1830,14 +1829,14 @@ quickScan:
         Files.walkFileTree(node, new SimplePathVisitor()
         {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
+            public @NotNull FileVisitResult preVisitDirectory(@NotNull Path dir, @NotNull BasicFileAttributes attrs) throws IOException
             {
                 hasMoreFlags.add(true);
                 return super.preVisitDirectory(dir, attrs);
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException
             {
                 appendFileLogEntry(sb, file, hasMoreFlags);
                 return super.visitFile(file, attrs);
@@ -1845,7 +1844,7 @@ quickScan:
 
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException
+            public @NotNull FileVisitResult postVisitDirectory(@NotNull Path dir, IOException exc) throws IOException
             {
                 hasMoreFlags.removeLast();
                 return super.postVisitDirectory(dir, exc);
