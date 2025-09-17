@@ -133,7 +133,8 @@ public interface DatabaseMigrationService
                 ForeignKey fk = TableSorter.getForeignKey(table, col, true);
                 if (fk != null)
                 {
-                    TableInfo lookupTableInfo = fk.getLookupTableInfo();
+                    // Use table's schema, since that's a Migration schema with XML metadata
+                    TableInfo lookupTableInfo = table.getSchema().getTable(fk.getLookupTableName());
                     if (lookupTableInfo != null)
                     {
                         fKey = lookupTableInfo.getContainerFieldKey();
@@ -143,9 +144,9 @@ public interface DatabaseMigrationService
                             // Ignore self joins
                             if (!lookupTableInfo.getName().equalsIgnoreCase(table.getName()))
                             {
-                                if (!lookupTableInfo.getSchema().getName().equalsIgnoreCase(table.getSchema().getName()))
-                                    LOG.warn("Different schemas!");
-                                fKey = getContainerFieldKey(lookupTableInfo);
+                                // Ignore lookups to different schemas
+                                if (lookupTableInfo.getSchema().getName().equalsIgnoreCase(table.getSchema().getName()))
+                                    fKey = getContainerFieldKey(lookupTableInfo);
                             }
                         }
 

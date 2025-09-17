@@ -1311,9 +1311,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             public List<TableInfo> getTablesToCopy()
             {
                 List<TableInfo> tablesToCopy = super.getTablesToCopy();
-                tablesToCopy.remove(getSchema().getTable("Modules"));
-                tablesToCopy.remove(getSchema().getTable("SqlScripts"));
-                tablesToCopy.remove(getSchema().getTable("UpgradeSteps"));
+                tablesToCopy.remove(CoreSchema.getInstance().getTableInfoModules());
+                tablesToCopy.remove(CoreSchema.getInstance().getTableInfoSqlScripts());
+                tablesToCopy.remove(CoreSchema.getInstance().getTableInfoUpgradeSteps());
 
                 return tablesToCopy;
             }
@@ -1337,7 +1337,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
 
                 // Users and root groups have container == null, so add that as an OR clause
-                if (sourceTable.getName().equals("Principals")) // TODO: Or "Members", since that joins to Principals
+                if (sourceTable.getName().equals("Principals") || sourceTable.getName().equals("Members"))
                 {
                     OrClause orClause = new OrClause();
                     orClause.addClause(containerClause);
@@ -1351,8 +1351,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public void afterSchema()
             {
-                super.afterSchema();
-
                 new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
             }

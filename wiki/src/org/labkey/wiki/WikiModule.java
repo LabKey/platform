@@ -133,8 +133,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             public List<TableInfo> getTablesToCopy()
             {
                 List<TableInfo> tablesToCopy = super.getTablesToCopy();
-                tablesToCopy.add(getSchema().getTable("Pages"));
-                tablesToCopy.add(getSchema().getTable("PageVersions"));
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPages());
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPageVersions());
 
                 return tablesToCopy;
             }

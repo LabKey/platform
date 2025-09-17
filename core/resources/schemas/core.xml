@@ -548,12 +548,7 @@
   <table tableName="ContainerAliases" tableDbType="TABLE">
     <columns>
       <column columnName="Path"/>
-        <column columnName="ContainerRowId">
-            <fk>
-                <fkTable>Containers</fkTable>
-                <fkColumnName>ObjectId</fkColumnName>
-            </fk>
-        </column>
+      <column columnName="ContainerRowId"/>
     </columns>
   </table>
 

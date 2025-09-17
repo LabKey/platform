@@ -89,6 +89,7 @@ import org.labkey.assay.plate.PlateSetDocumentProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSchemaTest;
+import org.labkey.assay.plate.query.PlateTypeTable;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.security.AssayDesignerRole;
@@ -290,7 +291,7 @@ public class AssayModule extends SpringModule
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
-                return "PlateType".equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
+                return PlateTypeTable.NAME.equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
         });
     }
@@ -360,5 +361,4 @@ public class AssayModule extends SpringModule
     {
         return new AssayUpgradeCode();
     }
-
 }
