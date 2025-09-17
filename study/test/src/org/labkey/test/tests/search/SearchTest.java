@@ -41,9 +41,11 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
+import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.WikiHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 import org.labkey.test.util.search.SearchResultsQueue;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.test.TestFileUtils.getFileRowCount;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
@@ -176,7 +179,7 @@ public abstract class SearchTest extends StudyBaseTest
     }
 
     @Test
-    public void testSearch()
+    public void testSearch() throws IOException
     {
         SearchAdminAPIHelper.setDirectoryType(directoryType(), getDriver());
         doCreateSteps();
@@ -226,13 +229,14 @@ public abstract class SearchTest extends StudyBaseTest
 
     @Override
     @LogMethod
-    protected void doVerifySteps()
+    protected void doVerifySteps() throws IOException
     {
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
         testAdvancedSearchScope();
         testAdvancedSearchCategoryFilters();
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
+        exportSearchIndexAndVerifyResults();
         deleteFolderAndVerifyNoResults();
     }
 
@@ -455,6 +459,27 @@ public abstract class SearchTest extends StudyBaseTest
         SearchAdminAPIHelper.waitForIndexerBackground();
         goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
+    }
+
+    @LogMethod
+    private void exportSearchIndexAndVerifyResults() throws IOException
+    {
+        goToAdminConsole()
+                .clickFullTextSearch();
+        clickAndWait(Locator.linkWithText("Export index contents"));
+        Locator exportTxtBtnLoc = Locator.tagWithClass("a", "labkey-button").withText("Export to Text");
+        shortWait().until(ExpectedConditions.elementToBeClickable(exportTxtBtnLoc));
+        var indexFile = clickAndWaitForDownload(exportTxtBtnLoc);
+
+        TextSearcher tsvSearcher = new TextSearcher(indexFile);
+        assertTextPresent(tsvSearcher, "CPS-1: Screening Chemistry Panel", "Black Bear", "Owlbear","pdf_sample.pdf", "docx_sample.docx",
+                "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
+                "Urinalysis", "EVC-1: Enrollment Vaccination", "SIL-1: Social Impact Log");
+        var fileRowCount = getFileRowCount(indexFile);
+        checker().wrapAssertion(() -> Assertions.assertThat(fileRowCount)
+                .as("expect minimum 300 rows")
+                .isGreaterThan(300));
+
     }
 
     @Override
