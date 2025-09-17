@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -46,6 +45,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -101,12 +101,14 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         )));
 
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
-        RESERVED_NAMES.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList());
-        RESERVED_NAMES.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(col -> ColumnInfo.labelFromName(col.name())).toList());
-        RESERVED_NAMES.add("Container");
-        RESERVED_NAMES.add("RunId"); // Issue 50461
-        RESERVED_NAMES.add("Run Id");
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainKind.namesAndLabels(
+                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
+        );
+        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(COMMON_RESERVED_PROPERTY_NAMES));
+        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList()));
+        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(List.of(
+                "RunId" // Issue 50461
+        )));
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate

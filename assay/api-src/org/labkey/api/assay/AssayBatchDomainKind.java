@@ -15,11 +15,15 @@
  */
 package org.labkey.api.assay;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.security.User;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,6 +32,13 @@ import java.util.Set;
  */
 public class AssayBatchDomainKind extends AssayDomainKind
 {
+    private static final Set<String> RESERVED_NAMES;
+
+    static {
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainKind.namesAndLabels(COMMON_RESERVED_PROPERTY_NAMES));
+        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(Arrays.stream(ExpExperimentTable.Column.values()).map( ExpExperimentTable.Column::name).toList()));
+        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(List.of("AssayId")));
+    }
     public AssayBatchDomainKind()
     {
         super(ExpProtocol.ASSAY_DOMAIN_BATCH);
@@ -42,14 +53,7 @@ public class AssayBatchDomainKind extends AssayDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> result = super.getAssayReservedPropertyNames();
-        for (ExpExperimentTable.Column column : ExpExperimentTable.Column.values())
-        {
-            result.add(column.toString());
-        }
-        result.add("AssayId");
-        result.add("Assay Id");
-        return result;
+        return RESERVED_NAMES;
     }
 
     @Override
