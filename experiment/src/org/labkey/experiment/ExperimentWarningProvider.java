@@ -20,6 +20,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
 
+// Remove this class when the exp-25.009-25.010.sql script is no longer in use.
 public class ExperimentWarningProvider implements WarningProvider
 {
     private Long _actualRecordCount;
