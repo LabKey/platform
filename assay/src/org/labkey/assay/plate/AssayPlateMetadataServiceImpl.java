@@ -1507,7 +1507,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
+    public @NotNull UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
     {
         return new PlateSchema(querySchema, contextualRoles);
     }

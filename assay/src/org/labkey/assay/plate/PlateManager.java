@@ -45,6 +45,7 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -100,9 +101,11 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -132,6 +135,8 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.audit.PlateAuditEvent;
+import org.labkey.assay.plate.audit.PlateAuditProvider;
 import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
@@ -181,6 +186,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
@@ -303,6 +309,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         @Nullable List<Map<String, Object>> data
     ) throws Exception
     {
+        return createAndSavePlate(container, user, plate, plateSetId, data, false);
+    }
+
+    private @NotNull Plate createAndSavePlate(
+        @NotNull Container container,
+        @NotNull User user,
+        @NotNull Plate plate,
+        @Nullable Long plateSetId,
+        @Nullable List<Map<String, Object>> data,
+        boolean skipAudit
+    ) throws Exception
+    {
         if (!plate.isNew())
             throw new ValidationException(String.format("Failed to create plate. The provided plate already exists with rowId (%d).", plate.getRowId()));
 
@@ -311,6 +329,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
+
             PlateSet plateSet = null;
 
             if (plateSetId != null)
@@ -325,12 +345,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ((PlateImpl) plate).setPlateSet(plateSet);
             }
 
-            long plateRowId = save(container, user, plate, data);
+            long plateRowId = save(container, user, plate, data, true);
             plate = getPlate(container, plateRowId);
             if (plate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 
             deriveCustomFieldsFromWellData(container, user, plate, data, plateSet);
+
+            if (!skipAudit)
+                addPlateCreatedAuditEvents(container, user, tx, List.of(plate), null);
 
             tx.commit();
 
@@ -370,11 +393,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 fields.add(new PlateCustomField(WellTable.Column.Type.fieldKey()));
                 fields.add(new PlateCustomField(WellTable.Column.WellGroup.fieldKey()));
                 fields.add(new PlateCustomField(WellTable.Column.ReplicateGroup.fieldKey()));
-                fields.add(new PlateCustomField(WellTable.Column.SampleID.fieldKey()));
+                fields.add(new PlateCustomField(WellTable.Column.SampleId.fieldKey()));
             }
         }
         else if (plateSet.isPrimary())
-            fields.add(new PlateCustomField(WellTable.Column.SampleID.fieldKey()));
+            fields.add(new PlateCustomField(WellTable.Column.SampleId.fieldKey()));
         else if (plateSet.isTemplate())
             fields = templateFields;
 
@@ -469,7 +492,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             for (PlateCustomField field : plate.getCustomFields())
             {
-                if (WellTable.Column.SampleID.fieldKey().equals(field.getFieldKey()))
+                if (WellTable.Column.SampleId.fieldKey().equals(field.getFieldKey()))
                     continue;
                 FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
                 if (lookupFk != null)
@@ -905,13 +928,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (StringUtils.trimToNull(name) == null)
             return false;
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
-        filter.addCondition(FieldKey.fromParts("Template"), true);
+        SimpleFilter filter = new SimpleFilter(PlateTable.Column.Name.fieldKey(), name);
+        filter.addCondition(PlateTable.Column.Template.fieldKey(), true);
 
         ContainerFilter cf = getPlateLookupContainerFilter(container, User.getAdminServiceUser());
-        filter.addCondition(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
+        filter.addCondition(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), PlateTable.Column.Container.fieldKey()));
 
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Set.of("RowId"), filter, null).exists();
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Set.of(PlateTable.Column.RowId.name()), filter, null).exists();
     }
 
     private @NotNull ContainerFilter getPlateLookupContainerFilter(Container container, User user)
@@ -986,13 +1009,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public long save(Container container, User user, Plate plate) throws Exception
     {
-        return save(container, user, plate, null);
+        return save(container, user, plate, null, false);
     }
 
-    private long save(Container container, User user, Plate plate, @Nullable List<Map<String, Object>> wellData) throws Exception
+    private long save(Container container, User user, Plate plate, @Nullable List<Map<String, Object>> wellData, boolean skipAudit) throws Exception
     {
         if (plate instanceof PlateImpl plateTemplate)
-            return savePlateImpl(container, user, plateTemplate, false, wellData);
+            return savePlateImpl(container, user, plateTemplate, false, wellData, skipAudit);
         throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
     }
 
@@ -1078,7 +1101,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private WellImpl[] getWells(Plate plate)
     {
-        SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
+        SimpleFilter plateFilter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plate.getRowId());
         Sort sort = new Sort("Col,Row");
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(WellImpl.class);
     }
@@ -1100,7 +1123,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new Lsid(nameSpace, "Folder-" + container.getRowId(), GUID.makeGUID());
     }
 
-    /* package private */ DbScope.Transaction ensureTransaction(Lock... locks)
+    public DbScope.Transaction ensureTransaction(Lock... locks)
     {
         return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
     }
@@ -1112,7 +1135,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private long savePlateImpl(Container container, User user, @NotNull PlateImpl plate, boolean isCopy) throws Exception
     {
-        return savePlateImpl(container, user, plate, isCopy, null);
+        return savePlateImpl(container, user, plate, isCopy, null, false);
     }
 
     private long savePlateImpl(
@@ -1120,13 +1143,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         @NotNull PlateImpl plate,
         boolean isCopy,
-        @Nullable List<Map<String, Object>> wellData
+        @Nullable List<Map<String, Object>> wellData,
+        boolean skipAudit
     ) throws Exception
     {
         boolean updateExisting = plate.getRowId() != null;
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            ensureTransactionAuditId(transaction, container, user, updateExisting ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+
             Long plateId = plate.getRowId();
 
             if (!updateExisting && plate.getPlateSet() == null)
@@ -1138,7 +1164,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 plate.setPlateSet(createPlateSet(container, user, plateSet, null, null));
             }
 
-            Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class).toMap(PlateBean.from(plate), new ArrayListMap<>());
+            Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class).toMap(PlateBean.from(plate, false), new ArrayListMap<>());
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
 
@@ -1158,12 +1184,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (errors.hasErrors())
                     throw errors;
                 Map<String, Object> row = insertedRows.get(0);
-                plateId = MapUtils.getLong(row,"RowId");
+                plateId = MapUtils.getLong(row,PlateTable.Column.RowId.name());
                 plate.setRowId(plateId);
-                plate.setLsid((String) row.get("Lsid"));
-                plate.setName((String) row.get("Name"));
-                plate.setPlateId((String) row.get("PlateId"));
-                plate.setBarcode((String) row.get("Barcode"));
+                plate.setLsid((String) row.get(PlateTable.Column.Lsid.name()));
+                plate.setName((String) row.get(PlateTable.Column.Name.name()));
+                plate.setPlateId((String) row.get(PlateTable.Column.PlateId.name()));
+                plate.setBarcode((String) row.get(PlateTable.Column.Barcode.name()));
             }
             savePropertyBag(container, user, plate.getLSID(), plate.getProperties(), updateExisting);
 
@@ -1207,7 +1233,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
-                    wellGroupInstanceLsid = (String)insertedRows.get(0).get("Lsid");
+                    wellGroupInstanceLsid = (String) insertedRows.get(0).get(WellTable.Column.Lsid.name());
                     wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.get(0));
                     savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
@@ -1250,8 +1276,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     }
                 }
 
+                Map<Enum, Object> configParameters = Map.of(AuditBehavior, AuditBehaviorType.DETAILED);
                 BatchValidationException wellErrors = new BatchValidationException();
-                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, null, extraScriptContext);
+                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, configParameters, extraScriptContext);
                 if (wellErrors.hasErrors())
                     throw wellErrors;
             }
@@ -1292,6 +1319,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (plate.getPlateSet() != null)
                     indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plate.getPlateSet());
             }, DbScope.CommitTaskOption.POSTCOMMIT);
+
+            if (!skipAudit && !updateExisting)
+            {
+                var auditPlate = getPlate(container, plateRowId);
+                if (auditPlate == null)
+                    throw new IllegalStateException("Unable to audit plate after save. Plate not found.");
+
+                addPlateCreatedAuditEvents(container, user, transaction, List.of(auditPlate), null);
+            }
+
             transaction.commit();
 
             return plateId;
@@ -1427,19 +1464,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public void deletePlate(Container container, User user, long rowId) throws Exception
     {
-        Map<String, Object> key = Collections.singletonMap("RowId", rowId);
+        Map<String, Object> key = Collections.singletonMap(PlateTable.Column.RowId.name(), rowId);
         QueryUpdateService qus = getPlateUpdateService(container, user);
         qus.deleteRows(user, container, Collections.singletonList(key), null, null);
     }
 
-    // Called by the Plate Query Update Service after deleting a plate
+    // Called by the Plate Query Update Service after deleting a plate (post-commit)
     public void afterPlateDelete(Container container, Plate plate)
     {
         clearCache(container, plate);
         deindexPlates(List.of(Lsid.parse(plate.getLSID())));
     }
 
-    // Called by the Plate Query Update Service prior to deleting a plate
+    // Called by the Plate Query Update Service before deleting a plate
     public void beforePlateDelete(Container container, Integer plateId)
     {
         assert requireActiveTransaction();
@@ -1819,8 +1856,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         var container = source.getContainer();
         var wellTable = getWellTable(container, user);
 
-        var sourceWellData = new TableSelector(wellTable, Set.of("RowId", "LSID", "SampleId"), new SimpleFilter(FieldKey.fromParts("PlateId"), source.getRowId()), new Sort("RowId")).getMapArray();
-        var copyWellData = new TableSelector(wellTable, Set.of("RowId", "LSID"), new SimpleFilter(FieldKey.fromParts("PlateId"), copy.getRowId()), new Sort("RowId")).getMapArray();
+        var lsidColumn = WellTable.Column.Lsid.name();
+        var lsidFieldKey = WellTable.Column.Lsid.fieldKey();
+        var rowIdColumn = WellTable.Column.RowId.name();
+        var sampleIdColumn = WellTable.Column.SampleId.name();
+
+        var sourceWellData = new TableSelector(wellTable, Set.of(rowIdColumn, lsidColumn, sampleIdColumn), new SimpleFilter(WellTable.Column.PlateId.fieldKey(), source.getRowId()), new Sort(rowIdColumn)).getMapArray();
+        var copyWellData = new TableSelector(wellTable, Set.of(rowIdColumn, lsidColumn), new SimpleFilter(WellTable.Column.PlateId.fieldKey(), copy.getRowId()), new Sort(rowIdColumn)).getMapArray();
 
         if (sourceWellData.length != copyWellData.length)
         {
@@ -1828,8 +1870,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException(String.format(msg, source.getName(), sourceWellData.length, copyWellData.length));
         }
 
-        var sourceWellLSIDS = Arrays.stream(sourceWellData).map(data -> data.get("LSID")).toList();
-        var sourceFilter = new SimpleFilter(FieldKey.fromParts("LSID"), sourceWellLSIDS, CompareType.IN);
+        var sourceWellLsids = Arrays.stream(sourceWellData).map(data -> data.get(lsidColumn)).toList();
+        var sourceFilter = new SimpleFilter(lsidFieldKey, sourceWellLsids, CompareType.IN);
 
         final List<ColumnInfo> wellMetadataFields;
         final Map<String, Map<String, Object>> sourceMetaData;
@@ -1838,13 +1880,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (metadataTable != null)
         {
             wellMetadataFields = metadataTable.getColumns()
-                    .stream().filter(c -> !FieldKey.fromParts("LSID").equals(c.getFieldKey()))
+                    .stream().filter(c -> !lsidFieldKey.equals(c.getFieldKey()))
                     .toList();
 
             var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection(); // note that row map keys here are column.getAlias()
             sourceMetaData = new CaseInsensitiveHashMap<>();
             for (var row : metaDataRows)
-                sourceMetaData.put((String) row.get("LSID"), row);
+                sourceMetaData.put((String) row.get(lsidColumn), row);
         }
         else
         {
@@ -1857,12 +1899,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (int i = 0; i < sourceWellData.length; i++)
         {
             var sourceRow = sourceWellData[i];
-            String sourceWellLSID = (String) sourceRow.get("LSID");
+            String sourceWellLSID = (String) sourceRow.get(lsidColumn);
             var copyRow = copyWellData[i];
 
             var updateCopyRow = new CaseInsensitiveHashMap<>();
-            if (copySample && sourceRow.get("SampleId") != null)
-                updateCopyRow.put("SampleId", sourceRow.get("SampleId"));
+            if (copySample && sourceRow.get(sampleIdColumn) != null)
+                updateCopyRow.put(sampleIdColumn, sourceRow.get(sampleIdColumn));
 
             if (sourceMetaData.containsKey(sourceWellLSID))
             {
@@ -1879,7 +1921,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (!updateCopyRow.isEmpty())
             {
-                updateCopyRow.put("RowId", copyRow.get("RowId"));
+                updateCopyRow.put(rowIdColumn, copyRow.get(rowIdColumn));
                 newWellData.add(updateCopyRow);
             }
         }
@@ -1888,8 +1930,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         var errors = new BatchValidationException();
+        Map<Enum, Object> configParameters = Map.of(AuditBehavior, AuditBehaviorType.DETAILED);
         Map<String, Object> extraScriptContext = CaseInsensitiveHashMap.of(PLATE_COPY_FLAG, true);
-        getWellUpdateService(container, user).updateRows(user, container, newWellData, null, errors, null, extraScriptContext);
+        getWellUpdateService(container, user).updateRows(user, container, newWellData, null, errors, configParameters, extraScriptContext);
         if (errors.hasErrors())
             throw errors;
     }
@@ -1952,8 +1995,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 throw new ValidationException(String.format("Failed to copy plate. A plate already exists with the name \"%s\".", name));
         }
 
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
+
             // Copy the plate
             PlateImpl newPlate = new PlateImpl(container, name, null, sourcePlate.getAssayType(), sourcePlate.getPlateType());
             List<PlateCustomField> newFields = new ArrayList<>(sourcePlate.getCustomFields());
@@ -1961,7 +2006,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (copyAsTemplate)
             {
                 newPlate.setTemplate(true);
-                newFields.removeIf((f) -> WellTable.Column.SampleID.fieldKey().equals(f.getFieldKey()));
+                newFields.removeIf((f) -> WellTable.Column.SampleId.fieldKey().equals(f.getFieldKey()));
             }
             else
                 newPlate.setPlateSet(destinationPlateSet);
@@ -1973,7 +2018,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             copyWellGroups(sourcePlate, newPlate);
 
             // Save the plate
-            long plateId = savePlateImpl(container, user, newPlate, true);
+            long plateId = savePlateImpl(container, user, newPlate, true, null, true);
             newPlate = (PlateImpl) getPlate(container, plateId);
             if (newPlate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
@@ -1982,6 +2027,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (copySamples == null)
                 copySamples = true;
             copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate() && copySamples);
+
+            // Specify the source plate for auditing
+            newPlate.setSourcePlateRowId(sourcePlate.getRowId());
+            String auditComment = String.format("Copied from %s \"%s\".", sourcePlate.isTemplate() ? "plate template" : "plate", sourcePlate.getName());
+            addPlateCreatedAuditEvents(container, user, tx, List.of(newPlate), auditComment);
 
             tx.commit();
 
@@ -2420,7 +2470,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.Type.fieldKey())));
             fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.WellGroup.fieldKey())));
             fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.ReplicateGroup.fieldKey())));
-            fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.SampleID.fieldKey())));
+            fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.SampleId.fieldKey())));
         }
 
         Domain metadataDomain = getPlateMetadataDomain(container, user);
@@ -2563,7 +2613,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         order.put(WellTable.Column.Type.fieldKey(), 0);
         order.put(WellTable.Column.WellGroup.fieldKey(), 1);
         order.put(WellTable.Column.ReplicateGroup.fieldKey(), 2);
-        order.put(WellTable.Column.SampleID.fieldKey(), 3);
+        order.put(WellTable.Column.SampleId.fieldKey(), 3);
         Comparator<PlateCustomField> nameComparator = Comparator.comparing((k) -> k.getName().toLowerCase(), Comparator.nullsLast(String::compareTo));
 
         fields.sort((f1, f2) -> {
@@ -2599,7 +2649,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
         for (WellCustomField customField : fields)
             customFieldMap.put(FieldKey.fromParts(customField.getName()), customField);
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
+        SimpleFilter filter = new SimpleFilter(WellTable.Column.RowId.fieldKey(), wellId);
 
         TableInfo wellTable = getWellTable(plate.getContainer(), user);
         Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
@@ -2758,7 +2808,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         long plateSetId,
         boolean plateSetIsTemplate,
-        @NotNull List<PlateData> plates
+        @NotNull List<PlateData> plates,
+        @Nullable String additionalAuditComment
     ) throws Exception
     {
         if (plates.isEmpty())
@@ -2766,6 +2817,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
+
             pausePlateIndexing();
             tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
 
@@ -2778,8 +2831,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 plateImpl.setTemplate(plateSetIsTemplate);
 
                 // TODO: Write a cheaper plate create/save for multiple plates
-                platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data));
+                platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data, true));
             }
+
+            addPlateCreatedAuditEvents(container, user, tx, platesAdded, additionalAuditComment);
 
             tx.commit();
 
@@ -2823,6 +2878,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
             BatchValidationException errors = new BatchValidationException();
             QueryUpdateService qus = getPlateSetUpdateService(container, user);
 
@@ -2831,12 +2887,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (errors.hasErrors())
                 throw errors;
 
-            Integer plateSetId = asInteger(rows.get(0).get("RowId"));
+            Integer plateSetId = asInteger(rows.get(0).get(PlateSetTable.Column.RowId.name()));
 
             savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
             if (plates != null)
-                addPlatesToPlateSet(container, user, plateSetId, plateSet.isTemplate(), plates);
+                addPlatesToPlateSet(container, user, plateSetId, plateSet.isTemplate(), plates, String.format("Added during creation of plate set \"%s\".", plateSet.getName()));
 
             plateSet = (PlateSetImpl) getPlateSet(container, plateSetId);
             tx.commit();
@@ -2884,7 +2940,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return createPlateSet(container, user, targetPlateSet, plates, options.getParentPlateSetId());
 
         // Update an existing plate set
-        addPlatesToPlateSet(container, user, targetPlateSet.getRowId(), targetPlateSet.isTemplate(), plates);
+        addPlatesToPlateSet(container, user, targetPlateSet.getRowId(), targetPlateSet.isTemplate(), plates, null);
 
         return getPlateSet(container, targetPlateSet.getRowId());
     }
@@ -2902,6 +2958,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
             PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, null, parentId);
 
             for (Plate plate : parentPlateSet.getPlates())
@@ -3492,7 +3549,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 int colIdx = iterateByColumn ? outerIdx : innerIdx;
 
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
-                    WellTable.Column.SampleID.name(), sampleIds.get(sampleIdsCounter),
+                    WellTable.Column.SampleId.name(), sampleIds.get(sampleIdsCounter),
                     WellTable.Column.Type.name(), SAMPLE.name(),
                     WELL_LOCATION, createPosition(c, rowIdx, colIdx).getDescription()
                 ));
@@ -3698,7 +3755,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private List<FieldKey> getPlateExportFieldKeys(Plate plate, boolean isMapView)
     {
         List<FieldKey> fieldKeys = new ArrayList<>();
-        fieldKeys.add(FieldKey.fromParts(WellTable.Column.SampleID.name(), "Name"));
+        fieldKeys.add(FieldKey.fromParts(WellTable.Column.SampleId.name(), "Name"));
 
         if (isMapView)
         {
@@ -3716,7 +3773,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (isMapView)
         {
             Set<FieldKey> excludedColumns = Set.of(
-                WellTable.Column.SampleID.fieldKey(),
+                WellTable.Column.SampleId.fieldKey(),
                 WellTable.Column.Type.fieldKey(),
                 WellTable.Column.WellGroup.fieldKey(),
                 WellTable.Column.ReplicateGroup.fieldKey()
@@ -3756,7 +3813,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Filter on isQueryColumn, so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream()
                 .filter(DisplayColumn::isQueryColumn)
-                .filter(col -> !col.getName().equalsIgnoreCase(WellTable.Column.SampleID.name()))
+                .filter(col -> !col.getName().equalsIgnoreCase(WellTable.Column.SampleId.name()))
                 .toList();
     }
 
@@ -3776,7 +3833,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
-                FieldKey sampleIdNameFieldKey = FieldKey.fromParts(WellTable.Column.SampleID.name(), "Name");
+                FieldKey sampleIdNameFieldKey = FieldKey.fromParts(WellTable.Column.SampleId.name(), "Name");
 
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap(sampleIdNameFieldKey.toString(), "Sample ID")))
                 {
@@ -3827,10 +3884,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         columns.add(WellTable.Column.WellGroup.name());
         columns.add(WellTable.Column.ReplicateGroup.name());
         if (includeSamples)
-            columns.add(WellTable.Column.SampleID.name());
+            columns.add(WellTable.Column.SampleId.name());
 
         var wellTable = getWellTable(container, user, getPlateLookupContainerFilter(container, user));
-        var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plateRowId);
+        var filter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plateRowId);
         var wellDatas = new TableSelector(wellTable, columns, filter, new Sort(WellTable.Column.RowId.name())).getArrayList(WellData.class);
 
         if (includeMetadata)
@@ -3848,7 +3905,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (metadataTable == null)
             return wellDataList;
 
-        var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.Lsid.name()), wellLsids, CompareType.IN);
+        var filter = new SimpleFilter(WellTable.Column.Lsid.fieldKey(), wellLsids, CompareType.IN);
         var metadataMap = new HashMap<String, Map<String, Object>>();
         var ignoredKeys = CaseInsensitiveHashSet.of("_row", WellTable.Column.Lsid.name());
 
@@ -4095,7 +4152,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     "Well %s must specify a \"%s\" when a \"%s\" is specified on plate \"%s\".",
                     position.getDescription(),
                     WellTable.Column.Type.name(),
-                    WellTable.Column.SampleID.name(),
+                    WellTable.Column.SampleId.name(),
                     plate.getName()
                 ));
             }
@@ -4244,7 +4301,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         columnNames.add(WellTable.Column.Type.name());
         columnNames.add(WellTable.Column.WellGroup.name());
         if (includeSampleId)
-            columnNames.add(WellTable.Column.SampleID.name());
+            columnNames.add(WellTable.Column.SampleId.name());
         String columns = columnNames.stream().map(LabKeySql::quoteIdentifier).collect(Collectors.joining(", "));
 
         String wellTypes = StringUtils.join(
@@ -4471,6 +4528,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             try (DbScope.Transaction tx = ensureTransaction())
             {
+                ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
+
                 if (!existingPlates.isEmpty())
                 {
                     QueryUpdateService qus = requiredUpdateService(getWellTable(container, user));
@@ -4487,7 +4546,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 plateSetRowId = targetPlateSet.getRowId();
                 plateSetName = targetPlateSet.getName();
-                newPlates = addPlatesToPlateSet(container, user, plateSetRowId, targetPlateSet.isTemplate(), plateData);
+                newPlates = addPlatesToPlateSet(container, user, plateSetRowId, targetPlateSet.isTemplate(), plateData, String.format("Added via reformat to plate set \"%s\".", plateSetName));
 
                 tx.commit();
             }
@@ -4527,7 +4586,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             for (Map<String, Object> row : plateData.data)
             {
-                Long sampleId = MapUtils.getLong(row, WellTable.Column.SampleID.name());
+                Long sampleId = MapUtils.getLong(row, WellTable.Column.SampleId.name());
                 if (sampleId != null)
                 {
                     wellsFilled++;
@@ -4575,7 +4634,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 for (Map<String, Object> row : plate.data)
                 {
-                    Long sampleId = MapUtils.getLong(row,WellTable.Column.SampleID.name());
+                    Long sampleId = MapUtils.getLong(row,WellTable.Column.SampleId.name());
                     if (sampleId != null)
                     {
                         wellsFilled++;
@@ -5044,5 +5103,37 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
         }
+    }
+
+    private void addPlateCreatedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, @Nullable String additionalComment)
+    {
+        if (plates.isEmpty())
+            return;
+
+        List<PlateAuditEvent> auditEvents = new ArrayList<>();
+        for (Plate plate : plates)
+            auditEvents.add(PlateAuditProvider.EventFactory.plateCreated(container, tx.getAuditId(), (PlateImpl) plate, additionalComment));
+
+        AuditLogService.get().addEvents(user, auditEvents, true);
+    }
+
+    public void addPlateDeletedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates)
+    {
+        if (plates.isEmpty())
+            return;
+
+        List<PlateAuditEvent> auditEvents = new ArrayList<>();
+        for (Plate plate : plates)
+            auditEvents.add(PlateAuditProvider.EventFactory.plateDeleted(container, tx.getAuditId(), (PlateImpl) plate));
+
+        AuditLogService.get().addEvents(user, auditEvents, true);
+    }
+
+    public void ensureTransactionAuditId(DbScope.Transaction tx, Container container, User user, QueryService.AuditAction auditAction)
+    {
+        if (tx.getAuditId() != null)
+            return;
+
+        AbstractQueryUpdateService.addTransactionAuditEvent(tx, user, AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction));
     }
 }

@@ -278,9 +278,9 @@ public class PlateController extends SpringActionController
         @Override
         public boolean handlePost(NameForm form, BindException errors) throws Exception
         {
-            Plate template = PlateService.get().getPlate(getContainer(), form.getPlateId());
-            if (template != null && template.getRowId() != null)
-                PlateService.get().deletePlate(getContainer(), getUser(), template.getRowId());
+            Plate plate = PlateService.get().getPlate(getContainer(), form.getPlateId());
+            if (plate != null && plate.getRowId() != null)
+                PlateService.get().deletePlate(getContainer(), getUser(), plate.getRowId());
             return true;
         }
 

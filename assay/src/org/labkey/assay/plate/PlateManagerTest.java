@@ -1465,7 +1465,7 @@ public final class PlateManagerTest
             int t = 0;
             while (r.next())
             {
-                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleID.name()));
+                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleId.name()));
                 var wellPosition = r.getString(FieldKey.fromParts("position"));
 
                 switch (wellPosition)
@@ -1500,7 +1500,7 @@ public final class PlateManagerTest
             int t = 0;
             while (r.next())
             {
-                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleID.name()));
+                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleId.name()));
                 var wellPosition = r.getString(FieldKey.fromParts("position"));
 
                 switch (wellPosition)
@@ -1534,7 +1534,7 @@ public final class PlateManagerTest
         {
             for (Map<String, Object> well : data.data())
             {
-                if (asLongElseNull(well.get(WellTable.Column.SampleID.name())) instanceof Long num)
+                if (asLongElseNull(well.get(WellTable.Column.SampleId.name())) instanceof Long num)
                     sampleIds.add(num);
             }
         }

@@ -32,9 +32,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * User: kevink
- * Date: 12/21/15
- *
  * Trigger scripts are invoked before insert/update/delete on many LabKey tables.
  * The Trigger is created by a TriggerFactory added to AbstractTableInfo.
  */

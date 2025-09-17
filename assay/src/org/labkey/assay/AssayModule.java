@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -87,6 +88,7 @@ import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.PlateSetDocumentProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.audit.PlateAuditProvider;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSchemaTest;
 import org.labkey.assay.plate.query.PlateTypeTable;
@@ -203,6 +205,7 @@ public class AssayModule extends SpringModule
             return result;
         });
         PlateManager.get().registerLsidHandlers();
+        AuditLogService.get().registerAuditType(new PlateAuditProvider());
         SearchService ss = SearchService.get();
 
         // ASSAY_CATEGORY
