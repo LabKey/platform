@@ -70,6 +70,15 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
                 queryXML = new File(path.substring(0, path.length()-FILE_EXTENSION.length()) + META_FILE_EXTENSION);
             }
         }
+        // Check that the files are under the root for the module's resources
+        if (querySQL != null && !moduleQueryDef.getModule().isUnderResourcesDirectory(querySQL.toPath()))
+        {
+            throw new IllegalArgumentException("SQL file is not under the resources directory for module " + moduleQueryDef.getModule().getName());
+        }
+        if (queryXML != null && !moduleQueryDef.getModule().isUnderResourcesDirectory(queryXML.toPath()))
+        {
+            throw new IllegalArgumentException("query.xml file is not under the resources directory for module " + moduleQueryDef.getModule().getName());
+        }
         _resourceSqlFile = querySQL;
         _resourceQueryXmlFile = queryXML;
     }

@@ -128,7 +128,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public Path getProtocolFile(PipeRoot root, String name, boolean archived)
     {
-        return getProtocolDir(root, archived).resolve(name + ".xml");
+        return FileUtil.appendName(getProtocolDir(root, archived), name + ".xml");
     }
 
     /** @return sorted list of protocol names */

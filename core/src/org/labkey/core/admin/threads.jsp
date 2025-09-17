@@ -62,7 +62,7 @@ for (Thread t : bean.threads)
         }
         TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(t);
         if (null != uri)
-        { %>    For URL <%= h(uri + "\n") %><%
+        { %>    For URL <%= h(uri.toLogString() + "\n") %><%
         }
 
 
