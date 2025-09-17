@@ -43,6 +43,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldKey;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TextSearcher;
@@ -912,7 +913,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         for (Object key : formData.keySet())
         {
-            String name = (formFieldPrefix != null ? formFieldPrefix : "") + key.toString();
+            String name = EscapeUtil.getFormFieldName(key.toString(), formFieldPrefix);
             Locator option = Locator.tagWithName("select", name);
             Locator field = Locator.name(name);
             log("setting form element: " + name);

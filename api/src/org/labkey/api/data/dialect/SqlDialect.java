@@ -191,7 +191,7 @@ public abstract class SqlDialect
                 if (null != uri)
                 {
                     sb.append("\t");
-                    sb.append(uri);
+                    sb.append(uri.toLogString());
                     sb.append("\n");
                 }
 

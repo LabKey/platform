@@ -35,7 +35,6 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.ontology.Quantity;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -562,48 +561,38 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
-     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * Returns a case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
      * @param includeUntyped The result map will include the String value that wasn't converted.
      * @return CaseInsensitiveHashMap of typed values.
      */
-    public Map<String,Object> getTypedColumns(boolean includeUntyped)
+    public CaseInsensitiveHashMap<Object> getTypedColumns(boolean includeUntyped)
     {
-        Map<String, Object> values = new CaseInsensitiveHashMap<>();
+        CaseInsensitiveHashMap<Object> values = new CaseInsensitiveHashMap<>();
+
         for (ColumnInfo column : getTable().getColumns())
         {
             if (hasTypedValue(column))
                 values.put(column.getName(), getTypedValue(column));
             else if (includeUntyped && contains(column))
                 values.put(column.getName(), get(column));
-            else if (column.getName().contains("\"") && getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+            else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
-                String quoteEncodedFieldName = getMultiPartFormFieldName(column);
-                boolean isFileColFileRemoved = false;
-                if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()))
-                {
-                    MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
-                    MultipartFile f = request.getFile(quoteEncodedFieldName);
-                    isFileColFileRemoved = f != null && (f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty());
-                }
+                String fieldName = getMultiPartFormFieldName(column);
+                Object typedValue = getTypedValues().get(fieldName);
 
-                if (isFileColFileRemoved)
-                    values.put(column.getName(), null);
-                else
+                if (typedValue != null)
+                    values.put(column.getName(), typedValue);
+                else if (File.class.equals(column.getJavaClass()))
                 {
-                    Object value = getTypedValues().get(quoteEncodedFieldName);
-                    if (value != null)
-                        values.put(column.getName(), value);
-                }
-            }
-
-            // Check if there was a file uploaded for the column's value
-            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest request)
-            {
-                MultipartFile f = request.getFile(getFormFieldName(column));
-                // Only set the parameter value if there was a form element that was posted
-                if (f != null)
-                {
-                    values.put(column.getName(), f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty() ? null : f);
+                    MultipartFile file = request.getFile(fieldName);
+                    if (file != null)
+                    {
+                        // Check if the file was removed
+                        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty())
+                            values.put(column.getName(), null);
+                        else
+                            values.put(column.getName(), file);
+                    }
                 }
             }
 
@@ -614,23 +603,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 {
                     if (hasTypedValue(mvColumn))
                         values.put(mvColumn.getName(), getTypedValue(mvColumn));
-                    else if (includeUntyped && contains(column))
+                    else if (includeUntyped && contains(mvColumn))
                         values.put(mvColumn.getName(), get(mvColumn));
                 }
             }
         }
+
         return values;
     }
 
     /**
-     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * Returns a case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
      * @return CaseInsensitiveHashMap of typed values.
      */
-    public Map<String,Object> getTypedColumns()
+    public CaseInsensitiveHashMap<Object> getTypedColumns()
     {
         return getTypedColumns(false);
     }
-
 
     /**
      * Set a map of real values. This will reset the matching strings stored in the object.
@@ -791,7 +780,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     {
         return getFormFieldName(column);
     }
-
 
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)
