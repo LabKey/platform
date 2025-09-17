@@ -19,6 +19,7 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.errors.ServerException;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.Part;
@@ -8895,7 +8896,7 @@ public class QueryController extends SpringActionController
                                 .build()))
                         .required("quotedTableName")
                         .build();
-                var listColumnMetaDataFn = FunctionDeclaration.builder().name("listColumnsForTable").description("Provide column metadata for a sql table.").parameters(columnsMetaDataParameters);
+                var listColumnMetaDataFn = FunctionDeclaration.builder().name("listColumnsForTable").description("Provide column metadata for a sql table.  This tool Will also return SQL source for saved queries.").parameters(columnsMetaDataParameters);
 
                 Schema tablesMetaDataParameters = Schema.builder()
                         .type(Type.Known.OBJECT)
@@ -8905,7 +8906,7 @@ public class QueryController extends SpringActionController
                                 .build()))
                         .required("quotedSchemaName")
                         .build();
-                var listTablesMetaDataFn = FunctionDeclaration.builder().name("listTablesForSchema").description("Provide column metadata for a sql table.").parameters(tablesMetaDataParameters);
+                var listTablesMetaDataFn = FunctionDeclaration.builder().name("listTablesForSchema").description("Provide column metadata for a database table.").parameters(tablesMetaDataParameters);
 
                 var tools = Tool.builder().functionDeclarations(listColumnMetaDataFn, listTablesMetaDataFn);
 
@@ -8954,7 +8955,19 @@ public class QueryController extends SpringActionController
             String prompt = form.getPrompt();
             for (int retry=0 ; retry < 5 ; retry++)
             {
-                GenerateContentResponse response = chatSession.sendMessage(prompt);
+                GenerateContentResponse response;
+                try
+                {
+                    response = chatSession.sendMessage(prompt);
+                }
+                catch (ServerException x)
+                {
+                    return new JSONObject(Map.of(
+                            "model", getModel(),
+                            "error", x.getMessage(),
+                            "text", "ERROR: " + x.getMessage(),
+                            "success", Boolean.FALSE));
+                }
                 var functionCalls = response.functionCalls();
                 if (null == functionCalls || functionCalls.isEmpty())
                 {
@@ -9084,23 +9097,29 @@ public class QueryController extends SpringActionController
         ViewContext context = HttpView.currentView().getViewContext();
         var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
         var schema = DefaultSchema.resolve(defaultSchema, fullKey);
-        if (null == schema)
+        if (!(schema instanceof UserSchema userSchema))
             return new JSONObject("error", "could not find schema for : " + fullQuotedName);
 
         JSONArray array = new JSONArray();
-         for (String tableName : schema.getTableNames())
-         {
-             // CONSIDER schema.getTableDescription()???
-             TableInfo td = schema.getTable(tableName, null);
-             if (null == td)
-                 continue;
-             JSONObject table = new JSONObject();
-             table.put("schemaName", schema.getName());
-             table.put("tableName", td.getName());
-             table.put("fullQuotedName", new SchemaKey(schema.getSchemaPath(), td.getName()).toSQLString());
-             table.put("description", td.getDescription());
-             array.put(table);
-         }
+        CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
+        var qds = userSchema.getQueryDefs();
+        names.addAll(qds.keySet());
+
+        for (String tableName : names)
+        {
+            // CONSIDER schema.getTableDescription()???
+            TableInfo td = schema.getTable(tableName, null);
+            if (null == td)
+                continue;
+            QueryDefinition qd = ((UserSchema)schema).getQueryDef(tableName);
+            JSONObject table = new JSONObject();
+            table.put("schemaName", schema.getName());
+            table.put("tableName", td.getName());
+            table.put("fullQuotedName", new SchemaKey(schema.getSchemaPath(), td.getName()).toSQLString());
+            table.put("description", td.getDescription());
+            table.put("type", null==qd ? "TABLE" : "QUERY");
+            array.put(table);
+        }
         return new JSONObject(Map.of("tables", array));
     }
 
@@ -9149,11 +9168,22 @@ public class QueryController extends SpringActionController
         if (null == td)
             return new JSONObject("error", "could not find table");
 
+        String sourceSQL = null;
+        if (schema instanceof UserSchema userSchema)
+        {
+            QueryDefinition d = userSchema.getQueryDef(tableName);
+            if (null != d)
+                sourceSQL = d.getSql();
+        }
+
         JSONObject table = new JSONObject();
         table.put("schemaName", schema.getName());
         table.put("tableName", td.getName());
         table.put("fullQuotedName", new SchemaKey(schema.getSchemaPath(), td.getName()).toSQLString());
-        table.put("description", td.getDescription());
+        if (isNotBlank(td.getDescription()))
+            table.put("description", td.getDescription());
+        if (isNotBlank(sourceSQL))
+            table.put("sql", sourceSQL);
 
         var pkColumns = td.getPkColumns();
         var pk = pkColumns.size() == 1 ? pkColumns.get(0).getFieldKey() : null;
