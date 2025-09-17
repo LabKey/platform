@@ -1797,7 +1797,7 @@ public class StudyManager
         return defaultQCState;
     }
 
-    private Map<String, VisitImpl> getVisitsForDataRows(DatasetDefinition def, Collection<String> dataLsids)
+    private Map<String, VisitImpl> getVisitsForDataRows(User user, DatasetDefinition def, Collection<String> dataLsids)
     {
         final Map<String, VisitImpl> visits = new HashMap<>();
 
@@ -1807,7 +1807,7 @@ public class StudyManager
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
 
-        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(user, false);
 
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
@@ -1833,12 +1833,12 @@ public class StudyManager
         return visits;
     }
 
-    public List<VisitImpl> getVisitsForDataset(Container container, int datasetId)
+    public List<VisitImpl> getVisitsForDataset(User user, Container container, int datasetId)
     {
         List<VisitImpl> visits = new ArrayList<>();
 
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
-        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(user, false);
 
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
@@ -1871,7 +1871,7 @@ public class StudyManager
 
         Map<String, VisitImpl> lsidVisits = null;
         if (!def.isDemographicData())
-            lsidVisits = getVisitsForDataRows(def, lsids);
+            lsidVisits = getVisitsForDataRows(user, def, lsids);
         List<Map<String, Object>> rows = def.getDatasetRows(user, lsids);
         if (rows.isEmpty())
             return;
