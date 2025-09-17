@@ -888,7 +888,12 @@ public class ExperimentModule extends SpringModule
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo table)
             {
-                return table.getName().equals("DataTypeExclusion") ? FieldKey.fromParts("ExcludedContainer") : super.getContainerFieldKey(table);
+                return switch (table.getName())
+                {
+                    case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
+                    case "ProtocolApplication" -> FieldKey.fromParts("RunId", "RowId", "Container");
+                    default -> super.getContainerFieldKey(table);
+                };
             }
 
             @Override

@@ -7,6 +7,7 @@ import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrati
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.logging.LogHelper;
@@ -133,8 +134,12 @@ public interface DatabaseMigrationService
                 ForeignKey fk = TableSorter.getForeignKey(table, col, true);
                 if (fk != null)
                 {
-                    // Use table's schema, since that's a Migration schema with XML metadata
-                    TableInfo lookupTableInfo = table.getSchema().getTable(fk.getLookupTableName());
+                    // Use the table's schema (or a migration schema retrieved from the table's scope), since we want a Migration schema with XML metadata applied
+                    DbSchema tableSchema = table.getSchema();
+                    DbSchema lookupSchema = fk.getLookupSchemaKey().equals(new SchemaKey(null, tableSchema.getName())) ?
+                        tableSchema :
+                        tableSchema.getScope().getSchema(fk.getLookupSchemaName(), DbSchemaType.Migration);
+                    TableInfo lookupTableInfo = lookupSchema.getTable(fk.getLookupTableName());
                     if (lookupTableInfo != null)
                     {
                         fKey = lookupTableInfo.getContainerFieldKey();
@@ -144,9 +149,7 @@ public interface DatabaseMigrationService
                             // Ignore self joins
                             if (!lookupTableInfo.getName().equalsIgnoreCase(table.getName()))
                             {
-                                // Ignore lookups to different schemas
-                                if (lookupTableInfo.getSchema().getName().equalsIgnoreCase(table.getSchema().getName()))
-                                    fKey = getContainerFieldKey(lookupTableInfo);
+                                fKey = getContainerFieldKey(lookupTableInfo);
                             }
                         }
 
