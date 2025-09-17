@@ -472,7 +472,7 @@ public abstract class SearchTest extends StudyBaseTest
         var indexFile = clickAndWaitForDownload(exportTxtBtnLoc);
 
         TextSearcher tsvSearcher = new TextSearcher(indexFile);
-        assertTextPresent(tsvSearcher, "Black Bear", "Owlbear","pdf_sample.pdf", "docx_sample.docx",
+        assertTextPresent(tsvSearcher, "CPS-1: Screening Chemistry Panel", "Black Bear", "Owlbear","pdf_sample.pdf", "docx_sample.docx",
                 "InlineFile.html", "verifyAssay", "Roquefort", "Brie", "Study 001", "Folder Banana", "Sample",
                 "Urinalysis");
         int fileRowCount = getFileRowCount(indexFile);
