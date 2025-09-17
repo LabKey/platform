@@ -348,6 +348,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -364,6 +365,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 import static org.labkey.api.assay.AssayFileWriter.ensureUploadDirectory;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
+import static org.labkey.api.data.views.DataViewProvider.EditInfo.Property.name;
 import static org.labkey.api.query.AbstractQueryUpdateService.saveFile;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -8916,19 +8918,17 @@ public class QueryController extends SpringActionController
 
                 StringBuilder serviceMessage = new StringBuilder();
                 serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n");
+                serviceMessage.append("NOTE: please prefer using lookup syntax rather than JOIN where possible.\n");
 
-                QuerySchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
+                DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
+                Map<SchemaKey, UserSchema> schemaMap = listAllSchemas(defaultSchema);
                 StringBuilder sb = new StringBuilder();
-                for (var name : defaultSchema.getSchemaNames())
+                for (var schema : schemaMap.values())
                 {
-                    var schema = defaultSchema.getSchema(name);
-                    if (null != schema)
-                    {
-                        sb.append("\t* ").append(schema.getSchemaPath().toSQLString());
-                        if (isNotBlank(schema.getDescription()))
-                            sb.append("\t").append(schema.getDescription());
-                        sb.append("\n");
-                    }
+                    sb.append("\t* ").append(schema.getSchemaPath().toSQLString());
+                    if (isNotBlank(schema.getDescription()))
+                        sb.append("\t").append(schema.getDescription());
+                    sb.append("\n");
                 }
                 serviceMessage.append("\n\nHere are the available schemas:\n" + sb);
 
@@ -9078,6 +9078,46 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    /* For now, list all schemas.  CONSIDER support incremental querying. */
+    public static Map<SchemaKey,UserSchema> listAllSchemas(DefaultSchema root)
+    {
+        SimpleSchemaTreeVisitor<Map<SchemaKey,UserSchema>, Void> visitor = new SimpleSchemaTreeVisitor<>(false)
+        {
+            @Override
+            public Map<SchemaKey,UserSchema> visitUserSchema(UserSchema schema, Path path, Void v)
+            {
+                Map<SchemaKey,UserSchema> r = Map.of(schema.getSchemaPath(),schema);
+                return visitAndReduce(schema.getUserSchemas(false), path, null, r);
+            }
+
+            @Override
+            public Map<SchemaKey, UserSchema> reduce(Map<SchemaKey, UserSchema> r1, Map<SchemaKey, UserSchema> r2)
+            {
+                if (null == r1 || null == r2)
+                    return null==r1 && null==r2 ? Map.of() : null==r1 ? r2 : r1;
+                var ret = new TreeMap<SchemaKey, UserSchema>();
+                ret.putAll(r1);
+                ret.putAll(r2);
+                return ret;
+            }
+        };
+
+        // DefaultSchema does not implement UserSchema which is inconvenient.
+        TreeMap<SchemaKey,UserSchema> ret = new TreeMap<>();
+        for (String name : root.getUserSchemaNames(false))
+        {
+            UserSchema s = root.getUserSchema(name);
+            if (null != s)
+            {
+                var res = visitor.visit(s, null, null);
+                ret.putAll(res);
+            }
+        }
+        return ret;
+    }
+
+
     public static JSONObject listTablesForSchema(String fullQuotedName)
     {
         SchemaKey fullKey;
@@ -9120,7 +9160,14 @@ public class QueryController extends SpringActionController
             table.put("type", null==qd ? "TABLE" : "QUERY");
             array.put(table);
         }
-        return new JSONObject(Map.of("tables", array));
+
+        var ret = new JSONObject();
+        ret.put("schemaName", schema.getName());
+        ret.put("fullQuotedName", schema.getSchemaPath().toSQLString());
+        if (isNotBlank(schema.getDescription()))
+            ret.put("description", schema.getDescription());
+        ret.put("tables", array);
+        return ret;
     }
 
     public static JSONObject listColumnsForTable(String fullQuotedName)
