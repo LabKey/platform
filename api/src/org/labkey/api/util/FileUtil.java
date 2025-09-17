@@ -824,7 +824,7 @@ public class FileUtil
             throw new IllegalArgumentException("Bad path: " + originalPath);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
-        if (ret.toPath().normalize().startsWith(dir.toPath().normalize()))
+        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
             throw new IllegalArgumentException(path.toString());
         return ret;
     }
@@ -861,7 +861,7 @@ public class FileUtil
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
-        if (ret.toPath().normalize().startsWith(dir.toPath().normalize()))
+        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
             throw new IllegalArgumentException(name);
         return ret;
     }
