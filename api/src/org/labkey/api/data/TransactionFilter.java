@@ -61,12 +61,17 @@ public class TransactionFilter implements Filter
             this(request, System.currentTimeMillis());
         }
 
-        @Override
-        public String toString()
+        public String toLogString()
         {
             String url = getUrl();
             Principal user = request.getUserPrincipal();
             return url + " running for " + (System.currentTimeMillis() - startTime) + "ms by " + (user == null ? "guest" : user.getName());
+        }
+
+        @Override
+        public @NotNull String toString()
+        {
+            throw new UnsupportedOperationException("Use toLogString() instead");
         }
 
         public @NotNull String getUrl()
@@ -117,7 +122,7 @@ public class TransactionFilter implements Filter
                                 {
                                     try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
                                     {
-                                        _log.info("Timing out request for {} on thread {}", tracker, thread);
+                                        _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
                                         DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
                                         PipelineJobService.get().killProcessesForThread(thread);
                                     }

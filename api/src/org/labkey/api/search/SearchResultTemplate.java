@@ -79,19 +79,15 @@ public interface SearchResultTemplate
                 break;
         }
 
-        SearchService ss = SearchService.get();
-        if (ss != null)
+        List<SearchCategory> categories = SearchService.get().getCategories(category);
+
+        if (null != categories)
         {
-            List<SearchCategory> categories = ss.getCategories(category);
+            List<String> list = categories.stream()
+                .map(SearchCategory::getDescription)
+                .toList();
 
-            if (null != categories)
-            {
-                List<String> list = categories.stream()
-                    .map(SearchCategory::getDescription)
-                    .toList();
-
-                title += " for " + StringUtilsLabKey.joinWithConjunction(list, "and");
-            }
+            title += " for " + StringUtilsLabKey.joinWithConjunction(list, "and");
         }
 
         root.addChild(title);

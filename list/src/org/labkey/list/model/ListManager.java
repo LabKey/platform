@@ -921,20 +921,14 @@ public class ListManager implements SearchService.DocumentProvider
     // Un-index the entire list doc, but leave the list items alone
     private void deleteIndexedEntireListDoc(ListDefinition list)
     {
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
-            ss.deleteResource(getDocumentId(list));
+        SearchService.get().deleteResource(getDocumentId(list));
     }
 
 
     // Un-index all list items, but leave the entire list doc alone
     private void deleteIndexedItems(ListDefinition list)
     {
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
-            ss.deleteResourcesForPrefix(getDocumentId(list, null));
+        SearchService.get().deleteResourcesForPrefix(getDocumentId(list, null));
     }
 
 

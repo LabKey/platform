@@ -82,7 +82,6 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
@@ -411,8 +410,6 @@ public class ApiModule extends CodeOnlyModule
             LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
-            Measurement.TestCase.class,
-            Measurement.Unit.TestCase.class,
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,

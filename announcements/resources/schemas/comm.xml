@@ -612,37 +612,6 @@
             </column>
         </columns>
     </table>
-    <table tableName="Tours" tableDbType="TABLE">
-      <description>Contains data for user tours.</description>
-      <columns>
-        <column columnName="RowId">
-          <description>Unique ID of the tour.</description>
-        </column>
-        <column columnName="Title">
-          <description>Title displayed to user.</description>
-        </column>
-        <column columnName="Description">
-        </column>
-        <column columnName="Container">
-        </column>
-        <column columnName="EntityId">
-        </column>
-        <column columnName="Created">
-        </column>
-        <column columnName="CreatedBy">
-        </column>
-        <column columnName="Modified">
-        </column>
-        <column columnName="ModifiedBy">
-        </column>
-        <column columnName="Json">
-          <description>JSON containing the tour steps.</description>
-        </column>
-        <column columnName="Mode">
-          <description>Tour mode (0)Off, (1)Show Once, (2)Always Show</description>
-        </column>
-      </columns>
-    </table>
   <table tableName="PageAliases" tableDbType="TABLE">
     <columns>
       <column columnName="Container"/>

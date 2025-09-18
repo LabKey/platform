@@ -44,6 +44,8 @@ public class Material extends RunItem
     private Integer aliquotCount;
     private Double aliquotVolume;
     private String aliquotUnit;
+    private Integer availableAliquotCount;
+    private Double availableAliquotVolume;
 
     public Material()
     {
@@ -118,6 +120,26 @@ public class Material extends RunItem
     public Double getAliquotVolume()
     {
         return aliquotVolume;
+    }
+
+    public Integer getAvailableAliquotCount()
+    {
+        return availableAliquotCount;
+    }
+
+    public void setAvailableAliquotCount(Integer availableAliquotCount)
+    {
+        this.availableAliquotCount = availableAliquotCount;
+    }
+
+    public void setAvailableAliquotVolume(Double availableAliquotVolume)
+    {
+        this.availableAliquotVolume = availableAliquotVolume;
+    }
+
+    public Double getAvailableAliquotVolume()
+    {
+        return availableAliquotVolume;
     }
 
     public String getAliquotUnit()

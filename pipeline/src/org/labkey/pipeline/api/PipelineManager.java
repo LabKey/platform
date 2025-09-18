@@ -196,9 +196,7 @@ public class PipelineManager
                 }
 
                 org.labkey.api.util.Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(FileContentService.PIPELINE_LINK);
-                SearchService ss = SearchService.get();
-                if (null != ss)
-                    ss.addPathToCrawl(davPath, null);
+                SearchService.get().addPathToCrawl(davPath, null);
             }
         }
         finally

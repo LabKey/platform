@@ -240,15 +240,24 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public double getAliquotVolume()
+    public Double getAliquotVolume()
     {
         return _object.getAliquotVolume();
     }
 
     @Override
+    public Double getAvailableAliquotVolume() { return _object.getAvailableAliquotVolume(); }
+
+    @Override
     public String getAliquotUnit()
     {
         return _object.getAliquotUnit();
+    }
+
+    @Override
+    public void setAliquotUnit(String units)
+    {
+        _object.setAliquotUnit(units);
     }
 
     @Override

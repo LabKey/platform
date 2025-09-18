@@ -3769,20 +3769,33 @@ public class StudyManager
         {
             DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
             _DatasetDomainChange domainChange = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
-            Domain domain = domainChange.domain;
 
-            if (domain.isProvisioned() && !datasetDefinitionEntry.datasetDefinition.isShared())
+            if (domainChange != null)
             {
-                // If we're changing an existing domain, we may be dropping a column that has an admin-configured index.
-                // We need to drop the indices first, adjust the properties, and then add the new indices. This method
-                // allows for that.
-                domain.setPropertyIndices(datasetImportInfo.indices);
-                StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
-            }
-            else
-            {
-                // deleteAndSaveProperties() calls domain.save() which ensures all the indices after provisioning the new domain
-                deleteAndSaveProperties(user, errors, domainChange);
+                Domain domain = domainChange.domain;
+                boolean shared = datasetDefinitionEntry.datasetDefinition.isShared();
+
+                if (!domain.isProvisioned() || shared)
+                {
+                    deleteAndSaveProperties(user, errors, domainChange);
+                    if (!datasetDefinitionEntry.datasetDefinition.isShared())
+                    {
+                        // Refresh the domain, now that it's provisioned
+                        domain = PropertyService.get().getDomain(domain.getContainer(), domain.getTypeURI());
+                        if (null == domain)
+                            throw new IllegalStateException("Domain should not be null");
+                        domain.setPropertyIndices(datasetImportInfo.indices);
+                        StorageProvisioner.get().ensureTableIndices(domain);
+                    }
+                }
+                else
+                {
+                    // If we're changing an existing domain, we may be dropping a column that has an admin-configured
+                    // index. We need to drop the indices first, adjust the properties, and then add the new indices.
+                    // This method allows for that.
+                    domain.setPropertyIndices(datasetImportInfo.indices);
+                    StorageProvisioner.get().ensureTableIndices(domain, () -> deleteAndSaveProperties(user, errors, domainChange));
+                }
             }
         }
     }
@@ -4211,9 +4224,7 @@ public class StudyManager
     private void unindexDataset(DatasetDefinition ds)
     {
         String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId()));
-        SearchService ss = SearchService.get();
-        if (null != ss)
-            ss.deleteResource(docid);
+        SearchService.get().deleteResource(docid);
     }
 
     public static void indexDatasets(SearchService.TaskIndexingQueue queue, Date modifiedSince)

@@ -6052,13 +6052,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_DATA, singleton(dataClass.getName()));
 
         // remove DataClass from search index
-        SearchService ss = SearchService.get();
-        if (null != ss)
+        try (Timing ignored = MiniProfiler.step("search docs"))
         {
-            try (Timing ignored = MiniProfiler.step("search docs"))
-            {
-                ss.deleteResource(dataClass.getDocumentId());
-            }
+            SearchService.get().deleteResource(dataClass.getDocumentId());
         }
     }
 

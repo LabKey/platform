@@ -437,7 +437,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                         .setKeyColumns(new CaseInsensitiveHashSet(Column.Lsid.name()));
             }
             dib = LoggingDataIterator.wrap(dib);
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(wellTable, dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(wellTable, dib, context.getInsertOption(), user, container, null);
 
             return dib;
         }

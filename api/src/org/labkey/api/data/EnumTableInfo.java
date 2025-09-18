@@ -37,6 +37,7 @@ import java.util.Map;
 public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable<UserSchema>
 {
     protected final Class<EnumType> _enum;
+    protected final EnumSet<EnumType> _enumSet;
     protected final EnumValueGetter<EnumType> _valueGetter;
     protected final EnumRowIdGetter<EnumType> _rowIdGetter;
     @Nullable protected String _schemaName;
@@ -93,6 +94,11 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         this(e, schema, EnumType::toString, rowIdGetter, rowIdPK, description);
     }
 
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> valueGetter, EnumRowIdGetter<EnumType> rowIdGetter, boolean rowIdPK, String description)
+    {
+        this(e, EnumSet.allOf(e), schema, valueGetter, rowIdGetter, rowIdPK, description);
+    }
+
     /**
      * Exposes an enum as a three column virtual table, using valueGetter to determine its value, rowIdGetter to determine rowId, and ordinal() as ordinal
      * @param e class of the enum
@@ -102,11 +108,12 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param rowIdPK use the rowId as the key field, otherwise use value field
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> valueGetter, EnumRowIdGetter<EnumType> rowIdGetter, boolean rowIdPK, String description)
+    public EnumTableInfo(Class<EnumType> e, EnumSet<EnumType> enumSet, UserSchema schema, EnumValueGetter<EnumType> valueGetter, EnumRowIdGetter<EnumType> rowIdGetter, boolean rowIdPK, String description)
     {
         super(schema.getDbSchema(), e.getSimpleName(), schema);
         setDescription(description);
         _enum = e;
+        _enumSet = enumSet;
         _valueGetter = valueGetter;
         _rowIdGetter = rowIdGetter;
 
@@ -131,8 +138,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
         String separator = "";
-        EnumSet<EnumType> enumSet = EnumSet.allOf(_enum);
-        for (EnumType e : enumSet)
+        for (EnumType e : _enumSet)
         {
             sql.append(separator);
             separator = " UNION ";
