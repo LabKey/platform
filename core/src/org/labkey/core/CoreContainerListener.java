@@ -38,6 +38,7 @@ import org.labkey.api.view.Portal;
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 
 public class CoreContainerListener implements ContainerManager.ContainerListener
 {
@@ -54,9 +55,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         String message = auditMsg == null ? c.getContainerNoun(true) + " " + c.getName() + " was created" : auditMsg;
         addAuditEvent(user, c, message);
-        SearchService ss = SearchService.get();
-        if (ss != null)
-            ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(ss.defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
     }
 
     @Override
@@ -110,16 +109,12 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         Container c = evt.container;
         ((CoreModule) ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
 
-        switch (evt.property)
+        if (Objects.requireNonNull(evt.property) == ContainerManager.Property.Name)
         {
-            case Name:
-            {
-                String oldValue = (String) evt.getOldValue();
-                String newValue = (String) evt.getNewValue();
-                String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
-                addAuditEvent(evt.user, c, message);
-                break;
-            }
+            String oldValue = (String) evt.getOldValue();
+            String newValue = (String) evt.getNewValue();
+            String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
+            addAuditEvent(evt.user, c, message);
         }
     }
 }

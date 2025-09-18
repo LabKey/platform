@@ -867,6 +867,17 @@ public class FileUtil
         return ret;
     }
 
+    /* Only returns an immediate child */
+    public static Path appendName(Path dir, String name)
+    {
+        legalPathPartThrow(name);
+        var ret = dir.resolve(name);
+
+        if (!ret.normalize().startsWith(dir.normalize()))
+            throw new IllegalArgumentException(name);
+        return ret;
+    }
+
 
     // narrower check than isLegalName() or isAllowedFileName()
     // this check that a name is a valid path part (e.g. filename) and is not path like.

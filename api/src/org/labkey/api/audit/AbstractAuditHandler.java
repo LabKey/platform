@@ -45,16 +45,17 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
     /**
      * Create a detailed audit record object so it can be recorded in the audit tables
-     * @param user making change
-     * @param c container containing auditable data
-     * @param tInfo Auditable tableInfo containing auditable record
-     * @param action being performed
-     * @param userComment Comment provided by the user explaining reason for change. NOTE: This value is generally not currently supported by many audit logging domains, and may be ignored.
-     * @param row map of new data values
-     * @param existingRow map of data values
+     * @param user           making change
+     * @param c              container containing auditable data
+     * @param tInfo          Auditable tableInfo containing auditable record
+     * @param action         being performed
+     * @param userComment    Comment provided by the user explaining reason for change. NOTE: This value is generally not currently supported by many audit logging domains, and may be ignored.
+     * @param row            map of new data values
+     * @param existingRow    map of data values
+     * @param providedValues map of values provided by the user before conversion (e.g., for quantity values)
      * @return DetailedAuditTypeEvent object describing audit record (NOTE: not committed to DB yet)
      */
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow);
+    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues);
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
@@ -69,7 +70,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     }
 
     @Override
-    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache)
+    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, @Nullable List<Map<String, Object>> providedValues, boolean useTransactionAuditCache)
     {
         if (table.supportsAuditTracking())
         {
@@ -119,7 +120,8 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     {
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow);
+                        Map<String, Object> providedValueRow = null == providedValues || providedValues.size() <= i  ? null : providedValues.get(i);
+                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow, providedValueRow);
 
                         switch (action)
                         {

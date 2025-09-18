@@ -89,11 +89,6 @@ public class CommSchema
         return getSchema().getTable("RSSFeeds");
     }
 
-    public TableInfo getTableInfoTours()
-    {
-        return getSchema().getTable("Tours");
-    }
-
     public TableInfo getTableInfoPageAliases()
     {
         return getSchema().getTable("PageAliases");

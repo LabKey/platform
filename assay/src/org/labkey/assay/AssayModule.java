@@ -202,33 +202,30 @@ public class AssayModule extends SpringModule
         PlateManager.get().registerLsidHandlers();
         SearchService ss = SearchService.get();
 
-        if (null != ss)
-        {
-            // ASSAY_CATEGORY
-            ss.addSearchCategory(AssayManager.get().ASSAY_CATEGORY);
-            ss.addResourceResolver(AssayManager.get().ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
-            ss.addDocumentProvider(new AssayDocumentProvider());
+        // ASSAY_CATEGORY
+        ss.addSearchCategory(AssayManager.get().ASSAY_CATEGORY);
+        ss.addResourceResolver(AssayManager.get().ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+        ss.addDocumentProvider(new AssayDocumentProvider());
 
-            // ASSAY_RUN_CATEGORY
-            ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
-            ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
-            ss.addDocumentProvider(new AssayRunDocumentProvider());
+        // ASSAY_RUN_CATEGORY
+        ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
+        ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
+        ss.addDocumentProvider(new AssayRunDocumentProvider());
 
-            // ASSAY_BATCH_CATEGORY
-            ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
-            ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
-            ss.addDocumentProvider(new AssayBatchDocumentProvider());
+        // ASSAY_BATCH_CATEGORY
+        ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
+        ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
+        ss.addDocumentProvider(new AssayBatchDocumentProvider());
 
-            // PLATE_CATEGORY
-            ss.addSearchCategory(PlateManager.get().PLATE_CATEGORY);
-            ss.addResourceResolver(PlateManager.get().PLATE_CATEGORY.getName(), PlateDocumentProvider.getResourceResolver());
-            ss.addDocumentProvider(new PlateDocumentProvider());
+        // PLATE_CATEGORY
+        ss.addSearchCategory(PlateManager.get().PLATE_CATEGORY);
+        ss.addResourceResolver(PlateManager.get().PLATE_CATEGORY.getName(), PlateDocumentProvider.getResourceResolver());
+        ss.addDocumentProvider(new PlateDocumentProvider());
 
-            // PLATE_SET_CATEGORY
-            ss.addSearchCategory(PlateManager.get().PLATE_SET_CATEGORY);
-            ss.addResourceResolver(PlateManager.get().PLATE_SET_CATEGORY.getName(), PlateSetDocumentProvider.getResourceResolver());
-            ss.addDocumentProvider(new PlateSetDocumentProvider());
-        }
+        // PLATE_SET_CATEGORY
+        ss.addSearchCategory(PlateManager.get().PLATE_SET_CATEGORY);
+        ss.addResourceResolver(PlateManager.get().PLATE_SET_CATEGORY.getName(), PlateSetDocumentProvider.getResourceResolver());
+        ss.addDocumentProvider(new PlateSetDocumentProvider());
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());

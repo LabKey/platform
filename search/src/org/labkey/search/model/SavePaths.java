@@ -467,11 +467,6 @@ public class SavePaths implements DavCrawler.SavePaths
 
     private static DbSchema getSearchSchema()
     {
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
-            return ss.getSchema();
-        else
-            return null;
+        return SearchService.get().getSchema();
     }
 }

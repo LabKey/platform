@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +58,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -93,6 +93,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -161,6 +163,10 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -1043,8 +1049,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         newProps.putAll(newProps_);
         oldProps.putAll(oldProps_);
 
-        boolean hasMetricUnitChanged = false;
-
         if (options != null)
         {
             String sampleIdPattern = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(options.getNameExpression()));
@@ -1062,11 +1066,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setAliquotNameExpression(aliquotIdPattern);
 
             st.setLabelColor(options.getLabelColor());
-            String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
-            String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
-            if (!Objects.equals(oldMetricUnit, newMetricUnit))
-                hasMetricUnitChanged = true;
-
             st.setMetricUnit(options.getMetricUnit());
 
             if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())
@@ -1122,23 +1121,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-
-                boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
-                transaction.addCommitTask(() -> {
-                    clearMaterialSourceCache(container);
-
-                    if (finalHasMetricUnitChanged)
-                    {
-                        try
-                        {
-                            recomputeSampleTypeRollup(st, container);
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
-                        }
-                    }
-                }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
@@ -1160,9 +1142,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues)
     {
-        return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
+        return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
     }
 
     @Override
@@ -1173,17 +1155,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, tInfo, comment, userComment, null, row, null);
+        return createAuditRecord(c, tInfo, comment, userComment, null, row, null, null);
     }
 
     private boolean isInputFieldKey(String fieldKey)
     {
         int slash = fieldKey.indexOf('/');
-        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
-                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && Strings.CI.startsWith(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && Strings.CI.startsWith(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, AuditConfigurable tInfo, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -1244,14 +1226,29 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
+        // Put the raw amount and units into the stored amount and unit fields to override the conversion to display values that has happened via the expression columns
+        if (existingRow != null && !existingRow.isEmpty())
+        {
+            if (existingRow.containsKey(RawAmount.name()))
+                existingRow.put(StoredAmount.name(), existingRow.get(RawAmount.name()));
+            if (existingRow.containsKey(RawUnits.name()))
+                existingRow.put(Units.name(), existingRow.get(RawUnits.name()));
+        }
+
+        // Add providedValues to eventMetadata
+        Map<String, Object> eventMetadata = new HashMap<>();
+        if (providedValues != null)
+        {
+            eventMetadata.putAll(providedValues);
+        }
         if (action != null)
         {
-            Map<String, Object> eventMetadata = new HashMap<>();
             SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
             if (timelineEventType != null)
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
-            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
         }
+        if (!eventMetadata.isEmpty())
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
 
         return event;
     }
@@ -1490,10 +1487,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         Long sampleId = sampleAliquotAmounts.getKey();
                         List<AliquotAmountUnitResult> aliquotAmounts = sampleAliquotAmounts.getValue();
 
-                        AliquotAvailableAmountUnit amountUnit = convertToDisplayUnits(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
-                        if (amountUnit == null)
+                        if (aliquotAmounts == null || aliquotAmounts.isEmpty())
                             continue;
-
+                        AliquotAvailableAmountUnit amountUnit = computeAliquotTotalAmounts(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
                         rowid.setValue(sampleId);
                         amount.setValue(amountUnit.amount);
                         unit.setValue(amountUnit.unit);
@@ -1542,37 +1538,31 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new SqlSelector(tableInfo.getSchema(), sql).fillSet(Long.class, new HashSet<>());
     }
 
-    private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
+    private AliquotAvailableAmountUnit computeAliquotTotalAmounts(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnitsStr)
     {
         if (volumeUnits == null || volumeUnits.isEmpty())
             return null;
 
-        String totalDisplayUnitStr = sampleTypeUnitsStr;
-        Measurement.Unit totalDisplayUnit = null;
-
-        if (StringUtils.isEmpty(totalDisplayUnitStr) && (sampleItemUnit != null))
-        {
-            // if sample type lacks unit, but the sample has a unit, use sample's unit
-            totalDisplayUnitStr = sampleItemUnit;
-        }
-
-        // if sample unit is empty, use 1st aliquot unit
-        if (StringUtils.isEmpty(totalDisplayUnitStr))
-        {
-            String aliquotUnit = volumeUnits.get(0).unit;
-            if (!StringUtils.isEmpty(aliquotUnit))
-                totalDisplayUnitStr = aliquotUnit;
-        }
-
-        if (!StringUtils.isEmpty(totalDisplayUnitStr))
+        Unit totalUnit = null;
+        String totalUnitsStr = null;
+        if (!StringUtils.isEmpty(sampleTypeUnitsStr))
+            totalUnitsStr = sampleTypeUnitsStr;
+        else if (!StringUtils.isEmpty(sampleItemUnitsStr))
+            totalUnitsStr = sampleItemUnitsStr;
+        else // use the unit of the first aliquot if there are no other indications
+            totalUnitsStr = volumeUnits.get(0).unit;
+        if (!StringUtils.isEmpty(totalUnitsStr))
         {
             try
             {
-                totalDisplayUnit = Measurement.Unit.valueOf(totalDisplayUnitStr);
+                if (!StringUtils.isEmpty(sampleTypeUnitsStr))
+                    totalUnit = Unit.valueOf(totalUnitsStr).getBase();
+                else
+                    totalUnit = Unit.valueOf(totalUnitsStr);
             }
             catch (IllegalArgumentException e)
             {
-                // do nothing; leave unit as null;
+                // do nothing; leave unit as null
             }
         }
 
@@ -1581,7 +1571,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         for (AliquotAmountUnitResult volumeUnit : volumeUnits)
         {
-            Measurement.Unit unit = null;
+            Unit unit = null;
             try
             {
                 double storedAmount = volumeUnit.amount;
@@ -1590,7 +1580,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 try
                 {
-                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : Measurement.Unit.valueOf(aliquotUnit);
+                    unit = StringUtils.isEmpty(aliquotUnit) ? totalUnit : Unit.fromName(aliquotUnit);
                 }
                 catch (IllegalArgumentException ignore)
                 {
@@ -1598,13 +1588,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 double convertedAmount = 0;
                 // include in total volume only if aliquot unit is compatible
-                if (totalDisplayUnit != null && totalDisplayUnit.isCompatible(unit))
-                    convertedAmount = unit.convertAmount(storedAmount, totalDisplayUnit);
-                else if (totalDisplayUnit == null) // sample (or 1st aliquot) unit is not a supported unit, or is blank
+                if (totalUnit != null && totalUnit.isCompatible(unit))
+                    convertedAmount = Unit.convert(storedAmount, unit, totalUnit);
+                else if (totalUnit == null) // sample (or 1st aliquot) unit is not a supported unit
                 {
-                    if (StringUtils.isEmpty(totalDisplayUnitStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
+                    if (StringUtils.isEmpty(sampleTypeUnitsStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
                         convertedAmount = storedAmount;
-                    else if (totalDisplayUnitStr != null && totalDisplayUnitStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same no supported unit ('cc')
+                    else if (sampleTypeUnitsStr != null && sampleTypeUnitsStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same unsupported unit ('cc')
                         convertedAmount = storedAmount;
                 }
 
@@ -1617,14 +1607,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
+        int scale = totalUnit == null ? Quantity.DEFAULT_PRECISION_SCALE : totalUnit.getPrecisionScale();
         totalVolume = Precision.round(totalVolume, scale);
         totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
-        if (Double.compare(totalVolume, 0.0) == 0)
-            totalDisplayUnit = null;
-
-        return new AliquotAvailableAmountUnit(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name(), totalAvailableVolume);
+        return new AliquotAvailableAmountUnit(totalVolume, totalUnit == null ? null : totalUnit.name(), totalAvailableVolume);
     }
 
     public Pair<Collection<Long>, Collection<Long>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
@@ -1669,7 +1656,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private Collection<Long> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
-        SqlDialect dialect = dbSchema.getSqlDialect();
 
         SQLFragment sql = withAmount ? getParentsOfAliquotsWithAmountsSql() : getParentsOfAliquotsSql();
 
@@ -1698,7 +1684,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // have run yet.
         SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
                 .append(useRootMaterialLSID ? "a.rootMaterialLsid = m.lsid" : "a.rootMaterialRowId = m.rowId")
-                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
+                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Long, Pair<Integer, String>> sampleAliquotCounts = new TreeMap<>(); // Order sample by rowId to reduce probability of deadlock with search indexer
@@ -1791,7 +1777,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(useRootMaterialLSID ? "parent.lsid = aliquot.rootmateriallsid" : "parent.rowid = aliquot.rootmaterialrowid")
                 .append(" WHERE ")
                 .append(useRootMaterialLSID ? "aliquot.rootmateriallsid <> aliquot.lsid" : "aliquot.rootmaterialrowid <> aliquot.rowid")
-                .append(" AND parent.rowid\s");
+                .append(" AND parent.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Long, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new LongHashMap<>();

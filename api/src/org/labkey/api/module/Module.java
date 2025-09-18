@@ -67,6 +67,8 @@ public interface Module
     /** Register filters and their mappings. */
     default void registerFilters(ServletContext servletCtx) {}
 
+    default boolean isUnderResourcesDirectory(java.nio.file.Path path) { return false; }
+
     enum TabDisplayMode
     {
         DISPLAY_NEVER,

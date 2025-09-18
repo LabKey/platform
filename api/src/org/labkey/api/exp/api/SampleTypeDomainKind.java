@@ -64,6 +64,7 @@ import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -82,7 +83,7 @@ import java.util.stream.Collectors;
 
 public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
-    private static final Logger logger;
+    private static final Logger logger = LogHelper.getLogger(SampleTypeDomainKind.class, "Sample type domain kind");
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
     public static final String SAMPLETYPE_FILE_DIRECTORY = "sampletype";
@@ -156,8 +157,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name", "SampleState")));
-
-        logger = LogManager.getLogger(SampleTypeDomainKind.class);
     }
 
     public SampleTypeDomainKind()

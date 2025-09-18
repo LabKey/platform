@@ -417,7 +417,7 @@ public class DebugInfoDumper
 
         TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
         if (null != uri)
-            logWriter.debug(uri.toString());
+            logWriter.debug(uri.toLogString());
 
         for (var i=0 ; i<stack.length ; i++)
         {
