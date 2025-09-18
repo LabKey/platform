@@ -37,6 +37,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
@@ -83,7 +84,7 @@ public class IpynbReport extends DockerScriptReport
     public static final String EXTENSION = "ipynb";
 
     
-    record Env(String env, String header) {}
+    public record Env(String env, String header) {}
     public static final Env LABKEY_USERID = new Env("LABKEY_USERID", "X-LABKEY-USERID");
     public static final Env LABKEY_EMAIL = new Env("LABKEY_EMAIL", "X-LABKEY-EMAIL");
     public static final Env LABKEY_APIKEY = new Env( "LABKEY_APIKEY", "X-LABKEY-APIKEY");
@@ -192,7 +193,7 @@ public class IpynbReport extends DockerScriptReport
         // write the script out to the working directory
         var descriptor = getDescriptor();
         String script = descriptor.getProperty(ScriptReportDescriptor.Prop.script);
-        File scriptFile = new File(workingDirectory, FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
+        File scriptFile = FileUtil.appendName(workingDirectory, FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
         FileUtil.createTempFile(scriptFile);
         IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
@@ -239,11 +240,11 @@ public class IpynbReport extends DockerScriptReport
             }
 
             // if there is console.txt or errors.txt file render them
-            File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
+            File console = FileUtil.appendName(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
             if (console.isFile() && console.length() > 0)
                 vbox.addView(new ConsoleOutput(console).getView(context));
 
-            File error = new File(workingDirectory, ERROR_OUTPUT);
+            File error = FileUtil.appendName(workingDirectory, ERROR_OUTPUT);
             if (error.isFile() && error.length() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
@@ -298,7 +299,7 @@ public class IpynbReport extends DockerScriptReport
             TarArchiveEntry entry;
             while ((entry = tar.getNextEntry()) != null)
             {
-                File path = new File(targetDirectory, entry.getName());
+                File path = FileUtil.appendPath(targetDirectory, new Path(entry.getName()));
                 if (entry.isDirectory())
                 {
                     FileUtils.forceMkdir(path);
@@ -365,7 +366,7 @@ public class IpynbReport extends DockerScriptReport
             JSONObject reportConfig = createReportConfig(context, ipynb);
 
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
-            FileUtils.write(new File(working, CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
+            FileUtils.write(FileUtil.appendName(working, CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
             URL service = getServiceAddress(context.getContainer());
             // For testing, just return if the remoteURL host is "noop.test"
