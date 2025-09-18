@@ -1436,7 +1436,7 @@ public class DomainUtil
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
-                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The name '" + name + "' is not allowed.")));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
