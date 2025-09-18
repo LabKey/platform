@@ -857,12 +857,16 @@ public class FileUtil
     /* Only returns an immediate child */
     public static File appendName(File dir, String name)
     {
+        if (!dir.isAbsolute())
+        {
+            dir = dir.getAbsoluteFile();
+        }
         legalPathPartThrow(name);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new IllegalArgumentException(ret + " is not a child of " + dir);
+            throw new IllegalArgumentException(name);
         return ret;
     }
 
