@@ -206,7 +206,8 @@ LABKEY.internal.ZipLoad = new function () {
             }
         }
         catch (e) {
-            onerror();
+            console.error("Error during zip operation:", e);
+            onerror(e);
         }
     }
 
