@@ -822,9 +822,7 @@ public class FileUtil
     public static File appendPath(File dir, org.labkey.api.util.Path originalPath)
     {
         org.labkey.api.util.Path path = originalPath.normalize();
-        if (path == null)
-            throw new InvalidPathException(originalPath.toString(), "Invalid path");
-        if (!path.isEmpty() && "..".equals(path.get(0)))
+        if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
             throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
@@ -866,7 +864,7 @@ public class FileUtil
         var ret = new File(dir, name);
 
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
-            throw new InvalidPathException(name, "Path to parent not allowed");
+            throw new InvalidPathException(name, "Name didn't resolve to a descendant of " + dir);
         return ret;
     }
 
@@ -877,7 +875,7 @@ public class FileUtil
         var ret = dir.resolve(name);
 
         if (!ret.normalize().startsWith(dir.normalize()))
-            throw new InvalidPathException(name, "Invalid file or directory name");
+            throw new InvalidPathException(name, "Name didn't resolve to a descendant of " + dir);
         return ret;
     }
 
