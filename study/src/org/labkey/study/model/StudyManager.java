@@ -1797,7 +1797,7 @@ public class StudyManager
         return defaultQCState;
     }
 
-    private Map<String, VisitImpl> getVisitsForDataRows(User user, DatasetDefinition def, Collection<String> dataLsids)
+    private Map<String, VisitImpl> getVisitsForDataRows(@NotNull User user, DatasetDefinition def, Collection<String> dataLsids)
     {
         final Map<String, VisitImpl> visits = new HashMap<>();
 
@@ -1833,7 +1833,7 @@ public class StudyManager
         return visits;
     }
 
-    public List<VisitImpl> getVisitsForDataset(User user, Container container, int datasetId)
+    public List<VisitImpl> getVisitsForDataset(@NotNull User user, Container container, int datasetId)
     {
         List<VisitImpl> visits = new ArrayList<>();
 
