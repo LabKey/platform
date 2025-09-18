@@ -38,10 +38,10 @@ LABKEY.internal.ZipLoad = new function () {
     let totalDone;
     let prevDone;
 
-    function onerror() {
+    function onerror(error) {
         this.zipProgressWindow.hide();
         zipFail();
-        dropZone.uploadPanel.showErrorMsg("Zip Error", "Error zipping file - " + this.zipProgressName + " in directory - " + this.directoryBeingZipped);
+        dropZone.uploadPanel.showErrorMsg("Zip Error", "Error zipping file " + this.zipProgressName + " in directory " + this.directoryBeingZipped + (error ? (". " + error) : ""));
     }
 
     function getCurrentZipFile() {
