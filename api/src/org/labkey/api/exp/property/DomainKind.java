@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
@@ -37,7 +36,6 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -50,8 +48,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,38 +57,8 @@ import java.util.stream.Collectors;
 
 abstract public class DomainKind<T> implements Handler<String>
 {
-    protected static final Set<String>  COMMON_RESERVED_PROPERTY_NAMES = new CaseInsensitiveHashSet();
-
-    static
-    {
-        COMMON_RESERVED_PROPERTY_NAMES.add("RowId");
-        COMMON_RESERVED_PROPERTY_NAMES.add("LSID");
-        COMMON_RESERVED_PROPERTY_NAMES.add("Name");
-        COMMON_RESERVED_PROPERTY_NAMES.add("Container");
-        COMMON_RESERVED_PROPERTY_NAMES.add("Folder");
-        COMMON_RESERVED_PROPERTY_NAMES.add("CreatedBy");
-        COMMON_RESERVED_PROPERTY_NAMES.add("Created");
-        COMMON_RESERVED_PROPERTY_NAMES.add("ModifiedBy");
-        COMMON_RESERVED_PROPERTY_NAMES.add("Modified");
-        COMMON_RESERVED_PROPERTY_NAMES.add("LastIndexed");
-        COMMON_RESERVED_PROPERTY_NAMES.add("*"); // Issue 53416
-    }
-
     public static final Logger LOG = LogHelper.getLogger(DomainKind.class, "Generic domain kind activities.");
     abstract public String getKindName();
-
-    public static Set<String> namesAndLabels(Collection<String> names)
-    {
-        Set<String> values = new CaseInsensitiveHashSet();
-        for (String name : names)
-        {
-            values.add(name);
-            String label = ColumnInfo.labelFromName(name);
-            values.add(label);
-            values.add(label.replaceAll("\\s", ""));
-        }
-        return values;
-    }
 
     /**
      * Return a class of DomainKind's bean which carries domain specific properties.

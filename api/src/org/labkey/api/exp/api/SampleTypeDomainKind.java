@@ -44,8 +44,8 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -109,13 +109,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainKind.namesAndLabels(
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.namesAndLabels(
                 BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
         );
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(COMMON_RESERVED_PROPERTY_NAMES));
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(List.of(
+        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList()));
+        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList()));
+        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(List.of(
                 "SampleType", // Issue 52716
                 "Protocol", // alias for "SourceProtocolApplication"
                 "SampleTypeUnits", // alias for MetricUnit
@@ -133,7 +132,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "Amount", // alias for storedAmount
                 "RunId"
         )));
-        RESERVED_NAMES.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
+        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(ALIQUOT_ROLLUP_FIELD_LABELS));
         RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
