@@ -15,8 +15,10 @@
  */
 package org.labkey.core.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -31,6 +33,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.module.ModuleContext;
@@ -57,23 +60,26 @@ import java.util.Set;
 public class UsersDomainKind extends SimpleTableDomainKind
 {
     public static final String NAME = "CoreUsersTable";
-    private static final Set<String> _reservedNames = new HashSet<>();
+    private static final Set<String> _reservedNames = new CaseInsensitiveHashSet();
     private static final List<PropertyDescriptorSpec> _requiredProperties = new ArrayList<>();
 
     static {
-        _reservedNames.add("Email");
-        _reservedNames.add("_ts");
-        _reservedNames.add("EntityId");
-        _reservedNames.add("CreatedBy");
-        _reservedNames.add("Created");
-        _reservedNames.add("ModifiedBy");
-        _reservedNames.add("Modified");
-        _reservedNames.add("Owner");
-        _reservedNames.add("UserId");
-        _reservedNames.add("DisplayName");
-        _reservedNames.add("LastLogin");
-        _reservedNames.add("Active");
-        _reservedNames.add("ExpirationDate");
+        _reservedNames.addAll(DomainUtil.getNamesAndLabels(List.of(
+                "Email",
+                "_ts",
+                "EntityId",
+                "CreatedBy",
+                "Created",
+                "ModifiedBy",
+                "Modified",
+                "Owner",
+                "UserId",
+                "DisplayName",
+                "LastLogin",
+                "Active",
+                "ExpirationDate"
+        )));
+
 
         _requiredProperties.add(new PropertyDescriptorSpec("FirstName", PropertyType.STRING, 64, false));
         _requiredProperties.add(new PropertyDescriptorSpec("LastName", PropertyType.STRING, 64, false));
@@ -154,7 +160,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return _reservedNames;
     }

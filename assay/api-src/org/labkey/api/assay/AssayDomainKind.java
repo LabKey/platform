@@ -33,6 +33,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -48,6 +49,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -55,6 +57,20 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
 {
     private final String _namespacePrefix;
     private final Priority _priority;
+    private static final Set<String> RESERVED_NAMES;
+    static {
+        Set<String> s = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(List.of(
+            "RowId",
+            "Container",
+            "LSID",
+            "Owner",
+            "CreatedBy",
+            "Created",
+            "ModifiedBy",
+            "Modified"
+        )));
+        RESERVED_NAMES = Collections.unmodifiableSet(s);
+    }
 
     protected AssayDomainKind(String namespacePrefix)
     {
@@ -210,19 +226,9 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         return PropertyService.get().getDomain(container, dd.getDomainURI(), forUpdate);
     }
 
-    protected Set<String> getAssayReservedPropertyNames()
+    protected static Set<String> getAssayReservedPropertyNames()
     {
-        Set<String> result = new CaseInsensitiveHashSet();
-        result.add("RowId");
-        result.add("Row Id");
-        result.add("Container");
-        result.add("LSID");
-        result.add("Owner");
-        result.add("CreatedBy");
-        result.add("Created");
-        result.add("ModifiedBy");
-        result.add("Modified");
-        return result;
+        return RESERVED_NAMES;
     }
 
     @Override

@@ -27,7 +27,6 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -96,6 +95,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private ListDefinitionImpl _list;
     private final static int MAX_NAME_LENGTH = 200;
+    private static final Set<String> RESERVED_NAMES;
 
     static
     {
@@ -107,6 +107,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false),
                 new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR,  256));
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
+                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet())));
     }
 
     public void setListDefinition(ListDefinitionImpl list)
@@ -240,15 +242,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> properties = new CaseInsensitiveHashSet();
-        for (PropertyStorageSpec pss : BASE_PROPERTIES)
-        {
-            properties.add(pss.getName());
-        }
-
-        return Collections.unmodifiableSet(properties);
+       return RESERVED_NAMES;
     }
 
     @Override

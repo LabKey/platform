@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.PropertyValidationError;
@@ -46,6 +47,8 @@ import java.util.Set;
 
 public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {
+    private static final Set<String> RESERVED_FIELD_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(List.of(COMMENTS, COLUMN)));
+
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";
 
@@ -224,11 +227,8 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> names = new HashSet<>();
-        names.add(COMMENTS);
-        names.add(COLUMN);
-        return names;
+        return RESERVED_FIELD_NAMES;
     }
 }

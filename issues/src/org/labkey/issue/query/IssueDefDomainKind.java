@@ -16,6 +16,8 @@
 package org.labkey.issue.query;
 
 import com.google.common.collect.Sets;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -23,6 +25,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.query.BatchValidationException;
@@ -83,23 +86,23 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
                 new PropertyStorageSpec.ForeignKey(RESOLUTION_LOOKUP, "Lists", RESOLUTION_LOOKUP, "value", null, false)
         )));
 
-        RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
-        RESERVED_NAMES.addAll(Arrays.asList("RowId", "Name"));
-        RESERVED_NAMES.addAll(REQUIRED_PROPERTIES
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet())));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.asList("RowId", "Name")));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(REQUIRED_PROPERTIES
                 .stream()
-                .filter(p -> !OPTIONAL_NAMES.contains(p.getName()))
                 .map(PropertyStorageSpec::getName)
-                .collect(Collectors.toSet()));
+                .filter(name -> !OPTIONAL_NAMES.contains(name))
+                .collect(Collectors.toSet())));
 
-        // field names that are contained in the issues table that get's joined to the provisioned table
-        RESERVED_NAMES.addAll(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
+        // field names that are contained in the issues table that gets joined to the provisioned table
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
                                             "Created", "CreatedBy", "Resolved", "ResolvedBy", "Status", "BuildFound",
-                                            "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId"));
+                                            "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId")));
 
         MANDATORY_PROPERTIES = REQUIRED_PROPERTIES
                 .stream()
-                .filter(p -> !OPTIONAL_NAMES.contains(p.getName()))
                 .map(PropertyStorageSpec::getName)
+                .filter(name -> !OPTIONAL_NAMES.contains(name))
                 .collect(Collectors.toSet());
     }
 
@@ -110,7 +113,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return RESERVED_NAMES;
     }

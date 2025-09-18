@@ -19,11 +19,13 @@ package org.labkey.api.specimen.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.PropertyValidationError;
@@ -44,6 +46,8 @@ import java.util.Set;
 
 public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 {
+    private static final Set<String> RESERVED_FIELD_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNameAndLabels(COLUMN));
+
     private static final String NAME = "SpecimenEvent";
     private static final String NAMESPACE_PREFIX = "SpecimenEvent";
 
@@ -264,10 +268,8 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> names = new HashSet<>();
-        names.add(COLUMN);
-        return names;
+        return RESERVED_FIELD_NAMES;
     }
 }

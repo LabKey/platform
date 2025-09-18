@@ -98,6 +98,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1712,9 +1713,9 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public Set<String> getReservedPropertyNames(Domain domain, User user)
+                public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
                 {
-                    return Set.of();
+                    return Collections.emptySet();
                 }
 
                 @Override

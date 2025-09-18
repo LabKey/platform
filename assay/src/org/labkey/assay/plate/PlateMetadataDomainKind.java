@@ -73,7 +73,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
 
     static
     {
-        RESERVED_NAMES = new CaseInsensitiveHashSet(Arrays.stream(Column.values()).map(Enum::name).toList());
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(Arrays.stream(Column.values()).map(Enum::name).toList()));
         INDEXES = Set.of(new PropertyStorageSpec.Index(true, Column.Lsid.name()));
         REQUIRED_PROPS = List.of(
                 new PropertyStorageSpec(Column.Amount.name(), JdbcType.DOUBLE),
@@ -217,7 +217,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return RESERVED_NAMES;
     }

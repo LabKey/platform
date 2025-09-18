@@ -1536,7 +1536,7 @@ public class DomainUtil
         return null;
     }
 
-    public static Set<String> nameAndLabels(String name)
+    public static Set<String> getNameAndLabels(String name)
     {
         Set<String> values = new CaseInsensitiveHashSet();
         values.add(name);
@@ -1546,7 +1546,7 @@ public class DomainUtil
         return values;
     }
 
-    public static Set<String> namesAndLabels(Collection<String> names)
+    public static Set<String> getNamesAndLabels(Collection<String> names)
     {
         Set<String> values = new CaseInsensitiveHashSet();
         for (String name : names)

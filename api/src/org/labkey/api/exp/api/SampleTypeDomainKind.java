@@ -109,12 +109,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.namesAndLabels(
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
                 BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
         );
-        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(List.of(
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList()));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList()));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of(
                 "SampleType", // Issue 52716
                 "Protocol", // alias for "SourceProtocolApplication"
                 "SampleTypeUnits", // alias for MetricUnit
@@ -132,7 +132,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "Amount", // alias for storedAmount
                 "RunId"
         )));
-        RESERVED_NAMES.addAll(DomainUtil.namesAndLabels(ALIQUOT_ROLLUP_FIELD_LABELS));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(ALIQUOT_ROLLUP_FIELD_LABELS));
         RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -261,13 +261,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return getReservedPropertyNames(domain, user, false);
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 

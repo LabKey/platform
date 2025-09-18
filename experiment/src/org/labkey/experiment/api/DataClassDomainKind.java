@@ -45,7 +45,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -100,13 +100,11 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 new PropertyStorageSpec("classid", JdbcType.INTEGER)
         )));
 
-
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainKind.namesAndLabels(
+        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
                 BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
         );
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(COMMON_RESERVED_PROPERTY_NAMES));
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList()));
-        RESERVED_NAMES.addAll(DomainKind.namesAndLabels(List.of(
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList()));
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of(
                 "RunId" // Issue 50461
         )));
 
@@ -223,7 +221,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return RESERVED_NAMES;
     }
