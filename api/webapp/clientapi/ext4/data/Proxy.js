@@ -222,7 +222,13 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
                 oldKeys[this.reader.getIdProperty()] = id;
                 oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
 
-                if (command.command == 'delete'){
+                // NOTE: if the 'id' property of the ApiQueryResponse is null, which will occur if there is more than 1 PK (see ApiQueryResponse.getMetaData()),
+                // then we need to ensure the original values of keyFields are still included in oldKeys. The check against record.modified should ensure we send the original value
+                this.reader.metaData.fields.filter(f => f.isKeyField).map(f => f.name).forEach(keyFieldName => {
+                    oldKeys[keyFieldName] = record.modified?.hasOwnProperty(keyFieldName) ? record.modified[keyFieldName] : record.get(keyFieldName);
+                })
+
+                if (command.command === 'delete'){
                     command.rows.push(this.getRowData(record));
                 }
                 else {
