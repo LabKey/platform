@@ -770,7 +770,8 @@ public class FileUtil
     public static URI createUri(String str, boolean isEncoded)
     {
         str = str.replace("\\", "/");
-        if (str.matches("^[A-z]:/.*"))
+        // Assume that Windows-style drive-letter paths like c:/myfile.txt should be treated as file:/ URIs
+        if (str.matches("^[A-Za-z]:/.*"))
             return new File(str).toURI();
 
         String str2 = str;
