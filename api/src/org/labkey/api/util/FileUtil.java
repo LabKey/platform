@@ -862,7 +862,7 @@ public class FileUtil
         var ret = new File(dir, name);
 
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new IllegalArgumentException(name);
+            throw new IllegalArgumentException(ret + " is not a child of " + dir);
         return ret;
     }
 
