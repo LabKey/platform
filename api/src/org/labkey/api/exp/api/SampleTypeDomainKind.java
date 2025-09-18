@@ -127,6 +127,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "AliquotUnit",
                 "ExpirationDate", // alias for MaterialExpDate
                 "Ancestors",
+                "Container",
                 "SampleID", // alias for Name
                 "Status",
                 "Amount", // alias for storedAmount
