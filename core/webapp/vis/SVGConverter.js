@@ -80,7 +80,7 @@ LABKEY.vis.SVGConverter = {
         let xml;
         const svgns = 'http://www.w3.org/2000/svg';
         // Escape the dots
-        const svgnsPattern = "xmlns=[\"']" + svgns.replace(/\./g, '\\.') + "[\"']";
+        const svgnsPattern = "xmlns=[\"']" + svgns.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "[\"']";
         const svgnsRegEx = new RegExp(svgnsPattern);
         const svgnsRegExG = new RegExp(svgnsPattern, 'g');
 
