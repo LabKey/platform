@@ -29,30 +29,30 @@ LABKEY.vis.SVGConverter = {
             return;
         }
 
-        var action;
-        var convertTo = format ? format.toLowerCase() : this.FORMAT_PNG;
-        if (this.FORMAT_PDF == convertTo)
+        let action;
+        const convertTo = format ? format.toLowerCase() : this.FORMAT_PNG;
+        if (this.FORMAT_PDF === convertTo)
             action = "exportPDF";
-        else if (this.FORMAT_PNG == convertTo)
+        else if (this.FORMAT_PNG === convertTo)
             action = "exportImage";
         else
             throw "Unknown format: " + format;
 
         // Insert a <form> into to page, with svg and title as hidden inputs, and submit it
-        var newForm = document.createElement('form');
+        const newForm = document.createElement('form');
         newForm.method = 'POST';
         newForm.enctype = 'multipart/form-data'; // use multipat post in case the SVG source is large (i.e. > 2 MB)
         newForm.action = LABKEY.ActionURL.buildURL('visualization', action);
         newForm.target = '_blank';
         document.body.appendChild(newForm);
 
-        var csrfInput = document.createElement('input');
+        const csrfInput = document.createElement('input');
         csrfInput.setAttribute('type', 'hidden');
         csrfInput.setAttribute('name', 'X-LABKEY-CSRF');
         csrfInput.setAttribute('value', LABKEY.CSRF);
         newForm.appendChild(csrfInput);
 
-        var svgInput = document.createElement('input');
+        const svgInput = document.createElement('input');
         svgInput.setAttribute('type', 'hidden');
         svgInput.setAttribute('name', 'svg');
         svgInput.setAttribute('value', svg);
@@ -60,7 +60,7 @@ LABKEY.vis.SVGConverter = {
 
         if (title)
         {
-            var titleInput = document.createElement('input');
+            const titleInput = document.createElement('input');
             titleInput.setAttribute('type', 'hidden');
             titleInput.setAttribute('name', 'title');
             titleInput.setAttribute('value', title.trim());
@@ -77,11 +77,12 @@ LABKEY.vis.SVGConverter = {
      */
     svgToStr: function(node)
     {
-
-        var xml;
-        var svgns = 'http://www.w3.org/2000/svg';
-        var svgnsRegEx = new RegExp("xmlns=[\"']" + svgns + "[\"']");
-        var svgnsRegExG = new RegExp("xmlns=[\"']" + svgns + "[\"']", 'g');
+        let xml;
+        const svgns = 'http://www.w3.org/2000/svg';
+        // Escape the dots
+        const svgnsPattern = "xmlns=[\"']" + svgns.replace(/\./g, '\\.') + "[\"']";
+        const svgnsRegEx = new RegExp(svgnsPattern);
+        const svgnsRegExG = new RegExp(svgnsPattern, 'g');
 
         if (typeof XMLSerializer != 'undefined')
         { // non-IE browsers
@@ -92,17 +93,17 @@ LABKEY.vis.SVGConverter = {
             xml = node.xml;
         }
         // add our namespace declarations
-        var nsString = '';
-        if (xml.indexOf('xmlns=') == -1)
+        let nsString = '';
+        if (xml.indexOf('xmlns=') === -1)
         {
             nsString = 'xmlns="' + svgns + '" ';
         }
         xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
         
-        var nsMatches = xml.match(svgnsRegExG);
+        const nsMatches = xml.match(svgnsRegExG);
         if (nsMatches.length > 1)
         {
-            for (var i = 1; i < nsMatches.length; i++)
+            for (let i = 1; i < nsMatches.length; i++)
                 xml = xml.replace(svgnsRegEx, "");
         }
 
