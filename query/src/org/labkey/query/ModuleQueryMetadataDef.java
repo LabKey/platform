@@ -22,6 +22,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
@@ -30,7 +31,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
@@ -112,9 +112,7 @@ public class ModuleQueryMetadataDef
 
     protected Document parseFile(Resource r) throws ParserConfigurationException, IOException, SAXException
     {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setValidating(false);
-        DocumentBuilder db = dbf.newDocumentBuilder();
+        DocumentBuilder db = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
 
         return db.parse(r.getInputStream());
     }
