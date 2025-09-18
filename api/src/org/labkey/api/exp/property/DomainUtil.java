@@ -116,6 +116,7 @@ public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
+    public static final Set<String> ILLEGAL_PROPERTY_NAMES = Set.of("*"); // Issue 53416
 
     private DomainUtil()
     {
@@ -1433,6 +1434,11 @@ public class DomainUtil
                 continue;
             }
 
+            if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
+            {
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The name '" + name + "' is not allowed.")));
+            }
+
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
             if (expMatcher.find())
             {
@@ -1528,5 +1534,28 @@ public class DomainUtil
             return propertyIdMap;
         }
         return null;
+    }
+
+    public static Set<String> nameAndLabels(String name)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        values.add(name);
+        String label = ColumnInfo.labelFromName(name);
+        values.add(label);
+        values.add(label.replaceAll("\\s", ""));
+        return values;
+    }
+
+    public static Set<String> namesAndLabels(Collection<String> names)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        for (String name : names)
+        {
+            values.add(name);
+            String label = ColumnInfo.labelFromName(name);
+            values.add(label);
+            values.add(label.replaceAll("\\s", ""));
+        }
+        return values;
     }
 }
