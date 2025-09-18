@@ -130,7 +130,7 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
         _importRunId = importRunId;
     }
 
-    public Boolean isReimport()
+    public Boolean getReimport()
     {
         return _reimport;
     }

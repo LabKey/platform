@@ -1529,7 +1529,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private final ExpProtocol _protocol;
         private final AssayProvider _provider;
         private final AssayRunUploadContext<?> _context;
-        private DomainProperty _stateProp;
 
         public PlateMetadataImportHelper(
             ExpData data,
@@ -1561,7 +1560,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             Domain runDomain = _provider.getRunDomain(_protocol);
             Domain resultDomain = _provider.getResultsDomain(_protocol);
-            _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+            DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
             DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
@@ -1634,7 +1633,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // Validate any data state values on the row. No hit selection / data state processing is done on import
             // because at this time transform script hit selection is not supported nor is there any intersection
             // in the re-import case yet.
-            validateRowDataStates(_container, map, _stateProp);
+            validateRowDataStates(_container, map, stateProp);
         }
 
         /**
@@ -1683,7 +1682,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                 AssayPlateMetadataService.get().applyHitSelectionCriteria(_container, _user, _protocol, resultsTable, List.of(_run.getRowId()));
 
-                // TODO: Check on wiring up of "reimport" column
                 PlateManager.get().addPlateImportAuditEvents(_container, _user, tx, _plateIdentifierMap.values().stream().toList(), _run, isReimport);
 
                 tx.commit();
