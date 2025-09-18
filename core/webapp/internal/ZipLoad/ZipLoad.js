@@ -9,39 +9,39 @@ if (!LABKEY.internal)
 
 LABKEY.internal.ZipLoad = new function () {
 
-    var dirPatterns;
-    var dropZone;
-    var filePattern =new RegExp(".*\\.zipme$");
-    var checkReadEntriesByBatch;
-    var testFile = false;
+    let dirPatterns;
+    let dropZone;
+    let filePattern =new RegExp(".*\\.zipme$");
+    let checkReadEntriesByBatch;
+    let testFile = false;
 
-    var zipWriter, writer;
-    var addIndex;
+    let zipWriter, writer;
+    let addIndex;
 
-    var itemsDropped;
-    var itemCount;   //to keep track of items dropped
-    var dirCbCount;  //to keep track of directory level callbacks
-    var fileCbCount; //to keep track of file level callbacks
-    var tree;
+    let itemsDropped;
+    let itemCount;   //to keep track of items dropped
+    let dirCbCount;  //to keep track of directory level callbacks
+    let fileCbCount; //to keep track of file level callbacks
+    let tree;
 
-    var allFiles;
-    var filesToZip;
-    var filesToUpload =[];
-    var filesToZipPerDirectory;
-    var filesToZipPerDirectoryParts;
-    var zipDirectoryCount = 0;
-    var parentItemName;
-    var filesBeingZipped;
-    var testFilesToZip;
+    let allFiles;
+    let filesToZip;
+    let filesToUpload =[];
+    let filesToZipPerDirectory;
+    let filesToZipPerDirectoryParts;
+    let zipDirectoryCount = 0;
+    let parentItemName;
+    let filesBeingZipped;
+    let testFilesToZip;
 
-    var totalSize;
-    var totalDone;
-    var prevDone;
+    let totalSize;
+    let totalDone;
+    let prevDone;
 
-    function onerror() {
+    function onerror(error) {
         this.zipProgressWindow.hide();
         zipFail();
-        dropZone.uploadPanel.showErrorMsg("Zip Error", "Error zipping file - " + this.zipProgressName + " in directory - " + this.directoryBeingZipped);
+        dropZone.uploadPanel.showErrorMsg("Zip Error", "Error zipping file " + this.zipProgressName + " in directory " + this.directoryBeingZipped + (error ? (". " + error) : ""));
     }
 
     function getCurrentZipFile() {
@@ -166,17 +166,17 @@ LABKEY.internal.ZipLoad = new function () {
         this.zipProgressWindow.hide();
     }
 
-    function nextFile() {
-        var file = filesBeingZipped[addIndex].file;
+    async function nextFile() {
+        const file = filesBeingZipped[addIndex].file;
         this.directoryBeingZipped = filesBeingZipped[addIndex].dir;
-        var filePath = file.fullPath.split('/');
+        const filePath = file.fullPath.split('/');
         filePath.shift();
-        var zipProgressName = filePath[filePath.length-1];
-        var fileZipPath = '';
+        const zipProgressName = filePath[filePath.length-1];
+        let fileZipPath = '';
 
-        for(var fp=0; fp<filePath.length; fp++) {
+        for(let fp=0; fp<filePath.length; fp++) {
             if(this.directoryBeingZipped === filePath[fp]) {
-                var index = fp;
+                let index = fp;
                 while(index+1 < filePath.length) {
                     fileZipPath += filePath[++index] +'/';
                 }
@@ -194,22 +194,21 @@ LABKEY.internal.ZipLoad = new function () {
         }
 
         //Issue 38826: removing extra slash from file path
-        zipWriter.add(fileZipPath.slice(0,-1), new zip.BlobReader(file), function () {
-            addIndex++;
-            fileZipPath = '';
+        await zipWriter.add(fileZipPath.slice(0,-1), new zip.BlobReader(file), { onprogress: zipProgress });
+        addIndex++;
+        try {
             if (addIndex < filesBeingZipped.length)
-                nextFile();
-            else
-                zipWriter.close(zipSuccess);
-        }, zipProgress);
-    }
-
-    function createZipWriter() {
-        zip.createWriter(writer, function (writer) {
-            zipWriter = writer;
-
-            nextFile();
-        }, onerror);
+                await nextFile();
+            else {
+                await zipWriter.close();
+                const data = await writer.getData();
+                zipSuccess(data);
+            }
+        }
+        catch (e) {
+            console.error("Error during zip operation:", e);
+            onerror(e);
+        }
     }
 
     function moveToNextDirectory() {
@@ -235,7 +234,7 @@ LABKEY.internal.ZipLoad = new function () {
 
     function zipProgress(current, total) {
         totalDone = (current - prevDone) + totalDone ;
-         getProgressBar().updateProgress(totalDone / totalSize);
+        getProgressBar().updateProgress(totalDone / totalSize);
         prevDone = current;
         if(current===total) {
             prevDone = 0;
@@ -292,13 +291,9 @@ LABKEY.internal.ZipLoad = new function () {
         this.zipProgressName = '';
         this.directoryBeingZipped = '';
 
-        if (zipWriter)
-            nextFile();
-        else {
-            writer = new zip.BlobWriter();
-            createZipWriter();
-        }
-
+        writer = new zip.BlobWriter();
+        zipWriter = new zip.ZipWriter(writer);
+        nextFile();
     }
 
     function zipDirectory(files) {
