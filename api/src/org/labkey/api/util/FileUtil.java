@@ -290,7 +290,7 @@ public class FileUtil
             }
         }
 
-        return false;
+        return true;
     }
 
 
