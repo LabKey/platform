@@ -336,7 +336,7 @@ const TabNames = Object.freeze({
 
     var onAddAttachment = function(fileInput, index) {
         // update the name column
-        var cell = $('#wiki-na-name-' + index).attr('nobreak', '1').html('<a class="labkey-button"><span>remove</span></a>&nbsp;' + getFileName(fileInput.value));
+        var cell = $('#wiki-na-name-' + index).attr('nobreak', '1').html('<a class="labkey-button"><span>remove</span></a>&nbsp;' + LABKEY.Utils.encodeHtml(getFileName(fileInput.value)));
 
         // mark the attachments as dirty
         LABKEY.setDirty(true);
