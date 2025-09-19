@@ -265,7 +265,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                         Path root = svc.getFileRootPath(container);
                         if (root != null)
                         {
-                            Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
+                            Path dir = FileUtil.appendName(root, svc.getFolderName(FileContentService.ContentType.files));
                             // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
                                 FileUtil.createDirectories(dir);
@@ -890,9 +890,14 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         Path dirData = props.getDirData();
         AbstractFileAnalysisProtocolFactory<?> factory = props.getFactory();
 
+        if (dirData == null)
+        {
+            throw new IOException("Couldn't determine analysis directory");
+        }
+        
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
-            dirData = dirData.resolve(form.getProtocolName() + "_" + FileUtil.getTimestamp());
+            dirData = FileUtil.appendName(dirData, form.getProtocolName() + "_" + FileUtil.getTimestamp());
             if (!Files.exists(FileUtil.createDirectories(dirData)))
             {
                 throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
