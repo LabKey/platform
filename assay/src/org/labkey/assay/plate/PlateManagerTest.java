@@ -2008,7 +2008,7 @@ public final class PlateManagerTest
         @Nullable Long parentPlateSetId
     ) throws Exception
     {
-        return PlateManager.get().createPlateSet(container, user, plateSet, plates, parentPlateSetId);
+        return PlateManager.get().createPlateSet(container, user, plateSet, plates, parentPlateSetId, null);
     }
 
     private void assertCreatePlateSetThrows(

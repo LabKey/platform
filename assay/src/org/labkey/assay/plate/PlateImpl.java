@@ -796,7 +796,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         public void setup() throws Exception
         {
             PlateSetImpl plateSet = new PlateSetImpl();
-            _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null);
+            _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null, null);
         }
 
         @Test

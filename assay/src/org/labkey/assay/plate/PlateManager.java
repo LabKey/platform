@@ -137,6 +137,8 @@ import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.audit.PlateAuditEvent;
 import org.labkey.assay.plate.audit.PlateAuditProvider;
+import org.labkey.assay.plate.audit.PlateSetAuditEvent;
+import org.labkey.assay.plate.audit.PlateSetAuditProvider;
 import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
@@ -1162,7 +1164,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 PlateSetImpl plateSet = new PlateSetImpl();
                 plateSet.setTemplate(plate.isTemplate());
 
-                plate.setPlateSet(createPlateSet(container, user, plateSet, null, null));
+                plate.setPlateSet(createPlateSet(container, user, plateSet, null, null, null));
             }
 
             Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class).toMap(PlateBean.from(plate, false), new ArrayListMap<>());
@@ -2298,25 +2300,28 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void indexPlateSet(Container container, Long plateSetRowId)
     {
         PlateSet plateSet = getPlateSet(container, plateSetRowId);
-
         if (plateSet == null)
             return;
 
-        indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plateSet);
+        indexPlateSet(plateSet);
+    }
+
+    private void indexPlateSet(@NotNull PlateSet plateSet)
+    {
+        indexPlateSet(SearchService.get().defaultTask().getQueue(plateSet.getContainer(), SearchService.PRIORITY.modified), plateSet);
     }
 
     private void indexPlateSet(SearchService.TaskIndexingQueue queue, @NotNull PlateSet plateSet)
     {
-        WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
-        queue.addResource(resource);
+        queue.addResource(PlateSetDocumentProvider.createDocument(plateSet));
     }
 
     public void indexPlateSets(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
-        for (PlateSet plateset : getPlateSets(queue.getContainer()))
+        for (PlateSet plateSet : getPlateSets(queue.getContainer()))
         {
-            if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateset).getModified()))
-                indexPlateSet(queue, plateset);
+            if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateSet).getModified()))
+                indexPlateSet(queue, plateSet);
         }
     }
 
@@ -2848,7 +2853,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         @NotNull PlateSetImpl plateSet,
         @Nullable List<PlateData> plates,
-        @Nullable Long parentPlateSetId
+        @Nullable Long parentPlateSetId,
+        @Nullable String additionalAuditComment
     ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
@@ -2895,14 +2901,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plates != null)
                 addPlatesToPlateSet(container, user, plateSetId, plateSet.isTemplate(), plates, String.format("Added during creation of plate set \"%s\".", plateSet.getName()));
 
-            plateSet = (PlateSetImpl) getPlateSet(container, plateSetId);
+            PlateSetImpl newPlateSet = (PlateSetImpl) requirePlateSet(container, plateSetId, "Failed to create plate set.");
+
+            // Set transient parent plate set property for auditing
+            if (parentPlateSet != null)
+                newPlateSet.setParentPlateSetId(parentPlateSet.getRowId());
+
+            // Audit plate set creation
+            {
+                int plateCount = plates != null ? plates.size() : 0;
+                additionalAuditComment = String.format("%s Initially contains %d %s.", StringUtils.trimToEmpty(additionalAuditComment), plateCount, plateCount == 1 ? "plate" : "plates");
+                PlateSetAuditEvent auditEvent = PlateSetAuditProvider.EventFactory.plateSetCreated(container, tx.getAuditId(), newPlateSet, additionalAuditComment);
+                AuditLogService.get().addEvent(user, auditEvent);
+            }
+
+            tx.addCommitTask(() -> indexPlateSet(newPlateSet), DbScope.CommitTaskOption.POSTCOMMIT);
             tx.commit();
+
+            return newPlateSet;
         }
-
-        if (plateSet != null)
-            indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plateSet);
-
-        return plateSet;
     }
 
     public PlateSet createOrAddToPlateSet(Container container, User user, CreatePlateSetOptions options) throws Exception
@@ -2938,7 +2955,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // Create a new plate set
         if (targetPlateSet.isNew())
-            return createPlateSet(container, user, targetPlateSet, plates, options.getParentPlateSetId());
+            return createPlateSet(container, user, targetPlateSet, plates, options.getParentPlateSetId(), null);
 
         // Update an existing plate set
         addPlatesToPlateSet(container, user, targetPlateSet.getRowId(), targetPlateSet.isTemplate(), plates, null);
@@ -2954,13 +2971,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     ) throws Exception
     {
         PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, null);
-
         Long parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
             ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.INSERT);
-            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, null, parentId);
+            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, null, parentId, String.format("Re-plated from plate set \"%s\".", parentPlateSet.getName()));
 
             for (Plate plate : parentPlateSet.getPlates())
                 copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null, true);
@@ -3024,6 +3040,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.UPDATE);
+
             if (archivingPlates)
             {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlate(), "plates", plateIds, archive);
@@ -3034,6 +3052,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
                 tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
+
+                List<PlateSetAuditEvent> auditEvents = PlateSetAuditProvider.EventFactory.plateSetsArchived(container, tx.getAuditId(), plateSetIds, archive);
+                AuditLogService.get().addEvents(user, auditEvents, true);
             }
 
             tx.commit();
@@ -4520,7 +4541,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateSet parentPlateSet = resolveParentPlateSet(container, user, options, sourcePlateSet);
             Long parentPlateSetId = parentPlateSet != null ? parentPlateSet.getRowId() : null;
 
-            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, plateData, parentPlateSetId);
+            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, plateData, parentPlateSetId, "Created via reformat.");
             plateSetRowId = newPlateSet.getRowId();
             plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();

@@ -60,6 +60,11 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(Column.Reimport.fieldKey());
     }
 
+    public PlateAuditProvider()
+    {
+        super(new PlateAuditDomainKind());
+    }
+
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
@@ -73,11 +78,6 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
         appendValueMapColumns(table, getEventName());
 
         return table;
-    }
-
-    public PlateAuditProvider()
-    {
-        super(new PlateAuditDomainKind());
     }
 
     @Override
@@ -134,7 +134,6 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
     {
         private static final String NAME = "PlateAuditDomain";
         private static final String NAMESPACE_PREFIX = "Audit-" + NAME;
-
         private final Set<PropertyDescriptor> fields;
 
         public PlateAuditDomainKind()

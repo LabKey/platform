@@ -284,7 +284,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
         _plateSetsCreated++;
         CPUTimer timer = new CPUTimer("Plate");
         timer.start();
-        PlateSet result = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);
+        PlateSet result = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null, null);
         timer.stop();
         _plateTimings.add(Double.valueOf((double) timer.getTotalMilliseconds() / plates.size()));
 
