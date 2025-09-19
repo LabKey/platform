@@ -650,17 +650,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      *
      * TODO convert usages of DatasetDefinition.getTableInfo() to use StudyQuerySchema.getTable()
      */
-    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(@NotNull User user) throws UnauthorizedException
     {
         return getDatasetSchemaTableInfo(user, true, false);
     }
 
-    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(@NotNull User user, boolean checkPermission) throws UnauthorizedException
     {
         return getDatasetSchemaTableInfo(user, checkPermission, false);
     }
 
-    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(@NotNull User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
