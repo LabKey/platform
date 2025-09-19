@@ -105,7 +105,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         );
         RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList()));
         RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of(
-                "RunId" // Issue 50461
+                "RunId", // Issue 50461
+                "Container"
         )));
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
