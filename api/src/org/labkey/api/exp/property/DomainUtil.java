@@ -116,6 +116,7 @@ public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
+    public static final Set<String> ILLEGAL_PROPERTY_NAMES = Set.of("*"); // Issue 53416
 
     private DomainUtil()
     {
@@ -1431,6 +1432,11 @@ public class DomainUtil
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "Please provide a name for each field.")));
                 continue;
+            }
+
+            if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
+            {
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
