@@ -1359,7 +1359,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return dataRow;
 
             ExperimentService experimentService = ExperimentService.get();
-            ExpData seed = lsid != null ? experimentService.getExpData(lsid) : experimentService.getExpData(_dataClass, rowId);
+            ExpData seed = null;
+            if (lsid != null && (rowId == null || rowId <= 0))
+                seed = experimentService.getExpData(lsid);
+            else if (rowId != null && rowId > 0)
+                seed = experimentService.getExpData(_dataClass, rowId);
+            else if (name != null)
+                seed = experimentService.getExpData(_dataClass, name);
             if (null == seed)
                 return dataRow;
 
