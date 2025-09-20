@@ -891,7 +891,8 @@ public class ExperimentModule extends SpringModule
                 return switch (table.getName())
                 {
                     case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
-                    case "ProtocolApplication" -> FieldKey.fromParts("RunId", "RowId", "Container");
+                    case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
+                    case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
                     default -> super.getContainerFieldKey(table);
                 };
             }
