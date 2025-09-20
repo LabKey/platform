@@ -1108,7 +1108,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
                 newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
-try { Thread.sleep(60000); } catch (InterruptedException e) { }
+
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             if (!errors.hasErrors())
