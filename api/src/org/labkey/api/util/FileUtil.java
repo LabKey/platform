@@ -268,7 +268,7 @@ public class FileUtil
     }
 
 
-    public static void deleteDir(@NotNull Path dir) throws IOException
+    public static boolean deleteDir(@NotNull Path dir) throws IOException
     {
         if (Files.exists(dir))
         {
@@ -277,17 +277,21 @@ public class FileUtil
                 // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
                 try (Stream<Path> paths = Files.walk(dir))
                 {
+                    boolean success = true;
                     for (Path path : paths.sorted(Comparator.reverseOrder()).toList())
                     {
-                        Files.deleteIfExists(path);
+                        success = Files.deleteIfExists(path) && success;
                     }
+                    return success;
                 }
             }
             else
             {
-                deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
+                return deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
             }
         }
+
+        return true;
     }
 
 
