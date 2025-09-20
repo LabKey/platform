@@ -273,7 +273,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (!canReadSchema())
             return null; // See #21014
 
-        TableInfo table = null;
+        TableInfo table;
         String cacheKey = cacheKey(name, cf, includeExtraMetadata, forWrite);
         if (null != cacheKey)
         {
@@ -281,8 +281,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             if (null != table)
                 return table;
         }
-        if (null == table)
-            table = createTable(name, cf, includeExtraMetadata);
+        table = createTable(name, cf, includeExtraMetadata);
         Object torq;
 
         if (table != null)
