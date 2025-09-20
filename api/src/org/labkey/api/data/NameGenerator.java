@@ -1044,7 +1044,7 @@ public class NameGenerator
         int searchStart = startIndex;
         int index = str.indexOf(target, searchStart);
 
-        // Keep searching until we find a valid 'target' that's not preceeded by \ (for example, find ${, but exclude \${)
+        // Keep searching until we find a valid 'target' that's not preceded by \ (for example, find ${, but exclude \${)
         while (index != -1)
         {
             if (index == 0)
