@@ -538,6 +538,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return "StudySnapshot".equals(sourceTable.getName()) ? FieldKey.fromParts("Source") : super.getContainerFieldKey(sourceTable);
             }
         });
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(StudySchema.getInstance().getDatasetSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                // Datasets don't have a Container column, so treat as site-wide. TODO: Treat shared datasets differently?
+                return SITE_WIDE_TABLE;
+            }
+        });
     }
 
     @Override
