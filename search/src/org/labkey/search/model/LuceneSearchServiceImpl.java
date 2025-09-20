@@ -108,6 +108,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -120,7 +121,6 @@ import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -221,7 +221,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         try
         {
             InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
-            org.w3c.dom.Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+            org.w3c.dom.Document doc = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(is);
             config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(_log), true));
         }
         catch (Exception e)
