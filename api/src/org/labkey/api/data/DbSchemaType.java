@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.exp.api.ProvisionedDbSchema;
@@ -27,11 +28,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
 
-/**
-* User: adam
-* Date: 8/14/13
-* Time: 5:46 AM
-*/
 public enum DbSchemaType
 {
     // TODO: Create Uncached type? Might make sense for non-external schema usages of Bare
@@ -48,14 +44,7 @@ public enum DbSchemaType
         @Override
         public Module getModule(DbScope scope, String schemaName)
         {
-            Module module = ModuleLoader.getInstance().getModule(scope, schemaName);
-
-            // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
-            // to provide backward compatibility for external modules that don't register their schemas.
-            if (null == module)
-                throw new IllegalStateException("Schema \"" + DbSchema.getDisplayName(scope, schemaName) + "\" is not claimed by any module.");
-
-            return module;
+            return getAssociatedModule(scope, schemaName);
         }
     },
     Provisioned("provisioned", CacheManager.YEAR, false)
@@ -63,7 +52,29 @@ public enum DbSchemaType
         @Override
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
         {
-            return new ProvisionedDbSchema(metaDataName, scope);
+            return new ProvisionedDbSchema(metaDataName, scope, module);
+        }
+
+        @Override
+        public Module getModule(DbScope scope, String schemaName)
+        {
+            return getAssociatedModule(scope, schemaName);
+        }
+    },
+    Migration("migration", CacheManager.YEAR, true)
+    {
+        @Override
+        public Module getModule(DbScope scope, String schemaName)
+        {
+            return getAssociatedModule(DbScope.getLabKeyScope(), schemaName);
+        }
+
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
+        {
+            Map<String, SchemaTableInfoFactory> metaDataTableNames = DbSchema.loadTableMetaData(DbScope.getLabKeyScope(), metaDataName);
+
+            return new MigrationDbSchema(metaDataName, this, scope, metaDataTableNames, module);
         }
     },
     Bare("bare", CacheManager.HOUR, false)
@@ -165,5 +176,16 @@ public enum DbSchemaType
     public @Nullable Module getModule(DbScope scope, String schemaName)
     {
         return null;
+    }
+
+    private static @NotNull Module getAssociatedModule(DbScope scope, String schemaName)
+    {
+        Module module = ModuleLoader.getInstance().getModule(scope, schemaName);
+
+        // Throw if no module claims this schema
+        if (null == module)
+            throw new IllegalStateException("Schema \"" + DbSchema.getDisplayName(scope, schemaName) + "\" is not claimed by any module.");
+
+        return module;
     }
 }
