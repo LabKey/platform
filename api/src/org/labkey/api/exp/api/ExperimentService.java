@@ -75,6 +75,7 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -519,6 +520,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
         }
 
         return null;
+    }
+
+    static @NotNull String[] getParentValues(String valueStr) throws IOException
+    {
+        try (TabLoader tabLoader = new TabLoader(valueStr))
+        {
+            tabLoader.setDelimiterCharacter(',');
+            tabLoader.setUnescapeBackslashes(false);
+            // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+            tabLoader.setIncludeComments(true);
+            // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+            tabLoader.setParseEnclosedQuotes(true);
+            String[][] parsedValues = tabLoader.getFirstNLines(1);
+            return parsedValues[0];
+        }
     }
 
     static Pair<String, String> parseInputOutputAlias(String columnName)

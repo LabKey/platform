@@ -13,11 +13,11 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,11 +25,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public interface AuditHandler
@@ -177,10 +177,16 @@ public interface AuditHandler
                         if (isExpInput && oldValue != null && newValue != null)
                         {
                             // For parent inputs, the order of the values does not matter, so compare as sets
-                            Set<String> oldSet = new HashSet<>(Arrays.asList(oldValue.toString().split(",")));
-                            Set<String> newSet = new HashSet<>(Arrays.asList(newValue.toString().split(",")));
-                            if (oldSet.equals(newSet) && !isExtraAuditField)
-                                continue;
+                            try
+                            {
+                                Set<String> oldSet = Arrays.stream(ExperimentService.getParentValues(oldValue.toString())).collect(Collectors.toSet());
+                                Set<String> newSet = Arrays.stream(ExperimentService.getParentValues(newValue.toString())).collect(Collectors.toSet());
+                                if (oldSet.equals(newSet) && !isExtraAuditField)
+                                    continue;
+                            }
+                            catch (IOException ignore)
+                            {
+                            }
                         }
 
                         originalRow.put(nameFromAlias, oldValue);

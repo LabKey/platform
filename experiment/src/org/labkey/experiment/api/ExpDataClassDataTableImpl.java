@@ -1285,7 +1285,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             List<Map<String, Object>> result = new ArrayList<>(keys.size());
             for (Map<String, Object> row : keys)
             {
-                Map<String, Object> materialMap = getDataMap(row, user, container,  true,false);
+                Map<String, Object> materialMap = getDataMap(row, user, container, true, false);
                 if (materialMap != null)
                     result.add(materialMap);
             }
