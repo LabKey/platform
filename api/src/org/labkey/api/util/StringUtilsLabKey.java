@@ -19,16 +19,20 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.view.ViewServlet;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,7 +96,20 @@ public class StringUtilsLabKey
         .sorted()
         .collect(Collectors.toCollection(ArrayList::new));
 
-    private static final Random RANDOM = new Random();
+    private static final Random RANDOM;
+
+    static
+    {
+        try
+        {
+            RANDOM = SecureRandom.getInstanceStrong();
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new ConfigurationException("JVM doesn't have a SecureRandom available", e);
+        }
+    }
+
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
 
     public static String generateSpecialCharacterString(int length)
@@ -244,7 +261,7 @@ public class StringUtilsLabKey
         if (s != null)
         {
             for (String prefix : URL_PREFIXES)
-                if (StringUtils.startsWithIgnoreCase(s, prefix))
+                if (Strings.CI.startsWith(s, prefix))
                     return true;
         }
 
@@ -290,7 +307,7 @@ public class StringUtilsLabKey
                 // DEL??
                 return false;
             }
-            else if (Character.isValidCodePoint(c))
+            else
             {
                 continue;
             }

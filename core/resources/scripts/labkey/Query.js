@@ -1487,7 +1487,7 @@ LABKEY.Query = new function()
             if (str === undefined || str === null || str == '')
                 return "NULL";
             str = str.toString();
-            return "'" + str.replace("'","''") + "'";
+            return "'" + str.replace(/'/g,"''") + "'";
         },
 
         URL_COLUMN_PREFIX: "_labkeyurl_"

@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.XmlBeansUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -27,7 +28,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -129,9 +129,7 @@ public class ParamParserImpl implements ParamParser
     {
         try
         {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
+            DocumentBuilder db = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
 
             InputSource source = new InputSource(new InputStreamReader(inputStream));
             _doc = db.parse(source);

@@ -91,7 +91,8 @@
         createPlateTemplate = function(){
 
             let template = document.querySelector('#plate_template');
-            if (template){
+            // Ensure it's a relative URL before redirecting
+            if (template && template.value.startsWith("/")){
                 window.location = template.value;
             }
         };

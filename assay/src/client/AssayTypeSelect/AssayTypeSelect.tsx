@@ -73,7 +73,7 @@ const AssayTypeSelect = memo(() => {
             })
         } else {
             window.location.href = ActionURL.buildURL('assay', 'designer', container, {
-                'providerName': assayPickerSelection.provider.name,
+                'providerName': assayPickerSelection.provider ? assayPickerSelection.provider.name : GENERAL_ASSAY_PROVIDER_NAME,
                 'returnUrl': returnUrl
             });
         }

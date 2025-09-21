@@ -65,6 +65,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -267,7 +268,7 @@ public class FileUtil
     }
 
 
-    public static void deleteDir(@NotNull Path dir) throws IOException
+    public static boolean deleteDir(@NotNull Path dir) throws IOException
     {
         if (Files.exists(dir))
         {
@@ -276,17 +277,21 @@ public class FileUtil
                 // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
                 try (Stream<Path> paths = Files.walk(dir))
                 {
+                    boolean success = true;
                     for (Path path : paths.sorted(Comparator.reverseOrder()).toList())
                     {
-                        Files.deleteIfExists(path);
+                        success = Files.deleteIfExists(path) && success;
                     }
+                    return success;
                 }
             }
             else
             {
-                deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
+                return deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
             }
         }
+
+        return true;
     }
 
 
@@ -353,7 +358,7 @@ public class FileUtil
     {
         // Regex encode the allowed extensions (escape periods and add '|' optional matcher)
         String allowedExtensions = appProps.getAllowedExtensions().stream().map(Pattern::quote).collect(Collectors.joining("|"));
-        // Allow any extension in the list unless it is preceeded by a '.' which we use as a proxy for double/multi extensions
+        // Allow any extension in the list unless it is preceded by a '.' which we use as a proxy for double/multi extensions
         extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
     }
 
@@ -441,7 +446,6 @@ public class FileUtil
                 checkAllowedFileName(parent.getName(), false);
             parent = parent.getParent();
         }
-        //noinspection SSBasedInspection
         file.mkdirs();
         return ret;
     }
@@ -771,7 +775,8 @@ public class FileUtil
     public static URI createUri(String str, boolean isEncoded)
     {
         str = str.replace("\\", "/");
-        if (str.matches("^[A-z]:/.*"))
+        // Assume that Windows-style drive-letter paths like c:/myfile.txt should be treated as file:/ URIs
+        if (str.matches("^[A-Za-z]:/.*"))
             return new File(str).toURI();
 
         String str2 = str;
@@ -822,11 +827,11 @@ public class FileUtil
     {
         org.labkey.api.util.Path path = originalPath.normalize();
         if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
-            throw new IllegalArgumentException("Bad path: " + originalPath);
+            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
-        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
-            throw new IllegalArgumentException(path.toString());
+        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
+            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
         return ret;
     }
 
@@ -836,7 +841,7 @@ public class FileUtil
     {
         path = path.normalize();
         if (!path.isEmpty() && "..".equals(path.get(0)))
-            throw new IllegalArgumentException(path.toString());
+            throw new InvalidPathException(path.toString(), "Path to parent not allowed");
         return dir.resolveFile(path);
     }
 
@@ -858,12 +863,16 @@ public class FileUtil
     /* Only returns an immediate child */
     public static File appendName(File dir, String name)
     {
+        if (!dir.isAbsolute())
+        {
+            dir = dir.getAbsoluteFile();
+        }
         legalPathPartThrow(name);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
-        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
-            throw new IllegalArgumentException(name);
+        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
+            throw new InvalidPathException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -874,7 +883,7 @@ public class FileUtil
         var ret = dir.resolve(name);
 
         if (!ret.normalize().startsWith(dir.normalize()))
-            throw new IllegalArgumentException(name);
+            throw new InvalidPathException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -883,12 +892,11 @@ public class FileUtil
     // this check that a name is a valid path part (e.g. filename) and is not path like.
     private static void legalPathPartThrow(String name)
     {
-        if (StringUtils.contains(name, '/'))
-            throw new IllegalArgumentException(name);
-        if (StringUtils.contains(name, File.separatorChar))
-            throw new IllegalArgumentException(name);
+        int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
+        if (invalidCharacterIndex >= 0)
+            throw new InvalidPathException(name, "Invalid file or directory name", invalidCharacterIndex);
         if (".".equals(name) || "..".equals(name))
-            throw new IllegalArgumentException(name);
+            throw new InvalidPathException(name, "Invalid file or directory name");
     }
 
 
@@ -1619,6 +1627,7 @@ quickScan:
             parent = file.getParentFile();
         }
         // we don't need to use FileUtil.appendName() here
+        //noinspection SSBasedInspection
         return new File(resolveFile(parent), file.getName());
     }
 
@@ -1829,14 +1838,14 @@ quickScan:
         Files.walkFileTree(node, new SimplePathVisitor()
         {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
+            public @NotNull FileVisitResult preVisitDirectory(@NotNull Path dir, @NotNull BasicFileAttributes attrs) throws IOException
             {
                 hasMoreFlags.add(true);
                 return super.preVisitDirectory(dir, attrs);
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException
             {
                 appendFileLogEntry(sb, file, hasMoreFlags);
                 return super.visitFile(file, attrs);
@@ -1844,7 +1853,7 @@ quickScan:
 
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException
+            public @NotNull FileVisitResult postVisitDirectory(@NotNull Path dir, IOException exc) throws IOException
             {
                 hasMoreFlags.removeLast();
                 return super.postVisitDirectory(dir, exc);
@@ -1991,7 +2000,7 @@ quickScan:
                 boolean closed = false;
 
                 @Override
-                public void write(@NotNull char[] cbuf, int off, int len) throws IOException
+                public void write(char @NotNull [] cbuf, int off, int len) throws IOException
                 {
                     if (closed)
                         throw new IOException("Writer is closed");
@@ -2053,7 +2062,7 @@ quickScan:
             _reader = new Reader()
             {
                 @Override
-                public int read(@NotNull char[] cbuf, int off, int len) throws IOException
+                public int read(char @NotNull [] cbuf, int off, int len) throws IOException
                 {
                     _prepareToRead();
 
