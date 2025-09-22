@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -82,6 +83,63 @@ public final class TableSorter
         return sort(schemaName, tables, tolerateLoops);
     }
 
+    public static @Nullable ForeignKey getForeignKey(TableInfo table, ColumnInfo column, boolean logErrors)
+    {
+        // Skip calculated columns (e.g., ExprColumn)
+        if (column.isCalculated())
+            return null;
+
+        ForeignKey fk = column.getFk();
+
+        // Skip fake FKs that just wrap the RowId
+        if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
+            return null;
+
+        try
+        {
+            // Ensure attempting to resolve table doesn't throw. Note that TableInfo could be null.
+            fk.getLookupTableInfo();
+            return fk;
+        }
+        catch (QueryParseException qpe)
+        {
+            // ignore and try to continue
+            if (logErrors)
+            {
+                String msg = String.format("Failed to resolve fk (%s, %s, %s) from (%s, %s)",
+                        fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), table.getName(), column.getName());
+                LOG.warn(msg, qpe);
+            }
+        }
+
+        return null;
+    }
+
+    private static @Nullable String getLookupTableName(String schemaName, Map<String, TableInfo> tables, TableInfo table, ColumnInfo column, boolean logErrors)
+    {
+        ForeignKey fk = getForeignKey(table, column, logErrors);
+        if (null == fk)
+            return null;
+
+        String lookupSchemaName = fk.getLookupSchemaName();
+        TableInfo t = fk.getLookupTableInfo();
+
+        // Skip lookups to other schemas
+        if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+            return null;
+
+        // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
+        String lookupTableName = fk.getLookupTableName();
+        if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
+            lookupTableName = t.getName();
+
+        // Skip self-referencing FKs
+        if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
+            return null;
+
+        return lookupTableName;
+    }
+
     private static List<TableInfo> sort(String schemaName, Map<String, TableInfo> tables, boolean tolerateLoops)
     {
         if (tables.isEmpty())
@@ -95,46 +153,12 @@ public final class TableSorter
             TableInfo table = tables.get(tableName);
             for (ColumnInfo column : table.getColumns())
             {
-                // Skip calculated columns (e.g., ExprColumn)
-                if (column.isCalculated())
-                    continue;
-
-                ForeignKey fk = column.getFk();
-
-                // Skip fake FKs that just wrap the RowId
-                if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
-                    continue;
-
-                String lookupSchemaName = fk.getLookupSchemaName();
-                // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-                TableInfo t = null;
-                try
+                String lookupTableName = getLookupTableName(schemaName, tables, table, column, true);
+                if (lookupTableName != null)
                 {
-                    t = fk.getLookupTableInfo();
+                    // Remove the lookup table from the set of tables with no incoming FK
+                    startTables.remove(lookupTableName);
                 }
-                catch (QueryParseException qpe)
-                {
-                    // ignore and try to continue
-                    String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
-                            lookupSchemaName, fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
-                    LOG.warn(msg, qpe);
-                }
-
-                // Skip lookups to other schemas
-                if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
-                    continue;
-
-                // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
-                String lookupTableName = fk.getLookupTableName();
-                if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
-                    lookupTableName = t.getName();
-
-                // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
-                    continue;
-
-                // Remove the lookup table from the set of tables with no incoming FK
-                startTables.remove(lookupTableName);
             }
         }
 
@@ -178,48 +202,18 @@ public final class TableSorter
 
         for (ColumnInfo column : table.getColumns())
         {
-            // Skip calculated columns (e.g., ExprColumn)
-            if (column.isCalculated())
-                continue;
-
-            ForeignKey fk = column.getFk();
-
-            // Skip fake FKs that just wrap the RowId
-            if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
-                continue;
-
-            String lookupSchemaName = fk.getLookupSchemaName();
-            // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-            TableInfo t = null;
-            try
+            // We've already reported errors
+            String lookupTableName = getLookupTableName(schemaName, tables, table, column, false);
+            if (lookupTableName != null)
             {
-                t = fk.getLookupTableInfo();
-            }
-            catch (QueryParseException qpe)
-            {
-                // We've already reported this error once; ignore and try to continue
-            }
-
-            // Skip lookups to other schemas
-            if (!(schemaName.equalsIgnoreCase(lookupSchemaName) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
-                continue;
-
-            // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
-            String lookupTableName = fk.getLookupTableName();
-            if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
-                lookupTableName = t.getName();
-
-            // Skip self-referencing FKs
-            if (schemaName.equalsIgnoreCase(lookupSchemaName) && lookupTableName.equalsIgnoreCase(table.getName()))
-                continue;
-
-            // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
-            TableInfo lookupTable = tables.get(lookupTableName);
-            if (lookupTable != null)
-            {
-                visitingPath.addLast(Tuple3.of(table, column, lookupTable));
-                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted, tolerateLoops);
-                visitingPath.removeLast();
+                // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
+                TableInfo lookupTable = tables.get(lookupTableName);
+                if (lookupTable != null)
+                {
+                    visitingPath.addLast(Tuple3.of(table, column, lookupTable));
+                    depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted, tolerateLoops);
+                    visitingPath.removeLast();
+                }
             }
         }
 

@@ -83,6 +83,10 @@
       </column>
       <column columnName="GroupId">
           <description>The unique id of the group the user belongs to.</description>
+          <fk>
+              <fkColumnName>UserId</fkColumnName>
+              <fkTable>Principals</fkTable>
+          </fk>
       </column>
     </columns>
   </table>
