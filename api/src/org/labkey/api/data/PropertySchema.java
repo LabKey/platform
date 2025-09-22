@@ -18,9 +18,7 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 
 /**
- * Convenience wrapper around the "prop" DbSchema.
- * User: adam
- * Date: 10/8/13
+ * Convenience wrapper around the "prop" DbSchema
  */
 public class PropertySchema
 {

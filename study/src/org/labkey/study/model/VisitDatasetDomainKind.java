@@ -18,6 +18,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.security.User;
@@ -77,9 +78,15 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
 
         if(null != study)
         {
+            TableInfo table;
             // Older datasets may not have participantsequencenum
-            if (null == domain.getStorageTableName() || (null != studyService
-                    && null != studyService.getDatasetSchema().getTable(domain.getStorageTableName()).getColumn("participantsequencenum")))
+            if (
+                // Unprovisioned domain that doesn't have its name yet
+                null == domain.getStorageTableName() ||
+                // Unprovisioned domain that does have a name (e.g., database cloning/migration scenario)
+                (null != studyService && (null == (table = studyService.getDatasetSchema().getTable(domain.getStorageTableName())) ||
+                // I guess this is the already provisioned case
+                null != table.getColumn("participantsequencenum"))))
             {
                 if (!study.isDataspaceStudy())
                 {

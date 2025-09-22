@@ -157,7 +157,7 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
         };
 
         FieldKey targetStudyContainerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
-        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}",
+        DetailsURL url = DetailsURL.fromString("study-publishHistoryDetails.view?protocolId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}",
                 new ContainerContext.FieldKeyContext(targetStudyContainerFieldKey));
         url.setStrictContainerContextEval(true);
 

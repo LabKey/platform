@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 
 /**
- * Convenience methods to get to tables in the core DbSchema.
+ * Convenience methods to get to tables in the core DbSchema
  */
 public class CoreSchema
 {

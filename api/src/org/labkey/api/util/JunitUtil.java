@@ -26,18 +26,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -62,21 +56,6 @@ public class JunitUtil
         if (null == node)
             return null;
         return node.getNodeValue();
-    }
-
-
-    public static Document tidyAsDocument(String html) throws Exception
-    {
-        ArrayList<String> errors = new ArrayList<>();
-        String tidy = JSoupUtil.convertHtmlToXml(html, errors);
-
-        DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
-        fact.setValidating(false);
-        fact.setCoalescing(true);
-        fact.setIgnoringComments(true);
-        fact.setNamespaceAware(false);
-        DocumentBuilder builder = fact.newDocumentBuilder();
-        return builder.parse(new InputSource(new StringReader(tidy)));
     }
 
     /**

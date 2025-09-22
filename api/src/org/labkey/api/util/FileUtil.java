@@ -65,6 +65,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -267,7 +268,7 @@ public class FileUtil
     }
 
 
-    public static void deleteDir(@NotNull Path dir) throws IOException
+    public static boolean deleteDir(@NotNull Path dir) throws IOException
     {
         if (Files.exists(dir))
         {
@@ -276,17 +277,21 @@ public class FileUtil
                 // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
                 try (Stream<Path> paths = Files.walk(dir))
                 {
+                    boolean success = true;
                     for (Path path : paths.sorted(Comparator.reverseOrder()).toList())
                     {
-                        Files.deleteIfExists(path);
+                        success = Files.deleteIfExists(path) && success;
                     }
+                    return success;
                 }
             }
             else
             {
-                deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
+                return deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
             }
         }
+
+        return true;
     }
 
 
@@ -770,7 +775,8 @@ public class FileUtil
     public static URI createUri(String str, boolean isEncoded)
     {
         str = str.replace("\\", "/");
-        if (str.matches("^[A-z]:/.*"))
+        // Assume that Windows-style drive-letter paths like c:/myfile.txt should be treated as file:/ URIs
+        if (str.matches("^[A-Za-z]:/.*"))
             return new File(str).toURI();
 
         String str2 = str;
@@ -821,11 +827,11 @@ public class FileUtil
     {
         org.labkey.api.util.Path path = originalPath.normalize();
         if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
-            throw new IllegalArgumentException("Bad path: " + originalPath);
+            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new IllegalArgumentException(path.toString());
+            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
         return ret;
     }
 
@@ -835,7 +841,7 @@ public class FileUtil
     {
         path = path.normalize();
         if (!path.isEmpty() && "..".equals(path.get(0)))
-            throw new IllegalArgumentException(path.toString());
+            throw new InvalidPathException(path.toString(), "Path to parent not allowed");
         return dir.resolveFile(path);
     }
 
@@ -866,7 +872,7 @@ public class FileUtil
         var ret = new File(dir, name);
 
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new IllegalArgumentException(name);
+            throw new InvalidPathException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -877,7 +883,7 @@ public class FileUtil
         var ret = dir.resolve(name);
 
         if (!ret.normalize().startsWith(dir.normalize()))
-            throw new IllegalArgumentException(name);
+            throw new InvalidPathException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -886,12 +892,11 @@ public class FileUtil
     // this check that a name is a valid path part (e.g. filename) and is not path like.
     private static void legalPathPartThrow(String name)
     {
-        if (StringUtils.contains(name, '/'))
-            throw new IllegalArgumentException(name);
-        if (StringUtils.contains(name, File.separatorChar))
-            throw new IllegalArgumentException(name);
+        int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
+        if (invalidCharacterIndex >= 0)
+            throw new InvalidPathException(name, "Invalid file or directory name", invalidCharacterIndex);
         if (".".equals(name) || "..".equals(name))
-            throw new IllegalArgumentException(name);
+            throw new InvalidPathException(name, "Invalid file or directory name");
     }
 
 

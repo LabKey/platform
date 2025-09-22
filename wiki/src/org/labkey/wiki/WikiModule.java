@@ -27,7 +27,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.CodeOnlyModule;
@@ -121,28 +120,30 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-        DatabaseMigrationService.get().registerHandler(CommSchema.getInstance().getSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(CommSchema.getInstance().getSchema())
         {
             @Override
-            public void beforeSchema(DbSchema targetSchema)
+            public void beforeSchema()
             {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
             }
 
             @Override
-            public List<TableInfo> getTablesToCopy(DbSchema targetSchema)
+            public List<TableInfo> getTablesToCopy()
             {
-                List<TableInfo> tablesToCopy = super.getTablesToCopy(targetSchema);
-                tablesToCopy.add(targetSchema.getTable("Pages"));
-                tablesToCopy.add(targetSchema.getTable("PageVersions"));
+                List<TableInfo> tablesToCopy = super.getTablesToCopy();
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPages());
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPageVersions());
 
                 return tablesToCopy;
             }
 
             @Override
-            public void afterSchema(DbSchema targetSchema)
+            public void afterSchema()
             {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
             }
         });
     }

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -24,9 +23,6 @@
     {
         dependencies.add("Ext4");
     }
-%>
-<%
-    Container c = getContainer();
 %>
 <style>
 .level-inherited {
@@ -66,12 +62,12 @@
 
 
 <p style='padding-left:0.75em; margin:0.5em;'>
-    <label for="showLevel">Filter by name:</label>
+    <label for="search">Filter by name:</label>
     <input id="search" type="text" size="50">
 </p>
 <p style='padding-left:0.75em; margin:0.5em;'>
 <label for="showLevel">Show Level:</label>
-<select id="showLevel" value="">
+<select id="showLevel">
   <option value="">
   <option value="OFF">OFF
   <option value="FATAL">FATAL
@@ -197,11 +193,11 @@
         var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
         return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
-                "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "' data-notes='" + LABKEY.Utils.encodeHtml(logger.notes) + "'>" +
+                "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + LABKEY.Utils.encodeHtml(logger.level) + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "' data-notes='" + LABKEY.Utils.encodeHtml(logger.notes) + "'>" +
                 "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
                 logger.level +
                 "</td>" +
-                "<td>" + (logger.name == 'null' ? '&lt;root&gt;' : LABKEY.Utils.encodeHtml(logger.name)) + "</td>" +
+                "<td>" + (logger.name === 'null' ? '&lt;root&gt;' : LABKEY.Utils.encodeHtml(logger.name)) + "</td>" +
                 "<td>" + LABKEY.Utils.encodeHtml(logger.parent) + "</td>" +
                 "<td>" + LABKEY.Utils.encodeHtml(logger.notes ? logger.notes : '') + "</td>" +
                 "</tr>";
@@ -292,10 +288,10 @@
             var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
             var visible = true;
-            if (filterName && name.indexOf(filterName) == -1)
+            if (filterName && name.indexOf(filterName) === -1)
                 visible = false;
 
-            if (filterLevel && logger.level != filterLevel)
+            if (filterLevel && logger.level !== filterLevel)
                 visible = false;
 
             if (!filterInherited && inherited)
@@ -314,7 +310,7 @@
     function onTableClick(evt)
     {
         var target = evt.target;
-        if (target.tagName == "TD" && target.classList.contains("level-configured") || target.classList.contains("level-inherited"))
+        if (target.tagName === "TD" && target.classList.contains("level-configured") || target.classList.contains("level-inherited"))
         {
             var initialValue = target.parentNode.dataset.level;
 
@@ -361,7 +357,7 @@
 
         // update the new level value if it is valid
         var updated = false;
-        if (levels[newLevel] && newLevel != tr.dataset.level)
+        if (levels[newLevel] && newLevel !== tr.dataset.level)
         {
             updated = true;
             tr.dataset.level = newLevel;
