@@ -2568,7 +2568,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void addRowsParentsFields(Set<Identifiable> seeds, Map<Integer, Map<String, Object>> dataRows, User user, Container container)
     {
-        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(seeds));
+        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, seeds);
 
         for (Map<String, Object> dataRow : dataRows.values())
         {

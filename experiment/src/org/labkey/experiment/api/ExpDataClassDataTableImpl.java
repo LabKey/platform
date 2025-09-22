@@ -1301,10 +1301,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
-            Long classId = (Long)JdbcType.BIGINT.convert(keys.get(Column.ClassId.name()));
-
-            if (classId == null)
-                classId = _dataClass.getRowId();
 
             if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
@@ -1318,7 +1314,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException
+        @Nullable protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException
         {
             Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
@@ -1328,7 +1324,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (classId == null)
                 classId = _dataClass.getRowId();
 
-            if (null == rowId && null == lsid && (null == name || null == classId))
+            if (null == rowId && null == lsid && null == name)
                 return null;
 
             // Issue 52886: Use queryTable here, not raw database table, so the rows are from the user schema with names
