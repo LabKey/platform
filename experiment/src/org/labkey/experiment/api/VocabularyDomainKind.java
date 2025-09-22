@@ -40,9 +40,9 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     private static final Set<String> RESERVED_PROPERTY_NAMES;
     static
     {
-        RESERVED_PROPERTY_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
+        RESERVED_PROPERTY_NAMES = DomainUtil.getNamesAndLabels(
                 List.of("RowId", "LSID", "EntityId", "Container", "Folder", "CreatedBy", "Created", "ModifiedBy", "Modified", "Owner", "LastIndexed")
-        ));
+        );
     }
 
     @Override

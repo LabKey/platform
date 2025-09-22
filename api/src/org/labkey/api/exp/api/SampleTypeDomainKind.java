@@ -109,12 +109,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
-                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
-        );
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList()));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of(
+        Set<String> names = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        names.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(Enum::name).toList());
+        names.addAll(Arrays.stream(ExpMaterialTable.Column.values()).map(Enum::name).toList());
+        names.addAll(List.of(
                 "SampleType", // Issue 52716
                 "Protocol", // alias for "SourceProtocolApplication"
                 "SampleTypeUnits", // alias for MetricUnit
@@ -132,8 +130,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "Status",
                 "Amount", // alias for storedAmount
                 "RunId"
-        )));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(ALIQUOT_ROLLUP_FIELD_LABELS));
+        ));
+        names.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
         RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(

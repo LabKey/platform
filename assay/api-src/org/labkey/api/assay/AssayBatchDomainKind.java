@@ -35,7 +35,7 @@ public class AssayBatchDomainKind extends AssayDomainKind
     private static final Set<String> RESERVED_NAMES;
 
     static {
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(Arrays.stream(ExpExperimentTable.Column.values()).map( ExpExperimentTable.Column::name).toList()));
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(Arrays.stream(ExpExperimentTable.Column.values()).map(ExpExperimentTable.Column::name).toList());
         RESERVED_NAMES.addAll(getAssayReservedPropertyNames());
         RESERVED_NAMES.addAll(DomainUtil.getNameAndLabels("AssayId"));
     }

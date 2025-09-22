@@ -107,8 +107,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false),
                 new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR,  256));
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
-                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet())));
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(
+                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
     }
 
     public void setListDefinition(ListDefinitionImpl list)

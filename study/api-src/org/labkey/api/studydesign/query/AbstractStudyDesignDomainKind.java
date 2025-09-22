@@ -65,9 +65,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         baseFields.add(createFieldSpec("ModifiedBy", JdbcType.INTEGER));
 
         BASE_FIELDS = Collections.unmodifiableSet(baseFields);
-        RESERVED_PROPERTY_NAMES = new CaseInsensitiveHashSet(
-                DomainUtil.getNamesAndLabels(baseFields.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
-        );
+        RESERVED_PROPERTY_NAMES = DomainUtil.getNamesAndLabels(baseFields.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
     }
 
     private final Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>(BASE_FIELDS);

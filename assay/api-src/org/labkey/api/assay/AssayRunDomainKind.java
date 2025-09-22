@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,11 +35,11 @@ public class AssayRunDomainKind extends AssayDomainKind
     private static final Set<String> RESERVED_NAMES;
     static
     {
-        RESERVED_NAMES = new CaseInsensitiveHashSet(getAssayReservedPropertyNames());
-        RESERVED_NAMES.addAll(DomainUtil.getNameAndLabels("AssayId"));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(
-                Arrays.stream(ExpRunTable.Column.values()).map(Enum::name).collect(Collectors.toSet())
-        ));
+        Set<String> names = new HashSet<>(getAssayReservedPropertyNames());
+        names.add("AssayId");
+        names.addAll(Arrays.stream(ExpRunTable.Column.values()).map(Enum::name).collect(Collectors.toSet()));
+
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
     }
 
     public AssayRunDomainKind()

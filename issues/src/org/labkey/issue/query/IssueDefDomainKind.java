@@ -86,18 +86,20 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
                 new PropertyStorageSpec.ForeignKey(RESOLUTION_LOOKUP, "Lists", RESOLUTION_LOOKUP, "value", null, false)
         )));
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet())));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.asList("RowId", "Name")));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(REQUIRED_PROPERTIES
+        Set<String> names = new HashSet<>();
+        names.addAll(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
+        names.addAll(REQUIRED_PROPERTIES
                 .stream()
                 .map(PropertyStorageSpec::getName)
                 .filter(name -> !OPTIONAL_NAMES.contains(name))
-                .collect(Collectors.toSet())));
-
+                .collect(Collectors.toSet()));
+        names.add("RowId");
+        names.add("Name");
         // field names that are contained in the issues table that gets joined to the provisioned table
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
-                                            "Created", "CreatedBy", "Resolved", "ResolvedBy", "Status", "BuildFound",
-                                            "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId")));
+        names.addAll(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
+                "Created", "CreatedBy", "Resolved", "ResolvedBy", "Status", "BuildFound",
+                "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId"));
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
 
         MANDATORY_PROPERTIES = REQUIRED_PROPERTIES
                 .stream()

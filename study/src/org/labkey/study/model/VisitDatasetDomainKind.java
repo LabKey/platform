@@ -63,8 +63,8 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        HashSet<String> fields = new CaseInsensitiveHashSet(getStudySubjectReservedName(domain));
-        fields.addAll(DomainUtil.getNamesAndLabels(DatasetDefinition.DEFAULT_VISIT_FIELDS));
+        Set<String> fields = DomainUtil.getNamesAndLabels(DatasetDefinition.DEFAULT_VISIT_FIELDS);
+        fields.addAll(getStudySubjectReservedName(domain));
 
         return Collections.unmodifiableSet(fields);
     }

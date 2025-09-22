@@ -47,7 +47,7 @@ import java.util.Set;
 
 public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {
-    private static final Set<String> RESERVED_FIELD_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(List.of(COMMENTS, COLUMN)));
+    private static final Set<String> RESERVED_FIELD_NAMES = DomainUtil.getNamesAndLabels(List.of(COMMENTS, COLUMN));
 
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";

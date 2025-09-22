@@ -59,7 +59,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     private final Priority _priority;
     private static final Set<String> RESERVED_NAMES;
     static {
-        Set<String> s = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(List.of(
+        Set<String> s = DomainUtil.getNamesAndLabels(List.of(
             "RowId",
             "Container",
             "LSID",
@@ -68,7 +68,8 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
             "Created",
             "ModifiedBy",
             "Modified"
-        )));
+        ));
+        // make this an unmodifiable set because many domains build from this set but shouldn't alter the base set
         RESERVED_NAMES = Collections.unmodifiableSet(s);
     }
 

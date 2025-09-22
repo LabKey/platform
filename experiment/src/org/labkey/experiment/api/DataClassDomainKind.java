@@ -70,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,14 +101,13 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 new PropertyStorageSpec("classid", JdbcType.INTEGER)
         )));
 
-        RESERVED_NAMES = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(
-                BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()))
-        );
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList()));
-        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of(
-                "RunId", // Issue 50461
-                "Container"
-        )));
+        Set<String> names = new HashSet<>();
+        names.addAll(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
+        names.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList());
+        names.add("RunId"); // Issue 50461
+        names.add("Container");
+
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate

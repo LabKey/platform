@@ -33,6 +33,7 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,10 +60,10 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     private static final Set<String> _reservedFieldSet;
 
     static {
-        Set<String> s = new CaseInsensitiveHashSet(DomainUtil.getNamesAndLabels(RESERVED_FIELDS));
+        Set<String> s = new HashSet<>(RESERVED_FIELDS);
 
-        s.addAll(DomainUtil.getNamesAndLabels(Arrays.stream(ExpDataTable.Column.values()).map(Enum::name).collect(Collectors.toSet())));
-        _reservedFieldSet = Collections.unmodifiableSet(s);
+        s.addAll(Arrays.stream(ExpDataTable.Column.values()).map(Enum::name).collect(Collectors.toSet()));
+        _reservedFieldSet = Collections.unmodifiableSet(DomainUtil.getNamesAndLabels(s));
     }
 
     @Override

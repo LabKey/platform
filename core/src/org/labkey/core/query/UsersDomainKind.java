@@ -60,11 +60,11 @@ import java.util.Set;
 public class UsersDomainKind extends SimpleTableDomainKind
 {
     public static final String NAME = "CoreUsersTable";
-    private static final Set<String> _reservedNames = new CaseInsensitiveHashSet();
+    private static final Set<String> _reservedNames;
     private static final List<PropertyDescriptorSpec> _requiredProperties = new ArrayList<>();
 
     static {
-        _reservedNames.addAll(DomainUtil.getNamesAndLabels(List.of(
+        _reservedNames = DomainUtil.getNamesAndLabels(List.of(
                 "Email",
                 "_ts",
                 "EntityId",
@@ -78,7 +78,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
                 "LastLogin",
                 "Active",
                 "ExpirationDate"
-        )));
+        ));
 
 
         _requiredProperties.add(new PropertyDescriptorSpec("FirstName", PropertyType.STRING, 64, false));
