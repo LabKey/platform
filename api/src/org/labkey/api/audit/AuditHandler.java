@@ -106,7 +106,7 @@ public interface AuditHandler
             }
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
-            boolean isExpInput = false; // TODO: extract exp lineage handling out of this generic method
+            boolean isExpInput = false; // TODO: extract lineage handling out of this generic method
             String encodedInputColumn = ExperimentService.getEncodedLineageKey(lcName);
             if (encodedInputColumn != null)
             {
