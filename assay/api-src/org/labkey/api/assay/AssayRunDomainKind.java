@@ -35,7 +35,7 @@ public class AssayRunDomainKind extends AssayDomainKind
     static
     {
         RESERVED_NAMES = new CaseInsensitiveHashSet(getAssayReservedPropertyNames());
-        RESERVED_NAMES.addAll(DomainUtil.getNameAndLabels("AsasyId"));
+        RESERVED_NAMES.addAll(DomainUtil.getNameAndLabels("AssayId"));
         RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(
                 Arrays.stream(ExpRunTable.Column.values()).map(Enum::name).collect(Collectors.toSet())
         ));
