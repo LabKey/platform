@@ -524,6 +524,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     static @NotNull String[] getParentValues(String valueStr) throws IOException
     {
+        if (StringUtils.isEmpty(valueStr.trim()))
+            return new String[0];
         try (TabLoader tabLoader = new TabLoader(valueStr))
         {
             tabLoader.setDelimiterCharacter(',');
