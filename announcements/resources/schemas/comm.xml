@@ -458,12 +458,7 @@
   <table tableName="UserList" tableDbType="TABLE">
       <description>Contains one row per user-specific thread-level subscription.</description>
     <columns>
-      <column columnName="MessageId">
-          <fk>
-              <fkColumnName>RowId</fkColumnName>
-              <fkTable>Announcements</fkTable>
-          </fk>
-      </column>
+      <column columnName="MessageId"/>
       <column columnName="UserId"/>
     </columns>
   </table>
