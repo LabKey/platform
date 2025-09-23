@@ -1,16 +1,13 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.util.Pair;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class QueryDatasetTable extends DatasetTableImpl
@@ -40,7 +37,7 @@ public class QueryDatasetTable extends DatasetTableImpl
     }
 
     @Override
-    public @NotNull Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public @NotNull Map<String, IndexDef> getUniqueIndices()
     {
         return Collections.emptyMap();
     }

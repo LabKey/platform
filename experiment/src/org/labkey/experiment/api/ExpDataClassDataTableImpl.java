@@ -17,8 +17,8 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
@@ -786,20 +786,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public Map<String, IndexDef> getUniqueIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getUniqueIndices());
+        Map<String, IndexDef> indices = new HashMap<>(super.getUniqueIndices());
         indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
 
         // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
         // RemapCache is used to findExpData using name/rowId remap.
         // The addition of "ClassId" column to the TableInfo is causing violation of RemapCache's requirement of "unique index over a single column that isn't the primary key".
         // Because this is a joined table between exp.data and the dataclass provisioned table, it's safe to ignore "ClassId" as part of the unique key.
-        Map<String, Pair<IndexType, List<ColumnInfo>>> filteredIndices = new HashMap<>();
-        for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> index : indices.entrySet())
+        Map<String, IndexDef> filteredIndices = new HashMap<>();
+        for (IndexDef def : indices.values())
         {
-            IndexType type = index.getValue().getKey();
-            List<ColumnInfo> columns = index.getValue().getValue();
+            IndexType type = def.indexType();
+            List<ColumnInfo> columns = def.columns();
 
             List<ColumnInfo> filteredColumns = new ArrayList<>();
             if (type == IndexType.Unique && columns.size() > 1)
@@ -813,16 +813,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
 
-            filteredIndices.put(index.getKey(), new Pair<>(type, filteredColumns.isEmpty() ? columns : filteredColumns));
+            filteredIndices.put(def.name(), new IndexDef(def.name(), def.indexType(), filteredColumns.isEmpty() ? columns : filteredColumns, def.filterCondition()));
         }
         return Collections.unmodifiableMap(filteredIndices);
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public Map<String, IndexDef> getAllIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getAllIndices());
+        Map<String, IndexDef> indices = new HashMap<>(super.getAllIndices());
         indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
         return Collections.unmodifiableMap(indices);
     }

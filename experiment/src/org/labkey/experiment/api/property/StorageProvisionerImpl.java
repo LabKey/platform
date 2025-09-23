@@ -52,6 +52,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDef;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -86,7 +87,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -689,14 +689,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         @NotNull
         @Override
-        public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+        public Map<String, IndexDef> getUniqueIndices()
         {
             return _inner.getUniqueIndices();
         }
 
         @NotNull
         @Override
-        public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+        public Map<String, IndexDef> getAllIndices()
         {
             return _inner.getAllIndices();
         }
@@ -923,7 +923,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
                 throw new IllegalStateException("Domain kind of " + domain.getName() + " is null!");
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
+            Map<String, IndexDef> existingIndices = schemaTableInfo.getAllIndices();
             // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
             // so we need to uniquify. Domain indices never specify "clustered" but DomainKind indices may (e.g.,
             // DatasetDomainKind), so compare using only column names and give preference to DomainKind.
@@ -933,15 +933,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             Set<String> toRemove = new HashSet<>();
             for (String name : existingIndices.keySet())
             {
-                if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
+                IndexDef def = existingIndices.get(name);
+                if (def.indexType() == TableInfo.IndexType.Primary)
                     continue;
-                Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
-                String[] columnNames = new String[columnIndex.second.size()];
-                for (int i = 0; i < columnIndex.second.size(); i++)
-                {
-                    columnNames[i] = columnIndex.second.get(i).getColumnName();
-                }
-                Index existingIndex = new Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+                String[] columnNames = def.columns().stream()
+                    .map(ColumnInfo::getColumnName)
+                    .toArray(String[]::new);
+                Index existingIndex = new Index(def.indexType() == TableInfo.IndexType.Unique, columnNames);
                 boolean foundIt = false;
                 for (Index propertyIndex : newIndices)
                 {

@@ -95,7 +95,6 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -527,16 +526,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public Map<String, IndexDef> getUniqueIndices()
     {
         // Get indices from underlying storage table
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
+        Map<String, IndexDef> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
 
         // Index enforced in code not on actual database for demographic datasets only
         if (getColumn(subjectColName) != null && getDatasetDefinition().isDemographicData())
         {
-            ret.put("uq_dataset_subject", Pair.of(IndexType.Unique, Arrays.asList(getColumn(subjectColName))));
+            String name = "uq_dataset_subject";
+            ret.put(name, new IndexDef(name, IndexType.Unique, Arrays.asList(getColumn(subjectColName)), null));
         }
         return Collections.unmodifiableMap(ret);
     }

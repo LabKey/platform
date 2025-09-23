@@ -45,7 +45,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -816,38 +815,38 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public Map<String, IndexDef> getUniqueIndices()
     {
         return Collections.unmodifiableMap(wrapTableIndices(getRealTable()));
     }
 
-    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableIndices(TableInfo table)
+    protected Map<String, IndexDef> wrapTableIndices(TableInfo table)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getUniqueIndices();
+        Map<String, IndexDef> indices = table.getUniqueIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public Map<String, IndexDef> getAllIndices()
     {
         return Collections.unmodifiableMap(wrapTableAllIndices(getRealTable()));
     }
 
-    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableAllIndices(TableInfo table)
+    protected Map<String, IndexDef> wrapTableAllIndices(TableInfo table)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getAllIndices();
+        Map<String, IndexDef> indices = table.getAllIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
-    private Map<String, Pair<IndexType, List<ColumnInfo>>> getStringPairMap(Map<String, Pair<IndexType, List<ColumnInfo>>> indices)
+    private Map<String, IndexDef> getStringPairMap(Map<String, IndexDef> indices)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>();
-        for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> entry : indices.entrySet())
+        Map<String, IndexDef> ret = new HashMap<>();
+        for (IndexDef def : indices.values())
         {
-            List<ColumnInfo> indexCols = new ArrayList<>(entry.getValue().getValue().size());
-            for (ColumnInfo col : entry.getValue().getValue())
+            List<ColumnInfo> indexCols = new ArrayList<>(def.columns().size());
+            for (ColumnInfo col : def.columns())
             {
                 ColumnInfo c = getColumn(col.getFieldKey());
                 if (c != null)
@@ -855,7 +854,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             }
 
             if (!indexCols.isEmpty())
-                ret.put(entry.getKey(), Pair.of(entry.getValue().getKey(), indexCols));
+                ret.put(def.name(), new IndexDef(def.name(), def.indexType(), indexCols, def.filterCondition()));
         }
 
         return ret;

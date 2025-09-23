@@ -20,9 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.Pair;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -31,8 +29,6 @@ import java.util.Map;
 /**
  * Exposes a Java enum as a virtual query table. Useful for creating lookups when it's really a hard-coded list
  * of possible values that the code needs to match up against exactly. 
- * User: jeckels
- * Date: Jun 2, 2008
 */
 public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable<UserSchema>
 {
@@ -181,21 +177,24 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     }
 
     @Override
-    public @NotNull Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public @NotNull Map<String, IndexDef> getAllIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>();
-        indices.put("pk_rowId", Pair.of(IndexType.Primary, Arrays.asList(getColumn("RowId"))));
+        Map<String, IndexDef> indices = new HashMap<>();
+        String name = "pk_rowId";
+        indices.put("pk_rowId", new IndexDef(name, IndexType.Primary, List.of(getColumn("RowId")), null));
         indices.putAll(getUniqueIndices());
         return indices;
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public Map<String, IndexDef> getUniqueIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>();
-        indices.put("uq_value", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Value"))));
-        indices.put("uq_oridinal", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Ordinal"))));
+        Map<String, IndexDef> indices = new HashMap<>();
+        String name = "uq_value";
+        indices.put(name, new IndexDef(name, IndexType.Unique, List.of(getColumn("Value")), null));
+        name = "uq_ordinal";
+        indices.put(name, new IndexDef(name, IndexType.Unique, List.of(getColumn("Ordinal")), null));
         return indices;
     }
 }

@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.TableInfo.IndexDef;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -36,7 +37,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
@@ -384,15 +384,15 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         Set<ColumnInfo> seen = new HashSet<>();
         List<List<ColumnInfo>> candidates = new ArrayList<>();
-        for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : lookupTable.getUniqueIndices().values())
+        for (IndexDef def : lookupTable.getUniqueIndices().values())
         {
-            if (index.getKey() != TableInfo.IndexType.Unique)
+            if (def.indexType() != TableInfo.IndexType.Unique)
                 continue;
 
-            if (index.getValue().size() != 1)
+            if (def.columns().size() != 1)
                 continue;
 
-            ColumnInfo col = index.getValue().get(0);
+            ColumnInfo col = def.columns().get(0);
             if (seen.contains(col))
                 continue;
             seen.add(col);
@@ -403,7 +403,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             if (!col.getJdbcType().isText())
                 continue;
 
-            candidates.add(index.getValue());
+            candidates.add(def.columns());
         }
 
         ColumnInfo titleCol = lookupTable.getTitleColumn() != null ? lookupTable.getColumn(lookupTable.getTitleColumn()) : null;

@@ -41,6 +41,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDef;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
@@ -82,7 +83,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
@@ -363,13 +363,13 @@ public class DomainUtil
         if (domainKind.allowUniqueConstraintProperties())
         {
             SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+            Map<String, IndexDef> allIndices = schemaTableInfo.getAllIndices();
             if (!allIndices.isEmpty())
             {
                 List<GWTIndex> indices = allIndices.values().stream()
-                        .filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary))
-                        .map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique()))
-                        .toList();
+                    .filter(index -> !index.indexType().equals(TableInfo.IndexType.Primary))
+                    .map(index -> new GWTIndex(index.columns().stream().map(ColumnInfo::getColumnName).toList(), index.indexType().isUnique()))
+                    .toList();
 
                 gwtDomain.setIndices(indices);
             }

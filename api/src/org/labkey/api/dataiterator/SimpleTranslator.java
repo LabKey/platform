@@ -51,6 +51,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDef;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -243,15 +244,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // - Has a single primary key
                 // - Has a unique index over a single column that isn't the primary key
                 // - The column in the unique index must be a string type
-                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getUniqueIndices().values())
+                for (IndexDef def : _targetTable.getUniqueIndices().values())
                 {
-                    if (index.getKey() != TableInfo.IndexType.Unique)
+                    if (def.indexType() != TableInfo.IndexType.Unique)
                         continue;
 
-                    if (index.getValue().size() != 1)
+                    if (def.columns().size() != 1)
                         continue;
 
-                    ColumnInfo col = index.getValue().get(0);
+                    ColumnInfo col = def.columns().get(0);
                     if (!seen.add(col))
                         continue;
 

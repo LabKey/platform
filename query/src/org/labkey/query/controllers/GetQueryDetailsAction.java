@@ -293,12 +293,12 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
             // table indices
             JSONObject jsonIndices = new JSONObject();
-            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : tinfo.getUniqueIndices().entrySet())
+            for (TableInfo.IndexDef def : tinfo.getUniqueIndices().values())
             {
                 JSONObject jsonIndex = new JSONObject();
-                jsonIndex.put("type", entry.getValue().getKey());
-                jsonIndex.put("columns", entry.getValue().getValue().stream().map(ColumnInfo::getFieldKey).toArray());
-                jsonIndices.put(entry.getKey(), jsonIndex);
+                jsonIndex.put("type", def.indexType());
+                jsonIndex.put("columns", def.columns().stream().map(ColumnInfo::getFieldKey).toArray());
+                jsonIndices.put(def.name(), jsonIndex);
             }
             resp.put("indices", jsonIndices);
 

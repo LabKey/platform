@@ -19,7 +19,10 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -31,7 +34,6 @@ import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -50,11 +52,6 @@ import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-/*
-* User: adam
-* Date: Jun 29, 2011
-* Time: 3:02:47 PM
-*/
 public class SchemaColumnMetaData
 {
     private final SchemaTableInfo _tinfo;
@@ -66,8 +63,8 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
-    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _uniqueIndices;
-    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
+    private Map<String, IndexDef> _uniqueIndices;
+    private Map<String, IndexDef> _allIndices;
 
     private static final Logger _log = LogHelper.getLogger(SchemaColumnMetaData.class, "Extracts column metadata through JDBC and schema-scoped XML overrides");
 
@@ -348,8 +345,9 @@ public class SchemaColumnMetaData
                             return dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), uniqueIndicesOnly, true);
                         }));
 
+                String primaryKeyName = ti.getPrimaryKeyName();
                 Set<String> ignoreIndex = new HashSet<>();
-                Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexMap = new HashMap<>();
+                Map<String, IndexDef> indexMap = new HashMap<>();
                 uqSelector.forEach(rs -> {
                     String colName = rs.getString("COLUMN_NAME");
                     String indexName = rs.getString("INDEX_NAME");
@@ -358,11 +356,12 @@ public class SchemaColumnMetaData
 
                     indexName = indexName.toLowerCase();
 
-                    Pair<TableInfo.IndexType, List<ColumnInfo>> pair = indexMap.get(indexName);
-                    if (pair == null)
+                    IndexDef def = indexMap.get(indexName);
+                    if (def == null)
                     {
-                        TableInfo.IndexType indexType = rs.getBoolean("NON_UNIQUE")?TableInfo.IndexType.NonUnique:TableInfo.IndexType.Unique;
-                        indexMap.put(indexName, pair = Pair.of(indexType, new ArrayList<>(2)));
+                        IndexType indexType = (indexName.equals(primaryKeyName) ? IndexType.Primary : rs.getBoolean("NON_UNIQUE") ? IndexType.NonUnique : IndexType.Unique);
+                        @Nullable String filterCondition = rs.getString("FILTER_CONDITION");
+                        indexMap.put(indexName, def = new IndexDef(indexName, indexType, new ArrayList<>(2), filterCondition));
                     }
 
                     ColumnInfo colInfo = getColumn(colName);
@@ -370,35 +369,23 @@ public class SchemaColumnMetaData
                     if (colInfo == null)
                         ignoreIndex.add(indexName);
                     else
-                        pair.getValue().add(colInfo);
+                        def.addColumn(colInfo);
                 });
 
                 // Remove ignored indices
                 ignoreIndex.forEach(indexMap::remove);
 
-                Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
-                Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndexMap = new HashMap<>();
-                String primaryKeyName = ti.getPrimaryKeyName();
+                Map<String, IndexDef> uniqueIndexMap = new HashMap<>();
+                Map<String, IndexDef> allIndexMap = new HashMap<>();
 
                 // Search for the primary key and change that index type to Primary
-                for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : indexMap.entrySet())
+                for (IndexDef def : indexMap.values())
                 {
-                    if (entry.getKey().equals(primaryKeyName))
-                    {
-                        List<ColumnInfo> cols = entry.getValue().getValue();
-                        Pair<TableInfo.IndexType, List<ColumnInfo>> indexTypeListPair = Pair.of(TableInfo.IndexType.Primary, cols);
-                        uniqueIndexMap.put(entry.getKey(), indexTypeListPair);
-                        allIndexMap.put(entry.getKey(), indexTypeListPair);
-                    }
-                    else
-                    {
-                        if (entry.getValue().getKey()== TableInfo.IndexType.Unique)
-                        {
-                            uniqueIndexMap.put(entry.getKey(), entry.getValue());
-                        }
-                        allIndexMap.put(entry.getKey(), entry.getValue());
-                    }
+                    allIndexMap.put(def.name(), def);
+                    if (!def.indexType().isUnique())
+                        uniqueIndexMap.put(def.name(), def);
                 }
+
                 _uniqueIndices = Collections.unmodifiableMap(uniqueIndexMap);
                 _allIndices = Collections.unmodifiableMap(allIndexMap);
             }
@@ -557,9 +544,9 @@ public class SchemaColumnMetaData
         return _pkColumnNames;
     }
 
-    public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public @NotNull Map<String, IndexDef> getUniqueIndices()
     {
-        if(_uniqueIndices == null)
+        if (_uniqueIndices == null)
         {
             try
             {
@@ -573,9 +560,9 @@ public class SchemaColumnMetaData
         return _uniqueIndices;
     }
 
-    public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getAllIndices()
+    public @NotNull Map<String, IndexDef> getAllIndices()
     {
-        if(_allIndices == null)
+        if (_allIndices == null)
         {
             try
             {
