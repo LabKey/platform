@@ -56,6 +56,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.labkey.test.pages.test.TestActions.ExceptionActions;
+import static org.labkey.test.util.PermissionsHelper.EDITOR_ROLE;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({Daily.class})
@@ -99,7 +100,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         _userHelper.createUser(ASSIGNEE2);
         _userHelper.createUser(NON_ASSIGNEE);
         permissionsHelper.createProjectGroup(MOTHERSHIP_GROUP, MOTHERSHIP_PROJECT);
-        permissionsHelper.addMemberToRole(MOTHERSHIP_GROUP, "Editor", MemberType.group, MOTHERSHIP_PROJECT);
+        permissionsHelper.addMemberToRole(MOTHERSHIP_GROUP, EDITOR_ROLE, MemberType.group, MOTHERSHIP_PROJECT);
         permissionsHelper.addUserToProjGroup(ASSIGNEE, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
         permissionsHelper.addUserToProjGroup(ASSIGNEE2, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
@@ -121,7 +122,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         ApiPermissionsHelper permHelper = new ApiPermissionsHelper(this);
         permHelper.createProjectGroup(ISSUES_GROUP, ISSUES_PROJECT);
         permHelper.addUserToProjGroup(ASSIGNEE, ISSUES_PROJECT, ISSUES_GROUP);
-        permHelper.addMemberToRole(ISSUES_GROUP, "Editor", MemberType.group, ISSUES_PROJECT);
+        permHelper.addMemberToRole(ISSUES_GROUP, EDITOR_ROLE, MemberType.group, ISSUES_PROJECT);
     }
 
     @Before
