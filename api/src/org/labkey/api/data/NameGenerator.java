@@ -744,26 +744,16 @@ public class NameGenerator
             // using TabLoader instead of just splitting on the comma.
             boolean likelyAlreadyQuoted = valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r") || (valueStr.startsWith("\"") && valueStr.endsWith("\""));
             String quotedStr = likelyAlreadyQuoted ? valueStr : tsvWriter.quoteValue(valueStr); // if value contains comma, no need to quote again
-            try (TabLoader tabLoader = new TabLoader(quotedStr))
+            try
             {
-                tabLoader.setDelimiterCharacter(',');
-                tabLoader.setUnescapeBackslashes(false);
-                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
-                tabLoader.setIncludeComments(true);
-                // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
-                tabLoader.setParseEnclosedQuotes(true);
-                try
-                {
-                    String[][] parsedValues = tabLoader.getFirstNLines(1);
-                    values = Arrays.stream(parsedValues[0]);
-                }
-                catch (IOException e)
-                {
-                    if (errors != null)
-                        errors.addRowError(new ValidationException("Unable to parse parent names from " + value, parentColName));
-                    else
-                        throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
-                }
+                values = Arrays.stream(ExperimentService.getParentValues(quotedStr));
+            }
+            catch (IOException e)
+            {
+                if (errors != null)
+                    errors.addRowError(new ValidationException("Unable to parse parent names from " + value, parentColName));
+                else
+                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
             }
         }
         else if (value instanceof Collection<?> coll)

@@ -2491,9 +2491,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findRelatedChildSamples(start);
     }
 
-    @Override
+    /**
+     * Find the Identifiable objects, if any, that are parents of the <code>start</code> Identifiable.
+     */
     @NotNull
-    public Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start)
+    public Set<ExpData> getParentDatas(Container c, User user, Identifiable start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2503,9 +2505,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findNearestParentDatas(start);
     }
 
-    @Override
+    /**
+     * Find the Identifiable objects, if any, that are parents of the <code>start</code> Identifiable.
+     */
     @NotNull
-    public Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start)
+    public Set<ExpMaterial> getParentMaterials(Container c, User user, Identifiable start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2513,6 +2517,73 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         ExpLineage lineage = getLineage(c, user, start, options);
         return lineage.findNearestParentMaterials(start);
+    }
+
+    public <T extends ExpRunItem> void addParentsFields(T seed, Map<String, Object> dataRow, User user, Container container)
+    {
+        Set<ExpMaterial> parentSamples = getParentMaterials(container, user, seed);
+        if (!parentSamples.isEmpty())
+            addParentFields(dataRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+        Set<ExpData> parentDatas = getParentDatas(container, user, seed);
+        if (!parentDatas.isEmpty())
+            addParentFields(dataRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
+    }
+
+    public <T extends ExpRunItem> void addParentFields(Map<String, Object> sampleRow, Set<T> parents, String parentPrefix, User user)
+    {
+        Map<String, List<String>> parentByType = new HashMap<>();
+        for (ExpRunItem parent : parents)
+        {
+            String type = "";
+            if (parent instanceof ExpData dataParent)
+            {
+                ExpDataClass dataClass = dataParent.getDataClass(user);
+                if (dataClass == null)
+                    continue;
+                type = dataClass.getName();
+            }
+            else if (parent instanceof ExpMaterial materialParent)
+            {
+                ExpSampleType sampleType = materialParent.getSampleType();
+                if (sampleType == null)
+                    continue;
+                type = sampleType.getName();
+            }
+
+            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
+            String parentName = parent.getName();
+            if (parentName.contains(","))
+                parentName = "\"" + parentName + "\"";
+            parentByType.get(type).add(parentName);
+        }
+
+        for (String type : parentByType.keySet())
+        {
+            String key = parentPrefix + type;
+            List<String> parentValues = parentByType.get(type);
+            String value = String.join(",", parentValues);
+            sampleRow.put(key, value);
+        }
+    }
+
+    public void addRowsParentsFields(Set<Identifiable> seeds, Map<Integer, Map<String, Object>> dataRows, User user, Container container)
+    {
+        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, seeds);
+
+        for (Map<String, Object> dataRow : dataRows.values())
+        {
+            String lsidKey = (String) dataRow.get("lsid");
+
+            if (!parents.containsKey(lsidKey))
+                continue;
+
+            Pair<Set<ExpMaterial>, Set<ExpData>> sampleParents = parents.get(lsidKey);
+
+            if (!sampleParents.first.isEmpty())
+                addParentFields(dataRow, sampleParents.first, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+            if (!sampleParents.second.isEmpty())
+                addParentFields(dataRow, sampleParents.second, ExpData.DATA_INPUT_PARENT + "/", user);
+        }
     }
 
     public Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> getParentMaterialAndDataMap(Container c, User user, Set<Identifiable> seeds)
@@ -2542,28 +2613,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return results;
-    }
-
-    @Override
-    @NotNull
-    public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setChildren(false);
-
-        ExpLineage lineage = getLineage(c, user, start, options);
-        return lineage.findNearestParentDatas(start);
-    }
-
-    @Override
-    @NotNull
-    public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setChildren(false);
-
-        ExpLineage lineage = getLineage(c, user, start, options);
-        return lineage.findNearestParentMaterials(start);
     }
 
     // Get list of ExpRun LSIDs for the start Data or Material

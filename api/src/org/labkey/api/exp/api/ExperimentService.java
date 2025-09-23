@@ -75,6 +75,7 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -521,6 +522,23 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return null;
     }
 
+    static @NotNull String[] getParentValues(String valueStr) throws IOException
+    {
+        if (StringUtils.isEmpty(valueStr.trim()))
+            return new String[0];
+        try (TabLoader tabLoader = new TabLoader(valueStr))
+        {
+            tabLoader.setDelimiterCharacter(',');
+            tabLoader.setUnescapeBackslashes(false);
+            // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+            tabLoader.setIncludeComments(true);
+            // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+            tabLoader.setParseEnclosedQuotes(true);
+            String[][] parsedValues = tabLoader.getFirstNLines(1);
+            return parsedValues[0];
+        }
+    }
+
     static Pair<String, String> parseInputOutputAlias(String columnName)
     {
         if (!isInputOutputColumn(columnName))
@@ -593,33 +611,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
-
-    /**
-     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
-     */
-    @NotNull
-    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
-     */
-    @NotNull
-    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
-     * stopping at the first parent generation (no grandparents.)
-     */
-    @NotNull
-    Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
-
-    /**
-     * Find all parent ExpMaterial that are parents of the <code>start</code> ExpMaterial,
-     * stopping at the first parent generation (no grandparents.)
-     */
-    @NotNull
-    Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start);
-
     /**
      * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
      * a ExpData (in a DataClass), or an ExpRun.
