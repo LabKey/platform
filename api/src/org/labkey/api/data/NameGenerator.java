@@ -78,7 +78,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.labkey.api.data.NameGenerator.NameGenerationExpression.findFirstOpenOrCloseTag;
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
@@ -1040,6 +1039,35 @@ public class NameGenerator
         return parentImportAliasFieldKeys;
     }
 
+    public static int findFirstOpenOrCloseTag(String str, String target, int startIndex)
+    {
+        int searchStart = startIndex;
+        int index = str.indexOf(target, searchStart);
+
+        // Keep searching until we find a valid 'target' that's not preceded by \ (for example, find ${, but exclude \${)
+        while (index != -1)
+        {
+            if (index == 0)
+                return index;
+            if (str.charAt(index - 1) != '\\')
+                return index;
+            else if (index > 1)
+            {
+                int backslashCount = 0;
+                for (int i = index - 1; i >= startIndex && str.charAt(i) == '\\'; i--)
+                    backslashCount++;
+                if (backslashCount % 2 == 0) // "\\{": the escape is for "\", not for "{"
+                    return index;
+            }
+
+            // Otherwise, continue searching after the current occurrence of the target
+            searchStart = index + 1;
+            index = str.indexOf(target, searchStart);
+        }
+
+        return -1;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any parent input tokens
@@ -1794,29 +1822,6 @@ public class NameGenerator
             {
                 return new StringExpressionFactory.ConstantPart("${" + expression + "}");
             }
-        }
-
-        public static int findFirstOpenOrCloseTag(String str, String target, int startIndex)
-        {
-            int searchStart = startIndex;
-            int index = str.indexOf(target, searchStart);
-
-            // Keep searching until we find a valid 'target' that's not preceeded by \ (for example, find ${, but exclude \${)
-            while (index != -1)
-            {
-                if (index == 0)
-                    return index;
-                if (str.charAt(index - 1) != '\\')
-                    return index;
-                else if (index > 1 && str.charAt(index - 2) == '\\') // "\\{": the escape is for "\", not for "{"
-                    return index;
-
-                // Otherwise, continue searching after the current occurrence of the target
-                searchStart = index + 1;
-                index = str.indexOf(target, searchStart);
-            }
-
-            return -1;
         }
 
         @Override
@@ -2897,6 +2902,27 @@ public class NameGenerator
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", "S-ancestorname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname");
             verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname", aliasMap, null);
+        }
+
+        @Test
+        public void findsOpenAndCloseTags()
+        {
+            // Finds first open tag
+            assertEquals(0, NameGenerator.findFirstOpenOrCloseTag("${example}", "${", 0));
+            // Finds tag after start index
+            assertEquals(16, NameGenerator.findFirstOpenOrCloseTag("text ${example} ${test}", "${", 10));
+            // Finds first close tag
+            assertEquals(9, NameGenerator.findFirstOpenOrCloseTag("${example}", "}", 0));
+            // Skips escaped open tag
+            assertEquals(11, NameGenerator.findFirstOpenOrCloseTag("\\${example}${test}", "${", 0));
+            // Skips escaped close tag
+            assertEquals(19, NameGenerator.findFirstOpenOrCloseTag("${example\\}${test\\\\}", "}", 0));
+            assertEquals(19, NameGenerator.findFirstOpenOrCloseTag("${example\\}${test\\\\}", "}", 12));
+            // Returns -1 when no tag found
+            assertEquals(-1, NameGenerator.findFirstOpenOrCloseTag("example text", "${", 0));
+            assertEquals(-1, NameGenerator.findFirstOpenOrCloseTag("example\\} text", "}", 0));
+            // Handles multiple consecutive escapes
+            assertEquals(13, NameGenerator.findFirstOpenOrCloseTag("\\\\\\${example}${test}", "${", 0));
         }
 
         @After
