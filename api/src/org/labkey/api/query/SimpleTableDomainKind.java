@@ -15,12 +15,11 @@
  */
 package org.labkey.api.query;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
@@ -34,6 +33,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -242,21 +242,16 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         SimpleUserSchema.SimpleTable table = domain != null ? getTable(domain, user) : null;
         if (table != null)
         {
-            // return the set of built-in column names.
-            return Sets.newHashSet(Iterables.transform(table.getBuiltInColumns(),
-                new Function<ColumnInfo, String>() {
-                    @Override
-                    public String apply(ColumnInfo col)
-                    {
-                        return col.getName();
-                    }
-                }
-            ));
+            Set<String> set = new CaseInsensitiveHashSet();
+            ((Iterable<ColumnInfo>) table.getBuiltInColumns()).forEach(col -> {
+                set.addAll(DomainUtil.getNameAndLabels(col.getName()));
+            });
+            return set;
         }
         return Collections.emptySet();
     }

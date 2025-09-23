@@ -1535,4 +1535,27 @@ public class DomainUtil
         }
         return null;
     }
+
+    public static Set<String> getNameAndLabels(String name)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        values.add(name);
+        String label = ColumnInfo.labelFromName(name);
+        values.add(label);
+        values.add(label.replaceAll("\\s", ""));
+        return values;
+    }
+
+    public static Set<String> getNamesAndLabels(Collection<String> names)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        for (String name : names)
+        {
+            values.add(name);
+            String label = ColumnInfo.labelFromName(name);
+            values.add(label);
+            values.add(label.replaceAll("\\s", ""));
+        }
+        return values;
+    }
 }

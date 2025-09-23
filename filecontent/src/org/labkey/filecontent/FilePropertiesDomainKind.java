@@ -15,6 +15,7 @@
  */
 package org.labkey.filecontent;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.SQLFragment;
@@ -22,6 +23,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.User;
@@ -31,8 +33,10 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: klum
@@ -56,11 +60,10 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     private static final Set<String> _reservedFieldSet;
 
     static {
-        Set<String> s = new CaseInsensitiveHashSet(RESERVED_FIELDS);
+        Set<String> s = new HashSet<>(RESERVED_FIELDS);
 
-        for (ExpDataTable.Column col : ExpDataTable.Column.values())
-            s.add(col.name());
-        _reservedFieldSet = Collections.unmodifiableSet(s);
+        s.addAll(Arrays.stream(ExpDataTable.Column.values()).map(Enum::name).collect(Collectors.toSet()));
+        _reservedFieldSet = Collections.unmodifiableSet(DomainUtil.getNamesAndLabels(s));
     }
 
     @Override
@@ -101,7 +104,7 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return _reservedFieldSet;
     }
@@ -116,12 +119,6 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
         return new DefaultValueType[] { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE };
-    }
-
-    @Override
-    public DefaultValueType getDefaultDefaultType(Domain domain)
-    {
-        return DefaultValueType.FIXED_EDITABLE;
     }
 
     @Override

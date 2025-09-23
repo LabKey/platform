@@ -283,21 +283,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     // Issue 43898: Add the study subject name column to reserved fields
     protected Set<String> getStudySubjectReservedName(Domain domain)
     {
-        HashSet<String> fields = new HashSet<>();
+        HashSet<String> fields = new CaseInsensitiveHashSet();
         if (null != domain)
         {
             Study study = StudyManager.getInstance().getStudy(domain.getContainer());
             if (null != study)
             {
                 String participantIdField = study.getSubjectColumnName();
-                fields.add(participantIdField);
+                fields.addAll(DomainUtil.getNameAndLabels(participantIdField));
             }
         }
         return Collections.unmodifiableSet(fields);
     }
 
     @Override
-    public abstract Set<String> getReservedPropertyNames(Domain domain, User user);
+    public abstract @NotNull Set<String> getReservedPropertyNames(Domain domain, User user);
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
