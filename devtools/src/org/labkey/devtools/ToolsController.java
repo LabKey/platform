@@ -769,7 +769,7 @@ public class ToolsController extends SpringActionController
                     try
                     {
                         // All writers are closed below
-                        WriterContext context = getFileWriter(overlap.schemaName());
+                        WriterContext context = getWriterContext(overlap.schemaName());
                         if (type.writeScript(context.getWriter(), overlap))
                             context.setModified();
                     }
@@ -781,7 +781,7 @@ public class ToolsController extends SpringActionController
             }
             finally
             {
-                closeAllWriters();
+                closeAllContexts();
             }
 
             return true;
@@ -834,11 +834,11 @@ public class ToolsController extends SpringActionController
             }
         }
 
-        private final Map<String, WriterContext> _writerMap = new HashMap<>();
+        private final Map<String, WriterContext> _writerContextMap = new HashMap<>();
 
-        private WriterContext getFileWriter(String schemaName) throws IOException
+        private WriterContext getWriterContext(String schemaName) throws IOException
         {
-            return _writerMap.computeIfAbsent(schemaName, n -> {
+            return _writerContextMap.computeIfAbsent(schemaName, n -> {
 
                 DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                 Module module = schema.getModule();
@@ -870,9 +870,9 @@ public class ToolsController extends SpringActionController
             return schemaName + "-" + Formats.f3.format(startVersion) + "-" + Formats.f3.format(startVersion + 0.001) + ".sql";
         }
 
-        private void closeAllWriters()
+        private void closeAllContexts()
         {
-            _writerMap.values().forEach(context -> {
+            _writerContextMap.values().forEach(context -> {
                 try
                 {
                     context.close();
@@ -974,7 +974,7 @@ public class ToolsController extends SpringActionController
 
     protected enum OverlapType
     {
-        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid")
+        UniqueOverlappingNonUnique("column lists that overlap at the start, but the first index is a unique constraint. These are likely valid")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap)
@@ -982,7 +982,7 @@ public class ToolsController extends SpringActionController
                 return false; // Write nothing
             }
         },
-        OverlappingWithDifferentFilter("column sets that overlap at the start, but with different filter conditions. These are likely valid")
+        OverlappingWithDifferentFilter("column lists that overlap at the start, but with different filter conditions. These are likely valid")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap)
@@ -990,7 +990,7 @@ public class ToolsController extends SpringActionController
                 return false; // Write nothing
             }
         },
-        Identical("identical column sets")
+        Identical("identical column lists")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException
@@ -1043,7 +1043,7 @@ public class ToolsController extends SpringActionController
                 return overlap.indexDef1.name() + " vs. " + overlap.indexDef2.name() + ": " + join(overlap.indexDef1.columns());
             }
         },
-        Overlapping("column sets that overlap at the start")
+        Overlapping("column lists that overlap at the start")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException

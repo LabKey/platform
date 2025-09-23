@@ -360,7 +360,7 @@ public class SchemaColumnMetaData
                     if (def == null)
                     {
                         IndexType indexType = (indexName.equals(primaryKeyName) ? IndexType.Primary : rs.getBoolean("NON_UNIQUE") ? IndexType.NonUnique : IndexType.Unique);
-                        @Nullable String filterCondition = rs.getString("FILTER_CONDITION");
+                        @Nullable String filterCondition = scope.getSqlDialect().getIndexFilterCondition(rs, schema.getName(), ti.getName(), indexName);
                         indexMap.put(indexName, def = new IndexDef(indexName, indexType, new ArrayList<>(2), filterCondition));
                     }
 
