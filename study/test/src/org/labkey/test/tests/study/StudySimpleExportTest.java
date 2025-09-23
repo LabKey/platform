@@ -29,6 +29,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
+import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.admin.ExportFolderPage;
@@ -164,6 +165,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         fieldsEditor.addField(new FieldDefinition("TestDate", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDate"));
         // "TestDateTime" format will default to date-time
         fieldsEditor.addField(new FieldDefinition("TestDateTime", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDateTime"));
+
+        // Issue 53929 : regression for updating QC state on dataset with a lookup
+        fieldsEditor.addField("Location").setType(FieldDefinition.ColumnType.Integer)
+                .setLookup(new FieldDefinition.IntLookup(null, "study", "Location"));
+
         editDatasetPage
             .clickSave()
             .clickViewData()
@@ -207,6 +213,17 @@ public class StudySimpleExportTest extends StudyBaseTest
             .setDefaultDirectEntryQCState("Third QC State")
             .setDefaultVisibility("Public data")
             .clickSave();
+
+        // Issue 53929 : set the QC state, no server side errors should occur
+        clickFolder(getFolderName());
+        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
+        new DataRegionTable("Dataset", this).checkAll();
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "Update state of selected rows");
+        selectOptionByText(Locator.name("newState"), "First QC State");
+        setFormElement(Locator.name("comments"), "Setting QC state.");
+        clickButton("Update Status");
 
         log("QC States: export study folder to the pipeline as individual files");
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
