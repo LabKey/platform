@@ -868,15 +868,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
         Integer aliquotRollupRoot = null;
-
+        SampleTypeService stService = SampleTypeService.get();
         if (!_sampleType.isMedia() && isAliquot)
         {
             Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
+                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
@@ -1828,14 +1828,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
+                String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
-                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                    addRowError("Failed to generate name for aliquot " + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    addRowError("Failed to generate name for sample " + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (_sampleType.hasNameAsIdCol())
-                    addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    addRowError("SampleID or Name is required for sample " + rowText + ".");
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample " + rowText + ".");
             }
         }
 
@@ -2052,7 +2053,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
 
 
-                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit);
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
@@ -2092,7 +2093,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
                 }
 
-                Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
+                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit);
 
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
