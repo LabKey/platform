@@ -974,7 +974,7 @@ public class ToolsController extends SpringActionController
 
     protected enum OverlapType
     {
-        UniqueOverlappingNonUnique("column lists that overlap at the start, but the first index is a unique constraint. These are likely valid")
+        UniqueOverlappingNonUnique("a column list that overlaps another index's column list at the start, but the first index is a unique constraint. These are likely valid")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap)
@@ -982,7 +982,7 @@ public class ToolsController extends SpringActionController
                 return false; // Write nothing
             }
         },
-        OverlappingWithDifferentFilter("column lists that overlap at the start, but with different filter conditions. These are likely valid")
+        OverlappingWithDifferentFilter("a column list that overlaps another index's column list at the start, but with different filter conditions. These are likely valid")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap)
@@ -990,7 +990,7 @@ public class ToolsController extends SpringActionController
                 return false; // Write nothing
             }
         },
-        Identical("identical column lists")
+        Identical("a column list that's identical to another index's column list")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException
@@ -1043,7 +1043,7 @@ public class ToolsController extends SpringActionController
                 return overlap.indexDef1.name() + " vs. " + overlap.indexDef2.name() + ": " + join(overlap.indexDef1.columns());
             }
         },
-        Overlapping("column lists that overlap at the start")
+        Overlapping("a column list that overlaps another index's column list at the start")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException

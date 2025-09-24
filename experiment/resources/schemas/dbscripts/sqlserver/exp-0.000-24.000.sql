@@ -23,6 +23,13 @@
 CREATE SCHEMA exp;
 GO
 
+-- Provisioned schema used by DataClassDomainKind
+CREATE SCHEMA expdataclass;
+GO
+
+CREATE SCHEMA expsampleset
+GO
+
 EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)';
 GO
 
@@ -1025,20 +1032,9 @@ GO
 
 EXECUTE core.fn_dropifexists 'material', 'exp', 'INDEX', 'idx_material_AK';
 
--- shouldn't any null names, but just to be safe
+-- shouldn't be any null names, but just to be safe
 UPDATE exp.material SET name='NULL' WHERE name IS NULL;
 ALTER TABLE exp.material ALTER COLUMN name NVARCHAR(200) NOT NULL;
-
-WITH nonunique AS (
-    SELECT container, cpastype, name
-    FROM exp.material
-      WHERE cpastype IS NOT NULL
-    GROUP BY container, cpastype, name
-    HAVING COUNT(*) > 1)
-UPDATE exp.material
-SET Name = Name + ' - ' + CAST(RowId AS NVARCHAR(11))
-FROM exp.material M
-WHERE EXISTS (SELECT * FROM nonunique NU WHERE M.container=NU.container AND M.cpastype=NU.cpastype AND M.name=NU.name);
 
 CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
 GO
@@ -1051,9 +1047,6 @@ GO
 
 /* exp-15.30-16.10.sql */
 
--- Provisioned schema used by DataClassDomainKind
-CREATE SCHEMA expdataclass;
-GO
 
 CREATE TABLE exp.DataClass
 (
@@ -1164,12 +1157,6 @@ EXEC core.fn_dropifexists 'list', 'exp', 'COLUMN', 'rowid';
 
 /* exp-17.10-17.20.sql */
 
-EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'DF__list__FileAttachmentIndex';
-
-IF EXISTS( SELECT TOP 1 1 FROM sys.objects o INNER JOIN sys.columns c ON o.object_id = c.object_id WHERE o.name = 'list' AND c.name = 'FileAttachmentIndex')
-  ALTER TABLE exp.list DROP COLUMN FileAttachmentIndex
-GO
-
 ALTER TABLE exp.list ADD FileAttachmentIndex BIT CONSTRAINT DF__list__FileAttachmentIndex DEFAULT 0 NOT NULL;
 GO
 
@@ -1272,9 +1259,6 @@ ALTER TABLE exp.Data ALTER COLUMN DataFileURL NVARCHAR(600);
 -- Removing active sample types
 EXEC core.fn_dropifexists 'ActiveMaterialSource', 'exp', 'TABLE', NULL;
 GO
-
-CREATE SCHEMA expsampleset
-go
 
 ALTER TABLE exp.materialsource
   ALTER COLUMN nameexpression NVARCHAR(500);
