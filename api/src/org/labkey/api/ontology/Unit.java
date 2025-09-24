@@ -218,9 +218,9 @@ public enum Unit
             rawUnitsString = rawUnitsString.trim();
 
             Unit mUnit = Unit.fromName(rawUnitsString);
-            if (mUnit == null)
+            List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
+            if (mUnit == null || !commonUnits.contains(mUnit))
             {
-                List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
                 throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
             }
             if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
