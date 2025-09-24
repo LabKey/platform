@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
@@ -86,7 +87,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         ReplicateGroup,
         Row,
         RowId,
-        SampleId,
+        SampleID,
         Type,
         Value,
         WellGroup;
@@ -277,7 +278,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         var columnInfo = super.wrapColumn(col);
 
         // workaround for sample lookup not resolving correctly
-        if (columnInfo.getName().equalsIgnoreCase(Column.SampleId.name()))
+        if (columnInfo.getName().equalsIgnoreCase(Column.SampleID.name()))
         {
             columnInfo.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
                     .schema(ExpSchema.SCHEMA_NAME, getContainer())
@@ -391,6 +392,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public @NotNull Set<String> getExtraDetailedUpdateAuditFields()
     {
         return CaseInsensitiveHashSet.of(Column.Position.name(), Column.PlateId.name());
+    }
+
+    @Override
+    public @NotNull AuditBehaviorType getDefaultAuditBehavior()
+    {
+        return AuditBehaviorType.DETAILED;
     }
 
     protected static class WellUpdateService extends DefaultQueryUpdateService

@@ -15,7 +15,6 @@
  */
 package org.labkey.assay;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;

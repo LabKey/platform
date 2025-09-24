@@ -140,25 +140,24 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
         _reimport = reimport;
     }
 
-    private static final Set<String> EXCLUDED_PROPERTIES = CaseInsensitiveHashSet.of("ContainerId", PlateTable.Column.DataFileId.name(), "EntityId");
-
     public void setNewRecordMap(Container container, PlateImpl plate)
     {
-        Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class)
-                .toMap(PlateBean.from(plate, true), new CaseInsensitiveHashMap<>());
-        EXCLUDED_PROPERTIES.forEach(plateRow::remove);
-
-        var newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(plateRow);
-        setNewRecordMap(newRecordMap, container);
+        setNewRecordMap(encodeRecordMap(plate), container);
     }
 
     public void setOldRecordMap(Container container, PlateImpl plate)
     {
+        setOldRecordMap(encodeRecordMap(plate), container);
+    }
+
+    private static final Set<String> EXCLUDED_PROPERTIES = CaseInsensitiveHashSet.of("ContainerId", PlateTable.Column.DataFileId.name(), "EntityId");
+
+    private static String encodeRecordMap(PlateImpl plate)
+    {
         Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class)
                 .toMap(PlateBean.from(plate, true), new CaseInsensitiveHashMap<>());
         EXCLUDED_PROPERTIES.forEach(plateRow::remove);
 
-        var oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(plateRow);
-        setOldRecordMap(oldRecordMap, container);
+        return AbstractAuditTypeProvider.encodeForDataMap(plateRow);
     }
 }

@@ -37,7 +37,7 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
 public class PlateMapExcelWriter extends ExcelWriter
 {
     private static final Logger logger = LogHelper.getLogger(PlateMapExcelWriter.class, "Plate map export");
-    private static final Set<String> excludedFields = CaseInsensitiveHashSet.of(Column.SampleId.name(), Column.Type.name(), Column.WellGroup.name());
+    private static final Set<String> excludedFields = CaseInsensitiveHashSet.of(Column.SampleID.name(), Column.Type.name(), Column.WellGroup.name());
 
     private final Plate _plate;
     private final QueryView _queryView;
