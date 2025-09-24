@@ -15,7 +15,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -936,7 +936,7 @@ public class ToolsController extends SpringActionController
             return !_alreadySeen.add(key);
         }
 
-        private @Nullable OverlapType overlap(IndexDef index1, IndexDef index2)
+        private @Nullable OverlapType overlap(IndexDefinition index1, IndexDefinition index2)
         {
             String key1 = getKey(index1.columns());
             String key2 = getKey(index2.columns());
@@ -970,7 +970,7 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    protected record Overlap(String schemaName, String tableName, IndexDef indexDef1, IndexDef indexDef2) {}
+    protected record Overlap(String schemaName, String tableName, IndexDefinition indexDef1, IndexDefinition indexDef2) {}
 
     protected enum OverlapType
     {

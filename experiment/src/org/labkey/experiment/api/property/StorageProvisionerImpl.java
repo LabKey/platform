@@ -52,7 +52,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -689,14 +689,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         @NotNull
         @Override
-        public Map<String, IndexDef> getUniqueIndices()
+        public Map<String, IndexDefinition> getUniqueIndices()
         {
             return _inner.getUniqueIndices();
         }
 
         @NotNull
         @Override
-        public Map<String, IndexDef> getAllIndices()
+        public Map<String, IndexDefinition> getAllIndices()
         {
             return _inner.getAllIndices();
         }
@@ -923,7 +923,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
                 throw new IllegalStateException("Domain kind of " + domain.getName() + " is null!");
-            Map<String, IndexDef> existingIndices = schemaTableInfo.getAllIndices();
+            Map<String, IndexDefinition> existingIndices = schemaTableInfo.getAllIndices();
             // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
             // so we need to uniquify. Domain indices never specify "clustered" but DomainKind indices may (e.g.,
             // DatasetDomainKind), so compare using only column names and give preference to DomainKind.
@@ -933,7 +933,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             Set<String> toRemove = new HashSet<>();
             for (String name : existingIndices.keySet())
             {
-                IndexDef def = existingIndices.get(name);
+                IndexDefinition def = existingIndices.get(name);
                 if (def.indexType() == TableInfo.IndexType.Primary)
                     continue;
                 String[] columnNames = def.columns().stream()

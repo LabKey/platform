@@ -145,7 +145,7 @@ public class TableChange
             TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
             if (storageTableInfo != null)
             {
-                for (TableInfo.IndexDef index : storageTableInfo.getAllIndices().values())
+                for (TableInfo.IndexDefinition index : storageTableInfo.getAllIndices().values())
                 {
                     List<String> columnNames = index.columns().stream().map(ColumnInfo::getName).collect(Collectors.toList());
 

@@ -526,17 +526,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getUniqueIndices()
+    public Map<String, IndexDefinition> getUniqueIndices()
     {
         // Get indices from underlying storage table
-        Map<String, IndexDef> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
+        Map<String, IndexDefinition> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo(false)));
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
 
         // Index enforced in code not on actual database for demographic datasets only
         if (getColumn(subjectColName) != null && getDatasetDefinition().isDemographicData())
         {
             String name = "uq_dataset_subject";
-            ret.put(name, new IndexDef(name, IndexType.Unique, Arrays.asList(getColumn(subjectColName)), null));
+            ret.put(name, new IndexDefinition(name, IndexType.Unique, Arrays.asList(getColumn(subjectColName)), null));
         }
         return Collections.unmodifiableMap(ret);
     }

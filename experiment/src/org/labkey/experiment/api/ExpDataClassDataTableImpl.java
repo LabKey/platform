@@ -786,17 +786,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getUniqueIndices()
+    public Map<String, IndexDefinition> getUniqueIndices()
     {
-        Map<String, IndexDef> indices = new HashMap<>(super.getUniqueIndices());
+        Map<String, IndexDefinition> indices = new HashMap<>(super.getUniqueIndices());
         indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
 
         // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
         // RemapCache is used to findExpData using name/rowId remap.
         // The addition of "ClassId" column to the TableInfo is causing violation of RemapCache's requirement of "unique index over a single column that isn't the primary key".
         // Because this is a joined table between exp.data and the dataclass provisioned table, it's safe to ignore "ClassId" as part of the unique key.
-        Map<String, IndexDef> filteredIndices = new HashMap<>();
-        for (IndexDef def : indices.values())
+        Map<String, IndexDefinition> filteredIndices = new HashMap<>();
+        for (IndexDefinition def : indices.values())
         {
             IndexType type = def.indexType();
             List<ColumnInfo> columns = def.columns();
@@ -813,16 +813,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
 
-            filteredIndices.put(def.name(), new IndexDef(def.name(), def.indexType(), filteredColumns.isEmpty() ? columns : filteredColumns, def.filterCondition()));
+            filteredIndices.put(def.name(), new IndexDefinition(def.name(), def.indexType(), filteredColumns.isEmpty() ? columns : filteredColumns, def.filterCondition()));
         }
         return Collections.unmodifiableMap(filteredIndices);
     }
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getAllIndices()
+    public Map<String, IndexDefinition> getAllIndices()
     {
-        Map<String, IndexDef> indices = new HashMap<>(super.getAllIndices());
+        Map<String, IndexDefinition> indices = new HashMap<>(super.getAllIndices());
         indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
         return Collections.unmodifiableMap(indices);
     }

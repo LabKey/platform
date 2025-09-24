@@ -463,11 +463,11 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public @NotNull Map<String, IndexDef> getUniqueIndices()
+    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
     {
-        Map<String, IndexDef> unique = new HashMap<>(super.getUniqueIndices());
+        Map<String, IndexDefinition> unique = new HashMap<>(super.getUniqueIndices());
         String name = "uq_users_email";
-        unique.put(name, new IndexDef(name, IndexType.Unique, getColumns("Email"), null));
+        unique.put(name, new IndexDefinition(name, IndexType.Unique, getColumns("Email"), null));
         return unique;
     }
 

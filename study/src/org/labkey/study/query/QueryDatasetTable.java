@@ -37,7 +37,7 @@ public class QueryDatasetTable extends DatasetTableImpl
     }
 
     @Override
-    public @NotNull Map<String, IndexDef> getUniqueIndices()
+    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
     {
         return Collections.emptyMap();
     }

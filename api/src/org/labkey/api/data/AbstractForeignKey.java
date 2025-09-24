@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -384,7 +384,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         Set<ColumnInfo> seen = new HashSet<>();
         List<List<ColumnInfo>> candidates = new ArrayList<>();
-        for (IndexDef def : lookupTable.getUniqueIndices().values())
+        for (IndexDefinition def : lookupTable.getUniqueIndices().values())
         {
             if (def.indexType() != TableInfo.IndexType.Unique)
                 continue;

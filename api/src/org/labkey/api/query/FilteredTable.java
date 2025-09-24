@@ -815,35 +815,35 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getUniqueIndices()
+    public Map<String, IndexDefinition> getUniqueIndices()
     {
         return Collections.unmodifiableMap(wrapTableIndices(getRealTable()));
     }
 
-    protected Map<String, IndexDef> wrapTableIndices(TableInfo table)
+    protected Map<String, IndexDefinition> wrapTableIndices(TableInfo table)
     {
-        Map<String, IndexDef> indices = table.getUniqueIndices();
+        Map<String, IndexDefinition> indices = table.getUniqueIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getAllIndices()
+    public Map<String, IndexDefinition> getAllIndices()
     {
         return Collections.unmodifiableMap(wrapTableAllIndices(getRealTable()));
     }
 
-    protected Map<String, IndexDef> wrapTableAllIndices(TableInfo table)
+    protected Map<String, IndexDefinition> wrapTableAllIndices(TableInfo table)
     {
-        Map<String, IndexDef> indices = table.getAllIndices();
+        Map<String, IndexDefinition> indices = table.getAllIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
-    private Map<String, IndexDef> getStringPairMap(Map<String, IndexDef> indices)
+    private Map<String, IndexDefinition> getStringPairMap(Map<String, IndexDefinition> indices)
     {
-        Map<String, IndexDef> ret = new HashMap<>();
-        for (IndexDef def : indices.values())
+        Map<String, IndexDefinition> ret = new HashMap<>();
+        for (IndexDefinition def : indices.values())
         {
             List<ColumnInfo> indexCols = new ArrayList<>(def.columns().size());
             for (ColumnInfo col : def.columns())
@@ -854,7 +854,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             }
 
             if (!indexCols.isEmpty())
-                ret.put(def.name(), new IndexDef(def.name(), def.indexType(), indexCols, def.filterCondition()));
+                ret.put(def.name(), new IndexDefinition(def.name(), def.indexType(), indexCols, def.filterCondition()));
         }
 
         return ret;

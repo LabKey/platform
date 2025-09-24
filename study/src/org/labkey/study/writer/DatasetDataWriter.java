@@ -40,7 +40,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -404,12 +404,12 @@ public class DatasetDataWriter implements InternalStudyWriter
             return Collections.emptyList();
 
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(tinfo.getDomain());
-        Map<String, IndexDef> allIndices = schemaTableInfo.getAllIndices();
+        Map<String, IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 
         Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices(tinfo.getDomain());
 
-        for (IndexDef index : allIndices.values())
+        for (IndexDefinition index : allIndices.values())
         {
             List<ColumnInfo> columnInfoList = index.columns();
             if (index.indexType().equals(TableInfo.IndexType.Primary) ||

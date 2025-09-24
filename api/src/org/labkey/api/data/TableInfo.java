@@ -140,11 +140,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /** Gets all the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
     @NotNull
-    Map<String, IndexDef> getUniqueIndices();
+    Map<String, IndexDefinition> getUniqueIndices();
 
     /** Gets all the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
-    Map<String, IndexDef> getAllIndices();
+    Map<String, IndexDefinition> getAllIndices();
 
     class _DoNothingAuditHandler implements AuditHandler
     {
@@ -203,7 +203,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         }
     }
 
-    record IndexDef(String name, IndexType indexType, List<ColumnInfo> columns, @Nullable String filterCondition)
+    record IndexDefinition(String name, IndexType indexType, List<ColumnInfo> columns, @Nullable String filterCondition)
     {
         void addColumn(ColumnInfo column)
         {

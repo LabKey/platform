@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -63,8 +63,8 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
-    private Map<String, IndexDef> _uniqueIndices;
-    private Map<String, IndexDef> _allIndices;
+    private Map<String, IndexDefinition> _uniqueIndices;
+    private Map<String, IndexDefinition> _allIndices;
 
     private static final Logger _log = LogHelper.getLogger(SchemaColumnMetaData.class, "Extracts column metadata through JDBC and schema-scoped XML overrides");
 
@@ -347,7 +347,7 @@ public class SchemaColumnMetaData
 
                 String primaryKeyName = ti.getPrimaryKeyName();
                 Set<String> ignoreIndex = new HashSet<>();
-                Map<String, IndexDef> indexMap = new HashMap<>();
+                Map<String, IndexDefinition> indexMap = new HashMap<>();
                 uqSelector.forEach(rs -> {
                     String colName = rs.getString("COLUMN_NAME");
                     String indexName = rs.getString("INDEX_NAME");
@@ -356,12 +356,12 @@ public class SchemaColumnMetaData
 
                     indexName = indexName.toLowerCase();
 
-                    IndexDef def = indexMap.get(indexName);
+                    IndexDefinition def = indexMap.get(indexName);
                     if (def == null)
                     {
                         IndexType indexType = (indexName.equals(primaryKeyName) ? IndexType.Primary : rs.getBoolean("NON_UNIQUE") ? IndexType.NonUnique : IndexType.Unique);
                         @Nullable String filterCondition = scope.getSqlDialect().getIndexFilterCondition(rs, schema.getName(), ti.getName(), indexName);
-                        indexMap.put(indexName, def = new IndexDef(indexName, indexType, new ArrayList<>(2), filterCondition));
+                        indexMap.put(indexName, def = new IndexDefinition(indexName, indexType, new ArrayList<>(2), filterCondition));
                     }
 
                     ColumnInfo colInfo = getColumn(colName);
@@ -375,11 +375,11 @@ public class SchemaColumnMetaData
                 // Remove ignored indices
                 ignoreIndex.forEach(indexMap::remove);
 
-                Map<String, IndexDef> uniqueIndexMap = new HashMap<>();
-                Map<String, IndexDef> allIndexMap = new HashMap<>();
+                Map<String, IndexDefinition> uniqueIndexMap = new HashMap<>();
+                Map<String, IndexDefinition> allIndexMap = new HashMap<>();
 
                 // Search for the primary key and change that index type to Primary
-                for (IndexDef def : indexMap.values())
+                for (IndexDefinition def : indexMap.values())
                 {
                     allIndexMap.put(def.name(), def);
                     if (!def.indexType().isUnique())
@@ -544,7 +544,7 @@ public class SchemaColumnMetaData
         return _pkColumnNames;
     }
 
-    public @NotNull Map<String, IndexDef> getUniqueIndices()
+    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
     {
         if (_uniqueIndices == null)
         {
@@ -560,7 +560,7 @@ public class SchemaColumnMetaData
         return _uniqueIndices;
     }
 
-    public @NotNull Map<String, IndexDef> getAllIndices()
+    public @NotNull Map<String, IndexDefinition> getAllIndices()
     {
         if (_allIndices == null)
         {

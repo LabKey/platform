@@ -177,24 +177,24 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     }
 
     @Override
-    public @NotNull Map<String, IndexDef> getAllIndices()
+    public @NotNull Map<String, IndexDefinition> getAllIndices()
     {
-        Map<String, IndexDef> indices = new HashMap<>();
+        Map<String, IndexDefinition> indices = new HashMap<>();
         String name = "pk_rowId";
-        indices.put("pk_rowId", new IndexDef(name, IndexType.Primary, List.of(getColumn("RowId")), null));
+        indices.put("pk_rowId", new IndexDefinition(name, IndexType.Primary, List.of(getColumn("RowId")), null));
         indices.putAll(getUniqueIndices());
         return indices;
     }
 
     @NotNull
     @Override
-    public Map<String, IndexDef> getUniqueIndices()
+    public Map<String, IndexDefinition> getUniqueIndices()
     {
-        Map<String, IndexDef> indices = new HashMap<>();
+        Map<String, IndexDefinition> indices = new HashMap<>();
         String name = "uq_value";
-        indices.put(name, new IndexDef(name, IndexType.Unique, List.of(getColumn("Value")), null));
+        indices.put(name, new IndexDefinition(name, IndexType.Unique, List.of(getColumn("Value")), null));
         name = "uq_ordinal";
-        indices.put(name, new IndexDef(name, IndexType.Unique, List.of(getColumn("Ordinal")), null));
+        indices.put(name, new IndexDefinition(name, IndexType.Unique, List.of(getColumn("Ordinal")), null));
         return indices;
     }
 }

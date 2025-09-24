@@ -41,7 +41,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfo.IndexDef;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
@@ -363,7 +363,7 @@ public class DomainUtil
         if (domainKind.allowUniqueConstraintProperties())
         {
             SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-            Map<String, IndexDef> allIndices = schemaTableInfo.getAllIndices();
+            Map<String, IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
             if (!allIndices.isEmpty())
             {
                 List<GWTIndex> indices = allIndices.values().stream()
