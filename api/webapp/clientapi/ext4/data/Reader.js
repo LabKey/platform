@@ -21,6 +21,9 @@ Ext4.define('LABKEY.ext4.data.JsonReader', {
     mixins: {
         observable: 'Ext.util.Observable'
     },
+    statics: {
+        DEFAULT_ID_PROPERTY: '_internalId'
+    },
     constructor: function(){
         this.callParent(arguments);
         this.addEvents('dataload');
@@ -29,7 +32,7 @@ Ext4.define('LABKEY.ext4.data.JsonReader', {
         if (data.metaData){
             // NOTE: normalize which field holds the PK.  this is a little unfortunate b/c ext will automatically create this field if it doesnt exist,
             // such as a query w/o a PK.  therefore we fall back to a standard name, which we can ignore when drawing grids
-            this.idProperty = data.metaData.id || this.idProperty || '_internalId';
+            this.idProperty = data.metaData.id || this.idProperty || LABKEY.ext4.data.JsonReader.DEFAULT_ID_PROPERTY;
             this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
             if (this.model){
                 this.model.prototype.idProperty = this.idProperty;

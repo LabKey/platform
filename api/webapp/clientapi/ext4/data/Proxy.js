@@ -220,13 +220,15 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
                 }
 
                 oldKeys[this.reader.getIdProperty()] = id;
-                oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
+                oldKeys[LABKEY.ext4.data.JsonReader.DEFAULT_ID_PROPERTY] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
 
-                // NOTE: if the 'id' property of the ApiQueryResponse is null, which will occur if there is more than 1 PK (see ApiQueryResponse.getMetaData()),
-                // then we need to ensure the original values of keyFields are still included in oldKeys. The check against record.modified should ensure we send the original value
-                this.reader?.metaData?.fields?.filter(f => f.isKeyField).map(f => f.name).forEach(keyFieldName => {
-                    oldKeys[keyFieldName] = record.modified?.hasOwnProperty(keyFieldName) ? record.modified[keyFieldName] : record.get(keyFieldName);
-                })
+                // NOTE: this will apply if a table has more than one PK. If that is true, the 'id' property of the ApiQueryResponse is will be null (see ApiQueryResponse.getMetaData()).
+                // If this happens, we iterate the fields, find PKs, and include them in oldKeys. As above, check record.modified to ensure we send the original value, in case it was modified on the client.
+                if (this.reader.getIdProperty() === LABKEY.ext4.data.JsonReader.DEFAULT_ID_PROPERTY) {
+                    this.reader?.metaData?.fields.filter(f => f.isKeyField).map(f => f.name).forEach(keyFieldName => {
+                        oldKeys[keyFieldName] = record.modified?.hasOwnProperty(keyFieldName) ? record.modified[keyFieldName] : record.get(keyFieldName);
+                    })
+                }
 
                 if (command.command == 'delete'){
                     command.rows.push(this.getRowData(record));
