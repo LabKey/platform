@@ -16,6 +16,8 @@
 
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -25,6 +27,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -32,6 +35,7 @@ import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.assay.AssayFileWriter.DIR_NAME;
@@ -42,6 +46,13 @@ import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 public class AssayResultDomainKind extends AssayDomainKind
 {
+    private static final Set<String> RESERVED_NAMES;
+    static
+    {
+        RESERVED_NAMES = new CaseInsensitiveHashSet(getAssayReservedPropertyNames());
+        RESERVED_NAMES.addAll(DomainUtil.getNamesAndLabels(List.of("Run", "DataId")));
+    }
+
     public enum Column
     {
         Plate,
@@ -119,12 +130,9 @@ public class AssayResultDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> result = getAssayReservedPropertyNames();
-        result.add("Run");
-        result.add("DataId");
-        return result;
+        return RESERVED_NAMES;
     }
 
     @Override

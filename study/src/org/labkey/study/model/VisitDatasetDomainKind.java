@@ -15,9 +15,12 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -58,10 +61,10 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
-        fields.addAll(DatasetDefinition.DEFAULT_VISIT_FIELDS);
+        Set<String> fields = DomainUtil.getNamesAndLabels(DatasetDefinition.DEFAULT_VISIT_FIELDS);
+        fields.addAll(getStudySubjectReservedName(domain));
 
         return Collections.unmodifiableSet(fields);
     }

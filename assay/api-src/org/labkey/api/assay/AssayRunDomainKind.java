@@ -15,17 +15,33 @@
  */
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class AssayRunDomainKind extends AssayDomainKind
 {
+    private static final Set<String> RESERVED_NAMES;
+    static
+    {
+        Set<String> names = new HashSet<>(getAssayReservedPropertyNames());
+        names.add("AssayId");
+        names.addAll(Arrays.stream(ExpRunTable.Column.values()).map(Enum::name).collect(Collectors.toSet()));
+
+        RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
+    }
+
     public AssayRunDomainKind()
     {
         super(ExpProtocol.ASSAY_DOMAIN_RUN);
@@ -38,16 +54,9 @@ public class AssayRunDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> result = getAssayReservedPropertyNames();
-        for (ExpRunTable.Column column : ExpRunTable.Column.values())
-        {
-            result.add(column.toString());
-        }
-        result.add("AssayId");
-        result.add("Assay Id");
-        return result;
+        return RESERVED_NAMES;
     }
 
     @Override

@@ -14,6 +14,7 @@ public enum Directive implements StartupProperty, SafeToRenderEnum
     Frame("frame-src", "Sources for iframes"),
     Image("image-src", "Sources for images"),
     Object("object-src", "Sources for objects"), // Issue 53226
+    Script("script-src", "Sources for scripts"),
     Style("style-src", "Sources for stylesheets");
 
     private final String _cspDirective;

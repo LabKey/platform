@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,7 +27,6 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +37,13 @@ import java.util.Set;
 public class VocabularyDomainKind extends BaseAbstractDomainKind
 {
     public static final String KIND_NAME = "Vocabulary";
+    private static final Set<String> RESERVED_PROPERTY_NAMES;
+    static
+    {
+        RESERVED_PROPERTY_NAMES = DomainUtil.getNamesAndLabels(
+                List.of("RowId", "LSID", "EntityId", "Container", "Folder", "CreatedBy", "Created", "ModifiedBy", "Modified", "Owner", "LastIndexed")
+        );
+    }
 
     @Override
     public String getKindName()
@@ -72,21 +79,9 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> reservedProperties = new HashSet<>();
-        reservedProperties.add("RowId");
-        reservedProperties.add("LSID");
-        reservedProperties.add("EntityId");
-        reservedProperties.add("Container");
-        reservedProperties.add("Folder");
-        reservedProperties.add("CreatedBy");
-        reservedProperties.add("Created");
-        reservedProperties.add("ModifiedBy");
-        reservedProperties.add("Modified");
-        reservedProperties.add("Owner");
-        reservedProperties.add("LastIndexed");
-        return reservedProperties;
+        return RESERVED_PROPERTY_NAMES;
     }
 
     @Override

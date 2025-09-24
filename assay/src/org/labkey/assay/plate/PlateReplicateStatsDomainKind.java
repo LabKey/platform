@@ -1,5 +1,6 @@
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.assay.plate.PlateSet;
@@ -50,7 +51,7 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return getAssayReservedPropertyNames();
     }

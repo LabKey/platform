@@ -187,7 +187,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                         // also add the visits included in this dataset
                         if (selectedVisits != null)
                         {
-                            for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), startDateDataset.getDatasetId()))
+                            for (Visit visit : StudyManager.getInstance().getVisitsForDataset(user, sourceStudy.getContainer(), startDateDataset.getDatasetId()))
                                 selectedVisits.add(visit.getId());
                         }
                     }
