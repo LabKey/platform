@@ -30,6 +30,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -113,6 +114,12 @@ public interface SampleTypeService
     {
         ServiceRegistry.get().registerService(SampleTypeService.class, impl);
     }
+
+    @NotNull
+    List<Unit> getSupportedUnits();
+
+    @Nullable
+    Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits);
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 

@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.function.Function;
 
 public enum Unit
@@ -75,8 +74,6 @@ public enum Unit
     pg(KindOfQuantity.Mass, g, 1e-12, 3, "pg",
             Quantity.Mass_pg.class,
             "picogram", "picograms");
-
-    private static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the display units (%s).";
 
     @Getter
     final @NotNull KindOfQuantity kindOfQuantity;
@@ -198,38 +195,6 @@ public enum Unit
         return Quantity.convert(value, this);
     }
 
-    public static Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits)
-    {
-        if (rawUnits == null)
-            return null;
-        if (rawUnits instanceof Unit u)
-        {
-            if (defaultUnits == null)
-                return u;
-            else if (u.kindOfQuantity != defaultUnits.kindOfQuantity)
-                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
-            else
-                return u;
-        }
-        if (!(rawUnits instanceof String rawUnitsString))
-            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
-        if (!StringUtils.isBlank(rawUnitsString))
-        {
-            rawUnitsString = rawUnitsString.trim();
-
-            Unit mUnit = Unit.fromName(rawUnitsString);
-            List<Unit> commonUnits = KindOfQuantity.getSupportedUnits();
-            if (mUnit == null || !commonUnits.contains(mUnit))
-            {
-                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
-            }
-            if (defaultUnits != null && mUnit.kindOfQuantity != defaultUnits.kindOfQuantity)
-                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
-            return mUnit;
-        }
-        return null;
-    }
-
     public static class TestCase extends Assert
     {
         @Test
@@ -330,9 +295,9 @@ public enum Unit
         {
             try
             {
-                Unit.getValidatedUnit("g", Unit.mg);
-                Unit.getValidatedUnit("g ", Unit.mg);
-                Unit.getValidatedUnit(" g ", Unit.mg);
+                SampleTypeServiceImpl.getValidatedUnit("g", Unit.mg);
+                SampleTypeServiceImpl.getValidatedUnit("g ", Unit.mg);
+                SampleTypeServiceImpl.getValidatedUnit(" g ", Unit.mg);
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -340,7 +305,7 @@ public enum Unit
             }
             try
             {
-                assertNull(Unit.getValidatedUnit(null, Unit.unit));
+                assertNull(SampleTypeServiceImpl.getValidatedUnit(null, Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -348,7 +313,7 @@ public enum Unit
             }
             try
             {
-                assertNull(Unit.getValidatedUnit("", Unit.unit));
+                assertNull(SampleTypeServiceImpl.getValidatedUnit("", Unit.unit));
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -356,7 +321,7 @@ public enum Unit
             }
             try
             {
-                Unit.getValidatedUnit("g", Unit.unit);
+                SampleTypeServiceImpl.getValidatedUnit("g", Unit.unit);
                 fail("Units that are not comparable should throw exception.");
             }
             catch (ConversionExceptionWithMessage ignore)
@@ -366,7 +331,7 @@ public enum Unit
 
             try
             {
-                Unit.getValidatedUnit("nonesuch", Unit.unit);
+                SampleTypeServiceImpl.getValidatedUnit("nonesuch", Unit.unit);
                 fail("Invalid units should throw exception.");
             }
             catch (ConversionExceptionWithMessage ignore)
