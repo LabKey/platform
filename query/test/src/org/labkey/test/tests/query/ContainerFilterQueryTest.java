@@ -31,6 +31,7 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
 public class ContainerFilterQueryTest extends BaseWebDriverTest
@@ -158,7 +159,7 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
         ApiPermissionsHelper apiPermissionsHelper = new ApiPermissionsHelper(this);
         _userHelper.createUser(USER);
         apiPermissionsHelper
-            .addMemberToRole(USER, "Reader", PermissionsHelper.MemberType.user, getFolderPath());
+            .addMemberToRole(USER, READER_ROLE, PermissionsHelper.MemberType.user, getFolderPath());
 
         DataRegionTable table = createQuery(getFolderPath(), queryName, "core", sql);
         impersonate(USER);

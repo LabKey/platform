@@ -22,6 +22,8 @@ import org.labkey.test.util.StudyHelper;
 import java.io.File;
 import java.util.List;
 
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
+
 @Category({Daily.class, Assays.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 5)
 public class AutoLinkToStudyTest extends BaseWebDriverTest
@@ -68,7 +70,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         log("Creating a reader user");
         _userHelper.createUser(READER_USER);
         ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
-        permissionsHelper.addMemberToRole(READER_USER, "Reader", PermissionsHelper.MemberType.user, STUDY1);
+        permissionsHelper.addMemberToRole(READER_USER, READER_ROLE, PermissionsHelper.MemberType.user, STUDY1);
     }
 
     @Override

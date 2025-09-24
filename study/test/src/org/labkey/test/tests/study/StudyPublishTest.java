@@ -69,6 +69,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.labkey.test.util.PermissionsHelper.FOLDER_ADMIN_ROLE;
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
@@ -1225,8 +1227,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         _permissionsHelper.enterPermissionsUI();
         _permissionsHelper.uncheckInheritedPermissions();
         _permissionsHelper.savePermissions();
-        _permissionsHelper.setUserPermissions(PUBLISH_FOLDER_ADMIN, "Folder Administrator");
-        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Reader");
+        _permissionsHelper.setUserPermissions(PUBLISH_FOLDER_ADMIN, FOLDER_ADMIN_ROLE);
+        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, READER_ROLE);
         impersonate(PUBLISH_FOLDER_ADMIN);
         goToSchemaBrowser();
         selectQuery("study", "StudySnapshot");
@@ -1251,7 +1253,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // verify the case where a user has read access to a folder and admin access to a subfolder
         log("verify permissions for a sub level folder admin");
         navigateToFolder(getProjectName(), PUB1_NAME);
-        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
+        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, FOLDER_ADMIN_ROLE);
         clickButton("Save and Finish");
         clickFolder(getFolderName());
         goToSchemaBrowser();
