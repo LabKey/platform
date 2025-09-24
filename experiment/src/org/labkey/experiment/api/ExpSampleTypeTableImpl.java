@@ -64,11 +64,16 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case MaterialLSIDPrefix:
             case Name:
             case LabelColor:
-            case MetricUnit:
             case AutoLinkTargetContainer:
             case AutoLinkCategory:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
+            case MetricUnit:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Display Units");
+                return columnInfo;
+            }
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
