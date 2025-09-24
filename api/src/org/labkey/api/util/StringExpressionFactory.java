@@ -72,7 +72,7 @@ public class StringExpressionFactory
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
-    public static final String SUBSTITUTION_EXP_PREFIX = ".*\\$\\{.+}.*";
+    public static final String SUBSTITUTION_EXP_PREFIX = "\\$\\{[^{}]+}";
     public static final Pattern SUBSTITUTION_EXP_PATTERN = Pattern.compile(SUBSTITUTION_EXP_PREFIX);
 
     public static StringExpression create(String str)
