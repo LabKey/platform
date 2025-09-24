@@ -35,6 +35,7 @@ import org.labkey.data.xml.folderType.SelectorsDocument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * User: bbimber
@@ -206,7 +207,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
                 return false;
             if (_controller != null && !url.getController().equalsIgnoreCase(_controller))
                 return false;
-            if (_regex != null && !url.toString().matches(_regex))
+            if (_regex != null && !url.toString().matches(Pattern.quote(_regex)))
                 return false;
 
             return true;

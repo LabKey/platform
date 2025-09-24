@@ -73,7 +73,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         try
         {
             //noinspection ResultOfMethodCallIgnored
-            Pattern.compile(validator.getExpressionValue());
+            Pattern.compile(Pattern.quote(validator.getExpressionValue()));
             return true;
         }
         catch (PatternSyntaxException se)
@@ -101,7 +101,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
             Pattern expression = (Pattern)validatorCache.get(RegExValidator.class, validator.getExpressionValue());
             if (expression == null)
             {
-                expression = Pattern.compile(validator.getExpressionValue());
+                expression = Pattern.compile(Pattern.quote(validator.getExpressionValue()));
                 // Cache the pattern so that it can be reused
                 validatorCache.put(RegExValidator.class, validator.getExpressionValue(), expression);
             }

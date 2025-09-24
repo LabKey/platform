@@ -128,7 +128,7 @@ public class SimpleModule extends SpringModule
         else // regex pattern
         {
             // 'regex' patterns are not cross-platform. Don't use file system provided matcher.
-            final var regex = Pattern.compile(pattern.substring(6));
+            final var regex = Pattern.compile(Pattern.quote(pattern.substring(6)));
             _pathMatcher = c -> regex.matcher(c.getPath()).matches();
         }
     }
