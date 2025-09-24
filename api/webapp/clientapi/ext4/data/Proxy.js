@@ -225,7 +225,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
                 // NOTE: this will apply if a table has more than one PK. If that is true, the 'id' property of the ApiQueryResponse is will be null (see ApiQueryResponse.getMetaData()).
                 // If this happens, we iterate the fields, find PKs, and include them in oldKeys. As above, check record.modified to ensure we send the original value, in case it was modified on the client.
                 if (this.reader.getIdProperty() === LABKEY.ext4.data.JsonReader.DEFAULT_ID_PROPERTY) {
-                    this.reader?.metaData?.fields.filter(f => f.isKeyField).map(f => f.name).forEach(keyFieldName => {
+                    this.reader?.metaData?.fields?.filter(f => f.isKeyField).map(f => f.name).forEach(keyFieldName => {
                         oldKeys[keyFieldName] = record.modified?.hasOwnProperty(keyFieldName) ? record.modified[keyFieldName] : record.get(keyFieldName);
                     })
                 }
