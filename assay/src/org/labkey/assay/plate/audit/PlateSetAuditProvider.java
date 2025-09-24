@@ -154,7 +154,6 @@ public class PlateSetAuditProvider extends AbstractAuditTypeProvider
             _fields.add(createPropertyDescriptor(Column.Archived.name(), PropertyType.BOOLEAN));
             
             // AbstractAuditTypeProvider fields
-            _fields.add(createPropertyDescriptor(COLUMN_NAME_COMMENT, PropertyType.STRING));
             _fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields.add(createOldDataMapPropertyDescriptor());

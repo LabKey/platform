@@ -125,6 +125,7 @@ import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -2900,10 +2901,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
-            if (plates != null)
-                addPlatesToPlateSet(container, user, plateSetId, plateSet.isTemplate(), plates, String.format("Added during creation of plate set \"%s\".", plateSet.getName()));
-
             PlateSetImpl newPlateSet = (PlateSetImpl) requirePlateSet(container, plateSetId, "Failed to create plate set.");
+
+            if (plates != null)
+                addPlatesToPlateSet(container, user, plateSetId, newPlateSet.isTemplate(), plates, String.format("Added during creation of plate set \"%s\".", newPlateSet.getName()));
 
             // Set transient parent plate set property for auditing
             if (parentPlateSet != null)
@@ -2911,9 +2912,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // Audit plate set creation
             {
-                int plateCount = plates != null ? plates.size() : 0;
-                additionalAuditComment = String.format("%s Initially contains %d %s.", StringUtils.trimToEmpty(additionalAuditComment), plateCount, plateCount == 1 ? "plate" : "plates");
-                PlateSetAuditEvent auditEvent = PlateSetAuditProvider.EventFactory.plateSetCreated(container, tx.getAuditId(), newPlateSet, additionalAuditComment);
+                // Example comment: "Plate set was created. Created via reformat. Initially contains 5 plates."
+                int plateCount = plates == null ? 0 : plates.size();
+                String comment = StringUtilsLabKey.joinNonBlank(" ", StringUtils.trimToEmpty(additionalAuditComment), String.format("Initially contains %s.", StringUtilsLabKey.pluralize(plateCount, "plate")));
+                PlateSetAuditEvent auditEvent = PlateSetAuditProvider.EventFactory.plateSetCreated(container, tx.getAuditId(), newPlateSet, comment);
                 AuditLogService.get().addEvent(user, auditEvent);
             }
 
