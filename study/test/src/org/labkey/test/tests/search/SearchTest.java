@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.test.TestFileUtils.getFileRowCount;
+import static org.labkey.test.util.PermissionsHelper.EDITOR_ROLE;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
@@ -543,7 +544,7 @@ public abstract class SearchTest extends StudyBaseTest
     {
         ApiPermissionsHelper apiPermissionsHelper = new ApiPermissionsHelper(this);
         apiPermissionsHelper.createPermissionsGroup(GROUP_NAME, USER1);
-        apiPermissionsHelper.addMemberToRole(GROUP_NAME, "Editor", group, getProjectName());
+        apiPermissionsHelper.addMemberToRole(GROUP_NAME, EDITOR_ROLE, group, getProjectName());
         clickFolder(getFolderName());
 
         IssuesHelper issuesHelper = new IssuesHelper(this);
