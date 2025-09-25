@@ -4307,7 +4307,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     continue;
 
                 if (groups.contains(groupName))
-                    throw new ValidationException(String.format("Replicate group \"%s\" contains mismatched well data. Ensure all data aligns for the replicates declared in these wells.", groupName));
+                    throw new ValidationException(String.format("Replicate group \"%s\" contains mismatched well data. Ensure the same data is recorded for each well in this replicate group across all plates in the plate set.", groupName));
 
                 groups.add(groupName);
             }
@@ -4317,7 +4317,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw UnexpectedException.wrap(e);
         }
 
-        // Fallback to more generic message if we did not resolve a specific mismatch
+        // Fallback to a more generic message if we did not resolve a specific mismatch
         throw new ValidationException(String.format("Plate set (%d) contains mismatched replicate well data.", plateSetRowId));
     }
 
