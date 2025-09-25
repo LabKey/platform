@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,8 @@ public class StringUtilsLabKey
     /** Instead of relying on the platform default character encoding, use this Charset */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
+    public static final String SPACE_DASH_EXPRESSION = "(\\s--[^ ])|(\\s-[^- ])";
+    public static final Pattern SPACE_DASH_PATTERN = Pattern.compile(SPACE_DASH_EXPRESSION);
     /** Special character strings that can be used by tests in this class and others */
     public static final List<String> specialCharacterTestStrings = List.of(
         "",
@@ -146,7 +149,8 @@ public class StringUtilsLabKey
             return type + " may not contain 'tab', 'new line', or 'return' characters.";
         if (StringUtils.contains("-$", s.charAt(0)))
             return type + " may not begin with any of these characters: -$";
-        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
+        Matcher expMatcher = SPACE_DASH_PATTERN.matcher(s);
+        if (expMatcher.find())
             return type + " may not contain space followed by dash.";
 
         return null;
