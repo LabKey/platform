@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.labkey.test.util.PermissionsHelper.AUTHOR_ROLE;
 
 
 @Category({Daily.class})
@@ -61,7 +62,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
     private void doSetup()
     {
         TEST_AUTHOR.create(this)
-                .addPermission("Author", "home");
+                .addPermission(AUTHOR_ROLE, "home");
     }
 
     @Test
