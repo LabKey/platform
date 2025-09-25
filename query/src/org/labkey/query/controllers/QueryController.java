@@ -4683,6 +4683,7 @@ public class QueryController extends SpringActionController
                 else if (commandType != CommandType.importRows)
                 {
                     response.put("rows", responseRows.stream()
+                        .map(JsonUtil::toMapPreserveNonFinite)
                         .map(JsonUtil::toJsonPreserveNulls)
                         .collect(LabKeyCollectors.toJSONArray()));
                 }
