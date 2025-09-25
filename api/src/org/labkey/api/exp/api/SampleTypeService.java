@@ -119,7 +119,7 @@ public interface SampleTypeService
     List<Unit> getSupportedUnits();
 
     @Nullable
-    Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits);
+    Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, @Nullable String sampleTypeName);
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 

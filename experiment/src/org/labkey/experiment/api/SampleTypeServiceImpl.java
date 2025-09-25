@@ -106,7 +106,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -145,7 +144,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -180,7 +178,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
 
     public static final List<Unit> SUPPORTED_UNITS = new ArrayList<>();
-    public static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the display units (%s).";
+    public static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the %s display units (%s).";
 
     static
     {
@@ -223,15 +221,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return materialSourceCache;
     }
 
-
-    @Override
+    @Override @NotNull
     public List<Unit> getSupportedUnits()
     {
         return SUPPORTED_UNITS;
     }
 
     @Nullable @Override
-    public Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits)
+    public Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, String sampleTypeName)
     {
         if (rawUnits == null)
             return null;
@@ -240,12 +237,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (defaultUnits == null)
                 return u;
             else if (u.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
-                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
             else
                 return u;
         }
         if (!(rawUnits instanceof String rawUnitsString))
-            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
+            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
         if (!StringUtils.isBlank(rawUnitsString))
         {
             rawUnitsString = rawUnitsString.trim();
@@ -257,7 +254,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
             }
             if (defaultUnits != null && mUnit.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
-                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, defaultUnits));
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
             return mUnit;
         }
         return null;
@@ -2329,9 +2326,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SampleTypeService service = SampleTypeService.get();
             try
             {
-                service.getValidatedUnit("g", Unit.mg);
-                service.getValidatedUnit("g ", Unit.mg);
-                service.getValidatedUnit(" g ", Unit.mg);
+                service.getValidatedUnit("g", Unit.mg, "Sample Type");
+                service.getValidatedUnit("g ", Unit.mg, "Sample Type");
+                service.getValidatedUnit(" g ", Unit.mg, "Sample Type");
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -2339,7 +2336,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             try
             {
-                assertNull(service.getValidatedUnit(null, Unit.unit));
+                assertNull(service.getValidatedUnit(null, Unit.unit, "Sample Type"));
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -2347,7 +2344,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             try
             {
-                assertNull(service.getValidatedUnit("", Unit.unit));
+                assertNull(service.getValidatedUnit("", Unit.unit, "Sample Type"));
             }
             catch (ConversionExceptionWithMessage e)
             {
@@ -2355,7 +2352,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             try
             {
-                service.getValidatedUnit("g", Unit.unit);
+                service.getValidatedUnit("g", Unit.unit, "Sample Type");
                 fail("Units that are not comparable should throw exception.");
             }
             catch (ConversionExceptionWithMessage ignore)
@@ -2365,7 +2362,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             try
             {
-                service.getValidatedUnit("nonesuch", Unit.unit);
+                service.getValidatedUnit("nonesuch", Unit.unit, "Sample Type");
                 fail("Invalid units should throw exception.");
             }
             catch (ConversionExceptionWithMessage ignore)

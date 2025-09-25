@@ -665,11 +665,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Object value = entry.getValue();
             if (col != null && col == unitsCol)
             {
-                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && col == amountCol)
             {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
@@ -875,8 +875,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
+                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
@@ -2037,7 +2037,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit)
+            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit, String sampleTypeName)
             {
                 if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
                 {
@@ -2053,7 +2053,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
 
 
-                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit);
+                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit, sampleTypeName);
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
@@ -2061,7 +2061,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit);
+                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
@@ -2076,7 +2076,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return a Number in the base units of the sample type.
-            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit, @Nullable String sampleTypeName)
             {
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).trim().isEmpty()))
                     return null;
@@ -2093,7 +2093,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
                 }
 
-                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit);
+                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit, sampleTypeName);
 
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
@@ -2118,7 +2118,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
-                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
