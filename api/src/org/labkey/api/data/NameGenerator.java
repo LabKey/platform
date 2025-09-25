@@ -127,7 +127,7 @@ public class NameGenerator
     public static final String ANCESTOR_INPUT_PREFIX_MATERIAL_NOSLASH = "..[MaterialInputs::";
     public static final String ANCESTOR_INPUT_PREFIX_DATA = "..[DataInputs/";
     public static final String ANCESTOR_INPUT_PREFIX_DATA_NOSLASH = "..[DataInputs::";
-    public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?(.*))]";
+    public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?([^]]*))]";
     public static final Pattern ANCESTOR_INPUT_PATTERN = Pattern.compile(ANCESTOR_INPUT_REGEX);
 
     public static Date PREVIEW_DATETIME_VALUE;
