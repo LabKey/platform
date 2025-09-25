@@ -56,7 +56,7 @@ public class StringSubstitution
     public void setRegex(String regex)
     {
         _regex = regex;
-        _pattern = Pattern.compile(Pattern.quote(regex));
+        _pattern = Pattern.compile(regex);
     }
 
     public String getSubstitution()
