@@ -47,6 +47,8 @@ import java.util.List;
 public abstract class RegexFilter extends FilterSupport {
   private static final Logger log = LogManager.getLogger(RegexFilter.class);
 
+  public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"";
+
   protected List<Pattern> pattern = new ArrayList<>();
   protected List<String> substitute = new ArrayList<>();
 
