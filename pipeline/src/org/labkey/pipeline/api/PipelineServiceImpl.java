@@ -986,7 +986,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             {
                 try
                 {
-                    Files.move(inputFile, dirData.resolve(inputFile.getFileName().toString()));
+                    Files.move(inputFile, FileUtil.appendName(dirData, inputFile.getFileName().toString()));
                 }
                 catch (IOException e)
                 {

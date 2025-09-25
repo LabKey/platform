@@ -483,7 +483,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         if (!root.isUnderRoot(f))
                             f = root.resolvePath(path);
 
-                        if (NetworkDrive.exists(f) && root.isUnderRoot(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                        if (root.isUnderRoot(f) && NetworkDrive.exists(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
                         {
                             hasPostData = true;
                             loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);

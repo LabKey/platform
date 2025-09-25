@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -113,6 +114,8 @@ public abstract class AbstractFileXarSource extends XarSource
         if (!uri.isAbsolute())
         {
             Path path = xarDirectory.resolve(dataFileURL);
+            if (!path.normalize().startsWith(xarDirectory.normalize()))
+                throw new InvalidPathException(dataFileURL, "Path to parent not allowed");
             String result = _dataFileURLs.get(FileUtil.getAbsolutePath(getXarContext().getContainer(), path));
             if (result != null)
             {
