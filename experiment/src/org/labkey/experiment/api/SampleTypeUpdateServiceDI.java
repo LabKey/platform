@@ -148,8 +148,8 @@ import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRema
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -534,9 +534,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasUnits == hasAmount)
             return; // both columns are present or neither is
         if (!hasAmount)
-            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+            throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
-        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+        throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
     @Override
@@ -2046,7 +2046,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // when there's a units value but no amount column, this is an error
                 if (!haveAmountCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+                    throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
                 // When an amount column is present but no amount value is provided, this is an error
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
@@ -2083,7 +2083,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // When there is an amount value, if there isn't a units column, this is an error.
                 if (!hasUnitsCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+                    throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
 
                 // Have a units column, but no units value
                 if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
