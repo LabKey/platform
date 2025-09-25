@@ -66,7 +66,7 @@ public class SelectRowsStreamHack
     private static final Logger _log = LogHelper.getLogger(SelectRowsStreamHack.class, "Information related to streaming of SelectRows results");
 
     private static final String TEMP_FILE_PREFIX = "SelectRows-";
-    private static final String TEMP_FILE_SUFFIX = ".tmp.gz";
+    private static final String TEMP_FILE_SUFFIX = ".remote.tmp.gz";
 
     public static DataIteratorBuilder go(Connection cn, String container, SelectRowsCommand cmd, Container targetContainer) throws IOException, CommandException
     {
