@@ -347,19 +347,17 @@ public class SchemaColumnMetaData
 
                 String primaryKeyName = ti.getPrimaryKeyName();
                 Set<String> ignoreIndex = new HashSet<>();
-                Map<String, IndexDefinition> indexMap = new HashMap<>();
+                Map<String, IndexDefinition> indexMap = new CaseInsensitiveHashMap<>();
                 uqSelector.forEach(rs -> {
                     String colName = rs.getString("COLUMN_NAME");
                     String indexName = rs.getString("INDEX_NAME");
                     if (indexName == null)
                         return;
 
-                    indexName = indexName.toLowerCase();
-
                     IndexDefinition def = indexMap.get(indexName);
                     if (def == null)
                     {
-                        IndexType indexType = (indexName.equals(primaryKeyName) ? IndexType.Primary : rs.getBoolean("NON_UNIQUE") ? IndexType.NonUnique : IndexType.Unique);
+                        IndexType indexType = (indexName.equalsIgnoreCase(primaryKeyName) ? IndexType.Primary : rs.getBoolean("NON_UNIQUE") ? IndexType.NonUnique : IndexType.Unique);
                         @Nullable String filterCondition = scope.getSqlDialect().getIndexFilterCondition(rs, schema.getName(), ti.getName(), indexName);
                         indexMap.put(indexName, def = new IndexDefinition(indexName, indexType, new ArrayList<>(2), filterCondition));
                     }
@@ -378,11 +376,11 @@ public class SchemaColumnMetaData
                 Map<String, IndexDefinition> uniqueIndexMap = new HashMap<>();
                 Map<String, IndexDefinition> allIndexMap = new HashMap<>();
 
-                // Search for the primary key and change that index type to Primary
+                // Fill in the maps
                 for (IndexDefinition def : indexMap.values())
                 {
                     allIndexMap.put(def.name(), def);
-                    if (!def.indexType().isUnique())
+                    if (def.indexType().isUnique())
                         uniqueIndexMap.put(def.name(), def);
                 }
 
@@ -400,7 +398,7 @@ public class SchemaColumnMetaData
     protected void addColumn(MutableColumnInfo column)
     {
         if (getColumn(column.getName()) != null)
-            _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");
+            _log.warn("Duplicate column '{}' on table '{}'", column.getName(), _tinfo.getName());
 
         _columns.add(column);
         assert null == column.getFieldKey().getParent();

@@ -181,7 +181,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     {
         Map<String, IndexDefinition> indices = new HashMap<>();
         String name = "pk_rowId";
-        indices.put("pk_rowId", new IndexDefinition(name, IndexType.Primary, List.of(getColumn("RowId")), null));
+        indices.put(name, new IndexDefinition(name, IndexType.Primary, List.of(getColumn("RowId")), null));
         indices.putAll(getUniqueIndices());
         return indices;
     }
