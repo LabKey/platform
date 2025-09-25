@@ -127,7 +127,7 @@ public class NameGenerator
     public static final String ANCESTOR_INPUT_PREFIX_MATERIAL_NOSLASH = "..[MaterialInputs::";
     public static final String ANCESTOR_INPUT_PREFIX_DATA = "..[DataInputs/";
     public static final String ANCESTOR_INPUT_PREFIX_DATA_NOSLASH = "..[DataInputs::";
-    public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?([^]]*))]";
+    public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?(.*))]";
     public static final Pattern ANCESTOR_INPUT_PATTERN = Pattern.compile(ANCESTOR_INPUT_REGEX);
 
     public static Date PREVIEW_DATETIME_VALUE;
@@ -1762,8 +1762,10 @@ public class NameGenerator
         }
 
         @Override
-        protected StringExpressionFactory.StringPart parsePart(String expression)
+        protected StringExpressionFactory.StringPart parsePart(@NotNull String expression)
         {
+            if (expression.length() > 500)
+                throw new IllegalArgumentException("\"" + expression + "\" cannot exceed 500 characters.");
             Matcher counterMatcher = WITH_COUNTER_PATTERN.matcher(expression);
             if (counterMatcher.find())
             {
