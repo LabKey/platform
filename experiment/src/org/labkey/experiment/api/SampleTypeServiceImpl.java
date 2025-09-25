@@ -42,6 +42,7 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -102,7 +103,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -141,7 +141,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -190,10 +189,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
-    // SampleType -> Container cache
+    /** SampleType LSID -> Container cache */
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
+    /** ContainerId -> MaterialSources */
+    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -903,9 +903,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                    transaction.addCommitTask(() -> {
-                        indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified));
-                    }, POSTCOMMIT);
+                    transaction.addCommitTask(() -> indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
 
                     return st;
                 }
@@ -961,8 +959,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         public DbSequence getDbSequence(Date date)
         {
             Pair<String,Integer> seqName = getSequenceName(date);
-            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
-            return seq;
+            return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
         }
     }
 
@@ -1032,7 +1029,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
-            changeDetails.append("The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.");
+            changeDetails.append("The name of the sample type '").append(oldSampleTypeName).append("' was changed to '").append(newName).append("'.");
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
@@ -1544,7 +1541,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return null;
 
         Unit totalUnit = null;
-        String totalUnitsStr = null;
+        String totalUnitsStr;
         if (!StringUtils.isEmpty(sampleTypeUnitsStr))
             totalUnitsStr = sampleTypeUnitsStr;
         else if (!StringUtils.isEmpty(sampleItemUnitsStr))
@@ -1864,9 +1861,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (inventoryService != null)
                 {
                     Map<String, Integer> inventoryCounts = inventoryService.moveSamples(sampleIds, targetContainer, user);
-                    inventoryCounts.forEach((key, count) -> {
-                        updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
-                    });
+                    inventoryCounts.forEach((key, count) -> updateCounts.compute(key, (k, c) -> c == null ? count : c + count));
                 }
 
                 // create summary audit entries for the source and target containers
@@ -2213,7 +2208,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Container seqContainer = container.getProject();
         DbSequenceManager.delete(seqContainer, seqName);
         DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
-        return;
     }
 
     @Override
