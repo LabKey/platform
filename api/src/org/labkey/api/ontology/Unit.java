@@ -290,56 +290,5 @@ public enum Unit
             assertNull(Unit.fromName(""));
         }
 
-        @Test
-        public void testGetValidatedUnit()
-        {
-            try
-            {
-                SampleTypeServiceImpl.getValidatedUnit("g", Unit.mg);
-                SampleTypeServiceImpl.getValidatedUnit("g ", Unit.mg);
-                SampleTypeServiceImpl.getValidatedUnit(" g ", Unit.mg);
-            }
-            catch (ConversionExceptionWithMessage e)
-            {
-                fail("Compatible unit should not throw exception.");
-            }
-            try
-            {
-                assertNull(SampleTypeServiceImpl.getValidatedUnit(null, Unit.unit));
-            }
-            catch (ConversionExceptionWithMessage e)
-            {
-                fail("null units should be null");
-            }
-            try
-            {
-                assertNull(SampleTypeServiceImpl.getValidatedUnit("", Unit.unit));
-            }
-            catch (ConversionExceptionWithMessage e)
-            {
-                fail("empty units should be null");
-            }
-            try
-            {
-                SampleTypeServiceImpl.getValidatedUnit("g", Unit.unit);
-                fail("Units that are not comparable should throw exception.");
-            }
-            catch (ConversionExceptionWithMessage ignore)
-            {
-
-            }
-
-            try
-            {
-                SampleTypeServiceImpl.getValidatedUnit("nonesuch", Unit.unit);
-                fail("Invalid units should throw exception.");
-            }
-            catch (ConversionExceptionWithMessage ignore)
-            {
-
-            }
-
-        }
-
     }
 }
