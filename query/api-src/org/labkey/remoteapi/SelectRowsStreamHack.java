@@ -122,8 +122,7 @@ public class SelectRowsStreamHack
                         public void close() throws IOException
                         {
                             // close the InputStream and http connection
-                            if (is != null)
-                                IOUtils.closeQuietly(is);
+                            IOUtils.closeQuietly(is);
                             response.close();
 
                             // close the JSONDataLoader
@@ -212,20 +211,16 @@ public class SelectRowsStreamHack
 
                 // Now try this using an InputStream that will fail:
                 preexistingTempFiles = getMatchingTempFileNames();
-                boolean exceptionThrown = false;
 
                 SelfDestructiveInputStream sdic = new SelfDestructiveInputStream(100, 10);
                 try
                 {
                     dib = SelectRowsStreamHack.go(cn, ContainerManager.getHomeContainer().getPath(), cmd, targetContainer, sdic);
-                    List<Map<String, Object>> results = dib.getDataIterator(dic).stream().toList();
+                    @SuppressWarnings("unused") List<Map<String, Object>> results = dib.getDataIterator(dic).stream().toList();
+                    fail("SelfDestructiveInputStream did not throw an exception!");
                 }
-                catch (Exception e)
-                {
-                    exceptionThrown = true;
-                }
+                catch (Exception ignored) {}
 
-                assertTrue("SelfDestructiveInputStream did not throw an exception!", exceptionThrown);
                 assertTrue("SelfDestructiveInputStream was not closed!", sdic.isCloseCalled());
 
                 actualTempFiles = getMatchingTempFileNames();
@@ -236,7 +231,9 @@ public class SelectRowsStreamHack
 
         private Set<String> getMatchingTempFileNames()
         {
-            return Arrays.stream(Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir")).list((dir, name) -> name.startsWith(TEMP_FILE_PREFIX) & name.endsWith(TEMP_FILE_SUFFIX)))).collect(Collectors.toSet());
+            return Arrays.stream(Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir")).
+                    list((dir, name) -> name.startsWith(TEMP_FILE_PREFIX) &&
+                            name.endsWith(TEMP_FILE_SUFFIX)))).collect(Collectors.toSet());
         }
 
         private static class SelfDestructiveInputStream extends InputStream
