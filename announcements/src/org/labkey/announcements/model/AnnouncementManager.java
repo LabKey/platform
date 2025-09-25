@@ -702,14 +702,12 @@ public class AnnouncementManager
 
     private static void deleteAnnouncement(AnnouncementModel ann)
     {
+        // Delete the member list associated with this announcement
+        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
         // Delete the announcement
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
         // Too hard to thread User through all the callers. notifyDiscussionProviderOfChange() will attempt to pull user from current context.
         notifyDiscussionProviderOfChange(ContainerManager.getForId(ann.getContainerId()), null, ann, Change.Delete);
-
-        // Delete the member list associated with this announcement
-        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
-
         // Delete attachments to the announcement
         AttachmentService.get().deleteAttachments(ann.getAttachmentParent());
     }
@@ -847,7 +845,18 @@ public class AnnouncementManager
 
     public static void purgeContainer(Container c)
     {
-        // Attachments are handled by AttachmentServiceImpl
+        // Note: Attachments are handled by AttachmentServiceImpl
+
+        // Delete rows from UserList first because of the FK
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+            .append(CommSchema.getInstance().getTableInfoMemberList())
+            .append(" WHERE MessageId IN (SELECT RowId FROM ")
+            .append(CommSchema.getInstance().getTableInfoAnnouncements())
+            .append(" WHERE Container = ?)")
+            .add(c);
+        new SqlExecutor(CommSchema.getInstance().getSchema()).execute(sql);
+
+        // Now delete the announcements
         ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), c, null);
     }
 
