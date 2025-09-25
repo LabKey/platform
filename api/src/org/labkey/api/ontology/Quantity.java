@@ -314,10 +314,6 @@ public class Quantity extends Number implements Comparable<Quantity>
                     Double.valueOf(valuePart) :
                     new BigDecimal(valuePart);
 
-            // Issue 53979: check for non-finite values
-            if (value instanceof Double d && (!Double.isFinite(d)))
-                throw new ConversionException("Could not parse a finite number from '" + s + "'.");
-
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
                 throw new ConversionException("Could not parse unit '" + unitPart + "' from '" + s + "'.");
