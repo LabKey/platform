@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.labkey.test.util.PermissionsHelper.EDITOR_ROLE;
 
 @Category({Daily.class, Specimen.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -107,7 +108,7 @@ public class TruncationTest extends BaseWebDriverTest
     public void testTruncateVisibility()
     {
         goToProjectHome();
-        impersonateRole("Editor");
+        impersonateRole(EDITOR_ROLE);
         clickAndWait(Locator.linkWithText(LIST_NAME));
         assertTextNotPresent("Delete All Rows");
         stopImpersonating();
