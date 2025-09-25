@@ -42,21 +42,14 @@ public interface Cache<K, V>
      */
     int removeUsingFilter(Predicate<K> filter);
 
-    class StringPrefixFilter implements Predicate<String>
-    {
-        private final String _prefix;
-
-        public StringPrefixFilter(String prefix)
+    record StringPrefixFilter(String prefix) implements Predicate<String>
         {
-            _prefix = prefix;
+            @Override
+            public boolean test(String s)
+            {
+                return s.startsWith(prefix);
+            }
         }
-
-        @Override
-        public boolean test(String s)
-        {
-            return s.startsWith(_prefix);
-        }
-    }
 
     Set<K> getKeys();
 

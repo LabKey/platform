@@ -96,9 +96,12 @@ public class BlockingCache<K, V> implements Cache<K, V>
     {
         Wrapper<V> w;
 
+        if (null == loader)
+            loader = _loader;
+
         try (var ignored = DebugInfoDumper.pushThreadDumpContext(this.getClass().getSimpleName() + ".get(" + key + ")"))
         {
-            synchronized(_cache)
+            synchronized (loader == null ? _cache : loader.getSyncObject(_cache))
             {
                 w = _cache.get(key);
                 if (null == w)
@@ -153,9 +156,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
             try
             {
-                if (null == loader)
-                    loader = _loader;
-
                 if (null == loader)
                     throw new IllegalStateException("cache loader was not provided");
 
