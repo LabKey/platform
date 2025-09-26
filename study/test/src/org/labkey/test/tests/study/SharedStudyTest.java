@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
@@ -480,7 +481,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testSharedDatasetSubfolderSecurity()
     {
-        createUserWithPermissions(user, getProjectName(), "Reader");
+        createUserWithPermissions(user, getProjectName(), READER_ROLE);
 
         impersonate(user);
         {
@@ -503,7 +504,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickFolder(STUDY1);
         _permissionsHelper.enterPermissionsUI();
         _permissionsHelper.uncheckInheritedPermissions();
-        _permissionsHelper.setUserPermissions(user, "Reader");
+        _permissionsHelper.setUserPermissions(user, READER_ROLE);
         _permissionsHelper.saveAndFinish();
         clickFolder(STUDY2);
         _permissionsHelper.enterPermissionsUI();
