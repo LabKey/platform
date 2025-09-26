@@ -488,7 +488,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             relativePath = Path.parse(relative);
                         }
 
-                        // Attempt absolute path first, then relative path from pipeline root
                         FileLike fileLike = FileUtil.appendPath(root.getRootFileLike(), relativePath);
                         if (fileLike == null)
                             throw new IllegalArgumentException("Invalid path: " + path);
