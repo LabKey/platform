@@ -483,6 +483,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         if (!root.isUnderRoot(f))
                             f = root.resolvePath(path);
 
+                        if (f == null || !f.isFile() || !f.toPath().normalize().startsWith(root.getRootFileLike().toNioPathForRead().normalize()))
+                            throw new IllegalArgumentException("Invalid path: " + path);
+
                         if (root.isUnderRoot(f) && NetworkDrive.exists(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
                         {
                             hasPostData = true;
