@@ -36,6 +36,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -88,11 +89,10 @@
             });
         };
 
-        createPlateTemplate = function(){
-
+        createPlateTemplate = function() {
             let template = document.querySelector('#plate_template');
-            if (template) {
-                window.location = template.value;
+            if (template && templateUrls[template.value]) {
+                window.location = templateUrls[template.value];
             }
         };
 
@@ -107,6 +107,7 @@
 <%
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
+        JSONArray urls = new JSONArray();
         List<Option> options = new ArrayList<>();
         for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
         {
@@ -120,8 +121,9 @@
 
             options.add(new OptionBuilder()
                     .label("new " + layout.description() + " template")
-                    .value(designerURL.toString())
+                    .value(urls.length())
                     .build());
+            urls.put(designerURL.toString());
         }
 %>
 <h4>Create New Plate</h4>
@@ -136,6 +138,10 @@
     %>
     <labkey:button text="create" submit="false" onclick="createPlateTemplate();" id="create-btn"/>
 </labkey:form>
+
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    const templateUrls = <%= urls %>;
+</script>
 <%
     }
 %>
