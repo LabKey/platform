@@ -826,7 +826,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
-        return new CaseInsensitiveHashSet(fields);
+        // Issue 53036: also include column labels and aliases
+        Set<String> metaFieldNames = new CaseInsensitiveHashSet(fields);
+        for (String fieldName : fields)
+        {
+            ColumnInfo columnInfo = getQueryTable().getColumn(fieldName);
+            if (columnInfo != null)
+            {
+                metaFieldNames.add(columnInfo.getLabel());
+                metaFieldNames.add(columnInfo.getAlias().getId());
+            }
+        }
+
+        return metaFieldNames;
     }
 
     public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
