@@ -967,7 +967,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
             String s = value.toString();
             try
             {
-                return Double.valueOf(s);
+                Double d = Double.valueOf(s);
+                // Issue 53979: Don't allow double values larger than Double.MAX_VALUE to silently convert to "Infinity"
+                if (!Double.isFinite(d))
+                    throw new NumberFormatException("Could not convert to a finite value from " + s);
+                return d;
             }
             catch (NumberFormatException x)
             {
@@ -979,7 +983,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
                     return Double.POSITIVE_INFINITY;
                 else if (s.equalsIgnoreCase("-Inf"))
                     return Double.NEGATIVE_INFINITY;
+                else if (s.equalsIgnoreCase("Infinity"))
+                    return Double.POSITIVE_INFINITY;
+                else if (s.equalsIgnoreCase("-Infinity"))
+                    return Double.NEGATIVE_INFINITY;
                 else if (s.equals("\uFFFD"))
+                    return Double.NaN;
+                else if (s.equalsIgnoreCase("NaN"))
                     return Double.NaN;
                 throw new ConversionException(x);
             }
