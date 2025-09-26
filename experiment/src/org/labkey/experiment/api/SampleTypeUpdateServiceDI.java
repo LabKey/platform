@@ -826,6 +826,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
+        // Issue 53036: also include column labels and aliases
         Set<String> metaFieldNames = new CaseInsensitiveHashSet(fields);
         for (String fieldName : fields)
         {
