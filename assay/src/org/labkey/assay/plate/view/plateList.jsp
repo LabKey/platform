@@ -36,6 +36,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -88,12 +89,10 @@
             });
         };
 
-        createPlateTemplate = function(){
-
+        createPlateTemplate = function() {
             let template = document.querySelector('#plate_template');
-            // Ensure it's a relative URL before redirecting
-            if (template && template.value.startsWith("/")){
-                window.location = template.value;
+            if (template && templateUrls[template.value]) {
+                window.location = templateUrls[template.value];
             }
         };
 
@@ -108,6 +107,7 @@
 <%
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
+        JSONArray urls = new JSONArray();
         List<Option> options = new ArrayList<>();
         for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
         {
@@ -121,8 +121,9 @@
 
             options.add(new OptionBuilder()
                     .label("new " + layout.description() + " template")
-                    .value(designerURL.toString())
+                    .value(urls.length())
                     .build());
+            urls.put(designerURL.toString());
         }
 %>
 <h4>Create New Plate</h4>
@@ -137,6 +138,10 @@
     %>
     <labkey:button text="create" submit="false" onclick="createPlateTemplate();" id="create-btn"/>
 </labkey:form>
+
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    const templateUrls = <%= urls %>;
+</script>
 <%
     }
 %>
@@ -228,7 +233,7 @@
         index++;
     }
 
-    if (plates == null || plates.isEmpty())
+    if (plates.isEmpty())
     {
 %>
         <tr><td colspan="2" style="padding: 3px;">No plates available.</td></tr>

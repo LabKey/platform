@@ -862,7 +862,8 @@ public class DomainPropertyImpl implements DomainProperty
                     StorageProvisionerImpl.get().changePropertyType(this.getDomain(), this);
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
-                        updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
+                        updateBooleanValue(
+                                new SQLFragment().appendIdentifier(_domain.getDomainKind().getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
                                 _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GH Issue 755
                     }
                 }
@@ -917,7 +918,7 @@ public class DomainPropertyImpl implements DomainProperty
 
             if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
             {
-                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSQLName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -945,7 +946,7 @@ public class DomainPropertyImpl implements DomainProperty
      * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
      * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
      */
-    private void updateBooleanValue(String schemaTable, DatabaseIdentifier column, String formatString, @Nullable SQLFragment whereClause)
+    private void updateBooleanValue(SQLFragment schemaTable, DatabaseIdentifier column, String formatString, @Nullable SQLFragment whereClause)
     {
         BooleanFormat f = BooleanFormat.getInstance(formatString);
         String trueValue = StringUtils.trimToNull(f.format(true));
