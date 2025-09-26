@@ -236,8 +236,12 @@ public class JsonUtil
     public static Map<String, Object> toMapPreserveNonFinite(Map<String, Object> map)
     {
         Map<String, Object> result = new HashMap<>();
-        map.forEach((k, v) -> result.put(k, v instanceof Double d && !Double.isFinite(d) ? d.toString() : v));
-        map.forEach((k, v) -> result.put(k, v instanceof Float f && !Float.isFinite(f) ? f.toString() : v));
+        map.forEach((k, v) -> {
+            if ((v instanceof Double d && !Double.isFinite(d)) || (v instanceof Float f && !Float.isFinite(f)))
+                result.put(k, v.toString());
+            else
+                result.put(k, v);
+        });
         return result;
     }
 
