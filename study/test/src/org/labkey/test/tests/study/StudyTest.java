@@ -72,6 +72,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.test.util.DataRegionTable.DataRegion;
 import static org.labkey.test.util.PasswordUtil.getUsername;
+import static org.labkey.test.util.PermissionsHelper.AUTHOR_ROLE;
 
 @Category({Specimen.class, Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
@@ -312,7 +313,7 @@ public class StudyTest extends StudyBaseTest
     {
         clickProject(getProjectName());
         _userHelper.createUser(authorUser, true);
-        _permissionsHelper.setUserPermissions(authorUser, "Author");
+        _permissionsHelper.setUserPermissions(authorUser, AUTHOR_ROLE);
         impersonate(authorUser);
         beginAt(specimenUrl);
         clickButton("Request Options", 0);

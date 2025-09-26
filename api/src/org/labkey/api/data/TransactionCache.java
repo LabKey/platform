@@ -69,6 +69,23 @@ public class TransactionCache<K, V> implements Cache<K, V>
         return get(key, null, null);
     }
 
+
+    /** A dummy loader that never fetches a value. Lets us see if the shared cache already has a value for this key. */
+    private final CacheLoader<K, V> _nonLoader = new CacheLoader<K, V>()
+    {
+        @Override
+        public V load(@NotNull K key, @Nullable Object argument)
+        {
+            throw new MissingCacheEntryException();
+        }
+
+        @Override
+        public Object getSyncObject(Cache<?, ?> cache)
+        {
+            return TransactionCache.this;
+        }
+    };
+
     @Override
     public V get(@NotNull K key, Object arg, @Nullable CacheLoader<K, V> loader)
     {
@@ -85,9 +102,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
             try
             {
                 // Entry has not been modified in the private cache, so read through to shared cache
-                v = _sharedCache.get(key, null, (key1, argument) -> {
-                    throw new MissingCacheEntryException();
-                });
+                v = _sharedCache.get(key, null, _nonLoader);
                 // Shared cache has an entry for this key, so return it and don't invoke the loader
                 if (null == v)
                     v = NULL_MARKER; // Cached miss in shared cache; use null marker to skip loading. Issue 47234
