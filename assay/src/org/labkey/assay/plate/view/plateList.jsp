@@ -91,8 +91,7 @@
         createPlateTemplate = function(){
 
             let template = document.querySelector('#plate_template');
-            // Ensure it's a relative URL before redirecting
-            if (template && template.value.startsWith("/")){
+            if (template) {
                 window.location = template.value;
             }
         };
@@ -228,7 +227,7 @@
         index++;
     }
 
-    if (plates == null || plates.isEmpty())
+    if (plates.isEmpty())
     {
 %>
         <tr><td colspan="2" style="padding: 3px;">No plates available.</td></tr>
