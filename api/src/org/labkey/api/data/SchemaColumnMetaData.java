@@ -373,8 +373,8 @@ public class SchemaColumnMetaData
                 // Remove ignored indices
                 ignoreIndex.forEach(indexMap::remove);
 
-                Map<String, IndexDefinition> uniqueIndexMap = new HashMap<>();
-                Map<String, IndexDefinition> allIndexMap = new HashMap<>();
+                Map<String, IndexDefinition> uniqueIndexMap = new CaseInsensitiveHashMap<>();
+                Map<String, IndexDefinition> allIndexMap = new CaseInsensitiveHashMap<>();
 
                 // Fill in the maps
                 for (IndexDefinition def : indexMap.values())
