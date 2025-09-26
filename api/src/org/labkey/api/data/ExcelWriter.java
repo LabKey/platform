@@ -370,17 +370,12 @@ public class ExcelWriter implements ExportWriter
      */
     public static @NotNull String cleanSheetName(String sheetName)
     {
-        return cleanSheetName(sheetName, 31);
-    }
-
-    public static @NotNull String cleanSheetName(String sheetName, int length)
-    {
         sheetName = StringUtils.trimToNull(sheetName);
         if (sheetName == null)
             sheetName = "Sheet";
 
-        if (sheetName.length() > length)
-            return cleanSheetName(sheetName.substring(0, length));
+        if (sheetName.length() > 31)
+            return cleanSheetName(sheetName.substring(0, 31));
 
         return WorkbookUtil.createSafeSheetName(sheetName, '_');
     }
