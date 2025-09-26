@@ -404,12 +404,12 @@ public class DatasetDataWriter implements InternalStudyWriter
             return Collections.emptyList();
 
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(tinfo.getDomain());
-        Map<String, IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
+        List<IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 
         Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices(tinfo.getDomain());
 
-        for (IndexDefinition index : allIndices.values())
+        for (IndexDefinition index : allIndices)
         {
             List<ColumnInfo> columnInfoList = index.columns();
             if (index.indexType().equals(TableInfo.IndexType.Primary) ||

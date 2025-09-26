@@ -1059,7 +1059,7 @@ public class DomainImpl implements Domain
         Set<ColumnInfo> uniqueIndexCols = new LinkedHashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
         // but exclude the uniqueId fields themselves.
-        table.getUniqueIndices().values().forEach(def -> def.columns().stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
+        table.getUniqueIndices().forEach(def -> def.columns().stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
 

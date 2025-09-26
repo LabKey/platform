@@ -690,14 +690,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         @NotNull
         @Override
-        public Map<String, IndexDefinition> getUniqueIndices()
+        public List<IndexDefinition> getUniqueIndices()
         {
             return _inner.getUniqueIndices();
         }
 
         @NotNull
         @Override
-        public Map<String, IndexDefinition> getAllIndices()
+        public List<IndexDefinition> getAllIndices()
         {
             return _inner.getAllIndices();
         }
@@ -924,7 +924,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
                 throw new IllegalStateException("Domain kind of " + domain.getName() + " is null!");
-            Map<String, IndexDefinition> existingIndices = schemaTableInfo.getAllIndices();
+            List<IndexDefinition> existingIndices = schemaTableInfo.getAllIndices();
             // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
             // so we need to uniquify. Domain indices never specify "clustered" but DomainKind indices may (e.g.,
             // DatasetDomainKind), so compare using only column names and give preference to DomainKind.
@@ -932,9 +932,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
             newIndices.addAll(domain.getPropertyIndices());
             newIndices.addAll(kind.getPropertyIndices(domain));
             Set<String> toRemove = new HashSet<>();
-            for (String name : existingIndices.keySet())
+            for (IndexDefinition def : existingIndices)
             {
-                IndexDefinition def = existingIndices.get(name);
                 if (def.indexType() == TableInfo.IndexType.Primary)
                     continue;
                 String[] columnNames = def.columns().stream()
@@ -953,7 +952,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
 
                 if (!foundIt)
-                    toRemove.add(name);
+                    toRemove.add(def.name());
             }
 
             if (!toRemove.isEmpty())

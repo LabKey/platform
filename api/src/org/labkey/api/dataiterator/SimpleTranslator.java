@@ -244,7 +244,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // - Has a single primary key
                 // - Has a unique index over a single column that isn't the primary key
                 // - The column in the unique index must be a string type
-                for (IndexDefinition def : _targetTable.getUniqueIndices().values())
+                for (IndexDefinition def : _targetTable.getUniqueIndices())
                 {
                     if (def.indexType() != TableInfo.IndexType.Unique)
                         continue;

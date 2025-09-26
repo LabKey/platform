@@ -8,16 +8,16 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 
 public class QueryDatasetTable extends DatasetTableImpl
 {
     public static final String[] REQUIRED_COLUMNS = new String[]{
-            DatasetDomainKind._KEY,
-            DatasetDomainKind.DATE,
-            DatasetDomainKind.QCSTATE,
-            DatasetDomainKind.LSID,
-            DatasetDomainKind.PARTICIPANTID
+        DatasetDomainKind._KEY,
+        DatasetDomainKind.DATE,
+        DatasetDomainKind.QCSTATE,
+        DatasetDomainKind.LSID,
+        DatasetDomainKind.PARTICIPANTID
     };
 
     QueryDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
@@ -37,9 +37,9 @@ public class QueryDatasetTable extends DatasetTableImpl
     }
 
     @Override
-    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
+    public @NotNull List<IndexDefinition> getUniqueIndices()
     {
-        return Collections.emptyMap();
+        return Collections.emptyList();
     }
 
     @Override

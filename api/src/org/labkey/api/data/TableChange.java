@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -145,7 +146,7 @@ public class TableChange
             TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
             if (storageTableInfo != null)
             {
-                for (TableInfo.IndexDefinition index : storageTableInfo.getAllIndices().values())
+                for (IndexDefinition index : storageTableInfo.getAllIndices())
                 {
                     List<String> columnNames = index.columns().stream().map(ColumnInfo::getName).collect(Collectors.toList());
 

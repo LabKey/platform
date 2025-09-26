@@ -384,7 +384,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         Set<ColumnInfo> seen = new HashSet<>();
         List<List<ColumnInfo>> candidates = new ArrayList<>();
-        for (IndexDefinition def : lookupTable.getUniqueIndices().values())
+        for (IndexDefinition def : lookupTable.getUniqueIndices())
         {
             if (def.indexType() != TableInfo.IndexType.Unique)
                 continue;

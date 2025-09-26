@@ -363,10 +363,10 @@ public class DomainUtil
         if (domainKind.allowUniqueConstraintProperties())
         {
             SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-            Map<String, IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
+            List<IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
             if (!allIndices.isEmpty())
             {
-                List<GWTIndex> indices = allIndices.values().stream()
+                List<GWTIndex> indices = allIndices.stream()
                     .filter(index -> !index.indexType().equals(TableInfo.IndexType.Primary))
                     .map(index -> new GWTIndex(index.columns().stream().map(ColumnInfo::getColumnName).toList(), index.indexType().isUnique()))
                     .toList();

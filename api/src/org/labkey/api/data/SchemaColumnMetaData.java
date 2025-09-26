@@ -63,8 +63,8 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
-    private Map<String, IndexDefinition> _uniqueIndices;
-    private Map<String, IndexDefinition> _allIndices;
+    private List<IndexDefinition> _uniqueIndices;
+    private List<IndexDefinition> _allIndices;
 
     private static final Logger _log = LogHelper.getLogger(SchemaColumnMetaData.class, "Extracts column metadata through JDBC and schema-scoped XML overrides");
 
@@ -332,8 +332,8 @@ public class SchemaColumnMetaData
         String schemaName = schema.getName();
         if (!ti.getSqlDialect().canCheckIndices(ti))
         {
-            _uniqueIndices = Collections.emptyMap();
-            _allIndices = Collections.emptyMap();
+            _uniqueIndices = Collections.emptyList();
+            _allIndices = Collections.emptyList();
         }
         else
         {
@@ -373,19 +373,19 @@ public class SchemaColumnMetaData
                 // Remove ignored indices
                 ignoreIndex.forEach(indexMap::remove);
 
-                Map<String, IndexDefinition> uniqueIndexMap = new CaseInsensitiveHashMap<>();
-                Map<String, IndexDefinition> allIndexMap = new CaseInsensitiveHashMap<>();
+                List<IndexDefinition> uniqueIndices = new ArrayList<>();
+                List<IndexDefinition> allIndices = new ArrayList<>();
 
-                // Fill in the maps
+                // Remove ignored indices and fill in the lists
                 for (IndexDefinition def : indexMap.values())
                 {
-                    allIndexMap.put(def.name(), def);
+                    allIndices.add(def);
                     if (def.indexType().isUnique())
-                        uniqueIndexMap.put(def.name(), def);
+                        uniqueIndices.add(def);
                 }
 
-                _uniqueIndices = Collections.unmodifiableMap(uniqueIndexMap);
-                _allIndices = Collections.unmodifiableMap(allIndexMap);
+                _uniqueIndices = Collections.unmodifiableList(uniqueIndices);
+                _allIndices = Collections.unmodifiableList(allIndices);
             }
         }
     }
@@ -542,7 +542,7 @@ public class SchemaColumnMetaData
         return _pkColumnNames;
     }
 
-    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
+    public @NotNull List<IndexDefinition> getUniqueIndices()
     {
         if (_uniqueIndices == null)
         {
@@ -558,7 +558,7 @@ public class SchemaColumnMetaData
         return _uniqueIndices;
     }
 
-    public @NotNull Map<String, IndexDefinition> getAllIndices()
+    public @NotNull List<IndexDefinition> getAllIndices()
     {
         if (_allIndices == null)
         {

@@ -21,10 +21,9 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Exposes a Java enum as a virtual query table. Useful for creating lookups when it's really a hard-coded list
@@ -177,24 +176,21 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     }
 
     @Override
-    public @NotNull Map<String, IndexDefinition> getAllIndices()
+    public @NotNull List<IndexDefinition> getAllIndices()
     {
-        Map<String, IndexDefinition> indices = new HashMap<>();
-        String name = "pk_rowId";
-        indices.put(name, new IndexDefinition(name, IndexType.Primary, List.of(getColumn("RowId")), null));
-        indices.putAll(getUniqueIndices());
+        List<IndexDefinition> indices = new ArrayList<>();
+        indices.add(new IndexDefinition("pk_rowId", IndexType.Primary, List.of(getColumn("RowId")), null));
+        indices.addAll(getUniqueIndices());
         return indices;
     }
 
     @NotNull
     @Override
-    public Map<String, IndexDefinition> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
-        Map<String, IndexDefinition> indices = new HashMap<>();
-        String name = "uq_value";
-        indices.put(name, new IndexDefinition(name, IndexType.Unique, List.of(getColumn("Value")), null));
-        name = "uq_ordinal";
-        indices.put(name, new IndexDefinition(name, IndexType.Unique, List.of(getColumn("Ordinal")), null));
+        List<IndexDefinition> indices = new ArrayList<>();
+        indices.add(new IndexDefinition("uq_value", IndexType.Unique, List.of(getColumn("Value")), null));
+        indices.add(new IndexDefinition("uq_ordinal", IndexType.Unique, List.of(getColumn("Ordinal")), null));
         return indices;
     }
 }

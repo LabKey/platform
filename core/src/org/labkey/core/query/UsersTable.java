@@ -86,7 +86,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -463,11 +462,10 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public @NotNull Map<String, IndexDefinition> getUniqueIndices()
+    public @NotNull List<IndexDefinition> getUniqueIndices()
     {
-        Map<String, IndexDefinition> unique = new HashMap<>(super.getUniqueIndices());
-        String name = "uq_users_email";
-        unique.put(name, new IndexDefinition(name, IndexType.Unique, getColumns("Email"), null));
+        List<IndexDefinition> unique = new ArrayList<>(super.getUniqueIndices());
+        unique.add(new IndexDefinition("uq_users_email", IndexType.Unique, getColumns("Email"), null));
         return unique;
     }
 

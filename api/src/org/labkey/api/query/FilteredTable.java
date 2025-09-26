@@ -55,7 +55,6 @@ import org.labkey.data.xml.TableType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -815,35 +814,35 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull
     @Override
-    public Map<String, IndexDefinition> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
-        return Collections.unmodifiableMap(wrapTableIndices(getRealTable()));
+        return Collections.unmodifiableList(wrapTableIndices(getRealTable()));
     }
 
-    protected Map<String, IndexDefinition> wrapTableIndices(TableInfo table)
+    protected List<IndexDefinition> wrapTableIndices(TableInfo table)
     {
-        Map<String, IndexDefinition> indices = table.getUniqueIndices();
+        List<IndexDefinition> indices = table.getUniqueIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
     @Override
-    public Map<String, IndexDefinition> getAllIndices()
+    public List<IndexDefinition> getAllIndices()
     {
-        return Collections.unmodifiableMap(wrapTableAllIndices(getRealTable()));
+        return Collections.unmodifiableList(wrapTableAllIndices(getRealTable()));
     }
 
-    protected Map<String, IndexDefinition> wrapTableAllIndices(TableInfo table)
+    protected List<IndexDefinition> wrapTableAllIndices(TableInfo table)
     {
-        Map<String, IndexDefinition> indices = table.getAllIndices();
+        List<IndexDefinition> indices = table.getAllIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
-    private Map<String, IndexDefinition> getStringPairMap(Map<String, IndexDefinition> indices)
+    private List<IndexDefinition> getStringPairMap(List<IndexDefinition> indices)
     {
-        Map<String, IndexDefinition> ret = new HashMap<>();
-        for (IndexDefinition def : indices.values())
+        List<IndexDefinition> ret = new ArrayList<>();
+        for (IndexDefinition def : indices)
         {
             List<ColumnInfo> indexCols = new ArrayList<>(def.columns().size());
             for (ColumnInfo col : def.columns())
@@ -854,7 +853,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             }
 
             if (!indexCols.isEmpty())
-                ret.put(def.name(), new IndexDefinition(def.name(), def.indexType(), indexCols, def.filterCondition()));
+                ret.add(new IndexDefinition(def.name(), def.indexType(), indexCols, def.filterCondition()));
         }
 
         return ret;
