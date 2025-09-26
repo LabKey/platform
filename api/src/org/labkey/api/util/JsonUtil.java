@@ -237,6 +237,7 @@ public class JsonUtil
     {
         Map<String, Object> result = new HashMap<>();
         map.forEach((k, v) -> result.put(k, v instanceof Double d && !Double.isFinite(d) ? d.toString() : v));
+        map.forEach((k, v) -> result.put(k, v instanceof Float f && !Float.isFinite(f) ? f.toString() : v));
         return result;
     }
 
