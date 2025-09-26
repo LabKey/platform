@@ -478,13 +478,22 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                     if (root != null)
                     {
-                        // Attempt absolute path first, then relative path from pipeline root
-                        File f = new File(path);
-                        if (!root.isUnderRoot(f))
-                            f = root.resolvePath(path);
+                        Path relativePath = Path.parse(path);
+                        java.nio.file.Path parsedPath = java.nio.file.Paths.get(path);
+                        if (parsedPath.isAbsolute())
+                        {
+                            String relative = root.relativePath(parsedPath);
+                            if (relative == null)
+                                throw new IllegalArgumentException("Invalid path: " + path);
+                            relativePath = Path.parse(relative);
+                        }
 
-                        if (f == null || !f.isFile() || !f.toPath().normalize().startsWith(root.getRootFileLike().toNioPathForRead().normalize()))
+                        // Attempt absolute path first, then relative path from pipeline root
+                        FileLike fileLike = FileUtil.appendPath(root.getRootFileLike(), relativePath);
+                        if (fileLike == null)
                             throw new IllegalArgumentException("Invalid path: " + path);
+
+                        File f = fileLike.toNioPathForRead().toFile();
 
                         if (root.isUnderRoot(f) && NetworkDrive.exists(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
                         {

@@ -47,12 +47,12 @@ public class FileAttachmentFile implements AttachmentFile
 
     public FileAttachmentFile(FileLike file)
     {
-        this(file.toNioPathForRead().toFile(), null);
+        this(file == null ? null : file.toNioPathForRead().toFile(), null);
     }
 
     public FileAttachmentFile(FileLike file, @Nullable String originalName)
     {
-        this(file.toNioPathForRead().toFile(), originalName);
+        this(file == null ? null : file.toNioPathForRead().toFile(), originalName);
     }
 
     public FileAttachmentFile(File file, @Nullable String originalName)
