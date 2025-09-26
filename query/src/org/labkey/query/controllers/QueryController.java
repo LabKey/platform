@@ -2129,7 +2129,7 @@ public class QueryController extends SpringActionController
                 {
                     List<QueryForm> queryForms = entry.getValue();
                     int countLength = String.valueOf(queryForms.size()).length() + 2;
-                    if (countLength > 31)
+                    if (countLength > name.length())
                         throw new IllegalArgumentException("Cannot create sheet names from overlapping query names.");
                     for (int i = 0; i < queryForms.size(); i++)
                     {
