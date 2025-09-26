@@ -557,11 +557,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             // Failed to generate a name due to some part of the expression not in the row
             if (hasNameExpression())
-                throw new ExperimentException("Failed to generate name for sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("Failed to generate name for sample.", e);
             else if (hasNameAsIdCol())
-                throw new ExperimentException("SampleID or Name is required for sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("SampleID or Name is required for sample.", e);
             else
-                throw new ExperimentException("All id columns are required for sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("All id columns are required for sample.", e);
         }
     }
 
@@ -609,7 +609,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
         catch (NameGenerator.NameGenerationException e)
         {
-            throw new ExperimentException("Failed to generate name for Sample", e);
+            throw new ExperimentException("Failed to generate name for sample.", e);
         }
     }
 
