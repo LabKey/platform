@@ -2840,7 +2840,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 plateImpl.setTemplate(plateSetIsTemplate);
 
                 // TODO: Write a cheaper plate create/save for multiple plates
-                platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data, true));
+                var newPlate = (PlateImpl) createAndSavePlate(container, user, plateImpl, plateSetId, plate.data, true);
+                if (plate.templateId != null)
+                    newPlate.setSourcePlateRowId(plate.templateId);
+                platesAdded.add(newPlate);
             }
 
             addPlateCreatedAuditEvents(container, user, tx, platesAdded, additionalAuditComment);
@@ -5065,10 +5068,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 List<Map<String, Object>> targetWellData = new ArrayList<>();
 
+                Long templateId = null;
                 if (wellLayout.getTargetTemplateId() != null)
+                {
+                    templateId = wellLayout.getTargetTemplateId();
                     hydrateFromPlateTemplate(context, wellLayout, targetWellData);
+                }
                 else
+                {
+                    List<WellLayout.Well> sourcedWells = Arrays.stream(wellLayout.getWells()).filter(well -> well != null && well.sourcePlateId() > 0).toList();
+                    if (!sourcedWells.isEmpty())
+                    {
+                        Long sourcePlateId = sourcedWells.get(0).sourcePlateId();
+                        if (sourcedWells.stream().allMatch(w -> sourcePlateId.equals(w.sourcePlateId())))
+                            templateId = sourcePlateId;
+                    }
+
                     hydrateFromPlate(context, wellLayout, targetWellData);
+                }
 
                 if (context.operation().produceEmptyPlates() || !targetWellData.isEmpty())
                 {
@@ -5084,7 +5101,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         }
                     }
 
-                    plates.add(new PlateData(name, wellLayout.getPlateType().getRowId(), null, barcode, targetWellData));
+                    plates.add(new PlateData(name, wellLayout.getPlateType().getRowId(), templateId, barcode, targetWellData));
                 }
             }
 

@@ -106,8 +106,8 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
 
     public enum PlateEventType
     {
-        CREATE_PLATE("Plate was created.", "Created"),
-        DELETE_PLATE("Plate was deleted.", "Deleted"),
+        CREATE_PLATE("%s was created.", "Created"),
+        DELETE_PLATE("%s was deleted.", "Deleted"),
         PLATE_IMPORT("Plate was imported into an assay run.", "Imported");
 
         private final String _actionLabel;
@@ -124,9 +124,9 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
             return _actionLabel;
         }
 
-        public String getComment()
+        public String getComment(boolean isTemplate)
         {
-            return _comment;
+            return String.format(_comment, isTemplate ? "Plate template" : "Plate");
         }
     }
 

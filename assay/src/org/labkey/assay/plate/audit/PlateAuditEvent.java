@@ -39,7 +39,7 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
         Long transactionAuditId
     )
     {
-        super(EVENT_NAME, container, eventType.getComment());
+        super(EVENT_NAME, container, eventType.getComment(plate.isTemplate()));
         setPlateEventType(eventType.name());
         setPlateRowId(plate.getRowId());
         setPlateName(plate.getName());
