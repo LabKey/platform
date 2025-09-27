@@ -20,7 +20,9 @@ import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -115,7 +117,13 @@ public abstract class AbstractFileXarSource extends XarSource
         {
             Path path = xarDirectory.resolve(dataFileURL);
             if (!path.normalize().startsWith(xarDirectory.normalize()))
-                throw new InvalidPathException(dataFileURL, "Path to parent not allowed");
+            {
+                // check alternative - relative to container pipeline root
+                PipeRoot root = PipelineService.get().findPipelineRoot(getXarContext().getContainer());
+                boolean valid = root != null && root.isUnderRoot(path);
+                if (!valid)
+                    throw new InvalidPathException(dataFileURL, "Path to parent not allowed");
+            }
             String result = _dataFileURLs.get(FileUtil.getAbsolutePath(getXarContext().getContainer(), path));
             if (result != null)
             {
