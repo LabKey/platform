@@ -507,7 +507,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public List<String> getChangeStatements(TableChange change)
+    public List<SQLFragment> getChangeStatements(TableChange change)
     {
         throw new RuntimeException("schema changes not currently supported via SimpleSqlDialect");
     }

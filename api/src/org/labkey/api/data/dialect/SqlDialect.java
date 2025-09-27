@@ -954,28 +954,6 @@ public abstract class SqlDialect
         return new _DatabaseIdentifier(alias, sql, null);
     }
 
-    // Create a comma-separated list of legal identifiers
-    @Deprecated
-    public String makeLegalIdentifiers(String[] names)
-    {
-        return makeLegalIdentifiers(names, ", ");
-    }
-
-    // Create list of legal identifiers
-    @Deprecated
-    public String makeLegalIdentifiers(String[] names, String sep)
-    {
-        String s = "";
-        StringBuilder sb = new StringBuilder();
-        for (String name : names)
-        {
-            sb.append(s).append(makeLegalIdentifier(name));
-            s = sep;
-        }
-        return sb.toString();
-    }
-
-
     // If necessary, quote identifier
     @Deprecated
     public String makeLegalIdentifier(String id)
@@ -1898,7 +1876,7 @@ public abstract class SqlDialect
     {
     }
 
-    public abstract List<String> getChangeStatements(TableChange change);
+    public abstract List<SQLFragment> getChangeStatements(TableChange change);
 
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
 
