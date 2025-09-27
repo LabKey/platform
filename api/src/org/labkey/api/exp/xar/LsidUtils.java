@@ -38,6 +38,12 @@ public class LsidUtils
 {
     private static final Logger _log = LogManager.getLogger(LsidUtils.class);
 
+    /**
+     * Matches placeholders in format ${name} where 'name' can contain any characters except curly braces.
+     * \\Q${\\E - matches literal "${" using quotation
+     * ([^{}]*?) - captures any character except {} (non-greedy match)
+     * \\Q}\\E - matches literal "}" using quotation
+     */
     private static final Pattern REPLACEMENT_PATTERN = Pattern.compile("\\Q${\\E([^{}]*?)\\Q}\\E");
 
     private static MapReplacer createMapReplacer(XarContext context, String declaredType, String baseType)
@@ -212,7 +218,7 @@ public class LsidUtils
         @Before
         public void setUp()
         {
-            _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), null,"localhost");
+            _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), null, "localhost");
             _context.addSubstitution("Value1", "One");
             _context.addSubstitution("Value2", "Two");
             _context.addSubstitution("Reference1", "${Value1}");

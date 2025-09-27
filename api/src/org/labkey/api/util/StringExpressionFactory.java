@@ -72,6 +72,12 @@ public class StringExpressionFactory
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
+    /**
+     * Matches expressions like ${...} where ... is any text not containing curly braces
+     *  \\$\\{ - matches literal "${" (double escaping needed for Java String)
+     *  [^{}]+ - matches one or more characters that are not { or }
+     *  } - matches literal "}"
+     */
     public static final String SUBSTITUTION_EXP_PREFIX = "\\$\\{[^{}]+}";
     public static final Pattern SUBSTITUTION_EXP_PATTERN = Pattern.compile(SUBSTITUTION_EXP_PREFIX);
 
@@ -112,15 +118,14 @@ public class StringExpressionFactory
     }
 
 
-
     /**
      * HANDLES three cases:
-     *  a) http[s]://*?param=${Column}
-     *  b) /Controller/Action.view?param=${Column}
-     *     /Controller-Action.view?param=${Column}
-     *     org.labkey.module.Controller$Action.class?param=${Column}\s
-     *     special w/ some container support
-     *  c) freeform, whatever
+     * a) http[s]://*?param=${Column}
+     * b) /Controller/Action.view?param=${Column}
+     * /Controller-Action.view?param=${Column}
+     * org.labkey.module.Controller$Action.class?param=${Column}\s
+     * special w/ some container support
+     * c) freeform, whatever
      * CONSIDER javascript: (permissions!)
      */
     public static StringExpression createURL(String str)
@@ -252,6 +257,7 @@ public class StringExpressionFactory
         }
 
         private boolean _previewMode;
+
         /**
          * @return The string value or null if the part is found in the map,
          * otherwise UNDEFINED if the value does not exist in the map.
@@ -267,7 +273,9 @@ public class StringExpressionFactory
 
         public abstract boolean isConstant();
 
-        /** Get the token that will be replaced -- either a String of FieldKey.  */
+        /**
+         * Get the token that will be replaced -- either a String of FieldKey.
+         */
         public abstract Object getToken();
 
         @NotNull
@@ -282,7 +290,7 @@ public class StringExpressionFactory
         }
 
         @Override
-        public  Object clone()
+        public Object clone()
         {
             try
             {
@@ -298,10 +306,12 @@ public class StringExpressionFactory
     public static class ConstantPart extends StringPart
     {
         private final String _value;
+
         public ConstantPart(String value)
         {
             _value = value;
         }
+
         @Override
         public String getValue(Map map)
         {
@@ -309,10 +319,16 @@ public class StringExpressionFactory
         }
 
         @Override
-        public boolean isConstant() { return true; }
+        public boolean isConstant()
+        {
+            return true;
+        }
 
         @Override
-        public Object getToken() { throw new UnsupportedOperationException(); }
+        public Object getToken()
+        {
+            throw new UnsupportedOperationException();
+        }
 
         @Override
         public String toString()
@@ -359,7 +375,7 @@ public class StringExpressionFactory
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(getExpressionParam(param));
                 }
                 else if ((rest.startsWith("minValue('") && rest.endsWith("')")
-                    || (rest.startsWith("minValue(") && rest.endsWith(")"))))
+                        || (rest.startsWith("minValue(") && rest.endsWith(")"))))
                 {
                     String param = "";
                     if (rest.startsWith("minValue('") && rest.endsWith("')"))
@@ -434,7 +450,10 @@ public class StringExpressionFactory
         }
 
         @Override
-        public boolean isConstant() { return false; }
+        public boolean isConstant()
+        {
+            return false;
+        }
 
         @Override
         public Object getToken()
@@ -529,58 +548,58 @@ public class StringExpressionFactory
         public enum Substitution
         {
             schemaName
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    DataRegion region = context.getCurrentRegion();
-                    if (region != null)
                     {
-                        TableInfo table = region.getTable();
-                        if (table != null)
+                        @Override
+                        public String getValue(RenderContext context)
                         {
-                            return table.getPublicSchemaName();
+                            DataRegion region = context.getCurrentRegion();
+                            if (region != null)
+                            {
+                                TableInfo table = region.getTable();
+                                if (table != null)
+                                {
+                                    return table.getPublicSchemaName();
+                                }
+                            }
+                            return "";
                         }
-                    }
-                    return "";
-                }
-            },
+                    },
             schemaPath
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    DataRegion region = context.getCurrentRegion();
-                    if (region != null)
                     {
-                        TableInfo table = region.getTable();
-                        if (table != null)
+                        @Override
+                        public String getValue(RenderContext context)
                         {
-                            UserSchema userSchema = table.getUserSchema();
-                            if (null != userSchema)
-                                return userSchema.getSchemaPath().toString();
+                            DataRegion region = context.getCurrentRegion();
+                            if (region != null)
+                            {
+                                TableInfo table = region.getTable();
+                                if (table != null)
+                                {
+                                    UserSchema userSchema = table.getUserSchema();
+                                    if (null != userSchema)
+                                        return userSchema.getSchemaPath().toString();
+                                }
+                            }
+                            return "";
                         }
-                    }
-                    return "";
-                }
-            },
+                    },
             queryName
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    DataRegion region = context.getCurrentRegion();
-                    if (region != null)
                     {
-                        TableInfo table = region.getTable();
-                        if (table != null)
+                        @Override
+                        public String getValue(RenderContext context)
                         {
-                            return table.getPublicName();
+                            DataRegion region = context.getCurrentRegion();
+                            if (region != null)
+                            {
+                                TableInfo table = region.getTable();
+                                if (table != null)
+                                {
+                                    return table.getPublicName();
+                                }
+                            }
+                            return "";
                         }
-                    }
-                    return "";
-                }
-            },
+                    },
             dataRegionName
                     {
                         @Override
@@ -595,29 +614,29 @@ public class StringExpressionFactory
                         }
                     },
             containerPath
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    return context.getContainerPath();
-                }
-            },
+                    {
+                        @Override
+                        public String getValue(RenderContext context)
+                        {
+                            return context.getContainerPath();
+                        }
+                    },
             contextPath
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    return context.getContextPath();
-                }
-            },
+                    {
+                        @Override
+                        public String getValue(RenderContext context)
+                        {
+                            return context.getContextPath();
+                        }
+                    },
             selectionKey
-            {
-                @Override
-                public String getValue(RenderContext context)
-                {
-                    return context.getSelectionKey();
-                }
-            };
+                    {
+                        @Override
+                        public String getValue(RenderContext context)
+                        {
+                            return context.getSelectionKey();
+                        }
+                    };
 
             public abstract String getValue(RenderContext context);
         }
@@ -649,7 +668,7 @@ public class StringExpressionFactory
             if (!(map instanceof RenderContext))
                 return "";
 
-            String s = Substitution.valueOf(_value).getValue((RenderContext)map);
+            String s = Substitution.valueOf(_value).getValue((RenderContext) map);
             return applyFormats(s);
         }
 
@@ -670,65 +689,65 @@ public class StringExpressionFactory
         {
             // Any null or missing field results in a null eval of the whole expression (good for URLs)
             NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT)
-            {
-                @Override
-                public String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException
-                {
-                    throw new StopIteratingException();
-                }
-            },
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException
+                        {
+                            throw new StopIteratingException();
+                        }
+                    },
 
             // All null fields get replaced with blank. Any missing field results in a null eval of the whole expression.
             ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
-            {
-                @Override
-                public String handleNull(StringExpressionFactory.StringPart part)
-                {
-                    return "";
-                }
-            },
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "";
+                        }
+                    },
 
             // All null and missing fields get replaced with blank
             ReplaceNullAndMissingWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
-            {
-                @Override
-                public String handleNull(StringExpressionFactory.StringPart part)
-                {
-                    return "";
-                }
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "";
+                        }
 
-                @Override
-                public String handleUndefined(StringPart part)
-                {
-                    return "";
-                }
-            },
+                        @Override
+                        public String handleUndefined(StringPart part)
+                        {
+                            return "";
+                        }
+                    },
 
             // All null fields get replaces with "null". Any missing field results in a null eval of the whole expression.
             OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE)
-            {
-                @Override
-                public String handleNull(StringExpressionFactory.StringPart part)
-                {
-                    return "null";
-                }
-            },
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "null";
+                        }
+                    },
 
             // All null and missing fields get skipped (substitution is left in place)
             KeepSubstitution(StringExpressionType.ReplaceMissing.KEEP_SUBSTITUTION)
-            {
-                @Override
-                public String handleNull(StringExpressionFactory.StringPart part)
-                {
-                    return "${" + part.getToken() + "}";
-                }
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "${" + part.getToken() + "}";
+                        }
 
-                @Override
-                public String handleUndefined(StringExpressionFactory.StringPart part)
-                {
-                    return handleNull(part);
-                }
-            };
+                        @Override
+                        public String handleUndefined(StringExpressionFactory.StringPart part)
+                        {
+                            return handleNull(part);
+                        }
+                    };
 
             private final StringExpressionType.ReplaceMissing.Enum _xenum;
 
@@ -826,7 +845,7 @@ public class StringExpressionFactory
                     break;
                 if (index > 0)
                     _parsedExpression.add(new ConstantPart(_source.substring(start, index)));
-                String sub = _source.substring(index+2,closeIndex);
+                String sub = _source.substring(index + 2, closeIndex);
 
                 StringPart part = parsePart(sub);
                 if (part.hasSideEffects() && !_allowSideEffects)
@@ -841,7 +860,7 @@ public class StringExpressionFactory
 
         protected abstract StringPart parsePart(String expr);
 
-        
+
         @Override
         public String eval(Map context)
         {
@@ -914,7 +933,7 @@ public class StringExpressionFactory
         {
             try
             {
-                AbstractStringExpression clone = (AbstractStringExpression)super.clone();
+                AbstractStringExpression clone = (AbstractStringExpression) super.clone();
                 if (null != clone._parsedExpression)
                 {
                     clone._parsedExpression = new ArrayList<>(clone._parsedExpression);
@@ -987,7 +1006,6 @@ public class StringExpressionFactory
     }
 
 
-    
     public static class ConstantStringExpression extends AbstractStringExpression
     {
         ConstantStringExpression(String str)
@@ -1009,7 +1027,6 @@ public class StringExpressionFactory
     }
 
 
-
     public static class SimpleStringExpression extends AbstractStringExpression
     {
         private final boolean _urlEncodeSubstitutions;
@@ -1024,7 +1041,7 @@ public class StringExpressionFactory
             super(source, nullValueBehavior, allowSideEffects);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
-        
+
         @Override
         protected StringPart parsePart(String expr)
         {
@@ -1035,7 +1052,8 @@ public class StringExpressionFactory
 
     public static class FieldPart extends SubstitutePart
     {
-        @NotNull private FieldKey _key;
+        @NotNull
+        private FieldKey _key;
 
         public FieldPart(@NotNull String s, boolean urlEncodeSubstitutions, boolean useBackslashEscape)
         {
@@ -1098,7 +1116,7 @@ public class StringExpressionFactory
         {
             this("");
         }
-        
+
         protected FieldKeyStringExpression(String source)
         {
             this(source, true, null);
@@ -1153,8 +1171,8 @@ public class StringExpressionFactory
          * E.g. consider column lk in table A, which joins to pk in table B
          * NOTE: original StringExpression is unchanged, it is cloned and the clone is modified
          *
-         * @param parent   title -> lk/title
-         * @param remap    pk -> fk
+         * @param parent title -> lk/title
+         * @param remap  pk -> fk
          * @return clone of original StringExpressions with updated fieldkey substitutions
          */
         public FieldKeyStringExpression remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
@@ -1192,7 +1210,7 @@ public class StringExpressionFactory
             for (StringPart p : getParsedExpression())
             {
                 if (p instanceof FieldPart)
-                    set.add(((FieldPart)p)._key);
+                    set.add(((FieldPart) p)._key);
             }
             return set;
         }
@@ -1206,11 +1224,12 @@ public class StringExpressionFactory
         @Override
         public FieldKeyStringExpression clone()
         {
-            return (FieldKeyStringExpression)super.clone();
+            return (FieldKeyStringExpression) super.clone();
         }
 
         /**
          * Remove the specified parent prefix from all FieldKeys
+         *
          * @return a modified copy, the original is not mutated
          */
         public FieldKeyStringExpression dropParent(String parentName)
@@ -1238,7 +1257,7 @@ public class StringExpressionFactory
 
 
     /**
-     *  Same as FieldKeyExpression, but validates !startsWith(javascript:)
+     * Same as FieldKeyExpression, but validates !startsWith(javascript:)
      * additional constructor
      */
     public static class URLStringExpression extends FieldKeyStringExpression
@@ -1270,7 +1289,7 @@ public class StringExpressionFactory
                 StringPart p = _parsedExpression.get(0);
                 if (p instanceof FieldPart fp)
                 {
-                    _parsedExpression.set(0,new FieldPart(fp._key,SubstitutionFormat.passThrough));
+                    _parsedExpression.set(0, new FieldPart(fp._key, SubstitutionFormat.passThrough));
                 }
             }
         }
@@ -1315,7 +1334,7 @@ public class StringExpressionFactory
         @Test
         public void testSimple()
         {
-            Map<Object,Object> m = new HashMap<>();
+            Map<Object, Object> m = new HashMap<>();
 
             StringExpression a = StringExpressionFactory.create("${one} ${and} ${two} = ${three}");
             m.put("and", "y");
@@ -1326,25 +1345,25 @@ public class StringExpressionFactory
             assertEquals("uno y dos = tres", a.eval(m));
 
             StringExpression b = StringExpressionFactory.create("${contextPath}/controller${containerPath}/details.view?id=${rowId}&label=${label}", true);
-            m.put("contextPath","/labkey");
-            m.put("containerPath","/home");
-            m.put("rowId",5);
-            m.put("label","%encode me%");
+            m.put("contextPath", "/labkey");
+            m.put("containerPath", "/home");
+            m.put("rowId", 5);
+            m.put("label", "%encode me%");
             assertEquals("/labkey/controller/home/details.view?id=5&label=%25encode%20me%25", b.eval(m));
         }
 
         @Test
         public void testFieldKey()
         {
-            Map<Object,Object> m = new HashMap<>();
+            Map<Object, Object> m = new HashMap<>();
 
             FieldKeyStringExpression original = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
-            m.put(FieldKey.fromParts("lookup","rowid"), 6);
+            m.put(FieldKey.fromParts("lookup", "rowid"), 6);
             m.put(FieldKey.fromParts("lookup"), 5);
-            m.put(FieldKey.fromParts("lookup","title"), "title one");
+            m.put(FieldKey.fromParts("lookup", "title"), "title one");
 
             // Approach #1 - prefix explicitly, column by column
-            Map<FieldKey,FieldKey> remap = new HashMap<>();
+            Map<FieldKey, FieldKey> remap = new HashMap<>();
             remap.put(FieldKey.fromParts("rowid"), FieldKey.fromParts("lookup"));
             remap.put(FieldKey.fromParts("title"), FieldKey.fromParts("lookup", "title"));
             FieldKeyStringExpression remapped = original.remapFieldKeys(null, remap);
@@ -1613,10 +1632,10 @@ public class StringExpressionFactory
         public void testCreateUrl()
         {
             Container container = JunitUtil.getTestContainer();
-            ActionURL url = new ActionURL("controller","action",container);
-            ActionURL urlBegin = new ActionURL("project","begin",container);
+            ActionURL url = new ActionURL("controller", "action", container);
+            ActionURL urlBegin = new ActionURL("project", "begin", container);
             String s;
-            Map<FieldKey,Object> m = new HashMap<>();
+            Map<FieldKey, Object> m = new HashMap<>();
 
             /* test auto-detect of details URL, 'old' details url, mailto:, etc etc */
             StringExpression a = StringExpressionFactory.createURL("mailto:tester@test.labkey.com");
@@ -1637,36 +1656,36 @@ public class StringExpressionFactory
 
             StringExpression e = StringExpressionFactory.createURL("/controller/action.view");
             assertTrue(e instanceof DetailsURL);
-            ((DetailsURL)e).setContainerContext(container);
+            ((DetailsURL) e).setContainerContext(container);
             s = e.eval(Collections.emptyMap());
             assertEquals(url.getLocalURIString(), s);
 
             StringExpression e2 = StringExpressionFactory.createURL("/controller-action.view");
             assertTrue(e2 instanceof DetailsURL);
-            ((DetailsURL)e2).setContainerContext(container);
+            ((DetailsURL) e2).setContainerContext(container);
             s = e2.eval(Collections.emptyMap());
             assertEquals(url.getLocalURIString(), s);
 
             StringExpression f = StringExpressionFactory.createURL("org.labkey.core.portal.ProjectController$BeginAction.class");
             assertTrue(f instanceof DetailsURL);
-            ((DetailsURL)f).setContainerContext(container);
+            ((DetailsURL) f).setContainerContext(container);
             s = f.eval(Collections.emptyMap());
             assertEquals(urlBegin.getLocalURIString(), s);
 
             StringExpression g = StringExpressionFactory.createURL("org.labkey.core.portal.ProjectController$BeginAction.class?q=labkey");
             assertTrue(g instanceof DetailsURL);
-            ((DetailsURL)g).setContainerContext(container);
+            ((DetailsURL) g).setContainerContext(container);
             s = g.eval(Collections.emptyMap());
-            urlBegin.addParameter("q","labkey");
+            urlBegin.addParameter("q", "labkey");
             assertEquals(urlBegin.getLocalURIString(), s);
 
-            m.put(new FieldKey(null,"h"),"http://www.labkey.com/");
+            m.put(new FieldKey(null, "h"), "http://www.labkey.com/");
             StringExpression h = StringExpressionFactory.createURL("${h}");
             assertTrue(h instanceof URLStringExpression);
             s = h.eval(m);
-            assertEquals("http://www.labkey.com/",s);
+            assertEquals("http://www.labkey.com/", s);
 
-            m.put(new FieldKey(null,"i"),"javascript://www.labkey.com");
+            m.put(new FieldKey(null, "i"), "javascript://www.labkey.com");
             StringExpression i = StringExpressionFactory.createURL("${i}");
             assertTrue(i instanceof URLStringExpression);
             s = i.eval(m);
@@ -1687,23 +1706,23 @@ public class StringExpressionFactory
         @Test
         public void testAddParameter() throws URISyntaxException
         {
-            Map<Object,Object> m = new HashMap<>();
+            Map<Object, Object> m = new HashMap<>();
 
             StringExpression b = StringExpressionFactory.create("z/details.view?id=${rowId}", true);
 
             // Add a returnUrl parameter expression
-            StringExpression c = ((AbstractStringExpression)b).addParameter("returnUrl", "${returnUrl}");
+            StringExpression c = ((AbstractStringExpression) b).addParameter("returnUrl", "${returnUrl}");
             assertNotSame("addParameter() should clone the original expression", c, b);
 
             URLHelper returnUrl = new URLHelper("/x/y.view?foo=bar&blee=q");
-            m.put("rowId",5);
+            m.put("rowId", 5);
             m.put("returnUrl", returnUrl);
             // XXX: URL parameters should be encoded with PageFlowUtil.encode() instead of PageFlowUtil.encodePart()
             //assertEquals("z/details.view?id=5&returnUrl=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", c.eval(m));
 
             // Add a returnUrl parameter literal
             String encodedReturnUrl = PageFlowUtil.encode(returnUrl.getLocalURIString(false));
-            StringExpression d = ((AbstractStringExpression)b).addParameter("returnUrl", encodedReturnUrl);
+            StringExpression d = ((AbstractStringExpression) b).addParameter("returnUrl", encodedReturnUrl);
             m.remove("returnUrl");
             assertEquals("z/details.view?id=5&returnUrl=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", d.eval(m));
             //assertEquals(b.eval(m), d.eval(m));

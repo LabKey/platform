@@ -27,13 +27,18 @@ package org.radeox.filter.regex;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.junit.Test;
 import org.radeox.filter.FilterSupport;
 import org.radeox.filter.context.FilterContext;
 import org.radeox.regex.Compiler;
+import org.radeox.regex.Matcher;
 import org.radeox.regex.Pattern;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /*
  * Class that stores regular expressions, can be subclassed
@@ -45,18 +50,26 @@ import java.util.List;
  */
 
 public abstract class RegexFilter extends FilterSupport {
-  private static final Logger log = LogManager.getLogger(RegexFilter.class);
+    private static final Logger log = LogManager.getLogger(RegexFilter.class);
 
+  /**
+   * Regular expression that matches a quoted string that may contain escaped quotes and characters.
+   * Pattern explanation:
+   * - Matches text between double quotes
+   * - Allows escaped quotes and characters within the string
+   * - Non-capturing group (?:) is used for escaping sequences
+   * - [^\"\\\\]* matches any chars except quotes and backslashes
+   * - \\\\. matches any escaped character
+   */
   public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"";
+
+//  public static final String QUOTE_REGEX_ORIG = "\"(([^\"\\\\]|\\.)*)\"";
 
   protected List<Pattern> pattern = new ArrayList<>();
   protected List<String> substitute = new ArrayList<>();
 
   public final static boolean SINGLELINE = false;
   public final static boolean MULTILINE = true;
-
-  // TODO future use
-  //private RegexService regexService;
 
   public RegexFilter() {
     super();
@@ -100,4 +113,40 @@ public abstract class RegexFilter extends FilterSupport {
 
   @Override
   public abstract String filter(String input, FilterContext context);
+
+    public static class TestCase
+    {
+        Pattern pattern = Compiler.create().compile(QUOTE_REGEX);
+
+        @Test
+        public void testBasicQuotedString()
+        {
+            assertTrue(Matcher.create("\"Hello World\"", pattern).matches());
+            assertFalse(Matcher.create("Hello World", pattern).matches());
+            assertFalse(Matcher.create("\"Unclosed quote", pattern).matches());
+        }
+
+        @Test
+        public void testEscapedQuotes()
+        {
+            assertTrue(Matcher.create("\"String with \\\"escaped quotes\\\"\"", pattern).matches());
+            assertTrue(Matcher.create("\"He said: \\\"Hello\\\"\"", pattern).matches());
+        }
+
+        @Test
+        public void testEscapedCharacters()
+        {
+            assertTrue(Matcher.create("\"Line1\\nLine2\"", pattern).matches());
+            assertTrue(Matcher.create("\"Tab\\there\"", pattern).matches());
+            assertTrue(Matcher.create("\"Backslash\\\\test\"", pattern).matches());
+        }
+
+        @Test
+        public void testInvalidPatterns()
+        {
+            assertFalse(Matcher.create("\"Missing end", pattern).matches());
+            assertFalse(Matcher.create("Missing start\"", pattern).matches());
+            assertFalse(Matcher.create("\"Nested \"quotes\"\"", pattern).matches());
+        }
+    }
 }

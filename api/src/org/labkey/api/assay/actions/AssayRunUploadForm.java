@@ -340,7 +340,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
             if (!fileParameters.isEmpty())
             {
-                AssayFileWriter writer = new AssayFileWriter();
+                AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
                 try
                 {
                     // Initialize member variable so we know that we've already tried to save the posted files in case of error
@@ -729,7 +729,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     @Override
     public void uploadComplete(ExpRun run) throws ExperimentException
     {
-        AssayDataCollector collector = getSelectedDataCollector();
+        AssayDataCollector<AssayRunUploadForm<ProviderType>> collector = getSelectedDataCollector();
         if (collector != null)
         {
             _uploadedData = CollectionUtils.checkValueClass(collector.uploadComplete(this, run),FileLike.class);

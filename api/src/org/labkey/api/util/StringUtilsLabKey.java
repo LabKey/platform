@@ -58,46 +58,51 @@ public class StringUtilsLabKey
     /** Instead of relying on the platform default character encoding, use this Charset */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
+    /**
+     * Matches either:
+     * 1. (\\s--[^ ]) - a space followed by two dashes followed by any non-space character
+     * 2. (\\s-[^- ]) - a space followed by one dash followed by any character that is not a dash or space
+     */
     public static final String SPACE_DASH_EXPRESSION = "(\\s--[^ ])|(\\s-[^- ])";
     public static final Pattern SPACE_DASH_PATTERN = Pattern.compile(SPACE_DASH_EXPRESSION);
     /** Special character strings that can be used by tests in this class and others */
     public static final List<String> specialCharacterTestStrings = List.of(
-        "",
-        "A",
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
-        "°±²³´µ¶·¸¹º»¼½¾¿",
-        "こんにちは世界!",
-        "Відношення об'єму великих тромбоцитів (P-LCR)",
-        "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
-        "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
-        "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
-        "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
+            "",
+            "A",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+            "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
+            "°±²³´µ¶·¸¹º»¼½¾¿",
+            "こんにちは世界!",
+            "Відношення об'єму великих тромбоцитів (P-LCR)",
+            "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
+            "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
+            "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
+            "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
     );
 
     /** A list with all distinct characters (keeping surrogate pairs together) from the above test strings */
     public static final List<String> uniqueSpecialChars = specialCharacterTestStrings.stream()
-        .flatMap(s -> {
-            List<String> moreStrings = new LinkedList<>();
-            for (int i = 0; i < s.length(); i++)
-            {
-                char c = s.charAt(i);
-                if (Character.isSurrogate(c))
+            .flatMap(s -> {
+                List<String> moreStrings = new LinkedList<>();
+                for (int i = 0; i < s.length(); i++)
                 {
-                    char c2 = s.charAt(i + 1);
-                    moreStrings.add(c + "" + c2);
-                    i++;
+                    char c = s.charAt(i);
+                    if (Character.isSurrogate(c))
+                    {
+                        char c2 = s.charAt(i + 1);
+                        moreStrings.add(c + "" + c2);
+                        i++;
+                    }
+                    else
+                    {
+                        moreStrings.add(String.valueOf(c));
+                    }
                 }
-                else
-                {
-                    moreStrings.add(String.valueOf(c));
-                }
-            }
-            return moreStrings.stream();
-        })
-        .distinct()
-        .sorted()
-        .collect(Collectors.toCollection(ArrayList::new));
+                return moreStrings.stream();
+            })
+            .distinct()
+            .sorted()
+            .collect(Collectors.toCollection(ArrayList::new));
 
     private static final Random RANDOM;
 
@@ -371,7 +376,7 @@ public class StringUtilsLabKey
                 {
                     if (appending)
                     {
-                        int lastIndex = stringList.size()-1;
+                        int lastIndex = stringList.size() - 1;
                         stringList.set(lastIndex, stringList.get(lastIndex) + part);
                         appending = false;
                     }
@@ -381,7 +386,7 @@ public class StringUtilsLabKey
                 else
                 {
                     appending = true;
-                    int lastIndex = stringList.size()-1;
+                    int lastIndex = stringList.size() - 1;
                     if (lastIndex < 0 || hasSpace)
                         stringList.add(part);
                     else
@@ -437,12 +442,12 @@ public class StringUtilsLabKey
         // replaces spaces with dashes and remove all characters that are not alpanumeric or a dash
         normalizedName = normalizedName.replaceAll(" ", "-").replaceAll("[^A-Za-z0-9-]", "");
         int start = 0;
-        int end = min(63,normalizedName.length()); // a sub-domain can be at most 63 characters in length
+        int end = min(63, normalizedName.length()); // a sub-domain can be at most 63 characters in length
         while (start < end && normalizedName.charAt(start) == '-')
             start++;
-        while (end > start && normalizedName.charAt(end-1) == '-')
+        while (end > start && normalizedName.charAt(end - 1) == '-')
             end--;
-        if (end-start == 0)
+        if (end - start == 0)
             return null;
         if (start > 0 || end < normalizedName.length())
             return normalizedName.substring(start, end);
@@ -462,9 +467,9 @@ public class StringUtilsLabKey
      * Compares two maps of name:value pairs and generates a string that documents the entries that have changed
      * (added, removed, or updated). Useful for audit logging of settings changes. A few examples of output:
      *
-     *    enabled: true » false
-     *    description: My Configuration » CAS Configuration, enabled: true » false
-     *    serverUrl: » http://localhost:8080/labkey/cas, description: » CAS localhost, autoRedirect: » true
+     * enabled: true » false
+     * description: My Configuration » CAS Configuration, enabled: true » false
+     * serverUrl: » http://localhost:8080/labkey/cas, description: » CAS localhost, autoRedirect: » true
      *
      * Null can be passed for either map, in which case an empty map is substituted.
      */
@@ -478,16 +483,16 @@ public class StringUtilsLabKey
         List<String> list = new LinkedList<>();
 
         difference.entriesOnlyOnLeft().entrySet().stream()
-            .map(e->e.getKey() + ": " + truncate(e.getValue(), truncateLength) + " » ")
-            .forEach(list::add);
+                .map(e -> e.getKey() + ": " + truncate(e.getValue(), truncateLength) + " » ")
+                .forEach(list::add);
 
         difference.entriesOnlyOnRight().entrySet().stream()
-            .map(e->e.getKey() + ": » " + truncate(e.getValue(), truncateLength))
-            .forEach(list::add);
+                .map(e -> e.getKey() + ": » " + truncate(e.getValue(), truncateLength))
+                .forEach(list::add);
 
         difference.entriesDiffering().entrySet().stream()
-            .map(e->e.getKey() + ": " + truncate(e.getValue().leftValue(), truncateLength) + " » " + truncate(e.getValue().rightValue(), truncateLength))
-            .forEach(list::add);
+                .map(e -> e.getKey() + ": " + truncate(e.getValue().leftValue(), truncateLength) + " » " + truncate(e.getValue().rightValue(), truncateLength))
+                .forEach(list::add);
 
         return String.join(", ", list);
     }
@@ -518,7 +523,7 @@ public class StringUtilsLabKey
             return null;
 
         return original.replaceAll("[\\u2018\\u2019]", "'")
-                        .replaceAll("[\\u201C\\u201D]", "\"");
+                .replaceAll("[\\u201C\\u201D]", "\"");
     }
 
     public static String unquoteString(@Nullable String original)
@@ -597,7 +602,7 @@ public class StringUtilsLabKey
         if (str == null)
             return null;
         // N.B. You might think that \p{Z} includes tabs, but it does not
-        return str.replaceAll("[\\p{Z}\\t\\n\\r]"," ");
+        return str.replaceAll("[\\p{Z}\\t\\n\\r]", " ");
     }
 
     /**
@@ -648,8 +653,8 @@ public class StringUtilsLabKey
         return valid;
     }
 
-    private static final byte NON_ASCII_MASK = (byte)0b1000_0000;
-    private static final byte START_BYTE_MASK = (byte)0b1100_0000;
+    private static final byte NON_ASCII_MASK = (byte) 0b1000_0000;
+    private static final byte START_BYTE_MASK = (byte) 0b1100_0000;
 
     // Truncates a string to UTF-8 bytes <= maxBytes starting from the first character (truncating the end of the string)
     public static String leftUtf8Bytes(String s, int maxBytes)
@@ -726,7 +731,7 @@ public class StringUtilsLabKey
             s = s.substring(s.length() - maxCharacters);
             // Don't split a surrogate pair at the beginning
             if (maxCharacters > 0 && Character.isLowSurrogate(s.charAt(0)))
-                s = s.substring( 1);
+                s = s.substring(1);
         }
         return s;
     }
