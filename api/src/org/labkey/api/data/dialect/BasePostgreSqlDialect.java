@@ -1312,7 +1312,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                   .append(" FOREIGN KEY (")
                   .append(makePropertyIdentifier(foreignKey.getColumnName()))
                   .append(") REFERENCES ")
-                  .appendIdentifier(foreignKey.getSchemaName()).append(".").appendIdentifier(tableInfo.getName())
+                  .appendIdentifier(tableInfo.getSchema().getName()).append(".").appendIdentifier(tableInfo.getName())
                   .append(" (")
                   .append(makePropertyIdentifier(foreignKey.getForeignColumnName()))
                   .append(")");
