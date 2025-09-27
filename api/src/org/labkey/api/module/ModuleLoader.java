@@ -1346,7 +1346,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public @Nullable String loadEnlistmentId(File directory)
     {
         String enlistmentId = null;
-        File file = new File(directory, "enlistment.properties");
+        File file = FileUtil.appendName(directory, "enlistment.properties");
 
         if (file.exists())
         {
