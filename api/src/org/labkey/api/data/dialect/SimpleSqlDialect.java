@@ -143,12 +143,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendStatement(Appendable sql, String statement)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

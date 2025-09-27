@@ -508,9 +508,6 @@ public abstract class SqlDialect
 
     public abstract String getSQLScriptPath();
 
-    // Note: SQLFragment and StringBuilder both implement Appendable
-    public abstract void appendStatement(Appendable sql, String statement);
-
     /**
      * Adds dialect-specific SQL that re-selects a value (e.g., from an auto-increment column) at INSERT or UPDATE time,
      * returning it either as a result set (proposedVariable = null) or into a SQL variable (proposedVariable = not null).

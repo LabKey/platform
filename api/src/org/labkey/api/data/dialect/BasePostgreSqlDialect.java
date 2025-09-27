@@ -269,20 +269,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return "VARCHAR(300)";
     }
 
-    @Override
-    public void appendStatement(Appendable sql, String statement)
-    {
-        try
-        {
-            sql.append(";\n");
-            sql.append(statement);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public int getMajorVersion()
     {
         return _majorVersion;
@@ -1113,7 +1099,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             {
                 String tempColumnName = column.getName() + "~~temp~~";
                 // create a temp column
-                String addTempColumnStatement = alterTableSegment + String.format(" ADD COLUMN %s", getSqlColumnSpec(column, tempColumnName));
+                String addTempColumnStatement = alterTableSegment + String.format(" ADD COLUMN %s", getSqlColumnSpec(column, tempColumnName).getSQL());
                 statements.add(addTempColumnStatement);
 
                 // copy casted value to temp column
@@ -1198,16 +1184,16 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private SQLFragment getDropColumnsStatement(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<>();
+        List<SQLFragment> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
             String name = prop.getExactName() ? quoteIdentifier(prop.getName()) : makePropertyIdentifier(prop.getName());
-            sqlParts.add("DROP COLUMN " + name);
+            sqlParts.add(new SQLFragment("DROP COLUMN ").appendIdentifier(name));
         }
 
         SQLFragment f = new SQLFragment("ALTER TABLE ");
         f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-        f.append(" ").append(StringUtils.join(sqlParts, ", "));
+        f.append(" ").append(sqlParts, ", ");
         return f;
     }
 
@@ -1217,13 +1203,13 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     private List<SQLFragment> getAddColumnsStatements(TableChange change)
     {
         List<SQLFragment> statements = new ArrayList<>();
-        List<String> sqlParts = new ArrayList<>();
         String pkColumn = null;
         Constraint constraint = null;
 
+        List<SQLFragment> columnSpecs = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add("ADD COLUMN " + getSqlColumnSpec(prop));
+            columnSpecs.add(getSqlColumnSpec(prop));
             if (prop.isPrimaryKey())
             {
                 assert null == pkColumn : "no more than one primary key defined";
@@ -1234,7 +1220,15 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         SQLFragment alter = new SQLFragment("ALTER TABLE ");
         alter.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-        alter.append(" ").append(StringUtils.join(sqlParts, ", "));
+        alter.append(" ");
+        String sep = "";
+        for (SQLFragment col : columnSpecs)
+        {
+            alter.append(sep);
+            alter.append("ADD COLUMN ");
+            alter.append(col);
+            sep = ", ";
+        }
         statements.add(alter);
         if (null != pkColumn)
         {
@@ -1267,17 +1261,23 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         if (null!=constraints && !constraints.isEmpty())
         {
             statements = constraints.stream().map(constraint -> {
+                List<SQLFragment> columns = new ArrayList<>();
+                for (String col : constraint.getColumns())
+                {
+                    columns.add(new SQLFragment().appendIdentifier(col));
+                }
+
                 SQLFragment f = new SQLFragment();
                 f.append("DO $$\nBEGIN\nIF NOT EXISTS\n(SELECT 1 FROM information_schema.constraint_column_usage\nWHERE table_name = ")
-                 .append(getStringHandler().quoteStringLiteral(change.getSchemaName() + "." + change.getTableName()))
-                 .append(" and constraint_name = ")
-                 .append(getStringHandler().quoteStringLiteral(constraint.getName()))
-                 .append(") THEN\nALTER TABLE ");
+                        .appendStringLiteral(change.getSchemaName() + "." + change.getTableName(), this)
+                        .append(" and constraint_name = ")
+                        .appendStringLiteral(constraint.getName(), this)
+                        .append(") THEN\nALTER TABLE ");
                 f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
                 f.append(" ADD CONSTRAINT ").appendIdentifier(constraint.getName()).append(" ")
-                 .append(constraint.getType().toString()).append(" (")
-                 .append(StringUtils.join(constraint.getColumns(), ","))
-                 .append(");\nEND IF)").appendEOS().append("\nEND$$").appendEOS();
+                        .append(constraint.getType().toString()).append(" (")
+                        .append(columns, ",")
+                        .append(")").appendEOS().append("\nEND IF)").appendEOS().append("\nEND$$").appendEOS();
                 return f;
             }).collect(Collectors.toList());
         }
@@ -1288,7 +1288,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     private List<SQLFragment> getCreateTableStatements(TableChange change)
     {
         List<SQLFragment> statements = new ArrayList<>();
-        List<String> createTableSqlParts = new ArrayList<>();
+        List<SQLFragment> createTableSqlParts = new ArrayList<>();
         String pkColumn = null;
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -1302,22 +1302,26 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         for (PropertyStorageSpec.ForeignKey foreignKey : change.getForeignKeys())
         {
-            StringBuilder fkString = new StringBuilder("CONSTRAINT ");
             DbSchema schema = DbSchema.get(foreignKey.getSchemaName(), DbSchemaType.Module);
             TableInfo tableInfo = foreignKey.isProvisioned() ?
                     foreignKey.getTableInfoProvisioned() :
                     schema.getTable(foreignKey.getTableName());
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
-            fkString.append(constraintName).append(" FOREIGN KEY (")
-                    .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo).append(" (")
-                    .append(foreignKey.getForeignColumnName()).append(")");
-            createTableSqlParts.add(fkString.toString());
+            SQLFragment fkFrag = new SQLFragment("CONSTRAINT ");
+            fkFrag.appendIdentifier(constraintName)
+                  .append(" FOREIGN KEY (")
+                  .append(makePropertyIdentifier(foreignKey.getColumnName()))
+                  .append(") REFERENCES ")
+                  .appendIdentifier(foreignKey.getSchemaName()).append(".").appendIdentifier(tableInfo.getName())
+                  .append(" (")
+                  .append(makePropertyIdentifier(foreignKey.getForeignColumnName()))
+                  .append(")");
+            createTableSqlParts.add(fkFrag);
         }
 
         SQLFragment create = new SQLFragment("CREATE TABLE ");
         create.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-        create.append(" (").append(StringUtils.join(createTableSqlParts, ", ")).append(")");
+        create.append(" (").append(createTableSqlParts, ", ").append(")");
         statements.add(create);
         if (null != pkColumn)
         {
@@ -1375,44 +1379,48 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
     }
 
-    private String getSqlColumnSpec(PropertyStorageSpec prop)
+    private SQLFragment getSqlColumnSpec(PropertyStorageSpec prop)
     {
         return getSqlColumnSpec(prop, prop.getName());
     }
 
-    private String getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
+    private SQLFragment getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
     {
-        List<String> colSpec = new ArrayList<>();
-        colSpec.add(makePropertyIdentifier(columnName));
-        colSpec.add(getSqlTypeName(prop));
+        SQLFragment colSpec = new SQLFragment();
+        colSpec.append(makePropertyIdentifier(columnName)).append(" ");
+        colSpec.append(getSqlTypeName(prop));
 
-        //Apply size and precision to varchar and Decimal types
+        // Apply size and precision to varchar and Decimal types
         if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
-            colSpec.add("(" + prop.getSize() + ")");
+        {
+            colSpec.append("(").append(prop.getSize().toString()).append(")");
+        }
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
+        {
+            colSpec.append(DEFAULT_DECIMAL_SCALE_PRECISION);
+        }
 
         if (prop.isPrimaryKey() || !prop.isNullable())
-            colSpec.add("NOT NULL");
+            colSpec.append(" NOT NULL");
 
         if (null != prop.getDefaultValue())
         {
             if (prop.getJdbcType() == JdbcType.BOOLEAN)
             {
-                String defaultClause = " DEFAULT " +
-                        ((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
-                colSpec.add(defaultClause);
+                colSpec.append(" DEFAULT ");
+                colSpec.append((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
             }
             else if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
-                colSpec.add(" DEFAULT " + getStringHandler().quoteStringLiteral(prop.getDefaultValue().toString()));
+                colSpec.append(" DEFAULT ");
+                colSpec.append(getStringHandler().quoteStringLiteral(prop.getDefaultValue().toString()));
             }
             else
             {
                 throw new IllegalArgumentException("Default value on type " + prop.getJdbcType().name() + " is not supported.");
             }
         }
-        return StringUtils.join(colSpec, ' ');
+        return colSpec;
     }
 
     private String makeTableIdentifier(TableChange change)

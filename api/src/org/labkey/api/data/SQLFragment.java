@@ -715,18 +715,17 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-
-    /** Append a full statement (using the correct dialect syntax) and its parameters to this SQLFragment */
-    public SQLFragment appendStatement(@Nullable SQLFragment statement, SqlDialect dialect)
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull String separator)
     {
-        if (null == statement || statement.isEmpty())
-            return this;
-        // getSQL() flattens out common table expressions
-        dialect.appendStatement(this, statement.getSQL());
-        addAll(statement.getParams());
+        String s = "";
+        for (SQLFragment fragment : fragments)
+        {
+            append(s);
+            s = separator;
+            append(fragment);
+        }
         return this;
     }
-
 
     // return boolean so this can be used in an assert.  passing in a dialect is not ideal, but parsing comments out
     // before submitting the fragment is not reliable and holding statements & comments separately (to eliminate the
