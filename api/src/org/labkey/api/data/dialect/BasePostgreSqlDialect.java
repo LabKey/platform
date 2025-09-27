@@ -1387,7 +1387,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     private SQLFragment getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
     {
         SQLFragment colSpec = new SQLFragment();
-        colSpec.append(makePropertyIdentifier(columnName)).append(" ");
+        colSpec.appendIdentifier(makeDatabaseIdentifier(columnName)).append(" ");
         colSpec.append(getSqlTypeName(prop));
 
         // Apply size and precision to varchar and Decimal types
