@@ -94,7 +94,6 @@ import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.security.AssayDesignerRole;
 import org.labkey.assay.view.AssayBatchesWebPartFactory;
-import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
@@ -136,14 +135,13 @@ public class AssayModule extends SpringModule
     public static final WebPartFactory assayBatchesWebPartFactory = new AssayBatchesWebPartFactory();
     public static final WebPartFactory assayRunsWebPartFactory = new AssayRunsWebPartFactory();
     public static final WebPartFactory assayResultsWebPartFactory = new AssayResultsWebPartFactory();
-    public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
 
     @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory, assayList2WebPartFactory
+            assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory
         );
     }
 
