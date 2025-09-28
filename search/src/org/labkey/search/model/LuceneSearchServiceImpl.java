@@ -132,6 +132,7 @@ import java.io.Reader;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,6 +146,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -457,6 +459,43 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
+    public boolean waitForStart(@NotNull Duration timeout)
+    {
+        if (timeout.isZero() || timeout.isNegative())
+            return isIndexManagerReady();
+
+        final long deadline = System.nanoTime() + timeout.toNanos();
+        final long sleepNanos = TimeUnit.MILLISECONDS.toNanos(200);
+
+        while (true)
+        {
+            if (isIndexManagerReady())
+                return true;
+
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0)
+                return isIndexManagerReady();
+
+            long toSleep = Math.min(sleepNanos, remaining);
+            try
+            {
+                TimeUnit.NANOSECONDS.sleep(toSleep);
+            }
+            catch (InterruptedException ie)
+            {
+                Thread.currentThread().interrupt();
+                return isIndexManagerReady();
+            }
+        }
+    }
+
+    private boolean isIndexManagerReady()
+    {
+        WritableIndexManager manager = _indexManager;
+        return manager.isReal() && !manager.isClosed();
+    }
+
+    @Override
     public void startCrawler()
     {
         handleEmptyOrMismatchedIndex();
@@ -557,7 +596,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     public void deleteIndex(String reason)
     {
         _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
-        if (_indexManager.isReal() && !_indexManager.isClosed())
+        if (isIndexManagerReady())
             closeIndex();
 
         File indexDir = getIndexDirectory();

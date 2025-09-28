@@ -29,6 +29,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.Reader;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -198,6 +199,12 @@ public class NoopSearchService implements SearchService
 
     @Override
     public boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit)
+    {
+        return true;
+    }
+
+    @Override
+    public boolean waitForStart(@NotNull Duration timeout)
     {
         return true;
     }
