@@ -382,12 +382,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String sanitizeException(SQLException ex)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

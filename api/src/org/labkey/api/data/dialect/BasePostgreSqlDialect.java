@@ -62,7 +62,6 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -536,16 +535,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 schemaName.equals("pg_catalog") ||
                 schemaName.startsWith("pg_temp_") ||
                 schemaName.startsWith("pg_toast_temp_");
-    }
-
-    @Override
-    public String sanitizeException(SQLException ex)
-    {
-        if ("22001".equals(ex.getSQLState()))
-        {
-            return INPUT_TOO_LONG_ERROR_MESSAGE;
-        }
-        return GENERIC_ERROR_MESSAGE;
     }
 
     @Override
@@ -1040,10 +1029,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
             case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
             case AddIndices -> sql.addAll(getCreateIndexStatements(change));
-            case ResizeColumns, ChangeColumnTypes -> {
-                for (String s : getChangeColumnTypeStatement(change))
-                    sql.add(new SQLFragment(s));
-            }
+            case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
             case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
             default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
@@ -1081,45 +1067,51 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
      */
-    private List<String> getChangeColumnTypeStatement(TableChange change)
+    private List<SQLFragment> getChangeColumnTypeStatement(TableChange change)
     {
-        List<String> statements = new ArrayList<>();
-        String comma = "";
+        List<SQLFragment> statements = new ArrayList<>();
 
-        //Postgres allows executing multiple Alter Column statements under one Alter Table
-        //  Reducing column size may cause a rebuild of the data so it can be expensive
-        String tableIdentifier = makeTableIdentifier(change);
-        String alterTableSegment = String.format("ALTER TABLE %s ", tableIdentifier);
-        List<String> nonDateTimeColumns = new ArrayList<>();
+        // Postgres allows executing multiple ALTER COLUMN statements under one ALTER TABLE
+        List<SQLFragment> nonDateTimeClauses = new ArrayList<>();
+
         for (PropertyStorageSpec column : change.getColumns())
         {
-            String columnName = makePropertyIdentifier(column.getName());
-            String dbType;
+            DatabaseIdentifier columnIdent = makeDatabaseIdentifier(column.getName());
             if (column.getJdbcType().isDateOrTime())
             {
                 String tempColumnName = column.getName() + "~~temp~~";
-                // create a temp column
-                String addTempColumnStatement = alterTableSegment + String.format(" ADD COLUMN %s", getSqlColumnSpec(column, tempColumnName).getSQL());
-                statements.add(addTempColumnStatement);
 
-                // copy casted value to temp column
-                String updateColumnValueStatement = "UPDATE " + tableIdentifier
-                    + String.format(" SET %s = CAST(%s AS %s)", makePropertyIdentifier(tempColumnName), columnName, getSqlTypeName(column));
-                statements.add(updateColumnValueStatement);
+                // 1) ADD temp column
+                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                addTemp.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                addTemp.append(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
+                statements.add(addTemp);
 
-                // drop original column
-                String dropOldColumnStatement = alterTableSegment + " DROP COLUMN " + columnName;
-                statements.add(dropOldColumnStatement);
+                // 2) UPDATE: copy casted value to temp column
+                SQLFragment update = new SQLFragment("UPDATE ");
+                update.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                update.append(" SET ").appendIdentifier(columnIdent = makeDatabaseIdentifier(tempColumnName));
+                update.append(" = CAST(").appendIdentifier(makeDatabaseIdentifier(column.getName())).append(" AS ").append(getSqlTypeName(column)).append(")");
+                statements.add(update);
 
-                // rename temp column to original column name
-                String renameTempColumnValStatement = alterTableSegment + String.format(" RENAME COLUMN %s TO %s", makePropertyIdentifier(tempColumnName), columnName);
-                statements.add(renameTempColumnValStatement);
+                // 3) DROP original column
+                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                drop.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                drop.append(" DROP COLUMN ").appendIdentifier(makeDatabaseIdentifier(column.getName()));
+                statements.add(drop);
+
+                // 4) RENAME temp column to original column name
+                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                rename.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                rename.append(" RENAME COLUMN ").appendIdentifier(makeDatabaseIdentifier(tempColumnName)).append(" TO ").appendIdentifier(columnIdent);
+                statements.add(rename);
             }
             else
             {
+                String dbType;
                 if (column.getJdbcType().isText())
                 {
-                    //Using the common default max size to make type change to text
+                    // Using the common default max size to make type change to text
                     dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
                             getSqlTypeName(JdbcType.LONGVARCHAR) :
                             getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
@@ -1133,14 +1125,25 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     dbType = getSqlTypeName(column.getJdbcType());
                 }
 
-                //Postgres retains the existing null behavior
-                nonDateTimeColumns.add(comma + String.format("ALTER COLUMN %s TYPE %s", columnName, dbType));
-                comma = ", ";
+                SQLFragment clause = new SQLFragment();
+                clause.append("ALTER COLUMN ").appendIdentifier(columnIdent).append(" TYPE ").append(dbType);
+                nonDateTimeClauses.add(clause);
             }
         }
 
-        if (!nonDateTimeColumns.isEmpty())
-            statements.add(alterTableSegment + " " + StringUtils.join(nonDateTimeColumns, ""));
+        if (!nonDateTimeClauses.isEmpty())
+        {
+            SQLFragment alter = new SQLFragment("ALTER TABLE ");
+            alter.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+            alter.append(" ");
+            String sep = "";
+            for (SQLFragment c : nonDateTimeClauses)
+            {
+                alter.append(sep).append(c);
+                sep = ", ";
+            }
+            statements.add(alter);
+        }
 
         return statements;
     }
@@ -1150,13 +1153,13 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         List<SQLFragment> statements = new ArrayList<>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
-            String oldIdentifier = makePropertyIdentifier(oldToNew.getKey());
-            String newIdentifier = makePropertyIdentifier(oldToNew.getValue());
+            DatabaseIdentifier oldIdentifier = makeDatabaseIdentifier(oldToNew.getKey());
+            DatabaseIdentifier newIdentifier = makeDatabaseIdentifier(oldToNew.getValue());
             if (!oldIdentifier.equals(newIdentifier))
             {
                 SQLFragment f = new SQLFragment("ALTER TABLE ");
                 f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-                f.append(" RENAME COLUMN ").append(oldIdentifier).append(" TO ").append(newIdentifier);
+                f.append(" RENAME COLUMN ").appendIdentifier(oldIdentifier).append(" TO ").appendIdentifier(newIdentifier);
                 statements.add(f);
             }
         }
@@ -1187,8 +1190,16 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         List<SQLFragment> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            String name = prop.getExactName() ? quoteIdentifier(prop.getName()) : makePropertyIdentifier(prop.getName());
-            sqlParts.add(new SQLFragment("DROP COLUMN ").appendIdentifier(name));
+            SQLFragment sql = new SQLFragment("DROP COLUMN ");
+            if (prop.getExactName())
+            {
+                sql.append(quoteIdentifier(prop.getName()));
+            }
+            else
+            {
+                sql.appendIdentifier(makeDatabaseIdentifier(prop.getName()));
+            }
+            sqlParts.add(sql);
         }
 
         SQLFragment f = new SQLFragment("ALTER TABLE ");
@@ -1236,7 +1247,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             addPk.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
             addPk.append(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
                  .append(" ").append(constraint.getType().toString()).append(" (")
-                 .append(makePropertyIdentifier(pkColumn)).append(")");
+                 .appendIdentifier(makeDatabaseIdentifier(pkColumn)).append(")");
             statements.add(addPk);
         }
 
@@ -1310,11 +1321,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             SQLFragment fkFrag = new SQLFragment("CONSTRAINT ");
             fkFrag.appendIdentifier(constraintName)
                   .append(" FOREIGN KEY (")
-                  .append(makePropertyIdentifier(foreignKey.getColumnName()))
+                  .appendIdentifier(makeDatabaseIdentifier(foreignKey.getColumnName()))
                   .append(") REFERENCES ")
                   .appendIdentifier(tableInfo.getSchema().getName()).append(".").appendIdentifier(tableInfo.getName())
                   .append(" (")
-                  .append(makePropertyIdentifier(foreignKey.getForeignColumnName()))
+                  .appendIdentifier(makeDatabaseIdentifier(foreignKey.getForeignColumnName()))
                   .append(")");
             createTableSqlParts.add(fkFrag);
         }
@@ -1332,7 +1343,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             addPk.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
             addPk.append(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
                  .append(" ").append(constraint.getType().toString()).append(" (")
-                 .append(makePropertyIdentifier(pkColumn)).append(")");
+                 .appendIdentifier(makeDatabaseIdentifier(pkColumn)).append(")");
             statements.add(addPk);
         }
 
@@ -1358,7 +1369,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 f.append("UNIQUE ");
             f.append("INDEX ").appendIdentifier(newIndexName).append(" ON ");
             f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-            f.append(" (").append(makePropertyIdentifiers(index.columnNames)).append(")");
+            f.append(" (");
+            String separator = "";
+            for (String columnName : index.columnNames)
+            {
+                f.append(separator).appendIdentifier(makeDatabaseIdentifier(columnName));
+                separator = ", ";
+            }
+            f.append(")");
             f.appendEOS();
             statements.add(f);
 
@@ -1423,12 +1441,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return colSpec;
     }
 
-    private String makeTableIdentifier(TableChange change)
-    {
-        assert isLegalName(change.getTableName());
-        return change.getSchemaName() + "." + change.getTableName();
-    }
-
     @Override
     public String getSqlTypeName(PropertyStorageSpec prop)
     {
@@ -1463,25 +1475,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return getSqlTypeName(prop.getJdbcType());
         }
     }
-
-    // Create comma-separated list of property identifiers
-    private String makePropertyIdentifiers(String[] names)
-    {
-        String sep = "";
-        StringBuilder sb = new StringBuilder();
-        for (String name : names)
-        {
-            sb.append(sep).append(makePropertyIdentifier(name));
-            sep = ", ";
-        }
-        return sb.toString();
-    }
-
-    private String makePropertyIdentifier(String name)
-    {
-        return quoteIdentifier(name.toLowerCase());
-    }
-
 
     @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
