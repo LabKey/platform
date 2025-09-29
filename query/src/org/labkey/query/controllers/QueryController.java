@@ -2109,7 +2109,7 @@ public class QueryController extends SpringActionController
             ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment);
             ViewContext viewContext = getViewContext();
 
-            Map<String, List<QueryForm>> nameFormMap = new HashMap<>();
+            Map<String, List<QueryForm>> nameFormMap = new CaseInsensitiveHashMap<>();
             Map<QueryForm, String> sheetNames = new HashMap<>();
             form.getQueryForms().forEach(qf -> {
                 String sheetName = qf.getSheetName();
