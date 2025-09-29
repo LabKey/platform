@@ -59,6 +59,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -360,7 +361,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                             String previousFileName = request.getParameter(fileParam);
                             if (null != previousFileName)
                             {
-                                previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath(), previousFileName);
+                                previousFile = FileUtil.appendName(getAssayDirectory(getContainer(), null), previousFileName);
 
                                 MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
 
