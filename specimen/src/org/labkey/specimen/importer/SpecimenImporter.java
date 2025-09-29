@@ -1215,7 +1215,7 @@ public class SpecimenImporter extends SpecimenTableManager
             SQLFragment cols = new SQLFragment();
             for (SpecimenColumn col : getVialCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
+                cols.append(sep).appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n   ";
             }
             _vialColsSql = cols;
@@ -1246,7 +1246,7 @@ public class SpecimenImporter extends SpecimenTableManager
             SQLFragment cols = new SQLFragment();
             for (SpecimenColumn col : getSpecimenEventCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
+                cols.append(sep).appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n    ";
             }
             _vialEventColsSql = cols;
@@ -1422,7 +1422,7 @@ public class SpecimenImporter extends SpecimenTableManager
             {
                 if (null != castColumn)
                 {
-                    sql.append(" COUNT(DISTINCT ").append(tempTableName).append(".").append(castColumn.getLegalDbColumnName(getSqlDialect())).append(") = 1 THEN ");
+                    sql.append(" COUNT(DISTINCT ").append(tempTableName).append(".").appendIdentifier(castColumn.getLegalDbColumnName(getSqlDialect())).append(") = 1 THEN ");
                     sql.append("CAST(MIN(").append(selectCol).append(") AS ").append(castColumn.getDbType()).append(")");
                 }
                 else
@@ -1436,9 +1436,9 @@ public class SpecimenImporter extends SpecimenTableManager
         sql.append(" AS ");
 
         if (null != castColumn)
-            sql.append(castColumn.getLegalDbColumnName(getSqlDialect()));
+            sql.appendIdentifier(castColumn.getLegalDbColumnName(getSqlDialect()));
         else
-            sql.append(col.getLegalDbColumnName(getSqlDialect()));
+            sql.appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
     }
 
 
@@ -1591,7 +1591,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .add(Boolean.TRUE);
 
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
-            insertSelectSql.append(prefix).append("VialList.").append(col.getLegalDbColumnName(getSqlDialect()));
+            insertSelectSql.append(prefix).append("VialList.").appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
 
         insertSelectSql
             .append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue))
@@ -2412,10 +2412,10 @@ public class SpecimenImporter extends SpecimenTableManager
         {
             if (col.getFkTable() != null)
             {
-                remapExternalIdsSql.append(sep).append(col.getLegalDbColumnName(getSqlDialect())).append(" = (SELECT RowId FROM ")
+                remapExternalIdsSql.append(sep).appendIdentifier(col.getLegalDbColumnName(getSqlDialect())).append(" = (SELECT RowId FROM ")
                         .append(getTableInfoFromFkTableName(col.getFkTable()).getSelectName()).append(" ").append(col.getFkTableAlias())
                         .append(" WHERE ").append("(").append(tempTable).append(".")
-                        .append(col.getLegalDbColumnName(getSqlDialect())).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn())
+                        .appendIdentifier(col.getLegalDbColumnName(getSqlDialect())).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn())
                         .append("))");
                 sep = ",\n\t";
             }
@@ -2610,7 +2610,7 @@ public class SpecimenImporter extends SpecimenTableManager
                     conflictResolvingSubselect.append(singletonAggregate);
                     conflictResolvingSubselect.append(" ELSE NULL END");
                 }
-                conflictResolvingSubselect.append(" AS ").append(col.getLegalDbColumnName(getSqlDialect()));
+                conflictResolvingSubselect.append(" AS ").appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
             }
         }
         conflictResolvingSubselect.append("\nFROM ").append(tempTableName).append("\nGROUP BY GlobalUniqueId");

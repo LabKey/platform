@@ -230,6 +230,21 @@ public class JsonUtil
         return json;
     }
 
+    // Issue 53979: "JSON does not allow non-finite numbers." The new JSONObject throws an exception if you try to
+    // put a Double.NaN or Double.POSITIVE_INFINITY/Double.NEGATIVE_INFINITY value into a JSONObject. This method
+    // preserves those values by converting them to strings.
+    public static Map<String, Object> toMapPreserveNonFinite(Map<String, Object> map)
+    {
+        Map<String, Object> result = new HashMap<>();
+        map.forEach((k, v) -> {
+            if ((v instanceof Double d && !Double.isFinite(d)) || (v instanceof Float f && !Float.isFinite(f)))
+                result.put(k, v.toString());
+            else
+                result.put(k, v);
+        });
+        return result;
+    }
+
     // The JSON standard and JSONObject do not allow comments. However, many JSON documents include them. This method
     // strips comments from JSON-formatted strings, making them compatible with JSONObject() and other strict parsers.
     // See https://stackoverflow.com/questions/52394945/fastest-means-of-removing-comments-from-json-in-java

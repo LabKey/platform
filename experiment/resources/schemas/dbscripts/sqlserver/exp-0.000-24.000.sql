@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-/* exp-0.00-11.20.sql */
-
 /*
  *  Creates experiment annotation tables in the exp schema base on FuGE-OM types
  */
 
 CREATE SCHEMA exp;
+GO
+
+-- Provisioned schema used by DataClassDomainKind
+CREATE SCHEMA expdataclass;
+GO
+
+CREATE SCHEMA expsampleset
 GO
 
 EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)';
@@ -53,6 +58,14 @@ CREATE TABLE exp.Protocol
     CONSTRAINT UQ_Protocol_LSID UNIQUE (LSID)
 );
 
+CREATE INDEX IDX_Protocol_Container ON exp.Protocol (Container)
+GO
+
+ALTER TABLE exp.Protocol ADD CONSTRAINT FK_Protocol_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+
+ALTER TABLE exp.Protocol ADD Status NVARCHAR(60);
+GO
+
 CREATE TABLE exp.Experiment
 (
     RowId INT IDENTITY (1, 1) NOT NULL,
@@ -77,6 +90,7 @@ CREATE TABLE exp.Experiment
 );
 CREATE INDEX IX_Experiment_Container ON exp.Experiment(Container);
 CREATE INDEX IDX_Experiment_BatchProtocolId ON exp.Experiment(BatchProtocolId);
+ALTER TABLE exp.Experiment ADD CONSTRAINT FK_Experiment_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 
 CREATE TABLE exp.ExperimentRun
 (
@@ -100,6 +114,44 @@ CREATE TABLE exp.ExperimentRun
 CREATE CLUSTERED INDEX IX_CL_ExperimentRun_Container ON exp.ExperimentRun(Container);
 CREATE INDEX IX_ExperimentRun_ProtocolLSID ON exp.ExperimentRun(ProtocolLSID);
 
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+ALTER TABLE exp.ExperimentRun ADD JobId INTEGER;
+
+--experiment module depends on pipeline, so this should be ok
+ALTER TABLE exp.ExperimentRun ADD
+    CONSTRAINT FK_ExperimentRun_JobId FOREIGN KEY (JobId)
+        REFERENCES pipeline.statusfiles (RowId);
+
+-- Change exp.ExperimentRun.Name from VARCHAR(100) to VARCHAR(200) to match other experiment table name columns
+ALTER TABLE exp.ExperimentRun ALTER COLUMN Name NVARCHAR(200);
+
+-- Add a column to track the chaining of original and replaced runs
+ALTER TABLE exp.ExperimentRun ADD ReplacedByRunId INT;
+
+ALTER TABLE exp.ExperimentRun ADD
+    CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId)
+        REFERENCES exp.ExperimentRun (RowId);
+
+CREATE INDEX IDX_ExperimentRun_ReplacedByRunId ON exp.ExperimentRun(ReplacedByRunId);
+
+-- Add batchId column to run table
+ALTER TABLE exp.ExperimentRun ADD BatchId INT;
+
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_BatchId FOREIGN KEY (BatchId) REFERENCES exp.Experiment (RowId);
+
+CREATE INDEX IX_ExperimentRun_BatchId ON exp.ExperimentRun(BatchId);
+
+GO
+
+ALTER TABLE exp.experimentrun ADD objectid INT;
+ALTER TABLE exp.experimentrun ALTER COLUMN objectid INT NOT NULL;
+CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid);
+ALTER TABLE exp.ExperimentRun ADD LastIndexed DATETIME NULL;
+
+ALTER TABLE exp.ExperimentRun ADD WorkflowTask INT;
+GO
+CREATE INDEX IDX_ExperimentRun_WorkflowTask ON exp.ExperimentRun(WorkflowTask);
+
 CREATE TABLE exp.ProtocolApplication
 (
     RowId INT IDENTITY (1, 1) NOT NULL,
@@ -119,6 +171,20 @@ CREATE TABLE exp.ProtocolApplication
 );
 CREATE CLUSTERED INDEX IX_CL_ProtocolApplication_RunId ON exp.ProtocolApplication(RunId);
 CREATE INDEX IX_ProtocolApplication_ProtocolLSID ON exp.ProtocolApplication(ProtocolLSID);
+
+-- add start time, end time, and record count to protocol application table for ETL tasks and others
+ALTER TABLE exp.ProtocolApplication ADD StartTime DATETIME NULL;
+ALTER TABLE exp.ProtocolApplication ADD EndTime DATETIME NULL;
+ALTER TABLE exp.ProtocolApplication ADD RecordCount INT NULL;
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments NVARCHAR(MAX);
+
+ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
+GO
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId ENTITYID NOT NULL;
+
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) ON DELETE SET NULL;
 
 CREATE TABLE exp.Data
 (
@@ -145,6 +211,31 @@ CREATE CLUSTERED INDEX IX_CL_Data_RunId ON exp.Data(RunId);
 CREATE INDEX IX_Data_Container ON exp.Data(Container);
 CREATE INDEX IX_Data_SourceApplicationId ON exp.Data(SourceApplicationId);
 CREATE INDEX IX_Data_DataFileUrl ON exp.Data(DataFileUrl);
+
+ALTER TABLE exp.Data ADD Generated BIT NOT NULL DEFAULT 0;
+GO
+
+ALTER TABLE exp.data ADD description NVARCHAR(4000);
+GO
+
+ALTER TABLE exp.data ADD classId INT;
+GO
+
+-- Within a DataClass, name must be unique.  If DataClass is null, duplicate names are allowed.
+CREATE UNIQUE INDEX UQ_Data_DataClass_Name ON exp.data(classId, name) WHERE classId IS NOT NULL;
+
+ALTER TABLE exp.data ALTER COLUMN cpastype nvarchar(300);
+
+ALTER TABLE exp.Data ADD LastIndexed DATETIME NULL;
+-- Issue 35817 - widen column to allow for longer paths and file names
+ALTER TABLE exp.Data ALTER COLUMN DataFileURL NVARCHAR(600);
+
+ALTER TABLE exp.data ADD ObjectId INT;
+ALTER TABLE exp.data ALTER COLUMN objectid INT NOT NULL;
+CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid);
+
+-- Most major file systems cap file lengths at 255 characters. Let's do the same
+ALTER TABLE exp.data ALTER COLUMN Name NVARCHAR(255);
 
 /*
    Make PropertyDescriptor consistent with OWL terms, and also work for storing NCI_Thesaurus concepts
@@ -190,6 +281,46 @@ CREATE TABLE exp.PropertyDescriptor
 );
 CREATE INDEX IX_PropertyDescriptor_Container ON exp.PropertyDescriptor(Container);
 
+ALTER TABLE exp.PropertyDescriptor ADD CreatedBy USERID NULL;
+ALTER TABLE exp.PropertyDescriptor ADD Created DATETIME NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ModifiedBy USERID NULL;
+ALTER TABLE exp.PropertyDescriptor ADD Modified DATETIME NULL;
+ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT FK_PropertyDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+ALTER TABLE exp.PropertyDescriptor ADD FacetingBehaviorType NVARCHAR(40) NOT NULL DEFAULT 'AUTOMATIC';
+ALTER TABLE exp.PropertyDescriptor ADD Protected BIT NOT NULL DEFAULT '0';
+ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupschema NVARCHAR(200);
+ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupquery NVARCHAR(200);
+ALTER TABLE exp.PropertyDescriptor ADD ExcludeFromShifting BIT NOT NULL DEFAULT '0';
+ALTER TABLE exp.propertydescriptor ADD Scale INT NOT NULL DEFAULT 0;
+ALTER TABLE exp.PropertyDescriptor ADD KeyVariable BIT NOT NULL DEFAULT '0';
+ALTER TABLE exp.PropertyDescriptor ADD DefaultScale NVARCHAR(40) NOT NULL DEFAULT 'LINEAR';
+ALTER TABLE exp.PropertyDescriptor ADD StorageColumnName NVARCHAR(100) NULL;
+GO
+
+EXEC sp_rename 'exp.PropertyDescriptor.KeyVariable', 'RecommendedVariable', 'COLUMN';
+
+ALTER TABLE exp.PropertyDescriptor ADD Phi NVARCHAR(20) NOT NULL DEFAULT 'NotPHI';
+GO
+
+EXEC core.fn_dropifexists 'PropertyDescriptor', 'exp', 'COLUMN', 'Protected';
+GO
+
+ALTER TABLE exp.PropertyDescriptor ADD RedactedText NVARCHAR(450) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD mvIndicatorStorageColumnName NVARCHAR(120);
+ALTER TABLE exp.PropertyDescriptor ADD TextExpression nvarchar(200) NULL
+ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI NVARCHAR(300) NOT NULL;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
+ALTER TABLE exp.PropertyDescriptor ADD PrincipalConceptCode NVARCHAR(50) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD SourceOntology NVARCHAR(20) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptImportColumn NVARCHAR(200) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptLabelColumn NVARCHAR(200) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD DerivationDataScope NVARCHAR(20) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptSubtree NVARCHAR(MAX) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD Scannable BIT NOT NULL DEFAULT 0;
+GO
+
 CREATE TABLE exp.DataInput
 (
     DataId INT NOT NULL,
@@ -202,6 +333,11 @@ CREATE TABLE exp.DataInput
 );
 CREATE INDEX IX_DataInput_TargetApplicationId ON exp.DataInput(TargetApplicationId);
 CREATE INDEX IDX_DataInput_Role ON exp.DataInput(Role);
+
+-- Add reference from DataInput to the ProtocolInputId that it corresponds to
+ALTER TABLE exp.DataInput ADD ProtocolInputId INT NULL;
+
+CREATE INDEX IX_DataInput_ProtocolInputId ON exp.DataInput (ProtocolInputId);
 
 CREATE TABLE exp.Material
 (
@@ -231,6 +367,91 @@ CREATE INDEX IX_Material_SourceApplicationId ON exp.Material(SourceApplicationId
 CREATE INDEX IX_Material_CpasType ON exp.Material(CpasType);
 CREATE INDEX IDX_Material_LSID ON exp.Material(LSID);
 
+EXECUTE core.fn_dropifexists 'material', 'exp', 'INDEX', 'idx_material_AK';
+
+ALTER TABLE exp.material ALTER COLUMN name NVARCHAR(200) NOT NULL;
+
+CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
+GO
+
+ALTER TABLE exp.material ADD description NVARCHAR(4000);
+
+ALTER TABLE exp.material ADD objectid INT;
+GO
+
+ALTER TABLE exp.material ALTER COLUMN objectid INT NOT NULL;
+GO
+
+CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
+GO
+
+ALTER TABLE exp.Material ADD RootMaterialLSID LSIDtype NULL;
+ALTER TABLE exp.Material ADD AliquotedFromLSID LSIDtype NULL;
+GO
+
+ALTER TABLE exp.Material ADD SampleState INT;
+GO
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
+
+ALTER TABLE exp.Material ADD RecomputeRollup BIT NULL CONSTRAINT DF_recomputeRollup DEFAULT(0);
+ALTER TABLE exp.Material ADD AliquotCount INT NULL;
+ALTER TABLE exp.Material ADD AliquotVolume FLOAT NULL;
+ALTER TABLE exp.Material ADD AliquotUnit NVARCHAR(10) NULL;
+GO
+
+CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=1;
+
+ALTER TABLE exp.Material ADD MaterialSourceId INT NULL;
+GO
+CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
+GO
+
+ALTER TABLE exp.Material ADD MaterialExpDate DATETIME NULL;
+
+ALTER TABLE exp.Material ADD StoredAmount DOUBLE PRECISION;
+ALTER TABLE exp.Material ADD Units NVARCHAR(20);
+GO
+
+EXEC core.fn_dropifexists 'Material', 'exp', 'INDEX', 'IDX_exp_material_recompute';
+
+EXEC core.fn_dropifexists 'Material', 'exp', 'CONSTRAINT', 'DF_recomputeRollup';
+
+ALTER TABLE exp.Material DROP COLUMN RecomputeRollup;
+
+ALTER TABLE exp.Material ADD AvailableAliquotCount INT NULL;
+ALTER TABLE exp.Material ADD AvailableAliquotVolume FLOAT NULL;
+
+ALTER TABLE exp.material ALTER COLUMN rootmateriallsid LSIDtype NOT NULL;
+
+CREATE INDEX uq_material_rootlsid on exp.material (rootmateriallsid);
+
+-- this is duplicative of constraint uq_material_lsid
+EXEC core.fn_dropifexists 'material', 'exp', 'INDEX', 'idx_material_lsid';
+
+-- Add new "RootMaterialRowId" column
+ALTER TABLE exp.Material ADD rootmaterialrowid INTEGER NULL;
+GO
+
+-- Add NOT NULL constraint to "RootMaterialRowId"
+ALTER TABLE exp.Material ALTER COLUMN rootmaterialrowid INTEGER NOT NULL;
+GO
+
+-- Add FK on "RootMaterialRowId"
+-- See exp-23.012-23.013.sql
+-- ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_RootMaterialRowId
+--     FOREIGN KEY (RootMaterialRowId) REFERENCES exp.Material (RowId);
+-- GO
+
+CREATE INDEX ix_material_rootmaterialrowid ON exp.Material (rootmaterialrowid);
+GO
+
+-- Remove the "RootMaterialLSID" column
+EXEC core.fn_dropifexists 'material', 'exp', 'INDEX', 'uq_material_rootlsid';
+EXEC core.fn_dropifexists 'material', 'exp', 'COLUMN', 'rootmateriallsid';
+
+-- It is possible for parent samples of aliquots to be moved to a subfolder where upon deletion
+-- of the subfolder we need to delete the parent sample but the aliquot still exists.
+EXEC core.fn_dropifexists 'material', 'exp', 'constraint', 'FK_Material_RootMaterialRowId';
 CREATE TABLE exp.MaterialInput
 (
     MaterialId INT NOT NULL,
@@ -243,6 +464,11 @@ CREATE TABLE exp.MaterialInput
 );
 CREATE INDEX IX_MaterialInput_TargetApplicationId ON exp.MaterialInput(TargetApplicationId);
 CREATE INDEX IDX_MaterialInput_Role ON exp.MaterialInput(Role);
+
+-- Add reference from MaterialInput to the ProtocolInputId that it corresponds to
+ALTER TABLE exp.MaterialInput ADD ProtocolInputId INT NULL;
+
+CREATE INDEX IX_MaterialInput_ProtocolInputId ON exp.MaterialInput (ProtocolInputId);
 
 CREATE TABLE exp.MaterialSource
 (
@@ -267,6 +493,34 @@ CREATE TABLE exp.MaterialSource
 );
 CREATE INDEX IX_MaterialSource_Container ON exp.MaterialSource(Container);
 
+ALTER TABLE exp.MaterialSource ADD CONSTRAINT FK_MaterialSource_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+-- Change exp.MaterialSource.Name from VARCHAR(50) to VARCHAR(100). Going to 200 to match other experiment tables
+ -- hits limits with domain URIs, etc
+ALTER TABLE exp.MaterialSource ALTER COLUMN Name NVARCHAR(100);
+
+ALTER TABLE exp.MaterialSource ADD NameExpression NVARCHAR(200) NULL;
+
+ALTER TABLE exp.materialsource ALTER COLUMN nameexpression NVARCHAR(500);
+
+ALTER TABLE exp.MaterialSource ADD LastIndexed DATETIME NULL;
+
+ALTER TABLE exp.MaterialSource ADD MaterialParentImportAliasMap NVARCHAR(4000) NULL;
+
+ALTER TABLE exp.MaterialSource ADD LabelColor NVARCHAR(7) NULL;
+
+ALTER TABLE exp.MaterialSource ADD MetricUnit NVARCHAR(10) NULL;
+GO
+
+ALTER TABLE exp.MaterialSource ADD AutoLinkTargetContainer ENTITYID NULL;
+
+ALTER TABLE exp.MaterialSource ADD AutoLinkCategory NVARCHAR(200) NULL;
+
+ALTER TABLE exp.MaterialSource ADD AliquotNameExpression NVARCHAR(200) NULL;
+
+ALTER TABLE exp.MaterialSource ADD Category NVARCHAR(20) NULL;
+
+EXEC core.fn_dropifexists 'materialsource', 'exp', 'CONSTRAINT', 'UQ_MaterialSource_Container_Name';
+
 CREATE TABLE exp.Object
 (
     ObjectId INT IDENTITY(1,1) NOT NULL,
@@ -281,6 +535,17 @@ CREATE TABLE exp.Object
 );
 CREATE CLUSTERED INDEX IDX_Object_ContainerOwnerObjectId ON exp.Object (Container, OwnerObjectId, ObjectId);
 CREATE INDEX IX_Object_OwnerObjectId ON exp.Object(OwnerObjectId);
+
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_Lsid FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+GO
+
+-- add constraints for lsid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_Lsid FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+-- add constraints for objectid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_ObjectId FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
 
 -- todo this index is in pqsql script.  Needed here?
 -- CREATE INDEX IDX_MaterialInput_TargetApplicationId ON exp.MaterialInput(TargetApplicationId);
@@ -379,6 +644,22 @@ CREATE TABLE exp.DomainDescriptor
 );
 CREATE INDEX IX_DomainDescriptor_Container ON exp.DomainDescriptor(Container);
 
+-- Add some FKs
+ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT FK_DomainDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domainuricontainer;
+ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domaindescriptor;
+
+ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT uq_domaindescriptor UNIQUE (DomainURI, Project);
+
+ALTER TABLE exp.DomainDescriptor ADD _ts ROWVERSION;
+ALTER TABLE exp.DomainDescriptor ADD ModifiedBy USERID;
+ALTER TABLE exp.DomainDescriptor ADD Modified DATETIME DEFAULT GETDATE();
+GO
+
+ALTER TABLE exp.DomainDescriptor ADD TemplateInfo NVARCHAR(4000) NULL;
+ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI NVARCHAR(300) NOT NULL;
+ALTER TABLE exp.DomainDescriptor ADD SystemFieldConfig NVARCHAR(MAX) NULL;
+
 CREATE TABLE exp.PropertyDomain
 (
     PropertyId INT NOT NULL,
@@ -403,16 +684,8 @@ CREATE TABLE exp.RunList
 );
 CREATE INDEX IX_RunList_ExperimentRunId ON exp.RunList(ExperimentRunId);
 
-CREATE TABLE exp.ActiveMaterialSource
-(
-    Container ENTITYID NOT NULL,
-    MaterialSourceLSID LSIDtype NOT NULL,
-
-    CONSTRAINT PK_ActiveMaterialSource PRIMARY KEY (Container),
-    CONSTRAINT FK_ActiveMaterialSource_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-    CONSTRAINT FK_ActiveMaterialSource_MaterialSourceLSID FOREIGN KEY (MaterialSourceLSID) REFERENCES exp.MaterialSource(LSID)
-);
-CREATE INDEX IX_ActiveMaterialSource_MaterialSourceLSID ON exp.ActiveMaterialSource(MaterialSourceLSID);
+ALTER TABLE exp.RunList ADD CreatedBy INT;
+ALTER TABLE exp.RunList ADD Created DATETIME;
 
 CREATE TABLE exp.list
 (
@@ -442,55 +715,59 @@ CREATE TABLE exp.list
 );
 CREATE INDEX IDX_List_DomainId ON exp.List(DomainId);
 
-CREATE TABLE exp.IndexInteger
-(
-    ListId INT NOT NULL,
-    "Key" INT NOT NULL,
-    ObjectId INT NULL,
-    EntityId ENTITYID, -- Used for discussions & attachments
+ALTER TABLE exp.List ADD CONSTRAINT FK_List_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+-- Use prefix naming to better match new field names
+EXEC sp_rename 'exp.List.IndexMetaData', 'MetaDataIndex', 'COLUMN';
 
-    CONSTRAINT PK_IndexInteger PRIMARY KEY(ListId, "Key"),
-    CONSTRAINT FK_IndexInteger_List FOREIGN KEY (ListId) REFERENCES exp.List(RowId),
-    CONSTRAINT FK_IndexInteger_Object FOREIGN KEY (ObjectId) REFERENCES exp.Object(ObjectId)
-);
-CREATE INDEX IDX_IndexInteger_ObjectId ON exp.IndexInteger(ObjectId);
+ALTER TABLE exp.list ADD EntireListIndex BIT NOT NULL DEFAULT 0;
+ALTER TABLE exp.list ADD EntireListTitleSetting INT NOT NULL DEFAULT 0;
+ALTER TABLE exp.list ADD EntireListTitleTemplate NVARCHAR(1000) NULL;
+ALTER TABLE exp.list ADD EntireListBodyTemplate NVARCHAR(1000) NULL;
+ALTER TABLE exp.list ADD EntireListBodySetting INT NOT NULL DEFAULT 0;
 
-CREATE TABLE exp.IndexVarchar
-(
-    ListId INT NOT NULL,
-    "Key" VARCHAR(300) NOT NULL,
-    ObjectId INT NULL,
-    EntityId ENTITYID, -- Used for discussions & attachments
+ALTER TABLE exp.list ADD EachItemIndex BIT NOT NULL DEFAULT 0;
+ALTER TABLE exp.list ADD EachItemTitleSetting INT NOT NULL DEFAULT 0;
+ALTER TABLE exp.list ADD EachItemTitleTemplate NVARCHAR(1000) NULL;
+ALTER TABLE exp.list ADD EachItemBodySetting INT NOT NULL DEFAULT 0;
+ALTER TABLE exp.list ADD EachItemBodyTemplate NVARCHAR(1000) NULL;
 
-    CONSTRAINT PK_IndexVarchar PRIMARY KEY(ListId, "Key"),
-    CONSTRAINT FK_IndexVarchar_List FOREIGN KEY (ListId) REFERENCES exp.List(RowId),
-    CONSTRAINT FK_IndexVarchar_Object FOREIGN KEY (ObjectId) REFERENCES exp.Object(ObjectId)
-);
-CREATE INDEX IDX_IndexVarchar_ObjectId ON exp.IndexVarchar(ObjectId);
+ALTER TABLE exp.List ADD LastIndexed DATETIME NULL;
 
-CREATE TABLE exp.PropertyValidator
-(
-    RowId INT IDENTITY(1,1) NOT NULL,
-    Name NVARCHAR(50) NOT NULL,
-    Description NVARCHAR(200),
-    TypeURI NVARCHAR(200) NOT NULL,
-    Expression TEXT,
-    Properties TEXT,
-    ErrorMessage TEXT,
-    Container ENTITYID NOT NULL,
+-- Merge the "metadata only" and "entire list data" settings, migrating them to a single boolean (EntireListIndex) plus
+-- a setting denoting what to index (EntireListIndexSetting = metadata only (0), item data only (1), or both (2))
 
-    CONSTRAINT PK_RowId PRIMARY KEY (RowId)
-);
+ALTER TABLE exp.List ADD EntireListIndexSetting INT NOT NULL DEFAULT 0;  -- Metadata only, the default
+GO
 
-CREATE TABLE exp.ValidatorReference
-(
-    ValidatorId INT NOT NULL,
-    PropertyId INT NOT NULL,
+-- Must drop default constraint before dropping column
+EXEC core.fn_dropifexists @objname='List', @objschema='exp', @objtype='DEFAULT', @subobjname='MetaDataIndex'
 
-    CONSTRAINT PK_ValidatorReference PRIMARY KEY (ValidatorId, PropertyId),
-    CONSTRAINT FK_PropertyValidator_ValidatorId FOREIGN KEY (ValidatorId) REFERENCES exp.PropertyValidator (RowId),
-    CONSTRAINT FK_PropertyDescriptor_PropertyId FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
-);
+ALTER TABLE exp.List DROP COLUMN MetaDataIndex;
+
+ALTER TABLE exp.List DROP CONSTRAINT PK_List;
+ALTER TABLE exp.List ADD CONSTRAINT UQ_RowId UNIQUE (RowId);
+-- Now add ListId column...
+ALTER TABLE exp.List ADD ListId INT NOT NULL;
+GO
+
+-- ...and create the new PK (Container, ListId)
+ALTER TABLE exp.List ADD CONSTRAINT PK_List PRIMARY KEY (Container, ListId);
+
+EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'UQ_RowId';
+EXEC core.fn_dropifexists 'list', 'exp', 'COLUMN', 'rowid';
+
+ALTER TABLE exp.list ADD FileAttachmentIndex BIT CONSTRAINT DF__list__FileAttachmentIndex DEFAULT 0 NOT NULL;
+GO
+
+ALTER TABLE exp.List ADD Category NVARCHAR(20) NULL;
+
+ALTER TABLE exp.list ALTER COLUMN Name NVARCHAR(200);
+GO
+
+-- These columns have been unused for years. https://github.com/LabKey/platform/pull/4549 cleaned up all code references.
+-- Use fb_dropIfExists() to drop default constraint before dropping each column.
+EXEC core.fn_dropifexists 'List', 'exp', 'COLUMN', 'EntireListTitleSetting';
+EXEC core.fn_dropifexists 'List', 'exp', 'COLUMN', 'EachItemTitleSetting';
 
 CREATE TABLE exp.ConditionalFormat
 (
@@ -509,16 +786,238 @@ CREATE TABLE exp.ConditionalFormat
     CONSTRAINT UQ_ConditionalFormat_PropertyId_SortOrder UNIQUE (PropertyId, SortOrder)
 );
 CREATE INDEX IDX_ConditionalFormat_PropertyId ON exp.ConditionalFormat(PropertyId);
-
 GO
--- Create procs used by Ontology Manager
+
+CREATE TABLE exp.AssayQCFlag
+(
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    RunId INT NOT NULL,
+    FlagType VARCHAR(40) NOT NULL,
+    Description TEXT NULL,
+    Comment TEXT NULL,
+    Enabled BIT NOT NULL,
+    Created DATETIME  NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME  NULL,
+    ModifiedBy INT NULL
+);
+
+ALTER TABLE exp.AssayQCFlag ADD CONSTRAINT PK_AssayQCFlag PRIMARY KEY (RowId);
+
+ALTER TABLE exp.AssayQCFlag ADD CONSTRAINT FK_AssayQCFlag_EunId FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId);
+
+CREATE INDEX IX_AssayQCFlag_RunId ON exp.AssayQCFlag(RunId);
+
+ALTER TABLE exp.AssayQCFlag ADD IntKey1 INT NULL;
+ALTER TABLE exp.AssayQCFlag ADD IntKey2 INT NULL;
+
+CREATE INDEX IX_AssayQCFlag_IntKeys ON exp.AssayQCFlag(IntKey1, IntKey2);
+
+ALTER TABLE exp.AssayQCFlag ADD Key1 NVARCHAR(50);
+ALTER TABLE exp.AssayQCFlag ADD Key2 NVARCHAR(50);
+
+CREATE INDEX IX_AssayQCFlag_Keys ON exp.AssayQCFlag(Key1, Key2);
+
+CREATE TABLE exp.DataClass
+(
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Container EntityId NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
+    Description NTEXT NULL,
+    MaterialSourceId INT NULL,
+    NameExpression NVARCHAR(200) NULL,
+
+    CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
+    CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
+    CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
+
+    CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
+    CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
+);
+CREATE INDEX IX_DataClass_Container ON exp.DataClass(Container);
+
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_DataClass FOREIGN KEY (classId) REFERENCES exp.DataClass (rowid);
+
+ALTER TABLE exp.dataclass ALTER COLUMN nameexpression NVARCHAR(500);
+
+ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;
+
+ALTER TABLE exp.DataClass ADD LastIndexed DATETIME NULL;
+
+ALTER TABLE exp.DataClass ADD dataparentimportaliasmap NVARCHAR(4000) NULL;
+
+CREATE TABLE exp.Alias
+(
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    Created DATETIME,
+    CreatedBy INT,
+    Modified DATETIME,
+    ModifiedBy INT,
+
+    Name NVARCHAR(500) NOT NULL,
+
+    CONSTRAINT PK_Alias PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Alias_Name UNIQUE (Name)
+);
+
+CREATE INDEX IX_Alias_Name ON exp.Alias(Name);
+
+CREATE TABLE exp.DataAliasMap
+(
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
+
+    CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+);
+
+ALTER TABLE exp.DataAliasMap ADD CONSTRAINT FK_DataAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Data(LSID);
+CREATE INDEX IX_DataAliasMap ON exp.DataAliasMap(LSID, Alias, Container);
+
+CREATE TABLE exp.MaterialAliasMap
+(
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
+
+    CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+);
+
+ALTER TABLE exp.MaterialAliasMap ADD CONSTRAINT FK_MaterialAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Material(LSID);
+CREATE INDEX IX_MaterialAliasMap ON exp.MaterialAliasMap(LSID, Alias, Container);
+
+CREATE TABLE exp.Edge
+(
+    FromObjectId INT NOT NULL,
+--    FromLsid LSIDtype NOT NULL,
+    ToObjectId INT NOT NULL,
+--    ToLsid LSIDtype NOT NULL,
+    RunId INT NOT NULL,
+
+    CONSTRAINT FK_Edge_From_Object FOREIGN KEY (FromObjectId) REFERENCES exp.object (objectid),
+    CONSTRAINT FK_Edge_To_Object FOREIGN KEY (ToObjectId) REFERENCES exp.object (objectid),
+    CONSTRAINT FK_Edge_RunId_Run FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId),
+-- for query performance
+    CONSTRAINT UQ_Edge_FromTo_RunId UNIQUE (FromObjectId, ToObjectId, RunId),
+    CONSTRAINT UQ_Edge_ToFrom_RunId UNIQUE (ToObjectId, FromObjectId, RunId)
+);
+GO
+
+ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_FromTo_RunId;
+ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_ToFrom_RunId;
+
+ALTER TABLE exp.Edge ALTER COLUMN RunId INT NULL;
+
+ALTER TABLE exp.Edge ADD SourceId INT NULL;
+ALTER TABLE exp.Edge ADD SourceKey NVARCHAR(200) NULL;
+
+ALTER TABLE exp.Edge ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid);
+ALTER TABLE exp.Edge ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
+
+CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
+CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
+GO
+
+CREATE INDEX IDX_Edge_RunId ON exp.Edge(RunId);
+
+CREATE TABLE exp.ProtocolInput
+(
+    RowId INT IDENTITY (1,1) NOT NULL,
+    Name NVARCHAR(300) NOT NULL,
+    LSID LSIDtype NOT NULL,
+    ProtocolId INT NOT NULL,
+    Input BIT NOT NULL,
+
+    -- One of 'Material' or 'Data'
+    ObjectType NVARCHAR(8) NOT NULL,
+
+    -- DataClassId may be non-null when ObjectType='Data'
+    DataClassId INT NULL,
+    -- MaterialSourceId may be non-null when ObjectType='Material'
+    MaterialSourceId INT NULL,
+
+    CriteriaName NVARCHAR(50) NULL,
+    CriteriaConfig NTEXT NULL,
+    MinOccurs INT NOT NULL,
+    MaxOccurs INT NULL,
+
+    CONSTRAINT PK_ProtocolInput_RowId PRIMARY KEY (RowId),
+    CONSTRAINT FK_ProtocolInput_ProtocolId FOREIGN KEY (ProtocolId) REFERENCES exp.Protocol (RowId),
+    CONSTRAINT FK_ProtocolInput_DataClassId FOREIGN KEY (DataClassId) REFERENCES exp.DataClass (RowId),
+    CONSTRAINT FK_ProtocolInput_MaterialSourceId FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
+);
+
+CREATE INDEX IX_ProtocolInput_ProtocolId ON exp.ProtocolInput (ProtocolId);
+CREATE INDEX IX_ProtocolInput_DataClassId ON exp.ProtocolInput (DataClassId);
+CREATE INDEX IX_ProtocolInput_MaterialSourceId ON exp.ProtocolInput (MaterialSourceId);
+
+ALTER TABLE exp.MaterialInput ADD CONSTRAINT FK_MaterialInput_ProtocolInput FOREIGN KEY (ProtocolInputId) REFERENCES exp.ProtocolInput (RowId);
+
+ALTER TABLE exp.DataInput ADD CONSTRAINT FK_DataInput_ProtocolInput FOREIGN KEY (ProtocolInputId) REFERENCES exp.ProtocolInput (RowId);
+
+CREATE TABLE exp.PropertyValidator
+(
+    RowId        int identity(1,1) not null,
+    Name         NVARCHAR(50) not null,
+    Description  NVARCHAR(200),
+    TypeURI      NVARCHAR(200) not null,
+    Expression   NVARCHAR(MAX),
+    ErrorMessage NVARCHAR(MAX),
+    Properties   NVARCHAR(MAX),
+    Container    entityid not null constraint fk_pv_container references core.containers (entityid),
+    PropertyId   int not null constraint fk_pv_descriptor references exp.propertydescriptor,
+    constraint pk_propertyvalidator primary key (container, propertyid, rowid)
+);
+GO
+
+CREATE INDEX ix_propertyvalidator_propertyid on exp.PropertyValidator(PropertyId);
+
+CREATE TABLE exp.ObjectLegacyNames
+(
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    ObjectId INT NOT NULL,
+    ObjectType NVARCHAR(20) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
+
+    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
+);
+GO
+
+CREATE TABLE exp.DataTypeExclusion
+(
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    DataTypeRowId INT NOT NULL,
+    DataType NVARCHAR(20) NOT NULL,
+    ExcludedContainer EntityId NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
+
+    CONSTRAINT PK_DataTypeExclusion PRIMARY KEY (RowId),
+    CONSTRAINT UQ_DataTypeExclusion_LSID UNIQUE (DataTypeRowId, DataType, ExcludedContainer)
+);
+GO
+
+-- Create procedures used by Ontology Manager
 CREATE PROCEDURE exp.getObjectProperties(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
     SELECT * FROM exp.ObjectPropertiesView
     WHERE Container = @container AND ObjectURI = @lsid
 END
-
 GO
+
 CREATE PROCEDURE exp.ensureObject(@container ENTITYID, @lsid LSIDType, @ownerObjectId INTEGER) AS
 BEGIN
     DECLARE @objectid AS INTEGER
@@ -533,8 +1032,8 @@ BEGIN
     COMMIT
     SELECT @objectid
 END
-
 GO
+
 CREATE PROCEDURE exp.deleteObject(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
     SET NOCOUNT ON
@@ -550,8 +1049,8 @@ BEGIN
         DELETE exp.Object WHERE ObjectId = @objectid
     COMMIT
 END
-
 GO
+
 -- internal methods
 CREATE PROCEDURE exp._insertFloatProperty(@objectid INTEGER, @propid INTEGER, @float FLOAT) AS
 BEGIN
@@ -559,26 +1058,26 @@ BEGIN
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, FloatValue)
     VALUES (@objectid, @propid, 'f', @float)
 END
-
 GO
+
 CREATE PROCEDURE exp._insertDateTimeProperty(@objectid INTEGER, @propid INTEGER, @datetime DATETIME) AS
 BEGIN
     IF (@propid IS NULL OR @objectid IS NULL) RETURN
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, DateTimeValue)
     VALUES (@objectid, @propid, 'd', @datetime)
 END
-
 GO
+
 CREATE PROCEDURE exp._insertStringProperty(@objectid INTEGER, @propid INTEGER, @string VARCHAR(400)) AS
 BEGIN
     IF (@propid IS NULL OR @objectid IS NULL) RETURN
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, StringValue)
     VALUES (@objectid, @propid, 's', @string)
 END
-
 GO
+
 --
--- Set the same property on multiple objects (e.g. impoirt a column of datea)
+-- Set the same property on multiple objects (e.g. import a column of data)
 --
 -- fast method for importing ObjectProperties (need to wrap with datalayer code)
 --
@@ -611,8 +1110,8 @@ BEGIN
         EXEC exp._insertFloatProperty @objectid10, @propertyid, @float10
     COMMIT
 END
-
 GO
+
 CREATE PROCEDURE exp.setStringProperties(@propertyid INTEGER,
     @objectid1 INTEGER, @string1 VARCHAR(400),
     @objectid2 INTEGER, @string2 VARCHAR(400),
@@ -641,8 +1140,8 @@ BEGIN
         EXEC exp._insertStringProperty @objectid10, @propertyid, @string10
     COMMIT
 END
-
 GO
+
 CREATE PROCEDURE exp.setDateTimeProperties(@propertyid INTEGER,
     @objectid1 INTEGER, @datetime1 DATETIME,
     @objectid2 INTEGER, @datetime2 DATETIME,
@@ -671,8 +1170,8 @@ BEGIN
         EXEC exp._insertDateTimeProperty @objectid10, @propertyid, @datetime10
     COMMIT
 END
-
 GO
+
 CREATE PROCEDURE exp.deleteObjectById(@container ENTITYID, @objectid INTEGER) AS
 BEGIN
     SET NOCOUNT ON
@@ -687,950 +1186,4 @@ BEGIN
         DELETE exp.Object WHERE ObjectId = @objectid
     COMMIT
 END
-
 GO
-
-/* exp-11.20-11.30.sql */
-
-CREATE INDEX IDX_Protocol_Container ON exp.Protocol (Container)
-GO
-
-/* exp-11.30-12.10.sql */
-
-CREATE TABLE exp.AssayQCFlag
-(
-    RowId INT IDENTITY (1, 1) NOT NULL,
-    RunId INT NOT NULL,
-    FlagType VARCHAR(40) NOT NULL,
-    Description TEXT NULL,
-    Comment TEXT NULL,
-    Enabled BIT NOT NULL,
-    Created DATETIME  NULL,
-    CreatedBy INT NULL,
-    Modified DATETIME  NULL,
-    ModifiedBy INT NULL
-);
-
-ALTER TABLE exp.AssayQCFlag ADD CONSTRAINT PK_AssayQCFlag PRIMARY KEY (RowId);
-
-ALTER TABLE exp.AssayQCFlag ADD CONSTRAINT FK_AssayQCFlag_EunId FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId);
-
-CREATE INDEX IX_AssayQCFlag_RunId ON exp.AssayQCFlag(RunId);
-
-ALTER TABLE exp.AssayQCFlag ADD IntKey1 INT NULL;
-ALTER TABLE exp.AssayQCFlag ADD IntKey2 INT NULL;
-
-CREATE INDEX IX_AssayQCFlag_IntKeys ON exp.AssayQCFlag(IntKey1, IntKey2);
-
-ALTER TABLE exp.AssayQCFlag ADD Key1 NVARCHAR(50);
-ALTER TABLE exp.AssayQCFlag ADD Key2 NVARCHAR(50);
-
-CREATE INDEX IX_AssayQCFlag_Keys ON exp.AssayQCFlag(Key1, Key2);
-
-ALTER TABLE exp.PropertyDescriptor ADD CreatedBy USERID NULL;
-ALTER TABLE exp.PropertyDescriptor ADD Created DATETIME NULL;
-ALTER TABLE exp.PropertyDescriptor ADD ModifiedBy USERID NULL;
-ALTER TABLE exp.PropertyDescriptor ADD Modified DATETIME NULL;
-
--- Clean up orphaned experiment objects that were not properly deleted when their container was deleted
--- Then, add real FKs to ensure we don't orphan rows in the future
-
--- First clean up memberships in run groups for orphaned runs and experiments
-DELETE FROM exp.RunList WHERE ExperimentId IN (SELECT RowId FROM exp.Experiment WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-DELETE FROM exp.RunList WHERE ExperimentRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
--- Disconnect datas and materials from runs that are going away
-UPDATE exp.Data SET RunId = NULL WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers));
-UPDATE exp.Material SET RunId = NULL WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers));
-
-UPDATE exp.Data SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
-UPDATE exp.Material SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
-
--- Clean up orphaned runs and their objects
-DELETE FROM exp.DataInput WHERE TargetApplicationId IN
-	(SELECT RowId FROM exp.ProtocolApplication WHERE
-		ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-		OR RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers)));
-
-DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN
-	(SELECT RowId FROM exp.ProtocolApplication WHERE
-		ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-		OR RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers)));
-
-DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN
-	(SELECT RowId FROM exp.ProtocolApplication WHERE
-		ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-		OR RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers)));
-
-DELETE FROM exp.ProtocolApplication WHERE
-	ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-	OR RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.AssayQCFlag WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Now that runs that might have been pointing to them for their batch are deleted, clean up orphaned experiments/run groups/batches
-DELETE FROM exp.Experiment WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Next, clean up orphaned protocols
-DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (SELECT RowId FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN (SELECT RowId FROM exp.ProtocolAction WHERE
-	ParentProtocolId IN (SELECT RowId FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-	OR ChildProtocolId IN (SELECT RowId FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers)));
-
-DELETE FROM exp.ProtocolAction WHERE
-	ParentProtocolId IN (SELECT RowId FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-	OR ChildProtocolId IN (SELECT RowId FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Delete orphaned sample types/material sources
-DELETE FROM exp.ActiveMaterialSource WHERE MaterialSourceLSID IN (SELECT Lsid FROM exp.MaterialSource WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.MaterialSource WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Next, work on properties and domains
--- Start by deleting from juntion table between properties and domains
-DELETE FROM exp.PropertyDomain WHERE
-	PropertyId IN (SELECT PropertyId FROM exp.PropertyDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
-	OR DomainId IN (SELECT DomainId FROM exp.DomainDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
--- Then orphaned domains
-DELETE FROM exp.DomainDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Next, orphaned validators and their usages
-DELETE FROM exp.ValidatorReference WHERE
-	ValidatorId IN (SELECT RowId FROM exp.PropertyValidator WHERE Container IN (SELECT EntityId FROM core.Containers))
-	OR PropertyId IN (SELECT PropertyId FROM exp.PropertyDescriptor WHERE Container IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.PropertyValidator WHERE Container IN (SELECT EntityId FROM core.Containers);
-
--- Clean up conditional formats attached to delete property descriptors
-DELETE FROM exp.ConditionalFormat WHERE PropertyId IN (SELECT PropertyId FROM exp.PropertyDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
--- Then delete orphaned properties and their values
-DELETE FROM exp.ObjectProperty WHERE PropertyId IN (SELECT PropertyId FROM exp.PropertyDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
-
-DELETE FROM exp.PropertyDescriptor WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Delete orphaned lists too
-DELETE FROM exp.List WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
--- Finally, add some FKs so we don't get into this horrible state again
-ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT FK_DomainDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.Experiment ADD CONSTRAINT FK_Experiment_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.List ADD CONSTRAINT FK_List_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.MaterialSource ADD CONSTRAINT FK_MaterialSource_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT FK_PropertyDescriptor_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.PropertyValidator ADD CONSTRAINT FK_PropertyValidator_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.Protocol ADD CONSTRAINT FK_Protocol_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-
-CREATE INDEX idx_propertyvalidator_container ON exp.PropertyValidator (Container);
-
--- Clean up DataInputs that were attached as run outputs in error
-DELETE FROM exp.DataInput WHERE DataId IN
-  (SELECT di.DataId
-   FROM exp.DataInput di, exp.Data d, exp.ExperimentRun r
-   WHERE di.DataId = d.RowId
-     AND d.RunId = r.RowId
-     AND r.lsid LIKE '%:NabAssayRun.%'
-     AND r.protocollsid LIKE '%:NabAssayProtocol.%'
-     AND di.role LIKE '%;%.xls');
-
-/* exp-12.10-12.20.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD FacetingBehaviorType NVARCHAR(40) NOT NULL DEFAULT 'AUTOMATIC';
-
-ALTER TABLE exp.IndexVarchar ADD CreatedBy USERID NULL;
-ALTER TABLE exp.IndexVarchar ADD Created DATETIME NULL;
-ALTER TABLE exp.IndexVarchar ADD ModifiedBy USERID NULL;
-ALTER TABLE exp.IndexVarchar ADD Modified DATETIME NULL;
-ALTER TABLE exp.IndexVarchar ADD LastIndexed DATETIME NULL;
-
-ALTER TABLE exp.IndexInteger ADD CreatedBy USERID NULL;
-ALTER TABLE exp.IndexInteger ADD Created DATETIME NULL;
-ALTER TABLE exp.IndexInteger ADD ModifiedBy USERID NULL;
-ALTER TABLE exp.IndexInteger ADD Modified DATETIME NULL;
-ALTER TABLE exp.IndexInteger ADD LastIndexed DATETIME NULL;
-
--- Use prefix naming to better match new field names
-EXEC sp_rename 'exp.List.IndexMetaData', 'MetaDataIndex', 'COLUMN';
-
-ALTER TABLE exp.list ADD EntireListIndex BIT NOT NULL DEFAULT 0;
-ALTER TABLE exp.list ADD EntireListTitleSetting INT NOT NULL DEFAULT 0;
-ALTER TABLE exp.list ADD EntireListTitleTemplate NVARCHAR(1000) NULL;
-ALTER TABLE exp.list ADD EntireListBodyTemplate NVARCHAR(1000) NULL;
-ALTER TABLE exp.list ADD EntireListBodySetting INT NOT NULL DEFAULT 0;
-
-ALTER TABLE exp.list ADD EachItemIndex BIT NOT NULL DEFAULT 0;
-ALTER TABLE exp.list ADD EachItemTitleSetting INT NOT NULL DEFAULT 0;
-ALTER TABLE exp.list ADD EachItemTitleTemplate NVARCHAR(1000) NULL;
-ALTER TABLE exp.list ADD EachItemBodySetting INT NOT NULL DEFAULT 0;
-ALTER TABLE exp.list ADD EachItemBodyTemplate NVARCHAR(1000) NULL;
-
-ALTER TABLE exp.List ADD LastIndexed DATETIME NULL;
-
--- Merge the "meta data only" and "entire list data" settings, migrating them to a single boolean (EntireListIndex) plus
--- a setting denoting what to index (EntireListIndexSetting = meta data only (0), item data only (1), or both (2))
-
-ALTER TABLE exp.List ADD EntireListIndexSetting INT NOT NULL DEFAULT 0;  -- Meta data only, the default
-GO
-
-UPDATE exp.List SET EntireListIndexSetting = 1 WHERE MetaDataIndex = 0 AND EntireListIndex = 1; -- Item data only
-UPDATE exp.List SET EntireListIndexSetting = 2 WHERE MetaDataIndex = 1 AND EntireListIndex = 1;  -- Meta data and item data
-
-UPDATE exp.List SET EntireListIndex = 1 WHERE MetaDataIndex = 1;   -- Turn on EntireListIndex if meta data was being indexed
-
--- Must drop default constraint before dropping column
-EXEC core.fn_dropifexists @objname='List', @objschema='exp', @objtype='DEFAULT', @subobjname='MetaDataIndex'
-
-ALTER TABLE exp.List DROP COLUMN MetaDataIndex;
-
-ALTER TABLE exp.ExperimentRun ADD JobId INTEGER;
-
---experiment module depends on pipeline, so this should be ok
-ALTER TABLE exp.ExperimentRun ADD
-    CONSTRAINT FK_ExperimentRun_JobId FOREIGN KEY (JobId)
-        REFERENCES pipeline.statusfiles (RowId);
-
--- Change exp.MaterialSource.Name from VARCHAR(50) to VARCHAR(100). Going to 200 to match other experiment tables
- -- hits limits with domain URIs, etc
-ALTER TABLE exp.MaterialSource ALTER COLUMN Name NVARCHAR(100);
-
--- Change exp.ExperimentRun.Name from VARCHAR(100) to VARCHAR(200) to match other experiment table name columns
-ALTER TABLE exp.ExperimentRun ALTER COLUMN Name NVARCHAR(200);
-
--- Rename any list field named Created, CreatedBy, Modified, or ModifiedBy since these are now built-in columns on every list
-UPDATE exp.PropertyDescriptor SET Name = Name + '_99' WHERE LOWER(Name) IN ('created', 'createdby', 'modified', 'modifiedby') AND
-    PropertyId IN (SELECT PropertyId FROM exp.PropertyDomain pdom INNER JOIN exp.List l ON pdom.DomainId = l.DomainId);
-
-/* exp-12.20-12.30.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD Protected BIT NOT NULL DEFAULT '0';
-
--- Add a column to track the chaining of original and replaced runs
-ALTER TABLE exp.ExperimentRun ADD ReplacedByRunId INT;
-
-ALTER TABLE exp.ExperimentRun ADD
-    CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId)
-        REFERENCES exp.ExperimentRun (RowId);
-
-CREATE INDEX IDX_ExperimentRun_ReplacedByRunId ON exp.ExperimentRun(ReplacedByRunId);
-
-ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domainuricontainer;
-ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT uq_domaindescriptor;
-
-ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT uq_domaindescriptor UNIQUE (DomainURI, Project);
-
-ALTER TABLE exp.RunList ADD Created TIMESTAMP;
-ALTER TABLE exp.RunList ADD CreatedBy INT;
-
-ALTER TABLE exp.RunList DROP COLUMN Created;
-ALTER TABLE exp.RunList ADD Created DATETIME;
-
-ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupschema NVARCHAR(200);
-ALTER TABLE exp.PropertyDescriptor ALTER COLUMN lookupquery NVARCHAR(200);
-
-/* exp-12.30-13.10.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD ExcludeFromShifting BIT NOT NULL DEFAULT '0';
-
-/* exp-13.10-13.20.sql */
-
--- Use a container-scoped sequence for lists; each folder maintains a distinct, auto-incrementing sequence of List IDs
-
--- We're changing the exp.List PK from (RowId) to (Container, ListId), but we still need to keep the RowId around
--- since the index tables need it. (When we convert lists to hard tables we can drop the index tables and the RowId.)
-
--- First, drop FKs that depend on the RowId PK, add the unique constraint, and then recreate the FKs
-ALTER TABLE exp.IndexInteger DROP CONSTRAINT FK_IndexInteger_List;
-ALTER TABLE exp.IndexVarchar DROP CONSTRAINT FK_IndexVarchar_List;
-ALTER TABLE exp.List DROP CONSTRAINT PK_List;
-ALTER TABLE exp.List ADD CONSTRAINT UQ_RowId UNIQUE (RowId);
-ALTER TABLE exp.IndexInteger ADD CONSTRAINT FK_IndexInteger_List FOREIGN KEY(ListId) REFERENCES exp.List(RowId);
-ALTER TABLE exp.IndexVarchar ADD CONSTRAINT FK_IndexVarchar_List FOREIGN KEY(ListId) REFERENCES exp.List(RowId);
-
--- Now add ListId column...
-ALTER TABLE exp.List ADD ListId INT NULL;
-GO
-
--- ...populate it with the current values of RowId...
-UPDATE exp.List SET ListId = RowId;
-ALTER TABLE exp.List ALTER COLUMN ListId INT NOT NULL;
-GO
-
--- ...and create the new PK (Container, ListId)
-ALTER TABLE exp.List ADD CONSTRAINT PK_List PRIMARY KEY (Container, ListId);
-
--- add start time, end time, and record count to protocol application table for ETL tasks and others
-ALTER TABLE exp.ProtocolApplication ADD StartTime DATETIME NULL;
-ALTER TABLE exp.ProtocolApplication ADD EndTime DATETIME NULL;
-ALTER TABLE exp.ProtocolApplication ADD RecordCount INT NULL;
-
-/* exp-13.30-14.10.sql */
-
-ALTER TABLE exp.propertydescriptor ADD Scale INT NOT NULL DEFAULT 0;
-
-/* exp-14.10-14.20.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD KeyVariable BIT NOT NULL DEFAULT '0';
-ALTER TABLE exp.PropertyDescriptor ADD DefaultScale NVARCHAR(40) NOT NULL DEFAULT 'LINEAR';
-
-/* exp-14.20-14.30.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD StorageColumnName NVARCHAR(100) NULL;
-GO
-
-UPDATE exp.propertydescriptor
-SET storagecolumnname=name
-WHERE EXISTS (SELECT * FROM
-  exp.propertydomain DP inner join exp.domaindescriptor DD on DP.domainid = DD.domainid
-WHERE DD.storagetablename is not null and propertydescriptor.propertyid = DP.propertyid);
-
--- Add batchId column to run table
-ALTER TABLE exp.ExperimentRun
-   ADD BatchId INT;
-
-ALTER TABLE exp.ExperimentRun
-  ADD CONSTRAINT FK_ExperimentRun_BatchId FOREIGN KEY (BatchId) REFERENCES exp.Experiment (RowId);
-
-CREATE INDEX IX_ExperimentRun_BatchId
-  ON exp.ExperimentRun(BatchId);
-
-GO
-
-UPDATE exp.ExperimentRun SET BatchId = (
-  SELECT e.RowId AS BatchId
-    FROM exp.Experiment e
-    WHERE
-      e.BatchProtocolId IS NOT NULL
-      AND e.RowId = (
-        SELECT MIN(ExperimentId) FROM exp.Experiment e, exp.RunList rl
-        WHERE e.RowId = rl.ExperimentId
-        AND rl.ExperimentRunId = ExperimentRun.RowId
-      )
-);
-
-/* exp-14.30-15.10.sql */
-
-ALTER TABLE exp.DomainDescriptor ADD _ts ROWVERSION;
-ALTER TABLE exp.DomainDescriptor ADD ModifiedBy USERID;
-ALTER TABLE exp.DomainDescriptor ADD Modified DATETIME DEFAULT GETDATE();
-GO
-
-/* exp-15.10-15.20.sql */
-
-EXECUTE core.fn_dropifexists 'material', 'exp', 'INDEX', 'idx_material_AK';
-
--- shouldn't any null names, but just to be safe
-UPDATE exp.material SET name='NULL' WHERE name IS NULL;
-ALTER TABLE exp.material ALTER COLUMN name NVARCHAR(200) NOT NULL;
-
-WITH nonunique AS (
-    SELECT container, cpastype, name
-    FROM exp.material
-      WHERE cpastype IS NOT NULL
-    GROUP BY container, cpastype, name
-    HAVING COUNT(*) > 1)
-UPDATE exp.material
-SET Name = Name + ' - ' + CAST(RowId AS NVARCHAR(11))
-FROM exp.material M
-WHERE EXISTS (SELECT * FROM nonunique NU WHERE M.container=NU.container AND M.cpastype=NU.cpastype AND M.name=NU.name);
-
-CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
-GO
-
-EXEC sp_rename 'exp.PropertyDescriptor.KeyVariable', 'RecommendedVariable', 'COLUMN';
-
-ALTER TABLE exp.Data ADD Generated BIT NOT NULL DEFAULT 0;
-
-GO
-
-/* exp-15.30-16.10.sql */
-
--- Provisioned schema used by DataClassDomainKind
-CREATE SCHEMA expdataclass;
-GO
-
-CREATE TABLE exp.DataClass
-(
-    RowId INT IDENTITY(1,1) NOT NULL,
-    Name NVARCHAR(200) NOT NULL,
-    LSID LSIDtype NOT NULL,
-    Container EntityId NOT NULL,
-    Created DATETIME NULL,
-    CreatedBy INT NULL,
-    Modified DATETIME NULL,
-    ModifiedBy INT NULL,
-    Description NTEXT NULL,
-    MaterialSourceId INT NULL,
-    NameExpression NVARCHAR(200) NULL,
-
-    CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
-    CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
-    CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
-
-    CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-    CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
-);
-CREATE INDEX IX_DataClass_Container ON exp.DataClass(Container);
-
-
-ALTER TABLE exp.data
-  ADD description NVARCHAR(4000);
-
-GO
-
-ALTER TABLE exp.data
-  ADD classId INT;
-
-GO
-
-ALTER TABLE exp.data
-  ADD CONSTRAINT FK_Data_DataClass FOREIGN KEY (classId) REFERENCES exp.DataClass (rowid);
-
--- Within a DataClass, name must be unique.  If DataClass is null, duplicate names are allowed.
-CREATE UNIQUE INDEX UQ_Data_DataClass_Name
-  ON exp.data(classId, name) WHERE classId IS NOT NULL;
-
-CREATE TABLE exp.Alias
-(
-    RowId INT IDENTITY (1, 1) NOT NULL,
-    Created DATETIME,
-    CreatedBy INT,
-    Modified DATETIME,
-    ModifiedBy INT,
-
-    Name NVARCHAR(500) NOT NULL,
-
-    CONSTRAINT PK_Alias PRIMARY KEY (RowId),
-    CONSTRAINT UQ_Alias_Name UNIQUE (Name)
-);
-
-CREATE TABLE exp.DataAliasMap
-(
-    LSID LSIDtype NOT NULL,
-    Alias INT NOT NULL,
-    Container EntityId NOT NULL,
-
-    CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
-    CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
-);
-
-CREATE TABLE exp.MaterialAliasMap
-(
-    LSID LSIDtype NOT NULL,
-    Alias INT NOT NULL,
-    Container EntityId NOT NULL,
-
-    CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
-    CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
-);
-
-CREATE INDEX IX_Alias_Name ON exp.Alias(Name);
-
-ALTER TABLE exp.DataAliasMap ADD CONSTRAINT FK_DataAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Data(LSID);
-CREATE INDEX IX_DataAliasMap ON exp.DataAliasMap(LSID, Alias, Container);
-
-ALTER TABLE exp.MaterialAliasMap ADD CONSTRAINT FK_MaterialAlias_LSID FOREIGN KEY (LSID) REFERENCES exp.Material(LSID);
-CREATE INDEX IX_MaterialAliasMap ON exp.MaterialAliasMap(LSID, Alias, Container);
-
-/* exp-16.10-16.20.sql */
-
-ALTER TABLE exp.data
-    ALTER COLUMN cpastype nvarchar(300);
-
-UPDATE exp.data
-    SET cpastype = (SELECT lsid FROM exp.dataclass WHERE exp.data.classId = exp.dataclass.rowid)
-    WHERE classid IS NOT NULL;
-
-ALTER TABLE exp.Data ADD LastIndexed DATETIME NULL;
-ALTER TABLE exp.DomainDescriptor ADD TemplateInfo NVARCHAR(4000) NULL;
-
-/* exp-16.30-17.10.sql */
-
-ALTER TABLE exp.MaterialSource ADD NameExpression NVARCHAR(200) NULL;
-
-ALTER TABLE exp.material
-    ADD description NVARCHAR(4000);
-
-EXEC core.fn_dropifexists 'indexinteger', 'exp', 'TABLE';
-EXEC core.fn_dropifexists 'indexvarchar', 'exp', 'TABLE';
-EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'UQ_RowId';
-EXEC core.fn_dropifexists 'list', 'exp', 'COLUMN', 'rowid';
-
-/* exp-17.10-17.20.sql */
-
-EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'DF__list__FileAttachmentIndex';
-
-IF EXISTS( SELECT TOP 1 1 FROM sys.objects o INNER JOIN sys.columns c ON o.object_id = c.object_id WHERE o.name = 'list' AND c.name = 'FileAttachmentIndex')
-  ALTER TABLE exp.list DROP COLUMN FileAttachmentIndex
-GO
-
-ALTER TABLE exp.list ADD FileAttachmentIndex BIT CONSTRAINT DF__list__FileAttachmentIndex DEFAULT 0 NOT NULL;
-GO
-
-/* exp-17.20-17.30.sql */
-
-ALTER TABLE exp.PropertyDescriptor ADD Phi NVARCHAR(20) NOT NULL DEFAULT 'NotPHI';
-GO
-UPDATE exp.PropertyDescriptor SET Phi='Limited' WHERE Protected='TRUE';
-GO
-
-EXEC core.fn_dropifexists 'PropertyDescriptor', 'exp', 'COLUMN', 'Protected';
-GO
-
-ALTER TABLE exp.PropertyDescriptor ADD RedactedText NVARCHAR(450) NULL;
-GO
-
-ALTER TABLE exp.PropertyDescriptor ADD mvIndicatorStorageColumnName NVARCHAR(120);
-GO
-
-/* exp-17.30-18.10.sql */
-
-CREATE TABLE exp.Edge
-(
-  FromLsid LSIDtype NOT NULL,
-  ToLsid LSIDtype NOT NULL,
-  RunId INT NOT NULL,
-
-  CONSTRAINT FK_Edge_FromLsid_Object FOREIGN KEY (FromLsid) REFERENCES exp.object (objecturi),
-  CONSTRAINT FK_Edge_ToLsid_Object FOREIGN KEY (ToLsid) REFERENCES exp.object (objecturi),
-  CONSTRAINT FK_Edge_RunId_Run FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId),
-  CONSTRAINT UQ_Edge_FromLsid_ToLsid_RunId UNIQUE (FromLsid, ToLsid, RunId)
-);
-
-/* exp-18.10-18.20.sql */
-
-ALTER TABLE exp.PropertyDescriptor
-  ADD TextExpression nvarchar(200) NULL
-
-ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI NVARCHAR(300) NOT NULL;
-ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI NVARCHAR(300) NOT NULL;
-
-/* exp-18.20-18.30.sql */
-
-CREATE TABLE exp.ProtocolInput
-(
-  RowId INT IDENTITY (1,1) NOT NULL,
-  Name NVARCHAR(300) NOT NULL,
-  LSID LSIDtype NOT NULL,
-  ProtocolId INT NOT NULL,
-  Input BIT NOT NULL,
-
-  -- One of 'Material' or 'Data'
-  ObjectType NVARCHAR(8) NOT NULL,
-
-  -- DataClassId may be non-null when ObjectType='Data'
-  DataClassId INT NULL,
-  -- MaterialSourceId may be non-null when ObjectType='Material'
-  MaterialSourceId INT NULL,
-
-  CriteriaName NVARCHAR(50) NULL,
-  CriteriaConfig NTEXT NULL,
-  MinOccurs INT NOT NULL,
-  MaxOccurs INT NULL,
-
-  CONSTRAINT PK_ProtocolInput_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_ProtocolInput_ProtocolId FOREIGN KEY (ProtocolId) REFERENCES exp.Protocol (RowId),
-  CONSTRAINT FK_ProtocolInput_DataClassId FOREIGN KEY (DataClassId) REFERENCES exp.DataClass (RowId),
-  CONSTRAINT FK_ProtocolInput_MaterialSourceId FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
-);
-
-CREATE INDEX IX_ProtocolInput_ProtocolId ON exp.ProtocolInput (ProtocolId);
-CREATE INDEX IX_ProtocolInput_DataClassId ON exp.ProtocolInput (DataClassId);
-CREATE INDEX IX_ProtocolInput_MaterialSourceId ON exp.ProtocolInput (MaterialSourceId);
-
-
--- Add reference from MaterialInput to the ProtocolInputId that it corresponds to
-ALTER TABLE exp.MaterialInput
-  ADD ProtocolInputId INT NULL;
-
-ALTER TABLE exp.MaterialInput
-  ADD CONSTRAINT FK_MaterialInput_ProtocolInput FOREIGN KEY (ProtocolInputId) REFERENCES exp.ProtocolInput (RowId);
-
-CREATE INDEX IX_MaterialInput_ProtocolInputId ON exp.MaterialInput (ProtocolInputId);
-
-
--- Add reference from DataInput to the ProtocolInputId that it corresponds to
-ALTER TABLE exp.DataInput
-  ADD ProtocolInputId INT NULL;
-
-ALTER TABLE exp.DataInput
-  ADD CONSTRAINT FK_DataInput_ProtocolInput FOREIGN KEY (ProtocolInputId) REFERENCES exp.ProtocolInput (RowId);
-
-CREATE INDEX IX_DataInput_ProtocolInputId ON exp.DataInput (ProtocolInputId);
-
--- Issue 35817 - widen column to allow for longer paths and file names
-ALTER TABLE exp.Data ALTER COLUMN DataFileURL NVARCHAR(600);
-
-/* exp-18.30-19.10.sql */
-
--- Removing active sample types
-EXEC core.fn_dropifexists 'ActiveMaterialSource', 'exp', 'TABLE', NULL;
-GO
-
-CREATE SCHEMA expsampleset
-go
-
-ALTER TABLE exp.materialsource
-  ALTER COLUMN nameexpression NVARCHAR(500);
-
-ALTER TABLE exp.dataclass
-  ALTER COLUMN nameexpression NVARCHAR(500);
-
-UPDATE exp.data SET datafileurl = 'file:///' + substring(datafileurl, 7, 600) WHERE datafileurl LIKE 'file:/_%' AND datafileurl NOT LIKE 'file:///%' AND datafileurl IS NOT NULL;
-
-/* exp-19.10-19.20.sql */
-
-DROP TABLE exp.Edge;
-GO
-
-CREATE TABLE exp.Edge
-(
-    FromObjectId INT NOT NULL,
---    FromLsid LSIDtype NOT NULL,
-    ToObjectId INT NOT NULL,
---    ToLsid LSIDtype NOT NULL,
-    RunId INT NOT NULL,
-
-    CONSTRAINT FK_Edge_From_Object FOREIGN KEY (FromObjectId) REFERENCES exp.object (objectid),
-    CONSTRAINT FK_Edge_To_Object FOREIGN KEY (ToObjectId) REFERENCES exp.object (objectid),
-    CONSTRAINT FK_Edge_RunId_Run FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId),
--- for query performance
-    CONSTRAINT UQ_Edge_FromTo_RunId UNIQUE (FromObjectId, ToObjectId, RunId),
-    CONSTRAINT UQ_Edge_ToFrom_RunId UNIQUE (ToObjectId, FromObjectId, RunId)
-);
-GO
-
-ALTER TABLE exp.MaterialSource ADD LastIndexed DATETIME NULL;
-
-ALTER TABLE exp.MaterialSource
-    ADD MaterialParentImportAliasMap NVARCHAR(4000) NULL;
-
-/* exp-19.20-19.30.sql */
-
-ALTER TABLE exp.data ADD ObjectId INT;
-ALTER TABLE exp.experimentrun ADD objectid INT;
-ALTER TABLE exp.material ADD objectid INT;
-GO
-
-
-INSERT INTO exp.object (objecturi, container)
-SELECT D.lsid as objecturi, D.container as container
-FROM exp.data D
-WHERE D.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
-
-UPDATE exp.data
-SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
-
-
-INSERT INTO exp.object (objecturi, container)
-SELECT ER.lsid as objecturi, ER.container as container
-FROM exp.experimentrun ER
-WHERE ER.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
-
-UPDATE exp.experimentrun
-SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
-
-
-INSERT INTO exp.object (objecturi, container, ownerobjectid)
-SELECT M.lsid as objecturi,M.container as container,
-       (select O.objectid from exp.materialsource MS left outer join exp.object O ON MS.lsid = O.objecturi WHERE MS.lsid = M.cpastype) as ownerobjectid
-FROM exp.material M
-WHERE M.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
-
-UPDATE exp.material
-SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
-
-
-ALTER TABLE exp.data ALTER COLUMN objectid INT NOT NULL;
-ALTER TABLE exp.experimentrun ALTER COLUMN objectid INT NOT NULL;
-ALTER TABLE exp.material ALTER COLUMN objectid INT NOT NULL;
-GO
-
-CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid);
-CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid);
-CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
-GO
-
-ALTER TABLE exp.ExperimentRun ADD LastIndexed DATETIME NULL;
-
-ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments NVARCHAR(MAX);
-
-ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;
-
-ALTER TABLE exp.DataClass ADD LastIndexed DATETIME NULL;
-
-ALTER TABLE exp.MaterialSource ADD LabelColor NVARCHAR(7) NULL;
-
-EXEC sp_rename 'exp.propertyvalidator', 'pv_old'
-GO
-
-CREATE TABLE exp.PropertyValidator
-(
-    RowId        int identity(1,1) not null,
-    Name         NVARCHAR(50) not null,
-    Description  NVARCHAR(200),
-    TypeURI      NVARCHAR(200) not null,
-    Expression   NVARCHAR(MAX),
-    ErrorMessage NVARCHAR(MAX),
-    Properties   NVARCHAR(MAX),
-    Container    entityid not null constraint fk_pv_container references core.containers (entityid),
-    PropertyId   int not null constraint fk_pv_descriptor references exp.propertydescriptor,
-    constraint pk_propertyvalidator primary key (container, propertyid, rowid)
-);
-GO
-
-INSERT INTO exp.propertyvalidator(propertyid, name, description, typeuri, expression, properties, errormessage, container)
-SELECT VR.propertyid, PV.name, PV.description, PV.typeuri, PV.expression, PV.properties, PV.errormessage, PV.container
-FROM exp.pv_old PV INNER JOIN exp.validatorreference VR ON PV.rowid = VR.validatorid
-ORDER BY container, propertyid;
-
-CREATE INDEX ix_propertyvalidator_propertyid on exp.PropertyValidator(PropertyId);
-
-DROP TABLE exp.validatorreference;
-DROP TABLE exp.pv_old;
-GO
-
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
-GO
-
-ALTER TABLE exp.PropertyDescriptor ADD PrincipalConceptCode NVARCHAR(50) NULL;
-GO
-
-ALTER TABLE exp.MaterialSource ADD MetricUnit NVARCHAR(10) NULL;
-GO
-
-ALTER TABLE exp.PropertyDescriptor ADD SourceOntology NVARCHAR(20) NULL;
-ALTER TABLE exp.PropertyDescriptor ADD ConceptImportColumn NVARCHAR(200) NULL;
-ALTER TABLE exp.PropertyDescriptor ADD ConceptLabelColumn NVARCHAR(200) NULL;
-GO
-
--- create exp.object for exp.data without one
-INSERT INTO exp.object (objecturi, container)
-SELECT D.lsid as objecturi, D.container as container
-FROM exp.data D LEFT OUTER JOIN exp.object O ON D.lsid = O.objecturi
-WHERE O.objecturi IS NULL;
-
--- fixup exp.data.objectid to be consistent with the lsid of the exp.object
-UPDATE exp.data
-SET objectid = (SELECT O.objectid FROM exp.object O WHERE O.objecturi = lsid)
-WHERE rowid IN (
-    SELECT rowid
-    FROM exp.data D
-    LEFT OUTER JOIN exp.object O ON D.lsid = O.objecturi
-    WHERE D.objectid != O.objectid
-);
-
--- add constraints for lsid -> exp.object
-ALTER TABLE exp.data ADD CONSTRAINT FK_Data_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_Lsid
-    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-
--- add constraints for objectid -> exp.object
-ALTER TABLE exp.data ADD CONSTRAINT FK_Data_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
-    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-GO
-
-/* 21.xxx SQL scripts */
-
--- Most major file systems cap file lengths at 255 characters. Let's do the same
-ALTER TABLE exp.data ALTER COLUMN Name NVARCHAR(255);
-
-ALTER TABLE exp.PropertyDescriptor ADD DerivationDataScope NVARCHAR(20) NULL;
-ALTER TABLE exp.Material ADD RootMaterialLSID LSIDtype NULL;
-ALTER TABLE exp.Material ADD AliquotedFromLSID LSIDtype NULL;
-GO
-
-ALTER TABLE exp.MaterialSource ADD AutoLinkTargetContainer ENTITYID NULL;
-
-ALTER TABLE exp.List ADD Category NVARCHAR(20) NULL;
-
-ALTER TABLE exp.PropertyDescriptor ADD ConceptSubtree NVARCHAR(MAX) NULL;
-
--- move the StudyPublishProtocol container to the shared folder
-UPDATE exp.protocol
-    SET container = (SELECT entityid FROM core.containers WHERE name = 'Shared')
-    WHERE lsid LIKE 'urn:lsid:labkey.org:Protocol:StudyPublishProtocol%';
-
-UPDATE exp.propertydescriptor SET scale=4000 WHERE propertyuri LIKE '%WorkflowTask#AssayTypes';
-
-ALTER TABLE exp.MaterialSource ADD AutoLinkCategory NVARCHAR(200) NULL;
-
-ALTER TABLE exp.MaterialSource ADD AliquotNameExpression NVARCHAR(200) NULL;
-
-ALTER TABLE exp.Material ADD SampleState INT;
-GO
-ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
-
-ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
-
-GO
-
-UPDATE exp.ProtocolApplication SET EntityId = NEWID();
-
-ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId ENTITYID NOT NULL;
-
-ALTER TABLE exp.MaterialSource ADD Category NVARCHAR(20) NULL;
-
-ALTER TABLE exp.ExperimentRun ADD WorkflowTask INT;
-GO
-ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) ON DELETE SET NULL;
-
-ALTER TABLE exp.Protocol ADD Status NVARCHAR(60);
-GO
-UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun';
-
-ALTER TABLE exp.Material ADD RecomputeRollup BIT NULL CONSTRAINT DF_recomputeRollup DEFAULT(0);
-ALTER TABLE exp.Material ADD AliquotCount INT NULL;
-ALTER TABLE exp.Material ADD AliquotVolume FLOAT NULL;
-ALTER TABLE exp.Material ADD AliquotUnit NVARCHAR(10) NULL;
-GO
-UPDATE exp.Material SET RecomputeRollup=1 WHERE lsid IN
-                                                (
-                                                    SELECT distinct rootMaterialLsid FROM exp.material
-                                                );
-GO
-CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=1;
-
-ALTER TABLE exp.PropertyDescriptor ADD Scannable BIT NOT NULL DEFAULT 0;
-GO
-
-/* 22.xxx SQL scripts */
-
-ALTER TABLE exp.list ALTER COLUMN Name NVARCHAR(200);
-GO
-
-UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun' AND Status IS NULL;
-
-CREATE TABLE exp.ObjectLegacyNames
-(
-    RowId INT IDENTITY (1, 1) NOT NULL,
-    ObjectId INT NOT NULL,
-    ObjectType NVARCHAR(20) NOT NULL,
-    Name NVARCHAR(200) NOT NULL,
-    Created DATETIME NULL,
-    CreatedBy INT NULL,
-    Modified DATETIME NULL,
-    ModifiedBy INT NULL,
-
-    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
-);
-GO
-ALTER TABLE exp.Material ADD MaterialSourceId INT NULL;
-GO
-UPDATE exp.Material SET MaterialSourceId = (
-    SELECT distinct rowId FROM exp.materialSource WHERE materialSource.lsid = Material.cpastype
-) WHERE Material.cpastype <> 'Material';
-GO
-CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
-GO
-
-EXEC core.fn_dropifexists 'materialsource', 'exp', 'CONSTRAINT', 'UQ_MaterialSource_Container_Name';
-
-ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_FromTo_RunId;
-ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_ToFrom_RunId;
-
-ALTER TABLE exp.Edge ALTER COLUMN RunId INT NULL;
-
-ALTER TABLE exp.Edge ADD SourceId INT NULL;
-ALTER TABLE exp.Edge ADD SourceKey NVARCHAR(200) NULL;
-
-ALTER TABLE exp.Edge ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid);
-ALTER TABLE exp.Edge ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
-
-CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
-CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
-GO
-
-/* 23.xxx SQL scripts */
-
-ALTER TABLE exp.Material ADD MaterialExpDate DATETIME NULL;
-
-ALTER TABLE exp.DomainDescriptor ADD SystemFieldConfig NVARCHAR(MAX) NULL;
-
-ALTER TABLE exp.Material ADD StoredAmount DOUBLE PRECISION;
-ALTER TABLE exp.Material ADD Units NVARCHAR(20);
-GO
-
-EXEC core.fn_dropifexists 'Material', 'exp', 'INDEX', 'IDX_exp_material_recompute';
-
-EXEC core.fn_dropifexists 'Material', 'exp', 'CONSTRAINT', 'DF_recomputeRollup';
-
-ALTER TABLE exp.Material DROP COLUMN RecomputeRollup;
-
-ALTER TABLE exp.DataClass
-    ADD dataparentimportaliasmap NVARCHAR(4000) NULL;
-
-CREATE TABLE exp.DataTypeExclusion
-(
-    RowId INT IDENTITY (1, 1) NOT NULL,
-    DataTypeRowId INT NOT NULL,
-    DataType NVARCHAR(20) NOT NULL,
-    ExcludedContainer EntityId NOT NULL,
-    Created DATETIME NULL,
-    CreatedBy INT NULL,
-    Modified DATETIME NULL,
-    ModifiedBy INT NULL,
-
-    CONSTRAINT PK_DataTypeExclusion PRIMARY KEY (RowId),
-    CONSTRAINT UQ_DataTypeExclusion_LSID UNIQUE (DataTypeRowId, DataType, ExcludedContainer)
-);
-
-ALTER TABLE exp.Material ADD AvailableAliquotCount INT NULL;
-ALTER TABLE exp.Material ADD AvailableAliquotVolume FLOAT NULL;
-
--- These columns have been unused for years. https://github.com/LabKey/platform/pull/4549 cleaned up all code references.
--- Use fb_dropIfExists() to drop default constraint before dropping each column.
-EXEC core.fn_dropifexists 'List', 'exp', 'COLUMN', 'EntireListTitleSetting';
-EXEC core.fn_dropifexists 'List', 'exp', 'COLUMN', 'EachItemTitleSetting';
-
-ALTER TABLE exp.material
-    ALTER COLUMN rootmateriallsid LSIDtype NOT NULL;
-
-CREATE INDEX uq_material_rootlsid
-    on exp.material (rootmateriallsid);
-
--- this is duplicative of constraint uq_material_lsid
-EXEC core.fn_dropifexists 'material', 'exp', 'INDEX', 'idx_material_lsid';
-
-CREATE INDEX IDX_ExperimentRun_WorkflowTask ON exp.ExperimentRun(WorkflowTask);
-CREATE INDEX IDX_Edge_RunId ON exp.Edge(RunId);
-
--- Add new "RootMaterialRowId" column
-ALTER TABLE exp.Material ADD rootmaterialrowid INTEGER NULL;
-GO
-
--- Add NOT NULL constraint to "RootMaterialRowId"
-ALTER TABLE exp.Material ALTER COLUMN rootmaterialrowid INTEGER NOT NULL;
-GO
-
--- Add FK on "RootMaterialRowId"
--- See exp-23.012-23.013.sql
--- ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_RootMaterialRowId
---     FOREIGN KEY (RootMaterialRowId) REFERENCES exp.Material (RowId);
--- GO
-
-CREATE INDEX ix_material_rootmaterialrowid ON exp.Material (rootmaterialrowid);
-GO
-
--- Remove the "RootMaterialLSID" column
-EXEC core.fn_dropifexists 'material', 'exp', 'INDEX', 'uq_material_rootlsid';
-EXEC core.fn_dropifexists 'material', 'exp', 'COLUMN', 'rootmateriallsid';
-
--- It is possible for parent samples of aliquots to be moved to a subfolder where upon deletion
--- of the subfolder we need to delete the parent sample but the aliquot still exists.
-EXEC core.fn_dropifexists 'material', 'exp', 'constraint', 'FK_Material_RootMaterialRowId';
