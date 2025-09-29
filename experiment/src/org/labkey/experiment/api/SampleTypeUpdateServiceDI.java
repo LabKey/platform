@@ -2110,8 +2110,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
                 {
+                    Double quantityValue;
                     if (amountObj instanceof Number)
-                        return Quantity.of((Number) amountObj, unit).doubleValue();
+                        quantityValue = Quantity.of((Number) amountObj, unit).doubleValue();
                     else if (amountObj instanceof String amountStr)
                     {
                         if (StringUtils.isEmpty(amountStr.trim()))
@@ -2119,10 +2120,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
                         // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
                         // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
-                        return Quantity.convert(amountObj, unit).doubleValue();
+                        quantityValue = Quantity.convert(amountObj, unit).doubleValue();
                     }
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
+
+                    // Issue 53979: check for non-finite values
+                    if (!Double.isFinite(quantityValue))
+                        throw new ConversionException("Could not parse a finite number from '" + amountObj + "'.");
+
+                    return quantityValue;
                 }
                 return amountObj; // have no display unit, so we'll do no conversions
             }

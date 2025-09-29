@@ -313,6 +313,7 @@ public class Quantity extends Number implements Comparable<Quantity>
             Number value = StringUtils.containsAny(valuePart,"eE") ?
                     Double.valueOf(valuePart) :
                     new BigDecimal(valuePart);
+
             var unit = StringUtils.isBlank(unitPart) ? defaultUnit : Unit.fromName(unitPart);
             if (null == unit)
                 throw new ConversionException("Could not parse unit '" + unitPart + "' from '" + s + "'.");

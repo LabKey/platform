@@ -128,7 +128,8 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Double.valueOf(s);
+            ConvertHelper.InfDoubleConverter converter = new ConvertHelper.InfDoubleConverter();
+            return converter.convert(Double.class, s);
         }
     },
 
