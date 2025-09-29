@@ -30,8 +30,6 @@ import java.util.Map;
 /**
  * Bean object to capture audit log entries. Will be used to populate the database tables via get/set methods that
  * align with column names in the corresponding provisioned table.
- * User: klum
- * Date: 7/12/13
  */
 public class AuditTypeEvent
 {
@@ -53,7 +51,7 @@ public class AuditTypeEvent
     private User _createdBy;
     private Date _modified;
     private User _modifiedBy;
-    private String userComment;
+    private String _userComment;
     private Long _transactionId;
 
     public AuditTypeEvent(@NotNull String eventType, @NotNull Container container, @Nullable String comment)
@@ -69,7 +67,9 @@ public class AuditTypeEvent
     }
 
     /** Important for reflection-based instantiation */
-    public AuditTypeEvent(){}
+    public AuditTypeEvent()
+    {
+    }
 
     public long getRowId()
     {
@@ -173,12 +173,12 @@ public class AuditTypeEvent
 
     public void setUserComment(String userComment)
     {
-        this.userComment = userComment;
+        _userComment = userComment;
     }
 
     public String getUserComment()
     {
-        return this.userComment;
+        return _userComment;
     }
 
     public Long getTransactionId()
