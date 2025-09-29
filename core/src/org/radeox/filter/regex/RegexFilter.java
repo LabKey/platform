@@ -61,7 +61,7 @@ public abstract class RegexFilter extends FilterSupport {
    * - [^\"\\\\]* matches any chars except quotes and backslashes
    * - \\\\. matches any escaped character
    */
-  public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"";
+  public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\.[^\"\\\\]*)*)\"";
 
 //  public static final String QUOTE_REGEX_ORIG = "\"(([^\"\\\\]|\\.)*)\"";
 
@@ -127,18 +127,27 @@ public abstract class RegexFilter extends FilterSupport {
         }
 
         @Test
+        public void testWithWhiteSpaceCharacters()
+        {
+            assertTrue(Matcher.create("\"Hello\nWorld\"", pattern).matches());
+            assertTrue(Matcher.create("\"Hello\tWorld\"", pattern).matches());
+            assertTrue(Matcher.create("\"Hello\n\rWorld\"", pattern).matches());
+        }
+
+        @Test
         public void testEscapedQuotes()
         {
-            assertTrue(Matcher.create("\"String with \\\"escaped quotes\\\"\"", pattern).matches());
-            assertTrue(Matcher.create("\"He said: \\\"Hello\\\"\"", pattern).matches());
+            assertFalse(Matcher.create("\"String with \\\"escaped quotes\\\"\"", pattern).matches());
+            assertFalse(Matcher.create("\"He said: \\\"Hello\\\"\"", pattern).matches());
+            assertFalse(Matcher.create("\"Hello\\World\"", pattern).matches());
         }
 
         @Test
         public void testEscapedCharacters()
         {
-            assertTrue(Matcher.create("\"Line1\\nLine2\"", pattern).matches());
-            assertTrue(Matcher.create("\"Tab\\there\"", pattern).matches());
-            assertTrue(Matcher.create("\"Backslash\\\\test\"", pattern).matches());
+            assertFalse(Matcher.create("\"Line1\\nLine2\"", pattern).matches());
+            assertFalse(Matcher.create("\"Tab\\there\"", pattern).matches());
+            assertFalse(Matcher.create("\"Backslash\\\\test\"", pattern).matches());
         }
 
         @Test
