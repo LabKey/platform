@@ -80,9 +80,11 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.mbean.SearchMXBean;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchStartupListener;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
@@ -132,7 +134,6 @@ import java.io.Reader;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,8 +146,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -234,6 +236,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         _autoDetectParser = new AutoDetectParser(config);
     }
 
+    private final List<SearchStartupListener> _startupListeners = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean _startupCompleted = new AtomicBoolean(false);
+
     private boolean _initializingIndex = false;
 
     private record IndexLockFileWatch(java.nio.file.Path dir, FileSystemDirectoryListener listener) {}
@@ -319,6 +324,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     });
 
                     FileSystemWatchers.get().addListener(_lockFileWatch.dir, _lockFileWatch.listener, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+                }
+
+                if (!_startupCompleted.get())
+                {
+                    if (isIndexManagerReady())
+                    {
+                        if (_startupCompleted.compareAndSet(false, true))
+                        {
+                            for (SearchStartupListener listener : _startupListeners)
+                                indexStartupComplete(listener);
+                            _startupListeners.clear();
+                        }
+                        else
+                        {
+                            _log.debug("Search startup listeners already executed by another thread.");
+                        }
+                    }
+                    else
+                    {
+                        _log.warn("Search index manager not yet ready; skipping startup listeners.");
+                    }
                 }
             }
         }
@@ -458,35 +484,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         super.start();
     }
 
-    @Override
-    public boolean waitForStart(@NotNull Duration timeout)
+    private void indexStartupComplete(@NotNull SearchStartupListener listener)
     {
-        if (timeout.isZero() || timeout.isNegative())
-            return isIndexManagerReady();
-
-        final long deadline = System.nanoTime() + timeout.toNanos();
-        final long sleepNanos = TimeUnit.MILLISECONDS.toNanos(200);
-
-        while (true)
+        try
         {
-            if (isIndexManagerReady())
-                return true;
-
-            long remaining = deadline - System.nanoTime();
-            if (remaining <= 0)
-                return isIndexManagerReady();
-
-            long toSleep = Math.min(sleepNanos, remaining);
-            try
-            {
-                TimeUnit.NANOSECONDS.sleep(toSleep);
-            }
-            catch (InterruptedException ie)
-            {
-                Thread.currentThread().interrupt();
-                return isIndexManagerReady();
-            }
+            _log.info("Running search startup listener: {}", listener.getName());
+            listener.indexStartupComplete();
         }
+        catch (Throwable t)
+        {
+            _log.error("Search startup listener '{}' failed: ", listener.getName(), t);
+        }
+    }
+
+    @Override
+    public void addStartupListener(@NotNull SearchStartupListener listener)
+    {
+        // If the index is already initialized, then run the listener immediately.
+        if (_startupCompleted.get())
+        {
+            indexStartupComplete(listener);
+            return;
+        }
+
+        // Otherwise, wait until the index is initialized.
+        _startupListeners.add(listener);
     }
 
     private boolean isIndexManagerReady()

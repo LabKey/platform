@@ -204,9 +204,8 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public boolean waitForStart(@NotNull Duration timeout)
+    public void addStartupListener(@NotNull SearchStartupListener listener)
     {
-        return true;
     }
 
     @Override

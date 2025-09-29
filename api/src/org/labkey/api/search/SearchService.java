@@ -55,7 +55,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -128,11 +127,10 @@ public interface SearchService extends SearchMXBean
     boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException;
 
     /**
-     * Wait until the search service has initialized its underlying index and is ready for operations.
-     * Returns true if ready before the timeout elapses; false on timeout.
-     * Default implementation returns true to avoid breaking non-Lucene implementations.
+     * Adds a startup listener that will be notified when the search index startup process is complete.
+     * @param listener The {@link SearchStartupListener} that will handle startup completion events.
      */
-    boolean waitForStart(@NotNull Duration timeout);
+    void addStartupListener(@NotNull SearchStartupListener listener);
 
     /**
      * From lowest to highest priority
