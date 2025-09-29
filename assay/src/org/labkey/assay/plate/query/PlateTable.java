@@ -54,6 +54,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
@@ -65,6 +66,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.GUID;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.data.PlateTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
@@ -93,6 +95,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Container,
         Created,
         CreatedBy,
+        DataFileId,
         Description,
         Lsid,
         Modified,
@@ -134,6 +137,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         super(schema, AssayDbSchema.getInstance().getTableInfoPlate(), cf);
         _allowInsert = allowInsert;
         setTitleColumn(Column.Name.name());
+        addTriggerFactory(new PlateTriggerFactory());
     }
 
     @Override
@@ -279,9 +283,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     (Supplier) () -> PlateManager.get().getLsid(Plate.class, container));
 
             // generate the data file id if not provided
-            if (!nameMap.containsKey("dataFileId"))
+            if (!nameMap.containsKey(Column.DataFileId.name()))
             {
-                lsidGenerator.addColumn(plateTable.getColumn("dataFileId"),
+                lsidGenerator.addColumn(plateTable.getColumn(Column.DataFileId.name()),
                         (Supplier) () -> GUID.makeGUID());
             }
 
@@ -300,7 +304,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
-            // Add generated barcode column for use in BarcodeDataIterator
+            // Add a generated barcode column for use in BarcodeDataIterator
             String barcodeGeneratedName = "barcodeGenerated";
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts(barcodeGeneratedName), JdbcType.VARCHAR);
             nameExpressionTranslator.addTextSequenceColumn(genIdCol, genIdCol.getDbSequenceContainer(ContainerManager.getRoot()), PLATE_BARCODE_SEQUENCE, null, 100);
@@ -373,8 +377,26 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            List<Map<String, Object>> result;
+
+            try (DbScope.Transaction tx = PlateManager.get().ensureTransaction())
+            {
+                PlateManager.get().ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.DELETE);
+                result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
+                tx.commit();
+            }
+
+            return result;
+        }
+
+        @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
+            DbScope.Transaction tx = DbScope.getLabKeyScope().getCurrentTransaction();
+            assert tx != null;
+
             Integer plateId = asInteger(oldRowMap.get(Column.RowId.name()));
             Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
@@ -384,16 +406,12 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
-            {
-                PlateManager.get().beforePlateDelete(container, plateId);
-                Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
+            PlateManager.get().beforePlateDelete(container, plateId);
+            Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
-                transaction.commit();
+            tx.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
 
-                return returnMap;
-            }
+            return result;
         }
 
         private void preventUpdates(Map<String, Object> newRow, Map<String, Object> oldRow, Column... columns) throws QueryUpdateServiceException

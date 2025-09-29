@@ -92,6 +92,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private WellImpl[][] _wells = null;
     private Map<Integer, Well> _wellMap;
     private Integer _metadataDomainId;
+    private transient Long _sourcePlateRowId;
 
     // no-param constructor for reflection
     public PlateImpl()
@@ -162,7 +163,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         // entity fields
         Container container = ContainerManager.getForId(bean.getContainerId());
-        plate.setContainer(container);
+        if (container != null)
+            plate.setContainer(container);
         plate.setCreated(bean.getCreated());
         plate.setCreatedBy(bean.getCreatedBy());
         plate.setModified(bean.getModified());
@@ -436,8 +438,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonProperty("createdBy")
     public JSONObject getCreatedBy()
     {
-        User user = UserManager.getUser(_createdBy);
+        User user = getCreatedByUser();
         return user != null ? user.getUserProps() : null;
+    }
+
+    @JsonIgnore
+    public User getCreatedByUser()
+    {
+        return UserManager.getUser(_createdBy);
     }
 
     public void setCreatedBy(int createdBy)
@@ -458,8 +466,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonProperty("modifiedBy")
     public JSONObject getModifiedBy()
     {
-        User user = UserManager.getUser(_modifiedBy);
+        User user = getModifiedByUser();
         return user != null ? user.getUserProps() : null;
+    }
+
+    @JsonIgnore
+    public User getModifiedByUser()
+    {
+        return UserManager.getUser(_modifiedBy);
     }
 
     public void setModifiedBy(int modifiedBy)
@@ -762,6 +776,18 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return _rowId == null || _rowId <= 0;
     }
 
+    @JsonIgnore
+    public Long getSourcePlateRowId()
+    {
+        return _sourcePlateRowId;
+    }
+
+    @JsonIgnore
+    public void setSourcePlateRowId(Long sourcePlateRowId)
+    {
+        _sourcePlateRowId = sourcePlateRowId;
+    }
+
     public static class TestCase extends Assert
     {
         private PlateSetImpl _plateSet;
@@ -770,7 +796,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         public void setup() throws Exception
         {
             PlateSetImpl plateSet = new PlateSetImpl();
-            _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null);
+            _plateSet = PlateManager.get().createPlateSet(JunitUtil.getTestContainer(), TestContext.get().getUser(), plateSet, null, null, null);
         }
 
         @Test
