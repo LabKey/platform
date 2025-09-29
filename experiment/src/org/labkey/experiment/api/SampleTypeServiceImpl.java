@@ -23,6 +23,8 @@ import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
@@ -42,6 +44,7 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConversionExceptionWithMessage;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -94,6 +97,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
@@ -174,6 +178,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
 
+    public static final List<Unit> SUPPORTED_UNITS = new ArrayList<>();
+    public static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the %s display units (%s).";
+
+    static
+    {
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Volume.getCommonUnits());
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Mass.getCommonUnits());
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Count.getCommonUnits());
+    }
+
     // columns that may appear in a row when only the sample status is updating.
     public static final Set<String> statusUpdateColumns = Set.of(
             ExpMaterialTable.Column.Modified.name().toLowerCase(),
@@ -208,6 +222,44 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return materialSourceCache;
     }
 
+    @Override @NotNull
+    public List<Unit> getSupportedUnits()
+    {
+        return SUPPORTED_UNITS;
+    }
+
+    @Nullable @Override
+    public Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, String sampleTypeName)
+    {
+        if (rawUnits == null)
+            return null;
+        if (rawUnits instanceof Unit u)
+        {
+            if (defaultUnits == null)
+                return u;
+            else if (u.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+            else
+                return u;
+        }
+        if (!(rawUnits instanceof String rawUnitsString))
+            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+        if (!StringUtils.isBlank(rawUnitsString))
+        {
+            rawUnitsString = rawUnitsString.trim();
+
+            Unit mUnit = Unit.fromName(rawUnitsString);
+            List<Unit> commonUnits = getSupportedUnits();
+            if (mUnit == null || !commonUnits.contains(mUnit))
+            {
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
+            }
+            if (defaultUnits != null && mUnit.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+            return mUnit;
+        }
+        return null;
+    }
 
     public void clearMaterialSourceCache(@Nullable Container c)
     {
@@ -2258,5 +2310,61 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetValidatedUnit()
+        {
+            SampleTypeService service = SampleTypeService.get();
+            try
+            {
+                service.getValidatedUnit("g", Unit.mg, "Sample Type");
+                service.getValidatedUnit("g ", Unit.mg, "Sample Type");
+                service.getValidatedUnit(" g ", Unit.mg, "Sample Type");
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("Compatible unit should not throw exception.");
+            }
+            try
+            {
+                assertNull(service.getValidatedUnit(null, Unit.unit, "Sample Type"));
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("null units should be null");
+            }
+            try
+            {
+                assertNull(service.getValidatedUnit("", Unit.unit, "Sample Type"));
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("empty units should be null");
+            }
+            try
+            {
+                service.getValidatedUnit("g", Unit.unit, "Sample Type");
+                fail("Units that are not comparable should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+            try
+            {
+                service.getValidatedUnit("nonesuch", Unit.unit, "Sample Type");
+                fail("Invalid units should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+        }
     }
 }

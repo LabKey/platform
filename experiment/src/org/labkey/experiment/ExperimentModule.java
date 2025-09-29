@@ -196,7 +196,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.010;
+        return 25.011;
     }
 
     @Nullable
@@ -1039,6 +1039,7 @@ public class ExperimentModule extends SpringModule
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
+            SampleTypeServiceImpl.TestCase.class,
             StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class

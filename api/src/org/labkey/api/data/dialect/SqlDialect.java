@@ -2139,6 +2139,12 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    public @Nullable String getIndexFilterCondition(ResultSet rs, String schemaName, String tableName, String indexName) throws SQLException
+    {
+        // Most dialects return filter conditions in the ResultSet returned by getIndexInfo()
+        return rs.getString("FILTER_CONDITION");
+    }
+
     public static class DialectTestCase
     {
         DbScope s;

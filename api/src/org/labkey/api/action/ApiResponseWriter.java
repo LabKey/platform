@@ -28,6 +28,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.BadRequestException;
@@ -476,7 +477,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         if (e.getQueryName() != null)
             obj.put("queryName", e.getQueryName());
         if (e.getRow() != null)
-            obj.put("row", e.getRow());
+            obj.put("row", JsonUtil.toMapPreserveNonFinite(e.getRow())); // Issue 53979
         if (e.getRowNumber() > -1)
             obj.put("rowNumber", e.getRowNumber());
 

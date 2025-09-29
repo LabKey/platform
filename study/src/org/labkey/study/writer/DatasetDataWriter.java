@@ -40,6 +40,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -54,7 +55,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -404,15 +404,15 @@ public class DatasetDataWriter implements InternalStudyWriter
             return Collections.emptyList();
 
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(tinfo.getDomain());
-        Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+        List<IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 
         Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices(tinfo.getDomain());
 
-        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexEntry : allIndices.entrySet())
+        for (IndexDefinition index : allIndices)
         {
-            List<ColumnInfo> columnInfoList = indexEntry.getValue().getValue();
-            if (indexEntry.getValue().getKey().equals(TableInfo.IndexType.Primary) ||
+            List<ColumnInfo> columnInfoList = index.columns();
+            if (index.indexType().equals(TableInfo.IndexType.Primary) ||
                     columnInfoListMatchesDomainIndex(columnInfoList, domainKindIndices))
             {
                 continue;
@@ -424,7 +424,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 columnNames.add(columnInfo.getColumnName());
             }
 
-            IndexInfo indexInfo = new IndexInfo(indexEntry.getValue().getKey(), columnNames);
+            IndexInfo indexInfo = new IndexInfo(index.indexType(), columnNames);
             outIndices.add(indexInfo);
         }
         return outIndices;
