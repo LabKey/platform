@@ -88,13 +88,6 @@ public class SqlBuilder extends Builder
         return super.appendValue(s, _dialect);
     }
 
-//    @Override
-    @Override
-    public SQLFragment appendStringLiteral(CharSequence s)
-    {
-        return super.appendStringLiteral(s, _dialect);
-    }
-
     @Override
     public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {
