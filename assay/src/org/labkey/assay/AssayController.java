@@ -135,7 +135,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
@@ -585,22 +584,6 @@ public class AssayController extends SpringActionController
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy Assay Design");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public static class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
-    {
-        @Override
-        public ModelAndView getView(ProtocolIdForm form, BindException errors)
-        {
-            throw new RedirectException(urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
     }
 
@@ -1227,12 +1210,6 @@ public class AssayController extends SpringActionController
         public ActionURL getBeginURL(Container container)
         {
             return new ActionURL(BeginAction.class, container);
-        }
-
-        @Override
-        public ActionURL getSummaryRedirectURL(Container container)
-        {
-            return new ActionURL(SummaryRedirectAction.class, container);
         }
 
         @Override

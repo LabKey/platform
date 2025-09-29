@@ -242,16 +242,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
-        return Collections.emptyMap();
+        return List.of();
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public List<IndexDefinition> getAllIndices()
     {
-        return Collections.emptyMap();
+        return List.of();
     }
 
     @NotNull
@@ -259,13 +259,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public List<ColumnInfo> getAlternateKeyColumns()
     {
         List<ColumnInfo> pkCols = getPkColumns();
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = getUniqueIndices();
-        for (Pair<IndexType, List<ColumnInfo>> pair : indices.values())
+        for (IndexDefinition def : getUniqueIndices())
         {
-            if (pair.getKey() == IndexType.Primary)
+            if (def.indexType() == IndexType.Primary)
                 continue;
 
-            return pair.getValue();
+            return def.columns();
         }
 
         return pkCols;
