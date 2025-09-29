@@ -469,7 +469,7 @@ public class FileType implements Serializable
 
     public Path newFile(Path parent, String basename)
     {
-        return parent.resolve(getName(parent, basename));
+        return FileUtil.appendName(parent, getName(parent, basename));
     }
 
     public boolean isType(File file)
