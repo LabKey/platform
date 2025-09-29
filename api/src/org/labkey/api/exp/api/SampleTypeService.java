@@ -30,6 +30,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -54,8 +55,8 @@ import java.util.function.Function;
 
 public interface SampleTypeService
 {
-    String MISSING_COLUMN_ERROR_MESSAGE_PATTERN = "When adding or updating samples, the %s column must be provided when the %s column is.";
-    String MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN = "When adding or updating samples, a %s value must be provided when there is a value for %s.";
+    String MISSING_AMOUNT_ERROR_MESSAGE = "An Amount value must be provided when Units are provided.";
+    String MISSING_UNITS_ERROR_MESSAGE = "A Units value must be provided when Amounts are provided.";
     String UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN = "No %s value provided for %s %s.";
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
@@ -113,6 +114,12 @@ public interface SampleTypeService
     {
         ServiceRegistry.get().registerService(SampleTypeService.class, impl);
     }
+
+    @NotNull
+    List<Unit> getSupportedUnits();
+
+    @Nullable
+    Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, @Nullable String sampleTypeName);
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 

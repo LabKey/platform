@@ -1251,7 +1251,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected File computeResourceDirectory()
     {
-        // We load resources from the module's source directory if all of the following conditions are true:
+        // We load resources from the module's source directory if all the following conditions are true:
         //
         // - devmode = true
         // - The module's source path is a directory that exists on the web server

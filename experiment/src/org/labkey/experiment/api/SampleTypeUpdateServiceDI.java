@@ -148,8 +148,8 @@ import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRema
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -534,9 +534,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasUnits == hasAmount)
             return; // both columns are present or neither is
         if (!hasAmount)
-            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+            throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
-        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+        throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
     @Override
@@ -665,11 +665,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Object value = entry.getValue();
             if (col != null && col == unitsCol)
             {
-                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && col == amountCol)
             {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
@@ -826,7 +826,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
-        return new CaseInsensitiveHashSet(fields);
+        // Issue 53036: also include column labels and aliases
+        Set<String> metaFieldNames = new CaseInsensitiveHashSet(fields);
+        for (String fieldName : fields)
+        {
+            ColumnInfo columnInfo = getQueryTable().getColumn(fieldName);
+            if (columnInfo != null)
+            {
+                metaFieldNames.add(columnInfo.getLabel());
+                metaFieldNames.add(columnInfo.getAlias().getId());
+            }
+        }
+
+        return metaFieldNames;
     }
 
     public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
@@ -868,15 +880,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
         Integer aliquotRollupRoot = null;
-
+        SampleTypeService stService = SampleTypeService.get();
         if (!_sampleType.isMedia() && isAliquot)
         {
             Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
+                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
@@ -1828,14 +1840,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
+                String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
-                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                    addRowError("Failed to generate name for aliquot " + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    addRowError("Failed to generate name for sample " + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (_sampleType.hasNameAsIdCol())
-                    addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    addRowError("SampleID or Name is required for sample " + rowText + ".");
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample " + rowText + ".");
             }
         }
 
@@ -2036,7 +2049,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit)
+            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit, String sampleTypeName)
             {
                 if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
                 {
@@ -2045,14 +2058,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // when there's a units value but no amount column, this is an error
                 if (!haveAmountCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+                    throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
                 // When an amount column is present but no amount value is provided, this is an error
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
 
 
-                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit, sampleTypeName);
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
@@ -2060,7 +2073,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit);
+                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
@@ -2075,14 +2088,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return a Number in the base units of the sample type.
-            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit, @Nullable String sampleTypeName)
             {
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).trim().isEmpty()))
                     return null;
 
                 // When there is an amount value, if there isn't a units column, this is an error.
                 if (!hasUnitsCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+                    throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
 
                 // Have a units column, but no units value
                 if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
@@ -2092,7 +2105,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
                 }
 
-                Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
+                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit, sampleTypeName);
 
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
@@ -2124,7 +2137,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
-                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
