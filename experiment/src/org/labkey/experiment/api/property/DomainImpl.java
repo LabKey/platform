@@ -24,15 +24,38 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.ServerPrimaryKeyLock;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -1036,7 +1059,7 @@ public class DomainImpl implements Domain
         Set<ColumnInfo> uniqueIndexCols = new LinkedHashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
         // but exclude the uniqueId fields themselves.
-        table.getUniqueIndices().values().forEach(idx -> idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
+        table.getUniqueIndices().forEach(def -> def.columns().stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
 

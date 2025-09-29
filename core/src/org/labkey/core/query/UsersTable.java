@@ -70,7 +70,6 @@ import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -87,7 +86,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -464,10 +462,10 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public @NotNull Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public @NotNull List<IndexDefinition> getUniqueIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> unique = new HashMap<>(super.getUniqueIndices());
-        unique.put("uq_users_email", Pair.of(IndexType.Unique, getColumns("Email")));
+        List<IndexDefinition> unique = new ArrayList<>(super.getUniqueIndices());
+        unique.add(new IndexDefinition("uq_users_email", IndexType.Unique, getColumns("Email"), null));
         return unique;
     }
 

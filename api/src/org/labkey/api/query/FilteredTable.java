@@ -45,7 +45,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -56,7 +55,6 @@ import org.labkey.data.xml.TableType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -816,38 +814,38 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
-        return Collections.unmodifiableMap(wrapTableIndices(getRealTable()));
+        return Collections.unmodifiableList(wrapTableIndices(getRealTable()));
     }
 
-    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableIndices(TableInfo table)
+    protected List<IndexDefinition> wrapTableIndices(TableInfo table)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getUniqueIndices();
+        List<IndexDefinition> indices = table.getUniqueIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public List<IndexDefinition> getAllIndices()
     {
-        return Collections.unmodifiableMap(wrapTableAllIndices(getRealTable()));
+        return Collections.unmodifiableList(wrapTableAllIndices(getRealTable()));
     }
 
-    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableAllIndices(TableInfo table)
+    protected List<IndexDefinition> wrapTableAllIndices(TableInfo table)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getAllIndices();
+        List<IndexDefinition> indices = table.getAllIndices();
         return getStringPairMap(indices);
     }
 
     @NotNull
-    private Map<String, Pair<IndexType, List<ColumnInfo>>> getStringPairMap(Map<String, Pair<IndexType, List<ColumnInfo>>> indices)
+    private List<IndexDefinition> getStringPairMap(List<IndexDefinition> indices)
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>();
-        for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> entry : indices.entrySet())
+        List<IndexDefinition> ret = new ArrayList<>();
+        for (IndexDefinition def : indices)
         {
-            List<ColumnInfo> indexCols = new ArrayList<>(entry.getValue().getValue().size());
-            for (ColumnInfo col : entry.getValue().getValue())
+            List<ColumnInfo> indexCols = new ArrayList<>(def.columns().size());
+            for (ColumnInfo col : def.columns())
             {
                 ColumnInfo c = getColumn(col.getFieldKey());
                 if (c != null)
@@ -855,7 +853,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             }
 
             if (!indexCols.isEmpty())
-                ret.put(entry.getKey(), Pair.of(entry.getValue().getKey(), indexCols));
+                ret.add(new IndexDefinition(def.name(), def.indexType(), indexCols, def.filterCondition()));
         }
 
         return ret;

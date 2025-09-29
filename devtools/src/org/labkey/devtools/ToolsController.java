@@ -15,6 +15,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -31,7 +32,6 @@ import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.vcs.Vcs;
@@ -769,8 +769,9 @@ public class ToolsController extends SpringActionController
                     try
                     {
                         // All writers are closed below
-                        Writer writer = getFileWriter(overlap.schemaName());
-                        type.writeScript(writer, overlap);
+                        WriterContext context = getWriterContext(overlap.schemaName());
+                        if (type.writeScript(context.getWriter(), overlap))
+                            context.setModified();
                     }
                     catch (IOException e)
                     {
@@ -780,17 +781,64 @@ public class ToolsController extends SpringActionController
             }
             finally
             {
-                closeAllWriters();
+                closeAllContexts();
             }
 
             return true;
         }
 
-        private final Map<String, Writer> _writerMap = new HashMap<>();
-
-        private Writer getFileWriter(String schemaName) throws IOException
+        private static class WriterContext
         {
-            return _writerMap.computeIfAbsent(schemaName, n -> {
+            private final File _scriptDirectory;
+            private final String _filename;
+            private final File _scriptFile;
+            private final Writer _writer;
+
+            private boolean _modified = false;
+
+            public WriterContext(File scriptDirectory, String filename) throws IOException
+            {
+                _scriptDirectory = scriptDirectory;
+                _filename = filename;
+                // Create script file
+                _scriptFile = FileUtil.appendName(scriptDirectory, filename);
+                FileUtil.createNewFile(_scriptFile);
+                _writer = new BufferedWriter(new FileWriter(_scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
+            }
+
+            public Writer getWriter()
+            {
+                return _writer;
+            }
+
+            public void setModified()
+            {
+                _modified = true;
+            }
+
+            public void close() throws IOException
+            {
+                _writer.close();
+
+                if (_modified)
+                {
+                    // Add to VCS
+                    Vcs vcs = VcsService.get().getVcs(_scriptDirectory);
+                    if (null != vcs)
+                        vcs.addFile(_filename);
+                }
+                else
+                {
+                    _scriptFile.delete();
+                }
+            }
+        }
+
+        private final Map<String, WriterContext> _writerContextMap = new HashMap<>();
+
+        private WriterContext getWriterContext(String schemaName) throws IOException
+        {
+            return _writerContextMap.computeIfAbsent(schemaName, n -> {
 
                 DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                 Module module = schema.getModule();
@@ -808,13 +856,7 @@ public class ToolsController extends SpringActionController
 
                 try
                 {
-                    // Create script file and add to VCS
-                    File file = FileUtil.appendName(scriptDirectory, filename);
-                    FileUtil.createNewFile(file);
-                    Vcs vcs = VcsService.get().getVcs(scriptDirectory);
-                    if (null != vcs)
-                        vcs.addFile(filename);
-                    return new BufferedWriter(new FileWriter(file, StringUtilsLabKey.DEFAULT_CHARSET));
+                    return new WriterContext(scriptDirectory, filename);
                 }
                 catch (IOException e)
                 {
@@ -828,12 +870,12 @@ public class ToolsController extends SpringActionController
             return schemaName + "-" + Formats.f3.format(startVersion) + "-" + Formats.f3.format(startVersion + 0.001) + ".sql";
         }
 
-        private void closeAllWriters()
+        private void closeAllContexts()
         {
-            _writerMap.values().forEach(writer -> {
+            _writerContextMap.values().forEach(context -> {
                 try
                 {
-                    writer.close();
+                    context.close();
                 }
                 catch (IOException e)
                 {
@@ -868,15 +910,15 @@ public class ToolsController extends SpringActionController
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
                 .forEach(table -> {
                     var indices = table.getAllIndices();
-                    indices.forEach((indexName1, indexDef1) -> indices.forEach((indexName2, indexDef2) -> {
+                    indices.forEach(indexDef1 -> indices.forEach(indexDef2 -> {
                         if (indexDef1 != indexDef2)
                         {
-                            OverlapType type = overlap(indexDef1.getKey(), indexDef1.getValue(), indexDef2.getKey(), indexDef2.getValue());
+                            OverlapType type = overlap(indexDef1, indexDef2);
 
                             if (type != null)
                             {
-                                if (type != OverlapType.Identical || !alreadySeen(indexName1, indexName2))
-                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexName1, indexDef1, indexName2, indexDef2));
+                                if (type != OverlapType.Identical || !alreadySeen(indexDef1.name(), indexDef2.name()))
+                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexDef1, indexDef2));
                             }
                         }
                     }));
@@ -894,18 +936,19 @@ public class ToolsController extends SpringActionController
             return !_alreadySeen.add(key);
         }
 
-        private @Nullable OverlapType overlap(IndexType type1, List<ColumnInfo> cols1, IndexType type2, List<ColumnInfo> cols2)
+        private @Nullable OverlapType overlap(IndexDefinition index1, IndexDefinition index2)
         {
-            String key1 = getKey(cols1);
-            String key2 = getKey(cols2);
+            String key1 = getKey(index1.columns());
+            String key2 = getKey(index2.columns());
+            boolean sameFilterConditions = Objects.equals(index1.filterCondition(), index2.filterCondition());
             if (key1.equals(key2))
-                return OverlapType.Identical;
+                return sameFilterConditions ? OverlapType.Identical : OverlapType.OverlappingWithDifferentFilter;
             if (key2.startsWith(key1))
             {
-                if (type2 == IndexType.NonUnique && (type1 == IndexType.Primary || type1 == IndexType.Unique))
+                if (index2.indexType() == IndexType.NonUnique && (index1.indexType() == IndexType.Primary || index1.indexType() == IndexType.Unique))
                     return OverlapType.UniqueOverlappingNonUnique;
                 else
-                    return OverlapType.Overlap;
+                    return sameFilterConditions ? OverlapType.Overlapping : OverlapType.OverlappingWithDifferentFilter;
             }
             return null;
         }
@@ -927,48 +970,56 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    protected record Overlap(String schemaName, String tableName, String indexName1, Pair<IndexType, List<ColumnInfo>> indexDef1, String indexName2, Pair<IndexType, List<ColumnInfo>> indexDef2) {}
+    protected record Overlap(String schemaName, String tableName, IndexDefinition indexDef1, IndexDefinition indexDef2) {}
 
     protected enum OverlapType
     {
-        UniqueOverlappingNonUnique("column sets that overlap at the start, but the first index is a unique constraint. These are likely valid")
+        UniqueOverlappingNonUnique("a column list that overlaps another index's column list at the start, but the first index is a unique constraint. These are likely valid")
         {
             @Override
-            void writeScript(Writer writer, Overlap overlap)
+            boolean writeScript(Writer writer, Overlap overlap)
             {
-                // Do nothing -- these are valid
+                return false; // Write nothing
             }
         },
-        Identical("identical column sets")
+        OverlappingWithDifferentFilter("a column list that overlaps another index's column list at the start, but with different filter conditions. These are likely valid")
         {
             @Override
-            void writeScript(Writer writer, Overlap overlap) throws IOException
+            boolean writeScript(Writer writer, Overlap overlap)
             {
-                IndexType type1 = overlap.indexDef1.getKey();
-                IndexType type2 = overlap.indexDef2.getKey();
+                return false; // Write nothing
+            }
+        },
+        Identical("a column list that's identical to another index's column list")
+        {
+            @Override
+            boolean writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                IndexType type1 = overlap.indexDef1.indexType();
+                IndexType type2 = overlap.indexDef2.indexType();
                 String dropIndex = null;
                 String otherIndex = null;
 
                 // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
                 if (type1 == IndexType.Primary)
                 {
-                    dropIndex = overlap.indexName2;
-                    otherIndex = overlap.indexName1;
+                    dropIndex = overlap.indexDef2.name();
+                    otherIndex = overlap.indexDef1.name();
                 }
                 else if (type2 == IndexType.Primary)
                 {
-                    dropIndex = overlap.indexName1;
-                    otherIndex = overlap.indexName2;
+                    dropIndex = overlap.indexDef1.name();
+                    otherIndex = overlap.indexDef2.name();
                 }
                 else if (type1 == IndexType.Unique && type2 == IndexType.NonUnique)
                 {
-                    dropIndex = overlap.indexName2;
-                    otherIndex = overlap.indexName1;
+                    dropIndex = overlap.indexDef2.name();
+                    otherIndex = overlap.indexDef1.name();
                 }
                 else if (type2 == IndexType.Unique && type1 == IndexType.NonUnique)
                 {
-                    dropIndex = overlap.indexName1;
-                    otherIndex = overlap.indexName2;
+                    dropIndex = overlap.indexDef1.name();
+                    otherIndex = overlap.indexDef2.name();
                 }
 
                 if (dropIndex != null)
@@ -978,24 +1029,27 @@ public class ToolsController extends SpringActionController
                 else
                 {
                     writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName2, overlap.indexName1);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef2.name(), overlap.indexDef1.name());
                     writer.write('\n');
                 }
+
+                return true;
             }
 
             @Override
             String getMessage(Overlap overlap)
             {
-                return overlap.indexName1 + " vs. " + overlap.indexName2 + ": " + join(overlap.indexDef1.getValue());
+                return overlap.indexDef1.name() + " vs. " + overlap.indexDef2.name() + ": " + join(overlap.indexDef1.columns());
             }
         },
-        Overlap("column sets that overlap at the start")
+        Overlapping("a column list that overlaps another index's column list at the start")
         {
             @Override
-            void writeScript(Writer writer, Overlap overlap) throws IOException
+            boolean writeScript(Writer writer, Overlap overlap) throws IOException
             {
-                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexName1, overlap.indexName2);
+                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
+                return true;
             }
         };
 
@@ -1011,11 +1065,12 @@ public class ToolsController extends SpringActionController
             return _description;
         }
 
-        abstract void writeScript(Writer writer, Overlap overlap) throws IOException;
+        // Return true if content has been written to the script file
+        abstract boolean writeScript(Writer writer, Overlap overlap) throws IOException;
 
         String getMessage(Overlap overlap)
         {
-            return overlap.indexName1 + " " + join(overlap.indexDef1.getValue()) + " vs. " + overlap.indexName2 + " " + join(overlap.indexDef2.getValue());
+            return overlap.indexDef1.name() + " " + join(overlap.indexDef1.columns()) + " vs. " + overlap.indexDef2.name() + " " + join(overlap.indexDef2.columns());
         }
 
         protected List<String> join(List<ColumnInfo> cols)
