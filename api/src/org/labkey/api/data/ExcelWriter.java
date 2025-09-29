@@ -380,6 +380,7 @@ public class ExcelWriter implements ExportWriter
         return WorkbookUtil.createSafeSheetName(sheetName, '_');
     }
 
+
     public String getSheetName(int index)
     {
         return Objects.requireNonNullElseGet(_sheetName, () -> "data" + (index == 0 ? "" : Integer.toString(index)));
