@@ -349,7 +349,7 @@ public class FileType implements Serializable
             for (String suffix : _suffixes)
             {
                 String name = tryName(parentDir, basename + suffix);
-                Path f = parentDir.resolve(name);
+                Path f = FileUtil.appendName(parentDir, name);
                 if (NetworkDrive.exists(f))
                 {
                     // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file
