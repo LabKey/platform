@@ -9635,8 +9635,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw errors;
 
                 // move audit events associated with the sources that are moving
-                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
-                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, List.of(dataIds), "exp.data", dataClassTable.getName());
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.

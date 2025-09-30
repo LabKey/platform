@@ -44,10 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/21/13
- */
 public class ListAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String COLUMN_NAME_LIST_ID = "ListId";
@@ -141,6 +137,11 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)ListAuditEvent.class;
+    }
+
+    public int moveEvents(Container targetContainer, List<String> listRowEntityIds)
+    {
+        return moveEvents(targetContainer, COLUMN_NAME_LIST_ITEM_ENTITY_ID, listRowEntityIds);
     }
 
     public static class ListAuditEvent extends DetailedAuditTypeEvent

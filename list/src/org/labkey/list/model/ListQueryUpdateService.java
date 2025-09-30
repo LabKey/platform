@@ -23,18 +23,27 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupResolutionType;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
@@ -42,12 +51,15 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -55,9 +67,14 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
@@ -126,7 +143,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     // EntityId
                     ret.put("EntityId", raw.get("entityid"));
 
-                    for (DomainProperty prop : _list.getDomain().getProperties())
+                    for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
                     {
                         String propName = prop.getName();
                         ColumnInfo column = queryTable.getColumn(propName);
@@ -294,7 +311,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // TODO: Check for equivalency so that attachments can be deleted etc.
 
         Map<String, DomainProperty> dps = new HashMap<>();
-        for (DomainProperty dp : _list.getDomain().getProperties())
+        for (DomainProperty dp : _list.getDomainOrThrow().getProperties())
         {
             dps.put(dp.getPropertyURI(), dp);
         }
@@ -335,7 +352,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             // 22747: Attachment columns
             if (null != column)
             {
-                DomainProperty dp = _list.getDomain().getPropertyByURI(column.getPropertyURI());
+                DomainProperty dp = _list.getDomainOrThrow().getPropertyByURI(column.getPropertyURI());
                 if (null != dp && isAttachmentProperty(dp))
                 {
                     modifiedAttachmentColumns.add(column);
@@ -446,6 +463,217 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return true;
     }
 
+    private record ListRecord(Object key, String entityId) { }
+
+    @Override
+    public Map<String, Object> moveRows(
+        User _user,
+        Container container,
+        Container targetContainer,
+        List<Map<String, Object>> rows,
+        BatchValidationException errors,
+        @Nullable Map<Enum, Object> configParameters,
+        @Nullable Map<String, Object> extraScriptContext
+    ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException
+    {
+        Map<String, Object> updateCounts = new HashMap<>();
+        updateCounts.put("listAuditEventsCreated", 0);
+        updateCounts.put("listAuditEventsMoved", 0);
+        updateCounts.put("listRecords", 0);
+        updateCounts.put("queryAuditEventsMoved", 0);
+
+        Map<GUID, List<ListRecord>> containerRows = getListRowsForMoveRows(targetContainer, rows, errors);
+        if (errors.hasErrors() || containerRows.isEmpty())
+            return updateCounts;
+
+        AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
+        String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
+        User user = getListUser(_user, container);
+        String listSchemaName = ListSchema.getInstance().getSchemaName();
+        boolean hasAttachmentProperties = _list.getDomainOrThrow()
+                .getProperties()
+                .stream()
+                .anyMatch(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType()));
+
+        int listAuditEventsCreatedCount = 0;
+        int listAuditEventsMovedCount = 0;
+        int listRecordsCount = 0;
+        int queryAuditEventsMovedCount = 0;
+        ListAuditProvider listAuditProvider = new ListAuditProvider();
+
+        try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
+        {
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && tx.getAuditEvent() == null)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.updateCommentRowCount(containerRows.values().stream().mapToInt(List::size).sum());
+                AbstractQueryUpdateService.addTransactionAuditEvent(tx, user, auditEvent);
+            }
+
+            List<ListAuditProvider.ListAuditEvent> listAuditEvents = new ArrayList<>();
+
+            for (GUID containerId : containerRows.keySet())
+            {
+                Container sourceContainer = ContainerManager.getForId(containerId);
+                if (sourceContainer == null)
+                    throw new InvalidKeyException("Container '" + containerId + "' does not exist.");
+
+                if (!sourceContainer.hasPermission(user, MoveEntitiesPermission.class))
+                    throw new UnauthorizedException("You do not have permission to move list records out of '" + sourceContainer.getName() + "'.");
+
+                TableInfo listTable = _list.getTable(user, sourceContainer);
+                if (listTable == null)
+                    throw new QueryUpdateServiceException(String.format("Failed to retrieve table for list '%s' in folder %s.", _list.getName(), sourceContainer.getPath()));
+
+                List<ListRecord> records = containerRows.get(containerId);
+                List<Object> rowPks = records.stream().map(ListRecord::key).toList();
+
+                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
+                listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
+                if (errors.hasErrors())
+                    return updateCounts;
+
+                listRecordsCount += ContainerManager.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
+                if (errors.hasErrors())
+                    return updateCounts;
+
+                if (hasAttachmentProperties)
+                {
+                    moveAttachments(user, sourceContainer, targetContainer, records, errors);
+                    if (errors.hasErrors())
+                        return updateCounts;
+                }
+
+                queryAuditEventsMovedCount += QueryService.get().moveAuditEvents(targetContainer, rowPks, listSchemaName, _list.getName());
+                listAuditEventsMovedCount += listAuditProvider.moveEvents(targetContainer, records.stream().map(ListRecord::entityId).toList());
+
+                // Create a summary audit event for the source container
+                {
+                    String comment = String.format("Moved %s to %s", StringUtilsLabKey.pluralize(records.size(), "row"), targetContainer.getPath());
+                    ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(sourceContainer, comment, _list);
+                    event.setUserComment(auditUserComment);
+                    listAuditEvents.add(event);
+                }
+
+                // Create a summary audit event for the target container
+                {
+                    String comment = String.format("Moved %s from %s", StringUtilsLabKey.pluralize(records.size(), "row"), sourceContainer.getPath());
+                    ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(targetContainer, comment, _list);
+                    event.setUserComment(auditUserComment);
+                    listAuditEvents.add(event);
+                }
+
+                if (AuditBehaviorType.DETAILED == listTable.getEffectiveAuditBehavior(auditBehavior))
+                    listAuditEventsCreatedCount += addDetailedMoveAuditEvents(user, sourceContainer, targetContainer, records);
+
+                // TODO: Picklist support?
+
+                listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                if (errors.hasErrors())
+                    return updateCounts;
+            }
+
+            if (!listAuditEvents.isEmpty())
+            {
+                AuditLogService.get().addEvents(user, listAuditEvents, true);
+                listAuditEventsCreatedCount += listAuditEvents.size();
+            }
+
+            tx.addCommitTask(() -> ListManager.get().indexList(_list), DbScope.CommitTaskOption.POSTCOMMIT);
+
+            tx.commit();
+
+            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "list");
+        }
+
+        updateCounts.put("listAuditEventsCreated", listAuditEventsCreatedCount);
+        updateCounts.put("listAuditEventsMoved", listAuditEventsMovedCount);
+        updateCounts.put("listRecords", listRecordsCount);
+        updateCounts.put("queryAuditEventsMoved", queryAuditEventsMovedCount);
+
+        return updateCounts;
+    }
+
+    private Map<GUID, List<ListRecord>> getListRowsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
+    {
+        if (rows.isEmpty())
+            return Collections.emptyMap();
+
+        String keyName = _list.getKeyName();
+        List<Object> keys = new ArrayList<>();
+        for (var row : rows)
+        {
+            Object key = getField(row, keyName);
+            if (key == null)
+            {
+                errors.addRowError(new ValidationException("Key field value required for moving list rows."));
+                return Collections.emptyMap();
+            }
+
+            keys.add(getKeyFilterValue(key));
+        }
+
+        SimpleFilter filter = new SimpleFilter();
+        FieldKey fieldKey = FieldKey.fromParts(keyName);
+        filter.addInClause(fieldKey, keys);
+        filter.addCondition(FieldKey.fromParts("Container"), targetContainer.getId(), CompareType.NEQ);
+
+        Map<GUID, List<ListRecord>> containerRows = new HashMap<>();
+        try (var result = new TableSelector(getQueryTable(), PageFlowUtil.set(keyName, "Container", "EntityId"), filter, null).getResults())
+        {
+            while (result.next())
+            {
+                GUID containerId = new GUID(result.getString("Container"));
+                containerRows.computeIfAbsent(containerId, k -> new ArrayList<>());
+                containerRows.get(containerId).add(new ListRecord(result.getObject(fieldKey), result.getString("EntityId")));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return containerRows;
+    }
+
+    private void moveAttachments(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records, BatchValidationException errors)
+    {
+        // TODO: Consider subsequent query to determine which rows need to be updated then only update those attachments
+        List<AttachmentParent> parents = new ArrayList<>();
+        for (ListRecord record : records)
+            parents.add(new ListItemAttachmentParent(record.entityId, sourceContainer));
+
+        try
+        {
+            AttachmentService.get().moveAttachments(targetContainer, parents, user);
+        }
+        catch (IOException e)
+        {
+            errors.addRowError(new ValidationException("Failed to move attachments when moving list rows. Error: " + e.getMessage()));
+        }
+    }
+
+    private int addDetailedMoveAuditEvents(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records)
+    {
+        List<ListAuditProvider.ListAuditEvent> auditEvents = new ArrayList<>(records.size());
+        String keyName = _list.getKeyName();
+        String sourcePath = sourceContainer.getPath();
+        String targetPath = targetContainer.getPath();
+
+        for (ListRecord record : records)
+        {
+            ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(targetContainer, "An existing list record was moved", _list);
+            event.setListItemEntityId(record.entityId);
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(CaseInsensitiveHashMap.of("Folder", sourcePath, keyName, record.key.toString())));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(CaseInsensitiveHashMap.of("Folder", targetPath, keyName, record.key.toString())));
+            auditEvents.add(event);
+        }
+
+        AuditLogService.get().addEvents(user, auditEvents, true);
+
+        return auditEvents.size();
+    }
+
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
@@ -544,32 +772,33 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-
     @Nullable
     public SimpleFilter getKeyFilter(Map<String, Object> map) throws InvalidKeyException
     {
         String keyName = _list.getKeyName();
-        ListDefinition.KeyType type = _list.getKeyType();
-
-        Object key = getField(map, _list.getKeyName());
+        Object key = getField(map, keyName);
 
         if (null == key)
         {
             // Auto-increment lists might not provide a key so allow them to pass through
-            if (type.equals(ListDefinition.KeyType.AutoIncrementInteger))
+            if (ListDefinition.KeyType.AutoIncrementInteger.equals(_list.getKeyType()))
                 return null;
             throw new InvalidKeyException("No " + keyName + " provided for list \"" + _list.getName() + "\"");
         }
 
-        // Check the type of the list to ensure proper casting of the key type
-        if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
-        {
-            if (isIntegral(key))
-                return new SimpleFilter(FieldKey.fromParts(keyName), key);
-            return new SimpleFilter(FieldKey.fromParts(keyName), Integer.valueOf(key.toString()));
-        }
+        return new SimpleFilter(FieldKey.fromParts(keyName), getKeyFilterValue(key));
+    }
 
-        return new SimpleFilter(FieldKey.fromParts(keyName), key.toString());
+    @NotNull
+    private Object getKeyFilterValue(@NotNull Object key)
+    {
+        ListDefinition.KeyType type = _list.getKeyType();
+
+        // Check the type of the list to ensure proper casting of the key type
+        if (ListDefinition.KeyType.Integer.equals(type) || ListDefinition.KeyType.AutoIncrementInteger.equals(type))
+            return isIntegral(key) ? key : Integer.valueOf(key.toString());
+
+        return key.toString();
     }
 
     @Nullable

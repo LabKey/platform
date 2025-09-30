@@ -153,6 +153,22 @@ public class ListDefinitionImpl implements ListDefinition
         }
         return _domain;
     }
+
+    @Override
+    public @NotNull Domain getDomainOrThrow()
+    {
+        return getDomainOrThrow(false);
+    }
+
+    @Override
+    public @NotNull Domain getDomainOrThrow(boolean forUpdate)
+    {
+        var domain = getDomain(forUpdate);
+        if (domain == null)
+            throw new IllegalArgumentException("Could not find domain for list \"" + getName() + "\".");
+        return domain;
+    }
+
     @Override
     public String getName()
     {
@@ -510,7 +526,7 @@ public class ListDefinitionImpl implements ListDefinition
         itm.setKey(row.get(getKeyName()));
 
         ListItemImpl impl = new ListItemImpl(this, itm);
-        for (DomainProperty prop : getDomain().getProperties())
+        for (DomainProperty prop : getDomainOrThrow().getProperties())
         {
             impl.setProperty(prop, row.get(prop.getName()));
         }
@@ -555,12 +571,12 @@ public class ListDefinitionImpl implements ListDefinition
         {
             // remove related attachments, discussions, and indices
             ListManager.get().deleteIndexedList(this);
-            if (qus instanceof ListQueryUpdateService)
-                ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
+            if (qus instanceof ListQueryUpdateService listQus)
+                listQus.deleteRelatedListData(user, getContainer());
 
             // then delete the list itself
             ListManager.get().deleteListDef(getContainer(), getListId());
-            Domain domain = getDomain();
+            Domain domain = getDomainOrThrow();
             domain.delete(user, auditUserComment);
 
             ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
@@ -669,7 +685,6 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setLastIndexed(modified);
     }
 
-    /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
     @Override
     @Nullable
     public TableInfo getTable(User user)
@@ -677,7 +692,6 @@ public class ListDefinitionImpl implements ListDefinition
         return getTable(user, getContainer());
     }
 
-    /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
     @Override
     @Nullable
     public TableInfo getTable(User user, Container c)

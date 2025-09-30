@@ -395,11 +395,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public int moveEvents(Container targetContainer, String idColumnName, Collection<?> ids)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE ").append(idColumnName);
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        return ContainerManager.updateContainer(createStorageTableInfo(), idColumnName, ids, targetContainer, null, false);
     }
 }

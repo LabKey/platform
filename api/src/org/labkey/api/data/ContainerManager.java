@@ -2701,18 +2701,31 @@ public class ContainerManager
         return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
     }
 
-    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
+    /**
+     * Updates the container of specified rows in the provided database table. Optionally, the modification timestamp
+     * and the user who made the modification can also be updated if specified.
+     *
+     * @param dataTable       The table where the container update should be applied.
+     * @param idField         The name of the identifier field used to locate the rows to update.
+     * @param ids             A collection of identifier values specifying the rows to be updated.
+     * @param targetContainer The target container to set for the specified rows.
+     * @param user            The user performing the update. If null, modified/modifiedBy details are not updated.
+     * @param withModified    If true, updates the modified timestamp and the user who made the modification.
+     * @return The number of rows updated in the table.
+     */
+    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, @Nullable User user, boolean withModified)
     {
         try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
         {
             SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                    .append(" SET container = ").appendValue(targetContainer.getEntityId());
+                    .append(" SET container = ").appendValue(targetContainer);
             if (withModified)
             {
+                assert user != null : "User must be specified when updating modified/modifiedBy details.";
                 dataUpdate.append(", modified = ").appendValue(new Date());
                 dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
             }
-            dataUpdate.append(" WHERE ").append(idField);
+            dataUpdate.append(" WHERE ").appendIdentifier(idField);
             dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
             int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
             transaction.commit();

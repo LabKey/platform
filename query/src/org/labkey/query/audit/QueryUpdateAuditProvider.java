@@ -192,13 +192,13 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-    public int moveEvents(Container targetContainer, Collection<Long> rowIds, String schemaName, String queryName)
+    public int moveEvents(Container targetContainer, Collection<Object> rowPks, String schemaName, String queryName)
     {
         TableInfo auditTable = createStorageTableInfo();
         SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
                 .append(" SET container = ").appendValue(targetContainer)
                 .append(" WHERE RowPk ");
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowIds.stream().map(Object::toString).toList());
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowPks.stream().map(Object::toString).toList());
         sql.append(" AND SchemaName = ").appendValue(schemaName).append(" AND QueryName = ").appendValue(queryName);
         return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
