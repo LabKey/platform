@@ -49,70 +49,72 @@ import static org.junit.Assert.assertTrue;
  * @version $Id: RegexFilter.java,v 1.11 2004/04/15 13:56:14 stephan Exp $
  */
 
-public abstract class RegexFilter extends FilterSupport {
+public abstract class RegexFilter extends FilterSupport
+{
     private static final Logger log = LogManager.getLogger(RegexFilter.class);
 
-  /**
-   * Regular expression that matches a quoted string that may contain escaped quotes and characters.
-   * Pattern explanation:
-   * - Matches text between double quotes
-   * - Allows escaped quotes and characters within the string
-   * - Non-capturing group (?:) is used for escaping sequences
-   * - [^\"\\\\]* matches any chars except quotes and backslashes
-   * - \\\\. matches any escaped character
-   */
-  public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\.[^\"\\\\]*)*)\"";
+    /**
+     * Regular expression pattern for matching quoted strings.
+     * Matches text enclosed in double quotes while ensuring proper escaped quote handling.
+     */
+    public static final String QUOTE_REGEX = "\"([^\"\\\\]*(?:\\.[^\"\\\\]*)*)\"";
+    protected List<Pattern> pattern = new ArrayList<>();
+    protected List<String> substitute = new ArrayList<>();
 
-//  public static final String QUOTE_REGEX_ORIG = "\"(([^\"\\\\]|\\.)*)\"";
+    public final static boolean SINGLELINE = false;
+    public final static boolean MULTILINE = true;
 
-  protected List<Pattern> pattern = new ArrayList<>();
-  protected List<String> substitute = new ArrayList<>();
-
-  public final static boolean SINGLELINE = false;
-  public final static boolean MULTILINE = true;
-
-  public RegexFilter() {
-    super();
-  }
-
-  /**
-   * create a new regular expression that takes input as multiple lines
-   */
-  public RegexFilter(String regex, String substitute) {
-    this();
-    addRegex(regex, substitute);
-  }
-
-  /**
-   * create a new regular expression and set
-   */
-  public RegexFilter(String regex, String substitute, boolean multiline) {
-    addRegex(regex, substitute, multiline);
-  }
-
-  public void clearRegex() {
-    pattern.clear();
-    substitute.clear();
-  }
-  public void addRegex(String regex, String substitute) {
-    addRegex(regex, substitute, MULTILINE);
-  }
-
-  public void addRegex(String regex, String substitute, boolean multiline) {
-    // compiler.compile(regex, (multiline ? Perl5Compiler.MULTILINE_MASK : Perl5Compiler.SINGLELINE_MASK) | Perl5Compiler.READ_ONLY_MASK));
-    try {
-      Compiler compiler = Compiler.create();
-      compiler.setMultiline(multiline);
-      this.pattern.add(compiler.compile(regex));
-      // Pattern.DOTALL
-      this.substitute.add(substitute);
-    } catch (Exception e) {
-      log.warn("bad pattern: " + regex + " -> " + substitute, e);
+    public RegexFilter()
+    {
+        super();
     }
-  }
 
-  @Override
-  public abstract String filter(String input, FilterContext context);
+    /**
+     * create a new regular expression that takes input as multiple lines
+     */
+    public RegexFilter(String regex, String substitute)
+    {
+        this();
+        addRegex(regex, substitute);
+    }
+
+    /**
+     * create a new regular expression and set
+     */
+    public RegexFilter(String regex, String substitute, boolean multiline)
+    {
+        addRegex(regex, substitute, multiline);
+    }
+
+    public void clearRegex()
+    {
+        pattern.clear();
+        substitute.clear();
+    }
+
+    public void addRegex(String regex, String substitute)
+    {
+        addRegex(regex, substitute, MULTILINE);
+    }
+
+    public void addRegex(String regex, String substitute, boolean multiline)
+    {
+        try
+        {
+            Compiler compiler = Compiler.create();
+            compiler.setMultiline(multiline);
+            this.pattern.add(compiler.compile(regex));
+            // Pattern.DOTALL
+            this.substitute.add(substitute);
+        }
+        catch (Exception e)
+        {
+            log.warn("bad pattern: " + regex + " -> " + substitute, e);
+        }
+    }
+
+    @Override
+    public abstract String filter(String input, FilterContext context);
 
     public static class TestCase
     {
