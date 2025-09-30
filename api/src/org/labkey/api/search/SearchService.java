@@ -127,6 +127,12 @@ public interface SearchService extends SearchMXBean
     boolean drainQueue(@NotNull PRIORITY priority, long timeout, @NotNull TimeUnit unit) throws InterruptedException;
 
     /**
+     * Adds a startup listener that will be notified when the search index startup process is complete.
+     * @param listener The {@link SearchStartupListener} that will handle startup completion events.
+     */
+    void addStartupListener(@NotNull SearchStartupListener listener);
+
+    /**
      * From lowest to highest priority
      */
     enum PRIORITY
