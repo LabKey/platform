@@ -244,14 +244,7 @@ public class FileType implements Serializable
     {
         if (_supportGZ.booleanValue())  // TPP treats xml.gz as a native format
         {
-            try
-            {
-                FileUtil.legalPathPartThrow(name);
-            }
-            catch (Exception e)
-            {
-                return name; // don't try to be clever if the name is not legal
-            }
+            FileUtil.legalPathPartThrow(name);
             // in the case of existing files, non-gz copy wins if present
             Path f = parentDir!=null ? FileUtil.appendName(parentDir, name) : Path.of(name);
             if (!NetworkDrive.exists(f))
