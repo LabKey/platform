@@ -491,13 +491,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
         User user = getListUser(_user, container);
-        String listSchemaName = ListSchema.getInstance().getSchemaName();
         boolean hasAttachmentProperties = _list.getDomainOrThrow()
                 .getProperties()
                 .stream()
                 .anyMatch(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType()));
 
         ListAuditProvider listAuditProvider = new ListAuditProvider();
+        final int BATCH_SIZE = 5_000;
 
         try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
         {
@@ -524,30 +524,47 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     throw new QueryUpdateServiceException(String.format("Failed to retrieve table for list '%s' in folder %s.", _list.getName(), sourceContainer.getPath()));
 
                 List<ListRecord> records = containerRows.get(containerId);
-                List<Object> rowPks = records.stream().map(ListRecord::key).toList();
+                int numRecords = records.size();
 
-                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
-                listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
-                if (errors.hasErrors())
-                    throw errors;
-
-                listRecordsCount += ContainerManager.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
-                if (errors.hasErrors())
-                    throw errors;
-
-                if (hasAttachmentProperties)
+                for (int start = 0; start < numRecords; start += BATCH_SIZE)
                 {
-                    moveAttachments(user, sourceContainer, targetContainer, records, errors);
+                    int end = Math.min(start + BATCH_SIZE, numRecords);
+                    List<ListRecord> batch = records.subList(start, end);
+                    List<Object> rowPks = batch.stream().map(ListRecord::key).toList();
+
+                    // Before trigger per batch
+                    Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
+                    if (errors.hasErrors())
+                        throw errors;
+
+                    listRecordsCount += ContainerManager.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
+                    if (errors.hasErrors())
+                        throw errors;
+
+                    if (hasAttachmentProperties)
+                    {
+                        moveAttachments(user, sourceContainer, targetContainer, batch, errors);
+                        if (errors.hasErrors())
+                            throw errors;
+                    }
+
+                    queryAuditEventsMovedCount += QueryService.get().moveAuditEvents(targetContainer, rowPks, ListQuerySchema.NAME, _list.getName());
+                    listAuditEventsMovedCount += listAuditProvider.moveEvents(targetContainer, batch.stream().map(ListRecord::entityId).toList());
+
+                    // Detailed audit events per row
+                    if (AuditBehaviorType.DETAILED == listTable.getEffectiveAuditBehavior(auditBehavior))
+                        listAuditEventsCreatedCount += addDetailedMoveAuditEvents(user, sourceContainer, targetContainer, batch);
+
+                    // After trigger per batch
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
                     if (errors.hasErrors())
                         throw errors;
                 }
 
-                queryAuditEventsMovedCount += QueryService.get().moveAuditEvents(targetContainer, rowPks, listSchemaName, _list.getName());
-                listAuditEventsMovedCount += listAuditProvider.moveEvents(targetContainer, records.stream().map(ListRecord::entityId).toList());
-
                 // Create a summary audit event for the source container
                 {
-                    String comment = String.format("Moved %s to %s", StringUtilsLabKey.pluralize(records.size(), "row"), targetContainer.getPath());
+                    String comment = String.format("Moved %s to %s", StringUtilsLabKey.pluralize(numRecords, "row"), targetContainer.getPath());
                     ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(sourceContainer, comment, _list);
                     event.setUserComment(auditUserComment);
                     listAuditEvents.add(event);
@@ -555,20 +572,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                 // Create a summary audit event for the target container
                 {
-                    String comment = String.format("Moved %s from %s", StringUtilsLabKey.pluralize(records.size(), "row"), sourceContainer.getPath());
+                    String comment = String.format("Moved %s from %s", StringUtilsLabKey.pluralize(numRecords, "row"), sourceContainer.getPath());
                     ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(targetContainer, comment, _list);
                     event.setUserComment(auditUserComment);
                     listAuditEvents.add(event);
                 }
-
-                if (AuditBehaviorType.DETAILED == listTable.getEffectiveAuditBehavior(auditBehavior))
-                    listAuditEventsCreatedCount += addDetailedMoveAuditEvents(user, sourceContainer, targetContainer, records);
-
-                // TODO: Picklist support?
-
-                listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
-                if (errors.hasErrors())
-                    throw errors;
             }
 
             if (!listAuditEvents.isEmpty())
@@ -641,7 +649,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     private void moveAttachments(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records, BatchValidationException errors)
     {
-        // TODO: Consider subsequent query to determine which rows need to be updated then only update those attachments
         List<AttachmentParent> parents = new ArrayList<>();
         for (ListRecord record : records)
             parents.add(new ListItemAttachmentParent(record.entityId, sourceContainer));

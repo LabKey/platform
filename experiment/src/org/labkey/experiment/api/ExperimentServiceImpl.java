@@ -9561,11 +9561,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids == null || lsids.isEmpty())
             return 0;
 
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
-        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return ContainerManager.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer);
     }
 
     @Override
@@ -9635,7 +9631,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw errors;
 
                 // move audit events associated with the sources that are moving
-                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, List.of(dataIds), "exp.data", dataClassTable.getName());
+                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
                 updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it

@@ -2701,6 +2701,11 @@ public class ContainerManager
         return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
     }
 
+    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer)
+    {
+        return updateContainer(dataTable, idField, ids, targetContainer, null, false);
+    }
+
     /**
      * Updates the container of specified rows in the provided database table. Optionally, the modification timestamp
      * and the user who made the modification can also be updated if specified.
@@ -2715,18 +2720,32 @@ public class ContainerManager
      */
     public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, @Nullable User user, boolean withModified)
     {
+        if (ids == null || ids.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts(idField), ids);
+
+        return updateContainer(dataTable, targetContainer, filter, user, withModified);
+    }
+
+    public static int updateContainer(TableInfo dataTable, Container targetContainer, @NotNull SimpleFilter filter, @Nullable User user, boolean withModified)
+    {
         try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
         {
             SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                     .append(" SET container = ").appendValue(targetContainer);
+
             if (withModified)
             {
                 assert user != null : "User must be specified when updating modified/modifiedBy details.";
-                dataUpdate.append(", modified = ").appendValue(new Date());
+                dataUpdate.append(", modified = CURRENT_TIMESTAMP");
                 dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
             }
-            dataUpdate.append(" WHERE ").appendIdentifier(idField);
-            dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
+
+            SQLFragment whereClause = filter.getSQLFragment(dataTable.getSchema().getSqlDialect());
+            dataUpdate.append("\n").append(whereClause);
+
             int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
             transaction.commit();
 
