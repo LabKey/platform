@@ -127,6 +127,7 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.remoteapi.SelectRowsStreamHack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -354,7 +355,8 @@ public class QueryModule extends DefaultModule
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
-            ServerManager.TestCase.class
+            ServerManager.TestCase.class,
+            SelectRowsStreamHack.TestCase.class
         );
     }
 
