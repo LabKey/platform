@@ -890,7 +890,7 @@ public class FileUtil
 
     // narrower check than isLegalName() or isAllowedFileName()
     // this check that a name is a valid path part (e.g. filename) and is not path like.
-    private static void legalPathPartThrow(String name)
+    public static void legalPathPartThrow(String name)
     {
         int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
         if (invalidCharacterIndex >= 0)

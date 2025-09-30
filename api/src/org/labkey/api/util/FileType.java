@@ -243,7 +243,9 @@ public class FileType implements Serializable
     private String tryName(Path parentDir, String name)
     {
         if (_supportGZ.booleanValue())  // TPP treats xml.gz as a native format
-        {   // in the case of existing files, non-gz copy wins if present
+        {
+            FileUtil.legalPathPartThrow(name);
+            // in the case of existing files, non-gz copy wins if present
             Path f = parentDir!=null ? FileUtil.appendName(parentDir, name) : Path.of(name);
             if (!NetworkDrive.exists(f))
             {  // non-gz copy doesn't exist - how about .gz version?
@@ -340,7 +342,7 @@ public class FileType implements Serializable
             for (String suffix : _suffixes)
             {
                 String name = tryName(parentDir, basename + suffix);
-                Path f = parentDir.resolve(name);
+                Path f = FileUtil.appendName(parentDir, name);
                 if (NetworkDrive.exists(f))
                 {
                     // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file
@@ -372,7 +374,7 @@ public class FileType implements Serializable
 
     public Path getPath(Path parentDir, String basename)
     {
-        return parentDir.resolve(getName(parentDir, basename));
+        return FileUtil.appendName(parentDir, getName(parentDir, basename));
     }
 
     /**

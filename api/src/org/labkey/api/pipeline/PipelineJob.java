@@ -473,16 +473,17 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
     public static File findUniqueLogFile(File primaryFile, String baseName)
     {
+        String validBaseName = FileUtil.makeLegalName(baseName);
         // need to look in current and archived dirs for any unused log file names (issue 20987)
-        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
+        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName);
         File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
-        File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);
+        File fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName);
 
         int index = 1;
         while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
         {
-            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index));
-            fileLogArchived = FT_LOG.newFile(archivedDir, baseName + "." + (index++));
+            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName + "." + (index));
+            fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName + "." + (index++));
         }
 
         return fileLog;
