@@ -138,7 +138,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
- * Containers are named using filesystem-like paths e.g. /proteomics/comet/.  Each path
+ * Containers are named using filesystem-like paths e.g., /proteomics/comet/.  Each path
  * maps to a UID and set of permissions.  The current security scheme allows ACLs
  * to be specified explicitly on the directory or completely inherited.  ACLs are not combined.
  * <p/>
@@ -150,7 +150,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
  * a container is deleted, it should never get put back in the cache. We accomplish this by synchronizing on
  * the removal from the cache, and the database lookup/cache insertion. While a container is in the middle
  * of being deleted, it's OK for other clients to see it because FKs enforce that it's always internally
- * consistent, even if some of the data has already been deleted.
+ * consistent, even if some data has already been deleted.
  */
 public class ContainerManager
 {

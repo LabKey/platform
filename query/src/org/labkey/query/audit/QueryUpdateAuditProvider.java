@@ -50,10 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/21/13
- */
 public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_UPDATE_AUDIT_EVENT = "QueryUpdateAuditEvent";

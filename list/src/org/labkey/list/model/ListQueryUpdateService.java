@@ -476,15 +476,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Nullable Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException
     {
-        Map<String, Object> updateCounts = new HashMap<>();
-        updateCounts.put("listAuditEventsCreated", 0);
-        updateCounts.put("listAuditEventsMoved", 0);
-        updateCounts.put("listRecords", 0);
-        updateCounts.put("queryAuditEventsMoved", 0);
-
         Map<GUID, List<ListRecord>> containerRows = getListRowsForMoveRows(targetContainer, rows, errors);
-        if (errors.hasErrors() || containerRows.isEmpty())
-            return updateCounts;
+        if (errors.hasErrors())
+            throw errors;
+
+        int listAuditEventsCreatedCount = 0;
+        int listAuditEventsMovedCount = 0;
+        int listRecordsCount = 0;
+        int queryAuditEventsMovedCount = 0;
+
+        if (containerRows.isEmpty())
+            return moveRowsCounts(listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
 
         AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
@@ -495,10 +497,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 .stream()
                 .anyMatch(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType()));
 
-        int listAuditEventsCreatedCount = 0;
-        int listAuditEventsMovedCount = 0;
-        int listRecordsCount = 0;
-        int queryAuditEventsMovedCount = 0;
         ListAuditProvider listAuditProvider = new ListAuditProvider();
 
         try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
@@ -531,17 +529,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
                 listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
                 if (errors.hasErrors())
-                    return updateCounts;
+                    throw errors;
 
                 listRecordsCount += ContainerManager.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
                 if (errors.hasErrors())
-                    return updateCounts;
+                    throw errors;
 
                 if (hasAttachmentProperties)
                 {
                     moveAttachments(user, sourceContainer, targetContainer, records, errors);
                     if (errors.hasErrors())
-                        return updateCounts;
+                        throw errors;
                 }
 
                 queryAuditEventsMovedCount += QueryService.get().moveAuditEvents(targetContainer, rowPks, listSchemaName, _list.getName());
@@ -570,7 +568,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                 listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
                 if (errors.hasErrors())
-                    return updateCounts;
+                    throw errors;
             }
 
             if (!listAuditEvents.isEmpty())
@@ -586,12 +584,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "list");
         }
 
-        updateCounts.put("listAuditEventsCreated", listAuditEventsCreatedCount);
-        updateCounts.put("listAuditEventsMoved", listAuditEventsMovedCount);
-        updateCounts.put("listRecords", listRecordsCount);
-        updateCounts.put("queryAuditEventsMoved", queryAuditEventsMovedCount);
+        return moveRowsCounts(listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
+    }
 
-        return updateCounts;
+    private Map<String, Object> moveRowsCounts(int listAuditEventsCreated, int listAuditEventsMoved, int listRecords, int queryAuditEventsMoved)
+    {
+        return Map.of(
+            "listAuditEventsCreated", listAuditEventsCreated,
+            "listAuditEventsMoved", listAuditEventsMoved,
+            "listRecords", listRecords,
+            "queryAuditEventsMoved", queryAuditEventsMoved
+        );
     }
 
     private Map<GUID, List<ListRecord>> getListRowsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)

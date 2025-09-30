@@ -1925,7 +1925,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
-                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 AuditBehaviorType stAuditBehavior = samplesTable.getEffectiveAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
