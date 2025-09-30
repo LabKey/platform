@@ -1015,27 +1015,27 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public List<SQLFragment> getChangeStatements(TableChange change)
     {
-        List<SQLFragment> sql = new ArrayList<>();
+        List<SQLFragment> result = new ArrayList<>();
         switch (change.getType())
         {
-            case CreateTable -> sql.addAll(getCreateTableStatements(change));
+            case CreateTable -> result.addAll(getCreateTableStatements(change));
             case DropTable -> {
                 SQLFragment f = new SQLFragment("DROP TABLE ");
                 f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
-                sql.add(f);
+                result.add(f);
             }
-            case AddColumns -> sql.addAll(getAddColumnsStatements(change));
-            case DropColumns -> sql.add(getDropColumnsStatement(change));
-            case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
-            case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
-            case AddIndices -> sql.addAll(getCreateIndexStatements(change));
-            case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
-            case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
-            case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
+            case AddColumns -> result.addAll(getAddColumnsStatements(change));
+            case DropColumns -> result.add(getDropColumnsStatement(change));
+            case RenameColumns -> result.addAll(getRenameColumnsStatement(change));
+            case DropIndicesByName -> result.addAll(getDropIndexByNameStatements(change));
+            case AddIndices -> result.addAll(getCreateIndexStatements(change));
+            case ResizeColumns, ChangeColumnTypes -> result.addAll(getChangeColumnTypeStatement(change));
+            case DropConstraints -> result.addAll(getDropConstraintsStatement(change));
+            case AddConstraints -> result.addAll(getAddConstraintsStatement(change));
             default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
         }
 
-        return sql;
+        return result;
     }
 
     private Collection<? extends SQLFragment> getDropIndexByNameStatements(TableChange change)
@@ -1057,8 +1057,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
 
     /**
-     * Generate the Alter Table statement to change the size or type of a column
-     *
+     * Generate the Alter Table statement to change the size or type of the column
+     * <p>
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
      */
