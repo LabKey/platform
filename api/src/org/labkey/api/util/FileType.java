@@ -374,7 +374,7 @@ public class FileType implements Serializable
 
     public Path getPath(Path parentDir, String basename)
     {
-        return parentDir.resolve(getName(parentDir, basename));
+        return FileUtil.appendName(parentDir, getName(parentDir, basename));
     }
 
     /**
