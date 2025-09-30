@@ -218,7 +218,7 @@ public interface FileContentService
      * relative to the first parent container with an override
      */
     File getDefaultRoot(Container c, boolean createDir);
-    Path getDefaultRootPath(Container c, boolean createDir);
+    Path getDefaultRootPath(@NotNull Container c, boolean createDir);
 
     class DefaultRootInfo
     {

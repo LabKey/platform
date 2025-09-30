@@ -244,7 +244,7 @@ public class FileType implements Serializable
     {
         if (_supportGZ.booleanValue())  // TPP treats xml.gz as a native format
         {   // in the case of existing files, non-gz copy wins if present
-            Path f = parentDir!=null ? parentDir.resolve(name) : Path.of(name);
+            Path f = parentDir!=null ? FileUtil.appendName(parentDir, name) : Path.of(name);
             if (!NetworkDrive.exists(f))
             {  // non-gz copy doesn't exist - how about .gz version?
                 String gzname = name + ".gz";
@@ -252,7 +252,7 @@ public class FileType implements Serializable
                 {   // we like .gz for new filenames, so don't care if exists
                     return gzname;
                 }
-                f = parentDir!=null ? parentDir.resolve(gzname) : Path.of(gzname);
+                f = parentDir!=null ? FileUtil.appendName(parentDir, gzname) : Path.of(gzname);
                 if (NetworkDrive.exists(f))
                 { // we don't prefer .gz, but we support it if it exists
                     return gzname;
@@ -464,12 +464,12 @@ public class FileType implements Serializable
 
     public File newFile(File parent, String basename)
     {
-        return new File(parent, getName(parent, basename));
+        return FileUtil.appendName(parent, getName(parent, basename));
     }
 
     public Path newFile(Path parent, String basename)
     {
-        return parent.resolve(getName(parent, basename));
+        return FileUtil.appendName(parent, getName(parent, basename));
     }
 
     public boolean isType(File file)

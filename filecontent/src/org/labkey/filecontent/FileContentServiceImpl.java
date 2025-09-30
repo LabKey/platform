@@ -310,7 +310,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
-    public java.nio.file.Path getDefaultRootPath(Container c, boolean createDir)
+    public java.nio.file.Path getDefaultRootPath(@NotNull Container c, boolean createDir)
     {
         Container firstOverride = getFirstAncestorWithOverride(c);
 
@@ -325,7 +325,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             parentRoot = getFileRootPath(firstOverride);
         }
 
-        if (parentRoot != null && c != null && firstOverride != null)
+        if (parentRoot != null && firstOverride != null)
         {
             java.nio.file.Path fileRootPath;
             if (FileUtil.hasCloudScheme(parentRoot))
@@ -336,7 +336,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             else
             {
                 // For local, the path may be several directories deep (since it matches the LK folder path), so we should create the directories for that path
-                fileRootPath = new File(parentRoot.toFile(), getRelativePath(c, firstOverride)).toPath();
+                fileRootPath = FileUtil.appendPath(parentRoot.toFile(), Path.parse(getRelativePath(c, firstOverride))).toPath();
 
                 try
                 {
@@ -395,7 +395,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return null;
     }
 
-    private String getRelativePath(Container c, Container ancestor)
+    private @NotNull String getRelativePath(Container c, Container ancestor)
     {
         return c.getPath().replaceAll("^" + Pattern.quote(ancestor.getPath()), "");
     }

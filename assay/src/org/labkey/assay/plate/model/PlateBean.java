@@ -21,7 +21,7 @@ public class PlateBean extends Entity
     private String _description;
     private String _barcode;
 
-    public static PlateBean from(PlateImpl plate)
+    public static PlateBean from(PlateImpl plate, boolean includeEntityProperties)
     {
         PlateBean bean = new PlateBean();
 
@@ -37,6 +37,31 @@ public class PlateBean extends Entity
         bean.setPlateId(plate.getPlateId());
         bean.setDescription(plate.getDescription());
         bean.setBarcode(plate.getBarcode());
+
+        if (includeEntityProperties)
+        {
+            if (plate.getCreated() != null)
+                bean.setCreated(plate.getCreated());
+
+            var createdBy = plate.getCreatedByUser();
+            if (createdBy != null)
+                bean.setCreatedBy(createdBy.getUserId());
+
+            if (plate.getModified() != null)
+                bean.setModified(plate.getModified());
+
+            var modifiedBy = plate.getModifiedByUser();
+            if (modifiedBy != null)
+                bean.setModifiedBy(modifiedBy.getUserId());
+
+            var container = plate.getContainer();
+            if (container != null)
+                bean.setContainerId(container.getId());
+
+            var entityId = plate.getEntityId();
+            if (entityId != null)
+                bean.setEntityId(entityId);
+        }
 
         return bean;
     }

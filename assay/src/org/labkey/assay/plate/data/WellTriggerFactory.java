@@ -5,6 +5,7 @@ import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.LongHashMap;
@@ -38,10 +39,48 @@ public final class WellTriggerFactory implements TriggerFactory
     public @NotNull Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
         return List.of(
+            new ValidateRunImportedPlateTrigger(),
             new EnsureSampleWellTypeTrigger(),
             new ValidatePrimaryPlateSetUniqueSamplesTrigger(),
             new ComputeWellGroupsTrigger()
         );
+    }
+
+    @SuppressWarnings("InnerClassMayBeStatic")
+    private class ValidateRunImportedPlateTrigger implements Trigger
+    {
+        private final Set<Long> plateRowIds = new LongHashSet();
+
+        @Override
+        public void beforeUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        ) throws ValidationException
+        {
+            if (oldRow == null || errors.hasErrors() || !oldRow.containsKey(WellTable.Column.PlateId.name()))
+                return;
+
+            Long plateRowId = asLong(oldRow.get(WellTable.Column.PlateId.name()));
+            if (plateRowId == null)
+                return;
+
+            if (plateRowIds.contains(plateRowId))
+                return;
+
+            plateRowIds.add(plateRowId);
+            Plate plate = PlateManager.get().getPlate(c, plateRowId);
+            if (plate == null)
+                return;
+
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(c, user, plate);
+            if (runsInUse > 0)
+                throw new ValidationException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+        }
     }
 
     // When no "Type" is given but "SampleId" is populated, provide 'Sample' as the type

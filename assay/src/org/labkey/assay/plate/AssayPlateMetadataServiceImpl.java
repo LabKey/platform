@@ -164,7 +164,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             @Override
             public Map<String, Object> apply(Map<String, Object> row)
             {
-                // ensure the result data includes a wellLocation field with values like : A1, F12, etc
+                // ensure the result data includes a wellLocation field with position value (e.g., A1, F12, etc.)
                 Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
                 if (wellLocation == null)
                     throw new RuntimeValidationException("Imported data must contain a WellLocation column to support plate metadata integration.");
@@ -179,11 +179,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (plateIdentifier == null)
                     throw new RuntimeValidationException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
 
-                Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
-                if (plate == null)
-                    throw new RuntimeValidationException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
+                plateIdentifierMap.computeIfAbsent(plateIdentifier, k -> {
+                    Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
+                    if (plate == null)
+                        throw new RuntimeValidationException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
 
-                plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
+                    return Pair.of(plate, new HashMap<>());
+                });
+                Plate plate = plateIdentifierMap.get(plateIdentifier).first;
 
                 // if the plate identifier is the plate name, we need to make sure it resolves during importRows
                 // so replace it with the plateId (which will be unique)
@@ -205,12 +208,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     }
 
                     if (!wellSamples.isEmpty())
+                    {
                         // stash away any samples associated with the plate
                         ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
+                    }
                 }
 
                 PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
-                // need to adjust the column value to be 0 based to match the template locations
+                // need to adjust the column value to be 0-based to match the template locations
                 well.setColumn(well.getColumn() - 1);
 
                 if (!positionToWell.containsKey(well))
@@ -386,7 +391,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException(String.format("Unable to query the assay results for protocol : %s", protocol.getName()));
 
         // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging existing data.
-        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name());
+        FieldKey plateFieldKey = AssayResultDomainKind.Column.Plate.fieldKey();
         // Note that in the case where there is a transform script on the assay design, the LK data parsing might not have
         // found any rows, and we might be deferring to the transform script to do that parsing. This block of code should
         // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
@@ -1507,7 +1512,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
+    public @NotNull UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
     {
         return new PlateSchema(querySchema, contextualRoles);
     }
@@ -1524,7 +1529,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private final ExpProtocol _protocol;
         private final AssayProvider _provider;
         private final AssayRunUploadContext<?> _context;
-        private DomainProperty _stateProp;
 
         public PlateMetadataImportHelper(
             ExpData data,
@@ -1556,7 +1560,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             Domain runDomain = _provider.getRunDomain(_protocol);
             Domain resultDomain = _provider.getResultsDomain(_protocol);
-            _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+            DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
             DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
@@ -1629,7 +1633,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // Validate any data state values on the row. No hit selection / data state processing is done on import
             // because at this time transform script hit selection is not supported nor is there any intersection
             // in the re-import case yet.
-            validateRowDataStates(_container, map, _stateProp);
+            validateRowDataStates(_container, map, stateProp);
         }
 
         /**
@@ -1650,11 +1654,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                 AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
                 TableInfo resultsTable = schema.createDataTable(null, false);
+                boolean isReimport = isExistingRun();
 
                 // Re-select any hits that were present in the previous run, this works in conjunction with the code in
                 // mergeReRunData where previous hits are removed for any data unchanged by the new incoming data. At this
                 // point any remaining hits should represent selections we plan to move forward to the new run
-                if (isExistingRun())
+                if (isReimport)
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)
@@ -1676,6 +1681,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 }
 
                 AssayPlateMetadataService.get().applyHitSelectionCriteria(_container, _user, _protocol, resultsTable, List.of(_run.getRowId()));
+
+                PlateManager.get().addPlateImportAuditEvents(_container, _user, tx, _plateIdentifierMap.values().stream().toList(), _run, isReimport);
 
                 tx.commit();
             }
@@ -1711,7 +1718,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     new PlateManager.PlateData(null, plateType.getRowId(), null, null, Collections.emptyList())
             );
 
-            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null);
+            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null, null);
             List<Plate> plateSetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
             assertEquals("Expected two plates to be created.", 2, plateSetPlates.size());
             Plate plate = plateSetPlates.get(0);

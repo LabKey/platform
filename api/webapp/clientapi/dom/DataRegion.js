@@ -1214,7 +1214,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.getParameters = function(toLowercase) {
 
         var params = this.parameters ? this.parameters : {},
-            re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
+            re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + LABKEY.Utils.escapeRe(PARAM_PREFIX), 'i'),
             name;
 
         _getParameters(this).forEach(function(pair) {

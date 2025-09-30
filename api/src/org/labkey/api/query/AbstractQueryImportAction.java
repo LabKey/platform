@@ -472,26 +472,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
                 }
-                else
-                {
-                    // Resolve file under pipeline root
-                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root != null)
-                    {
-                        // Attempt absolute path first, then relative path from pipeline root
-                        File f = new File(path);
-                        if (!root.isUnderRoot(f))
-                            f = root.resolvePath(path);
-
-                        if (NetworkDrive.exists(f) && root.isUnderRoot(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
-                        {
-                            hasPostData = true;
-                            loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
-                            file = new FileAttachmentFile(dataFile, f.getName());
-                            originalName = f.getName();
-                        }
-                    }
-                }
 
                 if (!hasPostData)
                 {

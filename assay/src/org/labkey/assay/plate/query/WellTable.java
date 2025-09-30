@@ -1,10 +1,10 @@
 package org.labkey.assay.plate.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
@@ -13,11 +13,14 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.FieldKeyRowMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
@@ -33,6 +36,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
@@ -63,7 +67,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
@@ -89,9 +92,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Value,
         WellGroup;
 
+        private final FieldKey _fieldKey = FieldKey.fromParts(name());
+
         public FieldKey fieldKey()
         {
-            return FieldKey.fromParts(name());
+            return _fieldKey;
         }
     }
 
@@ -383,6 +388,18 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         return super.hasPermission(user, perm);
     }
 
+    @Override
+    public @NotNull Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        return CaseInsensitiveHashSet.of(Column.Position.name(), Column.PlateId.name());
+    }
+
+    @Override
+    public @NotNull AuditBehaviorType getDefaultAuditBehavior()
+    {
+        return AuditBehaviorType.DETAILED;
+    }
+
     protected static class WellUpdateService extends DefaultQueryUpdateService
     {
         private final TableInfo _provisionedTable;
@@ -456,26 +473,45 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
 
         @Override
-        protected Map<String, Object> updateRow(
-            User user,
-            Container container,
-            Map<String, Object> row,
-            @NotNull Map<String, Object> oldRow,
-            @Nullable Map<Enum, Object> configParameters
-        ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            // enforce no updates if the plate has been imported in an assay run
-            if (oldRow.containsKey(Column.PlateId.name()))
+            return getRow(user, container, keys, false);
+        }
+
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException, SQLException
+        {
+            aliasColumns(_columnMapping, keys);
+
+            Long rowId = (Long) JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
+            if (null == rowId)
+                throw new InvalidKeyException(String.format("Value must be supplied for key field '%s'", Column.RowId.name()), keys);
+
+            return _select(container, rowId, allowCrossContainer);
+        }
+
+        @Override
+        protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
+        {
+            throw new IllegalStateException("Should not be called");
+        }
+
+        private Map<String, Object> _select(Container container, Long rowId, boolean allowCrossContainer) throws SQLException
+        {
+            if (rowId == null)
+                return null;
+
+            SimpleFilter filter = new SimpleFilter(Column.RowId.fieldKey(), rowId);
+            if (!allowCrossContainer)
+                filter.addCondition(Column.Container.fieldKey(), container.getEntityId());
+
+            try (var results = new TableSelector(getQueryTable(), filter, null).getResults())
             {
-                Plate plate = PlateManager.get().getPlate(container, asInteger(oldRow.get(Column.PlateId.name())));
-                if (plate != null)
-                {
-                    int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
-                    if (runsInUse > 0)
-                        throw new QueryUpdateServiceException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
-                }
+                if (results.next())
+                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
             }
-            return super.updateRow(user, container, row, oldRow, configParameters);
+
+            return null;
         }
 
         @Override

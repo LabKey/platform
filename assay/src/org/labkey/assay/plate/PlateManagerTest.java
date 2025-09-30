@@ -1608,7 +1608,7 @@ public final class PlateManagerTest
         }
 
         // Act / Assert
-        var expectedMessage = String.format("Replicate group \"%s\" contains mismatched well data. Ensure all data aligns for the replicates declared in these wells.", commonWellValues.get("replicateGroup"));
+        var expectedMessage = String.format("Replicate group \"%s\" contains mismatched well data. Ensure the same data is recorded for each well in this replicate group across all plates in the plate set.", commonWellValues.get("replicateGroup"));
         assertCreatePlateThrows(expectedMessage, PLATE_TYPE_96_WELLS, plateName, null, sourcePlateData);
 
         // Fixup rows by making all rows the same and resubmit
@@ -1690,7 +1690,7 @@ public final class PlateManagerTest
 
         // Act / Assert
         // Expect group "R1" to fail validation as it currently contains different samples across plates 1 and 2.
-        var expectedMessage = "Replicate group \"R1\" contains mismatched well data. Ensure all data aligns for the replicates declared in these wells.";
+        var expectedMessage = "Replicate group \"R1\" contains mismatched well data. Ensure the same data is recorded for each well in this replicate group across all plates in the plate set.";
         assertCreatePlateSetThrows(expectedMessage, plateSetImpl, plateData, null);
 
         // Fixup rows by making all rows the same and resubmit
@@ -2008,7 +2008,7 @@ public final class PlateManagerTest
         @Nullable Long parentPlateSetId
     ) throws Exception
     {
-        return PlateManager.get().createPlateSet(container, user, plateSet, plates, parentPlateSetId);
+        return PlateManager.get().createPlateSet(container, user, plateSet, plates, parentPlateSetId, null);
     }
 
     private void assertCreatePlateSetThrows(

@@ -30,6 +30,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     private String _description;
     private String _name;
     private String _plateSetId;
+    private transient Long _parentPlateSetId;
     private Long _primaryPlateSetId;
     private Long _rootPlateSetId;
     private Long _rowId;
@@ -194,6 +195,18 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    @JsonIgnore
+    public Long getParentPlateSetId()
+    {
+        return _parentPlateSetId;
+    }
+
+    @JsonIgnore
+    public void setParentPlateSetId(Long parentPlateSetId)
+    {
+        _parentPlateSetId = parentPlateSetId;
     }
 
     public Long getPrimaryPlateSetId()
