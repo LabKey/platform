@@ -181,7 +181,7 @@ public interface QueryUpdateService extends HasPermission
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
-    List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
+    @Nullable List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
                                                BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
         throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
