@@ -143,12 +143,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendStatement(Appendable sql, String statement)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
@@ -388,12 +382,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String sanitizeException(SQLException ex)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
@@ -507,7 +495,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public List<String> getChangeStatements(TableChange change)
+    public List<SQLFragment> getChangeStatements(TableChange change)
     {
         throw new RuntimeException("schema changes not currently supported via SimpleSqlDialect");
     }
