@@ -1029,6 +1029,32 @@ dependencies {
         )
     )
 
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "com.google.oauth-client:google-oauth-client:${googleOauthClientVersion}",
+                    "Google OAuth Client Library",
+                    "Google",
+                    "https://developers.google.com/api-client-library/java/google-oauth-java-client/download",
+                    "Creative Commons 3.0",
+                    "https://creativecommons.org/licenses/by/3.0/",
+                    "OAuth library",
+            )
+    )
+
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "com.google.http-client:google-http-client-jackson2:${googleHttpClientVersion}",
+                    "Google API Client Library",
+                    "Google",
+                    "https://developers.google.com/api-client-library/java/google-api-java-client/setup#google-api-client-jackson2",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "Jackson 2 Extensions To The Google HTTP Client Library For Java",
+            )
+    )
+
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
 }

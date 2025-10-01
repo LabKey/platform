@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import com.google.api.client.auth.oauth2.TokenResponse;
 import jakarta.mail.Address;
 import jakarta.mail.Authenticator;
 import jakarta.mail.BodyPart;
@@ -42,6 +43,7 @@ import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.SMTPOAuth2TokenProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
@@ -127,6 +129,7 @@ public class MailHelper
                     if (name.startsWith("mail.smtp."))
                         properties.put(name, context.getInitParameter(name));
                 }
+                properties.put("mail.debug", "true");
             }
 
             if (!properties.isEmpty())
@@ -138,13 +141,53 @@ public class MailHelper
                 {
                     String username = session.getProperty("mail.smtp.user");
                     String password = session.getProperty("mail.smtp.password");
-                    session = Session.getInstance(session.getProperties(), new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication()
+                    if (null != password)
+                    {
+                        session = Session.getInstance(session.getProperties(), new Authenticator()
                         {
-                            return new PasswordAuthentication(username, password);
+                            @Override
+                            protected PasswordAuthentication getPasswordAuthentication()
+                            {
+                                return new PasswordAuthentication(username, password);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        String oauthTokenUrl = session.getProperty("mail.smtp.oauth2.tokenURL");
+                        String authMechanisms = session.getProperty("mail.smtp.auth.mechanisms");
+                        String clientId = session.getProperty("mail.smtp.oauth2.clientId");
+                        String clientSecret = session.getProperty("mail.smtp.oauth2.clientSecret");
+                        String scope = session.getProperty("mail.smtp.oauth2.scope");
+                        if ("XOAUTH2".equalsIgnoreCase(authMechanisms) && null != oauthTokenUrl)
+                        {
+                            _log.info("Using SMTP XOAUTH2 authentication");
+
+                            Properties sessionProps = session.getProperties();
+                            _log.info("SMTP properties:" + sessionProps.stringPropertyNames().stream()
+                                    .filter(n -> n.startsWith("mail.smtp."))
+                                    .map(n -> "\n  " + n + "=" + (n.toLowerCase().contains("password") ? "*****" : sessionProps.getProperty(n)))
+                                    .reduce("", String::concat));
+                            session = Session.getInstance(sessionProps, new Authenticator()
+                            {
+                                @Override
+                                protected PasswordAuthentication getPasswordAuthentication()
+                                {
+                                    SMTPOAuth2TokenProvider tokenProvider = new SMTPOAuth2TokenProvider(clientId, clientSecret, scope, oauthTokenUrl);
+                                    try
+                                    {
+                                        TokenResponse response = tokenProvider.getTokenRequest(null).execute();
+                                        _log.info("Obtained new access token, expires in {} seconds", response.getExpiresInSeconds());
+                                        return new PasswordAuthentication(username, response.getAccessToken());
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             }
         }
