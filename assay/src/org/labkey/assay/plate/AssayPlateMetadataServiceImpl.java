@@ -1517,6 +1517,38 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateSchema(querySchema, contextualRoles);
     }
 
+    record WellSampleData(Long sampleId, Integer row, Integer col) {}
+
+    @Override
+    public Map<String, Long> getWellLocationToSampleIdMap(Long plateId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateid"), plateId);
+        List<WellSampleData> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), Set.of("SampleId", "Row", "Col"), filter, null).getArrayList(WellSampleData.class);
+        Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
+
+        for (WellSampleData well : wells)
+        {
+            PositionImpl pos = new PositionImpl(null, well.row, well.col);
+            wellLocationToSampleIdMap.put(pos.getDescription(), well.sampleId);
+        }
+
+        return wellLocationToSampleIdMap;
+    }
+
+    @Override
+    public boolean isWellLookup(ColumnInfo col)
+    {
+        if (col == null) return false;
+
+        if (!col.isLookup()) return false;
+
+        var wellTable = AssayDbSchema.getInstance().getTableInfoWell();
+        var lookupTable = col.getFkTableInfo();
+
+        return lookupTable.getSchema().getName().equalsIgnoreCase(wellTable.getSchema().getName())
+                && lookupTable.getName().equalsIgnoreCase(wellTable.getName());
+    }
+
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
         private final Map<Long, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
