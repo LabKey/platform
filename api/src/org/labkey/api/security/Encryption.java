@@ -507,7 +507,7 @@ public class Encryption
     public static Algorithm getAES128(EncryptionMigrationHandler handler)
     {
         // Ensure that every user of AES128 has registered an EncryptionMigrationHandler
-        assert null != handler && (Encryption.EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
+        assert null != handler && (EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
 
         if (isEncryptionPassPhraseSpecified())
             return new AES(getEncryptionPassPhrase(), 128, ENCRYPTION_KEY_CHANGED);

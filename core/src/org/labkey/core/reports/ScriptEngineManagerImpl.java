@@ -167,12 +167,12 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 }
             }
         });
-        LOG.info("  " + "Migration of encrypted content in scripting engine configurations is complete");
+        LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
     };
 
-   public static void registerEncryptionMigrationHandler()
+    public static void registerEncryptionMigrationHandler()
     {
-        Encryption.EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
     }
 
     private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)

@@ -163,6 +163,6 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
 
         // Clear the cache of encrypted properties since we updated the database directly
         clearCache();
-        LOG.info("  " + "Migration of encrypted property store values is complete");
+        LOG.info("  Migration of encrypted property store values is complete");
     }
 }
