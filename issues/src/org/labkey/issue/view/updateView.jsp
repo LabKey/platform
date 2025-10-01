@@ -155,101 +155,105 @@
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    function filterRe(e, input, re){
-        if (e.isSpecialKey())
-            return true;
-
-        var cc = String.fromCharCode(e.getCharCode());
-        if (!cc)
-            return true;
-
-        if (!re.test(cc))
-        {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            else {
-                e.cancelBubble = true;
-            }
-            if (e.preventDefault) {
-                e.preventDefault();
-            }
-            else {
-                e.returnValue = false;
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    function filterCommaSepNumber(e, input) {
-        return filterRe(e, input, /^[\d,\s]+$/);
-    }
-
-    function onSubmit(){
-        (function($){
-            $("input[name='dirty']").val(isDirty());
-            LABKEY.setSubmit(true);
-        })(jQuery);
-    }
-
     (function($){
 
-        var column1 = [];
-        var column2 = [];
-        var startColOneIdx = 11;
-        var startColTwoIdx = 21;
+        onSubmit = function(){
+            $("input[name='dirty']").val(isDirty());
+            // Issue:53907, disable all submit buttons to prevent multiple submits
+            $('a[data-submitid]').addClass('labkey-disabled-button');
 
-        <%
+            LABKEY.setSubmit(true);
+        };
+
+        isDirty = function (){
+            let origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
+            let notify = document.getElementById("notifyList");
+            if (notify && origNotify != notify.value)
+                return true;
+            return LABKEY.isDirty();
+        };
+
+        filterCommaSepNumber = function(e, input){
+            return filterRe(e, input, /^[\d,\s]+$/);
+        };
+
+        filterRe = function(e, input, re){
+            if (e.isSpecialKey())
+                return true;
+
+            var cc = String.fromCharCode(e.getCharCode());
+            if (!cc)
+                return true;
+
+            if (!re.test(cc))
+            {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                else {
+                    e.cancelBubble = true;
+                }
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                else {
+                    e.returnValue = false;
+                }
+                return false;
+            }
+
+            return true;
+        };
+
+        initialize = function(){
+            let column1 = [];
+            let column2 = [];
+            let startColOneIdx = 11;
+            let startColTwoIdx = 21;
+
+            <%
             for (DomainProperty prop : column1Props)
             {%>
-        column1.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
+                column1.push(<%=q(ColumnInfo.legalNameFromName(prop.getName()))%>);<%
             }
             for (DomainProperty prop : column2Props)
             {%>
-        column2.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
+                column2.push(<%=q(ColumnInfo.legalNameFromName(prop.getName()))%>);<%
             }
-        %>
+            %>
 
-        $(function() {
-            $("input[name='title']").attr("tabindex", "1").change(function(){LABKEY.setDirty(true);});
-            $("select[name='assignedTo']").attr("tabindex", "2").change(function(){LABKEY.setDirty(true);});
-            $("select[name='type']").attr("tabindex", "3").change(function(){LABKEY.setDirty(true);});
-            $("select[name='area']").attr("tabindex", "4").change(function(){LABKEY.setDirty(true);});
-            $("select[name='priority']").attr("tabindex", "5").change(function(){LABKEY.setDirty(true);});
-            $("select[name='milestone']").attr("tabindex", "6").change(function(){LABKEY.setDirty(true);});
-            $("textarea[name='comment']").attr("tabindex", "7").change(function(){LABKEY.setDirty(true);});
-            $("select[name='resolution']").attr("tabindex", "8").change(function(){LABKEY.setDirty(true);});
-            $("input[name='duplicate']").attr("tabindex", "9").change(function(){LABKEY.setDirty(true);});
+            // Set tabindex and change handler to set dirty flag
+            $("input[name='title']").attr("tabindex", "1").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='AssignedTo']").attr("tabindex", "2").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='Type']").attr("tabindex", "3").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='Area']").attr("tabindex", "4").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='Priority']").attr("tabindex", "5").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='Milestone']").attr("tabindex", "6").on("change", function(){LABKEY.setDirty(true);});
+            $("textarea[name='comment']").attr("tabindex", "7").on("change", function(){LABKEY.setDirty(true);});
+            $("select[name='Resolution']").attr("tabindex", "8").on("change", function(){LABKEY.setDirty(true);});
+            $("input[name='duplicate']").attr("tabindex", "9").on("change", function(){LABKEY.setDirty(true);});
             $("input[name='related']").attr("tabindex", "10");
 
             for (var i=0; i < column1.length; i++){
-                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++).change(function(){
+                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++).on("change", function(){
                     LABKEY.setDirty(true);
                 });
             }
 
             for (i=0; i < column2.length; i++){
-                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++).change(function(){
+                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++).on("change", function(){
                     LABKEY.setDirty(true);
                 });
             }
-
             LABKEY.setDirty(<%=bean.isDirty()%>)
+        };
+
+        LABKEY.Utils.onReady(function(){
+            initialize();
+            window.onbeforeunload = LABKEY.beforeunload(isDirty);
         });
+
     })(jQuery);
-
-    var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
-
-    function isDirty(){
-        var notify = document.getElementById("notifyList");
-        if (notify && origNotify != notify.value)
-            return true;
-        return LABKEY.isDirty();
-    }
-
-    window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
 </script>
 <labkey:form method="POST" onsubmit="onSubmit();" enctype="multipart/form-data" layout="horizontal">
@@ -268,7 +272,7 @@
         %>
     </table>
     <div class="labkey-button-bar-separate">
-        <%= button("Save").submit(true).name(bean.getAction().name()).disableOnClick(true) %>
+        <%= button("Save").submit(true).name(bean.getAction().name()) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <table class="lk-fields-table" style="margin-top:10px;">
@@ -408,7 +412,7 @@
         <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
     <div class="labkey-button-bar-separate" style="margin-bottom:10px">
-        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
+        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <% final Collection<IssueObject.CommentObject> comments = issue.getCommentObjects();
