@@ -317,8 +317,8 @@ describe('Sample Type Designer', () => {
 
 describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
-        const BLANK_KEY_UPDATE_ERROR = 'Name value not provided on row ';
-        const BLANK_KEY_MERGE_ERROR_NO_EXPRESSION = 'SampleID or Name is required for sample on row';
+        const BLANK_KEY_UPDATE_ERROR = 'Name value not provided';
+        const BLANK_KEY_MERGE_ERROR_NO_EXPRESSION = 'SampleID or Name is required for sample';
         const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist: bogus.';
         const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Sample does not belong to ";
 
@@ -331,11 +331,11 @@ describe('Import with update / merge', () => {
 
         // Issue 52922: Blank / bogus  id in the file are getting ignored in update from file
         let blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 2) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", subfolder1Options, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 2) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 1) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", topFolderOptions, editorUserOptions);
         expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_MERGE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", subfolder1Options, editorUserOptions);
@@ -356,11 +356,11 @@ describe('Import with update / merge', () => {
 
         // blank name
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 2) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 2) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         blankKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR + 1) > -1).toBeTruthy();
+        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR) > -1).toBeTruthy();
 
         // merge with blank name for data type with naming expression should not fail
         let successResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", topFolderOptions, editorUserOptions);

@@ -1842,13 +1842,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // Failed to generate a name due to some part of the expression not in the row
                 String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
-                    addRowError("Failed to generate name for aliquot " + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                    addRowError("Failed to generate name for aliquot" + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
-                    addRowError("Failed to generate name for sample " + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    addRowError("Failed to generate name for sample" + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (_sampleType.hasNameAsIdCol())
-                    addRowError("SampleID or Name is required for sample " + rowText + ".");
+                    addRowError("SampleID or Name is required for sample" + rowText + ".");
                 else
-                    addRowError("All id columns are required for sample " + rowText + ".");
+                    addRowError("All id columns are required for sample" + rowText + ".");
             }
         }
 

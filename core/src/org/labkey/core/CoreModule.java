@@ -319,6 +319,7 @@ import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
+import org.radeox.filter.regex.RegexFilter;
 import org.radeox.test.BaseRenderEngineTest;
 import org.radeox.test.filter.BasicRegexTest;
 import org.radeox.test.filter.BoldFilterTest;
@@ -1596,7 +1597,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             WikiLinkFilterTest.class,
             SmileyFilterTest.class,
             ListFilterTest.class,
-            HeadingFilterTest.class
+            HeadingFilterTest.class,
+            RegexFilter.TestCase.class
         );
     }
 

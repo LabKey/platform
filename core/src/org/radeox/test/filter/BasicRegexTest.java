@@ -29,6 +29,7 @@ import org.radeox.engine.context.BaseRenderContext;
 import org.radeox.engine.context.BaseInitialRenderContext;
 import org.radeox.filter.context.BaseFilterContext;
 import org.radeox.filter.context.FilterContext;
+import org.radeox.filter.regex.RegexFilter;
 import org.radeox.filter.regex.RegexReplaceFilter;
 import org.radeox.filter.regex.RegexTokenFilter;
 import org.radeox.regex.Compiler;
@@ -111,7 +112,7 @@ public class BasicRegexTest {
 
   @org.junit.Test
   public void testXmlCodeFilter() {
-    Pattern p = compiler.compile("\"(([^\"\\\\]|\\.)*)\"");
+    Pattern p = compiler.compile(RegexFilter.QUOTE_REGEX);
     Matcher m = Matcher.create("<xml attr=\"attr\"/>", p);
 
     assertEquals("Quote replaced", "<xml attr=<span class=\"xml-quote\">\"attr\"</span>/>", m.substitute("<span class=\"xml-quote\">\"$1\"</span>"));

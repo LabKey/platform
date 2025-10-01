@@ -36,6 +36,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -103,7 +104,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
                 {
                     throw new NotFoundException(fileName);
                 }
-                File file = new File(f, fileName);
+                File file = FileUtil.appendName(f, fileName);
                 if (!NetworkDrive.exists(file))
                 {
                     throw new NotFoundException(fileName);

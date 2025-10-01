@@ -1762,8 +1762,10 @@ public class NameGenerator
         }
 
         @Override
-        protected StringExpressionFactory.StringPart parsePart(String expression)
+        protected StringExpressionFactory.StringPart parsePart(@NotNull String expression)
         {
+            if (expression.length() > 500)
+                throw new IllegalArgumentException("\"" + expression + "\" cannot exceed 500 characters.");
             Matcher counterMatcher = WITH_COUNTER_PATTERN.matcher(expression);
             if (counterMatcher.find())
             {
