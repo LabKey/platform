@@ -30,6 +30,7 @@ import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
@@ -108,6 +109,20 @@ public class CoreUpgradeCode implements UpgradeCode
                 deleteSql = tableInfo.getSqlDialect().appendInClauseSql(deleteSql, toRemove);
                 new SqlExecutor(tableInfo.getSchema()).execute(deleteSql);
             }
+        }
+    }
+
+
+    /**
+     * Called from core-25.007-25.008.sql
+     * We're switching AES cipher variants and need to migrate existing encrypted values
+     */
+    @SuppressWarnings("unused")
+    public void migrateAES(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            Encryption.migrateUsingOldAESConfig();
         }
     }
 

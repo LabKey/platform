@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
+import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.logging.LogHelper;
@@ -94,9 +95,11 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     }
 
     @Override
-    public void migrateEncryptedContent(String oldPassPhrase, String keySource)
+    public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig config)
     {
-        LOG.info("  Attempting to migrate encrypted property store values");
+        Encryption.Algorithm legacyAes = Encryption.getAES128(oldPassPhrase, keySource, config);
+
+        LOG.info("  " + "Attempting to migrate encrypted property store values");
         TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
         TableInfo props = PropertySchema.getInstance().getTableInfoProperties();
 
@@ -104,7 +107,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
             int set = (int)map.get("Set");
             String encryption = (String)map.get("Encryption");
             String propertySetName = "\"" + map.get("Category") + "\" (Set = " + set + ")";
-            LOG.info("    Attempting to migrate encrypted property set " + propertySetName);
+            LOG.info("    Attempting to migrate encrypted property set {}", propertySetName);
             PropertyEncryption pe = PropertyEncryption.getBySerializedName(encryption);
 
             if (null != pe)
@@ -117,11 +120,24 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
                     {
                         String name = (String) m.get("Name");
                         String encryptedValue = (String) m.get("Value");
-                        LOG.info("      Attempting to decrypt property \"" + name + "\"");
-                        String decryptedValue = pe.decrypt(Base64.decodeBase64(encryptedValue), oldPassPhrase, keySource);
-                        String newEncryptedValue = Base64.encodeBase64String(pe.encrypt(decryptedValue));
-                        assert decryptedValue.equals(pe.decrypt(Base64.decodeBase64(newEncryptedValue)));
-                        newProps.put(name, newEncryptedValue);
+
+                        String newEncryptedValue;
+                        try
+                        {
+                            LOG.info("      Attempting to decrypt property \"{}\"", name);
+                            String decryptedValue = legacyAes.decrypt(Base64.decodeBase64(encryptedValue));
+                            newEncryptedValue = Base64.encodeBase64String(pe.encrypt(decryptedValue));
+                            assert decryptedValue.equals(pe.decrypt(Base64.decodeBase64(newEncryptedValue)));
+                            if (newEncryptedValue != null)
+                            {
+                                newProps.put(name, newEncryptedValue);
+                            }
+
+                        }
+                        catch (DecryptionException e)
+                        {
+                            LOG.warn("      Failed to decrypt property \"{}\". Skipping.", name);
+                        }
                     }
 
                     for (Map.Entry<String, String> entry : newProps.entrySet())
@@ -132,21 +148,21 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
                         }
                         catch (RuntimeSQLException e)
                         {
-                            LOG.error("Failed to save re-encrypted property \"" + entry.getKey() + "\"", e);
+                            LOG.error("Failed to save re-encrypted property \"{}\"", entry.getKey(), e);
                         }
                     }
 
-                    LOG.info("    Successfully migrated encrypted property set " + propertySetName);
+                    LOG.info("    Successfully migrated encrypted property set {}", propertySetName);
                 }
                 catch (DecryptionException e)
                 {
-                    LOG.warn("    Failed to decrypt the previous property. Skipping encrypted property set " + propertySetName);
+                    LOG.warn("    Failed to decrypt the previous property. Skipping encrypted property set {}", propertySetName);
                 }
             }
         });
 
         // Clear the cache of encrypted properties since we updated the database directly
         clearCache();
-        LOG.info("  Migration of encrypted property store values is complete");
+        LOG.info("  " + "Migration of encrypted property store values is complete");
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.EncryptedPropertyStore;
+import org.labkey.api.data.NormalPropertyStore;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
@@ -51,12 +52,14 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -79,6 +82,7 @@ public class Encryption
     public static final SecureRandom SR;
     private static final String ENCRYPTION_PASS_PHRASE;
     private static final String KEY_CHANGE_GUIDANCE = "An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.";
+    private static boolean _migrateUsingOldAESConfig = false;
 
     static
     {
@@ -137,21 +141,42 @@ public class Encryption
     {
         if (isEncryptionPassPhraseSpecified())
         {
-            LOG.info("Attempting to test the integrity of the configured encryption key");
+            testEncryptionKey(getEncryptionPassPhrase(), AESConfig.current, "configured encryption key");
+        }
+    }
+
+    // Test encryption key with specific passphrase and AES config. Used for testing old keys before migration.
+    private static void testEncryptionKey(String passPhrase, AESConfig config, String keyDescription)
+    {
+        if (passPhrase != null)
+        {
+            LOG.info("Attempting to test the integrity of the " + keyDescription);
 
             try
             {
+                // Create a temporary encrypted property store using the specified passphrase and config
+                Algorithm testAlgorithm = new AES(passPhrase, 128, keyDescription, config);
+
                 // On trial deployments, encryption key can change between initial bootstrap and the "new install"
                 // startup, so always delete if "newinstall" file is present. See Issue 48346.
                 // Use low-level deleteSetDirectly() method to skip decryption attempt and resulting admin warnings.
                 if (ModuleLoader.getInstance().isNewInstall())
                     PropertyManager.deleteSetDirectly(PropertyManager.SHARED_USER, ContainerManager.getRoot().getId(), TEST_ENCRYPTION_CATEGORY, (EncryptedPropertyStore)PropertyManager.getEncryptedStore());
 
-                // This will likely throw if the encryption key has changed
-                WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
-
-                if (map.isEmpty())
+                // Get the raw values from the store so we can attempt decrypt with the old setup
+                PropertyManager.PropertyMap rawMap = new NormalPropertyStore()
                 {
+                    @Override
+                    protected boolean isValidPropertyMap(PropertyManager.PropertyMap props)
+                    {
+                        return true;
+                    }
+                }.getProperties(TEST_ENCRYPTION_CATEGORY);
+
+
+                if (rawMap.isEmpty())
+                {
+                    WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
                     byte[] randomBytes = generateRandomBytes(TEST_BYTES_LENGTH);
                     MessageDigest sha1 = MessageDigest.getInstance("SHA1");
                     byte[] hash = sha1.digest(randomBytes);
@@ -164,8 +189,10 @@ public class Encryption
                 }
                 else
                 {
-                    String base64 = map.get(TEST_BYTES_NAME);
-                    byte[] combined = Base64.decodeBase64(base64); // This doesn't seem to throw, no matter what garbage you throw at it
+                    String rawEncryptedValue = rawMap.get(TEST_BYTES_NAME);
+                    String decrypted = testAlgorithm.decrypt(Base64.decodeBase64(rawEncryptedValue));
+
+                    byte[] combined = Base64.decodeBase64(decrypted); // This doesn't seem to throw, no matter what garbage you throw at it
                     if (combined.length != TEST_BYTES_LENGTH + SHA1_LENGTH)
                     {
                         // Base64 decoding problem -- log it and treat as a decryption failure
@@ -181,7 +208,7 @@ public class Encryption
                         byte[] hash = sha1.digest(randomBytes);
                         if (Arrays.equals(storedHash, hash))
                         {
-                            LOG.info("Encryption key test succeeded: encryption key has not changed");
+                            LOG.info("Encryption key test succeeded");
                         }
                         else
                         {
@@ -195,8 +222,8 @@ public class Encryption
             }
             catch (DecryptionException de)
             {
-                // getWritableProperties() has already incremented the exception count, so just log
                 LOG.error("Encryption key test failed: decryption of test property failed", de);
+                DECRYPTION_EXCEPTIONS.incrementAndGet();
                 logFailureGuidance();
             }
             catch (NoSuchAlgorithmException ae)
@@ -319,21 +346,62 @@ public class Encryption
         return null != getEncryptionPassPhrase();
     }
 
+    public static void migrateUsingOldAESConfig()
+    {
+        _migrateUsingOldAESConfig = true;
+    }
+
     public interface Algorithm
     {
-        @NotNull byte[] encrypt(@NotNull String plainText);
-        @NotNull String decrypt(@NotNull byte[] cipherText);
+        byte @NotNull[] encrypt(@NotNull String plainText);
+        @NotNull String decrypt(byte @NotNull[] cipherText);
+    }
+
+    public enum AESConfig
+    {
+        /** Our preferred config */
+        current(12, "AES/GCM/NoPadding")
+                {
+                    @Override
+                    protected AlgorithmParameterSpec createIvSpec(byte[] iv)
+                    {
+                        return new GCMParameterSpec(128, iv);
+                    }
+                },
+        /** Old config needed for upgrading existing values */
+        legacy(16, "AES/CBC/PKCS5Padding")
+                {
+                    @Override
+                    protected AlgorithmParameterSpec createIvSpec(byte[] iv)
+                    {
+                        return new IvParameterSpec(iv);
+                    }
+                };
+
+        private final int _ivLength;
+        private final String _cipherName;
+
+        AESConfig(int ivLength, String cipherName)
+        {
+            _ivLength = ivLength;
+            _cipherName = cipherName;
+        }
+
+        public int getIvLength()
+        {
+            return _ivLength;
+        }
+
+        public String getCipherName()
+        {
+            return _cipherName;
+        }
+
+        protected abstract AlgorithmParameterSpec createIvSpec(byte[] iv);
     }
 
     /*
         Wrapper class that makes it easier to encrypt/decrypt using AES and a pass phrase.
-
-        Encryption: AES
-        Mode of operation: CBC
-        Padding: PKCS #5
-        Initialization vector: random 16-byte IV, generated for each encryption
-
-        Key generation: PKCS #5 v2.0
         Salt: Standard server salt
         Iteration count: 65,536
         Key length: specified in constructor parameter
@@ -342,10 +410,17 @@ public class Encryption
     {
         private final @Nullable SecretKeySpec _keySpec;
         private final String _keySource;
+        private final AESConfig _config;
 
         public AES(String passPhrase, int keyLength, String keySource)
         {
+            this(passPhrase, keyLength, keySource, AESConfig.current);
+        }
+
+        public AES(String passPhrase, int keyLength, String keySource, AESConfig config)
+        {
             _keySource = keySource;
+            _config = config;
             if (null == passPhrase)
                 throw new IllegalStateException("Pass phrase cannot be null");
 
@@ -361,19 +436,18 @@ public class Encryption
             }
         }
 
-        @NotNull
         @Override
-        public byte[] encrypt(@NotNull String plainText)
+        public byte @NotNull[] encrypt(@NotNull String plainText)
         {
             try
             {
-                // Generate a random, 16-byte initialization vector (IV) for use with this one encryption
-                byte[] iv = generateRandomBytes(16);
+                // Generate a random initialization vector (IV) for use with this one encryption
+                byte[] iv = generateRandomBytes(_config.getIvLength());
 
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                cipher.init(Cipher.ENCRYPT_MODE, _keySpec, new IvParameterSpec(iv));
+                Cipher cipher = Cipher.getInstance(_config.getCipherName());
+                cipher.init(Cipher.ENCRYPT_MODE, _keySpec, _config.createIvSpec(iv));
 
-                // First 16 bytes is the iv, remainder is the encrypted bytes
+                // First bytes is the iv, remainder is the encrypted bytes
                 return ArrayUtils.addAll(iv, cipher.doFinal(plainText.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
             }
             catch (Exception e)
@@ -384,15 +458,16 @@ public class Encryption
 
         @NotNull
         @Override
-        public String decrypt(@NotNull byte[] cipherText)
+        public String decrypt(byte @NotNull[] cipherText)
         {
             try
             {
-                // Initialization vector (IV) is the first 16 bytes
-                byte[] iv = ArrayUtils.subarray(cipherText, 0, 16);
-                byte[] encrypted = ArrayUtils.subarray(cipherText, 16, cipherText.length);
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                cipher.init(Cipher.DECRYPT_MODE, _keySpec, new IvParameterSpec(iv));
+                // Initialization vector (IV) is the first bytes according to config
+                int ivLength = _config.getIvLength();
+                byte[] iv = ArrayUtils.subarray(cipherText, 0, ivLength);
+                byte[] encrypted = ArrayUtils.subarray(cipherText, ivLength, cipherText.length);
+                Cipher cipher = Cipher.getInstance(_config.getCipherName());
+                cipher.init(Cipher.DECRYPT_MODE, _keySpec, _config.createIvSpec(iv));
                 return new String(cipher.doFinal(encrypted), StringUtilsLabKey.DEFAULT_CHARSET);
             }
             catch (BadPaddingException e)
@@ -432,7 +507,7 @@ public class Encryption
     public static Algorithm getAES128(EncryptionMigrationHandler handler)
     {
         // Ensure that every user of AES128 has registered an EncryptionMigrationHandler
-        assert null != handler && (EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
+        assert null != handler && (Encryption.EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
 
         if (isEncryptionPassPhraseSpecified())
             return new AES(getEncryptionPassPhrase(), 128, ENCRYPTION_KEY_CHANGED);
@@ -441,12 +516,12 @@ public class Encryption
     }
 
     /**
-     * Same as above, but caller specifies the pass phrase. Used for one special case: migrating encrypted properties
-     * and settings after changing an encryption key. See {@link EncryptionMigrationHandler}.
+     * Same as above, but caller specifies the pass phrase and AES configuration. Used for migrating encrypted content 
+     * from one AES configuration to another.
      */
-    public static Algorithm getAES128(String encryptionPassPhrase, String keySource)
+    public static Algorithm getAES128(String encryptionPassPhrase, String keySource, AESConfig config)
     {
-        return new AES(encryptionPassPhrase, 128, keySource);
+        return new AES(encryptionPassPhrase, 128, keySource, config);
     }
 
     public interface EncryptionMigrationHandler
@@ -458,29 +533,68 @@ public class Encryption
             HANDLERS.add(handler);
         }
 
-        void migrateEncryptedContent(String oldPassPhrase, String keySource);
+        void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig);
     }
 
     public static void checkMigration()
     {
         String oldPassPhrase = getOldEncryptionPassPhrase();
+        AESConfig oldConfig = AESConfig.current;
 
-        if (null != oldPassPhrase && isEncryptionPassPhraseSpecified())
+        if (isEncryptionPassPhraseSpecified())
         {
-            String keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
-            LOG.info("OldEncryptionKey was found in " + AppProps.getInstance().getWebappConfigurationFilename() +
-                ". Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey.");
+            boolean migrationNeeded = false;
+            String keySource = null;
 
-            EncryptionMigrationHandler.HANDLERS
-                .forEach(handler -> handler.migrateEncryptedContent(oldPassPhrase, keySource));
+            if (null != oldPassPhrase)
+            {
+                keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
+                LOG.info("{}. Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey.", keySource);
+                migrationNeeded = true;
+            }
 
-            CacheManager.clearAllKnownCaches();
-            LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
-            LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+            if (_migrateUsingOldAESConfig)
+            {
+                migrationNeeded = true;
+                oldConfig = AESConfig.legacy;
+                LOG.info("Migrating existing encrypted content from legacy AES configuration to current AES configuration.");
+            }
+
+            if (migrationNeeded)
+            {
+                final AESConfig migrationConfig = oldConfig;
+                final String message = keySource;
+                final String passPhrase = oldPassPhrase != null ? oldPassPhrase : getEncryptionPassPhrase();
+
+                // Test the old encryption key/algorithm before attempting migration
+                String testDescription = (keySource != null) ? "old encryption key" : "legacy AES algorithm";
+                testEncryptionKey(passPhrase, migrationConfig, testDescription);
+                if (DECRYPTION_EXCEPTIONS.get() == 0)
+                {
+                    Encryption.EncryptionMigrationHandler.HANDLERS
+                            .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
+
+                    CacheManager.clearAllKnownCaches();
+                }
+            }
+
+            if (DECRYPTION_EXCEPTIONS.get() == 0)
+            {
+                if (oldPassPhrase != null)
+                {
+                    LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
+                    LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+                }
+                if (_migrateUsingOldAESConfig)
+                {
+                    LOG.info("Migration from existing encrypted content from legacy AES configuration to current AES configuration is complete.");
+                }
+            }
         }
     }
 
-    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource) -> {};
+
+    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {};
 
     public static class TestCase extends Assert
     {
