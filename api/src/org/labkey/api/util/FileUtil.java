@@ -111,7 +111,6 @@ public class FileUtil
         tempPaths.get().clear();
     }
 
-
     @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static void stopRequest()
     {
