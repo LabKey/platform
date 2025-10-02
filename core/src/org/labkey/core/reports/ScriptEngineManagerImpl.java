@@ -145,7 +145,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                     String decryptedPassword;
                     try
                     {
-                        decryptedPassword = oldAes.decrypt(Base64.decodeBase64(oldPassPhrase));
+                        decryptedPassword = oldAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
 
                         String newEncryptedPassword = Base64.encodeBase64String(newAes.encrypt(decryptedPassword));
                         assert decryptedPassword.equals(newAes.decrypt(Base64.decodeBase64(newEncryptedPassword)));
