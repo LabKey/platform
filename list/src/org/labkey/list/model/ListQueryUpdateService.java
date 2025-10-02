@@ -18,7 +18,6 @@ package org.labkey.list.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
@@ -466,10 +465,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 // Audit
                 mgr.addAuditEvent(_list, user, container, "An existing list record was deleted", entityId, deletedRecord, null);
 
-                // Remove discussions
-                if (DiscussionService.get() != null)
-                    DiscussionService.get().deleteDiscussions(container, user, entityId);
-
                 // Remove attachments
                 if (hasAttachmentProperties())
                     AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(entityId, container));
@@ -513,10 +508,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         // Build up set of entityIds and AttachmentParents
         List<AttachmentParent> attachmentParents = new ArrayList<>();
-
-        // Delete Discussions
-        if (_list.getDiscussionSetting() != ListDefinition.DiscussionSetting.None && DiscussionService.get() != null)
-            DiscussionService.get().deleteDiscussions(container, user, entityIds);
 
         // Delete Attachments
         if (hasAttachmentProperties())

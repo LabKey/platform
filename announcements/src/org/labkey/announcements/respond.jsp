@@ -63,7 +63,6 @@
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=bean.cancelURL%>" />
 <%=generateReturnUrlFormField(bean.cancelURL)%>
-<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
 <div style="max-width: 1050px;">
 <table style="width: 100%;" class="lk-fields-table">
 <%

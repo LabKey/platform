@@ -35,7 +35,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.companyNa
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.customLogin;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.customWelcome;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.dateParsingMode;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.discussionEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.folderDisplayMode;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.helpMenuEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.logoHref;
@@ -70,7 +69,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         folderDisplayMode("Show project and folder navigation. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         applicationMenuDisplayMode("Show application selection menu. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         helpMenuEnabled("Show LabKey Help menu item"),
-        discussionEnabled("Enable object-level discussions"),
         logoHref("Logo link (specifies page to which header logo links)"),
         reportAProblemPath("Support link (specifies page where users can request support)"),
         supportEmail("Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)"),
@@ -257,22 +255,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     {
         String stored = getStoredValue(restrictedColumnsEnabled);
         return null == stored ? null : "TRUE".equals(stored);
-    }
-
-    public boolean isDiscussionEnabled()
-    {
-        // Prefer correctly spelled property name, but fall-back to the old, misspelled one
-        String enabled = lookupStringValue(discussionEnabled.name(), null);
-        return enabled != null ? "TRUE".equalsIgnoreCase(enabled) : lookupBooleanValue("dicussionEnabled", true);
-    }
-
-    public Boolean isDiscussionEnabledStored()
-    {
-        // Prefer correctly spelled property name, but fall-back to the old, misspelled one
-        String enabled = getStoredValue(discussionEnabled);
-        if (enabled == null)
-            enabled = getStoredValue(_settingsContainer, "dicussionEnabled");
-        return null == enabled ? null : "TRUE".equalsIgnoreCase(enabled);
     }
 
     public String getUnsubstitutedLogoHref()

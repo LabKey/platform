@@ -16,18 +16,12 @@
 
 package org.labkey.api.announcements;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
-import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collection;
@@ -38,10 +32,6 @@ import java.util.Collection;
  * CONSIDER: ideas for future extensions
  *      + understand versioning (e.g. for wiki pages)
  *      + implement a resolver interface for generating links 
- *
- * User: matthewb
- * Date: Feb 1, 2007
- * Time: 2:33:22 PM
  */
 public interface DiscussionService
 {
@@ -69,31 +59,7 @@ public interface DiscussionService
         return ServiceRegistry.get().getService(DiscussionService.class);
     }
 
-    /**
-     * @return WebPartView with a form to start a new discussion, will post directly to Announcements controller
-     */
-    WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions);
-
-    /** show links, and forms, do it all (wrapper for other methods)
-     * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
-     *                                          discussion associated with this object.
-     * @return DiscussionView if EnableDiscussion flag in LookAndFeelProperties is true. If false, null.
-     */
-    @Nullable
-    DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
-
-    @Nullable
-    DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
-
-    void deleteDiscussions(Container container, User user, String... identifier);
-
-    void deleteDiscussions(Container container, User user, Collection<String> identifiers);
-
-    boolean hasDiscussions(Container container, String identifier);
-
     Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses);
-
-    void unlinkDiscussions(Container container, String identifier, User user);
 
     Settings getSettings(Container container);
 

@@ -18,8 +18,6 @@
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -83,23 +81,3 @@
         <labkey:panel title="Plate Data">
             <% me.include(bean.getPlateDataView(), out); %>
         </labkey:panel>
-
-<%
-    if (
-            !bean.isPrintView()
-                    && writer
-                    && AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS)
-                    && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled()
-        )
-    {
-%>
-        <labkey:panel title="Discussions">
-            <%
-                HttpView discussion = bean.getDiscussionView(getViewContext());
-                if (discussion != null)
-                    me.include(discussion, out);
-            %>
-        </labkey:panel>
-<%
-    }
-%>

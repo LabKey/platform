@@ -62,8 +62,6 @@
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=cancelURL%>" />
 <%=generateReturnUrlFormField(cancelURL)%>
-<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
-<labkey:input type="hidden" name="allowMultipleDiscussions" value="<%=bean.allowMultipleDiscussions%>" />
 <table class="lk-fields-table" style="max-width: 1050px"> <!-- 13625 -->
 <%
     ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
@@ -167,7 +165,7 @@ else
     %><%= generateBackButton("Cancel") %><%
 }
 %>
-<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.get("discussionSrcIdentifier")%>'/><labkey:input type="hidden" name="discussionSrcURL" value='<%=form.get("discussionSrcURL")%>'/>
+<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.get("discussionSrcIdentifier")%>'/>
 </labkey:form>
 <p/>
 <%

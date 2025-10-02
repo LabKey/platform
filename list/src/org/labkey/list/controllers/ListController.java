@@ -40,7 +40,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.StaticLoggerGetter;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
@@ -65,7 +64,6 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
@@ -91,8 +89,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -635,36 +631,6 @@ public class ListController extends SpringActionController
             else
             {
                 view.addView(new HtmlView(LinkBuilder.labkeyLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
-            }
-
-            if (
-                    _list.getDiscussionSetting().isLinked()
-                            && AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS)
-                            && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled()
-                            && DiscussionService.get() != null
-                )
-            {
-                String entityId = item.getEntityId();
-
-                DomainProperty titleProperty = null;
-                Domain d = _list.getDomain();
-                if (null != d)
-                    titleProperty = d.getPropertyByName(table.getTitleColumn());
-
-                Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
-                String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
-
-                ActionURL linkBackURL = _list.urlFor(ResolveAction.class).addParameter("entityId", entityId);
-                DiscussionService service = DiscussionService.get();
-                boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
-
-                // Display discussion by default in single-discussion case, #4529
-                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
-                if (discussion != null)
-                {
-                    view.addView(discussion);
-                    getPageConfig().setFocusId(discussion.getFocusId());
-                }
             }
 
             return view;
