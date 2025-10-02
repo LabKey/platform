@@ -172,6 +172,12 @@ public interface SampleTypeService
      */
     List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, boolean includeOtherContainers);
 
+    @Deprecated // Temporary just to keep code compiling during migration to new method
+    default List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, User user, boolean includeOtherContainers)
+    {
+        return getSampleTypes(container, includeOtherContainers);
+    }
+
     /**
      * Get a SampleType by name within the definition container.
      */
