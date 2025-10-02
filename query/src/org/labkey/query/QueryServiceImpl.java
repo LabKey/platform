@@ -3139,13 +3139,6 @@ public class QueryServiceImpl implements QueryService
                     if (pk == null)
                         pk = resolvePkValue(rowPk, existingRow);
 
-                    assert pk != null : String.format(
-                        "Unable to determine \"RowPk\" value for query audit record for table \"%s\".\"%s\". Expected value for \"%s\" to be available.",
-                        tinfo.getSchema().getName(),
-                        tinfo.getName(),
-                        rowPk.getName()
-                    );
-
                     if (pk != null)
                         event.setRowPk(String.valueOf(pk));
                 }
