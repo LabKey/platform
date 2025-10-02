@@ -85,10 +85,10 @@ public class TableChange
             boolean success = false;
             try
             {
-                for (String sql : scope.getSqlDialect().getChangeStatements(this))
+                for (SQLFragment sql : scope.getSqlDialect().getChangeStatements(this))
                 {
-                    LOG.debug("Will issue: " + sql);
-                    executor.execute(SQLFragment.unsafe(sql));
+                    LOG.debug("Will issue: " + sql.getSQL());
+                    executor.execute(sql);
                 }
                 success = true;
             }

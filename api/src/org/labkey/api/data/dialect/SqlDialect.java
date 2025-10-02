@@ -104,7 +104,6 @@ public abstract class SqlDialect
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
 
     protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
-    protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
     public static final String DEFAULT_DECIMAL_SCALE_PRECISION = "(15,4)";
@@ -507,9 +506,6 @@ public abstract class SqlDialect
     public abstract String getProductName();
 
     public abstract String getSQLScriptPath();
-
-    // Note: SQLFragment and StringBuilder both implement Appendable
-    public abstract void appendStatement(Appendable sql, String statement);
 
     /**
      * Adds dialect-specific SQL that re-selects a value (e.g., from an auto-increment column) at INSERT or UPDATE time,
@@ -954,28 +950,6 @@ public abstract class SqlDialect
         return new _DatabaseIdentifier(alias, sql, null);
     }
 
-    // Create a comma-separated list of legal identifiers
-    @Deprecated
-    public String makeLegalIdentifiers(String[] names)
-    {
-        return makeLegalIdentifiers(names, ", ");
-    }
-
-    // Create list of legal identifiers
-    @Deprecated
-    public String makeLegalIdentifiers(String[] names, String sep)
-    {
-        String s = "";
-        StringBuilder sb = new StringBuilder();
-        for (String name : names)
-        {
-            sb.append(s).append(makeLegalIdentifier(name));
-            s = sep;
-        }
-        return sb.toString();
-    }
-
-
     // If necessary, quote identifier
     @Deprecated
     public String makeLegalIdentifier(String id)
@@ -994,7 +968,7 @@ public abstract class SqlDialect
     // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
-        return "\"" + StringUtils.replace(id, "\"", "\"\"") + "\"";
+        return "\"" + Strings.CS.replace(id, "\"", "\"\"") + "\"";
     }
 
 
@@ -1371,11 +1345,6 @@ public abstract class SqlDialect
         }
     }
 
-    /**
-     * Transform the JDBC error message into something the user is more likely to understand.
-     */
-    public abstract String sanitizeException(SQLException ex);
-
     public abstract String getAnalyzeCommandForTable(String tableName);
 
     protected abstract String getSIDQuery();
@@ -1475,7 +1444,7 @@ public abstract class SqlDialect
     {
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
         String schemaName = schema.getName();
-        if (StringUtils.contains(objectName,".") && StringUtils.startsWith(objectName,getGlobalTempTablePrefix()))
+        if (Strings.CS.contains(objectName,".") && Strings.CS.startsWith(objectName,getGlobalTempTablePrefix()))
         {
             schemaName = objectName.substring(0,objectName.indexOf("."));
             objectName = objectName.substring(objectName.indexOf(".")+1);
@@ -1898,7 +1867,7 @@ public abstract class SqlDialect
     {
     }
 
-    public abstract List<String> getChangeStatements(TableChange change);
+    public abstract List<SQLFragment> getChangeStatements(TableChange change);
 
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
 
@@ -1936,14 +1905,6 @@ public abstract class SqlDialect
         SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.triggers WHERE UPPER(event_object_schema) = UPPER(?) AND UPPER(event_object_table) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(tableName);
-        return new SqlSelector(scope, sqlf).exists();
-    }
-
-    public boolean isTriggerExists(DbSchema scope, String schema, String triggerName)
-    {
-        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.triggers WHERE UPPER(trigger_schema) = UPPER(?) AND UPPER(trigger_name) = UPPER(?)");
-        sqlf.add(schema);
-        sqlf.add(triggerName);
         return new SqlSelector(scope, sqlf).exists();
     }
 

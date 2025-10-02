@@ -111,7 +111,6 @@ public class FileUtil
         tempPaths.get().clear();
     }
 
-
     @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static void stopRequest()
     {
@@ -1484,7 +1483,7 @@ quickScan:
             os.write(buf,0,r);
     }
 
-
+    // NOTE: Keep in sync with the copied constants in TestFileUtils
     private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^', '\n', '\r', '\''};
     public static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
@@ -1499,7 +1498,7 @@ quickScan:
         return !StringUtils.containsAny(name, ILLEGAL_CHARS);
     }
 
-
+    // NOTE: Keep in sync with the copied implementation in TestFileUtils.makeLegalFileName()
     public static String makeLegalName(String name)
     {
         if (name == null)
