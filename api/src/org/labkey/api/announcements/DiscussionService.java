@@ -21,17 +21,12 @@ import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.VBox;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collection;
 
 /**
- * Discussion service is a wrapper for the Announcements controller used as a forum for discussing objects/pages
- *
- * CONSIDER: ideas for future extensions
- *      + understand versioning (e.g. for wiki pages)
- *      + implement a resolver interface for generating links 
+ * Provides other modules with access to various Announcements settings and functionality. Now that we've removed most
+ * support for discussions, this should probably be merged with AnnouncementService.
  */
 public interface DiscussionService
 {
@@ -60,30 +55,6 @@ public interface DiscussionService
     }
 
     Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses);
-
-    Settings getSettings(Container container);
-
-    void setSettings(Container container, Settings settings);
-
-    class DiscussionView extends VBox
-    {
-        private String _focusId;
-
-        public DiscussionView(ModelAndView... views)
-        {
-            super(views);
-        }
-
-        public String getFocusId()
-        {
-            return _focusId;
-        }
-
-        public void setFocusId(String focusId)
-        {
-            _focusId = focusId;
-        }
-    }
 
     class Settings extends ReturnUrlForm
     {
@@ -153,7 +124,7 @@ public interface DiscussionService
         }
 
         // Set the defaults that will be used for un-customized message boards. We must set them to false above to
-        // workaround the "checkbox doesn't post if false" problem.
+        // work around the "checkbox doesn't post if false" problem.
         public void setDefaults()
         {
             _formatPicker = true;

@@ -35,11 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: Mar 4, 2007
- * Time: 9:14:51 PM
- */
 public abstract class EmailPrefsSelector
 {
     // This map contains one or more email preferences for each user who has read permissions to this folder.  If the

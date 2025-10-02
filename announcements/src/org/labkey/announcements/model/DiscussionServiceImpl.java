@@ -71,17 +71,4 @@ public class DiscussionServiceImpl implements DiscussionService
             throw new RuntimeException(e);
         }
     }
-
-    @Override
-    public void setSettings(Container container, DiscussionService.Settings settings)
-    {
-        try
-        {
-            AnnouncementManager.saveMessageBoardSettings(container, settings);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
 }
