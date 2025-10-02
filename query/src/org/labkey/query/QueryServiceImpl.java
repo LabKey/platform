@@ -3133,7 +3133,7 @@ public class QueryServiceImpl implements QueryService
                 event.setQueryName(tinfo.getPublicName());
 
                 FieldKey rowPk = tinfo.getAuditRowPk();
-                if (rowPk != null)
+                if (rowPk != null && (row != null || existingRow != null))
                 {
                     Object pk = resolvePkValue(rowPk, row);
                     if (pk == null)
