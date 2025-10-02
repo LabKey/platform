@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -194,7 +195,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         filter.addCondition(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME), schemaName);
         filter.addCondition(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME), queryName);
 
-        return ContainerManager.updateContainer(createStorageTableInfo(), targetContainer, filter, null, false);
+        return Table.updateContainer(createStorageTableInfo(), targetContainer, filter, null, false);
     }
 
     public static class QueryUpdateAuditEvent extends DetailedAuditTypeEvent

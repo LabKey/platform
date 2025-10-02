@@ -9561,7 +9561,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids == null || lsids.isEmpty())
             return 0;
 
-        return ContainerManager.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer);
+        return Table.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer, null, false);
     }
 
     @Override
@@ -9610,7 +9610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = Table.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container

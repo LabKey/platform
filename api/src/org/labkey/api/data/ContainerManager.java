@@ -43,6 +43,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.IntHashMap;
@@ -103,7 +104,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -2684,7 +2684,7 @@ public class ContainerManager
     }
 
     // targetContainer must be in the same app project at this time
-    // i.e. child of current project, project of current child, sibling within project
+    // i.e., child of the current project, project of the current child, descendants within the project
     private static boolean isValidTargetContainer(Container current, Container target)
     {
         if (current.isRoot() || target.isRoot())
@@ -2696,61 +2696,9 @@ public class ContainerManager
 
         boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
         boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
-        boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+        boolean moveFromChildToChildWithinProject = !current.isProject() && !target.isProject() && current.getProject() != null && current.getProject().equals(target.getProject());
 
-        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
-    }
-
-    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer)
-    {
-        return updateContainer(dataTable, idField, ids, targetContainer, null, false);
-    }
-
-    /**
-     * Updates the container of specified rows in the provided database table. Optionally, the modification timestamp
-     * and the user who made the modification can also be updated if specified.
-     *
-     * @param dataTable       The table where the container update should be applied.
-     * @param idField         The name of the identifier field used to locate the rows to update.
-     * @param ids             A collection of identifier values specifying the rows to be updated.
-     * @param targetContainer The target container to set for the specified rows.
-     * @param user            The user performing the update. If null, modified/modifiedBy details are not updated.
-     * @param withModified    If true, updates the modified timestamp and the user who made the modification.
-     * @return The number of rows updated in the table.
-     */
-    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, @Nullable User user, boolean withModified)
-    {
-        if (ids == null || ids.isEmpty())
-            return 0;
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts(idField), ids);
-
-        return updateContainer(dataTable, targetContainer, filter, user, withModified);
-    }
-
-    public static int updateContainer(TableInfo dataTable, Container targetContainer, @NotNull SimpleFilter filter, @Nullable User user, boolean withModified)
-    {
-        try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
-        {
-            SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                    .append(" SET container = ").appendValue(targetContainer);
-
-            if (withModified)
-            {
-                assert user != null : "User must be specified when updating modified/modifiedBy details.";
-                dataUpdate.append(", modified = CURRENT_TIMESTAMP");
-                dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
-            }
-
-            SQLFragment whereClause = filter.getSQLFragment(dataTable.getSchema().getSqlDialect());
-            dataUpdate.append("\n").append(whereClause);
-
-            int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
-            transaction.commit();
-
-            return numUpdated;
-        }
+        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToChildWithinProject;
     }
 
     /**

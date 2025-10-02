@@ -36,6 +36,7 @@ import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -47,6 +48,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -476,17 +478,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Nullable Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException
     {
+        var resolvedList = ListService.get().getList(targetContainer, _list.getName(), true);
+        if (resolvedList == null)
+        {
+            errors.addRowError(new ValidationException(String.format("List '%s' is not accessible from folder %s.", _list.getName(), targetContainer.getPath())));
+            throw errors;
+        }
+
         Map<GUID, List<ListRecord>> containerRows = getListRowsForMoveRows(targetContainer, rows, errors);
         if (errors.hasErrors())
             throw errors;
 
+        int fileAttachmentsMovedCount = 0;
         int listAuditEventsCreatedCount = 0;
         int listAuditEventsMovedCount = 0;
         int listRecordsCount = 0;
         int queryAuditEventsMovedCount = 0;
 
         if (containerRows.isEmpty())
-            return moveRowsCounts(listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
+            return moveRowsCounts(fileAttachmentsMovedCount, listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
 
         AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
@@ -538,13 +548,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     if (errors.hasErrors())
                         throw errors;
 
-                    listRecordsCount += ContainerManager.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
+                    listRecordsCount += Table.updateContainer(getDbTable(), _list.getKeyName(), rowPks, targetContainer, user, true);
                     if (errors.hasErrors())
                         throw errors;
 
                     if (hasAttachmentProperties)
                     {
-                        moveAttachments(user, sourceContainer, targetContainer, batch, errors);
+                        fileAttachmentsMovedCount += moveAttachments(user, sourceContainer, targetContainer, batch, errors);
                         if (errors.hasErrors())
                             throw errors;
                     }
@@ -592,12 +602,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "list");
         }
 
-        return moveRowsCounts(listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
+        return moveRowsCounts(fileAttachmentsMovedCount, listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
     }
 
-    private Map<String, Object> moveRowsCounts(int listAuditEventsCreated, int listAuditEventsMoved, int listRecords, int queryAuditEventsMoved)
+    private Map<String, Object> moveRowsCounts(int fileAttachmentsMovedCount, int listAuditEventsCreated, int listAuditEventsMoved, int listRecords, int queryAuditEventsMoved)
     {
         return Map.of(
+            "fileAttachmentsMoved", fileAttachmentsMovedCount,
             "listAuditEventsCreated", listAuditEventsCreated,
             "listAuditEventsMoved", listAuditEventsMoved,
             "listRecords", listRecords,
@@ -647,20 +658,23 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return containerRows;
     }
 
-    private void moveAttachments(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records, BatchValidationException errors)
+    private int moveAttachments(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records, BatchValidationException errors)
     {
         List<AttachmentParent> parents = new ArrayList<>();
         for (ListRecord record : records)
             parents.add(new ListItemAttachmentParent(record.entityId, sourceContainer));
 
+        int count = 0;
         try
         {
-            AttachmentService.get().moveAttachments(targetContainer, parents, user);
+            count = AttachmentService.get().moveAttachments(targetContainer, parents, user);
         }
         catch (IOException e)
         {
             errors.addRowError(new ValidationException("Failed to move attachments when moving list rows. Error: " + e.getMessage()));
         }
+
+        return count;
     }
 
     private int addDetailedMoveAuditEvents(User user, Container sourceContainer, Container targetContainer, List<ListRecord> records)

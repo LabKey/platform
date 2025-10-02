@@ -30,8 +30,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -395,6 +394,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public int moveEvents(Container targetContainer, String idColumnName, Collection<?> ids)
     {
-        return ContainerManager.updateContainer(createStorageTableInfo(), idColumnName, ids, targetContainer, null, false);
+        return Table.updateContainer(createStorageTableInfo(), idColumnName, ids, targetContainer, null, false);
     }
 }

@@ -963,7 +963,7 @@ public class Table
     /* NOTE this does not enforce that keyColumn is an appropriately unique column! */
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, @Nullable ColumnInfo keyColumn, Object pkVals, @Nullable Filter filter, Level level)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         assert null != pkVals;
 
         // _executeTriggers(table, previous, fields);
@@ -1128,6 +1128,65 @@ public class Table
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
     }
 
+    /**
+     * Updates the container of specified rows in the provided database table. Optionally, the modification timestamp
+     * and the user who made the modification can also be updated if specified.
+     *
+     * @param table           The table where the container update should be applied.
+     * @param idField         The name of the identifier field used to locate the rows to update.
+     * @param ids             A collection of identifier values specifying the rows to be updated.
+     * @param targetContainer The target container to set for the specified rows.
+     * @param user            The user performing the update. If null, modified/modifiedBy details are not updated.
+     * @param withModified    If true, updates the modified timestamp and the user who made the modification.
+     * @return The number of rows updated in the table.
+     */
+    public static int updateContainer(TableInfo table, String idField, Collection<?> ids, Container targetContainer, @Nullable User user, boolean withModified)
+    {
+        assert assertInDb(table);
+        ColumnInfo idColumn = table.getColumn(idField);
+        if (idColumn == null)
+            throw new IllegalArgumentException("Table " + table.getSchema().getName() + "." + table.getName() + " has no column named '" + idField + "'.");
+
+        if (ids == null || ids.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(idColumn.getFieldKey(), ids);
+
+        return updateContainer(table, targetContainer, filter, user, withModified);
+    }
+
+    public static int updateContainer(TableInfo table, Container targetContainer, @NotNull SimpleFilter filter, @Nullable User user, boolean withModified)
+    {
+        assert assertInDb(table);
+        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
+                .append(" SET container = ").appendValue(targetContainer);
+
+        if (withModified)
+        {
+            assert user != null : "User must be specified when updating modified/modifiedBy details.";
+            ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
+            if (null != colModified)
+            {
+                dataUpdate.append(", ").appendIdentifier(colModified.getSelectIdentifier())
+                        .append(" = ")
+                        .appendValue(new java.sql.Timestamp(System.currentTimeMillis()));
+            }
+
+            ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
+            if (null != colModifiedBy)
+            {
+                dataUpdate.append(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
+                        .append(" = ")
+                        .appendValue(user.getUserId());
+            }
+        }
+
+        SQLFragment whereClause = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
+        dataUpdate.append("\n").append(whereClause);
+
+        return new SqlExecutor(table.getSchema()).execute(dataUpdate);
+    }
 
     public static void delete(TableInfo table, Object rowId)
     {
@@ -1154,17 +1213,16 @@ public class Table
 
     public static int delete(TableInfo table)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
+
         return sqlExecutor.execute("DELETE FROM " + table.getSelectName());
     }
 
     public static int delete(TableInfo table, Filter filter)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
-
+        assert assertInDb(table);
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-
         SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
 
         return new SqlExecutor(table.getSchema()).execute(deleteSQL);
@@ -1172,7 +1230,7 @@ public class Table
 
     public static void truncate(TableInfo table)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
         sqlExecutor.execute(table.getSqlDialect().getTruncateSql(table.getSelectName()));
     }
@@ -1569,7 +1627,7 @@ public class Table
      *  Create a map that can be passed into Filter.getSQLFragment() that create a SQL fragment using getMetaDataName() instead of
      * getAlias().
      */
-    static private Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
+    private static Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
     {
         Map<FieldKey, ColumnInfo> ret = new HashMap<>();
         for (var column : table.getColumns())
@@ -1581,7 +1639,6 @@ public class Table
         return ret;
     }
 
-
     public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix)
     {
         return checkAllColumns(table, columns, prefix, false);
@@ -1591,7 +1648,6 @@ public class Table
     {
         int bad = 0;
 
-//        Map<FieldKey, ColumnInfo> mapFK = new HashMap<>(columns.size()*2);
         Map<String, ColumnInfo> mapAlias = new HashMap<>(columns.size()*2);
         ColumnInfo prev;
 
@@ -1599,8 +1655,6 @@ public class Table
         {
             if (!checkColumn(table, column, prefix))
                 bad++;
-//            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
-//                bad++;
             if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
                 _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias().getId() + ") as column " + prev + " from table: " + prev.getParentTable());
@@ -1621,7 +1675,6 @@ public class Table
         return 0 == bad;
     }
 
-
     public static boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
     {
         if (column.getParentTable() != table)
@@ -1635,8 +1688,7 @@ public class Table
         }
     }
 
-
-    public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
+    public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete) throws SQLException
     {
         if (!(tableDelete instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException();
@@ -1732,6 +1784,12 @@ public class Table
         return new ParameterMapStatement(tableDelete.getSchema().getScope(), conn, sqlfDelete, updatable.remapSchemaColumns());
     }
 
+    private static boolean assertInDb(TableInfo table)
+    {
+        if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
+            throw new AssertionError("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
+        return true;
+    }
 
     public static class TestDataIterator extends AbstractDataIterator
     {

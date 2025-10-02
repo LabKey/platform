@@ -545,14 +545,17 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
+    public int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
+        int totalRowsChanged = 0;
+
         for (AttachmentParent parent : parents)
         {
             checkSecurityPolicy(auditUser, parent);
             int rowsChanged = new SqlExecutor(coreTables().getSchema()).execute(sqlMove(parent, newContainer));
             if (rowsChanged > 0)
             {
+                totalRowsChanged += rowsChanged;
                 List<Attachment> atts = getAttachments(parent);
                 String filename;
                 for (Attachment att : atts)
@@ -575,6 +578,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 AttachmentCache.removeAttachments(parent);
             }
         }
+
+        return totalRowsChanged;
     }
 
     /** may return fewer AttachmentFile than Attachment, if there have been deletions */

@@ -3135,20 +3135,37 @@ public class QueryServiceImpl implements QueryService
                 FieldKey rowPk = tinfo.getAuditRowPk();
                 if (rowPk != null)
                 {
-                    String rowPkStr = rowPk.toString();
-                    Object pk = null;
-                    if (row != null && row.containsKey(rowPkStr))
-                    {
-                        pk = row.get(rowPkStr);
-                    }
-                    if (pk == null && existingRow != null && existingRow.containsKey(rowPkStr))
-                    {
-                        pk = existingRow.get(rowPkStr);
-                    }
+                    Object pk = resolvePkValue(rowPk, row);
+                    if (pk == null)
+                        pk = resolvePkValue(rowPk, existingRow);
+
+                    assert pk != null : String.format(
+                        "Unable to determine \"RowPk\" value for query audit record for table \"%s\".\"%s\". Expected value for \"%s\" to be available.",
+                        tinfo.getSchema().getName(),
+                        tinfo.getName(),
+                        rowPk.getName()
+                    );
+
                     if (pk != null)
                         event.setRowPk(String.valueOf(pk));
                 }
+
                 return event;
+            }
+
+            private static @Nullable Object resolvePkValue(@NotNull FieldKey fieldKey, @Nullable Map<String, Object> row)
+            {
+                Object pk = null;
+                if (row != null)
+                {
+                    String rowPkStr = fieldKey.toString();
+                    if (row.containsKey(rowPkStr))
+                        pk = row.get(rowPkStr);
+                    if (pk == null && row.containsKey(fieldKey.getName()))
+                        pk = row.get(fieldKey.getName());
+                }
+
+                return pk;
             }
         };
     }

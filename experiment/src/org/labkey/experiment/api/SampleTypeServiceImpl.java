@@ -59,6 +59,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1896,7 +1897,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Long> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
-                updateCounts.put("samples", updateCounts.get("samples") + ContainerManager.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
+                updateCounts.put("samples", updateCounts.get("samples") + Table.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
 
                 // update for exp.object.container
                 expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
