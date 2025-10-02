@@ -329,7 +329,7 @@ public class AuthenticationManager
 
     static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {
         Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
-        _log.info("  " + "Attempting to migrate encrypted properties in authentication configurations");
+        _log.info("  Attempting to migrate encrypted properties in authentication configurations");
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
         Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
                 new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);

@@ -97,9 +97,9 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     @Override
     public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig config)
     {
-        Encryption.Algorithm existingAes = Encryption.getAES128(oldPassPhrase, keySource, config);
+        Encryption.Algorithm oldAes = Encryption.getAES128(oldPassPhrase, keySource, config);
 
-        LOG.info("  " + "Attempting to migrate encrypted property store values");
+        LOG.info("  Attempting to migrate encrypted property store values");
         TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
         TableInfo props = PropertySchema.getInstance().getTableInfoProperties();
 
@@ -125,7 +125,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
                         try
                         {
                             LOG.info("      Attempting to decrypt property \"{}\"", name);
-                            String decryptedValue = existingAes.decrypt(Base64.decodeBase64(encryptedValue));
+                            String decryptedValue = oldAes.decrypt(Base64.decodeBase64(encryptedValue));
                             newEncryptedValue = Base64.encodeBase64String(pe.encrypt(decryptedValue));
                             assert decryptedValue.equals(pe.decrypt(Base64.decodeBase64(newEncryptedValue)));
                             if (newEncryptedValue != null)
