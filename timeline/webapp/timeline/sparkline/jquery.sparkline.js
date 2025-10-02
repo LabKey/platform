@@ -300,7 +300,7 @@
                     if (vals===undefined || vals===null) {
                         vals = $(this).html();
                     }
-                    values = vals.replace(/(^\s*<!--)|(-->\s*$)|\s+/g, '').split(',');
+                    values = vals.replace(/(^\s*<!--)|(--(?:-!|>)\s*$)|\s+/g, '').split(',');
                 } else {
                     values = uservalues;
                 }
