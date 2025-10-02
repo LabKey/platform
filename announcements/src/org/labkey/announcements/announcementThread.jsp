@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -30,8 +30,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
-<%@ page import="java.lang.Class" %>
-<%@ page import="java.lang.String" %>
 <%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
@@ -41,7 +39,7 @@
     User user = getUser();
     ThreadViewBean bean = me.getModelBean();
     AnnouncementModel announcementModel = bean.announcementModel;
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
 
     if (null == announcementModel)
     {

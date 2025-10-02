@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -40,7 +40,7 @@
     HttpView<BaseInsertView.InsertBean> me = HttpView.currentView();
     BaseInsertView.InsertBean bean = me.getModelBean();
 
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
 
     Container c = getContainer();

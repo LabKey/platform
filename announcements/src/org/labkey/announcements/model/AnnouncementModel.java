@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
-import org.labkey.api.announcements.DiscussionService.StatusOption;
+import org.labkey.api.announcements.api.AnnouncementService.StatusOption;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;

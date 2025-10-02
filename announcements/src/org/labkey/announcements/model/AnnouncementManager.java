@@ -27,7 +27,6 @@ import org.labkey.announcements.AnnouncementsController.ModeratorReviewAction;
 import org.labkey.announcements.api.AnnouncementImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;

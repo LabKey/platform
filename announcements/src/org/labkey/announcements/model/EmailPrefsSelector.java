@@ -18,7 +18,6 @@ package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
@@ -112,7 +111,7 @@ public abstract class EmailPrefsSelector
         if (!user.isActive())
             return false;
 
-        DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
+        Settings settings = AnnouncementsController.getSettings(_c);
         int emailPreference = up.getEmailOptionId();
 
         DiscussionSrcTypeProvider typeProvider = null;

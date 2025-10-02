@@ -15,11 +15,12 @@
  */
 package org.labkey.announcements.model;
 
+import jakarta.mail.Message;
+import jakarta.mail.internet.InternetAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.data.Container;
@@ -40,8 +41,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.mail.Message;
-import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private void sendDigest(Container c, Date start, Date end) throws Exception
     {
-        DiscussionService.Settings settings = AnnouncementManager.getMessageBoardSettings(c);
+        Settings settings = AnnouncementManager.getMessageBoardSettings(c);
         Collection<AnnouncementModel> announcements = getRecentAnnouncementsInContainer(c, start, end);
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
@@ -134,7 +133,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         }
     }
 
-    private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
+    private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
         DailyDigestBean bean = new DailyDigestBean(c, recipient, settings, perm, announcementModels);
         DailyDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(DailyDigestEmailTemplate.class, c);
@@ -305,14 +304,14 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         private final User recipient;
         private final List<AnnouncementModel> announcementModels;
         private final String conversationName;
-        private final DiscussionService.Settings settings;
+        private final Settings settings;
         private final ActionURL boardURL;
         private final String boardPath;
         private final String siteUrl;
         private final ActionURL removeURL;
         private final boolean includeGroups;
 
-        public DailyDigestBean(Container c, User recipient, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels)
+        public DailyDigestBean(Container c, User recipient, Settings settings, Permissions perm, List<AnnouncementModel> announcementModels)
         {
             this.c = c;
             this.recipient = recipient;

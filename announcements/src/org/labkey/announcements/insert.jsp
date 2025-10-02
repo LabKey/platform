@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -43,7 +43,7 @@
 
     Container c = getContainer();
     User user = getUser();
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;
     ActionURL insertUrl = AnnouncementsController.getInsertURL(c);

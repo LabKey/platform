@@ -32,6 +32,7 @@ import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.InsertMessagePermission;
 import org.labkey.announcements.model.Permissions;
+import org.labkey.announcements.model.Settings;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -49,8 +50,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService.Settings;
-import org.labkey.api.announcements.DiscussionService.StatusOption;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
@@ -958,7 +957,7 @@ public class AnnouncementsController extends SpringActionController
     private static SelectBuilder getStatusSelect(String currentValue)
     {
         return new SelectBuilder().name("status").id("status").className(null).selected(currentValue)
-            .addOptions(Arrays.stream(StatusOption.values()).map(Enum::name));
+            .addOptions(Arrays.stream(AnnouncementService.StatusOption.values()).map(Enum::name));
     }
 
 
