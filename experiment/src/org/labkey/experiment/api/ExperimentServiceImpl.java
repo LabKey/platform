@@ -1670,7 +1670,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, @NotNull DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -3200,7 +3200,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull String getObjectReferenceDescription(Class referencedClass)
+    public @NotNull String getObjectReferenceDescription(Class<?> referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -5519,7 +5519,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
-        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
+        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
@@ -9393,7 +9393,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return new Pair<>(sampleTypes, dataClasses);
 
         String targetInputType = (isSampleParent ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX) + parentDataTypeName;
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, true))
         {
             try
             {
@@ -9941,7 +9941,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbSchema dbSchema = ExperimentService.get().getSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
-        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, user, true);
+        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, true);
 
         String unionAll = "";
         SQLFragment query = new SQLFragment();

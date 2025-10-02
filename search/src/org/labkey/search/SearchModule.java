@@ -246,9 +246,8 @@ public class SearchModule extends DefaultModule
         }
     }
 
-    @NotNull
     @Override
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of
         (

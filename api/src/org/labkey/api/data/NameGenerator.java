@@ -43,7 +43,6 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -919,7 +918,7 @@ public class NameGenerator
                     dataTypes.add(sampleType);
             }
             else
-                dataTypes.addAll(SampleTypeService.get().getSampleTypes(_container, user, true));
+                dataTypes.addAll(SampleTypeService.get().getSampleTypes(_container, true));
         }
         if (isData)
         {
@@ -1122,7 +1121,7 @@ public class NameGenerator
             }
 
 
-            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(_container, user, true))
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(_container, true))
             {
                 sampleTypeLSIDs.put(sampleType.getName(), sampleType.getLSID());
                 sampleTypeNames.put(sampleType.getLSID(), sampleType.getName());

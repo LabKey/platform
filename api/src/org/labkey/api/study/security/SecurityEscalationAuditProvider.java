@@ -50,11 +50,6 @@ import java.util.Set;
  */
 public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    protected SecurityEscalationAuditProvider()
-    {
-        super();
-    }
-
     protected SecurityEscalationAuditProvider(AbstractAuditDomainKind dk)
     {
         super(dk);

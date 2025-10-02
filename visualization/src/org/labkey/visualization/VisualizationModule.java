@@ -63,15 +63,14 @@ public class VisualizationModule extends CodeOnlyModule
         return Collections.emptyList();
     }
 
-
-    @NotNull
     @Override
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
-        Set<Class> set = new LinkedHashSet<>();
+        Set<Class<?>> set = new LinkedHashSet<>();
         set.add(VisualizationController.TestCase.class);
         set.add(VisualizationSQLGenerator.GetDataTestCase.class);
         set.add(VisualizationCDSGenerator.TestCase.class);
+
         return set;
     }
 
@@ -93,7 +92,6 @@ public class VisualizationModule extends CodeOnlyModule
             }
         });
 
-
         addController(VisualizationController.NAME, VisualizationController.class);
         ReportService.get().registerDescriptor(new TimeChartReportDescriptor());
         ReportService.get().registerDescriptor(new GenericChartReportDescriptor());
@@ -106,7 +104,6 @@ public class VisualizationModule extends CodeOnlyModule
 
         VisualizationService.setInstance(new VisualizationServiceImpl());
     }
-
 
     @Override
     public void doStartup(ModuleContext moduleContext)

@@ -420,7 +420,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user)
+    public void removeAutoLinkedStudy(@NotNull Container studyContainer)
     {
         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterialSource())
                 .append(" SET autolinkTargetContainer = NULL WHERE autolinkTargetContainer = ?")
@@ -440,7 +440,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public @Nullable ExpSampleType getEffectiveSampleType(
         @NotNull Container definitionContainer,
-        @NotNull User user,
         @NotNull String sampleTypeName,
         @NotNull Date effectiveDate,
         @Nullable ContainerFilter cf
@@ -459,7 +458,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
+    public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
 

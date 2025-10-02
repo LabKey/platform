@@ -85,12 +85,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     private final AbstractAuditDomainKind _domainKind;
 
-    @Deprecated // Call the other constructor and stop overriding getDomainKind()
-    public AbstractAuditTypeProvider()
-    {
-        this(null);
-    }
-
     public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
         // TODO: consolidate domain kind initialization to this constructor and stop overriding getDomainKind()
@@ -99,7 +93,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         PropertyService.get().registerDomainKind(getDomainKind());
     }
 
-    protected AbstractAuditDomainKind getDomainKind()
+    protected final AbstractAuditDomainKind getDomainKind()
     {
         if (_domainKind == null)
             throw new IllegalStateException(String.format("The audit type : \"%s\" has a null domain kind", getLabel()));

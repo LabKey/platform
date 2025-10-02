@@ -15,5 +15,5 @@ public interface ObjectReferencer
     @NotNull Collection<Long> getItemsWithReferences(Collection<Long> referencedRowIds, @NotNull String referencedSchemaName, @Nullable String referencedQueryName);
 
     @Nullable
-    String getObjectReferenceDescription(Class referencedClass);
+    String getObjectReferenceDescription(Class<?> referencedClass);
 }
