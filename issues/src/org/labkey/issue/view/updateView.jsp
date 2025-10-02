@@ -1,19 +1,19 @@
 <%
-/*
- * Copyright (c) 2015-2019 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    /*
+     * Copyright (c) 2015-2019 LabKey Corporation
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
 %>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.data.Container"%>
@@ -155,101 +155,111 @@
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    function filterRe(e, input, re){
-        if (e.isSpecialKey())
-            return true;
-
-        var cc = String.fromCharCode(e.getCharCode());
-        if (!cc)
-            return true;
-
-        if (!re.test(cc))
-        {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            else {
-                e.cancelBubble = true;
-            }
-            if (e.preventDefault) {
-                e.preventDefault();
-            }
-            else {
-                e.returnValue = false;
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    function filterCommaSepNumber(e, input) {
-        return filterRe(e, input, /^[\d,\s]+$/);
-    }
-
-    function onSubmit(){
-        (function($){
-            $("input[name='dirty']").val(isDirty());
-            LABKEY.setSubmit(true);
-        })(jQuery);
-    }
-
     (function($){
 
-        var column1 = [];
-        var column2 = [];
-        var startColOneIdx = 11;
-        var startColTwoIdx = 21;
+        onSubmit = function(){
+            $("input[name='dirty']").val(isDirty());
+            // Issue:53907, disable all submit buttons to prevent multiple submits
+            $('a[data-submitid]').addClass('labkey-disabled-button');
 
-        <%
+            LABKEY.setSubmit(true);
+        };
+
+        isDirty = function (){
+            let origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
+            let notify = document.getElementById("notifyList");
+            if (notify && origNotify != notify.value)
+                return true;
+            return LABKEY.isDirty();
+        };
+
+        filterCommaSepNumber = function(e, input){
+            return filterRe(e, input, /^[\d,\s]+$/);
+        };
+
+        filterRe = function(e, input, re){
+            if (e.isSpecialKey())
+                return true;
+
+            var cc = String.fromCharCode(e.getCharCode());
+            if (!cc)
+                return true;
+
+            if (!re.test(cc))
+            {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                else {
+                    e.cancelBubble = true;
+                }
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                else {
+                    e.returnValue = false;
+                }
+                return false;
+            }
+
+            return true;
+        };
+
+        initialize = function(){
+            let startColOneIdx = 11;
+            let startColTwoIdx = 21;
+            // map of field name (lowercase) to tab index
+            let fieldMap = {
+                'title': 1,
+                'assignedto': 2,
+                'type': 3,
+                'area': 4,
+                'priority': 5,
+                'milestone': 6,
+                'comment': 7,
+                'resolution': 8,
+                'duplicate': 9,
+                'related': 10
+            };
+
+            // custom field mapping
+            <%
             for (DomainProperty prop : column1Props)
             {%>
-        column1.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
+                fieldMap[<%=q(ColumnInfo.legalNameFromName(prop.getName()).toLowerCase())%>] = startColOneIdx++;<%
             }
             for (DomainProperty prop : column2Props)
             {%>
-        column2.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
+                fieldMap[<%=q(ColumnInfo.legalNameFromName(prop.getName()).toLowerCase())%>] = startColTwoIdx++;<%
             }
-        %>
+            %>
 
-        $(function() {
-            $("input[name='title']").attr("tabindex", "1").change(function(){LABKEY.setDirty(true);});
-            $("select[name='assignedTo']").attr("tabindex", "2").change(function(){LABKEY.setDirty(true);});
-            $("select[name='type']").attr("tabindex", "3").change(function(){LABKEY.setDirty(true);});
-            $("select[name='area']").attr("tabindex", "4").change(function(){LABKEY.setDirty(true);});
-            $("select[name='priority']").attr("tabindex", "5").change(function(){LABKEY.setDirty(true);});
-            $("select[name='milestone']").attr("tabindex", "6").change(function(){LABKEY.setDirty(true);});
-            $("textarea[name='comment']").attr("tabindex", "7").change(function(){LABKEY.setDirty(true);});
-            $("select[name='resolution']").attr("tabindex", "8").change(function(){LABKEY.setDirty(true);});
-            $("input[name='duplicate']").attr("tabindex", "9").change(function(){LABKEY.setDirty(true);});
-            $("input[name='related']").attr("tabindex", "10");
-
-            for (var i=0; i < column1.length; i++){
-                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++).change(function(){
-                    LABKEY.setDirty(true);
-                });
-            }
-
-            for (i=0; i < column2.length; i++){
-                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++).change(function(){
-                    LABKEY.setDirty(true);
-                });
-            }
-
+            registerEvents(fieldMap);
             LABKEY.setDirty(<%=bean.isDirty()%>)
+        };
+
+        // Add dirty tracking to form fields and set tab order
+        registerEvents = function(fieldMap){
+
+            $('.form-control').filter(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    let nameLower = name.toLowerCase();
+                    if (fieldMap.hasOwnProperty(nameLower)){
+                        let inputSelect = '.form-control[name=' + name + ']';
+                        $(inputSelect).attr("tabindex", fieldMap[nameLower]).on("change", function(){LABKEY.setDirty(true);});
+                    }
+                }
+                return false;
+            });
+        };
+
+        LABKEY.Utils.onReady(function(){
+            initialize();
+            window.onbeforeunload = LABKEY.beforeunload(isDirty);
         });
+
     })(jQuery);
-
-    var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
-
-    function isDirty(){
-        var notify = document.getElementById("notifyList");
-        if (notify && origNotify != notify.value)
-            return true;
-        return LABKEY.isDirty();
-    }
-
-    window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
 </script>
 <labkey:form method="POST" onsubmit="onSubmit();" enctype="multipart/form-data" layout="horizontal">
@@ -268,7 +278,7 @@
         %>
     </table>
     <div class="labkey-button-bar-separate">
-        <%= button("Save").submit(true).name(bean.getAction().name()).disableOnClick(true) %>
+        <%= button("Save").submit(true).name(bean.getAction().name()) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <table class="lk-fields-table" style="margin-top:10px;">
@@ -408,7 +418,7 @@
         <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
     <div class="labkey-button-bar-separate" style="margin-bottom:10px">
-        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
+        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <% final Collection<IssueObject.CommentObject> comments = issue.getCommentObjects();
