@@ -731,19 +731,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                ParticipantGroupManager.ParticipantGroupTestCase.class,
-                StudyImpl.ProtocolDocumentTestCase.class,
-                StudyManager.StudySnapshotTestCase.class,
-                StudyManager.VisitCreationTestCase.class,
-                StudyModule.TestCase.class,
-                VisitImpl.TestCase.class,
-                DatasetUpdateService.TestCase.class,
-        DatasetLsidImportHelper.TestCase.class);
+            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+            ParticipantGroupManager.ParticipantGroupTestCase.class,
+            StudyImpl.ProtocolDocumentTestCase.class,
+            StudyManager.StudySnapshotTestCase.class,
+            StudyManager.VisitCreationTestCase.class,
+            StudyModule.TestCase.class,
+            VisitImpl.TestCase.class,
+            DatasetUpdateService.TestCase.class,
+            DatasetLsidImportHelper.TestCase.class
+        );
     }
 
     @Override
@@ -755,8 +755,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             DatasetDataWriter.TestCase.class,

@@ -165,34 +165,39 @@ public interface SampleTypeService
     @Nullable
     DataState getSampleState(Container container, Long stateRowId);
 
-    void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
+    void removeAutoLinkedStudy(@NotNull Container studyContainer);
 
     /**
      * @param includeOtherContainers whether sample types from the shared container or the container's project should be included
      */
-    // TODO: Remove user parameter (not used)
-    List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
+    List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, boolean includeOtherContainers);
+
+    @Deprecated // Temporary just to keep code compiling during migration to new method
+    default List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, User user, boolean includeOtherContainers)
+    {
+        return getSampleTypes(container, includeOtherContainers);
+    }
 
     /**
      * Get a SampleType by name within the definition container.
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
+    /**
+     * Get a SampleType by name within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
+     */
+    // TODO: Remove user parameter (not used)
+    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, @NotNull String sampleTypeName);
+
     /** Get the sample type with name at a specific time */
     @Nullable
-    // TODO: Remove user parameter (not used)
-    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
+    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
 
     /**
      * Return the sample type for this LSID, optionally pass Container hint for performance
      */
     ExpSampleType getSampleTypeByType(@NotNull String lsid, Container hint);
-
-    /**
-     * Get a SampleType by name within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
-     */
-    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, @NotNull String sampleTypeName);
 
     /**
      * Get a SampleType by rowId within the definition container.

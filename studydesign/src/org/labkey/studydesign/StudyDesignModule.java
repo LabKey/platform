@@ -34,9 +34,9 @@ public class StudyDesignModule extends SpringModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-                new AssayScheduleWebpartFactory(),
-                new ImmunizationScheduleWebpartFactory(),
-                new VaccineDesignWebpartFactory()
+            new AssayScheduleWebpartFactory(),
+            new ImmunizationScheduleWebpartFactory(),
+            new VaccineDesignWebpartFactory()
         );
     }
 
@@ -72,12 +72,11 @@ public class StudyDesignModule extends SpringModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-                TreatmentManager.TreatmentDataTestCase.class,
-                TreatmentManager.AssayScheduleTestCase.class
+            TreatmentManager.TreatmentDataTestCase.class,
+            TreatmentManager.AssayScheduleTestCase.class
         );
     }
 }

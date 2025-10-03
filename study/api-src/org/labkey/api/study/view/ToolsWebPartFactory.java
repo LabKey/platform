@@ -41,7 +41,7 @@ public abstract class ToolsWebPartFactory extends BaseWebPartFactory
     protected abstract String getTitle();
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         return new StudyToolsWebPart(getTitle(), webPart.getLocation().equals(HttpView.BODY), getItems(portalCtx));
     }
