@@ -696,7 +696,7 @@ public void testUpdateSomeParents() throws Exception
     }
     catch (Exception e)
     {
-        assertThat(e.getMessage(), containsString("'C1' is aliquoted from sample 'P2-1'. Circular relationships are not allowed."));
+        assertThat(e.getMessage(), containsString("'C1' is derived from sample 'P2-1'. Circular relationships are not allowed."));
     }
 
     errors = new BatchValidationException();

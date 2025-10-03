@@ -1814,7 +1814,7 @@ public class ExpDataIterators
                             for (ExpMaterial child : existingChildMaterials)
                             {
                                 if (child.getRowId() == sample.getRowId())
-                                    throw new ValidationException(String.format("'%s' is %s from sample '%s'. Circular relationships are not allowed.", entityName, child.getRootMaterialRowId() != null ? "aliquoted" : "derived", runItem.getName()));
+                                    throw new ValidationException(String.format("'%s' is %s from sample '%s'. Circular relationships are not allowed.", entityName, child.getRootMaterialRowId() != child.getRowId() ? "aliquoted" : "derived", runItem.getName()));
                             }
                         }
 
