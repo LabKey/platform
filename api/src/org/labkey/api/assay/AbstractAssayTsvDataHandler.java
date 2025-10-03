@@ -849,8 +849,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
                     // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
                     // Issue 53625: remap before validation so that validators can validate the remapped value
-                    if (o instanceof String s && remappableLookup.containsKey(pd) && !isSampleLookupById)
+                    if (o != null && remappableLookup.containsKey(pd) && !isSampleLookupById)
                     {
+                        String s = o instanceof String ? (String) o : o.toString();
                         TableInfo lookupTable = remappableLookup.get(pd);
                         try
                         {
@@ -880,9 +881,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         for (ColumnValidator validator : validatorMap.get(pd))
                         {
-                            String error = validator.validate(rowNum, o, validatorContext);
-                            if (error != null)
-                                errors.add(new PropertyValidationError(error, pd.getName()));
+                            try
+                            {
+                                String error = validator.validate(rowNum, o, validatorContext);
+                                if (error != null)
+                                    errors.add(new PropertyValidationError(error, pd.getName()));
+                            }
+                            catch (ConversionException e)
+                            {
+                                errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+                            }
                         }
                     }
 
