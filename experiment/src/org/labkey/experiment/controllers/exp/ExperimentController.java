@@ -4422,6 +4422,7 @@ public class ExperimentController extends SpringActionController
             Set<String> aliases = new CaseInsensitiveHashSet();
             // Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import
             aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL);
             boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
             // Issue 51894: We need to stop conversion to numbers for alias fields for all type
             // If there are aliases defined for one type that are number fields in another type, this will prevent
