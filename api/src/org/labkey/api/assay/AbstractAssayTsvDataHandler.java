@@ -842,10 +842,40 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         map.put(pd.getName(), o);
                     }
 
-                    // validate the data value for the non-sample lookup fields
-                    // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
                     boolean isSampleLookupById = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
                     boolean isSampleLookupByName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+
+                    // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
+                    // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
+                    // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
+                    // Issue 53625: remap before validation so that validators can validate the remapped value
+                    if (o instanceof String s && remappableLookup.containsKey(pd) && !isSampleLookupById)
+                    {
+                        TableInfo lookupTable = remappableLookup.get(pd);
+                        try
+                        {
+                            Object remapped = cache.remap(lookupTable, s, true);
+                            if (remapped == null)
+                            {
+                                if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
+                                    errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
+                                else
+                                    errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                            }
+                            else if (o != remapped)
+                            {
+                                o = remapped;
+                                map.put(pd.getName(), remapped);
+                            }
+                        }
+                        catch (ConversionException e)
+                        {
+                            errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+                        }
+                    }
+
+                    // validate the data value for the non-sample lookup fields
+                    // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
                     if (validatorMap.containsKey(pd) && !isSampleLookupById && !isSampleLookupByName)
                     {
                         for (ColumnValidator validator : validatorMap.get(pd))
@@ -941,34 +971,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             {
                                 errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
                             }
-                        }
-                    }
-
-                    // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
-                    // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
-                    // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
-                    if (o instanceof String s && remappableLookup.containsKey(pd) && !isSampleLookupById)
-                    {
-                        TableInfo lookupTable = remappableLookup.get(pd);
-                        try
-                        {
-                            Object remapped = cache.remap(lookupTable, s, true);
-                            if (remapped == null)
-                            {
-                                if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
-                                    errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
-                                else
-                                    errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
-                            }
-                            else if (o != remapped)
-                            {
-                                o = remapped;
-                                map.put(pd.getName(), remapped);
-                            }
-                        }
-                        catch (ConversionException e)
-                        {
-                            errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
                         }
                     }
 

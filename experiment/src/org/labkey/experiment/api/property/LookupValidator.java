@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -232,7 +233,17 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         assert value != null : "Shouldn't be validating a null value";
 
         if (value != null)
-            value = ConvertHelper.convert(value, crpField.getJavaObjectClass());
+        {
+            try
+            {
+                value = ConvertHelper.convert(value, crpField.getJavaObjectClass());
+            }
+            catch (ConversionException e)
+            {
+                // Issue 53625: If we can't convert the value to the correct type, don't try to validate it against the lookup
+                return false;
+            }
+        }
 
         if (crpField instanceof PropertyDescriptor field)
         {
