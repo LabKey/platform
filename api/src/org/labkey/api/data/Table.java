@@ -819,7 +819,7 @@ public class Table
      */
     public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
 
         // _executeTriggers(table, fields);
 
@@ -1145,7 +1145,7 @@ public class Table
         assert assertInDb(table);
         ColumnInfo idColumn = table.getColumn(idField);
         if (idColumn == null)
-            throw new IllegalArgumentException("Table " + table.getSchema().getName() + "." + table.getName() + " has no column named '" + idField + "'.");
+            throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + idField + "'.");
 
         if (ids == null || ids.isEmpty())
             return 0;
@@ -1159,8 +1159,14 @@ public class Table
     public static int updateContainer(TableInfo table, Container targetContainer, @NotNull SimpleFilter filter, @Nullable User user, boolean withModified)
     {
         assert assertInDb(table);
+        ColumnInfo containerColumn = table.getColumn(SpecialColumn.Container.name());
+        if (containerColumn == null)
+            throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + SpecialColumn.Container.name() + "'.");
+
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
-                .append(" SET container = ").appendValue(targetContainer);
+                .append(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
+                .append(" = ")
+                .appendValue(targetContainer);
 
         if (withModified)
         {
@@ -1787,8 +1793,13 @@ public class Table
     private static boolean assertInDb(TableInfo table)
     {
         if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
-            throw new AssertionError("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
+            throw new AssertionError("Table " + fullTableName(table) + " is not in the physical database.");
         return true;
+    }
+
+    private static String fullTableName(TableInfo table)
+    {
+        return table.getSchema().getName() + "." + table.getName();
     }
 
     public static class TestDataIterator extends AbstractDataIterator
