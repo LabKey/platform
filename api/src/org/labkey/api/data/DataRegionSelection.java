@@ -27,6 +27,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
@@ -54,14 +55,13 @@ import java.util.Set;
  * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
  * should do their own synchronization on the set itself if they are operating on it one element at a time
  * and want to have a consistent view. This allows for the backing set to be a {@link LinkedHashSet}.
- * User: kevink
- * Date: Jan 3, 2008
  */
 public class DataRegionSelection
 {
     public static final String SELECTED_VALUES = ".selectValues";
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
+    public static final int MAX_SELECTION_SIZE = 1_000;
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
@@ -268,9 +268,17 @@ public class DataRegionSelection
      */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
+        if (checked && selection.size() > MAX_SELECTION_SIZE)
+            throw new BadRequestException(String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.", Formats.commaf0.format(selection.size()), Formats.commaf0.format(MAX_SELECTION_SIZE)));
+
         Set<String> selectedValues = getSet(context, key, true, useSnapshot);
         if (checked)
+        {
+            // TODO: Need to synchronize on this change and not make it if it is too many
             selectedValues.addAll(selection);
+            if (selectedValues.size() > MAX_SELECTION_SIZE)
+                throw new BadRequestException(String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.", Formats.commaf0.format(selectedValues.size()), Formats.commaf0.format(MAX_SELECTION_SIZE)));
+        }
         else
             selectedValues.removeAll(selection);
         return selectedValues.size();
@@ -496,13 +504,13 @@ public class DataRegionSelection
     }
 
     private static List<String> createSelectionList(
-            RenderContext ctx,
-            DataRegion rgn,
-            ResultSet rs,
-            @Nullable Collection<String> selectedValues
+        RenderContext ctx,
+        DataRegion rgn,
+        ResultSet rs,
+        @Nullable Collection<String> selectedValues
     ) throws SQLException
     {
-        List<String> selected = new LinkedList<>();
+        List<String> selected = new ArrayList<>();
 
         if (rs != null)
         {
@@ -516,7 +524,11 @@ public class DataRegionSelection
                 {
                     var value = rgn.getRecordSelectorValue(ctx);
                     if (selectedValues == null || selectedValues.contains(value))
+                    {
                         selected.add(value);
+                        if (selected.size() == MAX_SELECTION_SIZE)
+                            break;
+                    }
                 }
             }
         }

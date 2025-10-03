@@ -16,6 +16,7 @@ if (!LABKEY.DataRegions) {
     var ALL_ROWS_MAX = 5_000;
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var DEFAULT_TIMEOUT = 30_000;
+    const MAX_SELECTION_SIZE = 1_000;
     var PARAM_PREFIX = '.param.';
     var SORT_ASC = '+';
     var SORT_DESC = '-';
@@ -1117,7 +1118,7 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Add or remove items from the selection associated with the this DataRegion.
+     * Add or remove items from the selection associated with this DataRegion.
      *
      * @param config A configuration object with the following properties:
      * @param {Array} config.ids Array of primary key ids for each row to select/unselect.
@@ -1157,7 +1158,11 @@ if (!LABKEY.DataRegions) {
             config.failure = failure;
         }
         else {
-            config.failure = function() { me.addMessage('Error sending selection.'); };
+            config.failure = function(error) {
+                let msg = 'Error setting selection';
+                if (error && error.exception) msg += ': ' + error.exception;
+                me.addMessage(msg, 'selection');
+            };
         }
 
         if (config.selectionKey) {
@@ -3037,6 +3042,7 @@ if (!LABKEY.DataRegions) {
 
         // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
         config.success = function(data) {
+            region.removeMessage('selection');
             region.selectionModified = true;
             region.selectedCount = data.count;
             _onSelectionChange(region);
@@ -3544,8 +3550,12 @@ if (!LABKEY.DataRegions) {
 
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
-            if (region.totalRows && region.totalRows != region.selectedCount) {
-                msg += "&nbsp;<span class='labkey-button select-all'>Select All Rows</span>";
+            if (region.totalRows && region.totalRows !== region.selectedCount && region.selectedCount < MAX_SELECTION_SIZE) {
+                let text = 'Select All Rows';
+                if (region.totalRows > MAX_SELECTION_SIZE) {
+                    text = `Select First ${MAX_SELECTION_SIZE.toLocaleString()} Rows`;
+                }
+                msg += "&nbsp;<span class='labkey-button select-all'>" + text + "</span>";
             }
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
@@ -4038,8 +4048,8 @@ if (!LABKEY.DataRegions) {
         // If not all rows are visible and some rows are selected, show selection message
         if (region.totalRows && 0 !== region.selectedCount && !region.complete) {
             var msg = (region.selectedCount === region.totalRows) ?
-                        'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.' :
-                        'Selected <span class="labkey-strong">' + region.selectedCount + '</span> of ' + region.totalRows + ' rows.';
+                        'All <span class="labkey-strong">' + region.totalRows.toLocaleString() + '</span> rows selected.' :
+                        'Selected <span class="labkey-strong">' + region.selectedCount.toLocaleString() + '</span> of ' + region.totalRows.toLocaleString() + ' rows.';
             _showSelectMessage(region, msg);
         }
 
