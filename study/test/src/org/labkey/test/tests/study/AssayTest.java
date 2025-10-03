@@ -1012,14 +1012,18 @@ public class AssayTest extends AbstractAssayTest
 
         log("Create a list with an int key and a string value");
         String lookToListName = TestDataGenerator.randomDomainName("lookToList", DomainUtils.DomainKind.IntList);
-        String keyName = TestDataGenerator.randomFieldName("key", null, DomainUtils.DomainKind.Assay);
-        FieldInfo valueField = FieldInfo.random("value", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.Assay);
+        String keyName = TestDataGenerator.randomFieldName("key", null, DomainUtils.DomainKind.IntList);
+        FieldInfo valueField = FieldInfo.random("value", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.IntList);
         _listHelper.createList(ISSUE_53625_PROJECT, lookToListName, keyName, valueField.getFieldDefinition());
-        _listHelper.bulkImportData(TestDataUtils.tsvStringFromRowMaps(List.of(Map.of(valueField.getName(), "One"), Map.of(valueField.getName(), "Two")), List.of(valueField.getName()), true));
+        _listHelper.bulkImportData(TestDataUtils.tsvStringFromRowMaps(List.of(
+                Map.of(valueField.getName(), "One"),
+                Map.of(valueField.getName(), "Two"),
+                Map.of(valueField.getName(), "123")
+        ), List.of(valueField.getName()), true));
 
         log("Create an assay with a results lookup field to the list, with lookup validator set");
         goToProjectHome(ISSUE_53625_PROJECT);
-        FieldInfo lookupField = FieldInfo.random("lookup", new FieldDefinition.IntLookup(null, "lists", lookToListName));
+        FieldInfo lookupField = new FieldInfo("lookup", new FieldDefinition.IntLookup(null, "lists", lookToListName));
         ReactAssayDesignerPage designerPage = _assayHelper.createAssayDesign("General", ISSUE_53625_ASSAY);
         designerPage.goToBatchFields()
                 .removeAllFields(false);
@@ -1065,14 +1069,27 @@ public class AssayTest extends AbstractAssayTest
 
         runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
                         Map.of(lookupField.getName(), "One"), // valid
-                        Map.of(lookupField.getName(), "2")), // valid
+                        Map.of(lookupField.getName(), "2"), // valid
+                        Map.of(lookupField.getName(), "123")), // valid
                 List.of(lookupField.getName()), true
         );
         importAssayData(assayName, runName, runDataStr);
         clickAndWait(Locator.linkWithText(runName));
         DataRegionTable dataTable = new DataRegionTable("Data", getDriver());
-        checker().verifyEquals("Incorrect number of results shown.", 2, dataTable.getDataRowCount());
-        checker().verifyEquals("Lookup values not as expected.", List.of("One", "Two"), dataTable.getColumnDataAsText(lookupField.getLabel()));
+        checker().verifyEquals("Incorrect number of results shown.", 3, dataTable.getDataRowCount());
+        checker().verifyEquals("Lookup values not as expected.", List.of("One", "Two", "123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
+
+        // test with just the numeric value since that was causing issues during manual testing
+        runName = runName + "NumericOnly";
+        runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "123")), // valid
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        clickAndWait(Locator.linkWithText(runName));
+        dataTable = new DataRegionTable("Data", getDriver());
+        checker().verifyEquals("Incorrect number of results shown.", 1, dataTable.getDataRowCount());
+        checker().verifyEquals("Lookup values not as expected.", List.of("123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
     }
 
     @Override
