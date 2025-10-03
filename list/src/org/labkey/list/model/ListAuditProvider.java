@@ -104,7 +104,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         appendValueMapColumns(table, null, true);
 
         // Render a details URL only for rows that have a listItemEntityId
-        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}", null, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
+        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&name=${listName}&entityId=${listItemEntityId}&rowId=${rowId}", null, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
         table.setDetailsURL(url);
 
         return table;
