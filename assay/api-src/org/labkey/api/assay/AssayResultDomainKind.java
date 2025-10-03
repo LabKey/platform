@@ -23,6 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.dataiterator.SimpleTranslator.SpecialColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -39,10 +40,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.assay.AssayFileWriter.DIR_NAME;
-import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 public class AssayResultDomainKind extends AssayDomainKind
 {
@@ -89,10 +86,10 @@ public class AssayResultDomainKind extends AssayDomainKind
         rowIdSpec.setAutoIncrement(true);
         rowIdSpec.setPrimaryKey(true);
 
-        PropertyStorageSpec createdSpec = new PropertyStorageSpec(CREATED_COLUMN_NAME, JdbcType.TIMESTAMP);
-        PropertyStorageSpec createdBySpec = new PropertyStorageSpec(CREATED_BY_COLUMN_NAME, JdbcType.INTEGER);
-        PropertyStorageSpec modifiedSpec = new PropertyStorageSpec(MODIFIED_COLUMN_NAME, JdbcType.TIMESTAMP);
-        PropertyStorageSpec modifiedBySpec = new PropertyStorageSpec(MODIFIED_BY_COLUMN_NAME, JdbcType.INTEGER);
+        PropertyStorageSpec createdSpec = new PropertyStorageSpec(SpecialColumn.Created.name(), JdbcType.TIMESTAMP);
+        PropertyStorageSpec createdBySpec = new PropertyStorageSpec(SpecialColumn.CreatedBy.name(), JdbcType.INTEGER);
+        PropertyStorageSpec modifiedSpec = new PropertyStorageSpec(SpecialColumn.Modified.name(), JdbcType.TIMESTAMP);
+        PropertyStorageSpec modifiedBySpec = new PropertyStorageSpec(SpecialColumn.ModifiedBy.name(), JdbcType.INTEGER);
 
         return PageFlowUtil.set(rowIdSpec, dataIdSpec, createdSpec, createdBySpec, modifiedSpec, modifiedBySpec);
     }
@@ -107,8 +104,8 @@ public class AssayResultDomainKind extends AssayDomainKind
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
     {
         return new HashSet<>(Arrays.asList(
-                new PropertyStorageSpec.ForeignKey(CREATED_BY_COLUMN_NAME, "core", "users", "userid", null, false),
-                new PropertyStorageSpec.ForeignKey(MODIFIED_BY_COLUMN_NAME, "core", "users", "userid", null, false)
+            new PropertyStorageSpec.ForeignKey(SpecialColumn.CreatedBy.name(), "core", "users", "userid", null, false),
+            new PropertyStorageSpec.ForeignKey(SpecialColumn.ModifiedBy.name(), "core", "users", "userid", null, false)
         ));
     }
 

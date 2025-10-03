@@ -462,6 +462,15 @@ public interface QueryService
     List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId, @Nullable ContainerFilter containerFilter);
     AuditHandler getDefaultAuditHandler();
 
+    /**
+     * Moves audit events associated with the specific rows, identified by primary key, to the target container.
+     *
+     * @param targetContainer The container to which audit events will be moved.
+     * @param rowPks A collection of primary key values identifying the rows whose audit events should be moved.
+     * @param schemaName The schema name of the table.
+     * @param queryName The query (table) name.
+     * @return The number of audit events moved.
+     */
     int moveAuditEvents(Container targetContainer, Collection<?> rowPks, String schemaName, String queryName);
 
     /**

@@ -2683,8 +2683,7 @@ public class ContainerManager
         return c;
     }
 
-    // targetContainer must be in the same app project at this time
-    // i.e., child of the current project, project of the current child, descendants within the project
+    // Current and target containers must be within the same project tree at this time
     private static boolean isValidTargetContainer(Container current, Container target)
     {
         if (current.isRoot() || target.isRoot())
@@ -2694,11 +2693,16 @@ public class ContainerManager
         if (current.equals(target))
             return true;
 
-        boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
-        boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
-        boolean moveFromChildToChildWithinProject = !current.isProject() && !target.isProject() && current.getProject() != null && current.getProject().equals(target.getProject());
+        // from project to descendant
+        if (current.isProject())
+            return target.isDescendant(current);
 
-        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToChildWithinProject;
+        // from descendant to project
+        if (target.isProject())
+            return current.isDescendant(target);
+
+        // from descendant to descendant
+        return current.getProject() != null && current.getProject().equals(target.getProject());
     }
 
     /**

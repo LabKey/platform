@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.formula.functions.T;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -37,6 +36,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.SimpleTranslator.SpecialColumn;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -102,12 +102,12 @@ public class Table
     // Makes long parameter lists easier to read
     public static final int NO_OFFSET = 0;
 
-    public static final String ENTITY_ID_COLUMN_NAME = "EntityId";
-    public static final String OWNER_COLUMN_NAME = "Owner";
-    public static final String CREATED_BY_COLUMN_NAME = "CreatedBy";
-    public static final String CREATED_COLUMN_NAME = "Created";
-    public static final String MODIFIED_BY_COLUMN_NAME = "ModifiedBy";
-    public static final String MODIFIED_COLUMN_NAME = "Modified";
+    private static final String ENTITY_ID_COLUMN_NAME = SpecialColumn.EntityId.name();
+    private static final String OWNER_COLUMN_NAME = "Owner";
+    private static final String CREATED_BY_COLUMN_NAME = SpecialColumn.CreatedBy.name();
+    private static final String CREATED_COLUMN_NAME = SpecialColumn.Created.name();
+    private static final String MODIFIED_BY_COLUMN_NAME = SpecialColumn.ModifiedBy.name();
+    private static final String MODIFIED_COLUMN_NAME = SpecialColumn.Modified.name();
 
     /** Columns that are magically populated as part of an insert or update operation */
     public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = CaseInsensitiveHashSet.of(

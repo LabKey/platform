@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupResolutionType;
@@ -70,6 +71,7 @@ import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -87,8 +89,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
@@ -478,14 +482,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Nullable Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException
     {
-        var resolvedList = ListService.get().getList(targetContainer, _list.getName(), true);
-        if (resolvedList == null)
+        // Ensure the list is in scope for the target container
+        if (null == ListService.get().getList(targetContainer, _list.getName(), true))
         {
             errors.addRowError(new ValidationException(String.format("List '%s' is not accessible from folder %s.", _list.getName(), targetContainer.getPath())));
             throw errors;
         }
 
-        Map<GUID, List<ListRecord>> containerRows = getListRowsForMoveRows(targetContainer, rows, errors);
+        User user = getListUser(_user, container);
+        Map<GUID, List<ListRecord>> containerRows = getListRowsForMoveRows(container, user, targetContainer, rows, errors);
         if (errors.hasErrors())
             throw errors;
 
@@ -500,7 +505,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
-        User user = getListUser(_user, container);
         boolean hasAttachmentProperties = _list.getDomainOrThrow()
                 .getProperties()
                 .stream()
@@ -508,10 +512,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         ListAuditProvider listAuditProvider = new ListAuditProvider();
         final int BATCH_SIZE = 5_000;
+        boolean isAuditEnabled = auditBehavior != null && AuditBehaviorType.NONE != auditBehavior;
 
         try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
         {
-            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior && tx.getAuditEvent() == null)
+            if (isAuditEnabled && tx.getAuditEvent() == null)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.updateCommentRowCount(containerRows.values().stream().mapToInt(List::size).sum());
@@ -573,6 +578,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
 
                 // Create a summary audit event for the source container
+                if (isAuditEnabled)
                 {
                     String comment = String.format("Moved %s to %s", StringUtilsLabKey.pluralize(numRecords, "row"), targetContainer.getPath());
                     ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(sourceContainer, comment, _list);
@@ -581,6 +587,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
 
                 // Create a summary audit event for the target container
+                if (isAuditEnabled)
                 {
                     String comment = String.format("Moved %s from %s", StringUtilsLabKey.pluralize(numRecords, "row"), sourceContainer.getPath());
                     ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(targetContainer, comment, _list);
@@ -616,7 +623,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         );
     }
 
-    private Map<GUID, List<ListRecord>> getListRowsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
+    private Map<GUID, List<ListRecord>> getListRowsForMoveRows(
+        Container container,
+        User user,
+        Container targetContainer,
+        List<Map<String, Object>> rows,
+        BatchValidationException errors
+    ) throws QueryUpdateServiceException
     {
         if (rows.isEmpty())
             return Collections.emptyMap();
@@ -640,12 +653,27 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         filter.addInClause(fieldKey, keys);
         filter.addCondition(FieldKey.fromParts("Container"), targetContainer.getId(), CompareType.NEQ);
 
+        // Request all rows without a container filter so that rows are more easily resolved across the list scope.
+        // Read permissions are subsequently checked upon loading a row.
+        TableInfo table = _list.getTable(user, container, ContainerFilter.getUnsafeEverythingFilter());
+        if (table == null)
+            throw new QueryUpdateServiceException(String.format("Failed to resolve table for list %s in %s", _list.getName(), container.getPath()));
+
         Map<GUID, List<ListRecord>> containerRows = new HashMap<>();
-        try (var result = new TableSelector(getQueryTable(), PageFlowUtil.set(keyName, "Container", "EntityId"), filter, null).getResults())
+        try (var result = new TableSelector(table, PageFlowUtil.set(keyName, "Container", "EntityId"), filter, null).getResults())
         {
             while (result.next())
             {
                 GUID containerId = new GUID(result.getString("Container"));
+                if (!containerRows.containsKey(containerId))
+                {
+                    var c = ContainerManager.getForId(containerId);
+                    if (c == null)
+                        throw new QueryUpdateServiceException(String.format("Failed to resolve container for row in list %s in %s.", _list.getName(), container.getPath()));
+                    else if (!c.hasPermission(user, ReadPermission.class))
+                        throw new UnauthorizedException("You do not have permission to read list rows in all source containers.");
+                }
+
                 containerRows.computeIfAbsent(containerId, k -> new ArrayList<>());
                 containerRows.get(containerId).add(new ListRecord(result.getObject(fieldKey), result.getString("EntityId")));
             }
