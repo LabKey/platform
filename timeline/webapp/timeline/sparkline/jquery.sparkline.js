@@ -300,7 +300,9 @@
                     if (vals===undefined || vals===null) {
                         vals = $(this).html();
                     }
-                    values = vals.replace(/(^\s*<!--)|(--(?:-!|>)\s*$)|\s+/g, '').split(',');
+                    // Remove HTML comments (<!-- ... --> and <!-- ... --!>)
+                    vals = vals.replace(/<!--[\s\S]*?--\s*!?>/g, '');
+                    values = vals.replace(/\s+/g, '').split(',');
                 } else {
                     values = uservalues;
                 }
