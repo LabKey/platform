@@ -91,7 +91,7 @@ public interface AttachmentService
 
     void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
 
-    void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+    int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 
     @NotNull
     List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;

@@ -9561,11 +9561,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids == null || lsids.isEmpty())
             return 0;
 
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
-        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return Table.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer, null, false);
     }
 
     @Override
@@ -9614,7 +9610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = Table.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -9636,7 +9632,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
-                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
