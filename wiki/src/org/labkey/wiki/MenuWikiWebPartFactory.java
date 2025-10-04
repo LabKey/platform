@@ -36,7 +36,7 @@ public class MenuWikiWebPartFactory extends WikiWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = new HashMap<>(webPart.getPropertyMap());
         if (null == props.get("webPartContainer"))

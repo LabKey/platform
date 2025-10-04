@@ -932,7 +932,7 @@ public class ExperimentModule extends SpringModule
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, false).size();
         if (sampleTypeCount > 0)
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
@@ -986,7 +986,7 @@ public class ExperimentModule extends SpringModule
         }
 
         // Sample Types
-        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, false).size();
         if (sampleTypeCount > 0)
             summaries.add(new Summary(sampleTypeCount, "Sample Type"));
 
@@ -1023,8 +1023,7 @@ public class ExperimentModule extends SpringModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             DomainImpl.TestCase.class,
@@ -1055,9 +1054,8 @@ public class ExperimentModule extends SpringModule
         return list;
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             GraphAlgorithms.TestCase.class,

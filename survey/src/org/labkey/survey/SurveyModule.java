@@ -208,13 +208,13 @@ public class SurveyModule extends DefaultModule
         }
 
         @Override
-        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+        public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
         {
             return new JspView<>("/org/labkey/survey/view/customizeSurveysWebPart.jsp", webPart);
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(ReadPermission.class) || context.getUser().isGuest())
                 return new HtmlView("Surveys", HtmlString.of("You do not have permission to see this data"));
@@ -262,9 +262,8 @@ public class SurveyModule extends DefaultModule
         }
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             SurveyManager.TestCase.class

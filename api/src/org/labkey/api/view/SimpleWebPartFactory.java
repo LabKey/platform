@@ -131,7 +131,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
     
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Object form = null;
         BindException errors = null;
@@ -154,7 +154,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if (view instanceof HttpView && _formClass != null)
             ((HttpView)view).setModelBean(form);
         if (view instanceof WebPartView)
-            return (WebPartView)view;
+            return (WebPartView<?>)view;
         VBox v = new VBox(view);
         v.setTitle(getName());
         return v;
