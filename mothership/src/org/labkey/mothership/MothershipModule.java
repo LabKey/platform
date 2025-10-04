@@ -111,8 +111,7 @@ public class MothershipModule extends DefaultModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return PageFlowUtil.set(ExceptionStackTrace.TestCase.class);
     }

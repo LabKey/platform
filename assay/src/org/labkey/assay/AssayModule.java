@@ -327,7 +327,7 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public @NotNull Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             ModuleAssayCache.TestCase.class,
@@ -345,7 +345,7 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public @NotNull Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             TsvAssayProvider.TestCase.class,

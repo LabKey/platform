@@ -76,14 +76,14 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(context.getContainer());
         return new JspView<>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String selectedTypeName = getConfiguredRunFilterName(webPart);
         Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(portalCtx.getContainer());

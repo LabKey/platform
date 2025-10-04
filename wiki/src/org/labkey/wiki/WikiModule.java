@@ -223,16 +223,13 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         }
     }
 
-
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             WikiManager.TestCase.class
         );
     }
-
 
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
@@ -241,13 +238,11 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
                 getWikiManager().indexWikis(q, modifiedSince, null));
     }
 
-
     @Override
     public void indexDeleted()
     {
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.pages SET lastIndexed=NULL");
     }
-
 
     private WikiManager getWikiManager()
     {

@@ -494,15 +494,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Collections.emptySet();
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Collections.emptySet();
     }

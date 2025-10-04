@@ -36,7 +36,7 @@ public class StudyContainerListener extends ContainerManager.AbstractContainerLi
             publishedStudy.setSourceStudyContainerId(null);
             StudyManager.getInstance().updateStudy(user, publishedStudy);
         }
-        SampleTypeService.get().removeAutoLinkedStudy(c, user);
+        SampleTypeService.get().removeAutoLinkedStudy(c);
     }
 
     @Override

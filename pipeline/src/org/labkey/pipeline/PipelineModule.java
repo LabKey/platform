@@ -333,8 +333,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             PipelineController.TestCase.class,
@@ -347,8 +346,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             CommandLineTokenizer.TestCase.class,
