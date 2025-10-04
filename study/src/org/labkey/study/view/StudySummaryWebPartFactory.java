@@ -135,13 +135,13 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView(NAME, HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data" : "You do not have permission to see this data"));
 
         BindException errors = (BindException) portalCtx.getRequest().getAttribute("errors");
-        WebPartView v = new JspView<>("/org/labkey/study/view/studySummary.jsp", new StudySummaryBean(portalCtx), errors);
+        WebPartView<?> v = new JspView<>("/org/labkey/study/view/studySummary.jsp", new StudySummaryBean(portalCtx), errors);
         v.setTitle(NAME);
 
         if(portalCtx.getContainer().hasPermission(portalCtx.getUser(), AdminPermission.class))

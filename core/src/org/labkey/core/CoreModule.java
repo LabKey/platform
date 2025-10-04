@@ -1511,11 +1511,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         // Must be mutable since we add the dialect tests below
-        Set<Class> testClasses = Sets.newHashSet
+        Set<Class<?>> testClasses = Sets.newHashSet
         (
             AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
@@ -1556,9 +1555,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return testClasses;
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             ApiJsonWriter.TestCase.class,

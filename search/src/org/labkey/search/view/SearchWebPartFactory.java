@@ -41,7 +41,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         boolean includeSubfolders = includeSubfolders(webPart);
 
@@ -57,7 +57,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/search/view/customizeSearchWebPart.jsp", webPart);
     }

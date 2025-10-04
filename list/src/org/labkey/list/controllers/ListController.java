@@ -142,11 +142,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * User: adam
- * Date: Dec 30, 2007
- * Time: 12:44:30 PM
- */
 public class ListController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class, ClearDefaultValuesAction.class);
@@ -814,27 +809,71 @@ public class ListController extends SpringActionController
         return form.getReturnUrl();
     }
 
+    public static class ListItemDetailsForm
+    {
+        private Integer _listId;
+        private String _name;
+        private Integer _rowId;
+
+        public Integer getListId()
+        {
+            return _listId;
+        }
+
+        public void setListId(Integer listId)
+        {
+            _listId = listId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class ListItemDetailsAction extends SimpleViewAction<Object>
+    public class ListItemDetailsAction extends SimpleViewAction<ListItemDetailsForm>
     {
         private ListDefinition _list;
 
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(ListItemDetailsForm form, BindException errors)
         {
-            int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
-            int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
-            _list = ListService.get().getList(getContainer(), listId);
+            String listName = form.getName();
+            if (listName != null)
+                _list = ListService.get().getList(getContainer(), listName, true);
+
             if (_list == null)
             {
-                return HtmlView.of("This list is no longer available.");
+                int listId = form.getListId();
+                if (listId > 0)
+                    _list = ListService.get().getList(getContainer(), listId);
             }
+
+            if (_list == null)
+                return HtmlView.of("This list is no longer available.");
 
             String comment = null;
             String oldRecord = null;
             String newRecord = null;
 
-            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
+            int eventRowId = form.getRowId();
+            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, eventRowId);
 
             if (event != null)
             {

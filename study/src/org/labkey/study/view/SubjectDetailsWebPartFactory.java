@@ -110,7 +110,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String participantId = webPart.getPropertyMap().get(PARTICIPANT_ID_KEY);
         String currentUrl = webPart.getPropertyMap().get(CURRENT_URL_KEY);
