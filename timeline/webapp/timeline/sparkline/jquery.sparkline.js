@@ -170,6 +170,16 @@
 
 (function($) {
 
+    // Repeatedly remove all HTML comments, for complete multi-character sanitization.
+    function removeHtmlComments(input) {
+        let previous;
+        do {
+            previous = input;
+            input = input.replace(/<!--[\s\S]*?--\s*!?>/g, '');
+        } while (input !== previous);
+        return input;
+    }
+
     /*
      * Default configuration settings
      */
@@ -301,7 +311,7 @@
                         vals = $(this).html();
                     }
                     // Remove HTML comments (<!-- ... --> and <!-- ... --!>)
-                    vals = vals.replace(/<!--[\s\S]*?--\s*!?>/g, '');
+                    vals = removeHtmlComments(vals);
                     values = vals.replace(/\s+/g, '').split(',');
                 } else {
                     values = uservalues;
