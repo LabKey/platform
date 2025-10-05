@@ -725,7 +725,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             String key = AssayDataCollector.PRIMARY_FILE + (reusableFiles.isEmpty() ? "" : Integer.toString(reusableFiles.size()));
             File f = inputData.getFile();
-            reusableFiles.put(key, org.labkey.vfs.FileSystemLike.wrapFile(f));
+            if (f != null)
+            {
+                reusableFiles.put(key, org.labkey.vfs.FileSystemLike.wrapFile(f));
+            }
         }
     }
 
