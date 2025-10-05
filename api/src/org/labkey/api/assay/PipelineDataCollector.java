@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
@@ -41,8 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.util.HtmlString.unsafe;
-
 /**
  * Data collector that supplies files the user previously selected through the pipeline/file browser.
  *
@@ -58,7 +57,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     private File _originalFileLocation = null;
 
     @Override
-    public HttpView getView(ContextType context) throws ExperimentException
+    public HttpView<?> getView(ContextType context) throws ExperimentException
     {
         return new HtmlView(getHTML(context));
     }
@@ -68,7 +67,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         Map<String, File> files = getCurrentFilesForDisplay(context);
         if (files.isEmpty())
         {
-            return unsafe("<div class=\"labkey-error\">No files have been selected.</div>");
+            return DOM.createHtml(DOM.DIV(DOM.at(DOM.cl("labkey-error")), "No files have been selected."));
         }
 
         HtmlStringBuilder html = HtmlStringBuilder.of();

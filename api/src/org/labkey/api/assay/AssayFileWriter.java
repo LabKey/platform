@@ -232,7 +232,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context, @NotNull Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
         Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
@@ -244,7 +244,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             while (iter.hasNext())
             {
                 Map.Entry<String, List<MultipartFile>> entry = iter.next();
-                if (parameterNames == null || parameterNames.contains(entry.getKey()))
+                if (parameterNames.contains(entry.getKey()))
                 {
                     List<MultipartFile> multipartFiles = entry.getValue();
                     boolean isAfterFirstFile = false;
