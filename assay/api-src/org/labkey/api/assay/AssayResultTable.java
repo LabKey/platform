@@ -38,6 +38,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.SimpleTranslator.SpecialColumn;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
@@ -78,11 +79,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 public class AssayResultTable extends FilteredTable<AssayProtocolSchema> implements UpdateableTableInfo
 {
@@ -331,12 +327,16 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         return lsidCol;
     }
 
+    private static final Set<String> CREATED_MODIFIED_COLUMN_NAMES = CaseInsensitiveHashSet.of(
+        SpecialColumn.Created.name(),
+        SpecialColumn.CreatedBy.name(),
+        SpecialColumn.Modified.name(),
+        SpecialColumn.ModifiedBy.name()
+    );
+
     private boolean isCreatedModifiedCol(String colName)
     {
-        return CREATED_COLUMN_NAME.equalsIgnoreCase(colName) ||
-                CREATED_BY_COLUMN_NAME.equalsIgnoreCase(colName) ||
-                MODIFIED_COLUMN_NAME.equalsIgnoreCase(colName) ||
-                MODIFIED_BY_COLUMN_NAME.equalsIgnoreCase(colName);
+        return CREATED_MODIFIED_COLUMN_NAMES.contains(colName);
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
@@ -437,10 +437,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (null == selectedColumns) // select all
             return true;
 
-        return selectedColumns.contains(new FieldKey(null, CREATED_COLUMN_NAME)) ||
-                selectedColumns.contains(new FieldKey(null, CREATED_BY_COLUMN_NAME)) ||
-                selectedColumns.contains(new FieldKey(null, MODIFIED_COLUMN_NAME)) ||
-                selectedColumns.contains(new FieldKey(null, MODIFIED_BY_COLUMN_NAME));
+        return selectedColumns.contains(new FieldKey(null, SpecialColumn.Created.name())) ||
+                selectedColumns.contains(new FieldKey(null, SpecialColumn.CreatedBy.name())) ||
+                selectedColumns.contains(new FieldKey(null, SpecialColumn.Modified.name())) ||
+                selectedColumns.contains(new FieldKey(null, SpecialColumn.ModifiedBy.name()));
     }
 
     @NotNull
@@ -468,10 +468,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     // without any updates to the results rows, the created and modified date of the result should match the created date of the run
                     // use run.created/by as default result modified/by
                     String runSelectCol = propertyColumn.getName();
-                    if (MODIFIED_COLUMN_NAME.equalsIgnoreCase(runSelectCol))
-                        runSelectCol = CREATED_COLUMN_NAME;
-                    else if (MODIFIED_BY_COLUMN_NAME.equalsIgnoreCase(runSelectCol))
-                        runSelectCol = CREATED_BY_COLUMN_NAME;
+                    if (SpecialColumn.Modified.name().equalsIgnoreCase(runSelectCol))
+                        runSelectCol = SpecialColumn.Created.name();
+                    else if (SpecialColumn.ModifiedBy.name().equalsIgnoreCase(runSelectCol))
+                        runSelectCol = SpecialColumn.CreatedBy.name();
 
                     coalescedCol.append(runSelectCol);
                     coalescedCol.append(") AS ");

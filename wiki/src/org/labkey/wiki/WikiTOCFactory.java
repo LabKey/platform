@@ -45,16 +45,16 @@ public class WikiTOCFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        WebPartView v = new WikiTOC(portalCtx, webPart);
+        WebPartView<?> v = new WikiTOC(portalCtx, webPart);
         //TODO: Should just use setters
         populateProperties(v, webPart.getPropertyMap());
         return v;
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/wiki/view/customizeWikiToc.jsp", webPart);
     }

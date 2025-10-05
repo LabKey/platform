@@ -43,7 +43,7 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView("Not Authorized", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));

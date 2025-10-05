@@ -212,9 +212,8 @@ public class ListModule extends SpringModule
         return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             ListManager.TestCase.class,

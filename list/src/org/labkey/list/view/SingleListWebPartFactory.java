@@ -48,7 +48,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = webPart.getPropertyMap();
 
@@ -89,7 +89,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/list/view/customizeSingleListWebPart.jsp", webPart);
     }

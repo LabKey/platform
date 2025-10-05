@@ -361,7 +361,7 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             Aggregate.TestCase.class,
@@ -458,7 +458,7 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             AbstractAuditDomainKind.TestCase.class,
