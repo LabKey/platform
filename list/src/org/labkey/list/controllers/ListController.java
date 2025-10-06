@@ -894,8 +894,8 @@ public class ListController extends SpringActionController
 
             if (_list == null)
             {
-                int listId = form.getListId();
-                if (listId > 0)
+                Integer listId = form.getListId();
+                if (listId != null && listId > 0)
                     _list = ListService.get().getList(getContainer(), listId);
             }
 
@@ -906,7 +906,10 @@ public class ListController extends SpringActionController
             String oldRecord = null;
             String newRecord = null;
 
-            int eventRowId = form.getRowId();
+            Integer eventRowId = form.getRowId();
+            if (eventRowId == null || eventRowId <= 0)
+                return HtmlView.of("Unable to resolve event details. An event \"rowId\" must be specified.");
+
             ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, eventRowId);
 
             if (event != null)
