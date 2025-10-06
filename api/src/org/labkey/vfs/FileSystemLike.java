@@ -45,7 +45,7 @@ import static org.labkey.api.util.FileUtil.FILE_SCHEME;
  *
  * <p/>
  * implementation notes:
- * - This is meant to be a wrapper over java.nio.file.Path, java.io.File or org.apache.commons.vfs2.FileObject or other implementaions.
+ * - This is meant to be a wrapper over java.nio.file.Path, java.io.File or org.apache.commons.vfs2.FileObject or other implementations.
  *   However, it is still lower level than Resource.  For instance, it does not know about Permissions or ContentType, etc.
  * <br>
  * - FileLike objects always present String path and util.Path relative to the FileSystemLike root.

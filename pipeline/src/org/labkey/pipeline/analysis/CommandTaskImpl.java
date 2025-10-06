@@ -50,6 +50,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -521,7 +522,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * to replace tokens the script or the command line before executing it.
      * The replaced paths will be resolved to paths in the work directory.
      */
-    protected Map<String, String> createReplacements(@Nullable File scriptFile, @Nullable String apiKey, @Nullable Container container) throws IOException
+    protected Map<String, String> createReplacements(@Nullable FileLike scriptFile, @Nullable String apiKey, @Nullable Container container) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
