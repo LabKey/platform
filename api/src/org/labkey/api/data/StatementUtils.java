@@ -346,7 +346,6 @@ public class StatementUtils
         ph.variableName = makeVariableName(name);
     }
 
-
     private ParameterHolder createParameter(String name, JdbcType type)
     {
         ParameterHolder ph = parameters.get(name);
@@ -358,7 +357,6 @@ public class StatementUtils
         }
         return ph;
     }
-
 
     private ParameterHolder createParameter(String name, String uri, JdbcType type)
     {

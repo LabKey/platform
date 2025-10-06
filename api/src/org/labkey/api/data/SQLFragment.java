@@ -1301,17 +1301,6 @@ public class SQLFragment implements Appendable, CharSequence
         }
     }
 
-
-    public static class IntegrationTestCase extends Assert
-    {
-        @Test
-        public void test()
-        {
-            // try some Dialect stuff and CTE executed against core schema
-        }
-    }
-
-
     @Override
     public boolean equals(Object obj)
     {
