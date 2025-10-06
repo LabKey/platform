@@ -55,11 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-
-/**
- * User: Karl Lum
- * Date: Oct 4, 2007
- */
 public class LogManager
 {
     private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(LogManager.class);
@@ -94,11 +89,11 @@ public class LogManager
             {
                 TableInfo table = schema.getTable(provider.getEventName(), false);
 
-                if (table instanceof DefaultAuditTypeTable)
+                if (table instanceof DefaultAuditTypeTable auditTypeTable)
                 {
                     // consider using etl data iterator for inserts
                     type = validateFields(provider, type);
-                    TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
+                    TableInfo dbTable = auditTypeTable.getRealTable();
                     K ret = Table.insert(user, dbTable, type);
                     return ret;
                 }
@@ -149,7 +144,7 @@ public class LogManager
         Container c = type.getContainer();
         UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
         TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);
-        TableInfo dbTable = table instanceof DefaultAuditTypeTable ? ((DefaultAuditTypeTable) table).getRealTable() : null;
+        TableInfo dbTable = table instanceof DefaultAuditTypeTable auditTypeTable ? auditTypeTable.getRealTable() : null;
 
         Logger auditLogger = getAuditLogger(type);
         SQLException sqlx = null;

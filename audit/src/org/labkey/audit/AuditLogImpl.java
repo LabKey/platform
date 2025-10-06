@@ -55,7 +55,6 @@ import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,10 +62,6 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-/**
- * User: Karl Lum
- * Date: Oct 4, 2007
- */
 public class AuditLogImpl implements AuditLogService, StartupListener
 {
     private static final AuditLogImpl _instance = new AuditLogImpl();
@@ -170,12 +165,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId()).second;
                 transactionEvents.add(event);
             }
-
-            // ensure some standard fields
-            if (event.getCreated() == null)
-                event.setCreated(new Date());
-            if (event.getCreatedBy() == null)
-                event.setCreatedBy(user);
 
             if (event.getImpersonatedBy() == null && user.isImpersonated())
             {

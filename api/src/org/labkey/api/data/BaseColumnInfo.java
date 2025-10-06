@@ -904,7 +904,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         if (JdbcType.TIMESTAMP == getJdbcType())
         {
-            return new SQLFragment("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
+            return new SQLFragment().appendValue(new SQLFragment.NowTimestamp());
         }
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {

@@ -676,7 +676,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(col);
-                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+                values.add(new SQLFragment().appendValue(new SQLFragment.NowTimestamp()));
                 done.add("Created");
             }
         }
@@ -693,7 +693,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(colModified);
-            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+            values.add(new SQLFragment().appendValue(new SQLFragment.NowTimestamp()));
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
@@ -1243,9 +1243,9 @@ public class StatementUtils
             f.append(value.toString());
             return;
         }
-        if (value instanceof SimpleTranslator.NowTimestamp)
+        if (value instanceof SQLFragment.NowTimestamp now)
         {
-            f.append("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
+            f.appendValue(now);
             return;
         }
         if (value instanceof java.sql.Date sqlDate)
@@ -1408,8 +1408,9 @@ public class StatementUtils
             assertEquals(new SQLFragment("1234567890"), actual);
 
             // NowTimestamp
-            actual = runToLiteral.apply(new SimpleTranslator.NowTimestamp(dateLong));
-            assertEquals(new SQLFragment("CURRENT_TIMESTAMP"), actual);
+            var now = new SQLFragment.NowTimestamp(dateLong);
+            actual = runToLiteral.apply(now);
+            assertEquals(new SQLFragment().appendValue(now), actual);
 
             // sql.Date
             var sqlDate = new java.sql.Date(dateLong);
