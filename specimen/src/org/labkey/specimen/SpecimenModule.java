@@ -315,8 +315,7 @@ public class SpecimenModule extends SpringModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             SpecimenWriter.TestCase.class
@@ -330,7 +329,7 @@ public class SpecimenModule extends SpringModule
     }
 
     @Override
-    public @NotNull Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             SpecimenImporter.TestCase.class

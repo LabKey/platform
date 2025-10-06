@@ -100,7 +100,6 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
 
-
     private final Cache<String, List<ListDef>> _listDefCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
@@ -1141,9 +1140,6 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-    /**
-     * Modeled after ListItemImpl.addAuditEvent
-     */
     void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
         ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c, comment, list);

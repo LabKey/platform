@@ -107,7 +107,7 @@ public class SharedStudyController extends BaseStudyController
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView<Object> view = new StudyFilterWebPart();
             view.setTitle(getName());

@@ -3098,7 +3098,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public int moveAuditEvents(Container targetContainer, List<Long> rowPks, String schemaName, String queryName)
+    public int moveAuditEvents(Container targetContainer, Collection<?> rowPks, String schemaName, String queryName)
     {
         QueryUpdateAuditProvider provider = new QueryUpdateAuditProvider();
         return provider.moveEvents(targetContainer, rowPks, schemaName, queryName);
@@ -3133,22 +3133,32 @@ public class QueryServiceImpl implements QueryService
                 event.setQueryName(tinfo.getPublicName());
 
                 FieldKey rowPk = tinfo.getAuditRowPk();
-                if (rowPk != null)
+                if (rowPk != null && (row != null || existingRow != null))
                 {
-                    String rowPkStr = rowPk.toString();
-                    Object pk = null;
-                    if (row != null && row.containsKey(rowPkStr))
-                    {
-                        pk = row.get(rowPkStr);
-                    }
-                    if (pk == null && existingRow != null && existingRow.containsKey(rowPkStr))
-                    {
-                        pk = existingRow.get(rowPkStr);
-                    }
+                    Object pk = resolvePkValue(rowPk, row);
+                    if (pk == null)
+                        pk = resolvePkValue(rowPk, existingRow);
+
                     if (pk != null)
                         event.setRowPk(String.valueOf(pk));
                 }
+
                 return event;
+            }
+
+            private static @Nullable Object resolvePkValue(@NotNull FieldKey fieldKey, @Nullable Map<String, Object> row)
+            {
+                Object pk = null;
+                if (row != null)
+                {
+                    String rowPkStr = fieldKey.toString();
+                    if (row.containsKey(rowPkStr))
+                        pk = row.get(rowPkStr);
+                    if (pk == null && row.containsKey(fieldKey.getName()))
+                        pk = row.get(fieldKey.getName());
+                }
+
+                return pk;
             }
         };
     }
