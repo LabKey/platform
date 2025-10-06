@@ -236,7 +236,6 @@ if (!bean.isResponse && !bean.print)
 {
     if (bean.perm.allowResponse(announcementModel))
     {
-        // There are two cases here.... I'm in the wiki controller or I'm not (e.g. I'm a discussion)
         ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
         respond.addReturnUrl(bean.currentURL);
         %><%= button("Respond").href(respond) %>&nbsp;<%
