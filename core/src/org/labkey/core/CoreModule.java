@@ -87,7 +87,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
@@ -546,10 +545,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Restore Object-Level Discussions",
             "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.11.",
             false, false, FeatureType.Deprecated));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
-            "Resolve Missing Lookup Values to Null",
-            "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
-            false, false, OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(TabLoader.FEATUREFLAG_UNESCAPE_BACKSLASH,
             "Unescape backslash character on import",
             "Treat backslash '\\' character as an escape character when loading data from file.",
