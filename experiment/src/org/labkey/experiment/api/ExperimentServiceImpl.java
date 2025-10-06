@@ -1670,7 +1670,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, @NotNull DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -2491,9 +2491,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findRelatedChildSamples(start);
     }
 
-    @Override
+    /**
+     * Find the Identifiable objects, if any, that are parents of the <code>start</code> Identifiable.
+     */
     @NotNull
-    public Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start)
+    public Set<ExpData> getParentDatas(Container c, User user, Identifiable start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2503,9 +2505,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findNearestParentDatas(start);
     }
 
-    @Override
+    /**
+     * Find the Identifiable objects, if any, that are parents of the <code>start</code> Identifiable.
+     */
     @NotNull
-    public Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start)
+    public Set<ExpMaterial> getParentMaterials(Container c, User user, Identifiable start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2513,6 +2517,73 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         ExpLineage lineage = getLineage(c, user, start, options);
         return lineage.findNearestParentMaterials(start);
+    }
+
+    public <T extends ExpRunItem> void addParentsFields(T seed, Map<String, Object> dataRow, User user, Container container)
+    {
+        Set<ExpMaterial> parentSamples = getParentMaterials(container, user, seed);
+        if (!parentSamples.isEmpty())
+            addParentFields(dataRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+        Set<ExpData> parentDatas = getParentDatas(container, user, seed);
+        if (!parentDatas.isEmpty())
+            addParentFields(dataRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
+    }
+
+    public <T extends ExpRunItem> void addParentFields(Map<String, Object> sampleRow, Set<T> parents, String parentPrefix, User user)
+    {
+        Map<String, List<String>> parentByType = new HashMap<>();
+        for (ExpRunItem parent : parents)
+        {
+            String type = "";
+            if (parent instanceof ExpData dataParent)
+            {
+                ExpDataClass dataClass = dataParent.getDataClass(user);
+                if (dataClass == null)
+                    continue;
+                type = dataClass.getName();
+            }
+            else if (parent instanceof ExpMaterial materialParent)
+            {
+                ExpSampleType sampleType = materialParent.getSampleType();
+                if (sampleType == null)
+                    continue;
+                type = sampleType.getName();
+            }
+
+            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
+            String parentName = parent.getName();
+            if (parentName.contains(","))
+                parentName = "\"" + parentName + "\"";
+            parentByType.get(type).add(parentName);
+        }
+
+        for (String type : parentByType.keySet())
+        {
+            String key = parentPrefix + type;
+            List<String> parentValues = parentByType.get(type);
+            String value = String.join(",", parentValues);
+            sampleRow.put(key, value);
+        }
+    }
+
+    public void addRowsParentsFields(Set<Identifiable> seeds, Map<Integer, Map<String, Object>> dataRows, User user, Container container)
+    {
+        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, seeds);
+
+        for (Map<String, Object> dataRow : dataRows.values())
+        {
+            String lsidKey = (String) dataRow.get("lsid");
+
+            if (!parents.containsKey(lsidKey))
+                continue;
+
+            Pair<Set<ExpMaterial>, Set<ExpData>> sampleParents = parents.get(lsidKey);
+
+            if (!sampleParents.first.isEmpty())
+                addParentFields(dataRow, sampleParents.first, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+            if (!sampleParents.second.isEmpty())
+                addParentFields(dataRow, sampleParents.second, ExpData.DATA_INPUT_PARENT + "/", user);
+        }
     }
 
     public Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> getParentMaterialAndDataMap(Container c, User user, Set<Identifiable> seeds)
@@ -2542,28 +2613,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return results;
-    }
-
-    @Override
-    @NotNull
-    public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setChildren(false);
-
-        ExpLineage lineage = getLineage(c, user, start, options);
-        return lineage.findNearestParentDatas(start);
-    }
-
-    @Override
-    @NotNull
-    public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setChildren(false);
-
-        ExpLineage lineage = getLineage(c, user, start, options);
-        return lineage.findNearestParentMaterials(start);
     }
 
     // Get list of ExpRun LSIDs for the start Data or Material
@@ -3151,7 +3200,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull String getObjectReferenceDescription(Class referencedClass)
+    public @NotNull String getObjectReferenceDescription(Class<?> referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -5470,7 +5519,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
-        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
+        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
@@ -9344,7 +9393,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return new Pair<>(sampleTypes, dataClasses);
 
         String targetInputType = (isSampleParent ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX) + parentDataTypeName;
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, true))
         {
             try
             {
@@ -9512,11 +9561,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids == null || lsids.isEmpty())
             return 0;
 
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
-        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return Table.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer, null, false);
     }
 
     @Override
@@ -9565,7 +9610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = Table.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -9587,7 +9632,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
-                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
@@ -9892,7 +9937,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbSchema dbSchema = ExperimentService.get().getSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
-        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, user, true);
+        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, true);
 
         String unionAll = "";
         SQLFragment query = new SQLFragment();

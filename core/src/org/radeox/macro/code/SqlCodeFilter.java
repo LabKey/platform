@@ -33,6 +33,8 @@ package org.radeox.macro.code;
  * @version $Id: SqlCodeFilter.java,v 1.6 2004/02/19 12:47:56 stephan Exp $
  */
 
+import org.radeox.filter.regex.RegexFilter;
+
 public class SqlCodeFilter extends DefaultRegexCodeFormatter implements SourceCodeFormatter {
 
   private static final String KEYWORDS =
@@ -42,12 +44,8 @@ public class SqlCodeFilter extends DefaultRegexCodeFormatter implements SourceCo
       "\\b(VARCHAR)" +
       "\\b";
 
-  private static final String QUOTES =
-      "\"(([^\"\\\\]|\\.)*)\"";
-
-
   public SqlCodeFilter() {
-    super(QUOTES, "<span class=\"sql-quote\">\"$1\"</span>");
+    super(RegexFilter.QUOTE_REGEX, "<span class=\"sql-quote\">\"$1\"</span>");
     addRegex(OBJECTS, "<span class=\"sql-object\">$1</span>");
     addRegex(KEYWORDS, "<span class=\"sql-keyword\">$1</span>");
   }

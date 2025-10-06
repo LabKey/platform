@@ -52,6 +52,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -86,7 +87,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -98,6 +98,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -689,14 +690,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         @NotNull
         @Override
-        public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+        public List<IndexDefinition> getUniqueIndices()
         {
             return _inner.getUniqueIndices();
         }
 
         @NotNull
         @Override
-        public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+        public List<IndexDefinition> getAllIndices()
         {
             return _inner.getAllIndices();
         }
@@ -923,7 +924,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
                 throw new IllegalStateException("Domain kind of " + domain.getName() + " is null!");
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
+            List<IndexDefinition> existingIndices = schemaTableInfo.getAllIndices();
             // Determine the desired indexes. Note that the index lists provided by Domain and DomainKind may overlap,
             // so we need to uniquify. Domain indices never specify "clustered" but DomainKind indices may (e.g.,
             // DatasetDomainKind), so compare using only column names and give preference to DomainKind.
@@ -931,17 +932,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
             newIndices.addAll(domain.getPropertyIndices());
             newIndices.addAll(kind.getPropertyIndices(domain));
             Set<String> toRemove = new HashSet<>();
-            for (String name : existingIndices.keySet())
+            for (IndexDefinition def : existingIndices)
             {
-                if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
+                if (def.indexType() == TableInfo.IndexType.Primary)
                     continue;
-                Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
-                String[] columnNames = new String[columnIndex.second.size()];
-                for (int i = 0; i < columnIndex.second.size(); i++)
-                {
-                    columnNames[i] = columnIndex.second.get(i).getColumnName();
-                }
-                Index existingIndex = new Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+                String[] columnNames = def.columns().stream()
+                    .map(ColumnInfo::getColumnName)
+                    .toArray(String[]::new);
+                Index existingIndex = new Index(def.indexType() == TableInfo.IndexType.Unique, columnNames);
                 boolean foundIt = false;
                 for (Index propertyIndex : newIndices)
                 {
@@ -954,7 +952,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
 
                 if (!foundIt)
-                    toRemove.add(name);
+                    toRemove.add(def.name());
             }
 
             if (!toRemove.isEmpty())
@@ -1712,9 +1710,9 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public Set<String> getReservedPropertyNames(Domain domain, User user)
+                public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
                 {
-                    return Set.of();
+                    return Collections.emptySet();
                 }
 
                 @Override

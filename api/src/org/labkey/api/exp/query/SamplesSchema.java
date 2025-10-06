@@ -77,7 +77,7 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
     {
         Map<String, ExpSampleType> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
-        for (ExpSampleType st : SampleTypeService.get().getSampleTypes(container, user, user != null))
+        for (ExpSampleType st : SampleTypeService.get().getSampleTypes(container, user != null))
         {
             map.put(st.getName(), st);
         }

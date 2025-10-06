@@ -15,8 +15,12 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -57,10 +61,10 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
-        fields.addAll(DatasetDefinition.DEFAULT_VISIT_FIELDS);
+        Set<String> fields = DomainUtil.getNamesAndLabels(DatasetDefinition.DEFAULT_VISIT_FIELDS);
+        fields.addAll(getStudySubjectReservedName(domain));
 
         return Collections.unmodifiableSet(fields);
     }
@@ -74,9 +78,15 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
 
         if(null != study)
         {
+            TableInfo table;
             // Older datasets may not have participantsequencenum
-            if (null == domain.getStorageTableName() || (null != studyService
-                    && null != studyService.getDatasetSchema().getTable(domain.getStorageTableName()).getColumn("participantsequencenum")))
+            if (
+                // Unprovisioned domain that doesn't have its name yet
+                null == domain.getStorageTableName() ||
+                // Unprovisioned domain that does have a name (e.g., database cloning/migration scenario)
+                (null != studyService && (null == (table = studyService.getDatasetSchema().getTable(domain.getStorageTableName())) ||
+                // I guess this is the already provisioned case
+                null != table.getColumn("participantsequencenum"))))
             {
                 if (!study.isDataspaceStudy())
                 {

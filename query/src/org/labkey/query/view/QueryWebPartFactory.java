@@ -33,7 +33,7 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         QueryWebPart ret = new QueryWebPart(portalCtx, webPart);
         populateProperties(ret, webPart.getPropertyMap());
@@ -41,7 +41,7 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/query/view/editQueryWebPart.jsp", webPart);
     }

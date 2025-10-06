@@ -183,7 +183,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
     {
         if (null != _loadException)
             throw new WebPartConfigurationException(this, "Error thrown during load", _loadException);
@@ -191,7 +191,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if (null == getViewName())
             throw new WebPartConfigurationException(this, "No view name specified for the module web part defined in " + _resourceName);
 
-        WebPartView ret = ModuleHtmlView.get(getModule(), ModuleHtmlView.getStandardPath(getViewName()), webPart);
+        WebPartView<?> ret = ModuleHtmlView.get(getModule(), ModuleHtmlView.getStandardPath(getViewName()), webPart);
         if (null != _webPartDef && null != _webPartDef.getView())
         {
             if (null != _webPartDef.getView().getFrame())

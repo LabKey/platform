@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 
 import java.nio.file.Path;
 
@@ -96,7 +97,7 @@ public class AnalyzeForm extends PipelinePathForm
         }
         else if (fileInputName != null)
         {
-            Path fileInput = dirData.resolve(fileInputName);
+            Path fileInput = FileUtil.appendName(dirData, fileInputName);
             FileType ft = protocol.findInputType(fileInput);
             if (ft != null)
                 fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis, ft.getBaseName(fileInput));

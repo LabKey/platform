@@ -82,6 +82,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -195,7 +196,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.010;
+        return 25.011;
     }
 
     @Nullable
@@ -874,19 +875,33 @@ public class ExperimentModule extends SpringModule
         }
 
         // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
-        DatabaseMigrationService.get().registerHandler(OntologyManager.getExpSchema(), new DefaultMigrationHandler()
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(OntologyManager.getExpSchema())
         {
             @Override
-            public void beforeSchema(DbSchema targetSchema)
+            public void beforeSchema()
             {
                 // Yes, the FK name is misspelled
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
             }
 
             @Override
-            public void afterSchema(DbSchema targetSchema)
+            public @Nullable FieldKey getContainerFieldKey(TableInfo table)
             {
-                new SqlExecutor(targetSchema).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+                return switch (table.getName())
+                {
+                    case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
+                    case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
+                    case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
+                    default -> super.getContainerFieldKey(table);
+                };
+            }
+
+            @Override
+            public void afterSchema()
+            {
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
             }
         });
     }
@@ -917,7 +932,7 @@ public class ExperimentModule extends SpringModule
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, false).size();
         if (sampleTypeCount > 0)
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
@@ -971,7 +986,7 @@ public class ExperimentModule extends SpringModule
         }
 
         // Sample Types
-        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, false).size();
         if (sampleTypeCount > 0)
             summaries.add(new Summary(sampleTypeCount, "Sample Type"));
 
@@ -1008,8 +1023,7 @@ public class ExperimentModule extends SpringModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             DomainImpl.TestCase.class,
@@ -1024,6 +1038,7 @@ public class ExperimentModule extends SpringModule
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
+            SampleTypeServiceImpl.TestCase.class,
             StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class
@@ -1039,9 +1054,8 @@ public class ExperimentModule extends SpringModule
         return list;
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             GraphAlgorithms.TestCase.class,

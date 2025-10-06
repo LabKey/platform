@@ -211,8 +211,7 @@ public class FileContentModule extends DefaultModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             FileContentController.TestCase.class,

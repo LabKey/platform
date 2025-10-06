@@ -24,6 +24,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.StandardSchemaTableInfoFactory;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
+import org.labkey.api.module.Module;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -34,9 +35,9 @@ import java.util.Collection;
  */
 public class ProvisionedDbSchema extends DbSchema
 {
-    public ProvisionedDbSchema(String name, DbScope scope)
+    public ProvisionedDbSchema(String name, DbScope scope, Module module)
     {
-        super(name, DbSchemaType.Provisioned, scope, null, null);
+        super(name, DbSchemaType.Provisioned, scope, null, module);
     }
 
     @Override

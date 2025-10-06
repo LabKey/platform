@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +28,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -53,6 +56,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -525,6 +529,25 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(StudySchema.getInstance().getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return "StudySnapshot".equals(sourceTable.getName()) ? FieldKey.fromParts("Source") : super.getContainerFieldKey(sourceTable);
+            }
+        });
+
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(StudySchema.getInstance().getDatasetSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                // Datasets don't have a Container column, so treat as site-wide. TODO: Treat shared datasets differently?
+                return SITE_WIDE_TABLE;
+            }
+        });
     }
 
     @Override
@@ -708,19 +731,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                ParticipantGroupManager.ParticipantGroupTestCase.class,
-                StudyImpl.ProtocolDocumentTestCase.class,
-                StudyManager.StudySnapshotTestCase.class,
-                StudyManager.VisitCreationTestCase.class,
-                StudyModule.TestCase.class,
-                VisitImpl.TestCase.class,
-                DatasetUpdateService.TestCase.class,
-        DatasetLsidImportHelper.TestCase.class);
+            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+            ParticipantGroupManager.ParticipantGroupTestCase.class,
+            StudyImpl.ProtocolDocumentTestCase.class,
+            StudyManager.StudySnapshotTestCase.class,
+            StudyManager.VisitCreationTestCase.class,
+            StudyModule.TestCase.class,
+            VisitImpl.TestCase.class,
+            DatasetUpdateService.TestCase.class,
+            DatasetLsidImportHelper.TestCase.class
+        );
     }
 
     @Override
@@ -732,8 +755,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             DatasetDataWriter.TestCase.class,

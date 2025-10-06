@@ -98,7 +98,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public @Nullable Double getSchemaVersion()
     {
-        return 25.001;
+        return 25.002;
     }
 
     @Override
@@ -200,8 +200,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             AnnouncementManager.TestCase.class
@@ -227,7 +226,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
         return list;
     }
-
 
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)

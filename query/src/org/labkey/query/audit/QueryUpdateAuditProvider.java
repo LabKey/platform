@@ -26,9 +26,8 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -50,10 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/21/13
- */
 public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_UPDATE_AUDIT_EVENT = "QueryUpdateAuditEvent";
@@ -192,15 +187,14 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-    public int moveEvents(Container targetContainer, Collection<Long> rowIds, String schemaName, String queryName)
+    public int moveEvents(Container targetContainer, Collection<?> rowPks, String schemaName, String queryName)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE RowPk ");
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowIds.stream().map(Object::toString).toList());
-        sql.append(" AND SchemaName = ").appendValue(schemaName).append(" AND QueryName = ").appendValue(queryName);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts(COLUMN_NAME_ROW_PK), rowPks.stream().map(Object::toString).toList());
+        filter.addCondition(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME), schemaName);
+        filter.addCondition(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME), queryName);
+
+        return Table.updateContainer(createStorageTableInfo(), targetContainer, filter, null, false);
     }
 
     public static class QueryUpdateAuditEvent extends DetailedAuditTypeEvent

@@ -137,7 +137,7 @@ public class LocalDirectory implements Serializable
         {
             try
             {
-                Path remoteLogFilePath = _remoteDir.resolve(_logFile.getFileName().toString());
+                Path remoteLogFilePath = FileUtil.appendName(_remoteDir, _logFile.getFileName().toString());
                 if (Files.exists(remoteLogFilePath))
                 {
                     Files.copy(remoteLogFilePath, _logFile);
@@ -307,6 +307,6 @@ public class LocalDirectory implements Serializable
     {
         if (_remoteDir == null)
             return _logFile;
-        return _remoteDir.resolve(_logFile.getFileName().toString());
+        return FileUtil.appendName(_remoteDir, _logFile.getFileName().toString());
     }
 }

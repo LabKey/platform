@@ -30,6 +30,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -54,8 +55,8 @@ import java.util.function.Function;
 
 public interface SampleTypeService
 {
-    String MISSING_COLUMN_ERROR_MESSAGE_PATTERN = "When adding or updating samples, the %s column must be provided when the %s column is.";
-    String MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN = "When adding or updating samples, a %s value must be provided when there is a value for %s.";
+    String MISSING_AMOUNT_ERROR_MESSAGE = "An Amount value must be provided when Units are provided.";
+    String MISSING_UNITS_ERROR_MESSAGE = "A Units value must be provided when Amounts are provided.";
     String UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN = "No %s value provided for %s %s.";
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
@@ -114,6 +115,12 @@ public interface SampleTypeService
         ServiceRegistry.get().registerService(SampleTypeService.class, impl);
     }
 
+    @NotNull
+    List<Unit> getSupportedUnits();
+
+    @Nullable
+    Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, @Nullable String sampleTypeName);
+
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
     /**
@@ -158,34 +165,39 @@ public interface SampleTypeService
     @Nullable
     DataState getSampleState(Container container, Long stateRowId);
 
-    void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
+    void removeAutoLinkedStudy(@NotNull Container studyContainer);
 
     /**
      * @param includeOtherContainers whether sample types from the shared container or the container's project should be included
      */
-    // TODO: Remove user parameter (not used)
-    List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
+    List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, boolean includeOtherContainers);
+
+    @Deprecated // Temporary just to keep code compiling during migration to new method
+    default List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, User user, boolean includeOtherContainers)
+    {
+        return getSampleTypes(container, includeOtherContainers);
+    }
 
     /**
      * Get a SampleType by name within the definition container.
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
+    /**
+     * Get a SampleType by name within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
+     */
+    // TODO: Remove user parameter (not used)
+    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, @NotNull String sampleTypeName);
+
     /** Get the sample type with name at a specific time */
     @Nullable
-    // TODO: Remove user parameter (not used)
-    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
+    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
 
     /**
      * Return the sample type for this LSID, optionally pass Container hint for performance
      */
     ExpSampleType getSampleTypeByType(@NotNull String lsid, Container hint);
-
-    /**
-     * Get a SampleType by name within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
-     */
-    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, @NotNull String sampleTypeName);
 
     /**
      * Get a SampleType by rowId within the definition container.

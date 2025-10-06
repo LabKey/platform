@@ -307,14 +307,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override @NotNull
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
         return getColumnMetaData().getUniqueIndices();
     }
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    public List<IndexDefinition> getAllIndices()
     {
         return getColumnMetaData().getAllIndices();
     }

@@ -131,7 +131,7 @@ public class StudyImportContext extends SimpleStudyImportContext
     {
         Path rootFile = FileUtil.stringToPath(getContainer(), root.getLocation());
         Path dirFile = FileUtil.stringToPath(getContainer(), dir.getLocation());
-        Path file = dirFile.resolve(name);
+        Path file = FileUtil.appendName(dirFile, name);
         String source = "study.xml";
 
         if (!Files.exists(file))

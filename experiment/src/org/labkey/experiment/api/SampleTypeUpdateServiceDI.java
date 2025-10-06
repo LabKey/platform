@@ -77,9 +77,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
@@ -109,6 +107,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JobRunner;
@@ -149,8 +148,8 @@ import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRema
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -535,9 +534,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasUnits == hasAmount)
             return; // both columns are present or neither is
         if (!hasAmount)
-            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+            throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
-        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+        throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
     @Override
@@ -666,11 +665,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Object value = entry.getValue();
             if (col != null && col == unitsCol)
             {
-                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && col == amountCol)
             {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
@@ -827,7 +826,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
-        return new CaseInsensitiveHashSet(fields);
+        // Issue 53036: also include column labels and aliases
+        Set<String> metaFieldNames = new CaseInsensitiveHashSet(fields);
+        for (String fieldName : fields)
+        {
+            ColumnInfo columnInfo = getQueryTable().getColumn(fieldName);
+            if (columnInfo != null)
+            {
+                metaFieldNames.add(columnInfo.getLabel());
+                metaFieldNames.add(columnInfo.getAlias().getId());
+            }
+        }
+
+        return metaFieldNames;
     }
 
     public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
@@ -869,15 +880,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
         Integer aliquotRollupRoot = null;
-
+        SampleTypeService stService = SampleTypeService.get();
         if (!_sampleType.isMedia() && isAliquot)
         {
             Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
+                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
@@ -1162,57 +1173,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
         if (null == seed)
             return sampleRow;
-        Set<ExpMaterial> parentSamples = experimentService.getParentMaterials(container, user, seed);
-        if (!parentSamples.isEmpty())
-            addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
-        Set<ExpData> parentDatas = experimentService.getParentDatas(container, user, seed);
-        if (!parentDatas.isEmpty())
-            addParentFields(sampleRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
+
+        ExperimentServiceImpl.get().addParentsFields(seed, sampleRow, user, container);
 
         return sampleRow;
-    }
-
-    private <T extends ExpRunItem> void addParentFields(Map<String, Object> sampleRow, Set<T> parents, String parentPrefix, User user)
-    {
-        Map<String, List<String>> parentByType = new HashMap<>();
-        for (ExpRunItem parent : parents)
-        {
-            String type = "";
-            if (parent instanceof ExpData dataParent)
-            {
-                ExpDataClass dataClass = dataParent.getDataClass(user);
-                if (dataClass == null)
-                    continue;
-                type = dataClass.getName();
-            }
-            else if (parent instanceof ExpMaterial materialParent)
-            {
-                ExpSampleType sampleType = materialParent.getSampleType();
-                if (sampleType == null)
-                    continue;
-                type = sampleType.getName();
-            }
-
-            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
-            String parentName = parent.getName();
-            if (parentName.contains(","))
-                parentName = "\"" + parentName + "\"";
-            parentByType.get(type).add(parentName);
-        }
-
-        for (String type : parentByType.keySet())
-        {
-            String key = parentPrefix + type;
-            String value = String.join(",", parentByType.get(type));
-            sampleRow.put(key, value);
-        }
-    }
-
-    @Override
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
-            throws QueryUpdateServiceException
-    {
-        return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
     }
 
     @Override
@@ -1236,13 +1200,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
 
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
-    }
-
-    @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
-            throws InvalidKeyException, QueryUpdateServiceException
-    {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
     private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
@@ -1310,8 +1267,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
-            throws QueryUpdateServiceException, InvalidKeyException
+    @Override
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
+            throws InvalidKeyException, QueryUpdateServiceException
     {
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
         TableInfo queryTableInfo = existingRowSelect.tableInfo;
@@ -1405,7 +1363,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        if (checkCrossFolderData && !allKeys.isEmpty())
+        if (verifyNoCrossFolderData && !allKeys.isEmpty())
         {
             // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
             ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
@@ -1445,37 +1403,27 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!existingRowSelect.includeParent)
             return sampleRows;
 
-        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLsid(rowNumLsid.values());
+        Set<String> lsids = new HashSet<>();
+        for (Map<String, Object> sampleRow : sampleRows.values())
+            lsids.add((String) sampleRow.get("lsid"));
+        List<ExpMaterialImpl> seeds = ExperimentServiceImpl.get().getExpMaterialsByLsid(lsids);
 
-        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
-
-        for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
-        {
-            Integer rowNum = rowNumSampleRow.getKey();
-            String lsidKey = rowNumLsid.get(rowNum);
-            Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!parents.containsKey(lsidKey))
-                continue;
-
-            Pair<Set<ExpMaterial>, Set<ExpData>> sampleParents = parents.get(lsidKey);
-
-            if (!sampleParents.first.isEmpty())
-                addParentFields(sampleRow, sampleParents.first, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
-            if (!sampleParents.second.isEmpty())
-                addParentFields(sampleRow, sampleParents.second, ExpData.DATA_INPUT_PARENT + "/", user);
-        }
+        ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), sampleRows, user, container);
 
         return sampleRows;
     }
 
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws QueryUpdateServiceException
     {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs);
+            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, false);
             if (materialMap != null)
                 result.add(materialMap);
         }
@@ -1892,14 +1840,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
+                String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
-                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                    addRowError("Failed to generate name for aliquot" + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    addRowError("Failed to generate name for sample" + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (_sampleType.hasNameAsIdCol())
-                    addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    addRowError("SampleID or Name is required for sample" + rowText + ".");
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample" + rowText + ".");
             }
         }
 
@@ -2100,7 +2049,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit)
+            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit, String sampleTypeName)
             {
                 if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
                 {
@@ -2109,14 +2058,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // when there's a units value but no amount column, this is an error
                 if (!haveAmountCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+                    throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
                 // When an amount column is present but no amount value is provided, this is an error
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
 
 
-                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit, sampleTypeName);
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
@@ -2124,7 +2073,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit);
+                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
@@ -2139,14 +2088,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return a Number in the base units of the sample type.
-            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit, @Nullable String sampleTypeName)
             {
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).trim().isEmpty()))
                     return null;
 
                 // When there is an amount value, if there isn't a units column, this is an error.
                 if (!hasUnitsCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+                    throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
 
                 // Have a units column, but no units value
                 if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
@@ -2156,13 +2105,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
                 }
 
-                Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
+                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit, sampleTypeName);
 
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
                 {
+                    Double quantityValue;
                     if (amountObj instanceof Number)
-                        return Quantity.of((Number) amountObj, unit).doubleValue();
+                        quantityValue = Quantity.of((Number) amountObj, unit).doubleValue();
                     else if (amountObj instanceof String amountStr)
                     {
                         if (StringUtils.isEmpty(amountStr.trim()))
@@ -2170,10 +2120,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
                         // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
                         // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
-                        return Quantity.convert(amountObj, unit).doubleValue();
+                        quantityValue = Quantity.convert(amountObj, unit).doubleValue();
                     }
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
+
+                    // Issue 53979: check for non-finite values
+                    if (!Double.isFinite(quantityValue))
+                        throw new ConversionException("Could not parse a finite number from '" + amountObj + "'.");
+
+                    return quantityValue;
                 }
                 return amountObj; // have no display unit, so we'll do no conversions
             }
@@ -2181,7 +2137,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
-                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 

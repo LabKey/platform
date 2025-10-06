@@ -80,9 +80,11 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.mbean.SearchMXBean;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchStartupListener;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
@@ -108,6 +110,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -120,7 +123,6 @@ import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -144,7 +146,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -221,7 +225,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         try
         {
             InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
-            org.w3c.dom.Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+            org.w3c.dom.Document doc = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(is);
             config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(_log), true));
         }
         catch (Exception e)
@@ -231,6 +235,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         _autoDetectParser = new AutoDetectParser(config);
     }
+
+    private final List<SearchStartupListener> _startupListeners = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean _startupCompleted = new AtomicBoolean(false);
 
     private boolean _initializingIndex = false;
 
@@ -317,6 +324,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     });
 
                     FileSystemWatchers.get().addListener(_lockFileWatch.dir, _lockFileWatch.listener, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+                }
+
+                if (!_startupCompleted.get())
+                {
+                    if (isIndexManagerReady())
+                    {
+                        if (_startupCompleted.compareAndSet(false, true))
+                        {
+                            for (SearchStartupListener listener : _startupListeners)
+                                indexStartupComplete(listener);
+                            _startupListeners.clear();
+                        }
+                        else
+                        {
+                            _log.debug("Search startup listeners already executed by another thread.");
+                        }
+                    }
+                    else
+                    {
+                        _log.warn("Search index manager not yet ready; skipping startup listeners.");
+                    }
                 }
             }
         }
@@ -456,6 +484,39 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         super.start();
     }
 
+    private void indexStartupComplete(@NotNull SearchStartupListener listener)
+    {
+        try
+        {
+            _log.info("Running search startup listener: {}", listener.getName());
+            listener.indexStartupComplete();
+        }
+        catch (Throwable t)
+        {
+            _log.error("Search startup listener '{}' failed: ", listener.getName(), t);
+        }
+    }
+
+    @Override
+    public void addStartupListener(@NotNull SearchStartupListener listener)
+    {
+        // If the index is already initialized, then run the listener immediately.
+        if (_startupCompleted.get())
+        {
+            indexStartupComplete(listener);
+            return;
+        }
+
+        // Otherwise, wait until the index is initialized.
+        _startupListeners.add(listener);
+    }
+
+    private boolean isIndexManagerReady()
+    {
+        WritableIndexManager manager = _indexManager;
+        return manager.isReal() && !manager.isClosed();
+    }
+
     @Override
     public void startCrawler()
     {
@@ -557,7 +618,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     public void deleteIndex(String reason)
     {
         _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
-        if (_indexManager.isReal() && !_indexManager.isClosed())
+        if (isIndexManagerReady())
             closeIndex();
 
         File indexDir = getIndexDirectory();

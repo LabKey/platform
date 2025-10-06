@@ -43,6 +43,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.IntHashMap;
@@ -103,7 +104,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -138,7 +138,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
- * Containers are named using filesystem-like paths e.g. /proteomics/comet/.  Each path
+ * Containers are named using filesystem-like paths e.g., /proteomics/comet/.  Each path
  * maps to a UID and set of permissions.  The current security scheme allows ACLs
  * to be specified explicitly on the directory or completely inherited.  ACLs are not combined.
  * <p/>
@@ -150,7 +150,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
  * a container is deleted, it should never get put back in the cache. We accomplish this by synchronizing on
  * the removal from the cache, and the database lookup/cache insertion. While a container is in the middle
  * of being deleted, it's OK for other clients to see it because FKs enforce that it's always internally
- * consistent, even if some of the data has already been deleted.
+ * consistent, even if some data has already been deleted.
  */
 public class ContainerManager
 {
@@ -2683,8 +2683,7 @@ public class ContainerManager
         return c;
     }
 
-    // targetContainer must be in the same app project at this time
-    // i.e. child of current project, project of current child, sibling within project
+    // Current and target containers must be within the same project tree at this time
     private static boolean isValidTargetContainer(Container current, Container target)
     {
         if (current.isRoot() || target.isRoot())
@@ -2694,31 +2693,16 @@ public class ContainerManager
         if (current.equals(target))
             return true;
 
-        boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
-        boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
-        boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+        // from project to descendant
+        if (current.isProject())
+            return target.isDescendant(current);
 
-        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
-    }
+        // from descendant to project
+        if (target.isProject())
+            return current.isDescendant(target);
 
-    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
-    {
-        try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
-        {
-            SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                    .append(" SET container = ").appendValue(targetContainer.getEntityId());
-            if (withModified)
-            {
-                dataUpdate.append(", modified = ").appendValue(new Date());
-                dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
-            }
-            dataUpdate.append(" WHERE ").append(idField);
-            dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
-            int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
-            transaction.commit();
-
-            return numUpdated;
-        }
+        // from descendant to descendant
+        return current.getProject() != null && current.getProject().equals(target.getProject());
     }
 
     /**

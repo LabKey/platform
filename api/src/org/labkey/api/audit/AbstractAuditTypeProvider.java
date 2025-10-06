@@ -30,8 +30,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -85,12 +84,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     private final AbstractAuditDomainKind _domainKind;
 
-    @Deprecated // Call the other constructor and stop overriding getDomainKind()
-    public AbstractAuditTypeProvider()
-    {
-        this(null);
-    }
-
     public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
         // TODO: consolidate domain kind initialization to this constructor and stop overriding getDomainKind()
@@ -99,7 +92,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         PropertyService.get().registerDomainKind(getDomainKind());
     }
 
-    protected AbstractAuditDomainKind getDomainKind()
+    protected final AbstractAuditDomainKind getDomainKind()
     {
         if (_domainKind == null)
             throw new IllegalStateException(String.format("The audit type : \"%s\" has a null domain kind", getLabel()));
@@ -222,20 +215,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    // #26311  We want to trigger a save if the scale has changed
+    // Issue 26311: We want to trigger a save if the scale has changed
     // CONSIDER: check for other differences here as well.
     private boolean differ(PropertyDescriptor pd, DomainProperty dp, Container c)
     {
-        return dp.getScale() != pd.getScale()
-                || !dp.getRangeURI().equals(pd.getRangeURI())
-//                || !dp.getLabel().equals(pd.getLabel())
-//                || dp.isRequired() != pd.isRequired()
-//                || dp.isHidden() != pd.isHidden()
-//                || dp.isMvEnabled() != pd.isMvEnabled()
-//                || dp.getDefaultValueTypeEnum() != pd.getDefaultValueTypeEnum()
-                ;
-
-
+        return dp.getScale() != pd.getScale() || !dp.getRangeURI().equals(pd.getRangeURI());
     }
 
     private void copyTo(DomainProperty dp, PropertyDescriptor pd, Container c)
@@ -321,7 +305,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         MutableColumnInfo oldCol = table.getMutableColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
         MutableColumnInfo newCol = table.getMutableColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
 
-        if(oldCol != null)
+        if (oldCol != null)
         {
             var added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
@@ -330,7 +314,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             oldCol.setHidden(true);
         }
 
-        if(newCol != null)
+        if (newCol != null)
         {
             var added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
@@ -390,16 +374,16 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 entry.getKey().equals(ExperimentService.ALIASCOLUMNALIAS))
                 continue;
             Object value = entry.getValue();
-            if (value instanceof Time)
+            if (value instanceof Time time)
             {
-                String formatted = DateUtil.formatIsoLongTime((Time)value);
+                String formatted = DateUtil.formatIsoLongTime(time);
                 stringMap.put(entry.getKey(), formatted);
             }
-            else if (value instanceof Date)
+            else if (value instanceof Date date)
             {
-                // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
-                // issue: 36472 - use iso format to show date-time values
-                String formatted = DateUtil.toISO((Date)value);
+                // Issue 35002 - normalize Date values to avoid Timestamp/Date toString differences
+                // Issue 36472 - use iso format to show date-time values
+                String formatted = DateUtil.toISO(date);
                 stringMap.put(entry.getKey(), formatted);
             }
             else
@@ -410,11 +394,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public int moveEvents(Container targetContainer, String idColumnName, Collection<?> ids)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE ").append(idColumnName);
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        return Table.updateContainer(createStorageTableInfo(), idColumnName, ids, targetContainer, null, false);
     }
 }

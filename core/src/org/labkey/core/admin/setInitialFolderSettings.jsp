@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -33,7 +34,7 @@
     String projectDefaultRoot;
 
     File siteRoot = FileContentService.get().getSiteDefaultRoot();
-    File projRoot = new File(siteRoot, getContainer().getProject().getName());
+    File projRoot = FileUtil.appendName(siteRoot, getContainer().getProject().getName());
     // Show the user the path that we'd point to if using the default location
     projectDefaultRoot = projRoot.getAbsolutePath();
 
@@ -45,9 +46,9 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
         Ext4.FocusManager.enable(false);
-        var projectDefault = "<%=h(projectDefaultRoot.replace("\\", "\\\\"))%>";
+        const projectDefault = "<%=h(projectDefaultRoot.replaceAll("\\\\", "\\\\\\\\"))%>";
 
-        var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
+        const panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
             border: false,
             autoHeight: true,
             defaults: {
@@ -71,7 +72,7 @@
                         fn: function(btn, newVal, oldVal){
                             var form = btn.up('form');
                             var field = form.child('#fileLocation');
-                            field.setDisabled(newVal.fileRootOption=='default');
+                            field.setDisabled(newVal.fileRootOption==='default');
                             field.reset();
                         },
                         buffer: 20,

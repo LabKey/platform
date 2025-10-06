@@ -17,6 +17,7 @@
 package org.labkey.api.attachments;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -40,22 +41,22 @@ public class FileAttachmentFile implements AttachmentFile
 
     private InputStream _in;
 
-    public FileAttachmentFile(File file)
+    public FileAttachmentFile(@NotNull File file)
     {
         this(file, null);
     }
 
-    public FileAttachmentFile(FileLike file)
+    public FileAttachmentFile(@NotNull FileLike file)
     {
         this(file.toNioPathForRead().toFile(), null);
     }
 
-    public FileAttachmentFile(FileLike file, @Nullable String originalName)
+    public FileAttachmentFile(@NotNull FileLike file, @Nullable String originalName)
     {
         this(file.toNioPathForRead().toFile(), originalName);
     }
 
-    public FileAttachmentFile(File file, @Nullable String originalName)
+    public FileAttachmentFile(@NotNull File file, @Nullable String originalName)
     {
         _file = file;
         _filename = null != originalName ? originalName : file.getName();

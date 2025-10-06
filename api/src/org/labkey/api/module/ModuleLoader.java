@@ -39,6 +39,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
@@ -146,7 +147,9 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 public class ModuleLoader implements MemTrackerListener, ShutdownListener
 {
-    /** System property name for an extra directory of static content */
+    /**
+     * System property name for an extra directory of static content
+     */
     private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";
 
     private static final ModuleLoader INSTANCE = new ModuleLoader();
@@ -163,7 +166,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
 
-    /** Used to separate lines in the lock file and also to detect if there were any modules listed as needing upgrades */
+    /**
+     * Used to separate lines in the lock file and also to detect if there were any modules listed as needing upgrades
+     */
     private static final String LOCK_FILE_DELIMITER = "\n";
 
     private static Throwable _startupFailure = null;
@@ -187,11 +192,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
 
-    // This argument is used to specify a Microsoft SQL Server database that is the source of migration to PostgreSQL
-    private final String _migrationDataSource = System.getProperty("migrationDataSource");
-    // This argument is used to bootstrap all the database schemas without populating them with any data rows. It can
-    // be used by itself to test the empty schema handling without attempting a full migration.
-    private final boolean _emptySchemas = Boolean.valueOf(System.getProperty("emptySchemas")) || _migrationDataSource != null;
+    // This argument is used to specify a database migration configuration properties file. If specified, the server
+    // starts up in a special mode where it doesn't accept requests, and it shuts down once the migration is complete.
+    private final String _migration = System.getProperty("migration");
+    private DatabaseMigrationConfiguration _databaseMigrationConfiguration = null;
 
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
@@ -214,7 +218,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         Started
     }
 
-    /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
+    /**
+     * Stash these warnings as a member variable so they can be registered after the WarningService has been initialized
+     */
     private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
 
     // these four collections are protected by _modulesLock
@@ -227,7 +233,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      */
     private volatile Map<String, Module> _moduleMap = Collections.emptyMap();
     private volatile Map<Class<? extends Module>, Module> _moduleClassMap = Collections.emptyMap();
-    /** Use a CopyOnWriteArrayList since the underlying collection is frequently accessed and very infrequently mutated */
+    /**
+     * Use a CopyOnWriteArrayList since the underlying collection is frequently accessed and very infrequently mutated
+     */
     private final List<Module> _modules = new CopyOnWriteArrayList<>();
     /**
      * Immutable wrapper over _modules so that we don't need to create a new wrapper every time we return it, which
@@ -236,7 +244,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
 
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
-    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
+    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
 
     private ModuleLoader()
@@ -302,17 +310,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return getInstance()._servletContext;
     }
 
-    /** Do basic module loading, remote pipeline deployments only */
+    /**
+     * Do basic module loading, remote pipeline deployments only
+     */
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
-        List<Map.Entry<File,File>> moduleDirs = explodedModuleDirs.stream()
-            .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
+        List<Map.Entry<File, File>> moduleDirs = explodedModuleDirs.stream()
+            .map(dir -> new AbstractMap.SimpleEntry<File, File>(dir, null))
             .collect(Collectors.toList());
         return doInitWithSourceModule(moduleDirs);
     }
 
-    /** Shared between the web server and remote pipeline deployments */
-    public List<Module> doInitWithSourceModule(List<Map.Entry<File,File>> explodedModuleDirs)
+    /**
+     * Shared between the web server and remote pipeline deployments
+     */
+    public List<Module> doInitWithSourceModule(List<Map.Entry<File, File>> explodedModuleDirs)
     {
         _log.debug("ModuleLoader init");
 
@@ -353,19 +365,19 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private static class _Proxy implements InvocationHandler
     {
         private final Object _delegate;
-        private final Map<String,Method> _methods = new HashMap<>();
+        private final Map<String, Method> _methods = new HashMap<>();
 
         public static ExplodedModuleService newInstance(Object obj)
         {
             if
             (
                 !"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) &&
-                !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName())
+                    !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName())
             )
                 return null;
 
-            return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(),
-                new Class[] {ExplodedModuleService.class},
+            return (ExplodedModuleService) java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(),
+                new Class[]{ExplodedModuleService.class},
                 new _Proxy(obj));
         }
 
@@ -377,7 +389,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 if (methodNames.contains(method.getName()))
                     _methods.put(method.getName(), method);
             });
-            methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment. Could not find method: " + name); });
+            methodNames.forEach(name -> {
+                if (null == _methods.get(name))
+                    throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment. Could not find method: " + name);
+            });
         }
 
         @Override
@@ -409,7 +424,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // TODO move call to ContextListener.fireModuleChangeEvent() into this method
         synchronized (_modulesLock)
         {
-            List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry<>(dir,archive)));
+            List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry<>(dir, archive)));
             if (moduleList.isEmpty())
             {
                 throw new IllegalStateException("Not a valid module: " + archive.getName());
@@ -458,13 +473,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             if (null != moduleExisting)
             {
                 ContextListener.fireModuleChangeEvent(moduleExisting);
-                ((DefaultModule)moduleExisting).unregister();
+                ((DefaultModule) moduleExisting).unregister();
             }
 
             try
             {
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
-                ((DefaultModule)moduleCreated).unregister();
+                ((DefaultModule) moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
                 pruneModules(moduleList);
                 initializeModules(moduleList);
@@ -511,7 +526,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    /** Full web-server initialization */
+    /**
+     * Full web-server initialization
+     */
     private void doInit(Execution execution) throws ServletException
     {
         _log.info(BANNER);
@@ -547,7 +564,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
-        List<Map.Entry<File,File>> explodedModuleDirs = new ArrayList<>();
+        List<Map.Entry<File, File>> explodedModuleDirs = new ArrayList<>();
 
         // find modules exploded by LabKeyBootStrapClassLoader
         ClassLoader webappClassLoader = getClass().getClassLoader();
@@ -651,6 +668,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             }
         }
 
+        // Now that we know if this is a new install...
+        setDatabaseMigrationConfiguration(labkeyRoot);
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
@@ -840,8 +859,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             });
     }
 
-    /** Create a file that indicates the server is in the midst of the upgrade process. Refuse to start up
-     * if a previous startup left the lock file in place. */
+    /**
+     * Create a file that indicates the server is in the midst of the upgrade process. Refuse to start up
+     * if a previous startup left the lock file in place.
+     */
     private File createLockFile(FileLike labkeyRoot) throws ConfigurationException
     {
         File result = FileUtil.toFileForWrite(labkeyRoot.resolveChild("labkeyUpgradeLockFile"));
@@ -904,7 +925,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
     }
 
-    /** Enumerates all the modules, removing the ones that don't support the core database */
+    /**
+     * Enumerates all the modules, removing the ones that don't support the core database
+     */
     private void pruneModules(List<Module> modules)
     {
         Module core = getCoreModule();
@@ -925,7 +948,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    /** Enumerates all remaining modules, initializing them and removing any that fail to initialize */
+    /**
+     * Enumerates all remaining modules, initializing them and removing any that fail to initialize
+     */
     private void initializeModules(List<Module> modules)
     {
         Module core = getCoreModule();
@@ -1019,7 +1044,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    /** @return an immutable wrapper over the modified map */
+    /**
+     * @return an immutable wrapper over the modified map
+     */
     private <K> Map<K, Module> removeMapValue(Module module, Map<K, Module> map)
     {
         map.entrySet().removeIf(entry -> entry.getValue() == module);
@@ -1063,7 +1090,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    private List<Module> loadModules(List<Map.Entry<File,File>> explodedModuleDirs)
+    private List<Module> loadModules(List<Map.Entry<File, File>> explodedModuleDirs)
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
 
@@ -1181,7 +1208,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return new ArrayList<>(includedModules.values());
     }
 
-    /** Load module metadata from a .properties file */
+    /**
+     * Load module metadata from a .properties file
+     */
     private Module loadModuleFromProperties(ApplicationContext parentContext, File moduleDir) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         //check for simple .properties file
@@ -1214,7 +1243,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         if (props.containsKey("ModuleClass"))
         {
             String moduleClassName = props.get("ModuleClass");
-            Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
+            Class<DefaultModule> moduleClass = (Class<DefaultModule>) Class.forName(moduleClassName);
             simpleModule = moduleClass.getDeclaredConstructor().newInstance();
         }
         else
@@ -1236,7 +1265,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     }
 
 
-    /** Read module metadata out of XML file */
+    /**
+     * Read module metadata out of XML file
+     */
     private Module loadModuleFromXML(ApplicationContext parentContext, File moduleXml)
     {
         ApplicationContext applicationContext;
@@ -1315,7 +1346,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public @Nullable String loadEnlistmentId(File directory)
     {
         String enlistmentId = null;
-        File file = new File(directory, "enlistment.properties");
+        File file = FileUtil.appendName(directory, "enlistment.properties");
 
         if (file.exists())
         {
@@ -1366,7 +1397,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     /**
      * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, ConfigurationException is thrown and server fails to start.
-     *
+     * <p>
      * Warnings for deprecated Tomcat versions are handled in CoreWarningProvider.
      *
      * @throws ConfigurationException if Tomcat version is not recognized or supported
@@ -1384,6 +1415,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Initialize and update the Core module first. We want to change the core tables before we display pages, request
      * login, check permissions, or initialize any of the other modules.
+     *
      * @return true if core module required upgrading, otherwise false
      */
     private boolean upgradeCoreModule(File lockFile) throws ServletException
@@ -1433,7 +1465,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             Throwable cause = e.getCause();
 
             if (cause instanceof ServletException)
-                throw (ServletException)cause;
+                throw (ServletException) cause;
 
             throw new ServletException(e);
         }
@@ -1638,7 +1670,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    /** Set a message that will be displayed in the upgrade/startup UI. */
+    /**
+     * Set a message that will be displayed in the upgrade/startup UI.
+     */
     public void setStartingUpMessage(String message)
     {
         synchronized (STARTUP_LOCK)
@@ -1722,7 +1756,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      *     <li>Deferred upgrade tasks</li>
      *     <li>Startup listeners</li>
      * </ol>
-     *
+     * <p>
      * Once the deferred upgrade tasks have run, the module is considered {@link ModuleState#Started started}.
      */
     private void completeStartup()
@@ -1861,8 +1895,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         clearUnknownModuleCount();
     }
 
-    public record SchemaAndModule(String schema, String module) {}
-    public record SchemaActions(List<String> deleteList, List<SchemaAndModule> skipList){}
+    public record SchemaAndModule(String schema, String module)
+    {
+    }
+
+    public record SchemaActions(List<String> deleteList, List<SchemaAndModule> skipList)
+    {
+    }
 
     // Divide the schemas reported by the specified module context into two lists: schemas that should be deleted and
     // schemas that shouldn't. If module is not-null (known) then the delete list contains all schemas and the skip list
@@ -1929,7 +1968,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         lockFile.delete();
 
         verifyRequiredModules();
-        DatabaseMigrationService.get().migrate(shouldInsertData(), getMigrationDataSource());
+        DatabaseMigrationService.get().migrate(_databaseMigrationConfiguration);
     }
 
     // If the "requiredModules" parameter is present in application.properties then fail startup if any specified module is missing.
@@ -1992,7 +2031,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private void setUpgradeState(UpgradeState state)
     {
-        synchronized(UPGRADE_LOCK)
+        synchronized (UPGRADE_LOCK)
         {
             _upgradeState = state;
         }
@@ -2000,7 +2039,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public boolean isUpgradeRequired()
     {
-        synchronized(UPGRADE_LOCK)
+        synchronized (UPGRADE_LOCK)
         {
             return UpgradeState.UpgradeComplete != _upgradeState;
         }
@@ -2008,28 +2047,28 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public boolean isUpgradeInProgress()
     {
-        synchronized(UPGRADE_LOCK)
+        synchronized (UPGRADE_LOCK)
         {
             return UpgradeState.UpgradeInProgress == _upgradeState;
         }
     }
 
-    // Did this server start up with no modules installed? If so, it's a new install. This lets us tailor the
+    // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
         return _newInstall;
     }
 
+    private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)
+    {
+        _databaseMigrationConfiguration = DatabaseMigrationService.get().getDatabaseMigrationConfiguration(labkeyRoot, _migration);
+    }
+
     // Are we bootstrapping a PostgreSQL database with empty schemas?
     public boolean shouldInsertData()
     {
-        return !(_emptySchemas && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
-    }
-
-    public @Nullable String getMigrationDataSource()
-    {
-        return _migrationDataSource != null && isNewInstall() && DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL() ? _migrationDataSource : null;
+        return _databaseMigrationConfiguration.shouldInsertData();
     }
 
     public void destroy()
@@ -2065,7 +2104,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return getModule(DefaultModule.CORE_MODULE_NAME);
     }
 
-    /** @return all known modules, sorted in dependency order */
+    /**
+     * @return all known modules, sorted in dependency order
+     */
     public List<Module> getModules()
     {
         // We can return the immutable, thread-safe list without needing to lock anything
@@ -2149,7 +2190,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public void initControllerToModule()
     {
-        synchronized(_controllerNameToModule)
+        synchronized (_controllerNameToModule)
         {
             if (!_controllerNameToModule.isEmpty())
                 return;
@@ -2173,7 +2214,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                         {
                             Class<?>[] supr = inter.getInterfaces();
                             if (supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>)inter, innerClass);
+                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>) inter, innerClass);
                         }
                     }
                 }
@@ -2183,7 +2224,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public Module getModuleForController(String controllerName)
     {
-        synchronized(_controllerNameToModule)
+        synchronized (_controllerNameToModule)
         {
             Module module = _controllerNameToModule.get(controllerName);
             if (null != module)
@@ -2193,7 +2234,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             if (-1 == i)
                 return null;
 
-            String prefix = controllerName.substring(0,i);
+            String prefix = controllerName.substring(0, i);
             module = _controllerNameToModule.get(prefix);
             if (null != module)
                 _controllerNameToModule.put(controllerName, module);
@@ -2223,7 +2264,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // Note: Do not reference any DbSchemas (directly or indirectly) in this method. We may be in the midst of loading
         // a DbSchema and don't want to cause CacheLoader re-entrancy. See #26037.
-        synchronized(_schemaNameToSchemaDetails)
+        synchronized (_schemaNameToSchemaDetails)
         {
             if (_schemaNameToSchemaDetails.isEmpty())
             {
@@ -2259,7 +2300,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public void clearAllSchemaDetails()
     {
-        synchronized(_schemaNameToSchemaDetails)
+        synchronized (_schemaNameToSchemaDetails)
         {
             _schemaNameToSchemaDetails.clear();
         }
@@ -2281,7 +2322,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         ResourceFinder finder = new ResourceFinder(name, sourcePath, buildPath);
         Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
 
-        synchronized(col)
+        synchronized (col)
         {
             col.add(finder);
         }
@@ -2449,7 +2490,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();
-         }
+        }
     }
 
     private static boolean checkPropertyScopeMapping()
@@ -2632,7 +2673,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private record SchemaDetails(Module module, DbSchemaType type) {}
+    private record SchemaDetails(Module module, DbSchemaType type)
+    {
+    }
 
     @Override
     public void beforeReport(Set<Object> set)

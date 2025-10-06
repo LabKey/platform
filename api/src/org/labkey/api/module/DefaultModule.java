@@ -494,15 +494,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Collections.emptySet();
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Collections.emptySet();
     }
@@ -1211,6 +1209,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     File _resourceDirectory;
+    java.nio.file.Path _resourceDirectoryPath;
     File NULL_FILE = new File("....");
 
     public File getResourceDirectory()
@@ -1219,13 +1218,38 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             File dir = computeResourceDirectory();
             _resourceDirectory = null==dir ? NULL_FILE : dir;
+            _resourceDirectoryPath = null==dir ? null : dir.toPath();
+            if (_resourceDirectoryPath != null)
+            {
+                _resourceDirectoryPath = _resourceDirectoryPath.normalize();
+            }
         }
         return NULL_FILE==_resourceDirectory ? null : _resourceDirectory;
     }
 
+    private java.nio.file.Path getResourceDirectoryPath()
+    {
+        getResourceDirectory();
+        return _resourceDirectoryPath;
+    }
+
+    @Override
+    public boolean isUnderResourcesDirectory(java.nio.file.Path path)
+    {
+        if (path == null)
+        {
+            return true;
+        }
+        if (getResourceDirectoryPath() != null)
+        {
+            return path.normalize().startsWith(getResourceDirectoryPath());
+        }
+        return false;
+    }
+
     protected File computeResourceDirectory()
     {
-        // We load resources from the module's source directory if all of the following conditions are true:
+        // We load resources from the module's source directory if all the following conditions are true:
         //
         // - devmode = true
         // - The module's source path is a directory that exists on the web server
@@ -1278,7 +1302,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected File getResourceDirectory(File dir)
     {
-        File resourcesDir = new File(dir, "resources");
+        File resourcesDir = FileUtil.appendName(dir, "resources");
 
         // If we have a "resources" directory then look for resources there (Java module layout)
         // If not, treat all top-level directories as resource directories (simple module layout)

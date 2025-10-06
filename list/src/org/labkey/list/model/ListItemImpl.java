@@ -16,8 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -36,7 +34,6 @@ public class ListItemImpl implements ListItem
     ListItm _itm;
     Map<String, ObjectProperty> _properties;
     Map<String, ObjectProperty> _oldProperties;
-    private static final Logger _log = LogManager.getLogger(ListItemImpl.class);
 
     public ListItemImpl(ListDefinitionImpl list, ListItm item)
     {

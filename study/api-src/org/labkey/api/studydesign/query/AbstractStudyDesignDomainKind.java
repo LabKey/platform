@@ -15,6 +15,8 @@
  */
 package org.labkey.api.studydesign.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -27,6 +29,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.QueryAction;
@@ -37,9 +40,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKind
 {
@@ -50,6 +53,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     private static final String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
     private static final Set<PropertyStorageSpec> BASE_FIELDS;
+    private static final Set<String> RESERVED_PROPERTY_NAMES;
 
     static
     {
@@ -61,6 +65,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         baseFields.add(createFieldSpec("ModifiedBy", JdbcType.INTEGER));
 
         BASE_FIELDS = Collections.unmodifiableSet(baseFields);
+        RESERVED_PROPERTY_NAMES = DomainUtil.getNamesAndLabels(baseFields.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
     }
 
     private final Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>(BASE_FIELDS);
@@ -159,14 +164,9 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        Set<String> names = new HashSet<>();
-
-        for (PropertyStorageSpec spec : getBaseProperties(domain))
-            names.add(spec.getName());
-
-        return names;
+        return RESERVED_PROPERTY_NAMES;
     }
 
     protected static PropertyStorageSpec createFieldSpec(String name, JdbcType jdbcType)

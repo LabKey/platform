@@ -41,6 +41,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
@@ -82,7 +83,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
@@ -116,6 +116,7 @@ public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
+    public static final Set<String> ILLEGAL_PROPERTY_NAMES = Set.of("*"); // Issue 53416
 
     private DomainUtil()
     {
@@ -362,13 +363,13 @@ public class DomainUtil
         if (domainKind.allowUniqueConstraintProperties())
         {
             SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+            List<IndexDefinition> allIndices = schemaTableInfo.getAllIndices();
             if (!allIndices.isEmpty())
             {
-                List<GWTIndex> indices = allIndices.values().stream()
-                        .filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary))
-                        .map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique()))
-                        .toList();
+                List<GWTIndex> indices = allIndices.stream()
+                    .filter(index -> !index.indexType().equals(TableInfo.IndexType.Primary))
+                    .map(index -> new GWTIndex(index.columns().stream().map(ColumnInfo::getColumnName).toList(), index.indexType().isUnique()))
+                    .toList();
 
                 gwtDomain.setIndices(indices);
             }
@@ -1433,6 +1434,11 @@ public class DomainUtil
                 continue;
             }
 
+            if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
+            {
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
+            }
+
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
             if (expMatcher.find())
             {
@@ -1528,5 +1534,28 @@ public class DomainUtil
             return propertyIdMap;
         }
         return null;
+    }
+
+    public static Set<String> getNameAndLabels(String name)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        values.add(name);
+        String label = ColumnInfo.labelFromName(name);
+        values.add(label);
+        values.add(label.replaceAll("\\s", ""));
+        return values;
+    }
+
+    public static Set<String> getNamesAndLabels(Collection<String> names)
+    {
+        Set<String> values = new CaseInsensitiveHashSet();
+        for (String name : names)
+        {
+            values.add(name);
+            String label = ColumnInfo.labelFromName(name);
+            values.add(label);
+            values.add(label.replaceAll("\\s", ""));
+        }
+        return values;
     }
 }

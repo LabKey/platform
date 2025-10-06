@@ -35,7 +35,7 @@ public class VaccineDesignWebpartFactory extends StudyDesignWebpartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!canShow(portalCtx.getContainer()))
             return null;

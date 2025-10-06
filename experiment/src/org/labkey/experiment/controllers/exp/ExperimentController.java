@@ -4429,7 +4429,7 @@ public class ExperimentController extends SpringActionController
             // file is loaded.
             if (crossTypeImport)
             {
-                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
+                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), true);
                 for (ExpSampleTypeImpl sampleType : sampleTypes)
                     aliases.addAll(sampleType.getImportAliases().keySet());
             }
@@ -6758,7 +6758,7 @@ public class ExperimentController extends SpringActionController
             {
                 userDirName = GUEST_DIRECTORY_NAME;
             }
-            Path userDir = uploadDir.resolve(userDirName);
+            Path userDir = FileUtil.appendName(uploadDir, userDirName);
             FileUtil.createDirectories(userDir);
             if (!Files.isDirectory(userDir))
             {
@@ -6766,7 +6766,7 @@ public class ExperimentController extends SpringActionController
                 return false;
             }
 
-            Path xarFile = userDir.resolve(formFile.getOriginalFilename());
+            Path xarFile = FileUtil.appendName(userDir, formFile.getOriginalFilename());
 
             // As this is multi-part will need to use finally to close, to prevent a stream closure exception
             try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(xarFile)))

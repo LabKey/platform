@@ -23,6 +23,8 @@ import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
@@ -42,6 +44,8 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConversionExceptionWithMessage;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -55,6 +59,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -93,6 +98,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
@@ -102,7 +108,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -141,7 +146,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -175,6 +179,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
 
+    public static final List<Unit> SUPPORTED_UNITS = new ArrayList<>();
+    public static final String CONVERSION_EXCEPTION_MESSAGE ="Units value (%s) is not compatible with the %s display units (%s).";
+
+    static
+    {
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Volume.getCommonUnits());
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Mass.getCommonUnits());
+        SUPPORTED_UNITS.addAll(KindOfQuantity.Count.getCommonUnits());
+    }
+
     // columns that may appear in a row when only the sample status is updating.
     public static final Set<String> statusUpdateColumns = Set.of(
             ExpMaterialTable.Column.Modified.name().toLowerCase(),
@@ -190,10 +204,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
-    // SampleType -> Container cache
+    /** SampleType LSID -> Container cache */
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
+    /** ContainerId -> MaterialSources */
+    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -208,6 +223,44 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return materialSourceCache;
     }
 
+    @Override @NotNull
+    public List<Unit> getSupportedUnits()
+    {
+        return SUPPORTED_UNITS;
+    }
+
+    @Nullable @Override
+    public Unit getValidatedUnit(@Nullable Object rawUnits, @Nullable Unit defaultUnits, String sampleTypeName)
+    {
+        if (rawUnits == null)
+            return null;
+        if (rawUnits instanceof Unit u)
+        {
+            if (defaultUnits == null)
+                return u;
+            else if (u.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+            else
+                return u;
+        }
+        if (!(rawUnits instanceof String rawUnitsString))
+            throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+        if (!StringUtils.isBlank(rawUnitsString))
+        {
+            rawUnitsString = rawUnitsString.trim();
+
+            Unit mUnit = Unit.fromName(rawUnitsString);
+            List<Unit> commonUnits = getSupportedUnits();
+            if (mUnit == null || !commonUnits.contains(mUnit))
+            {
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
+            }
+            if (defaultUnits != null && mUnit.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
+                throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
+            return mUnit;
+        }
+        return null;
+    }
 
     public void clearMaterialSourceCache(@Nullable Container c)
     {
@@ -368,7 +421,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user)
+    public void removeAutoLinkedStudy(@NotNull Container studyContainer)
     {
         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterialSource())
                 .append(" SET autolinkTargetContainer = NULL WHERE autolinkTargetContainer = ?")
@@ -388,7 +441,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public @Nullable ExpSampleType getEffectiveSampleType(
         @NotNull Container definitionContainer,
-        @NotNull User user,
         @NotNull String sampleTypeName,
         @NotNull Date effectiveDate,
         @Nullable ContainerFilter cf
@@ -407,7 +459,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
+    public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
 
@@ -903,9 +955,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                    transaction.addCommitTask(() -> {
-                        indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified));
-                    }, POSTCOMMIT);
+                    transaction.addCommitTask(() -> indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
 
                     return st;
                 }
@@ -961,8 +1011,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         public DbSequence getDbSequence(Date date)
         {
             Pair<String,Integer> seqName = getSequenceName(date);
-            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
-            return seq;
+            return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
         }
     }
 
@@ -1032,7 +1081,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
-            changeDetails.append("The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.");
+            changeDetails.append("The name of the sample type '").append(oldSampleTypeName).append("' was changed to '").append(newName).append("'.");
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
@@ -1544,7 +1593,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return null;
 
         Unit totalUnit = null;
-        String totalUnitsStr = null;
+        String totalUnitsStr;
         if (!StringUtils.isEmpty(sampleTypeUnitsStr))
             totalUnitsStr = sampleTypeUnitsStr;
         else if (!StringUtils.isEmpty(sampleItemUnitsStr))
@@ -1848,7 +1897,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Long> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
-                updateCounts.put("samples", updateCounts.get("samples") + ContainerManager.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
+                updateCounts.put("samples", updateCounts.get("samples") + Table.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
 
                 // update for exp.object.container
                 expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
@@ -1864,9 +1913,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (inventoryService != null)
                 {
                     Map<String, Integer> inventoryCounts = inventoryService.moveSamples(sampleIds, targetContainer, user);
-                    inventoryCounts.forEach((key, count) -> {
-                        updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
-                    });
+                    inventoryCounts.forEach((key, count) -> updateCounts.compute(key, (k, c) -> c == null ? count : c + count));
                 }
 
                 // create summary audit entries for the source and target containers
@@ -1879,7 +1926,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
-                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 AuditBehaviorType stAuditBehavior = samplesTable.getEffectiveAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
@@ -2213,7 +2260,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Container seqContainer = container.getProject();
         DbSequenceManager.delete(seqContainer, seqName);
         DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
-        return;
     }
 
     @Override
@@ -2264,5 +2310,61 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetValidatedUnit()
+        {
+            SampleTypeService service = SampleTypeService.get();
+            try
+            {
+                service.getValidatedUnit("g", Unit.mg, "Sample Type");
+                service.getValidatedUnit("g ", Unit.mg, "Sample Type");
+                service.getValidatedUnit(" g ", Unit.mg, "Sample Type");
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("Compatible unit should not throw exception.");
+            }
+            try
+            {
+                assertNull(service.getValidatedUnit(null, Unit.unit, "Sample Type"));
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("null units should be null");
+            }
+            try
+            {
+                assertNull(service.getValidatedUnit("", Unit.unit, "Sample Type"));
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("empty units should be null");
+            }
+            try
+            {
+                service.getValidatedUnit("g", Unit.unit, "Sample Type");
+                fail("Units that are not comparable should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+            try
+            {
+                service.getValidatedUnit("nonesuch", Unit.unit, "Sample Type");
+                fail("Invalid units should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+        }
     }
 }

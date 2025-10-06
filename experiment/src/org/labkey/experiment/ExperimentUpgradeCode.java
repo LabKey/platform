@@ -39,6 +39,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.QueryService;
@@ -156,7 +157,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     @SuppressWarnings("unused")
     public static void ensureBigObjectIds(ModuleContext context)
     {
-        if (AppProps.getInstance().isDevMode())
+        if (AppProps.getInstance().isDevMode() && ModuleLoader.getInstance().shouldInsertData())
         {
             DbScope primary = DbScope.getLabKeyScope();
             String schemaName = "exp";
@@ -193,7 +194,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // called from exp-25.007-25.008.sql
+    // called from exp-25.009-25.010.sql
+    // When this is removed, the ExperimentWarningProvider class can also be removed.
     @SuppressWarnings("unused")
     public static void upgradeAmountsAndUnits(ModuleContext context)
     {

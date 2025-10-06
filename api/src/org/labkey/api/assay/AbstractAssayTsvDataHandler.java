@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -598,14 +597,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
         {
-            if (context.getReRunId() != null)
+            // check if we are merging the re-imported data
+            if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                // check if we are merging the re-imported data
-                if (context.getReImportOption() == MERGE_DATA)
-                {
-                    DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
-                    fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
-                }
+                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider, context);

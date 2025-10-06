@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -72,7 +73,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
     protected abstract TableInfo getTableInfo();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         TableInfo table = getTableInfo();
         return table.getColumnNameSet();

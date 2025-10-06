@@ -34,6 +34,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -56,9 +57,9 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
             }
 
             @Override
-            public Set<String> getReservedPropertyNames(Domain domain, User user)
+            public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
             {
-                return null;
+                return Collections.emptySet();
             }
         };
     }
