@@ -1832,8 +1832,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class SampleTypeAmountPrecisionDisplayColumn extends DataColumn
     {
-        Unit typeUnit;
-        boolean applySampleTypePrecision = true;
+        private Unit typeUnit;
+        private boolean applySampleTypePrecision = true;
 
         public SampleTypeAmountPrecisionDisplayColumn(ColumnInfo col, Unit typeUnit) {
             super(col, false);
