@@ -517,7 +517,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            DataIterator fileData = checkData(container, user, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -684,6 +684,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     private DataIterator checkData(
             Container container,
             User user,
+            AssayProvider provider,
             ExpProtocol protocol,
             TableInfo dataTable,
             Domain dataDomain,
@@ -722,6 +723,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
+        boolean isPlateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
 
         for (DomainProperty pd : columns)
         {
@@ -753,15 +755,21 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 targetStudyPropFinder = pd;
             }
-            else if (pd.getName().equalsIgnoreCase("WellLocation") && pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLocation") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 wellLocationPropFinder = pd;
             }
-            else if (pd.getName().equalsIgnoreCase("WellLsid") && pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLsid") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 wellLsidPropFinder = pd;
             }
-            else if (pd.getName().equalsIgnoreCase("Plate") && pd.getPropertyDescriptor().isLookup())
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("Plate") &&
+                    pd.getPropertyDescriptor().isLookup())
             {
                 platePropFinder = pd;
             }
@@ -816,8 +824,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty wellLocationPD = wellLocationPropFinder;
         DomainProperty wellLsidPD = wellLsidPropFinder;
 
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        boolean isPlateMetadataEnabled = provider != null && provider.isPlateMetadataEnabled(protocol);
         boolean resolvePlateSamples = isPlateMetadataEnabled && platePD != null && wellLocationPD != null && wellLsidPD != null;
 
         return DataIteratorUtil.mapTransformer(rawData, inputCols ->
@@ -1077,7 +1083,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                     if (plateId != null && wellLocation != null)
                     {
-                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(plateId));
+                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(container, user, plateId));
                         sampleId = wellSampleCache.get(wellLocation);
                     }
 

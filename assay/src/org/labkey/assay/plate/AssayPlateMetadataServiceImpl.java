@@ -96,6 +96,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
@@ -1517,20 +1518,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateSchema(querySchema, contextualRoles);
     }
 
-    record WellSampleData(Long sampleId, Integer row, Integer col) {}
-
     @Override
-    public Map<String, Long> getWellLocationToSampleIdMap(Long plateId)
+    public Map<String, Long> getWellLocationToSampleIdMap(Container container, User user, Long plateId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateid"), plateId);
-        List<WellSampleData> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), Set.of("SampleId", "Row", "Col"), filter, null).getArrayList(WellSampleData.class);
         Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
+        List<WellData> wellData = PlateManager.get().getWellData(container, user, plateId, true, false);
 
-        for (WellSampleData well : wells)
-        {
-            PositionImpl pos = new PositionImpl(null, well.row, well.col);
-            wellLocationToSampleIdMap.put(pos.getDescription(), well.sampleId);
-        }
+        for (WellData data : wellData)
+            wellLocationToSampleIdMap.put(data.getPosition(), data.getSampleId());
 
         return wellLocationToSampleIdMap;
     }

@@ -2,6 +2,7 @@ package org.labkey.api.assay.sample;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -102,22 +103,24 @@ public class AssaySampleLookupContext
      * @param container Container from which to resolve sample lookup information.
      * @param user User to utilize to resolve sample lookup information.
      * @param table The table to utilize to resole sample lookup information.
-     * @param protocol The experiment protocol associated with the run.
+     * @param schema The AssayProtocolSchema associated with the run.
      * @param run The experiment run to track.
      */
-    public void trackSampleLookupChange(Container container, User user, TableInfo table, ExpProtocol protocol, ExpRun run)
+    public void trackSampleLookupChange(Container container, User user, TableInfo table, AssayProtocolSchema schema, ExpRun run)
     {
         if (table.getDomain() == null) return;
 
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-
-        if (provider != null && provider.isPlateMetadataEnabled(protocol))
-        {
-            _runIds.add(run.getRowId());
-        }
-
         for (DomainProperty dp : table.getDomain().getNonBaseProperties())
             trackSampleLookupChange(container, user, table, table.getColumn(dp.getName()), run);
+
+        if (_runIds.contains(run.getRowId()))
+            return;
+
+        AssayProvider provider = schema.getProvider();
+        ExpProtocol protocol = schema.getProtocol();
+
+        if (provider.isPlateMetadataEnabled(protocol))
+            _runIds.add(run.getRowId());
     }
 
     /**

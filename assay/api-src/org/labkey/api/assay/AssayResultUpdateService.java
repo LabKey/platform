@@ -368,7 +368,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         }
 
         // Issue 51126: need to track and resync run/sample lineage on delete in the same way we do for update
-        _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, _schema.getProtocol(), run);
+        _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, _schema, run);
 
         return result;
     }
