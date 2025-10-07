@@ -65,7 +65,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -223,18 +222,6 @@ public class ListDefinitionImpl implements ListDefinition
 
     @Override
     public int getCreatedBy() { return _def.getCreatedBy(); }
-
-    @Override
-    public DiscussionSetting getDiscussionSetting()
-    {
-        return _def.getDiscussionSettingEnum();
-    }
-
-    @Override
-    public void setDiscussionSetting(DiscussionSetting discussionSetting)
-    {
-        edit().setDiscussionSettingEnum(discussionSetting);
-    }
 
     @Override
     public boolean getAllowDelete()

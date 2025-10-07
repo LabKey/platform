@@ -62,7 +62,8 @@ $.widget("ui.tabs", {
 	},
 
 	_sanitizeSelector: function(hash) {
-		return hash.replace(/:/g, '\\:'); // we need this because an id may contain a ":"
+		// First escape backslashes, then escape colons
+		return hash.replace(/\\/g, '\\\\').replace(/:/g, '\\:'); // we need this because an id may contain a ":"
 	},
 
 	_cookie: function() {

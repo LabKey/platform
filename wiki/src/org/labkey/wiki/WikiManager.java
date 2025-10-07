@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -145,11 +144,6 @@ public class WikiManager implements WikiService
     SearchService getSearchService()
     {
         return SearchService.get();
-    }
-
-    DiscussionService getDiscussionService()
-    {
-        return DiscussionService.get();
     }
 
     // Used to verify that entityId is a wiki and belongs in the specified container
@@ -391,9 +385,6 @@ public class WikiManager implements WikiService
             deleteAliases(c, wiki);
 
             getAttachmentService().deleteAttachments(wiki.getAttachmentParent());
-
-            if (null != getDiscussionService())
-                getDiscussionService().deleteDiscussions(c, user, wiki.getEntityId());
 
             transaction.commit();
         }

@@ -23,7 +23,6 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.Category;
-import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.IndexSetting;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
@@ -43,7 +42,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
     protected Date _lastIndexed;
 
     protected Category _category = null;
-    protected DiscussionSetting _discussionSetting = DiscussionSetting.None;
     protected boolean _allowDelete = true;
     protected boolean _allowUpload = true;
     protected boolean _allowExport = true;
@@ -104,16 +102,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
     public Category getCategory()
     {
         return _category;
-    }
-
-    public int getDiscussionSetting()
-    {
-        return _discussionSetting.getValue();
-    }
-
-    public DiscussionSetting getDiscussionSettingEnum()
-    {
-        return _discussionSetting;
     }
 
     public boolean getAllowDelete()
@@ -232,7 +220,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         to._description = _description;
         to._lastIndexed = _lastIndexed;
         to._category = _category;
-        to._discussionSetting = _discussionSetting;
         to._allowDelete = _allowDelete;
         to._allowUpload = _allowUpload;
         to._allowExport = _allowExport;
@@ -271,7 +258,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         if (!Objects.equals(_description, listDef._description)) return false;
         if (!Objects.equals(_lastIndexed, listDef._lastIndexed)) return false;
         if (_category != listDef._category) return false;
-        if (_discussionSetting != listDef._discussionSetting) return false;
         if (_entireListIndexSetting != listDef._entireListIndexSetting) return false;
         if (!Objects.equals(_entireListTitleTemplate, listDef._entireListTitleTemplate)) return false;
         if (_entireListBodySetting != listDef._entireListBodySetting) return false;
@@ -294,7 +280,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + (_lastIndexed != null ? _lastIndexed.hashCode() : 0);
         result = 31 * result + (_category != null ? _category.hashCode() : 0);
-        result = 31 * result + (_discussionSetting != null ? _discussionSetting.hashCode() : 0);
         result = 31 * result + (_allowDelete ? 1 : 0);
         result = 31 * result + (_allowUpload ? 1 : 0);
         result = 31 * result + (_allowExport ? 1 : 0);
@@ -382,15 +367,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
             _lastIndexed = lastIndexed;
         }
         public void setCategory(Category category) { _category = category; }
-        @SuppressWarnings("unused") // Invoked by reflection, e.g., ObjectFactory that retrieves ListDefs via TableSelector
-        public void setDiscussionSetting(int value)
-        {
-            _discussionSetting = DiscussionSetting.getForValue(value);
-        }
-        public void setDiscussionSettingEnum(DiscussionSetting discussionSetting)
-        {
-            _discussionSetting = discussionSetting;
-        }
         public void setAllowDelete(boolean allowDelete)
         {
             _allowDelete = allowDelete;

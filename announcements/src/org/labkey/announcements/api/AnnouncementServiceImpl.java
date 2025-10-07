@@ -23,7 +23,7 @@ import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.Permissions;
-import org.labkey.api.announcements.DiscussionService;
+import org.labkey.announcements.model.Settings;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,7 +66,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId,
                                            @Nullable String status, @Nullable List<User> memberList)
     {
-        DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
+        Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
         if (!perm.allowInsert())
@@ -76,7 +77,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
         AnnouncementModel insert = new AnnouncementModel();
         insert.setTitle(title);
         insert.setBody(body);
-        if (status != null && EnumUtils.getEnum(DiscussionService.StatusOption.class, status, null) != null)
+        if (status != null && EnumUtils.getEnum(StatusOption.class, status, null) != null)
         {
             insert.setStatus(status);
         }
@@ -132,7 +133,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     public Announcement getAnnouncement(Container container, User user, int RowId)
     {
         AnnouncementModel model = new AnnouncementModel();
-        DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
+        Settings settings = AnnouncementsController.getSettings(container);
         Permissions perm = AnnouncementsController.getPermissions(container, user, settings);
 
         if (RowId != 0)
@@ -157,7 +158,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
         for (AnnouncementModel announcementModel : announcementModels)
         {
             Announcement announcement = new AnnouncementImpl(announcementModel);
-            DiscussionService.Settings settings = AnnouncementsController.getSettings(announcement.getContainer());
+            Settings settings = AnnouncementsController.getSettings(announcement.getContainer());
             Permissions perm = AnnouncementsController.getPermissions(announcement.getContainer(), HttpView.getRootContext().getUser(), settings);
 
             if (!perm.allowRead(announcementModel))
@@ -185,7 +186,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     public Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body)
     {
         AnnouncementModel model;
-        DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
+        Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
         model = AnnouncementManager.getAnnouncement(c, RowId);
@@ -221,7 +222,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     public void deleteAnnouncement(Announcement announcement)
     {
         Container container = announcement.getContainer();
-        DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
+        Settings settings = AnnouncementsController.getSettings(container);
         Permissions perm = AnnouncementsController.getPermissions(container, HttpView.getRootContext().getUser(), settings);
 
         if (!perm.allowDeleteAnyThread())
@@ -230,6 +231,22 @@ public class AnnouncementServiceImpl implements AnnouncementService
         }
 
         AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
+    }
+
+    @Override
+    public Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses)
+    {
+        final List<Announcement> ret = new LinkedList<>();
+
+        for (AnnouncementModel ann : AnnouncementManager.getDiscussions(container, identifier))
+        {
+            ret.add(new AnnouncementImpl(ann));
+
+            if (includeResponses)
+                ann.getResponses().forEach(x -> ret.add(new AnnouncementImpl(x)));
+        }
+
+        return ret;
     }
 
     @Override

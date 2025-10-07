@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -43,7 +43,7 @@
 
     Container c = getContainer();
     User user = getUser();
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;
     ActionURL insertUrl = AnnouncementsController.getInsertURL(c);
@@ -62,8 +62,6 @@
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=cancelURL%>" />
 <%=generateReturnUrlFormField(cancelURL)%>
-<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
-<labkey:input type="hidden" name="allowMultipleDiscussions" value="<%=bean.allowMultipleDiscussions%>" />
 <table class="lk-fields-table" style="max-width: 1050px"> <!-- 13625 -->
 <%
     ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
@@ -167,7 +165,7 @@ else
     %><%= generateBackButton("Cancel") %><%
 }
 %>
-<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.get("discussionSrcIdentifier")%>'/><labkey:input type="hidden" name="discussionSrcURL" value='<%=form.get("discussionSrcURL")%>'/>
+<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.get("discussionSrcIdentifier")%>'/>
 </labkey:form>
 <p/>
 <%
