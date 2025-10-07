@@ -541,10 +541,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
             false);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
-            "Restore Object-Level Discussions",
-            "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.11.",
-            false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(TabLoader.FEATUREFLAG_UNESCAPE_BACKSLASH,
             "Unescape backslash character on import",
             "Treat backslash '\\' character as an escape character when loading data from file.",
@@ -1484,7 +1480,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
-        json.put(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS));
         return json;
     }
 

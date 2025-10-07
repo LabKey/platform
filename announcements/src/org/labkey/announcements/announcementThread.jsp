@@ -22,13 +22,11 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
-<%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
@@ -41,7 +39,7 @@
     User user = getUser();
     ThreadViewBean bean = me.getModelBean();
     AnnouncementModel announcementModel = bean.announcementModel;
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
 
     if (null == announcementModel)
     {
@@ -52,20 +50,6 @@
 if (null != bean.message)
 {
     %><span><%=h(bean.message)%></span><%
-}
-
-// is this an embedded discussion?
-ActionURL discussionSrc = null;
-
-if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
-{
-    discussionSrc = DiscussionServiceImpl.fromSaved(announcementModel.getDiscussionSrcURL());
-    discussionSrc.replaceParameter("discussion.id", announcementModel.getRowId());
-}
-
-if (!bean.print && null != discussionSrc)
-{
-    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=link("view page", discussionSrc)%><%
 }
 
 if (announcementModel.isSpam())
@@ -83,11 +67,6 @@ else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminP
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
     <td class="labkey-announcement-title" width="33%" align=center><%=AnnouncementManager.getUserDetailsLink(c, user, announcementModel.getCreatedBy(), bean.includeGroups, false)%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
-
-if (false && !bean.print && null != discussionSrc)
-{
-    %><%=link("view in context", discussionSrc)%>&nbsp;<%
-}
 
 if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
@@ -257,38 +236,17 @@ if (!bean.isResponse && !bean.print)
 {
     if (bean.perm.allowResponse(announcementModel))
     {
-        // There are two cases here.... I'm in the wiki controller or I'm not (e.g. I'm a discussion)
-        if (bean.embedded)
-        {
-            // UNDONE: respond in place
-            URLHelper url = bean.currentURL.clone();
-            url.replaceParameter("discussion.id", announcementModel.getRowId());
-            url.replaceParameter("discussion.reply", "1");
-            %>
-        <%= button("Respond").href(url) %>&nbsp;<%
-        }
-        else
-        {
-            ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
-            respond.addReturnUrl(bean.currentURL);
-            %>
-        <%= button("Respond").href(respond) %>&nbsp;<%
-        }
+        ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
+        respond.addReturnUrl(bean.currentURL);
+        %><%= button("Respond").href(respond) %>&nbsp;<%
     }
+
     if (bean.perm.allowDeleteMessage(announcementModel))
     {
         ActionURL deleteThread = announcementURL(c, DeleteAction.class, "entityId", announcementModel.getEntityId());
         deleteThread.addCancelURL(bean.currentURL);
-        if (bean.embedded)
-        {
-            URLHelper redirect = bean.currentURL.clone().deleteScopeParameters("discussion");
-            deleteThread.addReturnUrl(redirect);
-        }
-        else
-        {
-            deleteThread.addReturnUrl(bean.messagesURL);
-        }
-        %>
+        deleteThread.addReturnUrl(bean.messagesURL);
+    %>
         <%= button("Delete " + settings.getConversationName()).href(deleteThread) %>&nbsp;<%
     }
 }

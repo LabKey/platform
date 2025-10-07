@@ -42,7 +42,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -1029,17 +1028,6 @@ public class ReportsController extends SpringActionController
                 return HtmlView.err(message);
             }
 
-            if (!isPrint() && DiscussionService.get() != null)
-            {
-                DiscussionService service = DiscussionService.get();
-                String title = "Discuss report - " + _report.getDescriptor().getReportName();
-                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
-                if (discussion != null)
-                {
-                    reportView = new VBox(reportView, discussion);
-                }
-            }
-
             return reportView;
         }
 
@@ -1172,18 +1160,7 @@ public class ReportsController extends SpringActionController
             Report report = form.getReport(getViewContext());
             if (null != report)
             {
-                VBox box = new VBox(new JspView<>("/org/labkey/query/reports/view/reportDetails.jsp", form));
-
-                DiscussionService service = DiscussionService.get();
-                if (service != null)
-                {
-                    String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
-                    if (discussion != null)
-                        box.addView(discussion);
-                }
-
-                return box;
+                return new JspView<>("/org/labkey/query/reports/view/reportDetails.jsp", form);
             }
             else
                 return new HtmlView(HtmlString.of("Specified report not found"));
@@ -2580,17 +2557,7 @@ public class ReportsController extends SpringActionController
                 {
                     _reportName = report.getDescriptor().getReportName();
 
-                    VBox view = new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
-
-                    if (!isPrint() && DiscussionService.get() != null)
-                    {
-                        DiscussionService service = DiscussionService.get();
-                        String title = "Discuss report - " + _reportName;
-                        DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
-                        if (discussion != null)
-                            view.addView(discussion);
-                    }
-                    return view;
+                    return new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
                 }
             }
             return new HtmlView(HtmlString.unsafe("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>"));

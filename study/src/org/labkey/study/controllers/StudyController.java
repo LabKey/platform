@@ -57,7 +57,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -1031,28 +1030,6 @@ public class StudyController extends BaseStudyController
             else if (report == null && (null==table || !table.hasPermission(getUser(),ReadPermission.class)))
             {
                 return HtmlView.of("User does not have read permission on this dataset.");
-            }
-            else if (DiscussionService.get() != null)
-            {
-                // add discussions
-                DiscussionService service = DiscussionService.get();
-
-                if (report != null)
-                {
-                    // discuss the report
-                    String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    HttpView<?> discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    if (discussion != null)
-                        view.addView(discussion);
-                }
-                else
-                {
-                    // discuss the dataset
-                    String title = "Discuss dataset - " + def.getLabel();
-                    HttpView<?> discussion = service.getDiscussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    if (discussion != null)
-                        view.addView(discussion);
-                }
             }
             return view;
         }
