@@ -344,8 +344,7 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             ModuleReportCache.TestCase.class,
@@ -375,8 +374,7 @@ public class QueryModule extends DefaultModule
 
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             AggregateQueryDataTransform.TestCase.class,

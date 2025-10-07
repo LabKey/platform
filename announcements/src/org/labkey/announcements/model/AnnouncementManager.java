@@ -27,8 +27,6 @@ import org.labkey.announcements.AnnouncementsController.ModeratorReviewAction;
 import org.labkey.announcements.api.AnnouncementImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
@@ -96,7 +94,6 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -191,12 +188,6 @@ public class AnnouncementManager
     public static @NotNull List<AnnouncementModel> getDiscussions(Container c, String identifier)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
-        return getAnnouncements(c, filter, new Sort("Created"));
-    }
-
-    public static @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String[] identifiers)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), Arrays.asList(identifiers), CompareType.IN);
         return getAnnouncements(c, filter, new Sort("Created"));
     }
 
@@ -560,7 +551,7 @@ public class AnnouncementManager
     private static void sendNotificationEmails(final AnnouncementModel a, final WikiRendererType currentRendererType, final Container c, final User user)
     {
         Thread renderAndEmailThread = new Thread(() -> {
-            Settings settings = DiscussionService.get().getSettings(c);
+            Settings settings = getMessageBoardSettings(c);
 
             boolean isResponse = null != a.getParent();
             AnnouncementModel parent = a;
@@ -696,7 +687,7 @@ public class AnnouncementManager
 
     public static int updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
     {
-        return ContainerManager.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
+        return Table.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
     }
 
 

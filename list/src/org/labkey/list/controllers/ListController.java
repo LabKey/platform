@@ -40,7 +40,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.StaticLoggerGetter;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
@@ -65,7 +64,6 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
@@ -91,8 +89,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -146,11 +142,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * User: adam
- * Date: Dec 30, 2007
- * Time: 12:44:30 PM
- */
 public class ListController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class, ClearDefaultValuesAction.class);
@@ -637,36 +628,6 @@ public class ListController extends SpringActionController
                 view.addView(new HtmlView(LinkBuilder.labkeyLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
             }
 
-            if (
-                    _list.getDiscussionSetting().isLinked()
-                            && AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS)
-                            && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled()
-                            && DiscussionService.get() != null
-                )
-            {
-                String entityId = item.getEntityId();
-
-                DomainProperty titleProperty = null;
-                Domain d = _list.getDomain();
-                if (null != d)
-                    titleProperty = d.getPropertyByName(table.getTitleColumn());
-
-                Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
-                String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
-
-                ActionURL linkBackURL = _list.urlFor(ResolveAction.class).addParameter("entityId", entityId);
-                DiscussionService service = DiscussionService.get();
-                boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
-
-                // Display discussion by default in single-discussion case, #4529
-                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
-                if (discussion != null)
-                {
-                    view.addView(discussion);
-                    getPageConfig().setFocusId(discussion.getFocusId());
-                }
-            }
-
             return view;
         }
 
@@ -848,27 +809,74 @@ public class ListController extends SpringActionController
         return form.getReturnUrl();
     }
 
+    public static class ListItemDetailsForm
+    {
+        private Integer _listId;
+        private String _name;
+        private Integer _rowId;
+
+        public Integer getListId()
+        {
+            return _listId;
+        }
+
+        public void setListId(Integer listId)
+        {
+            _listId = listId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class ListItemDetailsAction extends SimpleViewAction<Object>
+    public class ListItemDetailsAction extends SimpleViewAction<ListItemDetailsForm>
     {
         private ListDefinition _list;
 
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(ListItemDetailsForm form, BindException errors)
         {
-            int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
-            int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
-            _list = ListService.get().getList(getContainer(), listId);
+            String listName = form.getName();
+            if (listName != null)
+                _list = ListService.get().getList(getContainer(), listName, true);
+
             if (_list == null)
             {
-                return HtmlView.of("This list is no longer available.");
+                Integer listId = form.getListId();
+                if (listId != null && listId > 0)
+                    _list = ListService.get().getList(getContainer(), listId);
             }
+
+            if (_list == null)
+                return HtmlView.of("This list is no longer available.");
 
             String comment = null;
             String oldRecord = null;
             String newRecord = null;
 
-            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
+            Integer eventRowId = form.getRowId();
+            if (eventRowId == null || eventRowId <= 0)
+                return HtmlView.of("Unable to resolve event details. An event \"rowId\" must be specified.");
+
+            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, eventRowId);
 
             if (event != null)
             {

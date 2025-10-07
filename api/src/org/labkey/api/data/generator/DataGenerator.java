@@ -217,7 +217,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             SampleTypeService service = SampleTypeService.get();
             if (sampleTypeNames.isEmpty())
-                _sampleTypes.addAll(service.getSampleTypes(getContainer(), getUser(), false));
+                _sampleTypes.addAll(service.getSampleTypes(getContainer(), false));
             else
             {
                 for (String typeName : sampleTypeNames)
@@ -345,7 +345,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         boolean hasParentTypes = !parentTypes.isEmpty();
         // Default to using all types in the container
         if (!hasParentTypes)
-            parentTypes.addAll(SampleTypeService.get().getSampleTypes(getContainer(), getUser(), false).stream().map(ExpSampleType::getName).toList());
+            parentTypes.addAll(SampleTypeService.get().getSampleTypes(getContainer(), false).stream().map(ExpSampleType::getName).toList());
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
         // Default to using all types in the container
         if (dataClassParents.isEmpty())

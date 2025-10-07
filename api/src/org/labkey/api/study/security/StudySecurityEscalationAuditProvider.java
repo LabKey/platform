@@ -25,6 +25,11 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
     public static String EVENT_TYPE = StudySecurityEscalationEvent.class.getSimpleName();
     public static String AUDIT_LOG_TITLE = "Study Security Escalations";
 
+    public StudySecurityEscalationAuditProvider()
+    {
+        super(new StudySecurityEscalationDomainKind());
+    }
+
     @Override
     public String getDescription() {
         return "This audits all uses of the Study Security Escalation";
@@ -43,11 +48,6 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
     @Override
     public String getAuditLogTitle() {
         return AUDIT_LOG_TITLE;
-    }
-
-    public StudySecurityEscalationAuditProvider()
-    {
-        super(new StudySecurityEscalationDomainKind());
     }
 
     public static class StudySecurityEscalationEvent extends SecurityEscalationEvent

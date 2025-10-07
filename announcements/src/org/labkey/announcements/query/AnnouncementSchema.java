@@ -166,7 +166,7 @@ public class AnnouncementSchema extends UserSchema
     {
         AnnouncementTable table = new AnnouncementTable(this, cf, filter);
 
-        for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
+        for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "Folder", "LastIndexed"))
             table.getMutableColumnOrThrow(name).setHidden(true);
 
         return table;

@@ -4430,7 +4430,7 @@ public class ExperimentController extends SpringActionController
             // file is loaded.
             if (crossTypeImport)
             {
-                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
+                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), true);
                 for (ExpSampleTypeImpl sampleType : sampleTypes)
                     aliases.addAll(sampleType.getImportAliases().keySet());
             }

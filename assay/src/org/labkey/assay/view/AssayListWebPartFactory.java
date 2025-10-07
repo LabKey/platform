@@ -37,9 +37,9 @@ public class AssayListWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        WebPartView listView = AssayService.get().createAssayListView(portalCtx, true, null);
+        WebPartView<?> listView = AssayService.get().createAssayListView(portalCtx, true, null);
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(portalCtx.getContainer());
         listView.setTitle("Assay List");
         listView.setTitleHref(url);

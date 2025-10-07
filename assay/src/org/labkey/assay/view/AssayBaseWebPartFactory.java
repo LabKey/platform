@@ -87,7 +87,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 //    }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Long protocolId = getProtocolId(webPart);
         ProtocolIdForm protocolIdForm = new ProtocolIdForm();
@@ -97,7 +97,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 
         boolean showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(SHOW_BUTTONS_KEY));
         ExpProtocol protocol;
-        WebPartView view;
+        WebPartView<?> view;
         try
         {
             protocol = protocolIdForm.getProtocol(true);
@@ -113,7 +113,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
-    public abstract WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons);
+    public abstract WebPartView<?> getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons);
 
     public abstract String getDescription();
 
@@ -124,7 +124,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         EditViewBean bean = new EditViewBean();
         bean.description = getDescription();

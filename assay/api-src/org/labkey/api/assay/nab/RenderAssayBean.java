@@ -15,16 +15,18 @@
  */
 package org.labkey.api.assay.nab;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.DiscussionService;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.view.DuplicateDataFileRunView;
 import org.labkey.api.assay.nab.view.RunDetailOptions;
+import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -32,11 +34,9 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
@@ -44,10 +44,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -77,6 +73,9 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
 public class RenderAssayBean extends RenderAssayForm
 {
     private static final Logger LOG = LogManager.getLogger(RenderAssayBean.class);
+    private static final int DEFAULT_MAX_SAMPLE_PER_GRAPH = 8;
+    private static final int DEFAULT_GRAPHS_PER_ROW = 2;
+
     private ViewContext _context;
     private DilutionAssayRun _assay;
     private boolean _printView;
@@ -92,9 +91,6 @@ public class RenderAssayBean extends RenderAssayForm
     private ActionURL _graphURL;
     private String _plateDataFormat;
     private RunDetailOptions.DataIdentifier _dataIdentifier = RunDetailOptions.DataIdentifier.DefaultFormat;
-
-    private static final int DEFAULT_MAX_SAMPLE_PER_GRAPH = 8;
-    private static final int DEFAULT_GRAPHS_PER_ROW = 2;
 
     public RenderAssayBean()
     {
@@ -304,19 +300,6 @@ public class RenderAssayBean extends RenderAssayForm
     public boolean isPrintView()
     {
         return _printView;
-    }
-
-    @Nullable
-    public HttpView getDiscussionView(ViewContext context)
-    {
-        ExpRun run = _assay.getRun();
-        ActionURL pageUrl = context.getActionURL().clone();
-        pageUrl.replaceParameter("rowId", run.getRowId());
-        String discussionTitle = "Discuss Run " + run.getRowId() + ": " + run.getName();
-        String entityId = run.getLSID();
-        DiscussionService service = DiscussionService.get();
-        return service.getDiscussionArea(context,
-                entityId, pageUrl, discussionTitle, true, false);
     }
 
     public long getRunId()

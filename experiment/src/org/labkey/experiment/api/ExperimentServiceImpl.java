@@ -1670,7 +1670,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, @NotNull DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -3200,7 +3200,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull String getObjectReferenceDescription(Class referencedClass)
+    public @NotNull String getObjectReferenceDescription(Class<?> referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -5519,7 +5519,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
-        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
+        List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
@@ -9393,7 +9393,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return new Pair<>(sampleTypes, dataClasses);
 
         String targetInputType = (isSampleParent ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX) + parentDataTypeName;
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, true))
         {
             try
             {
@@ -9561,11 +9561,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids == null || lsids.isEmpty())
             return 0;
 
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
-        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return Table.updateContainer(OntologyManager.getTinfoObject(), "objecturi", lsids, targetContainer, null, false);
     }
 
     @Override
@@ -9614,7 +9610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = Table.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -9636,7 +9632,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
-                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
@@ -9941,7 +9937,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbSchema dbSchema = ExperimentService.get().getSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
-        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, user, true);
+        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, true);
 
         String unionAll = "";
         SQLFragment query = new SQLFragment();

@@ -542,10 +542,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
             false);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
-            "Restore Object-Level Discussions",
-            "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.11.",
-            false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
             "Resolve Missing Lookup Values to Null",
             "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
@@ -1489,7 +1485,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
-        json.put(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS));
         return json;
     }
 
@@ -1516,11 +1511,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         // Must be mutable since we add the dialect tests below
-        Set<Class> testClasses = Sets.newHashSet
+        Set<Class<?>> testClasses = Sets.newHashSet
         (
             AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
@@ -1561,9 +1555,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return testClasses;
     }
 
-    @NotNull
     @Override
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             ApiJsonWriter.TestCase.class,
