@@ -853,25 +853,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         String s = o instanceof String ? (String) o : o.toString();
                         TableInfo lookupTable = remappableLookup.get(pd);
-                        try
+                        Object remapped = cache.remap(lookupTable, s, true);
+                        if (remapped == null)
                         {
-                            Object remapped = cache.remap(lookupTable, s, true);
-                            if (remapped == null)
-                            {
-                                if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
-                                    errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
-                                else
-                                    errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
-                            }
-                            else if (o != remapped)
-                            {
-                                o = remapped;
-                                map.put(pd.getName(), remapped);
-                            }
+                            if (SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
+                                errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
+                            else
+                                errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
                         }
-                        catch (ConversionException e)
+                        else if (o != remapped)
                         {
-                            errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+                            o = remapped;
+                            map.put(pd.getName(), remapped);
                         }
                     }
 
