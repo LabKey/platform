@@ -29,7 +29,6 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertUpdateDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
@@ -674,7 +673,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(col);
-                values.add(new SQLFragment().appendValue(new SQLFragment.NowTimestamp()));
+                values.add(new SQLFragment().appendNowTimestamp());
                 done.add("Created");
             }
         }
@@ -691,7 +690,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(colModified);
-            values.add(new SQLFragment().appendValue(new SQLFragment.NowTimestamp()));
+            values.add(new SQLFragment().appendNowTimestamp());
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();

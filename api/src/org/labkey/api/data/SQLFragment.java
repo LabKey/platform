@@ -607,6 +607,11 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    public final SQLFragment appendNowTimestamp()
+    {
+        return appendValue(new NowTimestamp());
+    }
+
     // Issue 27534: Stop using {fn now()} in function declarations
     // Issue 48864: Query Table's use of web server time can cause discrepancies in created/modified timestamps
     public final SQLFragment appendValue(NowTimestamp now)
