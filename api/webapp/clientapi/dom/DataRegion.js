@@ -16,7 +16,7 @@ if (!LABKEY.DataRegions) {
     var ALL_ROWS_MAX = 5_000;
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var DEFAULT_TIMEOUT = 30_000;
-    const MAX_SELECTION_SIZE = 1_000;
+    const MAX_SELECTION_SIZE = LABKEY.moduleContext.query.maxQuerySelection;
     var PARAM_PREFIX = '.param.';
     var SORT_ASC = '+';
     var SORT_DESC = '-';
