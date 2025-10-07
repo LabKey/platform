@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "6.62.7"
+    "@labkey/components": "6.63.0-gridPanelTestFilterPill.0"
   },
   "devDependencies": {
     "@labkey/build": "8.6.0",
