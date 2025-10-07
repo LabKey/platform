@@ -738,8 +738,9 @@ public class ToolsController extends SpringActionController
                                 multiMap.get(type).stream()
                                     .map(overlap -> DOM.TR(
                                         DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
-                                        DOM.TD(type.getMessage(overlap)))
-                                    )
+                                        DOM.TD(type.getMessage(overlap)),
+                                        "\n"
+                                    ))
                             )
                         )
                     )

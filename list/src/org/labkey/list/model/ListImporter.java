@@ -77,11 +77,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-* User: adam
-* Date: Aug 27, 2009
-* Time: 2:12:01 PM
-*/
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
@@ -426,7 +421,6 @@ public class ListImporter
             if (listSettingsXml.isSetId())
                 preferredListIds.add(listSettingsXml.getId());
 
-            list.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(listSettingsXml.getDiscussions()));
             list.setAllowDelete(listSettingsXml.getAllowDelete());
             list.setAllowUpload(listSettingsXml.getAllowUpload());
             list.setAllowExport(listSettingsXml.getAllowExport());

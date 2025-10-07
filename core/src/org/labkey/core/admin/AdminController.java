@@ -433,10 +433,10 @@ import static org.labkey.api.view.FolderManagement.addTab;
 public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            AdminController.class,
-            FileListAction.class,
-            FilesSiteSettingsAction.class,
-            UpdateFilePathsAction.class
+        AdminController.class,
+        FileListAction.class,
+        FilesSiteSettingsAction.class,
+        UpdateFilePathsAction.class
     );
 
     private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
@@ -1865,8 +1865,6 @@ public class AdminController extends SpringActionController
         private boolean _applicationMenuDisplayModeInherited;
         private boolean _helpMenuEnabled;
         private boolean _helpMenuEnabledInherited;
-        private boolean _discussionEnabled;
-        private boolean _discussionEnabledInherited;
         private String _logoHref;
         private boolean _logoHrefInherited;
         private String _companyName;
@@ -2047,28 +2045,6 @@ public class AdminController extends SpringActionController
         public void setHelpMenuEnabledInherited(boolean helpMenuEnabledInherited)
         {
             _helpMenuEnabledInherited = helpMenuEnabledInherited;
-        }
-
-        public boolean isDiscussionEnabled()
-        {
-            return _discussionEnabled;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setDiscussionEnabled(boolean discussionEnabled)
-        {
-            _discussionEnabled = discussionEnabled;
-        }
-
-        public boolean isDiscussionEnabledInherited()
-        {
-            return _discussionEnabledInherited;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setDiscussionEnabledInherited(boolean discussionEnabledInherited)
-        {
-            _discussionEnabledInherited = discussionEnabledInherited;
         }
 
         public String getLogoHref()
@@ -11520,7 +11496,6 @@ public class AdminController extends SpringActionController
         setProperty(form.isFolderDisplayModeInherited(), props::clearFolderDisplayMode, () -> props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode())));
         setProperty(form.isApplicationMenuDisplayModeInherited(), props::clearApplicationMenuDisplayMode, () -> props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode())));
         setProperty(form.isHelpMenuEnabledInherited(), props::clearHelpMenuEnabled, () -> props.setHelpMenuEnabled(form.isHelpMenuEnabled()));
-        setProperty(form.isDiscussionEnabledInherited(), props::clearDiscussionEnabled, () -> props.setDiscussionEnabled(form.isDiscussionEnabled()));
 
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)

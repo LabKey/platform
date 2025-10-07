@@ -109,6 +109,7 @@
 <%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.hamcrest.Matchers.containsString" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -1044,7 +1045,7 @@ public void testInsertOptionUpdate() throws Exception
     String longFieldName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
     props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
-    ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
+    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very", "alias", "Much", "flag", "c100"));
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long", "alias", "Extended", "flag", "c200"));
@@ -1081,6 +1082,19 @@ public void testInsertOptionUpdate() throws Exception
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(3, count);
+
+    // Issue 53168: circular lineage not allowed
+    rowsToUpdate.clear();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("rowId", dataClass.getData(c, "D-1").getRowId(), "DataInputs/DataClassWithImportOption", "D-1-d"));
+    try
+    {
+        qus.updateRows(user, c, rowsToUpdate, null, new BatchValidationException(), null, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("'D-1-d' is child of the current source 'D-1'. Circular relationships are not allowed."));
+    }
 
     Set<String> columnNames = new HashSet<>();
     columnNames.add("rowId");

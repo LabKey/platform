@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -46,10 +45,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Feb 5, 2012
- */
 public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
 {
     private Boolean _secure;
@@ -129,7 +124,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     {
         if (_secure == null)
         {
-            _secure = DiscussionService.get().getSettings(_userSchema.getContainer()).isSecureOn();
+            _secure = AnnouncementManager.getMessageBoardSettings(_userSchema.getContainer()).isSecureOn();
         }
         return _secure;
     }
