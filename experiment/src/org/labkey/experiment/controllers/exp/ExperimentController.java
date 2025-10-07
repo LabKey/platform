@@ -7273,7 +7273,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table)
         {
             ActionURL url = new ActionURL(InsertMaterialQueryRowAction.class, c);
-            url.addParameter("schemaName", "samples");
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
@@ -7491,6 +7490,15 @@ public class ExperimentController extends SpringActionController
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
         @Override
+        protected QueryForm createQueryForm(ViewContext context)
+        {
+            QueryForm form = new QueryForm("samples", null);
+            form.setViewContext(getViewContext());
+            form.bindParameters(getViewContext().getBindPropertyValues());
+            return form;
+        }
+
+        @Override
         public BindException bindParameters(PropertyValues m) throws Exception
         {
             BindException bind = super.bindParameters(m);
@@ -7569,6 +7577,16 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class InsertMaterialQueryRowAction extends UserSchemaAction
     {
+        @Override
+        protected QueryForm createQueryForm(ViewContext context)
+        {
+            QueryForm form = new QueryForm("samples", null);
+            form.setViewContext(getViewContext());
+            form.bindParameters(getViewContext().getBindPropertyValues());
+
+            return form;
+        }
+
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
