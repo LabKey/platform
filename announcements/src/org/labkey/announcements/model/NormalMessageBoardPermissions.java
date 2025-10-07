@@ -17,7 +17,6 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
@@ -44,9 +43,9 @@ public class NormalMessageBoardPermissions implements Permissions
 {
     protected final Container _c;
     protected final User _user;
-    protected final DiscussionService.Settings _settings;
+    protected final Settings _settings;
 
-    public NormalMessageBoardPermissions(Container c, User user, DiscussionService.Settings settings)
+    public NormalMessageBoardPermissions(Container c, User user, Settings settings)
     {
         _c = c;
         _user = user;

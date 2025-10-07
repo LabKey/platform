@@ -135,46 +135,6 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
-    enum DiscussionSetting
-    {
-        None(0, "None"),
-        OnePerItem(1, "Allow one discussion per item"),
-        ManyPerItem(2, "Allow multiple discussions per item");
-
-        private final int _value;
-        private final String _text;
-
-        DiscussionSetting(int value, String text)
-        {
-            _value = value;
-            _text = text;
-        }
-
-        public static DiscussionSetting getForValue(int value)
-        {
-            for (DiscussionSetting s : DiscussionSetting.values())
-                if (s.getValue() == value)
-                    return s;
-
-            return null;
-        }
-
-        public boolean isLinked()
-        {
-            return _value > 0;
-        }
-
-        public String getText()
-        {
-            return _text;
-        }
-
-        public int getValue()
-        {
-            return _value;
-        }
-    }
-
     enum Category
     {
         PrivatePicklist,
@@ -346,9 +306,6 @@ public interface ListDefinition extends Comparable<ListDefinition>
     {
         return getCategory() == Category.PrivatePicklist || getCategory() == Category.PublicPicklist;
     }
-
-    DiscussionSetting getDiscussionSetting();
-    void setDiscussionSetting(DiscussionSetting discussionSetting);
 
     boolean getAllowDelete();
     void setAllowDelete(boolean allowDelete);
