@@ -313,7 +313,6 @@ public class JsonWriter
                 }
             }
         }
-            props.put("multiValue", true);
 
         if (null != cinfo)
         {
