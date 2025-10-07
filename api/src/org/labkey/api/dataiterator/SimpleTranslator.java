@@ -121,7 +121,6 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
-    public static final String DEPRECATED_NULL_MISSING_VALUE_RESOLUTION = "deprecatedNullMissingValueResolution";
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     /**
@@ -1354,17 +1353,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-            {
-                if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_NULL_MISSING_VALUE_RESOLUTION))
-                {
-                    // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
-                    boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
-
-                    missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-                }
-                else
-                    missing = RemapMissingBehavior.Error;
-            }
+                missing = RemapMissingBehavior.Error;
             c = new RemappingConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
