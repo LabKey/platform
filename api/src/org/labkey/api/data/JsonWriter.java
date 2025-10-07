@@ -300,6 +300,19 @@ public class JsonWriter
         }
 
         if (dc instanceof IMultiValuedDisplayColumn)
+        {
+            props.put("multiValue", true);
+            if (dc instanceof ILineageDisplayColumn lineageCol)
+            {
+                // Issue 52878: Attachment thumbnails from Source Types do not render
+                ColumnInfo innerCol = lineageCol.getInnerBoundColumn();
+                if (innerCol != null)
+                {
+                    props.put("align", innerCol.getTextAlign());
+                    props.put("inputType", innerCol.getInputType());
+                }
+            }
+        }
             props.put("multiValue", true);
 
         if (null != cinfo)
