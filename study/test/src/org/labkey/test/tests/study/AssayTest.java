@@ -34,19 +34,24 @@ import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.pages.assay.AssayBeginPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldInfo;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SampleTypeHelper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TestDataGenerator;
+import org.labkey.test.util.data.TestDataUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -58,6 +63,8 @@ public class AssayTest extends AbstractAssayTest
     private static final String INVESTIGATOR = "Dr. No";
     private static final String GRANT = "SPECTRE";
     private static final String DESCRIPTION = "World Domination.";
+    private static final String ISSUE_53625_ASSAY = TestDataGenerator.randomDomainName("Issue53625", DomainUtils.DomainKind.Assay);
+    private static final String ISSUE_53625_PROJECT = "Issue53625Project";
     private static final String ISSUE_53616_ASSAY = "Issue53616Assay";
     private static final String ISSUE_53616_PROJECT = "Issue53616Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
@@ -79,6 +86,7 @@ public class AssayTest extends AbstractAssayTest
         _containerHelper.deleteProject(getProjectName(), false);
         _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, false);
         _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
+        _containerHelper.deleteProject(ISSUE_53625_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
     }
@@ -176,7 +184,7 @@ public class AssayTest extends AbstractAssayTest
         ssHelper = SampleTypeHelper.beginAtSampleTypesList(this, getCurrentContainerPath());
         ssHelper.createSampleType(otherDefinition, "Name\nOS_1\nOS_2");
 
-        importSampleAssayData(TEST_RUN1, "OS_1");
+        importAssayData(SAMPLE_FIELD_TEST_ASSAY, TEST_RUN1, "SampleField\nOS_1");
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
         assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
@@ -193,7 +201,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Verify updates saved successfully");
         assertEquals("Error saving initial assay", 0, checker().errorsSinceMark());
-        importSampleAssayData(TEST_RUN2, "S_1");
+        importAssayData(SAMPLE_FIELD_TEST_ASSAY, TEST_RUN2, "SampleField\nS_1");
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 //        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change. Issue #40047
@@ -211,7 +219,7 @@ public class AssayTest extends AbstractAssayTest
         assertEquals("Error saving updated sample field", 0, checker().errorsSinceMark());
 
         log("Verify updates saved successfully");
-        importSampleAssayData(TEST_RUN3, "S_2\nOS_2");
+        importAssayData(SAMPLE_FIELD_TEST_ASSAY, TEST_RUN3, "SampleField\nS_2\nOS_2");
         assertEquals("Error importing data after assay sample field update", 0, checker().errorsSinceMark());
 
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
@@ -223,14 +231,14 @@ public class AssayTest extends AbstractAssayTest
 
     }
 
-    private void importSampleAssayData(String runName, String sampleId)
+    private void importAssayData(String assayName, String runName, String runDataStr)
     {
         goToManageAssays();
-        clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText(assayName));
         clickButton("Import Data", "Run Data");
         setFormElement(AssayConstants.ASSAY_NAME_FIELD_LOCATOR, runName);
         click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
-        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR,  "SampleField\n" + sampleId);
+        setFormElement(AssayConstants.TEXT_AREA_DATA_COLLECTOR_LOCATOR,  runDataStr);
         clickButton("Save and Finish");
 
     }
@@ -994,6 +1002,94 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("AAA07", aaa07Count * 2);
         assertTextPresent("AssayTestControl", controlCount * 2);
         assertTextPresent("BAQ00051", baq00051Count * 2);
+    }
+
+    @Test // Issue 53625
+    public void testAssayLookupValidatorConversion()
+    {
+        _containerHelper.createProject(ISSUE_53625_PROJECT, "Assay");
+        goToProjectHome(ISSUE_53625_PROJECT);
+
+        log("Create a list with an int key and a string value");
+        String lookToListName = TestDataGenerator.randomDomainName("lookToList", DomainUtils.DomainKind.IntList);
+        String keyName = TestDataGenerator.randomFieldName("key", null, DomainUtils.DomainKind.IntList);
+        FieldInfo valueField = FieldInfo.random("value", FieldDefinition.ColumnType.String, DomainUtils.DomainKind.IntList);
+        _listHelper.createList(ISSUE_53625_PROJECT, lookToListName, keyName, valueField.getFieldDefinition());
+        _listHelper.bulkImportData(TestDataUtils.tsvStringFromRowMaps(List.of(
+                Map.of(valueField.getName(), "One"),
+                Map.of(valueField.getName(), "Two"),
+                Map.of(valueField.getName(), "123")
+        ), List.of(valueField.getName()), true));
+
+        log("Create an assay with a results lookup field to the list, with lookup validator set");
+        goToProjectHome(ISSUE_53625_PROJECT);
+        FieldInfo lookupField = new FieldInfo("lookup", new FieldDefinition.IntLookup(null, "lists", lookToListName));
+        ReactAssayDesignerPage designerPage = _assayHelper.createAssayDesign("General", ISSUE_53625_ASSAY);
+        designerPage.goToBatchFields()
+                .removeAllFields(false);
+        designerPage.goToResultsFields()
+                .removeAllFields(false)
+                .manuallyDefineFields(lookupField.getFieldDefinition().setLookupValidatorEnabled(true));
+        designerPage.clickFinish();
+
+        log("Verify importing an assay run with valid and invalid values for the lookup field");
+        verifyAssayImportForLookupValidator(ISSUE_53625_ASSAY, lookupField, "RunWithLookupValidator", true);
+
+        log("Turn off lookup field validator and test the imports again");
+        designerPage = _assayHelper.clickEditAssayDesign();
+        designerPage.goToResultsFields()
+                .getField(lookupField.getName())
+                .setLookupValidatorEnabled(false);
+        designerPage.clickFinish();
+        verifyAssayImportForLookupValidator(ISSUE_53625_ASSAY, lookupField, "RunWithoutLookupValidator", false);
+    }
+
+    private void verifyAssayImportForLookupValidator(String assayName, FieldInfo lookupField, String runName, boolean validatorOn)
+    {
+        String runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "One"), // valid
+                        Map.of(lookupField.getName(), "99")), // invalid
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        assertTextPresent("Could not translate value: 99");
+        if (validatorOn) assertTextPresent("Value '99' was not present in lookup target");
+        else assertTextNotPresent("Value '99' was not present in lookup target");
+        clickButton("Cancel");
+
+        runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "Three"), // invalid
+                        Map.of(lookupField.getName(), "2")), // valid
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        assertTextPresent("Failed to convert");
+        assertTextPresent("Could not translate value: Three");
+        clickButton("Cancel");
+
+        runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "One"), // valid
+                        Map.of(lookupField.getName(), "2"), // valid
+                        Map.of(lookupField.getName(), "123")), // valid
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        clickAndWait(Locator.linkWithText(runName));
+        DataRegionTable dataTable = new DataRegionTable("Data", getDriver());
+        checker().verifyEquals("Incorrect number of results shown.", 3, dataTable.getDataRowCount());
+        checker().verifyEquals("Lookup values not as expected.", List.of("One", "Two", "123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
+
+        // test with just the numeric value since that was causing issues during manual testing
+        runName = runName + "NumericOnly";
+        runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "123")), // valid
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        clickAndWait(Locator.linkWithText(runName));
+        dataTable = new DataRegionTable("Data", getDriver());
+        checker().verifyEquals("Incorrect number of results shown.", 1, dataTable.getDataRowCount());
+        checker().verifyEquals("Lookup values not as expected.", List.of("123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
     }
 
     @Override
