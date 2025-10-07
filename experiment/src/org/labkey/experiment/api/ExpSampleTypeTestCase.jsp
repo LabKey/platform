@@ -503,7 +503,7 @@ public void testNameExpression() throws Exception
     assertExpectedName(st, expectedName3 + "-ALI-0009");
     assertEquals(expectedName3, aliquots.get(0).get("aliquotedFrom"));
 
-    // test the default aliquot naming pattern
+    // test the default aliquot naming pattern (${${AliquotedFrom}-:withCounter}
     st.setAliquotNameExpression("");
     st.save(user);
 
