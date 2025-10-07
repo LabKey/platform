@@ -451,7 +451,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 {
                     var aggregateErrorLayerConfig = {
                         data: aggregateData,
-                        geom: new LABKEY.vis.Geom.ErrorBar(),
+                        geom: new LABKEY.vis.Geom.ErrorBar({ showVertical: true }),
                         aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                     };
 

@@ -2167,6 +2167,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderErrorBar = function(layer, plot, geom, data) {
         var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
+        var errorLineWidth = geom.errorWidth ?? geom.width;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
@@ -2176,7 +2177,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value + error);
-            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
         bottomFn = function(d) {
             var x, y, value, error;
@@ -2188,7 +2189,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (y == null && geom.yScale.trans == "log") {
                 return null;
             }
-            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
         verticalFn = function(d) {
             var x, y1, y2, value, error;
@@ -2220,16 +2221,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (!geom.topOnly) {
             newBars.append('path').attr('class', 'error-bar-bottom');
         }
+        if (geom.errorShowVertical) {
+            newBars.append('path').attr('class','error-bar-vert');
+        }
 
-        selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', 1);
         if (!geom.topOnly) {
-            selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+            selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', 1);
+        }
+        if (geom.errorShowVertical) {
+            selection.selectAll('.error-bar-vert').attr('d', verticalFn).attr('stroke', colorAcc).attr('stroke-width', 1);
         }
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));
             if (!geom.topOnly) {
                 selection.selectAll('.error-bar-bottom').style("stroke-dasharray", ("2, 1"));
+            }
+            if (geom.errorShowVertical) {
+                selection.selectAll('.error-bar-vert').style("stroke-dasharray", ("2, 1"));
             }
         }
     };
