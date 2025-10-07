@@ -328,6 +328,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -6510,14 +6511,9 @@ public class QueryController extends SpringActionController
                 DataRegionSelection.clearAll(getViewContext(), form.getKey());
                 return new DataRegionSelection.SelectionResponse(0);
             }
-            else
-            {
-                // Note: DataRegionSelection.setSelectionForAll(form, false) will query for all rows in the region to remove those in context.
-                // Instead, get the selected values in context and then "uncheck" them directly
-                List<String> currentCtxSelection = DataRegionSelection.getSelected(form, false);
-                int count = DataRegionSelection.setSelected(getViewContext(), form.getQuerySettings().getSelectionKey(), currentCtxSelection, false);
-                return new DataRegionSelection.SelectionResponse(count);
-            }
+
+            int count = DataRegionSelection.setSelectedFromForm(form);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
@@ -6594,7 +6590,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                List<String> selected = DataRegionSelection.getSelected(form, form.isClearSelected());
+                Set<String> selected = DataRegionSelection.getSelected(form, form.isClearSelected());
                 return new ApiSimpleResponse("selected", selected);
             }
         }
@@ -6608,7 +6604,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
-            List<String> selection = new ArrayList<>();
+            Set<String> selection = new LinkedHashSet<>();
             if (ids != null)
             {
                 for (String id : ids)

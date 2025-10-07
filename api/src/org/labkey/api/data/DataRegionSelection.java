@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -61,7 +60,9 @@ public class DataRegionSelection
     public static final String SELECTED_VALUES = ".selectValues";
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
-    public static final int MAX_SELECTION_SIZE = 1_000;
+
+    // Issue 53997: Establish a maximum number of selected items allowed for a query.
+    public static final int MAX_QUERY_SELECTION_SIZE = 100_000;
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
@@ -211,7 +212,6 @@ public class DataRegionSelection
         Set<String> result = new LinkedHashSet<>(parameterSelected);
 
         Set<String> sessionSelected = getSet(context, key, false);
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (sessionSelected)
         {
             result.addAll(sessionSelected);
@@ -268,20 +268,52 @@ public class DataRegionSelection
      */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
-        if (checked && selection.size() > MAX_SELECTION_SIZE)
-            throw new BadRequestException(String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.", Formats.commaf0.format(selection.size()), Formats.commaf0.format(MAX_SELECTION_SIZE)));
+        if (checked && selection.size() > MAX_QUERY_SELECTION_SIZE)
+            throw new BadRequestException(selectionTooLargeMessage(selection.size()));
 
         Set<String> selectedValues = getSet(context, key, true, useSnapshot);
         if (checked)
         {
-            // TODO: Need to synchronize on this change and not make it if it is too many
+            // Verify that adding these selections will not result in a set that is too large
+            if (selectedValues.size() + selection.size() > MAX_QUERY_SELECTION_SIZE)
+            {
+                // Do not modify the actual selected values
+                int current = selectedValues.size();
+                int distinctAdds = 0;
+
+                for (String id : selection)
+                {
+                    if (!selectedValues.contains(id))
+                        distinctAdds++;
+                }
+
+                int prospective = current + distinctAdds;
+                if (prospective > MAX_QUERY_SELECTION_SIZE)
+                    throw new BadRequestException(selectionTooLargeMessage(prospective));
+            }
+
             selectedValues.addAll(selection);
-            if (selectedValues.size() > MAX_SELECTION_SIZE)
-                throw new BadRequestException(String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.", Formats.commaf0.format(selectedValues.size()), Formats.commaf0.format(MAX_SELECTION_SIZE)));
         }
         else
             selectedValues.removeAll(selection);
+
         return selectedValues.size();
+    }
+
+    public static int setSelectedFromForm(QueryForm form)
+    {
+        var view = getQueryView(form);
+        var viewContext = view.getViewContext();
+        var selection = getSet(viewContext, form.getQuerySettings().getSelectionKey(), true);
+        var items = getSelectedItems(view, selection);
+
+        return setSelected(viewContext, form.getQuerySettings().getSelectionKey(), items, false);
+    }
+
+    private static String selectionTooLargeMessage(long size)
+    {
+        return String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.",
+                Formats.commaf0.format(size), Formats.commaf0.format(MAX_QUERY_SELECTION_SIZE));
     }
 
     /**
@@ -347,13 +379,11 @@ public class DataRegionSelection
      * Gets the ids of the selected items for all items in the given query form's view.  That is,
      * not just the items on the current page, but all selected items corresponding to the view's filters.
      */
-    public static List<String> getSelected(QueryForm form, boolean clearSelected) throws IOException
+    public static Set<String> getSelected(QueryForm form, boolean clearSelected) throws IOException
     {
-        List<String> items;
         var view = getQueryView(form);
-
         var selection = getSet(view.getViewContext(), form.getQuerySettings().getSelectionKey(), true);
-        items = getSelectedItems(view, selection);
+        var items = getSelectedItems(view, selection);
 
         if (clearSelected && !selection.isEmpty())
         {
@@ -363,7 +393,8 @@ public class DataRegionSelection
                 items.forEach(selection::remove);
             }
         }
-        return Collections.unmodifiableList(items);
+
+        return items;
     }
 
     private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
@@ -407,7 +438,7 @@ public class DataRegionSelection
         return schema.createView(form, null);
     }
 
-    public static List<String> getValidatedIds(@NotNull List<String> selection, QueryForm form) throws IOException
+    public static Set<String> getValidatedIds(@NotNull Collection<String> selection, QueryForm form)
     {
         return getSelectedItems(getQueryView(form), selection);
     }
@@ -454,7 +485,7 @@ public class DataRegionSelection
 
         try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
-            var selection = createSelectionList(rc, rgn, rs, null);
+            var selection = createSelectionSet(rc, rgn, rs, null);
             return setSelected(view.getViewContext(), key, selection, checked);
         }
         catch (SQLException e)
@@ -468,13 +499,13 @@ public class DataRegionSelection
      * @param view the view from which to retrieve the data region context and session variable
      * @param selectedValues optionally (nullable) specify a collection of selected values that will be matched
      *                       against when selecting items. If null, then all items will be returned.
-     * @return list of items from the result set that are in the selected session, or an empty list if none.
+     * @return Set of items from the result set that are in the selected session, or an empty list if none.
      */
-    private static List<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues) throws IOException
+    private static Set<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues)
     {
         // Issue 48657: no need to query the region result set if we have no selectedValues
         if (selectedValues.isEmpty())
-            return new LinkedList<>();
+            return new LinkedHashSet<>();
 
         var dataRegionContext = getDataRegionContext(view);
         var rgn = dataRegionContext.first;
@@ -494,7 +525,7 @@ public class DataRegionSelection
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (selectedValues)
             {
-                return createSelectionList(ctx, rgn, rs, selectedValues);
+                return createSelectionSet(ctx, rgn, rs, selectedValues);
             }
         }
         catch (SQLException e)
@@ -503,14 +534,14 @@ public class DataRegionSelection
         }
     }
 
-    private static List<String> createSelectionList(
+    private static Set<String> createSelectionSet(
         RenderContext ctx,
         DataRegion rgn,
         ResultSet rs,
         @Nullable Collection<String> selectedValues
     ) throws SQLException
     {
-        List<String> selected = new ArrayList<>();
+        Set<String> selected = new LinkedHashSet<>();
 
         if (rs != null)
         {
@@ -526,7 +557,7 @@ public class DataRegionSelection
                     if (selectedValues == null || selectedValues.contains(value))
                     {
                         selected.add(value);
-                        if (selected.size() == MAX_SELECTION_SIZE)
+                        if (selected.size() == MAX_QUERY_SELECTION_SIZE)
                             break;
                     }
                 }
