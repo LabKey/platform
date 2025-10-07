@@ -81,8 +81,7 @@ public class Encryption
     private static final String SALT_KEY = "Salt";
     public static final SecureRandom SR;
     private static final String ENCRYPTION_PASS_PHRASE;
-    private static final String KEY_CHANGE_GUIDANCE = "An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.";
-    private static boolean _migrateUsingOldAESConfig = false;
+    private static String KEY_CHANGE_GUIDANCE = "An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.";
 
     static
     {
@@ -123,6 +122,12 @@ public class Encryption
         });
     }
 
+
+    // Used to keep track of the cipher configuration we've used, allowing us to reliably upgrade from one to another
+    private static final String ENCRYPTION_CIPHER_CATEGORY = "encryption-cipher";
+    private static final String CIPHER_PROPERTY = "cipher";
+
+    // Used to check the key against a testable value stored in the database
     private static final String TEST_ENCRYPTION_CATEGORY = "encryption-test";
     private static final String TEST_BYTES_NAME = "bytes";
     private static final int TEST_BYTES_LENGTH = 64; // Don't change unless you address backward compatibility
@@ -346,11 +351,6 @@ public class Encryption
         return null != getEncryptionPassPhrase();
     }
 
-    public static void migrateUsingOldAESConfig()
-    {
-        _migrateUsingOldAESConfig = true;
-    }
-
     public interface Algorithm
     {
         byte @NotNull[] encrypt(@NotNull String plainText);
@@ -551,13 +551,20 @@ public class Encryption
                 keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
                 LOG.info("{}. Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey.", keySource);
                 migrationNeeded = true;
+                KEY_CHANGE_GUIDANCE = KEY_CHANGE_GUIDANCE + " Note that if a migration has already been performed, the OldEncryptionKey value should be removed.";
             }
 
-            if (_migrateUsingOldAESConfig)
+            PropertyManager.WritablePropertyMap cipherProps = PropertyManager.getNormalStore().getWritableProperties(ENCRYPTION_CIPHER_CATEGORY, true);
+            String cipher = cipherProps.get(CIPHER_PROPERTY);
+            if (cipher == null)
             {
                 migrationNeeded = true;
                 oldConfig = AESConfig.legacy;
                 LOG.info("Migrating existing encrypted content from legacy AES configuration to current AES configuration.");
+            }
+            else if (!cipher.equals(AESConfig.current.getCipherName()))
+            {
+                LOG.error("Unexpected cipher configuration: " + cipher);
             }
 
             if (migrationNeeded)
@@ -585,8 +592,10 @@ public class Encryption
                     LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
                     LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
                 }
-                if (_migrateUsingOldAESConfig)
+                if (cipher == null)
                 {
+                    cipherProps.put(CIPHER_PROPERTY, AESConfig.current.getCipherName());
+                    cipherProps.save();
                     LOG.info("Migration from existing encrypted content from legacy AES configuration to current AES configuration is complete.");
                 }
             }

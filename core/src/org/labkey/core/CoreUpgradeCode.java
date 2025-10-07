@@ -112,20 +112,6 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
-
-    /**
-     * Called from core-25.007-25.008.sql
-     * We're switching AES cipher variants and need to migrate existing encrypted values
-     */
-    @SuppressWarnings("unused")
-    public void migrateAES(ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            Encryption.migrateUsingOldAESConfig();
-        }
-    }
-
     private static void toLowerCaseWithCounterSeqs(Container container)
     {
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
