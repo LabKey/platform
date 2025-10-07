@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.62.8-fb-plate-assay-material-inputs.0",
+    "@labkey/components": "6.63.0-fb-plate-assay-material-inputs.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
