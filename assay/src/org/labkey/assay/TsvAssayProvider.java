@@ -120,7 +120,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public static final String NAME = "General";
     public static final String PLATE_TEMPLATE_PROPERTY_NAME = "PlateTemplate";
-    public static final String PLATE_TEMPLATE_PROPERTY_CAPTION = "Plate Template";
 
     private static final Set<String> participantImportAliases;
     private static final Set<String> specimenImportAliases;
@@ -168,7 +167,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
         if (PipelineDataCollector.getFileQueue(context).isEmpty())
         {
-            result.add(0, new TextAreaDataCollector());
+            result.add(0, new TextAreaDataCollector<>());
         }
         return result;
     }
@@ -784,7 +783,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         private ExpProtocol _protocol;
         private ExpRun _run;
         private ExpData _data;
-        private AssayRunUploadForm _uploadContext;
+        private AssayRunUploadForm<?> _uploadContext;
 
         @Before
         public void setUp()
@@ -818,7 +817,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             // data or reusing the existing file
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                will(returnValue(new HashMap()));
+                will(returnValue(new HashMap<>()));
                 allowing(_uploadContext).getReRun();
                 will(returnValue(_run));
                 allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
@@ -841,7 +840,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             // data or reusing the existing file
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                will(returnValue(new HashMap()));
+                will(returnValue(new HashMap<>()));
                 allowing(_uploadContext).getReRun();
                 will(returnValue(_run));
                 allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
@@ -865,7 +864,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             // Simulate a regular upload wizard
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                will(returnValue(new HashMap()));
+                will(returnValue(new HashMap<>()));
                 allowing(_uploadContext).getReRun();
                 will(returnValue(null));
             }});
@@ -884,7 +883,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             _context.checking(new Expectations()
             {{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                Map<Pair<Container, Long>, Collection> map = new HashMap<>();
+                Map<Pair<Container, Long>, Collection<?>> map = new HashMap<>();
                 map.put(new Pair<>(_container, _protocol.getRowId()), Collections.singletonList(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile"))));
                 will(returnValue(map));
                 allowing(_uploadContext).getReRun();
@@ -903,7 +902,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacement
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
-                will(returnValue(new HashMap()));
+                will(returnValue(new HashMap<>()));
                 allowing(_uploadContext).getReRun();
                 will(returnValue(null));
             }});
