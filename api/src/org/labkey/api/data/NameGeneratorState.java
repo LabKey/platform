@@ -50,9 +50,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.NameGenerator.getParentImportAliasFieldKeys;
-import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.ExperimentService.isAliquotedFromColumn;
 
 public class NameGeneratorState implements AutoCloseable
 {
@@ -745,7 +745,7 @@ public class NameGeneratorState implements AutoCloseable
     {
         String prefix = null;
         String dataType = null;
-        if (ALIQUOTED_FROM_INPUT.equalsIgnoreCase(colName))
+        if (isAliquotedFromColumn(colName))
         {
             prefix = ExpMaterial.MATERIAL_INPUT_PARENT;
             dataType = getParentTable() != null ? getParentTable().getName() : null;
@@ -791,7 +791,7 @@ public class NameGeneratorState implements AutoCloseable
         String[] parts = colName.split("/", 2);
         String prefix = null;
         String decodedDataType = null;
-        if (ALIQUOTED_FROM_INPUT.equalsIgnoreCase(colName))
+        if (isAliquotedFromColumn(colName))
         {
             prefix = ExpMaterial.MATERIAL_INPUT_PARENT;
             decodedDataType = getParentTable() != null ? getParentTable().getName() : null;
