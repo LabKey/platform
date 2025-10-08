@@ -671,7 +671,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                         sep = ', \n';
 
                         // include the std dev / SEM value in the hover display for a value if available
-                        if (row[measure.name].error !== undefined && row[measure.name].errorType !== undefined) {
+                        if (row[measure.name] && row[measure.name].error !== undefined && row[measure.name].errorType !== undefined) {
                             hover += sep + row[measure.name].errorType + ': ' + row[measure.name].error;
                         }
 
@@ -1185,6 +1185,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
                 if (!aes.shape && yMeasures.length > 1) {
                     layerAes.shape = emptyTextFn;
+                }
+
+                // allow for bar chart and line chart to provide an errorAes for showing error bars
+                if (geom && geom.errorAes) {
+                    layerAes.error = geom.errorAes.getValue;
                 }
 
                 layers.push(
