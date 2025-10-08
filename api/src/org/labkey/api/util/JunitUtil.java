@@ -236,7 +236,7 @@ public class JunitUtil
             }
         }
 
-        File file = new File(sampleDataDir, relativePath);
+        File file = FileUtil.appendPath(sampleDataDir, Path.parse(relativePath));
         if (file.exists())
             return file;
 

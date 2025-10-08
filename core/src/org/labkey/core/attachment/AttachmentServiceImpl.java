@@ -119,6 +119,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1146,17 +1147,28 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             rs = stmt.executeQuery();
 
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
-                if (!parentDir.exists())
+                java.nio.file.Path parentDir = adParent.getFileSystemDirectoryPath();
+                if (!Files.exists(parentDir))
                     throw new FileNotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
-                File file = new File(parentDir, name);
+                java.nio.file.Path file = FileUtil.appendName(parentDir, name);
                 stmt.close();
                 stmt = null;
                 rs.close();
                 rs = null;
-                return new FileInputStream(file);
+                try
+                {
+                    return Files.newInputStream(file);
+                }
+                catch (FileNotFoundException e)
+                {
+                    throw e;
+                }
+                catch (IOException e)
+                {
+                    throw new FileNotFoundException(e.getMessage());
+                }
             }
             else
             {
