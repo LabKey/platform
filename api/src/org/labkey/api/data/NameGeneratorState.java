@@ -362,7 +362,7 @@ public class NameGeneratorState implements AutoCloseable
                                        boolean isMaterialParent,
                                        @Nullable Map<String, FieldKey> parentImportAliases,
                                        ExpObject parentObject,
-                                       Map<FieldKey, ArrayList<Object>> inputLookupValues,
+                                       Map<FieldKey, LinkedHashSet<Object>> inputLookupValues,
                                        @Nullable NameGenerator altNameGenerator)
     {
         String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
@@ -384,7 +384,7 @@ public class NameGeneratorState implements AutoCloseable
                 continue;
 
             // add to Input/<LookupField>
-            inputLookupValues.computeIfAbsent(FieldKey.fromParts(INPUT_PARENT, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
+            inputLookupValues.computeIfAbsent(FieldKey.fromParts(INPUT_PARENT, fieldName), (s) -> new LinkedHashSet<>()).add(lookupValue);
 
             // add to importAlias/<LookupField>
             if (parentImportAliases != null)
@@ -393,19 +393,19 @@ public class NameGeneratorState implements AutoCloseable
                         .entrySet()
                         .stream()
                         .filter(entry -> inputFK.equals(entry.getValue()))
-                        .forEach(entry -> inputLookupValues.computeIfAbsent(FieldKey.fromParts(entry.getKey(), fieldName), (s) -> new ArrayList<>()).add(lookupValue));
+                        .forEach(entry -> inputLookupValues.computeIfAbsent(FieldKey.fromParts(entry.getKey(), fieldName), (s) -> new LinkedHashSet<>()).add(lookupValue));
             }
 
             // add to <Type>Inputs/<LookupField>
-            inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
+            inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, fieldName), (s) -> new LinkedHashSet<>()).add(lookupValue);
             // add to <Type>Inputs/<TypeName>/<LookupField>
-            inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, parentTypeName, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
+            inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, parentTypeName, fieldName), (s) -> new LinkedHashSet<>()).add(lookupValue);
         }
     }
 
     private void addAncestorLookupValues(
             ExpRunItem parentObject,
-            Map<FieldKey, ArrayList<Object>> inputLookupValues,
+            Map<FieldKey, LinkedHashSet<Object>> inputLookupValues,
             @Nullable NameGenerator altNameGenerator)
     {
         String parentLsid = parentObject.getLSID();
@@ -481,8 +481,8 @@ public class NameGeneratorState implements AutoCloseable
 
                 if (!ancestorLookupValues.isEmpty())
                 {
-                    inputLookupValues.putIfAbsent(ancestorFieldKey, new ArrayList<>());
-                    List<Object> lookupValues = inputLookupValues.get(ancestorFieldKey);
+                    inputLookupValues.putIfAbsent(ancestorFieldKey, new LinkedHashSet<>());
+                    Set<Object> lookupValues = inputLookupValues.get(ancestorFieldKey);
                     for (Object lookupVal : ancestorLookupValues)
                     {
                         if (!lookupValues.contains(lookupVal))
@@ -497,7 +497,7 @@ public class NameGeneratorState implements AutoCloseable
                                         String parentName,
                                         boolean isMaterialParent,
                                         @Nullable Map<String, FieldKey> parentImportAliases,
-                                        Map<FieldKey, ArrayList<Object>> inputLookupValues,
+                                        Map<FieldKey, LinkedHashSet<Object>> inputLookupValues,
                                         @Nullable NameGenerator altNameGenerator)
     {
         NameGenerator.ExpressionSummary expressionSummary = getExpressionSummary(altNameGenerator);
@@ -591,7 +591,7 @@ public class NameGeneratorState implements AutoCloseable
         if (expressionSummary.hasParentLookup() || expressionSummary.hasParentInputs())
         {
             Map<FieldKey, Set<String>> inputs = new HashMap<>();
-            Map<FieldKey, ArrayList<Object>> inputLookupValues = new HashMap<>();
+            Map<FieldKey, LinkedHashSet<Object>> inputLookupValues = new HashMap<>();
 
             inputs.put(FieldKey.fromParts(INPUT_PARENT), new LinkedHashSet<>());
             inputs.put(FieldKey.fromParts(ExpData.DATA_INPUT_PARENT), new LinkedHashSet<>());
@@ -663,7 +663,7 @@ public class NameGeneratorState implements AutoCloseable
             ctx.putAll(inputValues);
 
             Map<FieldKey, Object> lookupValues = new HashMap<>();
-            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.get(0) : null)));
+            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.iterator().next() : null)));
             ctx.putAll(lookupValues);
         }
 
@@ -740,7 +740,7 @@ public class NameGeneratorState implements AutoCloseable
     private void addParentLookupInput(String colName,
                                       Object value,
                                       @Nullable Map<String, FieldKey> parentImportAliases,
-                                      Map<FieldKey, ArrayList<Object>> inputLookupValues,
+                                      Map<FieldKey, LinkedHashSet<Object>> inputLookupValues,
                                       @Nullable NameGenerator altNameGenerator)
     {
         String prefix = null;
