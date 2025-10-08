@@ -3199,6 +3199,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
             return (d.label !== undefined ? d.label + '\n' : '')
                 + (d.subLabel !== undefined ? 'Subcategory: ' + d.subLabel + '\n' : '')
+                + (d.errorType !== undefined && d.error !== undefined ? d.errorType + ': ' + d.error + '\n' : '')
                 + 'Value: ' + geom.yAes.getValue(d);
         };
 

@@ -670,6 +670,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
                         sep = ', \n';
 
+                        // include the std dev / SEM value in the hover display for a value if available
+                        if (row[measure.name].error !== undefined && row[measure.name].errorType !== undefined) {
+                            hover += sep + row[measure.name].errorType + ': ' + row[measure.name].error;
+                        }
+
                         distinctNames.push(measure.name);
                     }
                 }, this);
@@ -1060,7 +1065,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             if (!scales.y.domain) {
-                var values = $.map(data, function(d) {return d.value;}),
+                var values = $.map(data, function(d) {return d.value + (d.error ?? 0);}),
                     min = Math.min(0, Math.min.apply(Math, values)),
                     max = Math.max(0, Math.max.apply(Math, values));
 
