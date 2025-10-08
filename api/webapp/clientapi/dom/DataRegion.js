@@ -16,7 +16,7 @@ if (!LABKEY.DataRegions) {
     var ALL_ROWS_MAX = 5_000;
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var DEFAULT_TIMEOUT = 30_000;
-    const MAX_SELECTION_SIZE = LABKEY.moduleContext.query.maxQuerySelection;
+    const MAX_SELECTION_SIZE = LABKEY.moduleContext.query?.maxQuerySelection ?? 100_000;
     var PARAM_PREFIX = '.param.';
     var SORT_ASC = '+';
     var SORT_DESC = '-';
@@ -852,6 +852,10 @@ if (!LABKEY.DataRegions) {
         if (!_selDocClick) {
             _selDocClick = $(document).on('click', _onDocumentClick);
         }
+
+        if (_isShowSelectAll(this)) {
+            _getNavTreeSelectAllSelector(this).html(_getSelectAllText(this));
+        }
     };
 
     var _selClickLock; // lock to prevent removing a row highlight that was just applied
@@ -911,10 +915,10 @@ if (!LABKEY.DataRegions) {
             LABKEY.DataRegion.clearSelected(config);
         }
 
-        if (this.showRows == 'selected') {
+        if (this.showRows === 'selected') {
             _removeParameters(this, [SHOW_ROWS_PREFIX]);
         }
-        else if (this.showRows == 'unselected') {
+        else if (this.showRows === 'unselected') {
             // keep "SHOW_ROWS_PREFIX=unselected" parameter
             window.location.reload(true);
         }
@@ -1036,15 +1040,25 @@ if (!LABKEY.DataRegions) {
 
             LABKEY.DataRegion.selectAll(config);
 
-            if (this.showRows === "selected") {
+            if (this.showRows === 'selected') {
                 // keep "SHOW_ROWS_PREFIX=selected" parameter
                 window.location.reload(true);
             }
-            else if (this.showRows === "unselected") {
+            else if (this.showRows === 'unselected') {
                 _removeParameters(this, [SHOW_ROWS_PREFIX]);
             }
-            else {
+            else if (this.totalRows <= MAX_SELECTION_SIZE) {
                 _toggleAllRows(this, true);
+            }
+            else {
+                const lastRowIdx = this.offset + this.rowCount;
+                if (lastRowIdx < MAX_SELECTION_SIZE) {
+                    _toggleAllRows(this, true);
+                } else if (this.offset < MAX_SELECTION_SIZE && MAX_SELECTION_SIZE < lastRowIdx) {
+                    _checkRows(this, MAX_SELECTION_SIZE - this.offset);
+                } else {
+                    _toggleAllRows(this, false);
+                }
             }
         }
     };
@@ -1080,15 +1094,15 @@ if (!LABKEY.DataRegions) {
                         var msg;
                         if (me.totalRows) {
                             if (count == me.totalRows) {
-                                msg = 'All <span class="labkey-strong">' + this.totalRows + '</span> rows selected.';
+                                msg = 'All <span class="labkey-strong">' + this.totalRows.toLocaleString() + '</span> rows selected.';
                             }
                             else {
-                                msg = 'Selected <span class="labkey-strong">' + count + '</span> of ' + this.totalRows + ' rows.';
+                                msg = 'Selected <span class="labkey-strong">' + count.toLocaleString() + '</span> of ' + this.totalRows.toLocaleString() + ' rows.';
                             }
                         }
                         else {
                             // totalRows isn't available when showing all rows.
-                            msg = 'Selected <span class="labkey-strong">' + count + '</span> rows.';
+                            msg = 'Selected <span class="labkey-strong">' + count.toLocaleString() + '</span> rows.';
                         }
                         _showSelectMessage(me, msg);
                     }
@@ -3153,20 +3167,26 @@ if (!LABKEY.DataRegions) {
         return exists;
     };
 
+    var _getDomIdSelector = function(region, suffix) {
+        let selector = '#' + region.domId;
+        if (suffix) selector += suffix;
+        return $(selector);
+    };
+
     var _getAllRowSelectors = function(region) {
         return _getFormSelector(region).find('.labkey-selectors input[type="checkbox"][name=".toggle"]');
     };
 
     var _getBarSelector = function(region) {
-        return $('#' + region.domId + '-headerbar');
+        return _getDomIdSelector(region, '-headerbar');
     };
 
     var _getContextBarSelector = function(region) {
-        return $('#' + region.domId + '-ctxbar');
+        return _getDomIdSelector(region, '-ctxbar');
     };
 
     var _getDrawerSelector = function(region) {
-        return $('#' + region.domId + '-drawer');
+        return _getDomIdSelector(region, '-drawer');
     };
 
     var _getFormSelector = function(region) {
@@ -3174,14 +3194,14 @@ if (!LABKEY.DataRegions) {
 
         // derived DataRegion's may not include the form id
         if (form.length === 0) {
-            form = $('#' + region.domId).closest('form');
+            form = _getDomIdSelector(region).closest('form');
         }
 
         return form;
     };
 
     var _getHeaderSelector = function(region) {
-        return $('#' + region.domId + '-header');
+        return _getDomIdSelector(region, '-header');
     };
 
     var _getRowSelectors = function(region) {
@@ -3189,7 +3209,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getSectionSelector = function(region, dir) {
-        return $('#' + region.domId + '-section-' + dir);
+        return _getDomIdSelector(region, '-section-' + dir);
     };
 
     var _getShowFirstSelector = function(region) {
@@ -3203,6 +3223,10 @@ if (!LABKEY.DataRegions) {
     var _getShowAllSelector = function(region) {
         return $('#' + region.showAllID);
     };
+
+    var _getNavTreeSelectAllSelector = function(region) {
+        return _getDomIdSelector(region, '-navtree-select-all');
+    }
 
     // Formerly, LABKEY.DataRegion.getParamValPairsFromString / LABKEY.DataRegion.getParamValPairs
     var _getParameters = function(region, skipPrefixSet /* optional */) {
@@ -3327,7 +3351,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getViewBarSelector = function(region) {
-        return $('#' + region.domId + '-viewbar');
+        return _getDomIdSelector(region, '-viewbar');
     };
 
     var _buttonSelectionBind = function(region, cls, fn) {
@@ -3548,14 +3572,22 @@ if (!LABKEY.DataRegions) {
         _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
     };
 
+    var _getSelectAllText = function(region) {
+        let text = 'Select All Rows';
+        if (region.totalRows > MAX_SELECTION_SIZE) {
+            text = `Select First ${MAX_SELECTION_SIZE.toLocaleString()} Rows`;
+        }
+        return text;
+    };
+
+    var _isShowSelectAll = function(region) {
+        return region.totalRows && region.totalRows !== region.selectedCount && region.selectedCount < MAX_SELECTION_SIZE;
+    };
+
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
-            if (region.totalRows && region.totalRows !== region.selectedCount && region.selectedCount < MAX_SELECTION_SIZE) {
-                let text = 'Select All Rows';
-                if (region.totalRows > MAX_SELECTION_SIZE) {
-                    text = `Select First ${MAX_SELECTION_SIZE.toLocaleString()} Rows`;
-                }
-                msg += "&nbsp;<span class='labkey-button select-all'>" + text + "</span>";
+            if (_isShowSelectAll(region)) {
+                msg += "&nbsp;<span class='labkey-button select-all'>" + _getSelectAllText(region) + "</span>";
             }
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
@@ -3583,9 +3615,26 @@ if (!LABKEY.DataRegions) {
             }
         });
 
-        _getAllRowSelectors(region).each(function() { this.checked = checked === true; });
+        _getAllRowSelectors(region).each(function() {
+            this.checked = checked === true;
+        });
         return ids;
     };
+
+    var _checkRows = function(region, numRows) {
+        const rowSelectors = _getRowSelectors(region);
+
+        for (let i = 0; i < rowSelectors.length; i++) {
+            const el = rowSelectors[i];
+            if (!el.disabled) {
+                el.checked = i < numRows;
+            }
+        }
+
+        _getAllRowSelectors(region).each(function() {
+            this.checked = true;
+        });
+    }
 
     /**
      * Asynchronous loader for a DataRegion

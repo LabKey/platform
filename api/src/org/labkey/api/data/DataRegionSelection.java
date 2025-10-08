@@ -268,28 +268,47 @@ public class DataRegionSelection
      */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
+        return setSelected(context, key, selection, checked, useSnapshot, false);
+    }
+
+    private static int setSelected(
+        ViewContext context,
+        String key,
+        Collection<String> selection,
+        boolean checked,
+        boolean useSnapshot,
+        boolean replaceSelection
+    )
+    {
         if (checked && selection.size() > MAX_QUERY_SELECTION_SIZE)
             throw new BadRequestException(selectionTooLargeMessage(selection.size()));
 
         Set<String> selectedValues = getSet(context, key, true, useSnapshot);
         if (checked)
         {
-            // Verify that adding these selections will not result in a set that is too large
-            if (selectedValues.size() + selection.size() > MAX_QUERY_SELECTION_SIZE)
+            synchronized (selectedValues)
             {
-                // Do not modify the actual selected values
-                int current = selectedValues.size();
-                int distinctAdds = 0;
-
-                for (String id : selection)
+                if (replaceSelection)
                 {
-                    if (!selectedValues.contains(id))
-                        distinctAdds++;
+                    selectedValues.clear();
                 }
+                else if (selectedValues.size() + selection.size() > MAX_QUERY_SELECTION_SIZE)
+                {
+                    // Verify that adding these selections will not result in a set that is too large
+                    // Do not modify the actual selected values yet
+                    int current = selectedValues.size();
+                    int distinctAdds = 0;
 
-                int prospective = current + distinctAdds;
-                if (prospective > MAX_QUERY_SELECTION_SIZE)
-                    throw new BadRequestException(selectionTooLargeMessage(prospective));
+                    for (String id : selection)
+                    {
+                        if (!selectedValues.contains(id))
+                            distinctAdds++;
+                    }
+
+                    int prospective = current + distinctAdds;
+                    if (prospective > MAX_QUERY_SELECTION_SIZE)
+                        throw new BadRequestException(selectionTooLargeMessage(prospective));
+                }
             }
 
             selectedValues.addAll(selection);
@@ -387,7 +406,6 @@ public class DataRegionSelection
 
         if (clearSelected && !selection.isEmpty())
         {
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (selection)
             {
                 items.forEach(selection::remove);
@@ -486,7 +504,7 @@ public class DataRegionSelection
         try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
             var selection = createSelectionSet(rc, rgn, rs, null);
-            return setSelected(view.getViewContext(), key, selection, checked);
+            return setSelected(view.getViewContext(), key, selection, checked, false, true);
         }
         catch (SQLException e)
         {
