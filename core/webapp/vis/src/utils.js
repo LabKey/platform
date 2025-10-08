@@ -6,10 +6,6 @@
 
 // Contains helpers that aren't specific to plot, layer, geom, etc. and are used throughout the API.
 
-if(!LABKEY){
-	var LABKEY = {};
-}
-
 if(!LABKEY.vis){
     /**
      * @namespace The namespace for the internal LabKey visualization library. Contains classes within
@@ -222,9 +218,11 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
  * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
  * @param {Boolean} includeTotal Whether or not to include the cumulative totals. Defaults to false.
+ * @param {String} errorBarType SD/STDERR. Defaults to null/undefined.
+ * @param {Boolean} keepNames True to use the dimension names in the results data. Defaults to false.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
 {
     var results = [], subgroupAccessor,
         groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
@@ -258,11 +256,11 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             row['total'] = groupData[i]['total'];
         }
 
-        var values = measureAccessor != undefined && measureAccessor != null
+        var values = measureAccessor !== undefined && measureAccessor !== null
                 ? LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor)
                 : null;
 
-        if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+        if (aggregate === undefined || aggregate === null || aggregate === 'COUNT')
         {
             row['value'] = values != null ? values.length : groupData[i]['count'];
         }
@@ -270,13 +268,37 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         {
             try {
                 row.value = LABKEY.vis.Stat[aggregate](values);
+                row.aggType = aggregate;
             } catch (e) {
                 row.value = null;
+            }
+
+            if (errorBarType === 'SD' || errorBarType === 'SEM') {
+                row.error = LABKEY.vis.Stat[errorBarType](values, true);
+                row.errorType = errorBarType;
             }
         }
         else
         {
             throw 'Aggregate ' + aggregate + ' is not yet supported.';
+        }
+
+        if (keepNames) {
+            // if the value was/is a number, convert it back so that the axis domain min/max calculate correctly
+            var dimValue = row['label'];
+            row[dimensionName] = { value: !isNaN(Number(dimValue)) ? Number(dimValue) : dimValue };
+
+            row[measureName] = { value: row['value'] };
+            row[measureName].aggType = aggregate;
+            if (row.hasOwnProperty('subLabel')) {
+                row[subDimensionName] = { value: row['subLabel'] };
+            }
+            if (row.hasOwnProperty('error')) {
+                row[measureName].error = row['error'];
+            }
+            if (row.hasOwnProperty('errorType')) {
+                row[measureName].errorType = row['errorType'];
+            }
         }
 
         results.push(row);
