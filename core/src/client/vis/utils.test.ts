@@ -2,6 +2,42 @@ LABKEY.vis = {};
 require('../../../webapp/vis/src/statistics.js');
 require('../../../webapp/vis/src/utils.js');
 
+describe('LABKEY.vis.getValue', () => {
+    test('value not object', () => {
+        expect(LABKEY.vis.getValue()).toBeUndefined();
+        expect(LABKEY.vis.getValue(undefined)).toBeUndefined();
+        expect(LABKEY.vis.getValue(null)).toBeNull();
+        expect(LABKEY.vis.getValue(5)).toBe(5);
+        expect(LABKEY.vis.getValue('test')).toBe('test');
+    });
+
+    test('value is object', () => {
+        expect(LABKEY.vis.getValue({})).toBeUndefined();
+        expect(LABKEY.vis.getValue({ value: undefined })).toBeUndefined();
+        expect(LABKEY.vis.getValue({ value: null })).toBeNull();
+        expect(LABKEY.vis.getValue({ value: 5 })).toBe(5);
+        expect(LABKEY.vis.getValue({ value: 'test' })).toBe('test');
+        expect(LABKEY.vis.getValue({ value: 'test', other: 1 })).toBe('test');
+    });
+
+    test('formattedValue, displayValue, preferredProp', () => {
+        expect(LABKEY.vis.getValue({ formattedValue: 'formatted', displayValue: 'display', value: 'value' })).toBe('formatted');
+        expect(LABKEY.vis.getValue({ formattedValue: null, displayValue: 'display', value: 'value' })).toBe(null);
+        expect(LABKEY.vis.getValue({ formattedValue: undefined, displayValue: 'display', value: 'value' })).toBe(undefined);
+        expect(LABKEY.vis.getValue({ displayValue: 'display', value: 'value' })).toBe('display');
+        expect(LABKEY.vis.getValue({ displayValue: null, value: 'value' })).toBe(null);
+        expect(LABKEY.vis.getValue({ displayValue: undefined, value: 'value' })).toBe(undefined);
+        expect(LABKEY.vis.getValue({ value: 'value' })).toBe('value');
+        expect(LABKEY.vis.getValue({ value: null })).toBeNull();
+        expect(LABKEY.vis.getValue({ value: undefined })).toBeUndefined();
+
+        expect(LABKEY.vis.getValue({ formattedValue: 'formatted', displayValue: 'display', value: 'value' }, 'bogus')).toBe('formatted');
+        expect(LABKEY.vis.getValue({ formattedValue: 'formatted', displayValue: 'display', value: 'value' }, 'formattedValue')).toBe('formatted');
+        expect(LABKEY.vis.getValue({ formattedValue: 'formatted', displayValue: 'display', value: 'value' }, 'displayValue')).toBe('display');
+        expect(LABKEY.vis.getValue({ formattedValue: 'formatted', displayValue: 'display', value: 'value' }, 'value')).toBe('value');
+    });
+});
+
 describe('LABKEY.vis.getAggregateData', () => {
     const data = [
         { main: 'A', sub: 'a', value: 10 },

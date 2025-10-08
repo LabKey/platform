@@ -228,7 +228,7 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
         hasMeasure = measureName != undefined && measureName != null,
-        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName]); } : null;
+        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName], 'value'); } : null;
 
     if (hasSubgroup) {
         if (typeof subDimensionName === 'function') {
@@ -389,9 +389,11 @@ LABKEY.vis.naturalSortFn = function(aso, bso) {
     return b[i] ? -1 : 0;
 };
 
-LABKEY.vis.getValue = function(obj) {
+LABKEY.vis.getValue = function(obj, preferredProp) {
     if (obj && typeof obj == 'object') {
-        if (obj.hasOwnProperty('formattedValue')) {
+        if (preferredProp && obj.hasOwnProperty(preferredProp)) {
+            return obj[preferredProp];
+        } else if (obj.hasOwnProperty('formattedValue')) {
             return obj.formattedValue;
         } else if (obj.hasOwnProperty('displayValue')) {
             return obj.displayValue;
