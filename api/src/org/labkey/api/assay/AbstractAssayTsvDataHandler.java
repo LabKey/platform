@@ -93,6 +93,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -1076,20 +1077,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Wire up well samples as materials inputs
                 if (resolvePlateSamples)
                 {
-                    Long _plateId;
-
-                    try
-                    {
-                        _plateId = (Long) map.get(platePD.getName());
-                    }
-                    catch (ClassCastException e)
-                    {
-                        // File import can cause ClassCastException to be thrown, so we manually convert from integer.
-                        Integer plateIdInt = (Integer) map.get(platePD.getName());
-                        _plateId = plateIdInt.longValue();
-                    }
-
-                    Long plateId = _plateId; // Re-assign so it's final
+                    Long plateId = IntegerUtils.asLong(map.get(platePD.getName()));
                     String wellLocation = (String) map.get(wellLocationPD.getName());
                     Long sampleId = null;
                     ExpMaterial material = null;
