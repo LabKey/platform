@@ -2127,6 +2127,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'point').append('path');
 
+        if (geom.errorAes !== undefined) {
+            geom.errorShowVertical = true;
+            geom.errorWidth = Math.max(2, Math.min(10, geom.size)); // match size of points, if provided, default to 2 with max of 10
+            renderErrorBar(layer, plot, geom, data);
+        }
+
         // two different ways to add the hover title (so that it works in IE as well)
         anchorSel.attr('xlink:title', hoverTextAcc);
         anchorSel.append('title').text(hoverTextAcc);
@@ -2217,7 +2223,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var errorLineWidth = geom.errorWidth ?? geom.width;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
-        sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
         topFn = function(d) {
             var x, y, value, error;
             x = geom.getX(d);
@@ -3225,6 +3230,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         yZero = {};
         yZero[geom.yAes.value] = 0;
+
+        if (geom.errorAes !== undefined) {
+            geom.errorShowVertical = true;
+            geom.errorWidth = Math.max(2, Math.min(25, barWidth / 8)); // min 2 and max of 25 but default to 1/8 of bar width
+            renderErrorBar(layer, plot, geom, data);
+        }
 
         // group each bar with an a tag for hover
         barWrappers = layer.selectAll('a.bar-individual').data(data);
