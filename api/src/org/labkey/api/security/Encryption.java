@@ -146,12 +146,12 @@ public class Encryption
     {
         if (isEncryptionPassPhraseSpecified())
         {
-            testEncryptionKey(getEncryptionPassPhrase(), AESConfig.current, "configured encryption key");
+            testEncryptionKey(getEncryptionPassPhrase(), AESConfig.current, "configured encryption key", true);
         }
     }
 
     // Test encryption key with specific passphrase and AES config. Used for testing old keys before migration.
-    private static void testEncryptionKey(String passPhrase, AESConfig config, String keyDescription)
+    private static void testEncryptionKey(String passPhrase, AESConfig config, String keyDescription, boolean createIfNotSet)
     {
         if (passPhrase != null)
         {
@@ -181,16 +181,19 @@ public class Encryption
 
                 if (rawMap.isEmpty())
                 {
-                    WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
-                    byte[] randomBytes = generateRandomBytes(TEST_BYTES_LENGTH);
-                    MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-                    byte[] hash = sha1.digest(randomBytes);
-                    assert hash.length == SHA1_LENGTH;
-                    byte[] combined = Bytes.concat(randomBytes, hash);
-                    String base64 = Base64.encodeBase64String(combined);
-                    map.put(TEST_BYTES_NAME, base64);
-                    map.save();
-                    LOG.info("Encryption key test property was generated, encrypted, and stored. It will be tested on subsequent server startups.");
+                    if (createIfNotSet)
+                    {
+                        WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
+                        byte[] randomBytes = generateRandomBytes(TEST_BYTES_LENGTH);
+                        MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+                        byte[] hash = sha1.digest(randomBytes);
+                        assert hash.length == SHA1_LENGTH;
+                        byte[] combined = Bytes.concat(randomBytes, hash);
+                        String base64 = Base64.encodeBase64String(combined);
+                        map.put(TEST_BYTES_NAME, base64);
+                        map.save();
+                        LOG.info("Encryption key test property was generated, encrypted, and stored. It will be tested on subsequent server startups.");
+                    }
                 }
                 else
                 {
@@ -575,7 +578,8 @@ public class Encryption
 
                 // Test the old encryption key/algorithm before attempting migration
                 String testDescription = (keySource != null) ? "old encryption key" : "legacy AES algorithm";
-                testEncryptionKey(passPhrase, migrationConfig, testDescription);
+                // Test but don't create a validation value if it doesn't already exist
+                testEncryptionKey(passPhrase, migrationConfig, testDescription, false);
                 if (DECRYPTION_EXCEPTIONS.get() == 0)
                 {
                     Encryption.EncryptionMigrationHandler.HANDLERS
@@ -583,6 +587,8 @@ public class Encryption
 
                     CacheManager.clearAllKnownCaches();
                 }
+                // Test to validate conversion and create a validation value if needed
+                testEncryptionKey();
             }
 
             if (DECRYPTION_EXCEPTIONS.get() == 0)
