@@ -20,9 +20,9 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
+<%@ page import="org.labkey.announcements.model.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -30,7 +30,7 @@
 <%
     HttpView<CustomizeBean> me = HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
 
 %><labkey:form action="<%=urlFor(CustomizeAction.class)%>" method="post">
 <%=generateReturnUrlFormField(bean.returnUrl)%>
@@ -76,15 +76,15 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure" value="<%=h(DiscussionService.Settings.SECURE_OFF)%>"<%=checked(settings.isSecureOff())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="<%=h(Settings.SECURE_OFF)%>"<%=checked(settings.isSecureOff())%>></td>
                     <td><b>Off</b> - Conversations are visible to anyone with read permissions, content can be modified after posting, content will be sent via email</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure" value="<%=h(DiscussionService.Settings.SECURE_WITH_EMAIL)%>"<%=checked(settings.isSecureWithEmailOn())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="<%=h(Settings.SECURE_WITH_EMAIL)%>"<%=checked(settings.isSecureWithEmailOn())%>></td>
                     <td><b>On with email</b> - Only editors and those on the notify list can view conversations, content can't be modified after posting, content is sent via email</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure" value="<%=h(DiscussionService.Settings.SECURE_WITHOUT_EMAIL)%>"<%=checked(settings.isSecureWithoutEmailOn())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="<%=h(Settings.SECURE_WITHOUT_EMAIL)%>"<%=checked(settings.isSecureWithoutEmailOn())%>></td>
                     <td><b>On without email</b> - Identical to behavior described above, with the exception that content is never sent via email</td>
                 </tr>
             </table>

@@ -77,11 +77,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-* User: adam
-* Date: Aug 25, 2009
-* Time: 10:11:16 AM
-*/
 public class ListWriter
 {
     static final String SCHEMA_FILENAME = "lists.xml";
@@ -249,7 +244,6 @@ public class ListWriter
         settings.setName(def.getName());
         settings.setId(def.getListId());
 
-        if (def.getDiscussionSetting().getValue() != 0) settings.setDiscussions(def.getDiscussionSetting().getValue());
         if (!def.getAllowDelete()) settings.setAllowDelete(def.getAllowDelete());
         if (!def.getAllowUpload()) settings.setAllowUpload(def.getAllowUpload());
         if (!def.getAllowExport()) settings.setAllowExport(def.getAllowExport());
