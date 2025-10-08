@@ -196,6 +196,8 @@ public interface FileSystemLike
     /** Helper for partially converted code. Parent dir must exist. */
     static FileLike wrapFile(File f)
     {
+        if (f == null)
+            return null;
         FileLike p = new Builder(f.getParentFile()).root();
         return p.resolveChild(f.getName());
     }

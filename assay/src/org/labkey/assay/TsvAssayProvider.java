@@ -848,7 +848,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 will(returnValue(Collections.singletonList(_data)));
                 allowing(_data).getFile();
                 // Use a file that's not under the pipeline root for the folder
-                will(returnValue(new File("mockFile")));
+                will(returnValue(new File("mockParent/mockFile")));
             }});
 
             TsvAssayProvider provider = new TsvAssayProvider();
