@@ -1834,6 +1834,47 @@ LABKEY.vis.GenericChartHelper = new function(){
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
+    var generateDataForChartType = function(chartConfig, chartType, geom, data) {
+        var dimName = null;
+        var subDimName = null;
+        var measureName = null;
+        var aggType = chartType === 'bar_chart' || chartType === 'pie_chart' ? 'COUNT' : null;
+        var aggErrorType = null;
+
+        if (chartConfig.measures.x) {
+            dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+        }
+        if (chartConfig.measures.xSub) {
+            subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
+        } else if (chartConfig.measures.series) {
+            subDimName = chartConfig.measures.series.name;
+        }
+        if (chartConfig.measures.y) {
+            measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
+
+            // chartConfig.measures.y.aggregate = 'MEAN'; // TODO get from chartConfig
+
+            if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
+                aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
+                aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
+                aggErrorType = aggType === 'MEAN' ? 'SEM' : null; // TODO get from chartConfig
+            }
+            else if (measureName != null && (chartType === 'bar_chart' || chartType === 'pie_chart')) {
+                // default to SUM for bar and pie charts
+                aggType = 'SUM';
+            }
+        }
+
+        if (aggType) {
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot');
+            if (aggErrorType) {
+                geom.errorAes = { getValue: function(d){ return d.error } };
+            }
+        }
+
+        return data;
+    }
+
     var generateChartSVG = function(renderTo, chartConfig, measureStore, trendlineData) {
         var responseMetaData = measureStore.getResponseMetadata();
 
@@ -1856,28 +1897,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         var geom = generateGeom(chartType, chartConfig.geomOptions);
         var labels = generateLabels(chartConfig.labels);
 
-        if (chartType === 'bar_chart' || chartType === 'pie_chart') {
-            var dimName = null, subDimName = null; measureName = null, aggType = 'COUNT';
-
-            if (chartConfig.measures.x) {
-                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
-            }
-            if (chartConfig.measures.xSub) {
-                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
-            }
-            if (chartConfig.measures.y) {
-                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
-
-                if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
-                    aggType = chartConfig.measures.y.aggregate;
-                    aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
-                }
-                else if (measureName != null) {
-                    aggType = 'SUM';
-                }
-            }
-
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+        if (chartType === 'bar_chart' || chartType === 'pie_chart' || chartType === 'line_plot') {
+            data = generateDataForChartType(chartConfig, chartType, geom, data);
         }
 
         var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
@@ -1971,6 +1992,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateAggregateData: generateAggregateData,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
+        generateDataForChartType: generateDataForChartType,
         generateDiscreteAcc: generateDiscreteAcc,
         generateContinuousAcc: generateContinuousAcc,
         generateGroupingAcc: generateGroupingAcc,

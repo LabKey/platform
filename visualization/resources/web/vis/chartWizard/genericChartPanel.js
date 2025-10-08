@@ -1596,29 +1596,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
 
-        if (chartType === 'bar_chart' || chartType === 'pie_chart') {
-            var dimName = null, measureName = null, subDimName = null,
-                aggType = 'COUNT';
-
-            if (chartConfig.measures.x) {
-                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
-            }
-            if (chartConfig.measures.xSub) {
-                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
-            }
-            if (chartConfig.measures.y) {
-                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
-
-                if (Ext4.isDefined(chartConfig.measures.y.aggregate)) {
-                    aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
-                }
-                // backwards compatibility for bar charts saved prior to aggregate method selection UI
-                else if (measureName != null) {
-                    aggType = 'SUM';
-                }
-            }
-
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+        if (chartType === 'bar_chart' || chartType === 'pie_chart' || chartType === 'line_plot') {
+            data = LABKEY.vis.GenericChartHelper.generateDataForChartType(chartConfig, chartType, geom, data);
 
             // convert any undefined values to zero for display purposes in Bar and Pie chart case
             Ext4.each(data, function(d) {
