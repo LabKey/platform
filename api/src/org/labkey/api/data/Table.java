@@ -646,7 +646,6 @@ public class Table
         if (null != conn) scope.releaseConnection(conn);
     }
 
-
     /**
      * return a 'clean' list of fields to update
      */
@@ -660,7 +659,6 @@ public class Table
         fields = f.toMap(from, null);
         return _getTableData(table, fields, insert);
     }
-
 
     protected static Map<String, Object> _getTableData(TableInfo table, Map<String, Object> fields, boolean insert)
     {
@@ -678,7 +676,6 @@ public class Table
         {
             String key = column.getName();
 
-//            if (column.isReadOnly() && !(insert && key.equals("EntityId")))
             if (!insert && column.isReadOnly() || column.isAutoIncrement() || column.isVersionColumn())
                 continue;
 
@@ -702,15 +699,13 @@ public class Table
         return m;
     }
 
-
     static String _trimRight(String s)
     {
         if (null == s) return "";
         return StringUtils.stripEnd(s, "\t\r\n ");
     }
 
-
-    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, SQLFragment.NowTimestamp now)
     {
         ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
@@ -723,7 +718,7 @@ public class Table
         {
             Date dateCreated = (Date)fields.get(CREATED_COLUMN_NAME);
             if (null == dateCreated || 0 == dateCreated.getTime())
-                fields.put(CREATED_COLUMN_NAME, date);
+                fields.put(CREATED_COLUMN_NAME, now);
         }
         col = table.getColumn(ENTITY_ID_COLUMN_NAME);
         if (col != null && fields.get(ENTITY_ID_COLUMN_NAME) == null)
@@ -746,7 +741,7 @@ public class Table
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
 
-    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, SQLFragment.NowTimestamp now)
     {
         ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
         if (null != colModifiedBy && null != user)
@@ -754,11 +749,11 @@ public class Table
 
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         if (null != colModified)
-            fields.put(colModified.getName(), date);
+            fields.put(colModified.getName(), now);
 
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-            fields.put(colVersion.getName(), date);
+            fields.put(colVersion.getName(), now);
     }
 
     protected static void _copyUpdateSpecialFields(TableInfo table, Object returnObject, Map<String, Object> fields)
@@ -821,22 +816,19 @@ public class Table
     {
         assert assertInDb(table);
 
-        // _executeTriggers(table, fields);
-
         SQLFragment insertSQL = new SQLFragment();
         SQLFragment columnSQL = new SQLFragment();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
-        ColumnInfo versionColumn = null;
         String comma = "";
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
                 _getTableData(table, (Map<String, Object>)fieldsIn, true) :
                 _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _insertSpecialFields(user, table, fields, date);
-        _updateSpecialFields(user, table, fields, date);
+        SQLFragment.NowTimestamp now = new SQLFragment.NowTimestamp();
+        _insertSpecialFields(user, table, fields, now);
+        _updateSpecialFields(user, table, fields, now);
 
         List<ColumnInfo> columns = table.getColumns();
 
@@ -868,6 +860,8 @@ public class Table
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
                 valueSQL.append("NULL");
+            else if (value instanceof SQLFragment.NowTimestamp ts)
+                valueSQL.appendValue(ts);
             else
             {
                 // Validate the value
@@ -937,7 +931,7 @@ public class Table
             _copyInsertSpecialFields(returnObject, fields);
             _copyUpdateSpecialFields(table, returnObject, fields);
         }
-        catch(SQLException e)
+        catch (SQLException e)
         {
             logException(insertSQL, conn, e, Level.WARN);
             throw new RuntimeSQLException(e);
@@ -965,8 +959,6 @@ public class Table
     {
         assert assertInDb(table);
         assert null != pkVals;
-
-        // _executeTriggers(table, previous, fields);
 
         SQLFragment setSQL = new SQLFragment();
         SQLFragment whereSQL = new SQLFragment();
@@ -1028,8 +1020,7 @@ public class Table
         Map<String, Object> fields = fieldsIn instanceof Map ?
             _getTableData(table, (Map<String,Object>)fieldsIn, true) :
             _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _updateSpecialFields(user, table, fields, date);
+        _updateSpecialFields(user, table, fields, new SQLFragment.NowTimestamp());
 
         List<ColumnInfo> columns = table.getColumns();
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
@@ -1069,11 +1060,12 @@ public class Table
             Object value = fields.get(column.getName());
             setSQL.append(comma);
             setSQL.appendIdentifier(column.getSelectIdentifier());
+            setSQL.append("=");
 
             if (null == value || value instanceof String s && s.isEmpty())
-            {
-                setSQL.append("=NULL");
-            }
+                setSQL.append("NULL");
+            else if (value instanceof SQLFragment.NowTimestamp ts)
+                setSQL.appendValue(ts);
             else
             {
                 // Validate the value
@@ -1085,7 +1077,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                setSQL.append("=?");
+                setSQL.append("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     setSQL.add(value);
                 else

@@ -29,7 +29,6 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertUpdateDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
@@ -346,7 +345,6 @@ public class StatementUtils
         ph.variableName = makeVariableName(name);
     }
 
-
     private ParameterHolder createParameter(String name, JdbcType type)
     {
         ParameterHolder ph = parameters.get(name);
@@ -358,7 +356,6 @@ public class StatementUtils
         }
         return ph;
     }
-
 
     private ParameterHolder createParameter(String name, String uri, JdbcType type)
     {
@@ -676,7 +673,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(col);
-                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+                values.add(new SQLFragment().appendNowTimestamp());
                 done.add("Created");
             }
         }
@@ -693,7 +690,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(colModified);
-            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+            values.add(new SQLFragment().appendNowTimestamp());
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
@@ -1243,9 +1240,9 @@ public class StatementUtils
             f.append(value.toString());
             return;
         }
-        if (value instanceof SimpleTranslator.NowTimestamp)
+        if (value instanceof SQLFragment.NowTimestamp now)
         {
-            f.append("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
+            f.appendValue(now);
             return;
         }
         if (value instanceof java.sql.Date sqlDate)
@@ -1408,8 +1405,9 @@ public class StatementUtils
             assertEquals(new SQLFragment("1234567890"), actual);
 
             // NowTimestamp
-            actual = runToLiteral.apply(new SimpleTranslator.NowTimestamp(dateLong));
-            assertEquals(new SQLFragment("CURRENT_TIMESTAMP"), actual);
+            var now = new SQLFragment.NowTimestamp(dateLong);
+            actual = runToLiteral.apply(now);
+            assertEquals(new SQLFragment().appendValue(now), actual);
 
             // sql.Date
             var sqlDate = new java.sql.Date(dateLong);
