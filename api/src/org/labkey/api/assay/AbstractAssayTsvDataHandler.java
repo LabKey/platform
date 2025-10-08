@@ -1076,7 +1076,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Wire up well samples as materials inputs
                 if (resolvePlateSamples)
                 {
-                    Long plateId = (Long) map.get(platePD.getName());
+                    Long _plateId;
+
+                    try
+                    {
+                        _plateId = (Long) map.get(platePD.getName());
+                    }
+                    catch (ClassCastException e)
+                    {
+                        // File import can cause ClassCastException to be thrown, so we manually convert from integer.
+                        Integer plateIdInt = (Integer) map.get(platePD.getName());
+                        _plateId = plateIdInt.longValue();
+                    }
+
+                    Long plateId = _plateId; // Re-assign so it's final
                     String wellLocation = (String) map.get(wellLocationPD.getName());
                     Long sampleId = null;
                     ExpMaterial material = null;
