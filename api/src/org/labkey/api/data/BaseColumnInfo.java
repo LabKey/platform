@@ -158,7 +158,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         this(from, from.getParentTable());
     }
 
-
     public BaseColumnInfo(ColumnInfo from, TableInfo parent)
     {
         this(from.getFieldKey(), parent, from.getJdbcType());
@@ -199,7 +198,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
     }
 
-
     /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
      * e.g. for DataLoader or "fake" ResultsImpl.
      * These columns do not have a SqlDialect.  This constructor method is useful in that case.  In particular it will
@@ -235,14 +233,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     /* used by TableInfo.addColumn */
     public boolean lockName()
     {
         _lockName = true;
         return true;
     }
-
 
     /** use setFieldKey() avoid ambiguity when columns have "/" */
     public void setName(@NotNull String name)
@@ -255,7 +251,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _fieldKey = newFieldKey;
     }
 
-
     @Override @NotNull
     public String getName()
     {
@@ -265,7 +260,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return _fieldKey.toString();
     }
 
-
     @Override
     public void setFieldKey(@NotNull FieldKey key)
     {
@@ -273,13 +267,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _fieldKey = Objects.requireNonNull(key);
     }
 
-
     @Override @NotNull
     public FieldKey getFieldKey()
     {
         return _fieldKey;
     }
-
 
     // use only for debugging, will change after call to getAlias()
     @Override
@@ -362,7 +354,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptURI(col.getConceptURI());
         setUserEditable(col.isUserEditable());  //This can impact UniqueId fields if not set
     }
-
 
     /*
      * copy "non-core" attributes, e.g. leave key and type information alone
@@ -538,7 +529,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setScannable(col.isScannable());
     }
 
-
     /**
      * copy the url string expression from col with the specified rewrites
      * @param col source of the url StringExpression
@@ -570,7 +560,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setURLCls(col.getURLCls());
         setOnClick(col.getOnClick());
     }
-
 
     /* only copy if all field keys are in the map */
     public void copyURLFromStrict(ColumnInfo col, Map<FieldKey,FieldKey> remap)
@@ -698,14 +687,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _parentTable.getSqlDialect();
     }
 
-
     // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
     @Override
     public String getLabelValue()
     {
         return _label;
     }
-
 
     @Override
     public String getLabel()
@@ -714,7 +701,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return labelFromName(getFieldKey().getName());
         return _label;
     }
-
 
     @Override
     public boolean isFormatStringSet()
@@ -843,13 +829,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return getFk().getLookupTableDescription();
     }
 
-
     @Override
     public boolean isUserEditable()
     {
         return _isUserEditable;
     }
-
 
     @Override
     public void setUserEditable(boolean editable)
@@ -857,7 +841,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         checkLocked();
         _isUserEditable = editable;
     }
-
 
     @Override
     public void setDisplayColumnFactory(DisplayColumnFactory factory)
@@ -898,24 +881,22 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return JdbcType.BINARY == getJdbcType() && 8 == getScale() && "timestamp".equals(getSqlTypeName());
     }
 
-
     @Override
     public SQLFragment getVersionUpdateExpression()
     {
         if (JdbcType.TIMESTAMP == getJdbcType())
-        {
-            return new SQLFragment("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
-        }
-        else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
+            return new SQLFragment().appendNowTimestamp();
+
+        if (JdbcType.BIGINT == getJdbcType() && "_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer())
         {
             TableInfo t = getParentTable();
             String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataIdentifier()).getId() + "_ts";
             String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
             return new SQLFragment("nextval(" + sqlString + ")");
         }
+
         return null;
     }
-
 
     @Override
     public String getInputType()
@@ -936,7 +917,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _inputType;
     }
 
-
     @Override
     public int getInputLength()
     {
@@ -950,7 +930,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         return _inputLength;
     }
-
 
     @Override
     public int getInputRows()
@@ -1093,7 +1072,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             // external meta data. But perhaps this code could be shared with TableInfoWriter?
         }
     }
-
 
     public void loadFromXml(ColumnType xmlCol, boolean merge)
     {
@@ -1448,7 +1426,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     public static boolean booleanFromObj(Object o)
     {
         if (null == o)
@@ -1657,7 +1634,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     public static Collection<BaseColumnInfo> createFromDatabaseMetaData(String schemaName, SchemaTableInfo parentTable, @Nullable String columnNamePattern) throws SQLException
     {
          //Use linked hash map to preserve ordering...
@@ -1801,7 +1777,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return colMap.values();
     }
 
-
     private static void inferMetadata(BaseColumnInfo col)
     {
         String colName = col.getName();
@@ -1856,7 +1831,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     @Override
     public String getSqlTypeName()
     {
@@ -1873,8 +1847,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
         return _sqlTypeName;
     }
-
-
 
     @Override
     public void setSqlTypeName(String sqlTypeName)
@@ -1908,7 +1880,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _sqlTypeName = null;
     }
 
-
     @Override
     public @NotNull JdbcType getJdbcType()
     {
@@ -1931,7 +1902,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
         return _jdbcType == null ? JdbcType.OTHER : _jdbcType;
     }
-
 
     @Override
     public ForeignKey getFk()
@@ -1960,7 +1930,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _fk = b.build();
     }
 
-
     @Override
     public void setScale(int scale)
     {
@@ -1975,14 +1944,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         super.setPrecision(precision);
     }
 
-
     /** @return whether the column is part of the primary key for the table */
     @Override
     public boolean isKeyField()
     {
         return _isKeyField;
     }
-
 
     @Override
     public void setKeyField(boolean keyField)
@@ -2053,13 +2020,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _isUnselectable = b;
     }
 
-
     @Override
     public TableInfo getParentTable()
     {
         return _parentTable;
     }
-
 
     @Override
     public void setParentTable(TableInfo parentTable)
@@ -2182,7 +2147,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _validators = copyFixedList(validators);
     }
 
-
     @Override
     public void checkLocked()
     {
@@ -2218,7 +2182,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         checkLocked();
         _calculated = calculated;
     }
-
 
     // If true, you can't use this column when auto-generating LabKey SQL, it is not selected in the underlying query
     // only query can set this true

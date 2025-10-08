@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -309,9 +310,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAmount ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, null));
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
-                if (columnInfo.getFormat() == null)
-                    columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 return columnInfo;
@@ -324,6 +324,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (typeUnit != null)
                 {
                     SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, importAliases, typeUnit);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
                     columnInfo.setDescription("The amount of this sample, in the display unit for the sample type, currently on hand.");
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
@@ -334,8 +335,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 else
                 {
                     var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
-                    if (columnInfo.getFormat() == null)
-                        columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, null));
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
@@ -1576,14 +1576,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
                             .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" IS NOT NULL THEN ROUND(CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" / ? AS ")
                             .append(parent.getSqlDialect().isPostgreSQL() ? "DECIMAL" : "DOUBLE PRECISION")
-                            .append("), ?) ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())
-                            .add(typeUnit.getValue())
-                            .add(typeUnit.getPrecisionScale()),
+                            .add(typeUnit.getValue()),
                     JdbcType.DOUBLE);
 
             setLabel(label);
@@ -1829,5 +1828,29 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
         super.overlayMetadata(tableName, schema, errors);
+    }
+
+    static class SampleTypeAmountPrecisionDisplayColumn extends DataColumn
+    {
+        private Unit typeUnit;
+        private boolean applySampleTypePrecision = true;
+
+        public SampleTypeAmountPrecisionDisplayColumn(ColumnInfo col, Unit typeUnit) {
+            super(col, false);
+            this.typeUnit = typeUnit;
+            this.applySampleTypePrecision = col.getFormat() == null; // only apply if no custom format is set by user
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = super.getDisplayValue(ctx);
+            if (this.applySampleTypePrecision && value != null)
+            {
+                int scale = this.typeUnit == null ? Quantity.DEFAULT_PRECISION_SCALE : this.typeUnit.getPrecisionScale();
+                value = Precision.round(Double.valueOf(value.toString()), scale);
+            }
+            return value;
+        }
     }
 }
