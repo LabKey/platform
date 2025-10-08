@@ -1342,13 +1342,16 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
     };
 
-    var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
+    var _wrapXAxisTickTextLines = function(scales, plotConfig, maxTickLength, data) {
         if (scales.x && scales.x.scaleType === 'discrete') {
             var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
-            return (tickCount * maxTickLength * 4) > (plotConfig.width - 150);
+            // after 10 tick labels, we switch to rotating the label, so use that as the max here
+            tickCount = Math.min(tickCount, 10);
+            var approxTickLabelWidth = plotConfig.width / tickCount;
+            return Math.max(1, Math.floor((maxTickLength * 8) / approxTickLabelWidth));
         }
 
-        return false;
+        return 1;
     };
 
     var _getPlotMargins = function(renderType, scales, aes, data, plotConfig, chartConfig) {
@@ -1367,10 +1370,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             });
 
-            if (_willRotateXAxisTickText(scales, plotConfig, maxLen, data)) {
-                // min bottom margin: 50, max bottom margin: 150
-                margins.bottom = Math.min(Math.max(50, maxLen*5), 175);
-            }
+            var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
+            margins.bottom = 60 + ((wrapLines - 1) * 25);
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog

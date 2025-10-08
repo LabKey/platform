@@ -15,7 +15,7 @@ LABKEY.vis.internal.Axis = function() {
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
-        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 25, gridLineWidth = 1, borderWidth = 1,
+        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
         yGutterXOffset = 0, xGutterYOffset = 0, addLogGutterLabel = false, xGridExtension = 0, yGridExtension = 0, logGutterSel;
 
@@ -460,26 +460,73 @@ LABKEY.vis.internal.Axis = function() {
 
         if (orientation == 'bottom') {
             if (hasOverlap) {
-                textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
-                        .attr('text-anchor', 'start');
+                // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
+                if (tickOverlapRotation !== undefined || textEls[0].length > 10) {
+                    if (!tickOverlapRotation) {
+                        tickOverlapRotation = 35;
+                    }
 
-                if (tickHover || tickClick || tickMouseOver || tickMouseOut)
-                {
-                    addTickAreaRects(textAnchors);
-                    textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
-                            .attr('transform', function (v)
-                            {
-                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                            });
+                    textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
+                            .attr('text-anchor', 'start');
 
-                    addHighlightRects(textAnchors);
-                    textAnchors.selectAll('rect.highlight')
-                            .attr('transform', function (v)
-                            {
-                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                            });
+                    if (tickHover || tickClick || tickMouseOver || tickMouseOut)
+                    {
+                        addTickAreaRects(textAnchors);
+                        textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
+                                .attr('transform', function (v)
+                                {
+                                    return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
+                                });
+
+                        addHighlightRects(textAnchors);
+                        textAnchors.selectAll('rect.highlight')
+                                .attr('transform', function (v)
+                                {
+                                    return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
+                                });
+                    }
+                } else {
+                    function wrapAxisTickLabel(text) {
+                        var width;
+                        text.each(function(v) {
+                            if (!width)
+                                width = scale(v) - grid.leftEdge;
+
+                            let text = d3.select(this),
+                                    words = text.text().split(/[\s]+/).reverse(),
+                                    word,
+                                    line = [],
+                                    lineNumber = 0,
+                                    lineHeight = 1.1, // ems
+                                    x = this.getAttribute("x"),
+                                    y = this.getAttribute("y"),
+                                    dy = 0,
+                                    tspan = text.text(null)
+                                            .append("tspan")
+                                            .attr("x", x)
+                                            .attr("y", y)
+                                            .attr("dy", dy + "em");
+
+                            while (word = words.pop()) {
+                                line.push(word);
+                                tspan.text(line.join(" "));
+                                if (tspan.node().getComputedTextLength() > width) {
+                                    line.pop();
+                                    tspan.text(line.join(" "));
+                                    line = [word];
+                                    tspan = text.append("tspan")
+                                            .attr("x", x)
+                                            .attr("y", y)
+                                            .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                                            .text(word);
+                                }
+                            }
+                        });
+                    }
+
+                    textEls.attr('transform', '').call(wrapAxisTickLabel);
+                    textAnchors.selectAll('rect.highlight').attr('transform', '');
                 }
-
             } else {
                 textEls.attr('transform', '');
                 textAnchors.selectAll('rect.highlight').attr('transform', '');
