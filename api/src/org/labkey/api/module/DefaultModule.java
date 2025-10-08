@@ -1029,7 +1029,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         SqlDialect dialect = schema.getSqlDialect();
 
-        String sqlScriptsPath = getSqlScriptsPath(dialect);
+        Path sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);
         if (dir == null || !dir.isCollection())
             return Collections.emptySet();
@@ -1046,9 +1046,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    public final Path getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
-        return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
+        return Path.parse("schemas/dbscripts/" + dialect.getSQLScriptPath() + "/");
     }
 
     @Override

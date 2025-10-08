@@ -489,7 +489,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         public void testFileWatchers() throws IOException, InterruptedException
         {
             File root = FileUtil.createTempDirectory("fileWatcherTest").toFile(); //Conversion should be safe as temp dir should be on a local URI //TODO should convert to Path for consistencies sake
-            File testFolder = new File(root, "test");
+            File testFolder = FileUtil.appendName(root, "test");
 
             // Do it twice to ensure that everything gets cleaned up on directory delete and a new watcher can be added
             // to a new version of the same directory
@@ -553,13 +553,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             assertNotNull(plm);
             assertEquals(1, plm._list.size());
 
-            File a = new File(testFolder, "a");
-            File b = new File(testFolder, "b");
-            File c = new File(testFolder, "c");
+            File a = FileUtil.appendName(testFolder, "a");
+            File b = FileUtil.appendName(testFolder, "b");
+            File c = FileUtil.appendName(testFolder, "c");
 
-            assertTrue(a.createNewFile());
-            assertTrue(b.createNewFile());
-            assertTrue(c.createNewFile());
+            assertTrue(FileUtil.createNewFile(a));
+            assertTrue(FileUtil.createNewFile(b));
+            assertTrue(FileUtil.createNewFile(c));
 
             waitForEvents(events, 3);
 

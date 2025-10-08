@@ -43,6 +43,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -374,7 +375,7 @@ public class EmailServiceImpl implements EmailService
             EmailMessage msg = getBaseMessage();
             File studySampleData = JunitUtil.getSampleData(module, "study");
 
-            List<File> attachmentList = Collections.singletonList(new File(studySampleData, name));
+            List<File> attachmentList = Collections.singletonList(FileUtil.appendName(studySampleData, name));
 
             exception.expect(IllegalArgumentException.class);
             msg.setFiles(attachmentList);

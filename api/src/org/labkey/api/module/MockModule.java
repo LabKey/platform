@@ -367,7 +367,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    public Path getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return null;
     }

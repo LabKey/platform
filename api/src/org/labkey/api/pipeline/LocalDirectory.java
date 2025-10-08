@@ -102,7 +102,7 @@ public class LocalDirectory implements Serializable
         try
         {
             File containerDir = ensureContainerDir(container);
-            _localDirectoryFile = new File(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
+            _localDirectoryFile = FileUtil.appendName(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
 
             ensureLocalDirectory();
         }
@@ -179,7 +179,7 @@ public class LocalDirectory implements Serializable
                 String filename = FileUtil.getFileName(path);
                 try
                 {
-                    File tempFile = new File(_localDirectoryFile, filename);
+                    File tempFile = FileUtil.appendName(_localDirectoryFile, filename);
                     if (!Files.exists(tempFile.toPath()))
                     {
                         Files.copy(path, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
@@ -214,7 +214,7 @@ public class LocalDirectory implements Serializable
         try
         {
             File containerDir = ensureContainerDir(container);
-            File tempFile = new File(containerDir, tempFileName);
+            File tempFile = FileUtil.appendName(containerDir, tempFileName);
             if (!Files.exists(tempFile.toPath()))
             {
                 log.debug("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
@@ -295,12 +295,12 @@ public class LocalDirectory implements Serializable
     private static File getModuleLocalTempDirectory()
     {
         File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
-        return new File(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
+        return FileUtil.appendName(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
     }
 
     public static File getContainerLocalTempDirectory(Container container)
     {
-        return new File(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+        return FileUtil.appendName(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
     }
 
     public Path getRemoteLogFilePath()

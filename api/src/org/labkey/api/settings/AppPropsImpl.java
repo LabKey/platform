@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
@@ -267,7 +268,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         @SuppressWarnings("ConstantConditions")
         File webappDir = new File(ModuleLoader.getServletContext().getRealPath(""));
-        File binDir = new File(webappDir.getParentFile(), "bin");
+        File binDir = FileUtil.appendName(webappDir.getParentFile(), "bin");
 
         return lookupStringValue(pipelineToolsDirectory, binDir.getAbsolutePath());
     }

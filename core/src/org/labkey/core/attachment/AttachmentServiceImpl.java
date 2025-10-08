@@ -591,9 +591,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         for (Attachment attachment : attachments)
         {
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName());
+                File f = new File((adParent).getFileSystemDirectory(), attachment.getName());
                 files.add(new FileAttachmentFile(f));
             }
             else
@@ -1788,9 +1788,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             svc.renameAttachment(attachParent, newName, oldName, user);
 
 
-            assertTrue(new File(attachDir, UPLOAD_LOG).exists());
+            assertTrue(FileUtil.appendName(attachDir, UPLOAD_LOG).exists());
 
-            File otherDir = new File(attachDir, "subdir");
+            File otherDir = FileUtil.appendName(attachDir, "subdir");
             otherDir.mkdir();
             AttachmentDirectory namedParent = fileService.registerDirectory(folder, "test", otherDir.getCanonicalPath(), false);
 
@@ -1802,14 +1802,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             att = svc.getAttachments(namedParent);
             assertEquals(1, att.size());
             assertTrue(att.get(0).getFile().exists());
-            assertSameFile(new File(otherDir, "file.txt"), att.get(0).getFile());
-            assertTrue(new File(otherDir, UPLOAD_LOG).exists());
+            assertSameFile(FileUtil.appendName(otherDir, "file.txt"), att.get(0).getFile());
+            assertTrue(FileUtil.appendName(otherDir, UPLOAD_LOG).exists());
 
             fileService.unregisterDirectory(folder, "test");
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
 
-            File relativeDir = new File(attachDir, "subdir2");
+            File relativeDir = FileUtil.appendName(attachDir, "subdir2");
             relativeDir.mkdirs();
             AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", FileUtil.getAbsoluteCaseSensitiveFile(relativeDir).getAbsolutePath(), false);
             
@@ -1822,10 +1822,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             assertEquals(1, att.size());
 
             File expectedFile1 = att.get(0).getFile();
-            File expectedFile2 = new File(relativeDir, UPLOAD_LOG);
+            File expectedFile2 = FileUtil.appendName(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());
-            assertEquals(new File(relativeDir, "file.txt"), expectedFile1);
+            assertEquals(FileUtil.appendName(relativeDir, "file.txt"), expectedFile1);
             assertTrue(expectedFile2.exists());
 
 

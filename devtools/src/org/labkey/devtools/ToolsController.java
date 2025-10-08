@@ -286,7 +286,7 @@ public class ToolsController extends SpringActionController
                     @Override
                     public void handle(Path gaPath, Stream<String> stream)
                     {
-                        try (PrintWriter output = PrintWriters.getPrintWriter(new File(gaPath.getParent().toFile(), "gitattributes.temp")))
+                        try (PrintWriter output = PrintWriters.getPrintWriter(FileUtil.appendName(gaPath.getParent().toFile(), "gitattributes.temp")))
                         {
                             stream
                                 .filter(o -> !missingFiles.contains(o))

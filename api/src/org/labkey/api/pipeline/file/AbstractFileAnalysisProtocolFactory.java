@@ -178,11 +178,11 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         File protocolRootDir = locateProtocolRootDir(rootDir, systemDir);
 
         // Make sure the defaults for this particular protocol are in the right place.
-        File fileLegacyDefaults = new File(rootDir, getLegacyDefaultParametersFileName());
+        File fileLegacyDefaults = FileUtil.appendName(rootDir, getLegacyDefaultParametersFileName());
         if (NetworkDrive.exists(fileLegacyDefaults))
         {
-            File protocolDir = new File(protocolRootDir, getName());
-            fileLegacyDefaults.renameTo(new File(protocolDir, getDefaultParametersFileName()));
+            File protocolDir = FileUtil.appendName(protocolRootDir, getName());
+            fileLegacyDefaults.renameTo(FileUtil.appendName(protocolDir, getDefaultParametersFileName()));
         }
     }
 

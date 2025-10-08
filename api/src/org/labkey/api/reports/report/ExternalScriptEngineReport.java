@@ -419,14 +419,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     return;
 
                 try {
-                    File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
+                    File mapFile = FileUtil.appendName(cacheDir, SUBSTITUTION_MAP);
 
                     for (ParamReplacement param : replacements)
                     {
                         List<Pair<File, File>> changes = new ArrayList<>();
                         for (File src : param.getFiles())
                         {
-                            File dst = new File(cacheDir, src.getName());
+                            File dst = FileUtil.appendName(cacheDir, src.getName());
                             if (src.exists() && FileUtil.createTempFile(dst))
                             {
                                 FileUtil.copyFile(src, dst);
@@ -482,7 +482,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                 try
                 {
-                    replacements.addAll(ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)));
+                    replacements.addAll(ParamReplacementSvc.get().fromFile(FileUtil.appendName(cacheDir, SUBSTITUTION_MAP)));
                     return !replacements.isEmpty();
                 }
                 catch (Exception e)

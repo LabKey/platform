@@ -804,11 +804,11 @@ public class ExcelLoader extends DataLoader
         {
             File excelSamplesRoot = JunitUtil.getSampleData(null, "dataLoading/excel");
 
-            assertTrue(isExcel(new File(excelSamplesRoot, "ExcelLoaderTest.xls")));
-            assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xls")));
-            assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xlsx")));
-            assertTrue(isExcel(new File(excelSamplesRoot, "fruits.xls")));
-            assertTrue(isExcel(new File(excelSamplesRoot, "DatesWithSeconds.xlsx")));
+            assertTrue(isExcel(FileUtil.appendName(excelSamplesRoot, "ExcelLoaderTest.xls")));
+            assertTrue(isExcel(FileUtil.appendName(excelSamplesRoot, "SimpleExcelFile.xls")));
+            assertTrue(isExcel(FileUtil.appendName(excelSamplesRoot, "SimpleExcelFile.xlsx")));
+            assertTrue(isExcel(FileUtil.appendName(excelSamplesRoot, "fruits.xls")));
+            assertTrue(isExcel(FileUtil.appendName(excelSamplesRoot, "DatesWithSeconds.xlsx")));
 
             // Issue 22153: detect xls file without extension
             assertTrue(isExcel(JunitUtil.getSampleData(null, "Nab/seaman/MS010407")));
@@ -821,9 +821,9 @@ public class ExcelLoader extends DataLoader
                 assertTrue(factory instanceof ExcelLoader.Factory);
             }
 
-            assertFalse(isExcel(new File(excelSamplesRoot, "notreallyexcel.xls")));
-            assertFalse(isExcel(new File(excelSamplesRoot, "notreallyexcel.xlsx")));
-            assertFalse(isExcel(new File(excelSamplesRoot, "fruits.tsv")));
+            assertFalse(isExcel(FileUtil.appendName(excelSamplesRoot, "notreallyexcel.xls")));
+            assertFalse(isExcel(FileUtil.appendName(excelSamplesRoot, "notreallyexcel.xlsx")));
+            assertFalse(isExcel(FileUtil.appendName(excelSamplesRoot, "fruits.tsv")));
         }
 
         @Test
@@ -958,7 +958,7 @@ public class ExcelLoader extends DataLoader
             if (!excelSamplesRoot.canRead())
                 throw new IOException("Could not read excel samples in: " + excelSamplesRoot);
 
-            File excelFile = new File(excelSamplesRoot, filename);
+            File excelFile = FileUtil.appendName(excelSamplesRoot, filename);
 
             return new ExcelLoader(excelFile, true);
         }
