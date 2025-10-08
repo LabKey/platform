@@ -231,7 +231,7 @@ public abstract class AbstractClrInstallationManager
         {
             Module core = ModuleLoader.getInstance().getCoreModule();
             String enableClrFilename = "enable_clr.sql";
-            Path path = Path.parse(core.getSqlScriptsPath(dialect)).append(enableClrFilename);
+            Path path = core.getSqlScriptsPath(dialect).append(enableClrFilename);
             Resource r = core.getModuleResource(path);
 
             try
