@@ -243,6 +243,7 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
 
     @NotNull Map<String, String> getImportAliases() throws IOException;
 
+    // Issue 53063: support "Aliquoted From"
     @NotNull
     default Map<String, String> getImportAliasesIncludingAliquot() throws IOException
     {
