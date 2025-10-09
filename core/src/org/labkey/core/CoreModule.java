@@ -133,6 +133,7 @@ import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.DummyAntiVirusService;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LimitActiveUsersService;
@@ -1376,6 +1377,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
             });
         }
+
+        Encryption.checkMigration();
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate

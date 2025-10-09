@@ -248,7 +248,7 @@ public class AuthenticationManager
     public static boolean isLdapOrSsoEmail(String emailAddress)
     {
         return AuthenticationConfigurationCache.getActiveDomains().stream()
-            .anyMatch(domain->StringUtils.endsWithIgnoreCase(emailAddress, "@" + domain));
+            .anyMatch(domain->Strings.CI.endsWith(emailAddress, "@" + domain));
     }
 
     public static boolean isRegistrationEnabled()
@@ -327,9 +327,9 @@ public class AuthenticationManager
         }
     }
 
-    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
         _log.info("  Attempting to migrate encrypted properties in authentication configurations");
-        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
         Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
                 new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
@@ -339,15 +339,22 @@ public class AuthenticationManager
             try
             {
                 _log.info("    Migrating encrypted properties for configuration " + key);
-                String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
-                String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
-                saveMap.put("EncryptedProperties", newEncryptedValue);
-                assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
-                Table.update(null, tinfo, saveMap, key);
-            }
-            catch (DecryptionException e)
-            {
-                _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+                try
+                {
+                    String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
+                    String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
+                    assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
+
+                    if (newEncryptedValue != null)
+                    {
+                        saveMap.put("EncryptedProperties", newEncryptedValue);
+                        Table.update(null, tinfo, saveMap, key);
+                    }
+                }
+                catch (DecryptionException e)
+                {
+                    _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+                }
             }
             catch (Exception e)
             {
