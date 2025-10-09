@@ -1857,12 +1857,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (chartConfig.measures.y) {
             measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
 
-            // chartConfig.measures.y.aggregate = 'MEAN'; // TODO get from chartConfig
-
             if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
                 aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
                 aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
-                //aggErrorType = aggType === 'MEAN' ? 'SEM' : null; // TODO get from chartConfig
+                aggErrorType = aggType === 'MEAN' ? chartConfig.measures.y.errorBars : null;
             }
             else if (measureName != null && (chartType === 'bar_chart' || chartType === 'pie_chart')) {
                 // default to SUM for bar and pie charts
