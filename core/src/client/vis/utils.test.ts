@@ -151,4 +151,16 @@ describe('LABKEY.vis.getAggregateData', () => {
             { label: 'B', subLabel: 'a', value: 1 },
         ]);
     });
+
+    test('no values', () => {
+        const dataWithNulls = [
+            { main: 'A', sub: 'a', value: undefined },
+        ];
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'COUNT')).toStrictEqual([{ label: 'A', subLabel: 'a', value: 0 }]);
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'SUM')).toStrictEqual([{ aggType: 'SUM', label: 'A', subLabel: 'a', value: null }]);
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'MIN')).toStrictEqual([{ aggType: 'MIN', label: 'A', subLabel: 'a', value: null }]);
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'MAX')).toStrictEqual([{ aggType: 'MAX', label: 'A', subLabel: 'a', value: null }]);
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'MEAN')).toStrictEqual([{ aggType: 'MEAN', label: 'A', subLabel: 'a', value: null }]);
+        expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'MEDIAN')).toStrictEqual([{ aggType: 'MEDIAN', label: 'A', subLabel: 'a', value: null }]);
+    });
 });
