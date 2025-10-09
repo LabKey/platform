@@ -267,7 +267,11 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
         {
             try {
-                row.value = LABKEY.vis.Stat[aggregate](values);
+                if (values?.length > 0) {
+                    row.value = LABKEY.vis.Stat[aggregate](values);
+                } else {
+                    row.value = null;
+                }
                 row.aggType = aggregate;
             } catch (e) {
                 row.value = null;
