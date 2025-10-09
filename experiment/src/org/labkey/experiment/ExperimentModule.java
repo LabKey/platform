@@ -35,6 +35,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -874,12 +876,12 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
         DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(OntologyManager.getExpSchema())
         {
             @Override
             public void beforeSchema()
             {
+                // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask.
                 // Yes, the FK name is misspelled
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
@@ -890,6 +892,7 @@ public class ExperimentModule extends SpringModule
             {
                 return switch (table.getName())
                 {
+                    case "Alias", "ObjectLegacyNames" -> FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
                     case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
                     case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
                     case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
@@ -898,10 +901,50 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
+            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            {
+                return switch (sourceTable.getName())
+                {
+                    case "Alias" -> new SQLClause(
+                        new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container IN ")
+                            .appendCsvList(containers, sourceTable.getSqlDialect())
+                            .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container IN ")
+                            .appendCsvList(containers, sourceTable.getSqlDialect())
+                            .append(")")
+                    );
+                    case "ObjectLegacyNames" -> new SQLClause(
+                        new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container IN ")
+                            .appendCsvList(containers, sourceTable.getSqlDialect())
+                            .append(")")
+                    );
+                    default -> super.getContainerClause(sourceTable, containerFieldKey, containers);
+                };
+            }
+
+            @Override
             public void afterSchema()
             {
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
+            }
+        });
+
+        // Sample set materialized tables join on RowId to exp.Material
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(SampleTypeDomainKind.getSchema()) {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo table)
+            {
+                return FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
+            }
+
+            @Override
+            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            {
+                return new SQLClause(
+                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container IN ")
+                        .appendCsvList(containers, sourceTable.getSqlDialect())
+                        .append(")")
+                );
             }
         });
     }

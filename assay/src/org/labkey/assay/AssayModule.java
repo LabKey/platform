@@ -297,6 +297,16 @@ public class AssayModule extends SpringModule
                 return PlateTypeTable.NAME.equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
         });
+
+        // Tables in the "assaywell" provisioned schema are all single-container, so no filtering is needed
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(PlateMetadataDomainKind.getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return SITE_WIDE_TABLE;
+            }
+        });
     }
 
     @Override
