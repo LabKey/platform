@@ -705,7 +705,7 @@ public class Table
         return StringUtils.stripEnd(s, "\t\r\n ");
     }
 
-    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, SQLFragment.NowTimestamp now)
+    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, NowTimestamp now)
     {
         ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
@@ -741,7 +741,7 @@ public class Table
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
 
-    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, SQLFragment.NowTimestamp now)
+    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, NowTimestamp now)
     {
         ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
         if (null != colModifiedBy && null != user)
@@ -826,7 +826,7 @@ public class Table
         Map<String, Object> fields = fieldsIn instanceof Map ?
                 _getTableData(table, (Map<String, Object>)fieldsIn, true) :
                 _getTableData(table, fieldsIn, true);
-        SQLFragment.NowTimestamp now = new SQLFragment.NowTimestamp();
+        NowTimestamp now = new NowTimestamp();
         _insertSpecialFields(user, table, fields, now);
         _updateSpecialFields(user, table, fields, now);
 
@@ -860,7 +860,7 @@ public class Table
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
                 valueSQL.append("NULL");
-            else if (value instanceof SQLFragment.NowTimestamp ts)
+            else if (value instanceof NowTimestamp ts)
                 valueSQL.appendValue(ts);
             else
             {
@@ -1020,7 +1020,7 @@ public class Table
         Map<String, Object> fields = fieldsIn instanceof Map ?
             _getTableData(table, (Map<String,Object>)fieldsIn, true) :
             _getTableData(table, fieldsIn, true);
-        _updateSpecialFields(user, table, fields, new SQLFragment.NowTimestamp());
+        _updateSpecialFields(user, table, fields, new NowTimestamp());
 
         List<ColumnInfo> columns = table.getColumns();
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
@@ -1064,7 +1064,7 @@ public class Table
 
             if (null == value || value instanceof String s && s.isEmpty())
                 setSQL.append("NULL");
-            else if (value instanceof SQLFragment.NowTimestamp ts)
+            else if (value instanceof NowTimestamp ts)
                 setSQL.appendValue(ts);
             else
             {
