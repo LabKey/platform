@@ -1848,7 +1848,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
+                // Issue 53963: Cross-sample-type import gives incorrect row number in message
+                String rowText = _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ProcessingPartition) ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
                     addRowError("Failed to generate name for aliquot" + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())

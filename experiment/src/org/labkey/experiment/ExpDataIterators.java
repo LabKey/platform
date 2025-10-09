@@ -2592,6 +2592,7 @@ public class ExpDataIterators
                 {
                     _context.setCrossTypeImport(false);
                     _context.setCrossFolderImport(false);
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, true);
 
                     boolean hasCrossFolderImport = false;
 
@@ -2611,6 +2612,7 @@ public class ExpDataIterators
                     if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
                         SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
 
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, false);
                     _context.setCrossTypeImport(_isCrossType);
                     _context.setCrossFolderImport(_isCrossFolder);
                 }
