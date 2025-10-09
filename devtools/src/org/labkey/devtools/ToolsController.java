@@ -230,7 +230,7 @@ public class ToolsController extends SpringActionController
             .filter(line -> {
                 int idx = line.indexOf(' ');
                 String filename = line.substring(0, idx);
-                File file = new File(gaDirFile, filename);
+                File file = FileUtil.appendPath(gaDirFile, org.labkey.api.util.Path.parse(filename));
 
                 return !file.exists();
             })

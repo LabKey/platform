@@ -857,12 +857,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             List<WebDavTestCase> testCases = new ArrayList<>();
 
             final String PATH1 = "webDavTest.txt";
-            testCases.add(new WebDavTestCase("TestData1", new File(pr.getRootPath(), PATH1), PATH1));
-            testCases.add(new WebDavTestCase("TestData2", new File(pr.getRootPath(), "subfolder/webDavTest.txt"), "subfolder/webDavTest.txt"));
-            testCases.add(new WebDavTestCase("TestData3", new File(pr.getRootPath(), "subfolder/webD  avT est.txt"), "subfolder/webD%20%20avT%20est.txt"));
+            testCases.add(new WebDavTestCase("TestData1", FileUtil.appendName(pr.getRootPath(), PATH1), PATH1));
+            testCases.add(new WebDavTestCase("TestData2", FileUtil.appendPath(pr.getRootPath(), org.labkey.api.util.Path.parse("subfolder/webDavTest.txt")), "subfolder/webDavTest.txt"));
+            testCases.add(new WebDavTestCase("TestData3", FileUtil.appendPath(pr.getRootPath(), org.labkey.api.util.Path.parse("subfolder/webD  avT est.txt")), "subfolder/webD%20%20avT%20est.txt"));
 
             PipeRoot prHome = PipelineService.get().getPipelineRootSetting(ContainerManager.getHomeContainer());
-            testCases.add(new WebDavTestCase("NotUnderFolderRoot", new File(prHome.getRootPath(), PATH1), null));
+            testCases.add(new WebDavTestCase("NotUnderFolderRoot", FileUtil.appendName(prHome.getRootPath(), PATH1), null));
 
             testCases.add(new WebDavTestCase("NotUnderFileRoot", new File("/", PATH1), null));
 
