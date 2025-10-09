@@ -56,6 +56,7 @@ import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
+import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -121,11 +122,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
     private static final String PASSWORD_FIELD = "password";
 
-    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
-        LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
-        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {
+        String currentPassPhrase = Encryption.getEncryptionPassPhrase();
+        if (currentPassPhrase == null)
+        {
+            LOG.warn("  Cannot migrate encrypted content: EncryptionKey not specified");
+            return;
+        }
+
+        Algorithm oldAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
+        Algorithm newAes = Encryption.getAES128(currentPassPhrase, keySource, AESConfig.current);
+
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
-        Algorithm encryptAes = ExternalScriptEngineDefinitionImpl.AES.get();
         new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap(Integer.class).forEach((rowId, configuration) -> {
             JSONObject json = new JSONObject(configuration);
             String oldEncryptedPassword = json.optString(PASSWORD_FIELD, null);
@@ -134,15 +142,24 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 LOG.info("    Migrating script engine configuration " + rowId);
                 try
                 {
-                    String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
-                    String newEncryptedPassword = Base64.encodeBase64String(encryptAes.encrypt(decryptedPassword));
-                    json.put(PASSWORD_FIELD, newEncryptedPassword);
-                    assert decryptedPassword.equals(encryptAes.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
-                    Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
-                }
-                catch (DecryptionException e)
-                {
-                    LOG.info("    Failed to decrypt password for configuration " + rowId + ". This configuration will be skipped.");
+                    String decryptedPassword;
+                    try
+                    {
+                        decryptedPassword = oldAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
+
+                        String newEncryptedPassword = Base64.encodeBase64String(newAes.encrypt(decryptedPassword));
+                        assert decryptedPassword.equals(newAes.decrypt(Base64.decodeBase64(newEncryptedPassword)));
+
+                        if (newEncryptedPassword != null)
+                        {
+                            json.put(PASSWORD_FIELD, newEncryptedPassword);
+                            Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+                        }
+                    }
+                    catch (DecryptionException e)
+                    {
+                        LOG.info("    Failed to decrypt password for configuration " + rowId + ". This configuration will be skipped.");
+                    }
                 }
                 catch (Exception e)
                 {

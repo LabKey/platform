@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -39,19 +38,13 @@ public enum PropertyEncryption
     None
         {
             @Override
-            public @NotNull byte[] encrypt(@NotNull String plainText)
+            public byte @NotNull[] encrypt(@NotNull String plainText)
             {
                 throw new IllegalStateException("Incorrect PropertyStore for this PropertyMap");
             }
 
             @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText)
-            {
-                throw new IllegalStateException("Incorrect PropertyStore for this PropertyMap");
-            }
-
-            @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText, String encryptionPassPhrase, String keySource)
+            public @NotNull String decrypt(byte @NotNull[] cipherText)
             {
                 throw new IllegalStateException("Incorrect PropertyStore for this PropertyMap");
             }
@@ -66,13 +59,13 @@ public enum PropertyEncryption
     Test
         {
             @Override
-            public @NotNull byte[] encrypt(@NotNull String plainText)
+            public byte @NotNull[] encrypt(@NotNull String plainText)
             {
                 return Compress.deflate(plainText);
             }
 
             @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText)
+            public @NotNull String decrypt(byte @NotNull[] cipherText)
             {
                 try
                 {
@@ -85,12 +78,6 @@ public enum PropertyEncryption
             }
 
             @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText, String encryptionPassPhrase, String keySource)
-            {
-                return decrypt(cipherText);
-            }
-
-            @Override
             public @NotNull String getSerializedName()
             {
                 return "Test";
@@ -100,19 +87,13 @@ public enum PropertyEncryption
     NoKey
         {
             @Override
-            public @NotNull byte[] encrypt(@NotNull String plainText)
+            public byte @NotNull[] encrypt(@NotNull String plainText)
             {
                 throw getConfigurationException();
             }
 
             @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText)
-            {
-                throw getConfigurationException();
-            }
-
-            @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText, String encryptionPassPhrase, String keySource)
+            public @NotNull String decrypt(byte @NotNull[] cipherText)
             {
                 throw getConfigurationException();
             }
@@ -132,21 +113,15 @@ public enum PropertyEncryption
     AES128
         {
             @Override
-            public @NotNull byte[] encrypt(@NotNull String plainText)
+            public byte @NotNull[] encrypt(@NotNull String plainText)
             {
                 return AES.get().encrypt(plainText);
             }
 
             @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText)
+            public @NotNull String decrypt(byte @NotNull[] cipherText)
             {
                 return AES.get().decrypt(cipherText);
-            }
-
-            @Override
-            public @NotNull String decrypt(@NotNull byte[] cipherText, String encryptionPassPhrase, String keySource)
-            {
-                return Encryption.getAES128(encryptionPassPhrase, keySource).decrypt(cipherText);
             }
 
             @Override
@@ -156,9 +131,8 @@ public enum PropertyEncryption
             }
         };
 
-    public abstract @NotNull byte[] encrypt(@NotNull String plainText);
-    public abstract @NotNull String decrypt(@NotNull byte[] cipherText);
-    public abstract @NotNull String decrypt(@NotNull byte[] cipherText, String encryptionPassPhrase, String keySource);
+    public abstract byte @NotNull[] encrypt(@NotNull String plainText);
+    public abstract @NotNull String decrypt(byte @NotNull[] cipherText);
 
     // Canonical name to store in the property set. Do not change these return values, once they are in use!
     // Consider: if we need to, could change to a collection of names, the first being canonical, for backward

@@ -30,6 +30,7 @@ import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
