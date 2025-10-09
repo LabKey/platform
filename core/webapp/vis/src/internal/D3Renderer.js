@@ -2218,14 +2218,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderErrorBar = function(layer, plot, geom, data) {
+    var renderErrorBar = function(layer, plot, geom, data, xAcc) {
         var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
         var errorLineWidth = geom.errorWidth ?? geom.width;
+        var xAcc_ = xAcc || function(row) {return geom.getX(row);};
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
         topFn = function(d) {
             var x, y, value, error;
-            x = geom.getX(d);
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value + error);
@@ -2233,7 +2234,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
         bottomFn = function(d) {
             var x, y, value, error;
-            x = geom.getX(d);
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value - error);
@@ -2245,7 +2246,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
         verticalFn = function(d) {
             var x, y1, y2, value, error;
-            x = geom.getX(d);
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y1 = geom.yScale.scale(value + error);
@@ -2260,7 +2261,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         data.filter(function(d) {
             // Note: while we don't actually use the color here, we need to calculate it so they show up in the legend,
             // even if the points are null.
-            var x = geom.getX(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d);
+            var x = xAcc_(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d);
             if (typeof colorAcc == 'function') { colorAcc(d); }
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
@@ -3235,7 +3236,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (geom.errorAes !== undefined) {
             geom.errorShowVertical = true;
             geom.errorWidth = Math.max(2, Math.min(25, barWidth / 8)); // min 2 and max of 25 but default to 1/8 of bar width
-            renderErrorBar(layer, plot, geom, data);
+            renderErrorBar(layer, plot, geom, data, function(d) {
+                return xAcc(d) + (barWidth / 2);
+            });
         }
 
         // group each bar with an a tag for hover
