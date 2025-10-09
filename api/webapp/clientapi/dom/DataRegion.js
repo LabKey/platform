@@ -853,6 +853,7 @@ if (!LABKEY.DataRegions) {
             _selDocClick = $(document).on('click', _onDocumentClick);
         }
 
+        // Issue 53997: Establish a maximum size for query selections
         if (_isShowSelectAll(this)) {
             _getNavTreeSelectAllSelector(this).html(_getSelectAllText(this));
         }
@@ -1051,12 +1052,17 @@ if (!LABKEY.DataRegions) {
                 _toggleAllRows(this, true);
             }
             else {
+                // The number of selected rows exceeds MAX_SELECTION_SIZE, so here we determine
+                // which rows should be checked given which page (offset) we're on.
                 const lastRowIdx = this.offset + this.rowCount;
                 if (lastRowIdx < MAX_SELECTION_SIZE) {
+                    // On a page where ALL rows are within the first MAX_SELECTION_SIZE rows,
                     _toggleAllRows(this, true);
                 } else if (this.offset < MAX_SELECTION_SIZE && MAX_SELECTION_SIZE < lastRowIdx) {
+                    // On a page where SOME rows are within the first MAX_SELECTION_SIZE rows.
                     _checkRows(this, MAX_SELECTION_SIZE - this.offset);
                 } else {
+                    // On a page where NONE rows are within the first MAX_SELECTION_SIZE rows.
                     _toggleAllRows(this, false);
                 }
             }

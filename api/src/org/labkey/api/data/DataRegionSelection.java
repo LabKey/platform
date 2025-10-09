@@ -61,7 +61,7 @@ public class DataRegionSelection
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
 
-    // Issue 53997: Establish a maximum number of selected items allowed for a query.
+    // Issue 53997: Establish a maximum size for query selections
     public static final int MAX_QUERY_SELECTION_SIZE = 100_000;
 
     // set/updated using query-setSnapshotSelection
