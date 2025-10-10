@@ -48,6 +48,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
 import org.labkey.api.util.MimeMap.MimeType;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
@@ -330,8 +331,8 @@ public class EmailServiceImpl implements EmailService
         public ExpectedException exception = ExpectedException.none();
 
         private static final String PROTOCOL_ATTACHMENT_PATH = "study/Protocol.txt";
-        private static final String NON_EXISTENT_ATTACHMENT_NAME = "fake_file.txt";
-        private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
+        private static final Path NON_EXISTENT_ATTACHMENT_NAME = Path.parse("fake_file.txt");
+        private static final Path FAKE_DIRECTORY_NAME = Path.parse("./path/to/fake/directory");
 
         private final Module module = ModuleLoader.getInstance().getModule("Study");
 
@@ -370,12 +371,12 @@ public class EmailServiceImpl implements EmailService
             testAttachmentExceptions(FAKE_DIRECTORY_NAME);
         }
 
-        private void testAttachmentExceptions(String name) throws IOException
+        private void testAttachmentExceptions(Path childPath) throws IOException
         {
             EmailMessage msg = getBaseMessage();
             File studySampleData = JunitUtil.getSampleData(module, "study");
 
-            List<File> attachmentList = Collections.singletonList(FileUtil.appendName(studySampleData, name));
+            List<File> attachmentList = Collections.singletonList(FileUtil.appendPath(studySampleData, childPath));
 
             exception.expect(IllegalArgumentException.class);
             msg.setFiles(attachmentList);
