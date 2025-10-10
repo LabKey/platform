@@ -130,7 +130,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     ? properties[0].aggregate : properties.aggregate;
 
             if (LABKEY.Utils.isDefined(aggregateProps)) {
-                var aggLabel = LABKEY.Utils.isObject(aggregateProps) ? aggregateProps.name : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
+                var aggLabel = LABKEY.Utils.isObject(aggregateProps) ? (aggregateProps.name ?? aggregateProps.label) : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
             else {

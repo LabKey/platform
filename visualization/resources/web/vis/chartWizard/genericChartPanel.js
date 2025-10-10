@@ -1046,6 +1046,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 config.scales[axisName].min = options[axisName].scaleRange.min;
                 config.scales[axisName].max = options[axisName].scaleRange.max;
             }
+
+            if (options[axisName].hasOwnProperty('aggregate')) {
+                config.measures[axisName].aggregate = options[axisName].aggregate;
+            }
+            if (options[axisName].hasOwnProperty('errorBars')) {
+                config.measures[axisName].errorBars = options[axisName].errorBars;
+            }
         }
     },
 
@@ -1323,6 +1330,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         if (chartConfig.scales && chartConfig.scales[axisName]) {
             Ext4.apply(this.options[axisName], chartConfig.scales[axisName]);
+        }
+        if (chartConfig.measures && chartConfig.measures[axisName]) {
+            if (chartConfig.measures[axisName].aggregate)
+                this.options[axisName].aggregate = chartConfig.measures[axisName].aggregate.value ?? chartConfig.measures[axisName].aggregate;
+            if (chartConfig.measures[axisName].errorBars)
+                this.options[axisName].errorBars = chartConfig.measures[axisName].errorBars;
         }
     },
 
