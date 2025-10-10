@@ -736,7 +736,7 @@ public class Table
         if (fields.containsKey(OWNER_COLUMN_NAME))
             _setProperty(returnObject, OWNER_COLUMN_NAME, fields.get(OWNER_COLUMN_NAME));
         if (fields.containsKey(CREATED_COLUMN_NAME))
-            _setTimestampProperty(returnObject, CREATED_COLUMN_NAME, fields.get(CREATED_COLUMN_NAME));
+            _setProperty(returnObject, CREATED_COLUMN_NAME, fields.get(CREATED_COLUMN_NAME));
         if (fields.containsKey(CREATED_BY_COLUMN_NAME))
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
@@ -765,24 +765,20 @@ public class Table
             _setProperty(returnObject, MODIFIED_BY_COLUMN_NAME, fields.get(MODIFIED_BY_COLUMN_NAME));
 
         if (fields.containsKey(MODIFIED_COLUMN_NAME))
-            _setTimestampProperty(returnObject, MODIFIED_COLUMN_NAME, fields.get(MODIFIED_COLUMN_NAME));
+            _setProperty(returnObject, MODIFIED_COLUMN_NAME, fields.get(MODIFIED_COLUMN_NAME));
 
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-            _setTimestampProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
-    }
-
-    static private void _setTimestampProperty(Object fields, String propName, Object value)
-    {
-        // Replace marker NowTimestamp instances with Timestamp for default serialization
-        if (value instanceof NowTimestamp now)
-            value = new java.sql.Timestamp(now.getTime());
-        _setProperty(fields, propName, value);
+            _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
     }
 
     static private void _setProperty(Object fields, String propName, Object value)
     {
+        // Replace marker NowTimestamp instances with Timestamp for default serialization
+        if (value instanceof NowTimestamp now)
+            value = new java.sql.Timestamp(now.getTime());
+
         if (fields instanceof Map)
         {
             ((Map<String, Object>) fields).put(propName, value);
