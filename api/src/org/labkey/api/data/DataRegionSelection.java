@@ -208,8 +208,7 @@ public class DataRegionSelection
             values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         if (null != values && values.length == 1 && values[0].contains("\t"))
             values = StringUtils.split(values[0],'\t');
-        List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
-        Set<String> result = new LinkedHashSet<>(parameterSelected);
+        Set<String> result = values == null ? new LinkedHashSet<>() : new LinkedHashSet<>(Arrays.asList(values));
 
         Set<String> sessionSelected = getSet(context, key, false);
         synchronized (sessionSelected)
@@ -284,9 +283,9 @@ public class DataRegionSelection
             throw new BadRequestException(selectionTooLargeMessage(selection.size()));
 
         Set<String> selectedValues = getSet(context, key, true, useSnapshot);
-        if (checked)
+        synchronized (selectedValues)
         {
-            synchronized (selectedValues)
+            if (checked)
             {
                 if (replaceSelection)
                 {
@@ -309,12 +308,12 @@ public class DataRegionSelection
                     if (prospective > MAX_QUERY_SELECTION_SIZE)
                         throw new BadRequestException(selectionTooLargeMessage(prospective));
                 }
-            }
 
-            selectedValues.addAll(selection);
+                selectedValues.addAll(selection);
+            }
+            else
+                selectedValues.removeAll(selection);
         }
-        else
-            selectedValues.removeAll(selection);
 
         return selectedValues.size();
     }
@@ -412,7 +411,7 @@ public class DataRegionSelection
             }
         }
 
-        return items;
+        return Collections.unmodifiableSet(items);
     }
 
     private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)

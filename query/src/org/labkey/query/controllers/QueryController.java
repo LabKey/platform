@@ -6583,16 +6583,14 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
             getViewContext().getResponse().setHeader("Content-Type", CONTENT_TYPE_JSON);
+            Set<String> selected;
+
             if (form.getQueryName() == null)
-            {
-                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
-                return new ApiSimpleResponse("selected", selected);
-            }
+                selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
             else
-            {
-                Set<String> selected = DataRegionSelection.getSelected(form, form.isClearSelected());
-                return new ApiSimpleResponse("selected", selected);
-            }
+                selected = DataRegionSelection.getSelected(form, form.isClearSelected());
+
+            return new ApiSimpleResponse("selected", selected);
         }
     }
 
