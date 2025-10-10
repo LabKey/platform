@@ -453,7 +453,9 @@ LABKEY.vis.internal.Axis = function() {
                 }
             }
         }
-        if (tickHover || tickClick || tickMouseOver || tickMouseOut) {
+
+        var hasTickAction = tickHover || tickClick || tickMouseOver || tickMouseOut;
+        if (hasTickAction) {
             addTickAreaRects(textAnchors, !hasOverlap);
             addHighlightRects(textAnchors);
         }
@@ -461,7 +463,7 @@ LABKEY.vis.internal.Axis = function() {
         if (orientation == 'bottom') {
             if (hasOverlap) {
                 // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
-                if (tickOverlapRotation !== undefined || textEls[0].length > 10) {
+                if (hasTickAction || tickOverlapRotation !== undefined || textEls[0].length > 10) {
                     if (!tickOverlapRotation) {
                         tickOverlapRotation = 35;
                     }
@@ -469,7 +471,7 @@ LABKEY.vis.internal.Axis = function() {
                     textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
                             .attr('text-anchor', 'start');
 
-                    if (tickHover || tickClick || tickMouseOver || tickMouseOut)
+                    if (hasTickAction)
                     {
                         addTickAreaRects(textAnchors);
                         textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
