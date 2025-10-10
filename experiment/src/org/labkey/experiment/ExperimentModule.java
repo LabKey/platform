@@ -36,6 +36,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -905,6 +906,18 @@ public class ExperimentModule extends SpringModule
             {
                 return switch (sourceTable.getName())
                 {
+                    case "DataInput" -> new SimpleFilter.AndClause(
+                        new InClause(FieldKey.fromParts("DataId", "Container"), containers),
+                        new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
+                    );
+                    case "MaterialInput" -> new SimpleFilter.AndClause(
+                        new InClause(FieldKey.fromParts("MaterialId", "Container"), containers),
+                        new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
+                    );
+                    case "Edge" -> new SimpleFilter.AndClause(
+                        new InClause(FieldKey.fromParts("FromObjectId", "Container"), containers),
+                        new InClause(FieldKey.fromParts("ToObjectId", "Container"), containers)
+                    );
                     case "Alias" -> new SQLClause(
                         new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container IN ")
                             .appendCsvList(containers, sourceTable.getSqlDialect())
