@@ -29,7 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -530,7 +530,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(StudySchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
@@ -539,7 +539,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(StudySchema.getInstance().getDatasetSchema())
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getDatasetSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)

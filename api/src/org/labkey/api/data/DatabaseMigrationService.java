@@ -46,10 +46,11 @@ public interface DatabaseMigrationService
         LOG.warn("Database migration service is not present; database migration is a premium feature.");
     }
 
-    // By default, no-op implementation
-    default void registerHandler(MigrationHandler handler) {}
+    // By default, no-op implementations
+    default void registerHandler(MigrationSchemaHandler handler) {}
+    default void registerHandler(MigrationTableHandler tableHandler) {}
 
-    interface MigrationHandler
+    interface MigrationSchemaHandler
     {
         // Marker for tables to declare themselves as site-wide (no container filtering)
         FieldKey SITE_WIDE_TABLE = FieldKey.fromParts("site-wide");
@@ -69,11 +70,11 @@ public interface DatabaseMigrationService
         void afterSchema();
     }
 
-    class DefaultMigrationHandler implements MigrationHandler
+    class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     {
         private final DbSchema _schema;
 
-        public DefaultMigrationHandler(DbSchema schema)
+        public DefaultMigrationSchemaHandler(DbSchema schema)
         {
             _schema = schema;
         }
@@ -165,6 +166,34 @@ public interface DatabaseMigrationService
         @Override
         public void afterSchema()
         {
+        }
+    }
+
+    /**
+     * Rarely needed, this interface allows a module to provide a clause that filters the rows of another module's
+     * table. The specific use case: Core manages core.Documents and LabBook implements its global attachment manager
+     * on top of core.Documents. When copying data from core.Documents, we want LabBook to filter out the rows that
+     * are not referenced by notebooks in the subset of containers being copied.
+     */
+    interface MigrationTableHandler
+    {
+        TableInfo getTableInfo();
+        FilterClause getAdditionalFilterClause(Set<String> containers);
+    }
+
+    abstract class DefaultMigrationTableHandler implements MigrationTableHandler
+    {
+        private final TableInfo _tableInfo;
+
+        public DefaultMigrationTableHandler(TableInfo tableInfo)
+        {
+            _tableInfo = tableInfo;
+        }
+
+        @Override
+        public TableInfo getTableInfo()
+        {
+            return _tableInfo;
         }
     }
 }

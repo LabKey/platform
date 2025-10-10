@@ -60,7 +60,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -1279,7 +1279,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(CoreSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
             public void beforeVerification()
@@ -1338,6 +1338,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     containerClause = orClause;
                 }
 
+                if (sourceTable.getName().equals("Documents"))
+                {
+                    // If labbook module is present then filter out the rows in the root that are associated with the
+                    // canonical attachment parent and *don't* have attachment pointers in the desired containers.
+                    // So that would be something like:
+                    // containerClause AND NOT (Container = <RootId> AND Parent = <CanonicalParentId> AND DocumentName NOT IN (
+                    //    SELECT hash WHERE SourceId IN (THE SIX DIFFERENT CASES OF SourceId)
+                    // )
+                }
+
                 return containerClause;
             }
 
@@ -1349,7 +1359,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(PropertySchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
@@ -1357,7 +1367,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(TestSchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
             @Override
             public List<TableInfo> getTablesToCopy()
             {
@@ -1368,7 +1378,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
-            DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
             {
                 @Override
                 public List<TableInfo> getTablesToCopy()

@@ -30,7 +30,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -876,7 +876,7 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(OntologyManager.getExpSchema())
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(OntologyManager.getExpSchema())
         {
             @Override
             public void beforeSchema()
@@ -930,7 +930,7 @@ public class ExperimentModule extends SpringModule
         });
 
         // Sample set materialized tables join on RowId to exp.Material
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(SampleTypeDomainKind.getSchema()) {
+        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(SampleTypeDomainKind.getSchema()) {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo table)
             {

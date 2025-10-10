@@ -323,7 +323,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl)
+    public ErrorView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl)
     {
         boolean hasErrors = null != errors && errors.hasErrors();
         HtmlString errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errors collection
@@ -748,7 +748,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getAdminView(ActionURL currentUrl)
+    public HttpView<?> getAdminView(ActionURL currentUrl)
     {
         String requestedType = currentUrl.getParameter("type");
         AttachmentType attachmentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
@@ -816,7 +816,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             unknownSql.append(")\n");
             unknownSql.append("ORDER BY Container, Parent, DocumentName");
 
-            WebPartView unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
+            WebPartView<?> unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
             NavTree navMenu = new NavTree();
 
             if (!findAttachmentParents)
@@ -871,7 +871,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     @Override
     // Joins each row of core.Documents to the table(s) (if any) that contain an entityid matching the document's parent
-    public HttpView getFindAttachmentParentsView()
+    public WebPartView<?> getFindAttachmentParentsView()
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, Sets.newCaseInsensitiveHashSet("Audit"));
@@ -933,7 +933,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         selectStatements.add("    SELECT " + expression + " AS EntityId, " + table.getSqlDialect().quoteStringLiteral(table.getSelectName()) + " AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
-    private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
+    private WebPartView<?> getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
     {
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();
