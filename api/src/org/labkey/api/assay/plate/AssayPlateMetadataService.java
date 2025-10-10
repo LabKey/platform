@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
@@ -182,6 +183,13 @@ public interface AssayPlateMetadataService
         TableInfo resultsTable,
         List<Long> runIds
     ) throws ValidationException;
+
+    /**
+     * Returns a Map of Well Location to Sample RowID for a given Plate ID.
+     */
+    Map<String, Long> getWellLocationToSampleIdMap(Container container, User user, Long plateId);
+
+    boolean isWellLookup(ColumnInfo col);
 
     /**
      * Should only be used to get a local instance of a plate schema where a contextual role might be involved. Schemas created this way are not cached,

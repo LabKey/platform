@@ -93,6 +93,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -517,7 +518,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            DataIterator fileData = checkData(container, user, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -682,16 +683,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * @param rowBasedInputMaterials the map of materials that are inputs to this run based on the data rows
      */
     private DataIterator checkData(
-        Container container,
-        User user,
-        TableInfo dataTable,
-        Domain dataDomain,
-        DataIterator rawData,
-        DataLoaderSettings settings,
-        ParticipantVisitResolver resolver,
-        Map<String, ExpMaterial> inputMaterials,
-        ContainerFilter containerFilter,
-        Map<ExpMaterial, String> rowBasedInputMaterials
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            TableInfo dataTable,
+            Domain dataDomain,
+            DataIterator rawData,
+            DataLoaderSettings settings,
+            ParticipantVisitResolver resolver,
+            Map<String, ExpMaterial> inputMaterials,
+            ContainerFilter containerFilter,
+            Map<ExpMaterial, String> rowBasedInputMaterials
     ) throws BatchValidationException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -705,10 +708,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPropFinder = null;
         DomainProperty datePropFinder = null;
         DomainProperty targetStudyPropFinder = null;
+        DomainProperty platePropFinder = null;
+        DomainProperty wellLocationPropFinder = null;
+        DomainProperty wellLsidPropFinder = null;
 
         RemapCache cache = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+        Map<Long, Map<String, Long>> plateWellCache = new LongHashMap<>();
 
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeById = new HashMap<>();
@@ -717,6 +724,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
+        boolean isPlateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
 
         for (DomainProperty pd : columns)
         {
@@ -748,6 +756,25 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 targetStudyPropFinder = pd;
             }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLocation") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            {
+                wellLocationPropFinder = pd;
+            }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLsid") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            {
+                wellLsidPropFinder = pd;
+            }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("Plate") &&
+                    pd.getPropertyDescriptor().isLookup())
+            {
+                platePropFinder = pd;
+            }
+
             else
             {
                 var sampleLookup = AssaySampleLookupContext.checkSampleLookup(container, user, pd);
@@ -794,6 +821,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPD = visitPropFinder;
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
+        DomainProperty platePD = platePropFinder;
+        DomainProperty wellLocationPD = wellLocationPropFinder;
+        DomainProperty wellLsidPD = wellLsidPropFinder;
+
+        boolean resolvePlateSamples = isPlateMetadataEnabled && platePD != null && wellLocationPD != null && wellLsidPD != null;
 
         return DataIteratorUtil.mapTransformer(rawData, inputCols ->
         {
@@ -1039,6 +1071,34 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }
                         }
+                    }
+                }
+
+                // Wire up well samples as materials inputs
+                if (resolvePlateSamples)
+                {
+                    Long plateId = IntegerUtils.asLong(map.get(platePD.getName()));
+                    String wellLocation = (String) map.get(wellLocationPD.getName());
+                    Long sampleId = null;
+                    ExpMaterial material = null;
+
+                    if (plateId != null && wellLocation != null)
+                    {
+                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(container, user, plateId));
+                        sampleId = wellSampleCache.get(wellLocation);
+                    }
+
+                    if (sampleId != null)
+                    {
+                        material = materialCache.computeIfAbsent(sampleId, (id) -> exp.getExpMaterial(id, containerFilter));
+                    }
+
+                    if (material != null)
+                    {
+                        // Note: we have to use the wellLsidPD as the Property Input Lineage Role because we resolve
+                        // the material inputs for a plate assay based on WellLsid during delete.
+                        rowBasedInputMaterials.putIfAbsent(material, AssayService.get().getPropertyInputLineageRole(wellLsidPD));
+                        rowInputLSIDs.add(material.getLSID());
                     }
                 }
 

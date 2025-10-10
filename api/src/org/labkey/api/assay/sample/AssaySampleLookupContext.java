@@ -2,8 +2,10 @@ package org.labkey.api.assay.sample;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -11,6 +13,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -94,6 +97,33 @@ public class AssaySampleLookupContext
     }
 
     /**
+     * Keeps track of experiment runs for assays that have columns with a sample lookup, including plate metadata
+     * enabled assays. Useful in data updates of assay run/result domains where sample lookups are subsequently
+     * reflected as material inputs to  an experiment run.
+     * @param container Container from which to resolve sample lookup information.
+     * @param user User to utilize to resolve sample lookup information.
+     * @param table The table to utilize to resole sample lookup information.
+     * @param schema The AssayProtocolSchema associated with the run.
+     * @param run The experiment run to track.
+     */
+    public void trackSampleLookupChange(Container container, User user, TableInfo table, AssayProtocolSchema schema, ExpRun run)
+    {
+        if (table.getDomain() == null) return;
+
+        for (DomainProperty dp : table.getDomain().getNonBaseProperties())
+            trackSampleLookupChange(container, user, table, table.getColumn(dp.getName()), run);
+
+        if (_runIds.contains(run.getRowId()))
+            return;
+
+        AssayProvider provider = schema.getProvider();
+        ExpProtocol protocol = schema.getProtocol();
+
+        if (provider.isPlateMetadataEnabled(protocol))
+            _runIds.add(run.getRowId());
+    }
+
+    /**
      * Check if a domain property is considered a valid sample lookup.
      * @param container Container from which to resolve sample lookup information.
      * @param user User to utilize to resolve sample lookup information.
@@ -112,8 +142,9 @@ public class AssaySampleLookupContext
 
         ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
         boolean isSampleLookup = sampleType != null || ExperimentService.get().isLookupToMaterials(dp);
+        boolean isWellLookup = dp.getName().equalsIgnoreCase("WellLsid") && col != null && AssayPlateMetadataService.get().isWellLookup(col);
 
-        return new SampleLookup(isSampleLookup, col, dp, sampleType);
+        return new SampleLookup(isSampleLookup || isWellLookup, col, dp, sampleType);
     }
 
     private SampleLookup checkSampleLookup(Container container, User user, TableInfo table, ColumnInfo col)
@@ -384,7 +415,18 @@ public class AssaySampleLookupContext
         var role = AssayService.get().getPropertyInputLineageRole(sampleLookup.domainProperty);
         var sql = new SQLFragment();
 
-        if (column.getJdbcType().isInteger())
+        if (AssayPlateMetadataService.get().isWellLookup(column))
+        {
+            // tableSql selects all the Well LSIDs for the given runId, we then select all the SampleIds from the
+            // assay.well table that match those Well LSIDs.
+            tableSql = QueryService.get().getSelectBuilder(table)
+                    .columns(Set.of(column))
+                    .filter(tableFilter)
+                    .buildSqlFragment();
+            sql.append("SELECT WS.SampleId as MaterialRowId, ").appendValue(role).append(" AS MaterialInputRole\n");
+            sql.append("FROM assay.well WS WHERE LSID IN (").append(tableSql).append(")");
+        }
+        else if (column.getJdbcType().isInteger())
         {
             sql.append("SELECT DA.").appendIdentifier(column.getAlias()).append(" AS MaterialRowId");
             sql.append(", ?").add(role).append(" AS MaterialInputRole\n");

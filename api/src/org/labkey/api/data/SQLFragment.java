@@ -1342,18 +1342,4 @@ public class SQLFragment implements Appendable, CharSequence
 
         return new SQLFragment(sql, params);
     }
-
-    // Marker interface to hint that this value may be replaced by CURRENT_TIMESTAMP
-    public static class NowTimestamp extends java.sql.Timestamp
-    {
-        public NowTimestamp()
-        {
-            this(System.currentTimeMillis());
-        }
-
-        public NowTimestamp(long ms)
-        {
-            super(ms);
-        }
-    }
 }

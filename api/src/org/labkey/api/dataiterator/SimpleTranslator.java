@@ -48,7 +48,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.NowTimestamp;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
@@ -59,7 +59,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -72,7 +71,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JunitUtil;
@@ -1057,7 +1055,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public Object get()
         {
             if (null == _ts)
-                _ts =  new SQLFragment.NowTimestamp();
+                _ts =  new NowTimestamp();
             return _ts;
         }
     }
@@ -2005,7 +2003,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (c instanceof SimpleConvertColumn scc)
             return scc.convert(_data.getConstantValue(scc.index));
         if (c instanceof TimestampColumn)
-            return new SQLFragment.NowTimestamp();
+            return new NowTimestamp();
         throw new IllegalStateException("shouldn't call this method unless isConstant()==true");
     }
 

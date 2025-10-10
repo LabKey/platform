@@ -1240,7 +1240,7 @@ public class StatementUtils
             f.append(value.toString());
             return;
         }
-        if (value instanceof SQLFragment.NowTimestamp now)
+        if (value instanceof NowTimestamp now)
         {
             f.appendValue(now);
             return;
@@ -1405,7 +1405,7 @@ public class StatementUtils
             assertEquals(new SQLFragment("1234567890"), actual);
 
             // NowTimestamp
-            var now = new SQLFragment.NowTimestamp(dateLong);
+            var now = new NowTimestamp(dateLong);
             actual = runToLiteral.apply(now);
             assertEquals(new SQLFragment().appendValue(now), actual);
 
