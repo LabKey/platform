@@ -468,23 +468,80 @@ public void testNameExpression() throws Exception
 
     List<Map<String, Object>> aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1, "AliquotCount", 10));
-    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
-    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
-    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
-
     List<Map<String, Object>> aliquots = insertSampleRows(sampleTypeName, aliquotRows);
-
     assertExpectedName(st, expectedName1 + "-ALI-0004");
     assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName2 + "-ALI-0005");
-    assertEquals(expectedName2, aliquots.get(1).get("aliquotedFrom"));
+    assertEquals(expectedName2, aliquots.get(0).get("aliquotedFrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-ALI-0006");
-    assertEquals(expectedName1, aliquots.get(2).get("aliquotedfrom"));
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName3 + "-ALI-0007");
-    assertEquals(expectedName3, aliquots.get(3).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName3, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    // Issue 53063: Support "Aliquoted From"
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName2, "ALIQUOTCOUNT", 2));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName2 + "-ALI-0008");
+    assertEquals(expectedName2, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName3, "ALIQUOTCOUNT", 3));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName3 + "-ALI-0009");
+    assertEquals(expectedName3, aliquots.get(0).get("aliquotedFrom"));
+
+    // test the default aliquot naming pattern (${${AliquotedFrom}-:withCounter}
+    st.setAliquotNameExpression("");
+    st.save(user);
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-1");
+    assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-2");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-3");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-4");
+    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-5");
+    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-6");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
 }
 
 @Test

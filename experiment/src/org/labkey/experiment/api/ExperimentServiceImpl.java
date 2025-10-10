@@ -10252,6 +10252,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             allColumns.addAll(inputColumns);
 
         Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
+        parentAliasColumnMap.put(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL, ExpMaterial.ALIQUOTED_FROM_INPUT);
         try
         {
             if (currentDataType instanceof ExpDataClass dataClass)
@@ -10270,7 +10271,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String columnName = inputColName;
             if (parentAliasColumnMap.containsKey(columnName))
                 columnName = parentAliasColumnMap.get(columnName);
-            if (ExperimentService.isInputOutputColumn(columnName) || "parent".equalsIgnoreCase(columnName))
+            if (ExperimentService.isInputOutputColumn(columnName) || ExperimentService.isAliquotedFromColumn(columnName) || "parent".equalsIgnoreCase(columnName))
             {
                 if (seenColumns.contains(columnName))
                     throw new ApiUsageException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, columnName));
