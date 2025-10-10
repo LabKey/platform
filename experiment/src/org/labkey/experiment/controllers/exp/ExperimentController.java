@@ -4422,6 +4422,7 @@ public class ExperimentController extends SpringActionController
             Set<String> aliases = new CaseInsensitiveHashSet();
             // Issue 53419: Aliquot parent with number like names that starts with leading zeroes aren't resolved during import
             aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            aliases.add(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL);
             boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
             // Issue 51894: We need to stop conversion to numbers for alias fields for all type
             // If there are aliases defined for one type that are number fields in another type, this will prevent
@@ -7273,7 +7274,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table)
         {
             ActionURL url = new ActionURL(InsertMaterialQueryRowAction.class, c);
-            url.addParameter("schemaName", "samples");
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
@@ -7491,6 +7491,15 @@ public class ExperimentController extends SpringActionController
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
         @Override
+        protected QueryForm createQueryForm(ViewContext context)
+        {
+            QueryForm form = new QueryForm("samples", null);
+            form.setViewContext(getViewContext());
+            form.bindParameters(getViewContext().getBindPropertyValues());
+            return form;
+        }
+
+        @Override
         public BindException bindParameters(PropertyValues m) throws Exception
         {
             BindException bind = super.bindParameters(m);
@@ -7569,6 +7578,16 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class InsertMaterialQueryRowAction extends UserSchemaAction
     {
+        @Override
+        protected QueryForm createQueryForm(ViewContext context)
+        {
+            QueryForm form = new QueryForm("samples", null);
+            form.setViewContext(getViewContext());
+            form.bindParameters(getViewContext().getBindPropertyValues());
+
+            return form;
+        }
+
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {

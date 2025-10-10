@@ -755,8 +755,13 @@ public class NavTree implements Collapsible
             }
         }
 
+        String id = getId();
+        if (id == null)
+            id = config.makeId("popupMenuView");
+        id = id.replaceAll(" ", "");
+
         LinkBuilder builder = LinkBuilder.simpleLink(html)
-            .id(config.makeId("popupMenuView"))
+            .id(id)
             .target(getTarget())
             .title(getDescription())
             .tabindex(0)

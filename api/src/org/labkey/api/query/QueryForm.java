@@ -110,26 +110,28 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         assert MemTracker.getInstance().put(this);
     }
 
-    protected QueryForm(String schemaName, String queryName)
+    public QueryForm(String schemaName, String queryName)
     {
-        _schemaName = new SchemaKey(null, schemaName);
-        _queryName = queryName;
-
-        _bindSchemaName = false;
-        _bindQueryName = false;
-
-        assert MemTracker.getInstance().put(this);
+        this(schemaName, queryName, null);
     }
 
     protected QueryForm(String schemaName, String queryName, String viewName)
     {
-        _schemaName = new SchemaKey(null, schemaName);
-        _queryName = queryName;
-        _viewName = viewName;
-
-        _bindSchemaName = false;
-        _bindQueryName = false;
-        _bindViewName = false;
+        if (null != schemaName)
+        {
+            _schemaName = new SchemaKey(null, schemaName);
+            _bindSchemaName = false;
+        }
+        if (null != queryName)
+        {
+            _queryName = queryName;
+            _bindQueryName = false;
+        }
+        if (null != viewName)
+        {
+            _viewName = viewName;
+            _bindViewName = false;
+        }
 
         assert MemTracker.getInstance().put(this);
     }

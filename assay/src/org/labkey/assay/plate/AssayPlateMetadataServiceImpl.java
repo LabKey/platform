@@ -96,6 +96,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
@@ -1515,6 +1516,32 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     public @NotNull UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
     {
         return new PlateSchema(querySchema, contextualRoles);
+    }
+
+    @Override
+    public Map<String, Long> getWellLocationToSampleIdMap(Container container, User user, Long plateId)
+    {
+        Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
+        List<WellData> wellData = PlateManager.get().getWellData(container, user, plateId, true, false);
+
+        for (WellData data : wellData)
+            wellLocationToSampleIdMap.put(data.getPosition(), data.getSampleId());
+
+        return wellLocationToSampleIdMap;
+    }
+
+    @Override
+    public boolean isWellLookup(ColumnInfo col)
+    {
+        if (col == null) return false;
+
+        if (!col.isLookup()) return false;
+
+        var wellTable = AssayDbSchema.getInstance().getTableInfoWell();
+        var lookupTable = col.getFkTableInfo();
+
+        return lookupTable.getSchema().getName().equalsIgnoreCase(wellTable.getSchema().getName())
+                && lookupTable.getName().equalsIgnoreCase(wellTable.getName());
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
