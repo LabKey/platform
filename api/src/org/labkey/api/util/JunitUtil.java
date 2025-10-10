@@ -201,7 +201,8 @@ public class JunitUtil
             {
                 // Modules might have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
                 // a map the first time, then stash the map for future lookups.
-                String name = module.getExplodedFileLike().getName();
+                // Convert to a Path since this is the root for the FileLike so asking for its name returns an empty string
+                String name = module.getExplodedFileLike().toNioPathForRead().getFileName().toString();
 
                 synchronized (MAP_LOCK)
                 {
