@@ -35,6 +35,7 @@ public interface ExpMaterial extends ExpRunItem
     String MATERIAL_INPUTS_PREFIX_LC = MATERIAL_INPUTS_PREFIX.toLowerCase();
     String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
     String ALIQUOTED_FROM_INPUT = "AliquotedFrom";
+    String ALIQUOTED_FROM_INPUT_LABEL = "Aliquoted From";
 
     @Nullable
     ExpSampleType getSampleType();

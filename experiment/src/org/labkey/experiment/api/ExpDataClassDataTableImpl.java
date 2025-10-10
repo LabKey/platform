@@ -1370,6 +1370,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return dataRow;
         }
 
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
+                throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+
+            // add MaterialInput/DataInputs field from parent alias
+            try
+            {
+                Map<String, String> parentAliases = _dataClass.getImportAliases();
+                for (String alias : parentAliases.keySet())
+                {
+                    if (row.containsKey(alias))
+                        result.put(parentAliases.get(alias), result.get(alias));
+                }
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            return result;
+
+        }
+
         @Override
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
