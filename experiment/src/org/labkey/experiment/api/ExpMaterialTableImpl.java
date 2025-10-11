@@ -1725,7 +1725,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasesIncludingAliquot(), sampleTypeObjectId)
                     .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);

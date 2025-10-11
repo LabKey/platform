@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
@@ -241,6 +242,15 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
     void save(User user);
 
     @NotNull Map<String, String> getImportAliases() throws IOException;
+
+    // Issue 53063: support "Aliquoted From"
+    @NotNull
+    default Map<String, String> getImportAliasesIncludingAliquot() throws IOException
+    {
+        Map<String, String> aliases = new CaseInsensitiveHashMap<>(getImportAliases());
+        aliases.put(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL, ExpMaterial.ALIQUOTED_FROM_INPUT);
+        return aliases;
+    }
 
     @NotNull Map<String, String> getRequiredImportAliases() throws IOException;
 

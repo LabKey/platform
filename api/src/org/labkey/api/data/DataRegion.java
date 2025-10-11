@@ -1558,7 +1558,8 @@ public class DataRegion extends DisplayElement
         final String jsObject = getJavaScriptObjectReference();
         NavTree navtree = new NavTree();
 
-        NavTree selectAll = new NavTree("Select All");
+        NavTree selectAll = new NavTree("Select All Rows");
+        selectAll.setId(getDomId() + "-navtree-select-all");
         selectAll.setScript(jsObject + ".selectAll();");
         navtree.addChild(selectAll);
 

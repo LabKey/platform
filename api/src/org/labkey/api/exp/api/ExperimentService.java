@@ -507,6 +507,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
     }
 
+    static boolean isAliquotedFromColumn(String columnName)
+    {
+        return ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(columnName) ||
+               ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL.equalsIgnoreCase(columnName);
+    }
+
     // convert MaterialInputs/Blood/Type to MaterialInputs/Blood$SType
     static @Nullable String getEncodedLineageKey(String inputColumn /*not encoded*/)
     {
