@@ -298,6 +298,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -2548,7 +2549,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(realContent.toFile(), form.getFormat(), -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, null);
                     return null;
                 }
 
@@ -2617,11 +2618,11 @@ public class ExperimentController extends SpringActionController
                 return true;
             }
 
-            File tempFile = null;
+            FileLike tempFile = null;
             try
             {
-                tempFile = FileUtil.createTempFile("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(), tempFile);
+                tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
+                FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
                 streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
             }
             finally
@@ -2635,7 +2636,7 @@ public class ExperimentController extends SpringActionController
 
 
     // SampleTypeTest
-    private void streamToJSON(File realContent, String format, int maxRow, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2644,13 +2645,9 @@ public class ExperimentController extends SpringActionController
         JSONArray sheetsArray;
         if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
         {
-            try
+            try (InputStream in = realContent.openInputStream())
             {
-                sheetsArray = ExcelFactory.convertExcelToJSON(realContent, extended, maxRow);
-            }
-            catch (InvalidFormatException e)
-            {
-                throw new NotFoundException("Could not open " + realContent.getName(), e);
+                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow);
             }
         }
         else
@@ -2661,7 +2658,8 @@ public class ExperimentController extends SpringActionController
                 throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
 
-            try (DataLoader tabLoader = dlf.createLoader(realContent, true))
+            try (InputStream in = realContent.openInputStream();
+                DataLoader tabLoader = dlf.createLoader(in, true))
             {
                 tabLoader.setScanAheadLineCount(5000);
                 ColumnDescriptor[] cols = tabLoader.getColumns();

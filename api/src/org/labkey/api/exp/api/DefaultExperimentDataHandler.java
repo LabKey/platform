@@ -24,6 +24,7 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 
@@ -41,7 +42,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
     }
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
     {
         log.debug("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
     }

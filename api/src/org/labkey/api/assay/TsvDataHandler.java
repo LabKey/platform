@@ -118,19 +118,13 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     }
 
     @Override
-    public boolean hasContentToExport(ExpData data, File file)
-    {
-        return hasContentToExport(data, null != file ? file.toPath() : null);
-    }
-
-    @Override
-    public boolean hasContentToExport(ExpData data, Path file)
+    public boolean hasContentToExport(ExpData data, org.labkey.vfs.FileLike file)
     {
         return data.isFinalRunOutput();
     }
 
     @Override
-    public void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
+    public void exportFile(ExpData data, org.labkey.vfs.FileLike dataFile, User user, OutputStream out) throws ExperimentException
     {
         if (data.isFinalRunOutput())
         {
@@ -154,7 +148,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
                         try
                         {
-                            File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
+                            File tempFile = FileUtil.createTempFile("assay_export", ".tsv");
 
                             // Figure out the subset of columns to actually export in the TSV, see Issue 36746
                             Set<FieldKey> ignored = Set.of(FieldKey.fromParts("Run"), FieldKey.fromParts("RowId"), FieldKey.fromParts("DataId"), FieldKey.fromParts("Folder"));
@@ -163,10 +157,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                             {
                                 if (!ignored.contains(column.getFieldKey()))
                                 {
-                                    if (PropertyType.FILE_LINK == column.getPropertyType() && !StringUtils.isEmpty(rootFilePath))
-                                        displayColumns.add(new TsvDataHandler.ExportFileLinkColumn(column, rootFilePath));
-                                    else
-                                        displayColumns.add(column.getRenderer());
+                                    displayColumns.add(column.getRenderer());
                                 }
                             }
 

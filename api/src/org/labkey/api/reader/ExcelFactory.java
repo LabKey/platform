@@ -181,7 +181,7 @@ public class ExcelFactory
         {
             return getMetadata(opc);
         }
-        // might be OLE2 formet
+        // might be OLE2 format
         catch (InvalidFormatException|UnsupportedFileFormatException e)
         {
             Workbook wb = create(file);
@@ -585,11 +585,11 @@ public class ExcelFactory
 
     /** Supports .xls (BIFF8 only), and .xlsx */
     @NotNull
-    public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException
+    public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows) throws IOException
     {
         try (Workbook workbook = WorkbookFactory.create(in))
         {
-            return convertExcelToJSON(workbook, extended, -1);
+            return convertExcelToJSON(workbook, extended, maxRows);
         }
     }
 

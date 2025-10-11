@@ -30,8 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-
-import java.io.File;
+import org.labkey.vfs.FileLike;
 
 /**
  * User: jeckels
@@ -68,7 +67,7 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
     }
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
     {
     }
 }

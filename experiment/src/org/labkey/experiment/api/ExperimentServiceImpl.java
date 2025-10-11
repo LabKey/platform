@@ -6900,7 +6900,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+                insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFileLike(), info, log, context);
             }
         }
 

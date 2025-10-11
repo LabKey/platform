@@ -55,8 +55,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -88,7 +86,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     protected Map<String, Map<DomainProperty, String>> _sampleProperties;
     protected String _metadataNoun = "Sample";
     protected String _wellGroupColumnName = SAMPLE_WELLGROUP_COLUMN;
-    private File _metadataFile;
+    private FileLike _metadataFile;
 
     public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, List<? extends DomainProperty> domainProperties, Plate template, SampleMetadataInputFormat inputFormat)
     {
@@ -137,7 +135,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         return new HashMap<>(sampleProperties);
     }
 
-    protected File getSampleMetadata(HttpServletRequest request) throws ExperimentException
+    protected FileLike getSampleMetadata(HttpServletRequest request) throws ExperimentException
     {
         if (_metadataFile != null)
             return _metadataFile;
@@ -146,7 +144,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         {
             String relativePath = request.getParameter(METADATA_PREVUPLOAD_LOCATION);
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(_container);
-            _metadataFile = pipelineRoot.resolvePath(relativePath);
+            _metadataFile = pipelineRoot.resolvePathToFileLike(relativePath);
             return _metadataFile;
         }
 
@@ -155,7 +153,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         {
             String relativePath = request.getParameter(PRIMARY_PREV_UPLOAD_PATH);
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(_container);
-            _metadataFile = pipelineRoot.resolvePath(relativePath);
+            _metadataFile = pipelineRoot.resolvePathToFileLike(relativePath);
             return _metadataFile;
         }
 
@@ -167,15 +165,15 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         try
         {
             FileLike uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
-            _metadataFile = FileUtil.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).toNioPathForWrite().toFile();
-            try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
+            _metadataFile = FileUtil.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory);
+            try (BufferedOutputStream fos = new BufferedOutputStream(_metadataFile.openOutputStream());
                 InputStream is = metadata.getInputStream())
             {
                 IOUtils.copy(is, fos);
                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(_container, "Adding sample metadata file " + metadata.getOriginalFilename() + ".");
                 event.setProvidedFileName(metadata.getOriginalFilename());
                 event.setFile(_metadataFile.getName());
-                event.setDirectory(_metadataFile.getParent());
+                event.setDirectory(_metadataFile.getParent().toNioPathForRead().toFile().getPath());
                 AuditLogService.get().addEvent(null, event);
             }
         }
@@ -219,7 +217,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         if (_sampleProperties != null)
             return _sampleProperties;
 
-        File metadataFile = getSampleMetadata(request);
+        FileLike metadataFile = getSampleMetadata(request);
         if (metadataFile == null)
             return null;
 
@@ -282,7 +280,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         }
     }
 
-    public File getMetadataFile()
+    public FileLike getMetadataFile()
     {
         return _metadataFile;
     }
@@ -312,7 +310,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     @Override
     public void addSampleColumns(InsertView view, User user, final AssayRunUploadForm<?> defaultValueContext, final boolean errorReshow)
     {
-        final File reshowFile;
+        final FileLike reshowFile;
         if (errorReshow)
             reshowFile = getMetadataFile();
         else if (defaultValueContext instanceof PlateUploadForm &&

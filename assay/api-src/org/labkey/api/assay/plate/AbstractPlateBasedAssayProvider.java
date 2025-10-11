@@ -51,8 +51,8 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -127,7 +127,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public File getSampleMetadataFile(Container container, int runId)
+    public FileLike getSampleMetadataFile(Container container, int runId)
     {
         ExpRun run = ExperimentService.get().getExpRun(runId);
         if (!run.getContainer().equals(container))
@@ -151,7 +151,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         for (Map.Entry<? extends ExpData, String> entry : sampleDerivationInputs.entrySet())
         {
             if (SAMPLE_METADATA_INPUT_ROLE.equals(entry.getValue()))
-                return entry.getKey().getFile();
+                return entry.getKey().getFileLike();
         }
         return null;
     }

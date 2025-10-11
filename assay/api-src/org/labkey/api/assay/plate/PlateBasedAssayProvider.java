@@ -25,6 +25,7 @@ import org.labkey.api.assay.actions.PlateUploadForm;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Collection;
@@ -39,7 +40,7 @@ public interface PlateBasedAssayProvider extends AssayProvider
 
     void setPlate(Container container, ExpProtocol protocol, Plate plate);
     @Nullable Plate getPlate(Container container, ExpProtocol protocol);
-    File getSampleMetadataFile(Container container, int runId);
+    FileLike getSampleMetadataFile(Container container, int runId);
     @Nullable PlateReader getPlateReader(String readerName);
     SampleMetadataInputFormat[] getSupportedMetadataInputFormats();
     SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol);

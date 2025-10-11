@@ -509,24 +509,15 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
+    public String relativePath(FileLike file)
+    {
+        return relativePath(file.toNioPathForRead());
+    }
+
+    @Override
     public String relativePath(File file)
     {
-        File root = findRootPath(file);
-        if (root == null)
-        {
-            return null;
-        }
-        String strRoot = root.toString();
-
-        String strFile = file.toString();
-        if (!strFile.toLowerCase().startsWith(strRoot.toLowerCase()))
-            return null;
-        String ret = strFile.substring(strRoot.length());
-        if (ret.startsWith(File.separator))
-        {
-            return ret.substring(1);
-        }
-        return ret;
+        return relativePath(file.toPath());
     }
 
     @Override

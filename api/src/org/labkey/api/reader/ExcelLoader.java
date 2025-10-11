@@ -46,6 +46,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.vfs.FileSystemLike;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -817,7 +818,7 @@ public class ExcelLoader extends DataLoader
             DataLoaderService svc = DataLoaderService.get();
             if (svc != null)
             {
-                DataLoaderFactory factory = svc.findFactory(JunitUtil.getSampleData(null, "Nab/seaman/MS010407"), null);
+                DataLoaderFactory factory = svc.findFactory(FileSystemLike.wrapFile(JunitUtil.getSampleData(null, "Nab/seaman/MS010407")), null);
                 assertTrue(factory instanceof ExcelLoader.Factory);
             }
 
