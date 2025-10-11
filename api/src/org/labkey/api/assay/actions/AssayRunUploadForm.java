@@ -247,9 +247,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     @Nullable
     @Override
-    public File getOriginalFileLocation()
+    public FileLike getOriginalFileLocation()
     {
-        AssayDataCollector collector = getSelectedDataCollector();
+        AssayDataCollector<?> collector = getSelectedDataCollector();
         if (collector != null)
         {
             return collector.getOriginalFileLocation();

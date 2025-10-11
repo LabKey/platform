@@ -254,6 +254,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.vfs.FileLike;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
@@ -2107,78 +2108,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         url.addParameter("experimentRunFilter", type.getDescription());
         view.setTitleHref(url);
         return view;
-    }
-
-    /**
-     * export to temp directory
-     */
-    @Override
-    public File exportXarForRuns(
-            User user,
-            Set<Long> runIds,
-            Long expRowId,
-            XarExportOptions options
-    ) throws NotFoundException, IOException, ExperimentException
-    {
-        if (runIds.isEmpty())
-        {
-            throw new NotFoundException();
-        }
-
-        try
-        {
-            List<ExpRun> runs = new ArrayList<>();
-            for (var id : runIds)
-            {
-                ExpRun run = getExpRun(id);
-                if (run == null || !run.getContainer().hasPermission(user, ReadPermission.class))
-                {
-                    throw new NotFoundException("Could not find run " + id);
-                }
-                runs.add(run);
-            }
-
-            XarExportSelection selection = new XarExportSelection();
-            if (expRowId != null)
-            {
-                ExpExperiment experiment = getExpExperiment(expRowId);
-                if (experiment == null || !experiment.getContainer().hasPermission(user, ReadPermission.class))
-                {
-                    throw new NotFoundException("Run group " + expRowId);
-                }
-                selection.addExperimentIds(experiment.getRowId());
-            }
-            selection.addRuns(runs);
-            // NOTE: selection distinguishes between null and empty (careful)
-            // TODO have ArchiveURLRewriter() differentiate between input and output roles
-            // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)
-            if (options.isFilterDataRoles())
-                selection.addRoles(options.getDataRoles());
-            XarExporter exporter = new XarExporter(
-                    LSIDRelativizer.valueOf(options.getLsidRelativizer()),
-                    selection,
-                    user,
-                    options.getXarXmlFileName(),
-                    options.getLog(),
-                    null
-            );
-            if (options.getExportFile().isDirectory())
-            {
-                exporter.writeAsDirectory(options.getExportFile());
-            }
-            else
-            {
-                try (FileOutputStream fOut = new FileOutputStream(options.getExportFile().getPath()))
-                {
-                    exporter.writeAsArchive(fOut);
-                }
-            }
-            return options.getExportFile();
-        }
-        catch (NumberFormatException e)
-        {
-            throw new NotFoundException(runIds.toString());
-        }
     }
 
     @Override
@@ -4169,6 +4098,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             result.put(param.getOntologyEntryURI(), param);
         }
         return result;
+    }
+
+    @Override
+    public ExpDataImpl getExpDataByURL(FileLike file, @Nullable Container c)
+    {
+        return getExpDataByURL(file.toNioPathForRead(), c);
     }
 
     @Override

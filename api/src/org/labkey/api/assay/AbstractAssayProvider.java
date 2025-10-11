@@ -637,7 +637,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 // In the re-run scenario, figure out what files to offer up for reuse
 
-//                Map<String, File> reusableFiles = new HashMap<>();
                 Map<String, org.labkey.vfs.FileLike> reusableFiles = new HashMap<>();
                 // Include any files that were uploaded as part of this request
                 if (uploadedFiles != null && !uploadedFiles.isEmpty())

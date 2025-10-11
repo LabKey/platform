@@ -23,7 +23,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.HttpView;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -81,5 +80,5 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
      * @return null if the file was uploaded as part of the import
      */
     @Nullable
-    default File getOriginalFileLocation() { return null; }
+    default FileLike getOriginalFileLocation() { return null; }
 }

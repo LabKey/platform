@@ -557,6 +557,12 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
+    public boolean isUnderRoot(FileLike file)
+    {
+        return findRootPath(file.toNioPathForRead()) != null;
+    }
+
+    @Override
     public boolean isUnderRoot(Path path)
     {
         return findRootPath(path) != null;

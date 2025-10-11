@@ -113,6 +113,7 @@ public interface PipeRoot extends SecurableResource
 
     /** @return whether the file specified is a child of the pipeline root */
     boolean isUnderRoot(File file);
+    boolean isUnderRoot(FileLike file);
     boolean isUnderRoot(Path file);
 
     boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
