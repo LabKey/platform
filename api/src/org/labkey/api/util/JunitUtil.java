@@ -233,6 +233,11 @@ public class JunitUtil
                     }
 
                     sampleDataDir = _sampleDataDirectories.get(name);
+
+                    if (sampleDataDir == null)
+                    {
+                        Assert.fail("Sample data directory not found for module: " + name + ". Known directories: " + _sampleDataDirectories);
+                    }
                 }
             }
         }
