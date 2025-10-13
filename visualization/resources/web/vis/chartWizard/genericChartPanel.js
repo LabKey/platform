@@ -1047,10 +1047,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 config.scales[axisName].max = options[axisName].scaleRange.max;
             }
 
-            if (options[axisName].hasOwnProperty('aggregate')) {
+            if (options[axisName].aggregate) {
                 config.measures[axisName].aggregate = options[axisName].aggregate;
             }
-            if (options[axisName].hasOwnProperty('errorBars')) {
+            if (options[axisName].errorBars) {
                 config.measures[axisName].errorBars = options[axisName].errorBars;
             }
         }
