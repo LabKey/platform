@@ -2221,7 +2221,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data, xAcc) {
-        var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
+        var colorAcc, topFn, bottomFn, verticalFn, selection, newBars;
         var errorLineWidth = geom.errorWidth ?? geom.width;
         var xAcc_ = xAcc || function(row) {return geom.getX(row);};
 
@@ -2247,12 +2247,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
         verticalFn = function(d) {
-            var x, y1, y2, value, error;
+            var x, y, y1, y2, value, error;
             x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
+            y = geom.yScale.scale(value);
             y1 = geom.yScale.scale(value + error);
-            y2 = geom.yScale.scale(value - error);
+            y2 =  geom.topOnly ? y : geom.yScale.scale(value - error);
             // if we have a log scale, y2 will be null for negative values so set to scale min
             if (y2 == null && geom.yScale.trans == "log") {
                 y2 = geom.yScale.range[0];
@@ -3236,6 +3237,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         yZero[geom.yAes.value] = 0;
 
         if (geom.errorAes !== undefined) {
+            geom.topOnly = true;
             geom.errorShowVertical = true;
             geom.errorWidth = Math.max(2, Math.min(25, barWidth / 8)); // min 2 and max of 25 but default to 1/8 of bar width
             renderErrorBar(layer, plot, geom, data, function(d) {
