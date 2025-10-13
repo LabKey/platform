@@ -773,9 +773,12 @@ public class Table
             _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
     }
 
-
     static private void _setProperty(Object fields, String propName, Object value)
     {
+        // Replace marker NowTimestamp instances with Timestamp for default serialization
+        if (value instanceof NowTimestamp now)
+            value = new java.sql.Timestamp(now.getTime());
+
         if (fields instanceof Map)
         {
             ((Map<String, Object>) fields).put(propName, value);
