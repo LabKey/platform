@@ -222,7 +222,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {Boolean} keepNames True to use the dimension names in the results data. Defaults to false.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames)
 {
     var results = [], subgroupAccessor,
         groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
@@ -287,6 +287,9 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             throw 'Aggregate ' + aggregate + ' is not yet supported.';
         }
 
+        if (keepNames === undefined || keepNames === null) {
+            keepNames = false;
+        }
         if (keepNames) {
             // if the value was/is a number, convert it back so that the axis domain min/max calculate correctly
             var dimValue = row['label'];

@@ -130,7 +130,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                     ? properties[0].aggregate : properties.aggregate;
 
             if (LABKEY.Utils.isDefined(aggregateProps)) {
-                var aggLabel = LABKEY.Utils.isObject(aggregateProps) ? (aggregateProps.name ?? aggregateProps.label) : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
+                var aggLabel = LABKEY.Utils.isObject(aggregateProps)
+                        ? (aggregateProps.name != null ? aggregateProps.name : aggregateProps.label)
+                        : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
             else {
@@ -1065,7 +1067,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             if (!scales.y.domain) {
-                var values = $.map(data, function(d) {return d.value + (d.error ?? 0);}),
+                var values = $.map(data, function(d) {return d.value + (d.error != null ? d.error : 0);}),
                     min = Math.min(0, Math.min.apply(Math, values)),
                     max = Math.max(0, Math.max.apply(Math, values));
 

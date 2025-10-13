@@ -202,8 +202,9 @@ LABKEY.vis.Stat.MEAN = LABKEY.vis.Stat.getMean;
  * @param sample If true, use (n-1) for the denominator of the final step. Defaults to false.
  * @returns {Number}
  */
-LABKEY.vis.Stat.getStdDev = function(values, sample = false)
+LABKEY.vis.Stat.getStdDev = function(values, sample)
 {
+    if (sample === undefined || sample === null) sample = false;
     if (values == null)
         throw "invalid input";
     if (values.length === 0)
@@ -230,7 +231,8 @@ LABKEY.vis.Stat.SD = LABKEY.vis.Stat.getStdDev;
  * @param sample If true, use (n-1) for the denominator of the final step. Defaults to false.
  * @returns {Number}
  */
-LABKEY.vis.Stat.getStdErr = function(values, sample = false) {
+LABKEY.vis.Stat.getStdErr = function(values, sample) {
+    if (sample === undefined || sample === null) sample = false;
     if (values == null)
         throw "invalid input";
     if (values.length === 0)

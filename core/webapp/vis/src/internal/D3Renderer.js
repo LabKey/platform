@@ -494,7 +494,7 @@ LABKEY.vis.internal.Axis = function() {
                             if (!width)
                                 width = scale(v) - grid.leftEdge;
 
-                            let text = d3.select(this),
+                            var text = d3.select(this),
                                     words = text.text().split(/[\s]+/).reverse(),
                                     word,
                                     line = [],
@@ -2222,7 +2222,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderErrorBar = function(layer, plot, geom, data, xAcc) {
         var colorAcc, topFn, bottomFn, verticalFn, selection, newBars;
-        var errorLineWidth = geom.errorWidth ?? geom.width;
+        var errorLineWidth = geom.errorWidth != null ? geom.errorWidth : geom.width;
         var xAcc_ = xAcc || function(row) {return geom.getX(row);};
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
