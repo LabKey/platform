@@ -8,6 +8,10 @@ on:
     types:
       - submitted
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   merge_release:
     if: >
