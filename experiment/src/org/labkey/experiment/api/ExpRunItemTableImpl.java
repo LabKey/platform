@@ -19,8 +19,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
@@ -95,6 +99,13 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             }
         }, "Alias")
         {
+            @Override
+            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+            {
+                ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
+                return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+            }
+
             @Override
             public boolean isMultiSelectInput()
             {
