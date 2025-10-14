@@ -140,7 +140,8 @@ public class IssueServiceImpl implements IssueService
                     for (int curIssueId : prevIssues)
                     {
                         IssueObject relatedIssue = ChangeSummary.relatedIssueCommentHandler(issueObject.getIssueId(), curIssueId, user, true);
-                        IssueManager.saveIssue(getRelatedIssueUser(container, user, relatedIssue), container, relatedIssue);
+                        if (null != relatedIssue)
+                            IssueManager.saveIssue(getRelatedIssueUser(container, user, relatedIssue), container, relatedIssue);
                     }
                 }
 
