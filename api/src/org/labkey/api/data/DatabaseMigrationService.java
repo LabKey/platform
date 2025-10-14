@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,8 +49,20 @@ public interface DatabaseMigrationService
     }
 
     // By default, no-op implementations
-    default void registerHandler(MigrationSchemaHandler handler) {}
+    default void registerHandler(MigrationSchemaHandler schemaHandler) {}
     default void registerHandler(MigrationTableHandler tableHandler) {}
+
+    Map<String, MigrationFilter> _migrationFilters = new CopyOnWriteCaseInsensitiveHashMap<>();
+
+    default void registerMigrationFilter(MigrationFilter filter)
+    {
+        _migrationFilters.put(filter.getName(), filter);
+    }
+
+    default @Nullable MigrationFilter getMigrationFilter(String propertyName)
+    {
+        return null;
+    }
 
     interface MigrationSchemaHandler
     {
@@ -195,5 +209,16 @@ public interface DatabaseMigrationService
         {
             return _tableInfo;
         }
+    }
+
+    /**
+     * A MigrationFilter adds support for the named filter property in the migration configuration file. If present,
+     * saveFilter() is called with the container guid and property value. Modules can register these to present
+     * module-specific filters.
+     */
+    interface MigrationFilter
+    {
+        String getName();
+        void saveFilter(String guid, String value);
     }
 }
