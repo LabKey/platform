@@ -8,6 +8,10 @@ on:
     tags:
       - '*'
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   branch_release:
     if: github.event.created && github.event.sender.login == 'labkey-teamcity'
