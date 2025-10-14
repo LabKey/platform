@@ -27,6 +27,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
@@ -45,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -54,14 +54,15 @@ import java.util.Set;
  * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
  * should do their own synchronization on the set itself if they are operating on it one element at a time
  * and want to have a consistent view. This allows for the backing set to be a {@link LinkedHashSet}.
- * User: kevink
- * Date: Jan 3, 2008
  */
 public class DataRegionSelection
 {
     public static final String SELECTED_VALUES = ".selectValues";
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
+
+    // Issue 53997: Establish a maximum size for query selections
+    public static final int MAX_QUERY_SELECTION_SIZE = 100_000;
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
@@ -207,11 +208,9 @@ public class DataRegionSelection
             values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         if (null != values && values.length == 1 && values[0].contains("\t"))
             values = StringUtils.split(values[0],'\t');
-        List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
-        Set<String> result = new LinkedHashSet<>(parameterSelected);
+        Set<String> result = values == null ? new LinkedHashSet<>() : new LinkedHashSet<>(Arrays.asList(values));
 
         Set<String> sessionSelected = getSet(context, key, false);
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (sessionSelected)
         {
             result.addAll(sessionSelected);
@@ -268,12 +267,71 @@ public class DataRegionSelection
      */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
+        return setSelected(context, key, selection, checked, useSnapshot, false);
+    }
+
+    private static int setSelected(
+        ViewContext context,
+        String key,
+        Collection<String> selection,
+        boolean checked,
+        boolean useSnapshot,
+        boolean replaceSelection
+    )
+    {
+        if (checked && selection.size() > MAX_QUERY_SELECTION_SIZE)
+            throw new BadRequestException(selectionTooLargeMessage(selection.size()));
+
         Set<String> selectedValues = getSet(context, key, true, useSnapshot);
-        if (checked)
-            selectedValues.addAll(selection);
-        else
-            selectedValues.removeAll(selection);
+        synchronized (selectedValues)
+        {
+            if (checked)
+            {
+                if (replaceSelection)
+                {
+                    selectedValues.clear();
+                }
+                else if (selectedValues.size() + selection.size() > MAX_QUERY_SELECTION_SIZE)
+                {
+                    // Verify that adding these selections will not result in a set that is too large
+                    // Do not modify the actual selected values yet
+                    int current = selectedValues.size();
+                    int distinctAdds = 0;
+
+                    for (String id : selection)
+                    {
+                        if (!selectedValues.contains(id))
+                            distinctAdds++;
+                    }
+
+                    int prospective = current + distinctAdds;
+                    if (prospective > MAX_QUERY_SELECTION_SIZE)
+                        throw new BadRequestException(selectionTooLargeMessage(prospective));
+                }
+
+                selectedValues.addAll(selection);
+            }
+            else
+                selectedValues.removeAll(selection);
+        }
+
         return selectedValues.size();
+    }
+
+    public static int setSelectedFromForm(QueryForm form)
+    {
+        var view = getQueryView(form);
+        var viewContext = view.getViewContext();
+        var selection = getSet(viewContext, form.getQuerySettings().getSelectionKey(), true);
+        var items = getSelectedItems(view, selection);
+
+        return setSelected(viewContext, form.getQuerySettings().getSelectionKey(), items, false);
+    }
+
+    private static String selectionTooLargeMessage(long size)
+    {
+        return String.format("Too many selected items: %s. Maximum number of selected items allowed is %s.",
+                Formats.commaf0.format(size), Formats.commaf0.format(MAX_QUERY_SELECTION_SIZE));
     }
 
     /**
@@ -339,23 +397,21 @@ public class DataRegionSelection
      * Gets the ids of the selected items for all items in the given query form's view.  That is,
      * not just the items on the current page, but all selected items corresponding to the view's filters.
      */
-    public static List<String> getSelected(QueryForm form, boolean clearSelected) throws IOException
+    public static Set<String> getSelected(QueryForm form, boolean clearSelected) throws IOException
     {
-        List<String> items;
         var view = getQueryView(form);
-
         var selection = getSet(view.getViewContext(), form.getQuerySettings().getSelectionKey(), true);
-        items = getSelectedItems(view, selection);
+        var items = getSelectedItems(view, selection);
 
         if (clearSelected && !selection.isEmpty())
         {
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (selection)
             {
                 items.forEach(selection::remove);
             }
         }
-        return Collections.unmodifiableList(items);
+
+        return Collections.unmodifiableSet(items);
     }
 
     private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
@@ -399,7 +455,7 @@ public class DataRegionSelection
         return schema.createView(form, null);
     }
 
-    public static List<String> getValidatedIds(@NotNull List<String> selection, QueryForm form) throws IOException
+    public static Set<String> getValidatedIds(@NotNull Collection<String> selection, QueryForm form)
     {
         return getSelectedItems(getQueryView(form), selection);
     }
@@ -446,8 +502,8 @@ public class DataRegionSelection
 
         try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
-            var selection = createSelectionList(rc, rgn, rs, null);
-            return setSelected(view.getViewContext(), key, selection, checked);
+            var selection = createSelectionSet(rc, rgn, rs, null);
+            return setSelected(view.getViewContext(), key, selection, checked, false, true);
         }
         catch (SQLException e)
         {
@@ -460,13 +516,13 @@ public class DataRegionSelection
      * @param view the view from which to retrieve the data region context and session variable
      * @param selectedValues optionally (nullable) specify a collection of selected values that will be matched
      *                       against when selecting items. If null, then all items will be returned.
-     * @return list of items from the result set that are in the selected session, or an empty list if none.
+     * @return Set of items from the result set that are in the selected session, or an empty list if none.
      */
-    private static List<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues) throws IOException
+    private static Set<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues)
     {
         // Issue 48657: no need to query the region result set if we have no selectedValues
         if (selectedValues.isEmpty())
-            return new LinkedList<>();
+            return new LinkedHashSet<>();
 
         var dataRegionContext = getDataRegionContext(view);
         var rgn = dataRegionContext.first;
@@ -486,7 +542,7 @@ public class DataRegionSelection
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (selectedValues)
             {
-                return createSelectionList(ctx, rgn, rs, selectedValues);
+                return createSelectionSet(ctx, rgn, rs, selectedValues);
             }
         }
         catch (SQLException e)
@@ -495,14 +551,14 @@ public class DataRegionSelection
         }
     }
 
-    private static List<String> createSelectionList(
-            RenderContext ctx,
-            DataRegion rgn,
-            ResultSet rs,
-            @Nullable Collection<String> selectedValues
+    private static Set<String> createSelectionSet(
+        RenderContext ctx,
+        DataRegion rgn,
+        ResultSet rs,
+        @Nullable Collection<String> selectedValues
     ) throws SQLException
     {
-        List<String> selected = new LinkedList<>();
+        Set<String> selected = new LinkedHashSet<>();
 
         if (rs != null)
         {
@@ -516,7 +572,11 @@ public class DataRegionSelection
                 {
                     var value = rgn.getRecordSelectorValue(ctx);
                     if (selectedValues == null || selectedValues.contains(value))
+                    {
                         selected.add(value);
+                        if (selected.size() == MAX_QUERY_SELECTION_SIZE)
+                            break;
+                    }
                 }
             }
         }

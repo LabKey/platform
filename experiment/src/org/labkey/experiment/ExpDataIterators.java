@@ -162,6 +162,7 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
+import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
@@ -1667,6 +1668,25 @@ public class ExpDataIterators
         }
     }
 
+    static Set<ExpData> getNearestChildDatas(Container c, User user, ExpRunItem start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setParents(false);
+
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, start, options);
+        return lineage.findNearestChildDatas(start);
+    }
+
+    static Set<ExpMaterial> getNearestChildMaterials(Container c, User user, ExpRunItem start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setParents(false);
+
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, start, options);
+        return lineage.findNearestChildMaterials(start);
+    }
+
+
     /**
      * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
      * DataInputs/<data class name> or MaterialInputs/<sample type name>. Either / or . works as a delimiter
@@ -1723,6 +1743,8 @@ public class ExpDataIterators
             }
         }
 
+        Set<ExpData> existingChildData = null;
+        Set<ExpMaterial> existingChildMaterials = null;
         for (Pair<String, String> pair : entityNamePairs)
         {
             String entityColName = pair.first;
@@ -1784,6 +1806,19 @@ public class ExpDataIterators
                             throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
                         ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, sampleType, cache, materialMap);
+
+                        if (isUpdatingExisting && sample != null)
+                        {
+                            if (existingChildMaterials == null)
+                                existingChildMaterials = getNearestChildMaterials(c, user, runItem); // lazy initialization
+
+                            for (ExpMaterial child : existingChildMaterials)
+                            {
+                                if (child.getRowId() == sample.getRowId())
+                                    throw new ValidationException(String.format("'%s' is %s from sample '%s'. Circular relationships are not allowed.", entityName, child.getRootMaterialRowId() != child.getRowId() ? "aliquoted" : "derived", runItem.getName()));
+                            }
+                        }
+
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -1837,6 +1872,19 @@ public class ExpDataIterators
                             throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
 
                         ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
+
+                        if (isUpdatingExisting && data != null)
+                        {
+                            if (existingChildData == null)
+                                existingChildData = getNearestChildDatas(c, user, runItem); // lazy initialization
+
+                            for (ExpData child : existingChildData)
+                            {
+                                if (child.getRowId() == data.getRowId())
+                                    throw new ValidationException(String.format("'%s' is child of the current source '%s'. Circular relationships are not allowed.", entityName, runItem.getName()));
+                            }
+                        }
+
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
@@ -2544,6 +2592,7 @@ public class ExpDataIterators
                 {
                     _context.setCrossTypeImport(false);
                     _context.setCrossFolderImport(false);
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, true);
 
                     boolean hasCrossFolderImport = false;
 
@@ -2563,6 +2612,7 @@ public class ExpDataIterators
                     if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
                         SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
 
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, false);
                     _context.setCrossTypeImport(_isCrossType);
                     _context.setCrossFolderImport(_isCrossFolder);
                 }
@@ -2814,6 +2864,7 @@ public class ExpDataIterators
             Map<String, String> aliasMap = sampleType.getImportAliases();
             validFields.addAll(aliasMap.keySet());
             validFields.add(ALIQUOTED_FROM_INPUT);
+            validFields.add(ALIQUOTED_FROM_INPUT_LABEL);
             validFields.add("StorageUnit");
             validFields.add("Storage Unit");
             validFields.add("StorageUnitLabel");

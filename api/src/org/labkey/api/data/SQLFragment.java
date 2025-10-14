@@ -52,8 +52,6 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 /**
  * Holds both the SQL text and JDBC parameter values to use during invocation.
- * User: Matthew
- * Date: Apr 19, 2006
  */
 public class SQLFragment implements Appendable, CharSequence
 {
@@ -606,6 +604,21 @@ public class SQLFragment implements Appendable, CharSequence
             getStringBuilder().append(" ? ");
             add(N);
         }
+        return this;
+    }
+
+    public final SQLFragment appendNowTimestamp()
+    {
+        return appendValue(new NowTimestamp());
+    }
+
+    // Issue 27534: Stop using {fn now()} in function declarations
+    // Issue 48864: Query Table's use of web server time can cause discrepancies in created/modified timestamps
+    public final SQLFragment appendValue(NowTimestamp now)
+    {
+        if (null == now)
+            return appendNull();
+        getStringBuilder().append("CURRENT_TIMESTAMP");
         return this;
     }
 
@@ -1292,17 +1305,6 @@ public class SQLFragment implements Appendable, CharSequence
             shouldFail(() -> new SQLFragment().appendIdentifier("`a`a`"));
         }
     }
-
-
-    public static class IntegrationTestCase extends Assert
-    {
-        @Test
-        public void test()
-        {
-            // try some Dialect stuff and CTE executed against core schema
-        }
-    }
-
 
     @Override
     public boolean equals(Object obj)

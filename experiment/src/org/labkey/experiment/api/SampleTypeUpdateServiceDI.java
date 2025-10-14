@@ -859,6 +859,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+
+        // add MaterialInput/DataInputs field from parent alias
+        try
+        {
+            Map<String, String> parentAliases = _sampleType.getImportAliases();
+            for (String alias : parentAliases.keySet())
+            {
+                if (row.containsKey(alias))
+                    result.put(parentAliases.get(alias), result.get(alias));
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return result;
+
+    }
+
+    @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
@@ -1631,7 +1656,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addColumns.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
 
             // recompute only add when AliquotedFrom column is not null
-            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT) || columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL))
             {
                 addColumns.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addColumns.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
@@ -1752,7 +1777,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             try
             {
-                Map<String, String> importAliasMap = sampleType.getImportAliases();
+                Map<String, String> importAliasMap = sampleType.getImportAliasesIncludingAliquot();
                 _extraPropsFns.add(() -> Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap));
             }
             catch (IOException e)
@@ -1792,24 +1817,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<String, Object> map = new CaseInsensitiveHashMap<>(((MapDataIterator)getInput()).getMap());
 
-            String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj != null)
-            {
-                if (aliquotedFromObj instanceof String)
-                {
-                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else if (aliquotedFromObj instanceof Number)
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
-                }
-            }
-
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+            boolean isAliquot = isAliquotRow(map);
 
             try
             {
@@ -1840,7 +1848,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                String rowText = _context.isCrossFolderImport() || _context.isCrossTypeImport() ? "" : " on row " + e.getRowNumber();
+                // Issue 53963: Cross-sample-type import gives incorrect row number in message
+                String rowText = _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ProcessingPartition) ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
                     addRowError("Failed to generate name for aliquot" + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
@@ -1926,7 +1935,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
-                    if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
+                    if (isAliquotedFromColName(from.getName()))
                         aliquotedFromDataColInd = i;
                     else if (unitsImportAliasSet.contains(from.getName()))
                         unitDataColInd = i;
@@ -2011,10 +2020,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        private String getAliquotedFromColName()
+        private boolean isAliquotedFromColName(String fromCol)
         {
-            // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
-            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : ExpMaterial.ALIQUOTED_FROM_INPUT;
+            if (_context.getInsertOption().updateOnly)
+                return AliquotedFromLSID.name().equalsIgnoreCase(fromCol);
+
+            return ExperimentService.isAliquotedFromColumn(fromCol);
         }
 
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
@@ -2175,6 +2186,36 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
+    private static boolean isAliquotRow(Map<String, Object> map, String aliquotedFromColName)
+    {
+        String aliquotedFrom = null;
+        Object aliquotedFromObj = map.get(aliquotedFromColName);
+        if (aliquotedFromObj == null && map.containsKey(ColumnInfo.labelFromName(ExpMaterial.ALIQUOTED_FROM_INPUT)))
+            aliquotedFromObj = map.get(ColumnInfo.labelFromName(ExpMaterial.ALIQUOTED_FROM_INPUT));
+        if (aliquotedFromObj != null)
+        {
+            if (aliquotedFromObj instanceof String)
+            {
+                // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                if (!StringUtils.isEmpty(aliquotedFrom))
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+            }
+            else if (aliquotedFromObj instanceof Number)
+            {
+                aliquotedFrom = aliquotedFromObj.toString();
+            }
+        }
+
+        return !StringUtils.isEmpty(aliquotedFrom);
+    }
+
+    private static boolean isAliquotRow(Map<String, Object> map)
+    {
+        return isAliquotRow(map, ExpMaterial.ALIQUOTED_FROM_INPUT) || isAliquotRow(map, ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL);
+    }
+
     public static class SampleNameGeneratorState extends NameGeneratorState
     {
         private final NameGenerator aliquotNameGenerator;
@@ -2195,24 +2236,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
         {
-            String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj != null)
-            {
-                if (aliquotedFromObj instanceof String)
-                {
-                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else if (aliquotedFromObj instanceof Number)
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
-                }
-            }
-
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+            boolean isAliquot = isAliquotRow(map);
 
             String generatedName = null;
             if (isAliquot && aliquotNameGenerator != null)

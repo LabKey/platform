@@ -20,13 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.Collection;
 import java.util.List;
 
-/**
- * User: Nick
- * Date: Jun 30, 2010
- * Time: 5:50:52 PM
- */
 public interface AnnouncementService
 {
     static AnnouncementService get()
@@ -71,8 +67,16 @@ public interface AnnouncementService
     // Delete
     void deleteAnnouncement(Announcement announcement);
 
+    Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses);
+
     @Nullable
     DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(@Nullable String type);
 
     void registerDiscussionSrcTypeProvider(String type, DiscussionSrcTypeProvider typeProvider);
+
+    enum StatusOption
+    {
+        Active,
+        Closed
+    }
 }

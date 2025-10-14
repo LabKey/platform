@@ -91,7 +91,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             return _dataState;
         }
 
-        private boolean isDuplicate(String label, Container container)
+        private boolean isDuplicate(String label, Container container, int currentRowId)
         {
             Map<String, DataStateHandler<AbstractManageDataStatesForm>> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
             for (DataStateHandler<AbstractManageDataStatesForm> handler : registeredHandlers.values())
@@ -101,7 +101,8 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
                     List<DataState> dataStates = handler.getStates(container);
                     for (DataState dataState : dataStates)
                     {
-                        if (dataState.getLabel().equalsIgnoreCase(label))
+                        boolean isUpdatingCurrent = currentRowId == dataState.getRowId();
+                        if (!isUpdatingCurrent && dataState.getLabel().equalsIgnoreCase(label))
                             return true;
                     }
                 }
@@ -151,7 +152,8 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             if (!validateLabel(row, true))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
 
-            if (isDuplicate(String.valueOf(row.get("label")), container))
+
+            if (isDuplicate(String.valueOf(row.get("label")), container, (int) row.get("rowId")))
                 throw new QueryUpdateServiceException("Label '" + row.get("label") + "' already exists, perhaps with different capitalization.");
 
             String errorMsg = validateQCStateChangeAllowed(row, container);
@@ -173,7 +175,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         {
             if (!validateLabel(row, false))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
-            if (isDuplicate(String.valueOf(row.get("label")), container))
+            if (isDuplicate(String.valueOf(row.get("label")), container, -1/*new row, no rowId*/))
                 throw new QueryUpdateServiceException("Label '" + row.get("label") + "' already exists, perhaps with different capitalization.");
 
             Map<String, Object> rowToInsert;

@@ -301,8 +301,6 @@ public class UserController extends SpringActionController
         ButtonBar detailsButtonBar = new ButtonBar();
 
         ActionURL editURL = new ActionURL(ShowUpdateAction.class, getContainer());
-        editURL.addParameter(QueryParam.schemaName.toString(), "core");
-        editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
         editURL.addReturnUrl(currentURL);
 
@@ -1254,6 +1252,12 @@ public class UserController extends SpringActionController
 
     public static class UserQueryForm extends QueryForm
     {
+        public UserQueryForm()
+        {
+            // set schema/query so that the wrapped QuerySettings won't pull it off the URL
+            super("core", CoreQuerySchema.SITE_USERS_TABLE_NAME);
+        }
+
         private int _userId;
 
         public int getUserId()

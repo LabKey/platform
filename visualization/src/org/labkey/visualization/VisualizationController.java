@@ -43,7 +43,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.cache.Cache;
@@ -95,7 +94,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -1159,16 +1157,6 @@ public class VisualizationController extends SpringActionController
             if (report != null)
             {
                 _navTitle = report.getDescriptor().getReportName();
-
-                // check if the report is shared and if not, whether the user has access to the report
-                if (report.getDescriptor().isShared() || (report.getDescriptor().getOwner() == getUser().getUserId()))
-                {
-                    String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    DiscussionService service = DiscussionService.get();
-                    HttpView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    if (discussion != null)
-                        boxView.addView(discussion);
-                }
             }
 
             return boxView;

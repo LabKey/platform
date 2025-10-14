@@ -35,7 +35,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
@@ -1229,22 +1228,7 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                WikiView v = new WikiView(_wiki, _wikiversion, existing);
-
-                // get discussion view
-                if (existing && DiscussionService.get() != null)
-                {
-                    ActionURL pageUrl = new PageAction(getViewContext(), _wiki, _wikiversion).getUrl();
-                    String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
-                    DiscussionService.DiscussionView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
-                    if (discussionView != null)
-                    {
-                        v.setView("discussion", discussionView);
-                        v.setShowTitle(false);
-                    }
-                }
-
-                return v;
+                return new WikiView(_wiki, _wikiversion, existing);
             }
         }
 
@@ -1276,13 +1260,6 @@ public class WikiController extends SpringActionController
     {
         ActionURL url = new ActionURL(PageAction.class, c);
         return url.addParameter("name", wiki.getName());
-    }
-
-    @Nullable
-    private DiscussionService.DiscussionView getDiscussionView(String objectId, ActionURL pageURL, String title)
-    {
-        DiscussionService service = DiscussionService.get();
-        return service.getDiscussionArea(getViewContext(), objectId, pageURL, title, true, false);
     }
 
     private ActionURL getVersionURL(String name)

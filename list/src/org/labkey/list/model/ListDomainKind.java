@@ -637,7 +637,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         updatedListProps.setAllowDelete(newListProps.isAllowDelete());
         updatedListProps.setAllowUpload(newListProps.isAllowUpload());
         updatedListProps.setAllowExport(newListProps.isAllowExport());
-        updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
         updatedListProps.setCategory(newListProps.getCategory());
         updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
         updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());

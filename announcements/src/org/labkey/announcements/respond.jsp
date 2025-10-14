@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -40,7 +40,7 @@
     HttpView<BaseInsertView.InsertBean> me = HttpView.currentView();
     BaseInsertView.InsertBean bean = me.getModelBean();
 
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
 
     Container c = getContainer();
@@ -63,7 +63,6 @@
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=bean.cancelURL%>" />
 <%=generateReturnUrlFormField(bean.cancelURL)%>
-<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
 <div style="max-width: 1050px;">
 <table style="width: 100%;" class="lk-fields-table">
 <%

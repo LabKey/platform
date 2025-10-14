@@ -29,10 +29,10 @@ import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
-import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.InsertMessagePermission;
 import org.labkey.announcements.model.Permissions;
+import org.labkey.announcements.model.Settings;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -50,9 +50,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.announcements.DiscussionService.Settings;
-import org.labkey.api.announcements.DiscussionService.StatusOption;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
@@ -832,17 +829,8 @@ public class AnnouncementsController extends SpringActionController
                 if (null != insert.getParent())
                     thread = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent());
 
-                if (form.isFromDiscussion() && null != thread.getDiscussionSrcIdentifier())
-                {
-                    returnUrl = DiscussionServiceImpl.fromSaved(thread.getDiscussionSrcURL());
-                    returnUrl.addParameter("discussion.id", "" + thread.getRowId());
-                    returnUrl.addParameter("_anchor", "discussionArea");               // TODO: insert.getRowId() instead? -- target just inserted response
-                }
-                else
-                {
-                    String threadId = thread.getEntityId();
-                    returnUrl = getThreadURL(c, threadId, insert.getRowId());
-                }
+                String threadId = thread.getEntityId();
+                returnUrl = getThreadURL(c, threadId, insert.getRowId());
             }
 
             _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnUrl);
@@ -874,18 +862,6 @@ public class AnnouncementsController extends SpringActionController
     public class InsertAction extends BaseInsertAction
     {
         @Override
-        public void validateCommand(AnnouncementForm form, Errors errors)
-        {
-            super.validateCommand(form, errors);
-
-            if (form.isFromDiscussion() && !form.allowMultipleDiscussions())
-            {
-                if (DiscussionService.get().hasDiscussions(getContainer(), form.getBean().getDiscussionSrcIdentifier()))
-                    errors.reject(ERROR_MSG, "Can't post a new discussion -- a discussion already exists and multiple discussions are not allowed");
-            }
-        }
-
-        @Override
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
@@ -897,7 +873,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrlHelper(), false, true);
+            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrlHelper());
             insertView.setShowTitle(false);
 
             getPageConfig().setFocusId("title");
@@ -958,7 +934,7 @@ public class AnnouncementsController extends SpringActionController
             ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
 
-            HttpView<?> respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow, false);
+            HttpView<?> respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow);
 
             getPageConfig().setFocusId("body");
             _parent = parent;
@@ -981,7 +957,7 @@ public class AnnouncementsController extends SpringActionController
     private static SelectBuilder getStatusSelect(String currentValue)
     {
         return new SelectBuilder().name("status").id("status").className(null).selected(currentValue)
-            .addOptions(Arrays.stream(StatusOption.values()).map(Enum::name));
+            .addOptions(Arrays.stream(AnnouncementService.StatusOption.values()).map(Enum::name));
     }
 
 
@@ -1081,7 +1057,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class BaseInsertView extends JspView<BaseInsertView.InsertBean>
     {
-        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, @Nullable AnnouncementModel latestPost, boolean reshow, boolean fromDiscussion)
+        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, @Nullable AnnouncementModel latestPost, boolean reshow)
         {
             super(page, bean, errors);
             setTitle(title);
@@ -1135,7 +1111,6 @@ public class AnnouncementsController extends SpringActionController
             bean.memberList = getMemberList(u, c, latestPost, reshow ? form.get("memberList") : null);
             bean.form = form;
             bean.cancelURL = cancelURL;
-            bean.fromDiscussion = fromDiscussion;
 
             // If default email option is "all messages" (or "all messages daily digest") then gently warn
             // that a bunch of users are about to be emailed.
@@ -1158,8 +1133,6 @@ public class AnnouncementsController extends SpringActionController
             public AnnouncementForm form;
             public URLHelper cancelURL;
             public AnnouncementModel parentAnnouncementModel;   // Used by RespondView only... move to subclass?
-            public boolean fromDiscussion;
-            public boolean allowMultipleDiscussions = true;
             public Integer emailUsers = null;
         }
     }
@@ -1167,28 +1140,20 @@ public class AnnouncementsController extends SpringActionController
 
     public static class InsertMessageView extends BaseInsertView
     {
-        public InsertMessageView(AnnouncementForm form, String title, BindException errors, boolean reshow, URLHelper cancelURL, boolean fromDiscussion, boolean allowMultipleDiscussions)
+        public InsertMessageView(AnnouncementForm form, String title, BindException errors, boolean reshow, URLHelper cancelURL)
         {
-            super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow, fromDiscussion);
-
-            InsertBean bean = getModelBean();
-            bean.allowMultipleDiscussions = allowMultipleDiscussions;
+            super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow);
         }
     }
 
 
     public static class RespondView extends BaseInsertView
     {
-        public RespondView(Container c, AnnouncementModel parent, AnnouncementForm form, URLHelper cancelURL, BindException errors, boolean reshow, boolean fromDiscussion)
+        public RespondView(Container c, AnnouncementModel parent, AnnouncementForm form, URLHelper cancelURL, BindException errors, boolean reshow)
         {
-            super("/org/labkey/announcements/respond.jsp", new InsertBean(), form, cancelURL, "Response", errors, AnnouncementManager.getLatestPost(c, parent), reshow, fromDiscussion);
+            super("/org/labkey/announcements/respond.jsp", new InsertBean(), form, cancelURL, "Response", errors, AnnouncementManager.getLatestPost(c, parent), reshow);
 
             getModelBean().parentAnnouncementModel = parent;
-        }
-
-        public RespondView(Container c, AnnouncementModel parent, URLHelper cancelURL, boolean fromDiscussion)
-        {
-            this(c, parent, new AnnouncementForm(), cancelURL, null, false, fromDiscussion);
         }
     }
 
@@ -1386,27 +1351,6 @@ public class AnnouncementsController extends SpringActionController
             root.addChild(_title, getActionURL());
         }
     }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public class ThreadBareAction extends ThreadAction
-    {
-        @Override
-        public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            ThreadView tv = super.getView(form, errors);
-            tv.setFrame(WebPartView.FrameType.NONE);
-            tv.getModelBean().embedded = true;
-            return tv;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class RssAction extends SimpleViewAction<Object>
@@ -1736,18 +1680,7 @@ public class AnnouncementsController extends SpringActionController
                 errors.reject(ERROR_MSG, "Expires must be blank or a valid date.");
             }
         }
-
-        public boolean isFromDiscussion()
-        {
-            return Boolean.parseBoolean(get("fromDiscussion"));
-        }
-
-        public boolean allowMultipleDiscussions()
-        {
-            return Boolean.parseBoolean(get("allowMultipleDiscussions"));
-        }
     }
-
 
     public static class EmailOptionsForm extends ViewForm
     {
@@ -2318,7 +2251,6 @@ public class AnnouncementsController extends SpringActionController
         public URLHelper currentURL;
         public boolean print = false;
         public boolean includeGroups;
-        public boolean embedded;
     }
 
 
@@ -2327,12 +2259,6 @@ public class AnnouncementsController extends SpringActionController
         private ThreadView()
         {
             super("/org/labkey/announcements/announcementThread.jsp", new ThreadViewBean());
-        }
-
-        public ThreadView(Container c, URLHelper currentURL, User user, String rowId, String entityId)
-        {
-            this();
-            init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
         public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm)
@@ -2370,9 +2296,8 @@ public class AnnouncementsController extends SpringActionController
             bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter(ActionURL.Param._print.name(), "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
-            bean.embedded = (null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getController().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 
-            if (!bean.print && !bean.embedded)
+            if (!bean.print)
             {
                 NavTree buttons = new NavTree();
                 if (null != bean.listURL)
