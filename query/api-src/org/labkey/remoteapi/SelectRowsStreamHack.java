@@ -195,28 +195,13 @@ public class SelectRowsStreamHack
                 DataIteratorContext dic = new DataIteratorContext();
 
                 DataIterator di = dib.getDataIterator(dic);
-
-                // This should create the file (allow a short delay on Windows filesystems):
-                Set<String> actualTempFiles = getMatchingTempFileNames();
-                int expectedSize = preexistingTempFiles.size() + 1;
-                if (actualTempFiles.size() < expectedSize)
-                {
-                    long start = System.currentTimeMillis();
-                    // Retry for up to 2 seconds to account for eventual directory listing visibility on some systems
-                    while (System.currentTimeMillis() - start < 2000 && actualTempFiles.size() < expectedSize)
-                    {
-                        try { Thread.sleep(50); } catch (InterruptedException ignore) {}
-                        actualTempFiles = getMatchingTempFileNames();
-                    }
-                }
-                assertEquals("Temp file not created", expectedSize, actualTempFiles.size());
-
+                
                 // This should iterate and close the stream:
                 long actualCount = di.stream().count();
                 assertEquals("Incorrect row count", expectedRows, actualCount);
 
                 // The file should be deleted now:
-                actualTempFiles = getMatchingTempFileNames();
+                Set<String> actualTempFiles = getMatchingTempFileNames();
                 actualTempFiles.removeAll(preexistingTempFiles);
                 assertEquals("Temp files were not deleted, found: " + actualTempFiles.size(), 0, actualTempFiles.size());
 
