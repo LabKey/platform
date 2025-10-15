@@ -99,17 +99,12 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
     {
-        renderIconAndFilename(ctx, out, fileValue, fileIconUrl, popupIconUrl, link, thumbnail, false);
-    }
-
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail, boolean input)
-    {
         if (null != fileValue && !StringUtils.isEmpty(fileValue))
         {
             // equivalent of DisplayColumn.renderURL.
             // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
             StringExpression s = compileExpression(ctx.getViewContext());
-            String displayName = getFileName(ctx, fileValue, !input);
+            String displayName = getFileName(ctx, fileValue, true);
             boolean unavailable = displayName.endsWith(UNAVAILABLE_FILE_SUFFIX);
             String url = null == s || unavailable ? null : s.eval(ctx);
             boolean isImage = isImage(fileValue);
@@ -291,7 +286,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             if (null != filename)
             {
                 // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                renderThumbnailAndRemoveLink(out, ctx, filename, input, true); // don't use display
+                renderThumbnailAndRemoveLink(out, ctx, filename, input);
             }
             else
             {
@@ -312,7 +307,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return "Previous file " + filename + " will be removed.";
     }
 
-    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, InputBuilder<?> filePicker, boolean input)
+    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, InputBuilder<?> filePicker)
     {
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;
@@ -320,7 +315,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         DIV(
             id(divId),
             (Renderable) ret -> {
-                renderIconAndFilename(ctx, out, filename, null, null, false, false, input);
+                renderIconAndFilename(ctx, out, filename, false, false);
                 out.write(HtmlString.NBSP);
                 out.write("[");
                 out.write(LinkBuilder.simpleLink("remove", "#").id(linkId));
