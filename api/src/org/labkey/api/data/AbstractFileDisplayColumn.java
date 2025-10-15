@@ -97,6 +97,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 || filename.toLowerCase().endsWith(".gif");
     }
 
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
+    {
+        renderIconAndFilename(ctx, out, fileValue, fileIconUrl, popupIconUrl, link, thumbnail, false);
+    }
+
     protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail, boolean input)
     {
         if (null != fileValue && !StringUtils.isEmpty(fileValue))
