@@ -65,13 +65,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     @Override
     public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true, false);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true, false);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
     /** @return the short name of the file (not including full path) */
@@ -84,9 +84,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail, boolean input)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
     {
-        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail, input);
+        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail, false);
     }
 
     protected boolean isImage(String filename)
@@ -315,7 +315,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         DIV(
             id(divId),
             (Renderable) ret -> {
-                renderIconAndFilename(ctx, out, filename, false, false, input);
+                renderIconAndFilename(ctx, out, filename, null, null, false, false, input);
                 out.write(HtmlString.NBSP);
                 out.write("[");
                 out.write(LinkBuilder.simpleLink("remove", "#").id(linkId));
