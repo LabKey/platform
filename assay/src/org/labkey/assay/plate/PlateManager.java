@@ -3903,6 +3903,70 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public List<WellData> getWellData(Container container, User user, long plateRowId, boolean includeSamples, boolean includeMetadata)
     {
+        var wellTable = getWellTable(container, user, getPlateLookupContainerFilter(container, user));
+        var filter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plateRowId);
+        var sort = new Sort(WellTable.Column.RowId.name());
+
+        var metadataTable = getPlateMetadataTable(container, user);
+
+        if (includeMetadata && metadataTable != null)
+        {
+            var wellDatas = new ArrayList<WellData>();
+            var metadataFieldKeys = new HashSet<FieldKey>();
+
+            for (var column : metadataTable.getColumns())
+            {
+                if (!WellTable.Column.Lsid.fieldKey().equals(column.getFieldKey()))
+                    metadataFieldKeys.add(column.getFieldKey());
+            }
+
+            try (Results results = new TableSelector(wellTable, filter, sort).getResults())
+            {
+                Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
+
+                while (results.next())
+                {
+                    var wellData = new WellData();
+                    wellData.setCol(results.getInt(WellTable.Column.Col.name()));
+                    wellData.setLsid(results.getString(WellTable.Column.Lsid.name()));
+                    wellData.setPosition(results.getString(WellTable.Column.Position.name()));
+                    wellData.setRow(results.getInt(WellTable.Column.Row.name()));
+                    wellData.setRowId(results.getLong(WellTable.Column.RowId.name()));
+                    String rawType = results.getString(WellTable.Column.Type.name());
+                    if (rawType != null)
+                        wellData.setType(WellGroup.Type.valueOf(rawType));
+                    wellData.setWellGroup(results.getString(WellTable.Column.WellGroup.name()));
+                    wellData.setReplicateGroup(results.getString(WellTable.Column.ReplicateGroup.name()));
+                    if (includeSamples)
+                        wellData.setSampleId(results.getLong(WellTable.Column.SampleID.name()));
+
+                    var metadata = new CaseInsensitiveHashMap<>();
+
+                    results.getFieldKeyRowMap().forEach((key, value) -> {
+                        if (value != null && metadataFieldKeys.contains(key))
+                        {
+                            // Issue 53017: usages of getWellData are expecting the WellData metadata map to be keyed
+                            // by column names (see savePlateImpl wellQus.insertRows() which requires rows to be keyed
+                            // by column names)
+                            String colName = fieldMap.get(key).getName();
+                            metadata.put(colName, value);
+                        }
+                    });
+
+                    if (!metadata.isEmpty())
+                        wellData.setMetadata(metadata);
+
+                    wellDatas.add(wellData);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            return wellDatas;
+        }
+
         Set<String> columns = new HashSet<>();
         columns.add(WellTable.Column.Col.name());
         columns.add(WellTable.Column.Lsid.name());
@@ -3915,73 +3979,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (includeSamples)
             columns.add(WellTable.Column.SampleID.name());
 
-        var wellTable = getWellTable(container, user, getPlateLookupContainerFilter(container, user));
-        var filter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plateRowId);
-        var wellDatas = new TableSelector(wellTable, columns, filter, new Sort(WellTable.Column.RowId.name())).getArrayList(WellData.class);
-
-        if (includeMetadata)
-            return getWellMetadata(container, user, wellDatas);
-        return wellDatas;
-    }
-
-    private List<WellData> getWellMetadata(Container container, User user, List<WellData> wellDataList)
-    {
-        List<String> wellLsids = wellDataList.stream().map(WellData::getLsid).toList();
-        if (wellLsids.isEmpty())
-            return wellDataList;
-
-        var metadataTable = getPlateMetadataTable(container, user);
-        if (metadataTable == null)
-            return wellDataList;
-
-        var filter = new SimpleFilter(WellTable.Column.Lsid.fieldKey(), wellLsids, CompareType.IN);
-        var metadataMap = new HashMap<String, Map<String, Object>>();
-        var ignoredKeys = CaseInsensitiveHashSet.of("_row", WellTable.Column.Lsid.name());
-
-        try (Results results = new TableSelector(metadataTable, filter, null).getResults())
-        {
-            Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
-
-            while (results.next())
-            {
-                var row = results.getFieldKeyRowMap();
-                var metadata = new CaseInsensitiveHashMap<>();
-
-                row.forEach((key, value) -> {
-                    if (value != null)
-                    {
-                        // Issue 53017: usages of getWellData are expecting the WellData metadata map to be keyed
-                        // by column names (see savePlateImpl wellQus.insertRows() which requires rows to be keyed
-                        // by column names)
-                        String colName = fieldMap.get(key).getName();
-                        if (!ignoredKeys.contains(colName))
-                            metadata.put(colName, value);
-                    }
-                });
-
-                if (!metadata.isEmpty())
-                {
-                    var lsid = (String) row.get(WellTable.Column.Lsid.fieldKey());
-                    metadataMap.put(lsid, metadata);
-                }
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        if (!metadataMap.isEmpty())
-        {
-            for (var wellData : wellDataList)
-            {
-                var metadata = metadataMap.get(wellData.getLsid());
-                if (metadata != null)
-                    wellData.setMetadata(metadata);
-            }
-        }
-
-        return wellDataList;
+        return new TableSelector(wellTable, columns, filter, sort).getArrayList(WellData.class);
     }
 
     public record WellGroupChange(Long plateRowId, Long wellRowId, String type, String group, String replicateGroup) {}

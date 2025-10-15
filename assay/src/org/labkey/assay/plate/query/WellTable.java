@@ -62,6 +62,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -306,34 +307,89 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         // join the base assay.well table to the provisioned table
         checkReadBeforeExecute();
 
-        Set<String> baseColumns = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+        Set<ColumnInfo> baseColumns_ = new LinkedHashSet<>();
+        baseColumns_.add(_rootTable.getColumn(Column.Col.fieldKey()));
+        baseColumns_.add(_rootTable.getColumn(Column.Row.fieldKey()));
+        baseColumns_.add(_rootTable.getColumn(Column.RowId.fieldKey()));
 
-        // all columns from provisioned table except lsid
+        Set<ColumnInfo> provisionedColumns_ = new LinkedHashSet<>();
         TableInfo wellProperties = PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser());
-        Set<String> provisionedColumns = Collections.emptySet();
-        if (wellProperties != null)
+
+        SimpleFilter filter = getFilter();
+
+        // TODO: Sort fields?
+        // getSortFields();
+
+        if (cols == null)
         {
-            provisionedColumns = new CaseInsensitiveHashSet(wellProperties.getColumnNameSet());
-            provisionedColumns.remove("lsid");
+            baseColumns_.addAll(_rootTable.getColumns());
+            if (wellProperties != null)
+            {
+                provisionedColumns_.addAll(wellProperties.getColumns());
+                provisionedColumns_.remove(wellProperties.getColumn(Column.Lsid.fieldKey()));
+            }
+        }
+        else
+        {
+            FieldKey lsidFieldKey = Column.Lsid.fieldKey();
+            for (var fieldKey : cols)
+            {
+                ColumnInfo column = null;
+                if (wellProperties != null && !lsidFieldKey.equals(fieldKey))
+                {
+                    column = wellProperties.getColumn(fieldKey);
+                    if (column != null)
+                        provisionedColumns_.add(column);
+                }
+
+                if (column == null)
+                {
+                    column = _rootTable.getColumn(fieldKey);
+                    if (column != null)
+                        baseColumns_.add(column);
+                }
+            }
+
+            for (var clause : filter.getClauses())
+            {
+                for (var fieldKey : clause.getFieldKeys())
+                {
+                    ColumnInfo column = null;
+                    if (wellProperties != null && !lsidFieldKey.equals(fieldKey))
+                    {
+                        column = wellProperties.getColumn(fieldKey);
+                        if (column != null)
+                            provisionedColumns_.add(column);
+                    }
+
+                    if (column == null)
+                    {
+                        column = _rootTable.getColumn(fieldKey);
+                        if (column != null)
+                            baseColumns_.add(column);
+                    }
+                }
+            }
         }
 
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM (SELECT ");
         String delim = "";
-        for (String col : baseColumns)
+        for (ColumnInfo col : baseColumns_)
         {
-            sql.append(delim).append("d.").append(col);
+            sql.append(delim).append(col.getValueSql("d"));
             delim = ", ";
         }
 
-        for (String col : provisionedColumns)
+        for (ColumnInfo col : provisionedColumns_)
         {
-            sql.append(delim).append(wellProperties.getColumn(col).getValueSql("p"));
+            sql.append(delim).append(col.getValueSql("p"));
+            delim = ", ";
         }
 
         sql.append(" FROM ").append(_rootTable, "d");
 
-        if (!provisionedColumns.isEmpty())
+        if (!provisionedColumns_.isEmpty())
         {
             sql.append(" INNER JOIN ").append(wellProperties, "p").append(" ON d.lsid = p.lsid");
         }
@@ -343,7 +399,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
         // add the WHERE clause
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
+        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
         sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return sql;
