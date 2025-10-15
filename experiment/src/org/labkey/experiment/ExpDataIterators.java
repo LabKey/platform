@@ -2555,7 +2555,7 @@ public class ExpDataIterators
                 else
                     aliasNames = new CaseInsensitiveHashSet(((ExpDataClass) typeData.dataType).getImportAliases().keySet());
                 // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                configureLoader(loader, dataTable, null, true, aliasNames);
+                configureLoader(loader, dataTable, null, true, aliasNames, null /* Not needed since partition is not a cross type import*/);
                 if (loader instanceof TabLoader tabLoader)
                     tabLoader.setIncludeComments(true); // don't skip lines that starts with "#" (if the original file is Excel)
                 return updateService.loadRows(_user, dataContainer, loader, _context, null);

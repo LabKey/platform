@@ -294,7 +294,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
 
-            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases());
+            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases(), _importContextBuilder.getOptionParamsMap());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
 
