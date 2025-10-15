@@ -137,17 +137,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             }
         });
 
-        var aggregateMethodData = [];
-        if (this.renderType === 'bar_chart')
-            aggregateMethodData.push(['COUNT', 'Count (non-blank)']);
-        if (this.renderType === 'line_plot')
-            aggregateMethodData.push(['', 'None']);
-        aggregateMethodData.push(['SUM', 'Sum']);
-        aggregateMethodData.push(['MIN', 'Min']);
-        aggregateMethodData.push(['MAX', 'Max']);
-        aggregateMethodData.push(['MEAN', 'Mean']);
-        aggregateMethodData.push(['MEDIAN', 'Median']);
-
         this.aggregateMethodCombobox = Ext4.create('Ext.form.field.ComboBox', {
             fieldLabel: 'Aggregate Method',
             name: 'aggregate',
@@ -157,13 +146,26 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             width: 300,
             store: Ext4.create('Ext.data.ArrayStore', {
                 fields: ['value', 'display'],
-                data: aggregateMethodData
+                data: [
+                    ['', 'None'],
+                    ['SUM', 'Sum'],
+                    ['MIN', 'Min'],
+                    ['MAX', 'Max'],
+                    ['MEAN', 'Mean'],
+                    ['MEDIAN', 'Median']
+                ]
             }),
             forceSelection: 'true',
             editable: false,
             valueField: 'value',
             displayField: 'display',
-            value: ''
+            value: '',
+            listeners: {
+                scope: this,
+                change: function(rg, newValue) {
+                    this.onAggregateMethodChange(newValue);
+                }
+            }
         });
 
         this.errorBarsRadioGroup = Ext4.create('Ext.form.RadioGroup', {
@@ -344,13 +346,20 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
+    onAggregateMethodChange: function(value) {
+        // reset error bars to None on aggregate change
+        this.setErrorBars('');
+    },
+
     setAggregateMethod: function(value){
         this.aggregateMethodCombobox.setValue(value);
+        this.onAggregateMethodChange(value);
     },
 
     setErrorBars: function(value){
         this.errorBarsRadioGroup.setValue(value);
-        var radioComp = this.errorBarsRadioGroup.down('radio[inputValue="' + value + '"]');
+        const selector = value === '' ? 'radio': 'radio[inputValue="' + value + '"]';
+        var radioComp = this.errorBarsRadioGroup.down(selector);
         if (radioComp)
             radioComp.setValue(true);
     },
@@ -378,6 +387,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (Ext4.isBoolean(isNumeric)) {
             this.setRangeOptionVisible(isNumeric);
             this.setScaleTypeOptionVisible(isNumeric);
+            this.setAggregateOptionVisible(isNumeric);
+            this.setErrorBarsOptionVisible(isNumeric);
         }
 
         //some render type axis options should always be hidden
@@ -390,9 +401,11 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTypeOptionVisible(false);
         }
 
-        // only show aggregate method and error bars option for y-axis on bar and line charts
-        if (!(this.axisName === 'y' && (isBar || isLine))) {
+        // only show aggregate method for line chart and error bars option for both bar and line
+        if (this.axisName !== 'y' || !isLine) {
             this.setAggregateOptionVisible(false);
+        }
+        if (this.axisName !== 'y' || !(isBar || isLine)) {
             this.setErrorBarsOptionVisible(false);
         }
     },
