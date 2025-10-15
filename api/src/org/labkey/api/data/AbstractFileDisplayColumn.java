@@ -77,6 +77,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(RenderContext ctx, Object value);
 
+    protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
+    {
+        return getFileName(ctx, value);
+    }
+
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
     protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
@@ -99,7 +104,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             // equivalent of DisplayColumn.renderURL.
             // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
             StringExpression s = compileExpression(ctx.getViewContext());
-            String displayName = getFileName(ctx, fileValue);
+            String displayName = getFileName(ctx, fileValue, true);
             boolean unavailable = displayName.endsWith(UNAVAILABLE_FILE_SUFFIX);
             String url = null == s || unavailable ? null : s.eval(ctx);
             boolean isImage = isImage(fileValue);
