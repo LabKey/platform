@@ -65,13 +65,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     @Override
     public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true, false);
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true, false);
     }
 
     /** @return the short name of the file (not including full path) */
@@ -84,9 +84,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail, boolean input)
     {
-        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail);
+        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail, input);
     }
 
     protected boolean isImage(String filename)
@@ -97,14 +97,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 || filename.toLowerCase().endsWith(".gif");
     }
 
-    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail, boolean input)
     {
         if (null != fileValue && !StringUtils.isEmpty(fileValue))
         {
             // equivalent of DisplayColumn.renderURL.
             // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
             StringExpression s = compileExpression(ctx.getViewContext());
-            String displayName = getFileName(ctx, fileValue, true);
+            String displayName = getFileName(ctx, fileValue, !input);
             boolean unavailable = displayName.endsWith(UNAVAILABLE_FILE_SUFFIX);
             String url = null == s || unavailable ? null : s.eval(ctx);
             boolean isImage = isImage(fileValue);
@@ -286,7 +286,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             if (null != filename)
             {
                 // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                renderThumbnailAndRemoveLink(out, ctx, filename, input);
+                renderThumbnailAndRemoveLink(out, ctx, filename, input, true); // don't use display
             }
             else
             {
@@ -307,7 +307,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return "Previous file " + filename + " will be removed.";
     }
 
-    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, InputBuilder<?> filePicker)
+    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, InputBuilder<?> filePicker, boolean input)
     {
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;
@@ -315,7 +315,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         DIV(
             id(divId),
             (Renderable) ret -> {
-                renderIconAndFilename(ctx, out, filename, false, false);
+                renderIconAndFilename(ctx, out, filename, false, false, input);
                 out.write(HtmlString.NBSP);
                 out.write("[");
                 out.write(LinkBuilder.simpleLink("remove", "#").id(linkId));
