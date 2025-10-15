@@ -86,7 +86,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String fileValue, boolean link, boolean thumbnail)
     {
-        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail, false);
+        renderIconAndFilename(ctx, out, fileValue, null, null, link, thumbnail);
     }
 
     protected boolean isImage(String filename)
