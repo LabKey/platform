@@ -1279,7 +1279,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
             public void beforeVerification()
@@ -1319,7 +1319,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId", "EntityId");
                     case "Containers" -> FieldKey.fromParts("EntityId");
                     case "Report" -> FieldKey.fromParts("ContainerId");
-                    case "APIKeys", "AuthenticationConfigurations", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
+                    // Note: DataStates is not really site-wide, but there seem to be exp.Materials referencing DataStates with conflicting containers
+                    case "APIKeys", "AuthenticationConfigurations", "DataStates", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
                     default -> super.getContainerFieldKey(sourceTable);
                 };
             }
@@ -1338,16 +1339,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     containerClause = orClause;
                 }
 
-                if (sourceTable.getName().equals("Documents"))
-                {
-                    // If labbook module is present then filter out the rows in the root that are associated with the
-                    // canonical attachment parent and *don't* have attachment pointers in the desired containers.
-                    // So that would be something like:
-                    // containerClause AND NOT (Container = <RootId> AND Parent = <CanonicalParentId> AND DocumentName NOT IN (
-                    //    SELECT hash WHERE SourceId IN (THE SIX DIFFERENT CASES OF SourceId)
-                    // )
-                }
-
                 return containerClause;
             }
 
@@ -1359,7 +1350,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
@@ -1367,7 +1358,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
             @Override
             public List<TableInfo> getTablesToCopy()
             {
@@ -1378,7 +1369,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
-            DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
             {
                 @Override
                 public List<TableInfo> getTablesToCopy()

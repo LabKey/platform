@@ -878,7 +878,7 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(OntologyManager.getExpSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(OntologyManager.getExpSchema())
         {
             @Override
             public void beforeSchema()
@@ -887,6 +887,9 @@ public class ExperimentModule extends SpringModule
                 // Yes, the FK name is misspelled
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
+
+                // Need to drop self FK until all rows are populated because replaced runs will be inserted before their replacements
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_ExperimentRun_ReplacedByRunId");
             }
 
             @Override
@@ -940,11 +943,12 @@ public class ExperimentModule extends SpringModule
             {
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId) REFERENCES exp.ExperimentRun (RowId)");
             }
         });
 
         // Sample set materialized tables join on RowId to exp.Material
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(SampleTypeDomainKind.getSchema()) {
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SampleTypeDomainKind.getSchema()) {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo table)
             {

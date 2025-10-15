@@ -120,7 +120,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
         {
             @Override
             public void beforeSchema()

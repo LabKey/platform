@@ -49,8 +49,8 @@ public interface DatabaseMigrationService
     }
 
     // By default, no-op implementations
-    default void registerHandler(MigrationSchemaHandler schemaHandler) {}
-    default void registerHandler(MigrationTableHandler tableHandler) {}
+    default void registerSchemaHandler(MigrationSchemaHandler schemaHandler) {}
+    default void registerTableHandler(MigrationTableHandler tableHandler) {}
 
     Map<String, MigrationFilter> _migrationFilters = new CopyOnWriteCaseInsensitiveHashMap<>();
 

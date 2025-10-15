@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -371,7 +372,7 @@ public class SimpleFilter implements Filter
         {
             var ret = toSQLFragment(columnMap, dialect);
             tableAlias = StringUtils.trimToEmpty(tableAlias);
-            ret.setSqlUnsafe(StringUtils.replace(ret.getRawSQL(), STR_TABLE_ALIAS+".", tableAlias+"."));
+            ret.setSqlUnsafe(Strings.CS.replace(ret.getRawSQL(), STR_TABLE_ALIAS + ".", tableAlias + "."));
             return ret;
         }
 
@@ -733,8 +734,12 @@ public class SimpleFilter implements Filter
                     throw new IllegalArgumentException("Filter column '" + _fieldKey.toDisplayString() + "' not found.");
                 }
 
-                in.append("((").append(alias);
-                in.append(" ").append(isNegated() ? "NOT " : "").append("IN (");
+                in.append(isIncludeNull() || isNegated() ? "((" : "(")
+                    .append(alias)
+                    .append(" ")
+                    .append(isNegated() ? "NOT " : "")
+                    .append("IN (");
+
                 String sep = "";
 
                 for (Object param : params)
@@ -757,7 +762,7 @@ public class SimpleFilter implements Filter
                     if (isNegated())
                         in.append(") OR ").append(alias).append(" IS NULL)");
                     else
-                        in.append("))");
+                        in.append(")");
                 }
             }
 
@@ -824,7 +829,7 @@ public class SimpleFilter implements Filter
                 }
             }
 
-            in.append("((");
+            in.append(isIncludeNull() || isNegated() ? "((" : "(");
 
             if (isNegated())
                 in.append("NOT ");
@@ -846,7 +851,7 @@ public class SimpleFilter implements Filter
                 if (isNegated())
                     in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
                 else
-                    in.append("))");
+                    in.append(")");
             }
 
             return in;

@@ -188,7 +188,7 @@ public class SearchModule extends DefaultModule
             return Collections.singletonMap("fullTextSearches", count);
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
         {
             @Override
             public List<TableInfo> getTablesToCopy()
