@@ -340,8 +340,8 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
     this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
-    this.topOnly = ('topOnly' in config && config.topOnly != null && config.topOnly != undefined) ? config.topOnly : false;
-    this.errorShowVertical = ('showVertical' in config && config.showVertical != null && config.showVertical != undefined) ? config.showVertical : false;
+    this.topOnly = config.topOnly ?? false;
+    this.errorShowVertical = config.showVertical ?? false;
 
     return this;
 };

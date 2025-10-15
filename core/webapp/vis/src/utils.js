@@ -181,7 +181,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
                     if (groupedData[groupName].hasOwnProperty(subgroupName))
                     {
                         var row = {rawData: groupedData[groupName][subgroupName]},
-                            count = row['rawData'].length;
+                            count = row.rawData.length;
                         total += count;
 
                         row[nameProp] = groupName;
@@ -195,7 +195,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
             else
             {
                 var row = {rawData: groupedData[groupName]},
-                    count = row['rawData'].length;
+                    count = row.rawData.length;
                 total += count;
 
                 row[nameProp] = groupName;
@@ -222,7 +222,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {Boolean} keepNames True to use the dimension names in the results data. Defaults to false.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
 {
     var results = [], subgroupAccessor,
         groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
@@ -242,18 +242,18 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
 
     for (var i = 0; i < groupData.length; i++)
     {
-        var row = {label: groupData[i]['name']};
-        if (row['label'] == null || row['label'] == 'null')
-            row['label'] = nullDisplayValue || 'null';
+        var row = {label: groupData[i].name};
+        if (row.label == null || row.label == 'null')
+            row.label = nullDisplayValue || 'null';
 
         if (hasSubgroup)
         {
-            row['subLabel'] = groupData[i]['subname'];
-            if (row['subLabel'] == null || row['subLabel'] == 'null')
-                row['subLabel'] = nullDisplayValue || 'null';
+            row.subLabel = groupData[i].subname;
+            if (row.subLabel == null || row.subLabel == 'null')
+                row.subLabel = nullDisplayValue || 'null';
         }
         if (includeTotal) {
-            row['total'] = groupData[i]['total'];
+            row.total = groupData[i].total;
         }
 
         var values = measureAccessor !== undefined && measureAccessor !== null
@@ -262,7 +262,7 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
 
         if (aggregate === undefined || aggregate === null || aggregate === 'COUNT')
         {
-            row['value'] = values != null ? values.length : groupData[i]['count'];
+            row.value = values != null ? values.length : groupData[i].count;
         }
         else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
         {
@@ -287,24 +287,21 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             throw 'Aggregate ' + aggregate + ' is not yet supported.';
         }
 
-        if (keepNames === undefined || keepNames === null) {
-            keepNames = false;
-        }
         if (keepNames) {
             // if the value was/is a number, convert it back so that the axis domain min/max calculate correctly
-            var dimValue = row['label'];
+            var dimValue = row.label;
             row[dimensionName] = { value: !isNaN(Number(dimValue)) ? Number(dimValue) : dimValue };
 
-            row[measureName] = { value: row['value'] };
+            row[measureName] = { value: row.value };
             row[measureName].aggType = aggregate;
             if (row.hasOwnProperty('subLabel')) {
-                row[subDimensionName] = { value: row['subLabel'] };
+                row[subDimensionName] = { value: row.subLabel };
             }
             if (row.hasOwnProperty('error')) {
-                row[measureName].error = row['error'];
+                row[measureName].error = row.error;
             }
             if (row.hasOwnProperty('errorType')) {
-                row[measureName].errorType = row['errorType'];
+                row[measureName].errorType = row.errorType;
             }
         }
 

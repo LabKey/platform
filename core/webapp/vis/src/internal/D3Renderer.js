@@ -454,85 +454,71 @@ LABKEY.vis.internal.Axis = function() {
             }
         }
 
-        var hasTickAction = tickHover || tickClick || tickMouseOver || tickMouseOut;
+        const hasTickAction = tickHover || tickClick || tickMouseOver || tickMouseOut;
         if (hasTickAction) {
             addTickAreaRects(textAnchors, !hasOverlap);
             addHighlightRects(textAnchors);
         }
 
-        if (orientation == 'bottom') {
-            if (hasOverlap) {
-                // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
-                if (hasTickAction || tickOverlapRotation !== undefined || textEls[0].length > 10) {
-                    if (!tickOverlapRotation) {
-                        tickOverlapRotation = 35;
-                    }
+        if (orientation === 'bottom' && hasOverlap) {
+            // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
+            if (hasTickAction || tickOverlapRotation !== undefined || textEls[0].length > 10) {
+                if (!tickOverlapRotation) tickOverlapRotation = 35;
+                const rotate = (v) => `rotate(${tickOverlapRotation}, ${textXFn(v)}, ${textYFn(v)})`;
 
-                    textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
-                            .attr('text-anchor', 'start');
+                textEls.attr('transform', rotate).attr('text-anchor', 'start');
 
-                    if (hasTickAction)
-                    {
-                        addTickAreaRects(textAnchors);
-                        textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
-                                .attr('transform', function (v)
-                                {
-                                    return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                                });
+                if (hasTickAction) {
+                    addTickAreaRects(textAnchors);
+                    textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
+                            .attr('transform', rotate);
 
-                        addHighlightRects(textAnchors);
-                        textAnchors.selectAll('rect.highlight')
-                                .attr('transform', function (v)
-                                {
-                                    return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                                });
-                    }
-                } else {
-                    function wrapAxisTickLabel(text) {
-                        var width;
-                        text.each(function(v) {
-                            if (!width)
-                                width = scale(v) - grid.leftEdge;
-
-                            var text = d3.select(this),
-                                    words = text.text().split(/[\s]+/).reverse(),
-                                    word,
-                                    line = [],
-                                    lineNumber = 0,
-                                    lineHeight = 1.1, // ems
-                                    x = this.getAttribute("x"),
-                                    y = this.getAttribute("y"),
-                                    dy = 0,
-                                    tspan = text.text(null)
-                                            .append("tspan")
-                                            .attr("x", x)
-                                            .attr("y", y)
-                                            .attr("dy", dy + "em");
-
-                            while (word = words.pop()) {
-                                line.push(word);
-                                tspan.text(line.join(" "));
-                                if (tspan.node().getComputedTextLength() > width) {
-                                    line.pop();
-                                    tspan.text(line.join(" "));
-                                    line = [word];
-                                    tspan = text.append("tspan")
-                                            .attr("x", x)
-                                            .attr("y", y)
-                                            .attr("dy", ++lineNumber * lineHeight + dy + "em")
-                                            .text(word);
-                                }
-                            }
-                        });
-                    }
-
-                    textEls.attr('transform', '').call(wrapAxisTickLabel);
-                    textAnchors.selectAll('rect.highlight').attr('transform', '');
+                    addHighlightRects(textAnchors);
+                    textAnchors.selectAll('rect.highlight').attr('transform', rotate);
                 }
             } else {
-                textEls.attr('transform', '');
+                // wrap text to multiple lines if we have overlapping tick labels and are not rotating
+                function wrapAxisTickLabel(text) {
+                    let width;
+                    text.each(function(v) {
+                        if (!width) width = scale(v) - grid.leftEdge;
+
+                        const textEl = d3.select(this);
+                        const words = textEl.text().split(/[\s]+/).reverse();
+                        const lineHeight = 1.1; // ems
+                        const x = this.getAttribute("x");
+                        const y = this.getAttribute("y");
+                        let line = [];
+                        let lineNumber = 0;
+                        let tspan = textEl.text(null)
+                                .append("tspan")
+                                .attr("x", x)
+                                .attr("y", y)
+                                .attr("dy", "0em");
+
+                        for (const word of words) {
+                            line.push(word);
+                            tspan.text(line.join(" "));
+                            if (tspan.node().getComputedTextLength() > width) {
+                                line.pop();
+                                tspan.text(line.join(" "));
+                                line = [word];
+                                tspan = textEl.append("tspan")
+                                        .attr("x", x)
+                                        .attr("y", y)
+                                        .attr("dy", ++lineNumber * lineHeight + "em")
+                                        .text(word);
+                            }
+                        }
+                    });
+                }
+
+                textEls.attr('transform', '').call(wrapAxisTickLabel);
                 textAnchors.selectAll('rect.highlight').attr('transform', '');
             }
+        } else if (orientation === 'bottom') {
+            textEls.attr('transform', '');
+            textAnchors.selectAll('rect.highlight').attr('transform', '');
         }
 
         if (!borderSel) {
@@ -2221,12 +2207,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data, xAcc) {
-        var colorAcc, topFn, bottomFn, verticalFn, selection, newBars;
-        var errorLineWidth = geom.errorWidth != null ? geom.errorWidth : geom.width;
-        var xAcc_ = xAcc || function(row) {return geom.getX(row);};
+        const errorLineWidth = geom.errorWidth != null ? geom.errorWidth : geom.width;
+        const xAcc_ = xAcc || function(row) {return geom.getX(row);};
 
-        colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
-        topFn = function(d) {
+        const colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
+        const topFn = function(d) {
             var x, y, value, error;
             x = xAcc_(d);
             value = geom.yAes.getValue(d);
@@ -2234,7 +2219,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             y = geom.yScale.scale(value + error);
             return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
-        bottomFn = function(d) {
+        const bottomFn = function(d) {
             var x, y, value, error;
             x = xAcc_(d);
             value = geom.yAes.getValue(d);
@@ -2246,7 +2231,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
-        verticalFn = function(d) {
+        const verticalFn = function(d) {
             var x, y, y1, y2, value, error;
             x = xAcc_(d);
             value = geom.yAes.getValue(d);
@@ -2269,10 +2254,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
 
-        selection = layer.selectAll('.error-bar').data(data);
+        const selection = layer.selectAll('.error-bar').data(data);
         selection.exit().remove();
 
-        newBars = selection.enter().append('g').attr('class', 'error-bar');
+        const newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
         if (!geom.topOnly) {
             newBars.append('path').attr('class', 'error-bar-bottom');

@@ -131,7 +131,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             if (LABKEY.Utils.isDefined(aggregateProps)) {
                 var aggLabel = LABKEY.Utils.isObject(aggregateProps)
-                        ? (aggregateProps.name != null ? aggregateProps.name : aggregateProps.label)
+                        ? (aggregateProps.name ?? aggregateProps.label)
                         : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
@@ -1067,7 +1067,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             if (!scales.y.domain) {
-                var values = $.map(data, function(d) {return d.value + (d.error != null ? d.error : 0);}),
+                var values = $.map(data, d => d.value + (d.error ?? 0)),
                     min = Math.min(0, Math.min.apply(Math, values)),
                     max = Math.max(0, Math.max.apply(Math, values));
 
@@ -1383,7 +1383,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             });
 
             var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
-            margins.bottom = 60 + ((wrapLines - 1) * 25);
+            // min bottom margin: 50, max bottom margin: 150
+            margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog
@@ -1842,11 +1843,11 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var generateDataForChartType = function(chartConfig, chartType, geom, data) {
-        var dimName = null;
-        var subDimName = null;
-        var measureName = null;
-        var aggType = chartType === 'bar_chart' || chartType === 'pie_chart' ? 'COUNT' : null;
-        var aggErrorType = null;
+        let dimName = null;
+        let subDimName = null;
+        let measureName = null;
+        let aggType = chartType === 'bar_chart' || chartType === 'pie_chart' ? 'COUNT' : null;
+        let aggErrorType = null;
 
         if (chartConfig.measures.x) {
             dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
@@ -1873,7 +1874,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (aggType) {
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot');
             if (aggErrorType) {
-                geom.errorAes = { getValue: function(d){ return d.error } };
+                geom.errorAes = { getValue: d => d.error };
             }
         }
 
