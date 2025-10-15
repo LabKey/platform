@@ -1,5 +1,4 @@
 <%@ page import="com.fasterxml.jackson.databind.JsonNode" %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="com.fasterxml.jackson.databind.node.ArrayNode" %>
 <%@ page import="com.fasterxml.jackson.databind.node.ObjectNode" %>
 <%@ page import="com.google.common.collect.ImmutableList" %>
@@ -16,7 +15,6 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
-<%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
@@ -37,17 +35,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.assertThat" %>
-<%@ page import="static org.junit.Assert.assertEquals" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias" %>
-<%@ page import="static org.labkey.api.exp.query.ExpMaterialTable.Column.Name" %>
-<%@ page import="com.fasterxml.jackson.core.JsonPointer" %>
-<%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
-<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="static org.junit.Assert.assertNotNull" %>
-<%@ page import="static org.junit.Assert.assertTrue" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>

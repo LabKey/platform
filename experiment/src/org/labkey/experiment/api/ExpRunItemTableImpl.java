@@ -21,10 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
@@ -36,6 +33,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -88,30 +86,23 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
     protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)
     {
-        var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
-        aliasCol.setDescription("Contains the list of aliases for this data object");
-        aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
+        ColumnInfo lsidCol = getRealTable().getColumn("LSID");
+        MutableColumnInfo aliasCol = new AliasedColumn(this, alias, lsidCol)
         {
             @Override
-            public TableInfo getLookupTableInfo()
+            public SQLFragment getValueSql(String tableAlias)
             {
-                return aliasMapTable.get();
+                return new SQLFragment("(SELECT ")
+                    .append(getSqlDialect().getGroupConcat(new SQLFragment("AA.name"), false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true))
+                    .append(" FROM ").append(ExperimentServiceImpl.get().getTinfoAlias(), "AA")
+                    .append(" INNER JOIN ").append(aliasMapTable.get(), "MM")
+                    .append(" ON AA.rowId = MM.alias")
+                    .append(" WHERE MM.lsid = ").append(lsidCol.getValueSql(tableAlias))
+                    .append(")");
             }
-        }, "Alias")
-        {
-            @Override
-            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
-            {
-                ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
-                return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
-            }
+        };
 
-            @Override
-            public boolean isMultiSelectInput()
-            {
-                return false;
-            }
-        });
+        aliasCol.setDescription("Contains the list of aliases for this data object");
         aliasCol.setCalculated(false);
         aliasCol.setNullable(true);
         aliasCol.setRequired(false);

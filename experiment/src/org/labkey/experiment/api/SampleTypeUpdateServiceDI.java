@@ -657,7 +657,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
         }
 
-
         Unit baseUnit = _sampleType != null ? _sampleType.getBaseUnit() : null;
 
         for (Map.Entry<String, Object> entry : row.entrySet())
@@ -673,34 +672,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
-            else if (col != null && value != null &&
-                    !col.getJavaObjectClass().isInstance(value) &&
-                    !(value instanceof AttachmentFile) &&
-                    !(value instanceof MultipartFile) &&
-                    !(value instanceof String[]) &&
-                    !(col.getFk() instanceof MultiValuedForeignKey))
+            else
             {
-                try
-                {
-                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
-                        value = ExpDataFileConverter.convert(value);
-                    else if (col.getKindOfQuantity() != null)
-                    {
-                        providedValues.put(entry.getKey(), value);
-                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                    }
-                    else
-                        value = col.getConvertFn().apply(value);
-                }
-                catch (ConvertHelper.FileConversionException e)
-                {
-                    throw e;
-                }
-                catch (ConversionException e)
-                {
-                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
-                }
+                value = coerceTypesValue(col, providedValues, entry.getKey(), value);
             }
+
             result.put(entry.getKey(), value);
         }
         return result;
