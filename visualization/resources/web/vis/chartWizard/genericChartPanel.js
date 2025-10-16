@@ -1339,10 +1339,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             Ext4.apply(this.options[axisName], chartConfig.scales[axisName]);
         }
         if (chartConfig.measures && chartConfig.measures[axisName]) {
-            if (chartConfig.measures[axisName].aggregate)
-                this.options[axisName].aggregate = chartConfig.measures[axisName].aggregate.value ?? chartConfig.measures[axisName].aggregate;
-            if (chartConfig.measures[axisName].errorBars)
-                this.options[axisName].errorBars = chartConfig.measures[axisName].errorBars;
+            // LKS y-axis supports multiple measures, so account for that when applying options
+            // note that we only apply to the first measure in the array
+            var measure = LABKEY.Utils.isArray(chartConfig.measures[axisName]) ? chartConfig.measures[axisName][0] : chartConfig.measures[axisName];
+
+            if (measure.aggregate)
+                this.options[axisName].aggregate = measure.aggregate.value ?? measure.aggregate;
+            if (measure.errorBars)
+                this.options[axisName].errorBars = measure.errorBars;
         }
     },
 
