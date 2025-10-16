@@ -628,7 +628,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             //di = wrap(di, ve);
             //importData(di, ve);
 
-            configureLoader(loader);
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases(), getOptionParamsMap());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
@@ -669,13 +669,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     }
 
-    protected void configureLoader(DataLoader loader) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames, @Nullable Map<Params, Boolean> optionParamsMap) throws IOException
     {
-        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), null);
-    }
+        // Issue 53804: When updating or adding samples across different sample types, the strings 'Yes' and 'No' are converted to their boolean values
+        if (loader != null && optionParamsMap != null && optionParamsMap.getOrDefault(Params.crossTypeImport, false))
+            loader.setInferTypes(false);
 
-    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames) throws IOException
-    {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
             loader.setKnownColumns(target.getColumns());
