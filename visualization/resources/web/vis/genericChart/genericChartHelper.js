@@ -290,21 +290,26 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getChartTypeBasedWidth = function(chartType, measures, measureStore, defaultWidth) {
         var width = defaultWidth;
 
-        if (chartType == 'bar_chart' && LABKEY.Utils.isObject(measures.x)) {
-            // 15px per bar + 15px between bars + 300 for default margins
-            var xBarCount = measureStore.members(measures.x.name).length;
-            width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
+        try {
+            if (chartType == 'bar_chart' && LABKEY.Utils.isObject(measures.x)) {
+                // 15px per bar + 15px between bars + 300 for default margins
+                var xBarCount = measureStore.members(measures.x.name).length;
+                width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
 
-            if (LABKEY.Utils.isObject(measures.xSub)) {
-                // 15px per bar per group + 200px between groups + 300 for default margins
-                var xSubCount = measureStore.members(measures.xSub.name).length;
-                width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
+                if (LABKEY.Utils.isObject(measures.xSub)) {
+                    // 15px per bar per group + 200px between groups + 300 for default margins
+                    var xSubCount = measureStore.members(measures.xSub.name).length;
+                    width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
+                }
             }
-        }
-        else if (chartType == 'box_plot' && LABKEY.Utils.isObject(measures.x)) {
-            // 20px per box + 20px between boxes + 300 for default margins
-            var xBoxCount = measureStore.members(measures.x.name).length;
-            width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
+            else if (chartType == 'box_plot' && LABKEY.Utils.isObject(measures.x)) {
+                // 20px per box + 20px between boxes + 300 for default margins
+                var xBoxCount = measureStore.members(measures.x.name).length;
+                width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
+            }
+        } catch (e) {
+            // measureStore.members can throw if the measure name is not found
+            // we don't care about this here when trying to figure out the width, just use the defaultWidth
         }
 
         return width;
