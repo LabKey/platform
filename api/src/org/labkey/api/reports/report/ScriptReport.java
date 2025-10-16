@@ -279,7 +279,7 @@ public abstract class ScriptReport extends AbstractReport
     public static File getDefaultTempRoot()
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        return new File(tempDir, REPORT_DIR);
+        return FileUtil.appendName(tempDir, REPORT_DIR);
     }
 
     public static FileLike getTempRootFileLike(ReportDescriptor descriptor)

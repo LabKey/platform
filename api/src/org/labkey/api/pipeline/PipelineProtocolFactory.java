@@ -52,8 +52,8 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public static File locateProtocolRootDir(File rootDir, File systemDir)
     {
-        File protocolRootDir = new File(systemDir, _pipelineProtocolDir);
-        File protocolRootDirLegacy = new File(rootDir, _pipelineProtocolDir);
+        File protocolRootDir = FileUtil.appendName(systemDir, _pipelineProtocolDir);
+        File protocolRootDirLegacy = FileUtil.appendName(rootDir, _pipelineProtocolDir);
         if (NetworkDrive.exists(protocolRootDirLegacy))
             protocolRootDirLegacy.renameTo(protocolRootDir);
         return protocolRootDir;

@@ -57,6 +57,7 @@ import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
@@ -180,7 +181,7 @@ public class ExcelFactory
         {
             return getMetadata(opc);
         }
-        // might be OLE2 formet
+        // might be OLE2 format
         catch (InvalidFormatException|UnsupportedFileFormatException e)
         {
             Workbook wb = create(file);
@@ -584,11 +585,11 @@ public class ExcelFactory
 
     /** Supports .xls (BIFF8 only), and .xlsx */
     @NotNull
-    public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException
+    public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows) throws IOException
     {
         try (Workbook workbook = WorkbookFactory.create(in))
         {
-            return convertExcelToJSON(workbook, extended, -1);
+            return convertExcelToJSON(workbook, extended, maxRows);
         }
     }
 
@@ -919,9 +920,9 @@ public class ExcelFactory
         {
             File dataloading = JunitUtil.getSampleData(null, "dataLoading/excel");
 
-            attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
+            attemptImportExpectError(FileUtil.appendName(dataloading, "doesntexist.xls"), FileNotFoundException.class);
+            attemptImportExpectError(FileUtil.appendName(dataloading, ""), FileNotFoundException.class);
+            attemptImportExpectError(FileUtil.appendName(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
         private void attemptImportExpectError(File excelFile, Class<? extends Throwable> exceptionClass)

@@ -111,10 +111,10 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected class DilutionDataFileParser
     {
         private final ExpData _data;
-        private final File _dataFile;
+        private final FileLike _dataFile;
         private final ViewBackgroundInfo _info;
 
-        public DilutionDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
+        public DilutionDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
         {
             _data = data;
             _dataFile = dataFile;
@@ -136,7 +136,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      *                         plate data versus the saved table data. If use run for plates is false (use dataFile) then
      *                         stats are always recalculated.
      */
-    public List<Map<String, Object>> calculateDilutionStats(ExpRun run, User user, @Nullable File dataFile, boolean useRunForPlates, boolean recalculateStats) throws ExperimentException
+    public List<Map<String, Object>> calculateDilutionStats(ExpRun run, User user, @Nullable FileLike dataFile, boolean useRunForPlates, boolean recalculateStats) throws ExperimentException
     {
         try {
             DilutionAssayRun assayResults = getAssayResults(run, user, dataFile, null, useRunForPlates, recalculateStats);
@@ -238,12 +238,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         results.put(name + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX, outOfRange);
     }
 
-    protected ExperimentException createParseError(File dataFile, String msg)
+    protected ExperimentException createParseError(FileLike dataFile, String msg)
     {
         return createParseError(dataFile, msg, null);
     }
 
-    protected ExperimentException createParseError(File dataFile, String msg, @Nullable Exception cause)
+    protected ExperimentException createParseError(FileLike dataFile, String msg, @Nullable Exception cause)
     {
         StringBuilder fullMessage = new StringBuilder("There was an error parsing ");
         fullMessage.append(dataFile.getName()).append(".\n");
@@ -290,14 +290,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return getAssayResults(run, user, getDataFile(run), fit, true, false);
     }
 
-    public File getDataFile(ExpRun run)
+    public FileLike getDataFile(ExpRun run)
     {
         if (run == null)
             return null;
         List<? extends ExpData> outputDatas = run.getOutputDatas(getDataType());
         if (outputDatas == null || outputDatas.size() != 1)
             throw new IllegalStateException(getResourceName(run) + " runs should have a single data output.");
-        File dataFile = outputDatas.get(0).getFile();
+        FileLike dataFile = outputDatas.get(0).getFileLike();
         if (!dataFile.exists())
             return null;
         return dataFile;
@@ -312,7 +312,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return provider != null ? provider.getResourceName() : "Assay";
     }
 
-    protected List<Plate> createPlates(File dataFile, Plate template) throws ExperimentException
+    protected List<Plate> createPlates(FileLike dataFile, Plate template) throws ExperimentException
     {
         return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, PlateService.NO_RUNID, 1));
     }
@@ -335,9 +335,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return Collections.singletonList(plate);
     }
 
-    protected abstract double[][] getCellValues(final File dataFile, Plate nabTemplate) throws ExperimentException;
+    protected abstract double[][] getCellValues(final FileLike dataFile, Plate nabTemplate) throws ExperimentException;
 
-    protected DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable File dataFile, @Nullable StatsService.CurveFitType fit,
+    protected DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable FileLike dataFile, @Nullable StatsService.CurveFitType fit,
                                                boolean useRunForPlates, boolean recalcStats) throws ExperimentException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
@@ -473,18 +473,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException, SQLException;
 
-    protected DilutionDataFileParser getDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
+    final protected DilutionDataFileParser getDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
     {
         return new DilutionDataFileParser(data, dataFile, info);
     }
 
-    final protected DilutionDataFileParser getDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
-    {
-        return new DilutionDataFileParser(data, dataFile.toNioPathForRead().toFile(), info);
-    }
-
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         ExpRun run = data.getRun();
         ExpProtocol protocol = run.getProtocol();
@@ -807,7 +802,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
             if (populatePlatesFromFile)
             {
-                File dataFile = getDataFile(run);
+                FileLike dataFile = getDataFile(run);
                 if (null == dataFile)
                     throw new MissingDataFileException("Data file not found.");
                 plates = createPlates(dataFile, nabTemplate);

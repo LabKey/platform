@@ -88,7 +88,7 @@ public class DotRunner
     {
         try
         {
-            File testVersion = new File(baseDirectory, "dottest.txt");
+            File testVersion = FileUtil.appendName(baseDirectory, "dottest.txt");
             if (testVersion.exists())
                 return;
 

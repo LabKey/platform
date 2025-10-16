@@ -247,9 +247,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     @Nullable
     @Override
-    public File getOriginalFileLocation()
+    public FileLike getOriginalFileLocation()
     {
-        AssayDataCollector collector = getSelectedDataCollector();
+        AssayDataCollector<?> collector = getSelectedDataCollector();
         if (collector != null)
         {
             return collector.getOriginalFileLocation();
@@ -356,14 +356,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     // Hidden values in form containing previously uploaded files if previous upload resulted in error
                     for (String fileParam : filePdNames)
                     {
-                        if (request instanceof MultipartHttpServletRequest && null != request.getParameter(fileParam))
+                        if (request instanceof MultipartHttpServletRequest mhsr && null != request.getParameter(fileParam))
                         {
                             String previousFileName = request.getParameter(fileParam);
                             if (null != previousFileName)
                             {
                                 previousFile = FileUtil.appendName(getAssayDirectory(getContainer(), null), previousFileName);
 
-                                MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
+                                MultipartFile multiFile = mhsr.getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
 
                                 // If file is removed from form after error, override hidden file name with empty file
                                 if (null != multiFile && multiFile.getOriginalFilename().isEmpty())

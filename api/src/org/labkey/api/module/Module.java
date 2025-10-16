@@ -355,7 +355,7 @@ public interface Module
      * @param dialect The sql dialect for the scripts
      * @return The script file path
      */
-    String getSqlScriptsPath(@NotNull SqlDialect dialect);
+    Path getSqlScriptsPath(@NotNull SqlDialect dialect);
 
     /**
      * handle a http request

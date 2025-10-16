@@ -16,7 +16,7 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
@@ -27,7 +27,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -100,19 +99,19 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
             sb.append(separator);
             separator = ", ";
             sb.append(entry.getValue().getName());
-            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue().toNioPathForRead().toFile()));
+            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
         }
         return new HtmlView(sb);
     }
 
-    public HtmlString getHiddenFormElementHTML(Container container, String formElementName, File file)
+    public HtmlString getHiddenFormElementHTML(Container container, String formElementName, FileLike file)
     {
         PipeRoot pipeRoot = getPipelineRoot(container);
         HtmlStringBuilder sb = HtmlStringBuilder.of();
         sb.unsafeAppend("<input name=\"");
         sb.append(_type.getPathFormElementName());
         sb.unsafeAppend("\" type=\"hidden\" value=\"");
-        sb.append(pipeRoot.relativePath(file).replace('\\', '/'));
+        sb.append(pipeRoot.relativePath(file.toNioPathForRead()).replace('\\', '/'));
         sb.unsafeAppend("\"/><input type=\"hidden\" name=\"");
         sb.append(_type.getNameFormElementName());
         sb.unsafeAppend("\" value=\"");
@@ -174,7 +173,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         for (int i = 0; i < paths.length; i++)
         {
-            result.put(names[i], pipelineRoot.resolvePathToFileLike(StringUtils.replace(paths[i],"\\","/")));
+            result.put(names[i], pipelineRoot.resolvePathToFileLike(Strings.CS.replace(paths[i],"\\","/")));
         }
         return result;
     }

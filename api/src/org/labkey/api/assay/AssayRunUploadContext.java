@@ -213,7 +213,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * @return null if the file was uploaded as part of the import
      */
     @Nullable
-    default File getOriginalFileLocation()
+    default FileLike getOriginalFileLocation()
     {
         return null;
     }

@@ -144,19 +144,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     protected abstract boolean allowEmptyData();
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
-        importFile(data, dataFile, info, log, context, true);
+        importFile(data, dataFile, info, log, context, true, false);
     }
 
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
-    {
-        importFile(data, dataFile, info, log, context, allowLookupByAlternateKey, false);
-    }
-
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    protected void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
     {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
@@ -176,7 +169,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // type conversion error).
         settings.setBestEffortConversion(true);
 
-        FileLike fo = FileSystemLike.wrapFile(dataFile);
+        FileLike fo = dataFile;
         Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, fo, info, log, context, settings);
         assert(rawData.size() <= 1);
         try

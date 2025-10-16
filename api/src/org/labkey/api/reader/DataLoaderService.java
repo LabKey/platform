@@ -47,10 +47,10 @@ public interface DataLoaderService
     void registerFactory(@NotNull DataLoaderFactory factory);
 
     @Nullable
-    DataLoaderFactory findFactory(File file, @Nullable FileType guessFormat);
+    DataLoaderFactory findFactory(FileLike file, @Nullable FileType guessFormat);
 
     @Nullable
-    DataLoaderFactory findFactory(File file, String contentType, @Nullable FileType guessFormat);
+    DataLoaderFactory findFactory(FileLike file, String contentType, @Nullable FileType guessFormat);
 
     @Nullable
     DataLoaderFactory findFactory(String filename, String contentType, InputStream is, @Nullable FileType guessFormat);

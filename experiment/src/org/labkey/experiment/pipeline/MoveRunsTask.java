@@ -194,7 +194,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 throw new ExperimentException("Unable to create log file directory", e);
             }
             _logFileDir.deleteOnExit();
-            _logFile = new File(_logFileDir, "upload.xar.log");
+            _logFile = FileUtil.appendName(_logFileDir, "upload.xar.log");
             _logFile.deleteOnExit();
             _uploadTime = DateUtil.formatDateTime(job.getContainer());
         }

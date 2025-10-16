@@ -607,7 +607,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 ExperimentDataHandler dataHandler = insertedData.findDataHandler();
 
-                dataHandler.importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
+                FileLike fileLike = FileSystemLike.wrapFile(insertedData.getFile());
+                if (dataHandler instanceof AbstractAssayTsvDataHandler tsvHandler)
+                {
+                    tsvHandler.importFile(insertedData, fileLike, info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
+                }
+                else
+                {
+                    dataHandler.importFile(insertedData, fileLike, info, logger, xarContext);
+                }
             }
         }
     }

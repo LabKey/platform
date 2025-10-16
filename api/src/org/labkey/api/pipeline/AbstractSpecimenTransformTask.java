@@ -55,24 +55,6 @@ public abstract class AbstractSpecimenTransformTask
         _job = job;
     }
 
-    @Deprecated
-    public void transform(File input, File output) throws PipelineJobException
-    {
-        throw new UnsupportedOperationException("Use the Path version of the transform method");
-    }
-
-    public void transform(Path input, Path output) throws PipelineJobException
-    {
-        try
-        {
-            transform(input.toFile(), output.toFile());
-        }
-        catch (UnsupportedOperationException e)
-        {
-            throw new PipelineJobException("Error transforming input file.", e);
-        }
-    }
-
     /**
      * Transform a row of data from the parsed input data file the transformed specimen row
      * During the transform, it's expected that any lab, primary, derivative and additive
