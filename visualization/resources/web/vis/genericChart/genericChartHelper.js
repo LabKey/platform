@@ -1072,6 +1072,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                     max = Math.max(0, Math.max.apply(Math, values));
 
                 scales.y.domain = [min, max];
+            } else if (!scales.y.domain[0]) {
+                // if user has set a max but not a min, default to 0 for bar chart
+                scales.y.domain[0] = 0;
             }
         }
         else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
