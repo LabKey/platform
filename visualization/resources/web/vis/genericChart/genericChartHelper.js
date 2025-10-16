@@ -1860,13 +1860,16 @@ LABKEY.vis.GenericChartHelper = new function(){
         } else if (chartConfig.measures.series) {
             subDimName = chartConfig.measures.series.name;
         }
-        if (chartConfig.measures.y) {
-            measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
 
-            if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
-                aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
+        // LKS y-axis supports multiple measures, but for aggregation we only support one
+        if (chartConfig.measures.y && (!LABKEY.Utils.isArray(chartConfig.measures.y) || chartConfig.measures.y.length === 1)) {
+            const yMeasure = LABKEY.Utils.isArray(chartConfig.measures.y) ? chartConfig.measures.y[0] : chartConfig.measures.y;
+            measureName = yMeasure.converted ? yMeasure.convertedName : yMeasure.name;
+
+            if (LABKEY.Utils.isDefined(yMeasure.aggregate)) {
+                aggType = yMeasure.aggregate.value || yMeasure.aggregate;
                 aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
-                aggErrorType = aggType === 'MEAN' ? chartConfig.measures.y.errorBars : null;
+                aggErrorType = aggType === 'MEAN' ? yMeasure.errorBars : null;
             }
             else if (measureName != null && (chartType === 'bar_chart' || chartType === 'pie_chart')) {
                 // default to SUM for bar and pie charts
