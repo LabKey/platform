@@ -121,6 +121,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
@@ -1084,13 +1085,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                     if (plateId != null && wellLocation != null)
                     {
-                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(container, user, plateId));
+                        boolean loadMaterialsCache = !plateWellCache.containsKey(plateId);
+                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(plateId));
+
+                        // If we had to load the wellSampleCache we should also preload the ExpMaterials into the
+                        // materialCache, so we don't need to fetch them with individual queries. This has a large
+                        // impact on performance.
+                        if (loadMaterialsCache)
+                        {
+                            Set<Long> samplesToFetch = wellSampleCache.values().stream()
+                                    .filter(id -> !materialCache.containsKey(id))
+                                    .collect(Collectors.toSet());
+
+                            for (ExpMaterial m : exp.getExpMaterials(samplesToFetch))
+                                materialCache.put(m.getRowId(), m);
+                        }
                         sampleId = wellSampleCache.get(wellLocation);
                     }
 
                     if (sampleId != null)
                     {
-                        material = materialCache.computeIfAbsent(sampleId, (id) -> exp.getExpMaterial(id, containerFilter));
+                        material = materialCache.get(sampleId);
                     }
 
                     if (material != null)

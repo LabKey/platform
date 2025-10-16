@@ -1518,14 +1518,23 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateSchema(querySchema, contextualRoles);
     }
 
-    @Override
-    public Map<String, Long> getWellLocationToSampleIdMap(Container container, User user, Long plateId)
-    {
-        Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
-        List<WellData> wellData = PlateManager.get().getWellData(container, user, plateId, true, false);
+    record WellSampleData(Long sampleId, Integer row, Integer col) {}
 
-        for (WellData data : wellData)
-            wellLocationToSampleIdMap.put(data.getPosition(), data.getSampleId());
+    @Override
+    public Map<String, Long> getWellLocationToSampleIdMap(Long plateId)
+    {
+        // Note: this method intentionally does not use PlateManager.get().getWellData, by selecting only the columns
+        // we need there is a small but measurable performance boost when importing plate assay data
+        SimpleFilter filter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plateId);
+        Set<String> columns = Set.of(WellTable.Column.SampleID.name(), WellTable.Column.Row.name(), WellTable.Column.Col.name());
+        List<WellSampleData> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), columns, filter, null).getArrayList(WellSampleData.class);
+        Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
+
+        for (WellSampleData well : wells)
+        {
+            PositionImpl pos = new PositionImpl(null, well.row, well.col);
+            wellLocationToSampleIdMap.put(pos.getDescription(), well.sampleId);
+        }
 
         return wellLocationToSampleIdMap;
     }
