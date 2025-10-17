@@ -291,9 +291,9 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             // if the value was/is a number, convert it back so that the axis domain min/max calculate correctly
             var dimValue = row.label;
             row[dimensionName] = { value: !isNaN(Number(dimValue)) ? Number(dimValue) : dimValue };
-
             row[measureName] = { value: row.value };
             row[measureName].aggType = aggregate;
+
             if (row.hasOwnProperty('subLabel')) {
                 row[subDimensionName] = { value: row.subLabel };
             }
