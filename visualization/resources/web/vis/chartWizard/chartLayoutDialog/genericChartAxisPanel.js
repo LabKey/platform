@@ -402,10 +402,10 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         }
 
         // only show aggregate method for line chart and error bars option for both bar and line
-        if (this.axisName !== 'y' || !isLine) {
+        if (!(this.axisName === 'y' && isLine)) {
             this.setAggregateOptionVisible(false);
         }
-        if (this.axisName !== 'y' || !(isBar || isLine)) {
+        if (!(this.axisName === 'y' && (isBar || isLine))) {
             this.setErrorBarsOptionVisible(false);
         }
     },
