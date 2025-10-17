@@ -488,6 +488,7 @@ LABKEY.vis.internal.Axis = function() {
                         const lineHeight = 1.1; // ems
                         const x = this.getAttribute("x");
                         const y = this.getAttribute("y");
+                        let word;
                         let line = [];
                         let lineNumber = 0;
                         let tspan = textEl.text(null)
@@ -496,7 +497,7 @@ LABKEY.vis.internal.Axis = function() {
                                 .attr("y", y)
                                 .attr("dy", "0em");
 
-                        for (const word of words) {
+                        while (word = words.pop()) {
                             line.push(word);
                             tspan.text(line.join(" "));
                             if (tspan.node().getComputedTextLength() > width) {
