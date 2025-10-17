@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -94,6 +93,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -121,6 +121,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
@@ -143,19 +144,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     protected abstract boolean allowEmptyData();
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
-        importFile(data, dataFile, info, log, context, true);
+        importFile(data, dataFile, info, log, context, true, false);
     }
 
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
-    {
-        importFile(data, dataFile, info, log, context, allowLookupByAlternateKey, false);
-    }
-
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    protected void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
     {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
@@ -175,7 +169,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // type conversion error).
         settings.setBestEffortConversion(true);
 
-        FileLike fo = FileSystemLike.wrapFile(dataFile);
+        FileLike fo = dataFile;
         Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, fo, info, log, context, settings);
         assert(rawData.size() <= 1);
         try
@@ -518,7 +512,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            DataIterator fileData = checkData(container, user, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -598,14 +592,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
         {
-            if (context.getReRunId() != null)
+            // check if we are merging the re-imported data
+            if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                // check if we are merging the re-imported data
-                if (context.getReImportOption() == MERGE_DATA)
-                {
-                    DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
-                    fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
-                }
+                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider, context);
@@ -686,16 +677,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * @param rowBasedInputMaterials the map of materials that are inputs to this run based on the data rows
      */
     private DataIterator checkData(
-        Container container,
-        User user,
-        TableInfo dataTable,
-        Domain dataDomain,
-        DataIterator rawData,
-        DataLoaderSettings settings,
-        ParticipantVisitResolver resolver,
-        Map<String, ExpMaterial> inputMaterials,
-        ContainerFilter containerFilter,
-        Map<ExpMaterial, String> rowBasedInputMaterials
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            TableInfo dataTable,
+            Domain dataDomain,
+            DataIterator rawData,
+            DataLoaderSettings settings,
+            ParticipantVisitResolver resolver,
+            Map<String, ExpMaterial> inputMaterials,
+            ContainerFilter containerFilter,
+            Map<ExpMaterial, String> rowBasedInputMaterials
     ) throws BatchValidationException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -709,10 +702,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPropFinder = null;
         DomainProperty datePropFinder = null;
         DomainProperty targetStudyPropFinder = null;
+        DomainProperty platePropFinder = null;
+        DomainProperty wellLocationPropFinder = null;
+        DomainProperty wellLsidPropFinder = null;
 
         RemapCache cache = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+        Map<Long, Map<String, Long>> plateWellCache = new LongHashMap<>();
 
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeById = new HashMap<>();
@@ -721,6 +718,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
+        boolean isPlateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
 
         for (DomainProperty pd : columns)
         {
@@ -752,6 +750,25 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 targetStudyPropFinder = pd;
             }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLocation") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            {
+                wellLocationPropFinder = pd;
+            }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("WellLsid") &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            {
+                wellLsidPropFinder = pd;
+            }
+            else if (isPlateMetadataEnabled &&
+                    pd.getName().equalsIgnoreCase("Plate") &&
+                    pd.getPropertyDescriptor().isLookup())
+            {
+                platePropFinder = pd;
+            }
+
             else
             {
                 var sampleLookup = AssaySampleLookupContext.checkSampleLookup(container, user, pd);
@@ -798,6 +815,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPD = visitPropFinder;
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
+        DomainProperty platePD = platePropFinder;
+        DomainProperty wellLocationPD = wellLocationPropFinder;
+        DomainProperty wellLsidPD = wellLsidPropFinder;
+
+        boolean resolvePlateSamples = isPlateMetadataEnabled && platePD != null && wellLocationPD != null && wellLsidPD != null;
 
         return DataIteratorUtil.mapTransformer(rawData, inputCols ->
         {
@@ -846,17 +868,48 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         map.put(pd.getName(), o);
                     }
 
-                    // validate the data value for the non-sample lookup fields
-                    // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
                     boolean isSampleLookupById = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
                     boolean isSampleLookupByName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+
+                    // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
+                    // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
+                    // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
+                    // Issue 53625: remap before validation so that validators can validate the remapped value
+                    if (o != null && remappableLookup.containsKey(pd) && !isSampleLookupById)
+                    {
+                        String s = o instanceof String ? (String) o : o.toString();
+                        TableInfo lookupTable = remappableLookup.get(pd);
+                        Object remapped = cache.remap(lookupTable, s, true);
+                        if (remapped == null)
+                        {
+                            if (SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
+                                errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
+                            else
+                                errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                        }
+                        else if (o != remapped)
+                        {
+                            o = remapped;
+                            map.put(pd.getName(), remapped);
+                        }
+                    }
+
+                    // validate the data value for the non-sample lookup fields
+                    // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
                     if (validatorMap.containsKey(pd) && !isSampleLookupById && !isSampleLookupByName)
                     {
                         for (ColumnValidator validator : validatorMap.get(pd))
                         {
-                            String error = validator.validate(rowNum, o, validatorContext);
-                            if (error != null)
-                                errors.add(new PropertyValidationError(error, pd.getName()));
+                            try
+                            {
+                                String error = validator.validate(rowNum, o, validatorContext);
+                                if (error != null)
+                                    errors.add(new PropertyValidationError(error, pd.getName()));
+                            }
+                            catch (ConversionException e)
+                            {
+                                errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+                            }
                         }
                     }
 
@@ -948,34 +1001,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         }
                     }
 
-                    // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
-                    // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
-                    // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
-                    if (o instanceof String s && remappableLookup.containsKey(pd) && !isSampleLookupById)
-                    {
-                        TableInfo lookupTable = remappableLookup.get(pd);
-                        try
-                        {
-                            Object remapped = cache.remap(lookupTable, s, true);
-                            if (remapped == null)
-                            {
-                                if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
-                                    errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
-                                else
-                                    errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
-                            }
-                            else if (o != remapped)
-                            {
-                                o = remapped;
-                                map.put(pd.getName(), remapped);
-                            }
-                        }
-                        catch (ConversionException e)
-                        {
-                            errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
-                        }
-                    }
-
                     if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(pd.getName()))
                     {
                         wrongTypes.add(pd.getName());
@@ -1040,6 +1065,48 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }
                         }
+                    }
+                }
+
+                // Wire up well samples as materials inputs
+                if (resolvePlateSamples)
+                {
+                    Long plateId = IntegerUtils.asLong(map.get(platePD.getName()));
+                    String wellLocation = (String) map.get(wellLocationPD.getName());
+                    Long sampleId = null;
+                    ExpMaterial material = null;
+
+                    if (plateId != null && wellLocation != null)
+                    {
+                        boolean loadMaterialsCache = !plateWellCache.containsKey(plateId);
+                        Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(plateId));
+
+                        // If we had to load the wellSampleCache we should also preload the ExpMaterials into the
+                        // materialCache, so we don't need to fetch them with individual queries. This has a large
+                        // impact on performance.
+                        if (loadMaterialsCache)
+                        {
+                            Set<Long> samplesToFetch = wellSampleCache.values().stream()
+                                    .filter(id -> !materialCache.containsKey(id))
+                                    .collect(Collectors.toSet());
+
+                            for (ExpMaterial m : exp.getExpMaterials(samplesToFetch))
+                                materialCache.put(m.getRowId(), m);
+                        }
+                        sampleId = wellSampleCache.get(wellLocation);
+                    }
+
+                    if (sampleId != null)
+                    {
+                        material = materialCache.get(sampleId);
+                    }
+
+                    if (material != null)
+                    {
+                        // Note: we have to use the wellLsidPD as the Property Input Lineage Role because we resolve
+                        // the material inputs for a plate assay based on WellLsid during delete.
+                        rowBasedInputMaterials.putIfAbsent(material, AssayService.get().getPropertyInputLineageRole(wellLsidPD));
+                        rowInputLSIDs.add(material.getLSID());
                     }
                 }
 

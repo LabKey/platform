@@ -32,13 +32,14 @@ package org.radeox.macro.code;
  * @version $Id: XmlCodeFilter.java,v 1.6 2003/12/11 13:24:56 leo Exp $
  */
 
+import org.radeox.filter.regex.RegexFilter;
+
 public class XmlCodeFilter extends DefaultRegexCodeFormatter implements SourceCodeFormatter {
   private static final String KEYWORDS = "\\b(xsl:[^&\\s]*)\\b";
   private static final String TAGS = "(&#60;/?.*?&#62;)";
-  private static final String QUOTE = "\"(([^\"\\\\]|\\.)*)\"";
 
   public XmlCodeFilter() {
-    super(QUOTE, "<span class=\"xml-quote\">\"$1\"</span>");
+    super(RegexFilter.QUOTE_REGEX, "<span class=\"xml-quote\">\"$1\"</span>");
     addRegex(TAGS, "<span class=\"xml-tag\">$1</span>");
     addRegex(KEYWORDS, "<span class=\"xml-keyword\">$1</span>");
   }

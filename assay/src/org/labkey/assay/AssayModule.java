@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -87,6 +88,8 @@ import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.PlateSetDocumentProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.audit.PlateAuditProvider;
+import org.labkey.assay.plate.audit.PlateSetAuditProvider;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSchemaTest;
 import org.labkey.assay.plate.query.PlateTypeTable;
@@ -94,7 +97,6 @@ import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.security.AssayDesignerRole;
 import org.labkey.assay.view.AssayBatchesWebPartFactory;
-import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
@@ -136,14 +138,13 @@ public class AssayModule extends SpringModule
     public static final WebPartFactory assayBatchesWebPartFactory = new AssayBatchesWebPartFactory();
     public static final WebPartFactory assayRunsWebPartFactory = new AssayRunsWebPartFactory();
     public static final WebPartFactory assayResultsWebPartFactory = new AssayResultsWebPartFactory();
-    public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
 
     @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory, assayList2WebPartFactory
+            assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory
         );
     }
 
@@ -205,6 +206,8 @@ public class AssayModule extends SpringModule
             return result;
         });
         PlateManager.get().registerLsidHandlers();
+        AuditLogService.get().registerAuditType(new PlateSetAuditProvider());
+        AuditLogService.get().registerAuditType(new PlateAuditProvider());
         SearchService ss = SearchService.get();
 
         // ASSAY_CATEGORY
@@ -324,7 +327,7 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public @NotNull Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             ModuleAssayCache.TestCase.class,
@@ -342,7 +345,7 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public @NotNull Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             TsvAssayProvider.TestCase.class,

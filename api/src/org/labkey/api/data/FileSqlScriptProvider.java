@@ -31,6 +31,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.vcs.Vcs;
@@ -164,7 +165,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // Returns all script file names listed in the specified file
     private @NotNull Collection<String> getScriptsFromFile(SqlDialect dialect, String filename) throws IOException
     {
-        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append(filename);
+        Path path = _module.getSqlScriptsPath(dialect).append(filename);
         Resource r = _module.getModuleResource(path);
 
         return null != r ? PageFlowUtil.getStreamContentsAsList(r.getInputStream(), true) : Collections.emptyList();
@@ -205,7 +206,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     {
         try
         {
-            Path path = Path.parse(_module.getSqlScriptsPath(schema.getSqlDialect())).append(filename);
+            Path path = _module.getSqlScriptsPath(schema.getSqlDialect()).append(filename);
             Resource r = _module.getModuleResource(path);
             if (null == r || !r.isFile())
                 throw new SqlScriptException("File not found: " + path, filename);
@@ -249,7 +250,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (!scriptsDir.exists())
             throw new IllegalStateException("SQL scripts directory not found");
 
-        File file = new File(scriptsDir, description);
+        File file = FileUtil.appendName(scriptsDir, description);
         boolean exists = file.exists();
 
         if (exists && !overwrite)
@@ -279,12 +280,12 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (isBlank(_module.getSourcePath()))
             return null;
 
-        String scriptsPath = _module.getSqlScriptsPath(dialect);
-        File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), scriptsPath);
+        Path scriptsPath = _module.getSqlScriptsPath(dialect);
+        File scriptsDir = FileUtil.appendPath(FileUtil.appendName(new File(_module.getSourcePath()), "resources"), scriptsPath);
 
         // Handle file structure of old file-based modules, e.g., reagent
         if (!scriptsDir.exists())
-            scriptsDir = new File(_module.getSourcePath(), scriptsPath);
+            scriptsDir = FileUtil.appendPath(new File(_module.getSourcePath()), scriptsPath);
 
         return scriptsDir;
     }

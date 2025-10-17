@@ -494,15 +494,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Collections.emptySet();
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Collections.emptySet();
     }
@@ -1031,7 +1029,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         SqlDialect dialect = schema.getSqlDialect();
 
-        String sqlScriptsPath = getSqlScriptsPath(dialect);
+        Path sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);
         if (dir == null || !dir.isCollection())
             return Collections.emptySet();
@@ -1048,9 +1046,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    public final Path getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
-        return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
+        return Path.parse("schemas/dbscripts/" + dialect.getSQLScriptPath() + "/");
     }
 
     @Override
@@ -1251,7 +1249,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected File computeResourceDirectory()
     {
-        // We load resources from the module's source directory if all of the following conditions are true:
+        // We load resources from the module's source directory if all the following conditions are true:
         //
         // - devmode = true
         // - The module's source path is a directory that exists on the web server

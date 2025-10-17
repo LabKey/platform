@@ -50,14 +50,14 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = webPart.getPropertyMap();
         return new WikiWebPart(webPart.getRowId(), props);
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new WikiController.CustomizeWikiPartView(webPart);
     }

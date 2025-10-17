@@ -1590,7 +1590,7 @@ public class XarExporter
         {
             if (_includeXML)
             {
-                File xmlEntry = new File(dir, _xarXmlFileName);
+                File xmlEntry = FileUtil.appendName(dir, _xarXmlFileName);
                 logProgress("Writing XAR XML file");
                 try (FileOutputStream os = new FileOutputStream(xmlEntry))
                 {
@@ -1615,7 +1615,7 @@ public class XarExporter
         catch (Exception e)
         {
             // insert the stack trace into the zip file
-            File errorEntry = new File(dir,"error.log");
+            File errorEntry = FileUtil.appendName(dir,"error.log");
 
             try (FileOutputStream os = new FileOutputStream(errorEntry); PrintStream ps = new PrintStream(os))
             {

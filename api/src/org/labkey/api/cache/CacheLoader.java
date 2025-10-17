@@ -25,4 +25,13 @@ import org.jetbrains.annotations.Nullable;
 public interface CacheLoader<K, V>
 {
     V load(@NotNull K key, @Nullable Object argument);
+
+    /**
+     * Returns an object that can be used to synchronize access to the cache. Typically, the cache itself but it's
+     * OK to swap with another lock object when running inside of a transaction to reduce the likelihood of deadlocks.
+     */
+    default Object getSyncObject(Cache<?, ?> cache)
+    {
+        return cache;
+    }
 }

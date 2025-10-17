@@ -73,12 +73,12 @@ public class ExperimentPipelineProvider extends PipelineProvider
 
     public void locateSystemDir(Path systemDir, String name)
     {
-        Path path = systemDir.resolve(name);
+        Path path = FileUtil.appendName(systemDir, name);
         if (Files.exists(path))
         {
             try
             {
-                Path dest = getExperimentDirectory(systemDir, name).resolve(FileUtil.getFileName(path));
+                Path dest = FileUtil.appendName(getExperimentDirectory(systemDir, name), FileUtil.getFileName(path));
                 Files.move(path, dest);
             }
             catch (IOException e)

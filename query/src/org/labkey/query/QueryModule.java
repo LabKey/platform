@@ -25,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
@@ -127,6 +128,7 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.remoteapi.SelectRowsStreamHack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -343,8 +345,7 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             ModuleReportCache.TestCase.class,
@@ -354,7 +355,8 @@ public class QueryModule extends DefaultModule
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
-            ServerManager.TestCase.class
+            ServerManager.TestCase.class,
+            SelectRowsStreamHack.TestCase.class
         );
     }
 
@@ -373,8 +375,7 @@ public class QueryModule extends DefaultModule
 
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             AggregateQueryDataTransform.TestCase.class,
@@ -416,6 +417,7 @@ public class QueryModule extends DefaultModule
         json.put(QueryService.PRODUCT_FOLDERS_EXIST, isProductFoldersEnabled && container.hasProductFolders());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductFoldersAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductFoldersDataListingScopedToProject());
+        json.put(QueryService.MAX_QUERY_SELECTION, DataRegionSelection.MAX_QUERY_SELECTION_SIZE);
         return json;
     }
 }

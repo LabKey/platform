@@ -33,7 +33,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -189,8 +188,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return ensureUploadDirectory(context.getContainer());
     }
 
-    /* TODO: this is a really awkward transition between File->FileLike (files come from FileQueue) */
-    public Map<String, FileLike> savePipelineFiles(ContextType context, Map<String, File> files) throws ExperimentException, IOException
+    public Map<String, FileLike> savePipelineFiles(ContextType context, Map<String, FileLike> files) throws ExperimentException, IOException
     {
         Map<String, FileLike> savedFiles = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         if (context.getRequest() instanceof MultipartHttpServletRequest)
@@ -201,27 +199,24 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             for (String key : files.keySet())
             {
                 // Copy the user uploaded files not already under the pipeline root to the temp directory.
-                File file = files.get(key);
+                FileLike file = files.get(key);
                 if (!root.isUnderRoot(file))
                 {
                     FileLike savedFile = dir.resolveChild(file.getName());
                     LOG.debug("savePipelineFiles: file '" + file + "' is not under pipeline root. copying to savedFile=" + savedFile);
-                    FileUtils.copyFile(file, toFileForWrite(savedFile));
+                    FileUtils.copyFile(toFileForRead(file), toFileForWrite(savedFile));
                     savedFiles.put(key, savedFile);
                 }
                 else
                 {
-                    savedFiles.put(key, FileSystemLike.wrapFile(file));
+                    savedFiles.put(key, file);
                     LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is already under pipeline root. not copying");
                 }
             }
         }
         else
         {
-            for (var entry : files.entrySet())
-            {
-                savedFiles.put(entry.getKey(), FileSystemLike.wrapFile((entry.getValue())));
-            }
+            savedFiles.putAll(files);
         }
 
         return savedFiles;
@@ -232,7 +227,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context, @NotNull Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
         Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
@@ -244,7 +239,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             while (iter.hasNext())
             {
                 Map.Entry<String, List<MultipartFile>> entry = iter.next();
-                if (parameterNames == null || parameterNames.contains(entry.getKey()))
+                if (parameterNames.contains(entry.getKey()))
                 {
                     List<MultipartFile> multipartFiles = entry.getValue();
                     boolean isAfterFirstFile = false;

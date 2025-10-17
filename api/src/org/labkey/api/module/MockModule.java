@@ -232,15 +232,13 @@ public class MockModule implements Module
     }
 
     @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Collections.emptySet();
     }
 
     @Override
-    @NotNull
-    public Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Collections.emptySet();
     }
@@ -369,7 +367,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    public Path getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return null;
     }

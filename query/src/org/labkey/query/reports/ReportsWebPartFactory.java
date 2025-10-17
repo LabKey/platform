@@ -45,7 +45,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
     }
     
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         ReportsWebPart wp = new ReportsWebPart(portalCtx, webPart);
         populateProperties(wp, webPart.getPropertyMap());
@@ -54,7 +54,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new ReportsWebPartConfig(webPart);
     }

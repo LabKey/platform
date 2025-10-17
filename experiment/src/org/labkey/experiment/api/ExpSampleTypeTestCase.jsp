@@ -390,7 +390,7 @@ public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     errors = new BatchValidationException();
     svc.insertRows(user, c, rows, errors, null, null);
     assertTrue(errors.hasErrors());
-    assertTrue(errors.getMessage().contains("SampleID or Name is required for sample on row 1"));
+    assertTrue(errors.getMessage().contains("SampleID or Name is required for sample"));
 }
 
 // idCols not null, nameExpression not null, 'name' property (not used) -- fail
@@ -468,23 +468,80 @@ public void testNameExpression() throws Exception
 
     List<Map<String, Object>> aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1, "AliquotCount", 10));
-    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
-    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
-    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
-
     List<Map<String, Object>> aliquots = insertSampleRows(sampleTypeName, aliquotRows);
-
     assertExpectedName(st, expectedName1 + "-ALI-0004");
     assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName2 + "-ALI-0005");
-    assertEquals(expectedName2, aliquots.get(1).get("aliquotedFrom"));
+    assertEquals(expectedName2, aliquots.get(0).get("aliquotedFrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-ALI-0006");
-    assertEquals(expectedName1, aliquots.get(2).get("aliquotedfrom"));
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
 
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName3 + "-ALI-0007");
-    assertEquals(expectedName3, aliquots.get(3).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName3, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    // Issue 53063: Support "Aliquoted From"
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName2, "ALIQUOTCOUNT", 2));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName2 + "-ALI-0008");
+    assertEquals(expectedName2, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName3, "ALIQUOTCOUNT", 3));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName3 + "-ALI-0009");
+    assertEquals(expectedName3, aliquots.get(0).get("aliquotedFrom"));
+
+    // test the default aliquot naming pattern (${${AliquotedFrom}-:withCounter}
+    st.setAliquotNameExpression("");
+    st.save(user);
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-1");
+    assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-2");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-3");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-4");
+    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-5");
+    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+
+    aliquotRows = new ArrayList<>();
+    aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName1));
+    aliquots = insertSampleRows(sampleTypeName, aliquotRows);
+    assertExpectedName(st, expectedName1 + "-6");
+    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
 }
 
 @Test
@@ -647,7 +704,7 @@ public void testUpdateSomeParents() throws Exception
 
     // add first parents
     TableInfo table = schema.getTable("Parent1Samples", null, true, false);
-    QueryUpdateService svc = table.getUpdateService();
+    QueryUpdateService svcParent = table.getUpdateService();
 
     BatchValidationException errors = new BatchValidationException();
     rows.add(CaseInsensitiveHashMap.of("name", "P1-1"));
@@ -655,25 +712,25 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "P1-3"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-4,test"));
 
-    List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
+    List<Map<String, Object>> inserted = svcParent.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of parent1 samples inserted not as expected", 4, inserted.size());
 
     // add second parents
     table = schema.getTable("Parent2Samples", null, true, false);
-    svc = table.getUpdateService();
+    QueryUpdateService svcParent2 = table.getUpdateService();
 
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "P2-1"));
     rows.add(CaseInsensitiveHashMap.of("name", "P2-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "P2-3"));
-    inserted = svc.insertRows(user, c, rows, errors, null, null);
+    inserted = svcParent2.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of parent2 samples inserted not as expected", 3, inserted.size());
 
     // add child samples
     table = schema.getTable("ChildSamples", null, true, false);
-    svc = table.getUpdateService();
+    QueryUpdateService svcChild = table.getUpdateService();
 
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "C1",  "MaterialInputs/Parent1Samples", "P1-1,P1-2", "MaterialInputs/Parent2Samples", "P2-1"));
@@ -682,9 +739,24 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-2", "MaterialInputs/Parent2Samples", "P2-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "C5", "MaterialInputs/Parent1Samples", "P1-1, \"P1-4,test\", P1-2"));
 
-    inserted = svc.insertRows(user, c, rows, errors, null, null);
+    inserted = svcChild.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of child samples inserted not as expected", 5, inserted.size());
+
+    // Issue 53168: circular lineage not allowed
+    rows.clear();
+    rows.add(CaseInsensitiveHashMap.of("rowId", parent2Type.getSample(c, "P2-1").getRowId(), "MaterialInputs/ChildSamples", "C1"));
+    try
+    {
+        svcParent2.updateRows(user, c, rows, null, errors, null, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("'C1' is derived from sample 'P2-1'. Circular relationships are not allowed."));
+    }
+
+    errors = new BatchValidationException();
 
     ExpMaterial P11 = parent1Type.getSample(c, "P1-1");
     ExpMaterial P12 = parent1Type.getSample(c, "P1-2");
@@ -708,7 +780,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C1", "MaterialInputs/Parent1Samples", "P1-1")); // change one parent but not the other
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", null)); // remove one parent but not the other
 
-    svc.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+    svcChild.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     ExpLineage lineage = ExpLineageService.get().getLineage(c, user, C1, opts);
@@ -725,7 +797,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1")); // change both parents
     rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "", "MaterialInputs/Parent2Samples", null)); // remove both parents
 
-    svc.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+    svcChild.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     lineage = ExpLineageService.get().getLineage(c, user, C2, opts);
@@ -1142,7 +1214,7 @@ public void testInsertOptionUpdate() throws Exception
     props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
     final String sampleTypeName = "TestSamplesWithRequired";
-    SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+    ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
 
     TableInfo table = getSampleTypeTable(sampleTypeName);
     QueryUpdateService qus = table.getUpdateService();
@@ -1164,7 +1236,21 @@ public void testInsertOptionUpdate() throws Exception
     assertFalse(context.getErrors().hasErrors());
     assertEquals("Unexpected count from IMPORT on loadRows()", 3, count);
 
-    var rows = getSampleRows(sampleTypeName);
+    // Issue 53168: aliquot cannot be parent to its aliquot parent
+    BatchValidationException errors = new BatchValidationException();
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(CaseInsensitiveHashMap.of("rowId", sampleType.getSample(c, "S-1").getRowId(), "MaterialInputs/" + sampleTypeName, "S-1-1"));
+    try
+    {
+        qus.updateRows(user, c, rows, null, errors, null, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("'S-1-1' is aliquoted from sample 'S-1'. Circular relationships are not allowed."));
+    }
+
+    rows = getSampleRows(sampleTypeName);
     assertEquals("S-1", rows.get(0).get("name"));
     assertEquals(1, rows.get(0).get("aliquotcount"));
     assertEquals(0.0, rows.get(0).get("aliquotvolume"));

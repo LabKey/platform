@@ -23,7 +23,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -139,17 +139,22 @@ public final class PlateSchemaTest
 
     private @NotNull Plate updatePlate(CaseInsensitiveHashMap<Object> row) throws Exception
     {
-        var errors = new BatchValidationException();
-        var plateRows = PlateManager.get().getPlateTable(container, user)
-                .getUpdateService()
-                .updateRows(user, container, Arrays.asList(row), null, errors, null, null);
+        try (var tx = PlateManager.get().ensureTransaction())
+        {
+            var errors = new BatchValidationException();
+            var plateRows = PlateManager.get().getPlateTable(container, user)
+                    .getUpdateService()
+                    .updateRows(user, container, List.of(row), null, errors, null, null);
 
-        assertFalse("Expected no errors", errors.hasErrors());
-        assertEquals("Expected a single row", 1, plateRows.size());
+            tx.commit();
 
-        var plateRow = plateRows.get(0);
-        var plateRowId = (int) plateRow.get(PlateTable.Column.RowId.name());
+            assertFalse("Expected no errors", errors.hasErrors());
+            assertEquals("Expected a single row", 1, plateRows.size());
 
-        return getPlate(plateRowId);
+            var plateRow = plateRows.get(0);
+            var plateRowId = (int) plateRow.get(PlateTable.Column.RowId.name());
+
+            return getPlate(plateRowId);
+        }
     }
 }

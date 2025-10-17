@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -309,9 +310,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAmount ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
+                columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, null));
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
-                if (columnInfo.getFormat() == null)
-                    columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 return columnInfo;
@@ -324,6 +324,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (typeUnit != null)
                 {
                     SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, importAliases, typeUnit);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
                     columnInfo.setDescription("The amount of this sample, in the display unit for the sample type, currently on hand.");
                     columnInfo.setShownInUpdateView(true);
                     columnInfo.setShownInInsertView(true);
@@ -334,8 +335,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 else
                 {
                     var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
-                    if (columnInfo.getFormat() == null)
-                        columnInfo.setFormat(Quantity.DEFAULT_FORMAT);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, null));
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
@@ -1576,14 +1576,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
                             .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" IS NOT NULL THEN ROUND(CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" / ? AS ")
                             .append(parent.getSqlDialect().isPostgreSQL() ? "DECIMAL" : "DOUBLE PRECISION")
-                            .append("), ?) ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())
-                            .add(typeUnit.getValue())
-                            .add(typeUnit.getPrecisionScale()),
+                            .add(typeUnit.getValue()),
                     JdbcType.DOUBLE);
 
             setLabel(label);
@@ -1631,17 +1630,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    public List<IndexDefinition> getUniqueIndices()
     {
         // Rewrite the "idx_material_ak" unique index over "Folder", "SampleSet", "Name" to just "Name"
         // Issue 25397: Don't include the "idx_material_ak" index if the "Name" column hasn't been added to the table.
         // Some FKs to ExpMaterialTable don't include the "Name" column (e.g. NabBaseTable.Specimen)
-        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(super.getUniqueIndices());
+        String indexName = "idx_material_ak";
+        List<IndexDefinition> ret = new ArrayList<>(super.getUniqueIndices());
         if (getColumn("Name") != null)
-            ret.put("idx_material_ak", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Name"))));
+            ret.add(new IndexDefinition(indexName, IndexType.Unique, Arrays.asList(getColumn("Name")), null));
         else
-            ret.remove("idx_material_ak");
-        return Collections.unmodifiableMap(ret);
+            ret.removeIf(   def -> def.name().equals(indexName));
+        return Collections.unmodifiableList(ret);
     }
 
 
@@ -1725,7 +1725,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasesIncludingAliquot(), sampleTypeObjectId)
                     .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);
@@ -1828,5 +1828,29 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
         super.overlayMetadata(tableName, schema, errors);
+    }
+
+    static class SampleTypeAmountPrecisionDisplayColumn extends DataColumn
+    {
+        private Unit typeUnit;
+        private boolean applySampleTypePrecision = true;
+
+        public SampleTypeAmountPrecisionDisplayColumn(ColumnInfo col, Unit typeUnit) {
+            super(col, false);
+            this.typeUnit = typeUnit;
+            this.applySampleTypePrecision = col.getFormat() == null; // only apply if no custom format is set by user
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = super.getDisplayValue(ctx);
+            if (this.applySampleTypePrecision && value != null)
+            {
+                int scale = this.typeUnit == null ? Quantity.DEFAULT_PRECISION_SCALE : this.typeUnit.getPrecisionScale();
+                value = Precision.round(Double.valueOf(value.toString()), scale);
+            }
+            return value;
+        }
     }
 }

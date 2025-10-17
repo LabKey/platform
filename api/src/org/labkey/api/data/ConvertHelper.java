@@ -967,7 +967,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
             String s = value.toString();
             try
             {
-                return Double.valueOf(s);
+                Double d = Double.valueOf(s);
+                // Issue 53979: Don't allow double values larger than Double.MAX_VALUE to silently convert to "Infinity"
+                if (!Double.isFinite(d))
+                    throw new NumberFormatException("Could not convert to a finite value from " + s);
+                return d;
             }
             catch (NumberFormatException x)
             {
@@ -979,7 +983,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
                     return Double.POSITIVE_INFINITY;
                 else if (s.equalsIgnoreCase("-Inf"))
                     return Double.NEGATIVE_INFINITY;
+                else if (s.equalsIgnoreCase("Infinity"))
+                    return Double.POSITIVE_INFINITY;
+                else if (s.equalsIgnoreCase("-Infinity"))
+                    return Double.NEGATIVE_INFINITY;
                 else if (s.equals("\uFFFD"))
+                    return Double.NaN;
+                else if (s.equalsIgnoreCase("NaN"))
                     return Double.NaN;
                 throw new ConversionException(x);
             }
@@ -1142,6 +1152,65 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
             assertEquals(12.3f, ConvertUtils.convert("12.3", Float.class));
             assertEquals(12.3f, ConvertUtils.convert(" 12.3 ", Float.class));
+        }
+
+        @Test
+        public void testValidInfDoubleConverter()
+        {
+            InfDoubleConverter converter = new InfDoubleConverter();
+
+            assertEquals(Double.POSITIVE_INFINITY, converter.convert(Double.class, "\u221E"));
+            assertEquals(Double.NEGATIVE_INFINITY, converter.convert(Double.class, "-\u221E"));
+            assertEquals(Double.POSITIVE_INFINITY, converter.convert(Double.class, "Inf"));
+            assertEquals(Double.NEGATIVE_INFINITY, converter.convert(Double.class, "-Inf"));
+            assertEquals(Double.POSITIVE_INFINITY, converter.convert(Double.class, "Infinity"));
+            assertEquals(Double.NEGATIVE_INFINITY, converter.convert(Double.class, "-Infinity"));
+            assertEquals(Double.NaN, converter.convert(Double.class, "\uFFFD"));
+            assertEquals(Double.NaN, converter.convert(Double.class, "NaN"));
+
+            assertEquals(1.23, converter.convert(Double.class, "1.23"));
+            assertEquals(-1.23, converter.convert(Double.class, "-1.23"));
+            assertEquals(0.0, converter.convert(Double.class, "0"));
+            assertEquals(-0.0, converter.convert(Double.class, "-0"));
+
+            assertNull(converter.convert(Double.class, ""));
+            assertNull(converter.convert(Double.class, null));
+        }
+
+        @Test
+        public void testInvalidInfDoubleConverter()
+        {
+            InfDoubleConverter converter = new InfDoubleConverter();
+
+            // Values that are not valid doubles
+            String[] invalidValues = new String[] { "abc", "1.2.3", "Infinity and beyond", "--1.0", "++1.0", "+-1.0", "-+1.0", "NaNNaN" };
+            for (String value : invalidValues)
+            {
+                try
+                {
+                    converter.convert(Double.class, value);
+                    fail("Expected ConversionException for value: " + value);
+                }
+                catch (ConversionException e)
+                {
+                    // Expected exception
+                }
+            }
+
+            // Values that would parse to infinity but are not exactly the accepted strings
+            String[] overflowValues = new String[] { "1.8e308", "-1.8e308", "1E400", "-1E400" };
+            for (String value : overflowValues)
+            {
+                try
+                {
+                    converter.convert(Double.class, value);
+                    fail("Expected ConversionException for overflow value: " + value);
+                }
+                catch (ConversionException e)
+                {
+                    // Expected exception
+                }
+            }
         }
     }
 

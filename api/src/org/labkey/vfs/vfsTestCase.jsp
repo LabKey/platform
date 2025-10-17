@@ -229,8 +229,8 @@
         fs = fs.getCachingFileSystem();
         FileLike root = fs.getRoot();
         File ROOT = root.toNioPathForWrite().toFile();
-        File DIR = new File(ROOT,"caching");
-        FileUtil.deleteDir(new File(ROOT,"caching"));
+        File DIR = FileUtil.appendName(ROOT,"caching");
+        FileUtil.deleteDir(DIR);
 
         FileLike dir = root.resolveChild("caching");
         assertFalse(dir.exists());
@@ -243,12 +243,12 @@
         assertTrue(dir.isDirectory());
         assertTrue(dir.getChildren().isEmpty());
 
-        File FILE = new File(DIR, "a.txt");
+        File FILE = FileUtil.appendName(DIR, "a.txt");
         FileLike file = dir.resolveChild("a.txt");
         assertFalse(file.exists());
         assertFalse(file.isFile());
         assertTrue(dir.getChildren().isEmpty());
-        FILE.createNewFile();
+        FileUtil.createNewFile(FILE);
         assertFalse(file.exists());
         assertFalse(file.isFile());
         assertTrue(dir.getChildren().isEmpty());

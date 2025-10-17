@@ -111,7 +111,6 @@ public class FileUtil
         tempPaths.get().clear();
     }
 
-
     @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static void stopRequest()
     {
@@ -890,7 +889,7 @@ public class FileUtil
 
     // narrower check than isLegalName() or isAllowedFileName()
     // this check that a name is a valid path part (e.g. filename) and is not path like.
-    private static void legalPathPartThrow(String name)
+    public static void legalPathPartThrow(String name)
     {
         int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
         if (invalidCharacterIndex >= 0)
@@ -1484,7 +1483,7 @@ quickScan:
             os.write(buf,0,r);
     }
 
-
+    // NOTE: Keep in sync with the copied constants in TestFileUtils
     private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^', '\n', '\r', '\''};
     public static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
@@ -1499,7 +1498,7 @@ quickScan:
         return !StringUtils.containsAny(name, ILLEGAL_CHARS);
     }
 
-
+    // NOTE: Keep in sync with the copied implementation in TestFileUtils.makeLegalFileName()
     public static String makeLegalName(String name)
     {
         if (name == null)
@@ -1560,6 +1559,12 @@ quickScan:
      * Returns the absolute path to a file. On Windows and Mac, corrects casing in file paths to match the
      * canonical path.
      */
+    @NotNull
+    public static FileLike getAbsoluteCaseSensitiveFile(@NotNull FileLike file)
+    {
+        return FileSystemLike.wrapFile(getAbsoluteCaseSensitiveFile(file.toNioPathForRead().toFile()));
+    }
+
     @NotNull
     public static File getAbsoluteCaseSensitiveFile(@NotNull File file)
     {

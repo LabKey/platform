@@ -2697,7 +2697,7 @@ public class DavController extends SpringActionController
 
             long created = resource.getCreated();
             if (Long.MIN_VALUE != created)
-                json.key("creationdate").value(new Date(created));
+                json.key("creationdate").value(getISOCreationDate(created));
             User createdby = resource.getCreatedBy();
             if (null != createdby)
                 json.key("createdby").value(UserManager.getDisplayName(createdby.getUserId(), getUser()));
@@ -2709,7 +2709,7 @@ public class DavController extends SpringActionController
             {
                 long lastModified = resource.getLastModified();
                 if (Long.MIN_VALUE != lastModified)
-                    json.key("lastmodified").value(new Date(lastModified));
+                    json.key("lastmodified").value(getISOCreationDate(lastModified));
                 long length = resource.getContentLength();
                 json.key("contentlength").value(length);
                 if (length >= 0)
@@ -3779,7 +3779,7 @@ public class DavController extends SpringActionController
                     if (destFile.exists())
                     {
                         WebdavResource parent = (WebdavResource)dest.parent();
-                        tmp = new File(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
+                        tmp = FileUtil.appendName(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                         markTempFile(tmp);
                         if (!destFile.renameTo(tmp))
                             throw new ConfigurationException("Could not remove destination: " + dest.getPath());

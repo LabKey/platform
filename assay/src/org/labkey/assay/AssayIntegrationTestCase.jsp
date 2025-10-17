@@ -95,6 +95,7 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="org.apache.commons.collections.MapUtils" %>
+<%@ page import="org.labkey.vfs.FileSystemLike" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -259,7 +260,7 @@
         HttpSession session = TestContext.get().getRequest().getSession();
 
         // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the file browser.
-        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, file)));
+        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, FileSystemLike.wrapFile(file))));
 
         // Use a multipart request to trigger the AssayFileWriter.savePipelineFiles() code path that copies files into the assay upload directory
         var mockRequest = new MockMultipartHttpServletRequest();

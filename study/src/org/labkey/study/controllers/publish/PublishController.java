@@ -50,7 +50,6 @@ import org.labkey.study.assay.query.PublishAuditProvider;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -315,7 +314,7 @@ public class PublishController extends SpringActionController
             _runIds = form.getRunId();
             _autoLinkCategory = form.getAutoLinkCategory();
 
-            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")).toPath());
+            setLogFile(FileUtil.appendName(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")).toPath());
         }
 
         @Override

@@ -44,6 +44,7 @@ import org.labkey.api.study.assay.ThawListResolverException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Arrays;
@@ -189,7 +190,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
             if (getProvider().getMetadataInputFormat(context.getProtocol()) == SampleMetadataInputFormat.FILE_BASED)
             {
                 PlateSampleFilePropertyHelper helper = (PlateSampleFilePropertyHelper) getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);
-                File metadataFile = helper.getMetadataFile();
+                FileLike metadataFile = helper.getMetadataFile();
                 sampleMetadataFile = ExperimentService.get().createData(context.getContainer(), SAMPLE_METADATA_FILE_TYPE);
                 sampleMetadataFile.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(metadataFile).toURI());
                 sampleMetadataFile.setName(metadataFile.getName());

@@ -31,6 +31,8 @@ import org.labkey.api.util.HideConfigurationDetails;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import org.labkey.api.util.Path;
+
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
@@ -70,7 +72,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         {
             File jspJavaFileBuildDirectory = new File(finder.getBuildPath() + JSP_JAVA_PATH);
             File jspClassesFileBuildDirectory = new File(finder.getBuildPath() + JSP_CLASSES_DIR);
-            File classFile = new File(jspClassesFileBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
+            File classFile = FileUtil.appendPath(jspClassesFileBuildDirectory, Path.parse(JSP_PACKAGE_PATH + compiledJspPath + ".class"));
             File sourceFile = null;
             if (null != finder.getSourcePath())
                 sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(jspFilename)));

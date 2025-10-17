@@ -17,8 +17,10 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
@@ -28,6 +30,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.labkey.api.util.logging.LogHelper;
+
 import java.io.IOException;
 
 /**
@@ -35,26 +39,32 @@ import java.io.IOException;
  */
 public class FileServlet extends HttpServlet
 {
-    private static final Logger _log = LogManager.getLogger(FileServlet.class);
+    private static final Logger _log = LogHelper.getLogger(FileServlet.class, "Forwards requests from /files to the FileContent module");
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
         String pathInfo = StringUtils.trimToEmpty(request.getPathInfo());
-        int index = pathInfo.lastIndexOf("/@");         // new style URL's: /files/<container>/@files/<path>/<name>
+        int index = pathInfo.lastIndexOf("/@"); // new style URL's: /files/<container>/@files/<path>/<name> or /files/<container>/@files/<path>/?fileName=<name>
         if (index < 0)
-            index = pathInfo.lastIndexOf('/');          // legacy style: /files/<container>/<name>
+            index = pathInfo.lastIndexOf('/');  // legacy style: /files/<container>/<name> or /files/<container>/?fileName=<name>
 
         if (index < 0)
         {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        //pathInfo is /${extraPath}/${fileName}
+        //pathInfo is /<container>>/<name>
         String fileNameParam = StringUtils.trimToNull(request.getParameter("fileName"));
         String fileName = pathInfo.substring(index + 1);
-        String extraPath = pathInfo.substring(0, index);
+        String containerPath = pathInfo.substring(0, index);
+        Container c = ContainerManager.getForPath(containerPath);
+        if (c == null)
+        {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
 
         // Store the original URL in case we need to redirect for authentication
         if (request.getAttribute(ViewServlet.ORIGINAL_URL_STRING) == null)
@@ -64,7 +74,9 @@ public class FileServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
         }
 
-        String dispatchUrl = extraPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
+        SimpleMetricsService.get().increment("API", "FileServlet", "urlsDispatched");
+        String dispatchUrl = containerPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
+        _log.info("FileServlet dispatching " + request.getRequestURL() + " to " + dispatchUrl);
         // NOTE other parameters seem to get magically propagated...
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
         r.forward(request, response);

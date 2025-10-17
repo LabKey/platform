@@ -112,6 +112,8 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1457,12 +1459,13 @@ public class PropertyController extends SpringActionController
             String suffix = filename.substring(dotIndex).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
 
-            File tempFile = FileUtil.createTempFile(prefix, suffix);
-            tempFile.deleteOnExit();
+            File rawTempFile = FileUtil.createTempFile(prefix, suffix);
+            rawTempFile.deleteOnExit();
+            FileLike tempFile = FileSystemLike.wrapFile(rawTempFile);
 
             try
             {
-                try (InputStream input = file.getInputStream(); OutputStream output = new FileOutputStream(tempFile))
+                try (InputStream input = file.getInputStream(); OutputStream output = tempFile.openOutputStream())
                 {
                     byte[] buffer = new byte[1024];
                     int len;
@@ -1530,13 +1533,13 @@ public class PropertyController extends SpringActionController
             return o.toString();
         }
 
-        private DataLoader getDataLoader(File tempFile) throws IOException
+        private DataLoader getDataLoader(FileLike tempFile) throws IOException
         {
             DataLoaderFactory factory = DataLoader.get().findFactory(tempFile, null);
             if (factory == null)
                 return null;
 
-            return factory.createLoader(tempFile, true);
+            return factory.createLoader(tempFile.openInputStream(), true);
         }
     }
 

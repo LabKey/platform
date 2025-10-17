@@ -148,8 +148,8 @@ import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRema
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.api.SampleTypeService.MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
+import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -534,9 +534,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (hasUnits == hasAmount)
             return; // both columns are present or neither is
         if (!hasAmount)
-            throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+            throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
-        throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+        throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
     @Override
@@ -665,11 +665,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Object value = entry.getValue();
             if (col != null && col == unitsCol)
             {
-                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && col == amountCol)
             {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit);
+                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
             else if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
@@ -826,7 +826,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
-        return new CaseInsensitiveHashSet(fields);
+        // Issue 53036: also include column labels and aliases
+        Set<String> metaFieldNames = new CaseInsensitiveHashSet(fields);
+        for (String fieldName : fields)
+        {
+            ColumnInfo columnInfo = getQueryTable().getColumn(fieldName);
+            if (columnInfo != null)
+            {
+                metaFieldNames.add(columnInfo.getLabel());
+                metaFieldNames.add(columnInfo.getAlias().getId());
+            }
+        }
+
+        return metaFieldNames;
     }
 
     public static boolean isAliquotStatusChangeNeedRecalc(Collection<Long> availableStatuses, Long oldStatus, Long newStatus)
@@ -844,6 +856,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return true;
 
         return false;
+    }
+
+    @Override
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+
+        // add MaterialInput/DataInputs field from parent alias
+        try
+        {
+            Map<String, String> parentAliases = _sampleType.getImportAliases();
+            for (String alias : parentAliases.keySet())
+            {
+                if (row.containsKey(alias))
+                    result.put(parentAliases.get(alias), result.get(alias));
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return result;
+
     }
 
     @Override
@@ -868,15 +905,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
         Integer aliquotRollupRoot = null;
-
+        SampleTypeService stService = SampleTypeService.get();
         if (!_sampleType.isMedia() && isAliquot)
         {
             Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                Unit oldRowUnits = Unit.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit());
-                Unit rowUnits = Unit.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit());
+                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
+                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
                 Quantity oldQuantity = null;
                 Quantity newQuantity = null;
                 if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
@@ -1619,7 +1656,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addColumns.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
 
             // recompute only add when AliquotedFrom column is not null
-            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT) || columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL))
             {
                 addColumns.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addColumns.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
@@ -1740,7 +1777,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             try
             {
-                Map<String, String> importAliasMap = sampleType.getImportAliases();
+                Map<String, String> importAliasMap = sampleType.getImportAliasesIncludingAliquot();
                 _extraPropsFns.add(() -> Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap));
             }
             catch (IOException e)
@@ -1780,24 +1817,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<String, Object> map = new CaseInsensitiveHashMap<>(((MapDataIterator)getInput()).getMap());
 
-            String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj != null)
-            {
-                if (aliquotedFromObj instanceof String)
-                {
-                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else if (aliquotedFromObj instanceof Number)
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
-                }
-            }
-
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+            boolean isAliquot = isAliquotRow(map);
 
             try
             {
@@ -1828,14 +1848,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
+                // Issue 53963: Cross-sample-type import gives incorrect row number in message
+                String rowText = _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ProcessingPartition) ? "" : " on row " + e.getRowNumber();
                 if (isAliquot)
-                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                    addRowError("Failed to generate name for aliquot" + rowText + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 else if (_sampleType.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    addRowError("Failed to generate name for sample" + rowText + " using naming pattern " + _sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (_sampleType.hasNameAsIdCol())
-                    addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    addRowError("SampleID or Name is required for sample" + rowText + ".");
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample" + rowText + ".");
             }
         }
 
@@ -1913,7 +1935,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
-                    if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
+                    if (isAliquotedFromColName(from.getName()))
                         aliquotedFromDataColInd = i;
                     else if (unitsImportAliasSet.contains(from.getName()))
                         unitDataColInd = i;
@@ -1998,10 +2020,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        private String getAliquotedFromColName()
+        private boolean isAliquotedFromColName(String fromCol)
         {
-            // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
-            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : ExpMaterial.ALIQUOTED_FROM_INPUT;
+            if (_context.getInsertOption().updateOnly)
+                return AliquotedFromLSID.name().equalsIgnoreCase(fromCol);
+
+            return ExperimentService.isAliquotedFromColumn(fromCol);
         }
 
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
@@ -2036,7 +2060,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return the base unit if we have one for the sample type since we are storing all data in the base unit
-            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit)
+            public static Object getValue(Object o, Object amountObj, boolean haveAmountCol, Unit baseUnit, String sampleTypeName)
             {
                 if (o == null || ((o instanceof String) && ((String) o).isEmpty()))
                 {
@@ -2045,14 +2069,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 // when there's a units value but no amount column, this is an error
                 if (!haveAmountCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, StoredAmount.label(), Units.name()));
+                    throw new ConversionExceptionWithMessage(MISSING_AMOUNT_ERROR_MESSAGE);
 
                 // When an amount column is present but no amount value is provided, this is an error
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).isEmpty()))
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN,  StoredAmount.label(), Units.name(), o));
 
 
-                Unit validatedUnit = Unit.getValidatedUnit(o, baseUnit);
+                Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit, sampleTypeName);
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
@@ -2060,7 +2084,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit);
+                return getValue(o, _storedAmountColInd == -1 ? null : _data.get(_storedAmountColInd), _storedAmountColInd != -1, _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
@@ -2075,14 +2099,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             // This should return a Number in the base units of the sample type.
-            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit)
+            public static Object getValue(Object amountObj, boolean hasUnitsCol, Object unitsObj, Unit displayUnit, @Nullable String sampleTypeName)
             {
                 if (amountObj == null || ((amountObj instanceof String) && ((String) amountObj).trim().isEmpty()))
                     return null;
 
                 // When there is an amount value, if there isn't a units column, this is an error.
                 if (!hasUnitsCol)
-                    throw new ConversionExceptionWithMessage(String.format(MISSING_COLUMN_VALUE_ERROR_MESSAGE_PATTERN, Units.name(), StoredAmount.label()));
+                    throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
 
                 // Have a units column, but no units value
                 if (unitsObj == null || ((unitsObj instanceof String) && ((String) unitsObj).trim().isEmpty()))
@@ -2092,13 +2116,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new ConversionExceptionWithMessage(String.format(UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN , Units.name(), StoredAmount.label(), amountObj));
                 }
 
-                Unit unit = Unit.getValidatedUnit(unitsObj, displayUnit);
+                Unit unit = SampleTypeService.get().getValidatedUnit(unitsObj, displayUnit, sampleTypeName);
 
                 // Should always be non-null at this point.
                 if (unit != null && displayUnit != null)
                 {
+                    Double quantityValue;
                     if (amountObj instanceof Number)
-                        return Quantity.of((Number) amountObj, unit).doubleValue();
+                        quantityValue = Quantity.of((Number) amountObj, unit).doubleValue();
                     else if (amountObj instanceof String amountStr)
                     {
                         if (StringUtils.isEmpty(amountStr.trim()))
@@ -2106,10 +2131,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         // If the string value includes the unit (e.g., "7ml"), convert will handle that and should
                         // ignore the unit value. If the string amount does not have the unit (e.g., "7"), we use either the
                         // unit from the unit column or the sample type display unit. doubleValue returns the amount in the base unit.
-                        return Quantity.convert(amountObj, unit).doubleValue();
+                        quantityValue = Quantity.convert(amountObj, unit).doubleValue();
                     }
                     else
                         throw new ConversionException("Cannot convert " + amountObj + " to " + unit);
+
+                    // Issue 53979: check for non-finite values
+                    if (!Double.isFinite(quantityValue))
+                        throw new ConversionException("Could not parse a finite number from '" + amountObj + "'.");
+
+                    return quantityValue;
                 }
                 return amountObj; // have no display unit, so we'll do no conversions
             }
@@ -2117,7 +2148,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
-                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit);
+                return getValue(amountObj, _unitsColInd != -1, _unitsColInd == -1 ? null : _data.get(_unitsColInd), _sampleTypeBaseUnit, _sampleType.getName());
             }
         }
 
@@ -2155,6 +2186,36 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
+    private static boolean isAliquotRow(Map<String, Object> map, String aliquotedFromColName)
+    {
+        String aliquotedFrom = null;
+        Object aliquotedFromObj = map.get(aliquotedFromColName);
+        if (aliquotedFromObj == null && map.containsKey(ColumnInfo.labelFromName(ExpMaterial.ALIQUOTED_FROM_INPUT)))
+            aliquotedFromObj = map.get(ColumnInfo.labelFromName(ExpMaterial.ALIQUOTED_FROM_INPUT));
+        if (aliquotedFromObj != null)
+        {
+            if (aliquotedFromObj instanceof String)
+            {
+                // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                if (!StringUtils.isEmpty(aliquotedFrom))
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+            }
+            else if (aliquotedFromObj instanceof Number)
+            {
+                aliquotedFrom = aliquotedFromObj.toString();
+            }
+        }
+
+        return !StringUtils.isEmpty(aliquotedFrom);
+    }
+
+    private static boolean isAliquotRow(Map<String, Object> map)
+    {
+        return isAliquotRow(map, ExpMaterial.ALIQUOTED_FROM_INPUT) || isAliquotRow(map, ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL);
+    }
+
     public static class SampleNameGeneratorState extends NameGeneratorState
     {
         private final NameGenerator aliquotNameGenerator;
@@ -2175,24 +2236,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
         {
-            String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj != null)
-            {
-                if (aliquotedFromObj instanceof String)
-                {
-                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else if (aliquotedFromObj instanceof Number)
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
-                }
-            }
-
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+            boolean isAliquot = isAliquotRow(map);
 
             String generatedName = null;
             if (isAliquot && aliquotNameGenerator != null)

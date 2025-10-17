@@ -59,6 +59,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -246,9 +247,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     @Nullable
     @Override
-    public File getOriginalFileLocation()
+    public FileLike getOriginalFileLocation()
     {
-        AssayDataCollector collector = getSelectedDataCollector();
+        AssayDataCollector<?> collector = getSelectedDataCollector();
         if (collector != null)
         {
             return collector.getOriginalFileLocation();
@@ -340,7 +341,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
             if (!fileParameters.isEmpty())
             {
-                AssayFileWriter writer = new AssayFileWriter();
+                AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
                 try
                 {
                     // Initialize member variable so we know that we've already tried to save the posted files in case of error
@@ -355,14 +356,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     // Hidden values in form containing previously uploaded files if previous upload resulted in error
                     for (String fileParam : filePdNames)
                     {
-                        if (request instanceof MultipartHttpServletRequest && null != request.getParameter(fileParam))
+                        if (request instanceof MultipartHttpServletRequest mhsr && null != request.getParameter(fileParam))
                         {
                             String previousFileName = request.getParameter(fileParam);
                             if (null != previousFileName)
                             {
-                                previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath(), previousFileName);
+                                previousFile = FileUtil.appendName(getAssayDirectory(getContainer(), null), previousFileName);
 
-                                MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
+                                MultipartFile multiFile = mhsr.getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
 
                                 // If file is removed from form after error, override hidden file name with empty file
                                 if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
@@ -729,7 +730,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     @Override
     public void uploadComplete(ExpRun run) throws ExperimentException
     {
-        AssayDataCollector collector = getSelectedDataCollector();
+        AssayDataCollector<AssayRunUploadForm<ProviderType>> collector = getSelectedDataCollector();
         if (collector != null)
         {
             _uploadedData = CollectionUtils.checkValueClass(collector.uploadComplete(this, run),FileLike.class);

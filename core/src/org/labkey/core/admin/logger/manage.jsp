@@ -194,8 +194,8 @@
 
         return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
                 "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + LABKEY.Utils.encodeHtml(logger.level) + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "' data-notes='" + LABKEY.Utils.encodeHtml(logger.notes) + "'>" +
-                "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
-                logger.level +
+                "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + LABKEY.Utils.encodeHtml(logger.level) + "'>" +
+                LABKEY.Utils.encodeHtml(logger.level) +
                 "</td>" +
                 "<td>" + (logger.name === 'null' ? '&lt;root&gt;' : LABKEY.Utils.encodeHtml(logger.name)) + "</td>" +
                 "<td>" + LABKEY.Utils.encodeHtml(logger.parent) + "</td>" +

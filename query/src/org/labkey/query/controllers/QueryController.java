@@ -328,6 +328,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -2109,6 +2110,38 @@ public class QueryController extends SpringActionController
             ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment);
             ViewContext viewContext = getViewContext();
 
+            Map<String, List<QueryForm>> nameFormMap = new CaseInsensitiveHashMap<>();
+            Map<QueryForm, String> sheetNames = new HashMap<>();
+            form.getQueryForms().forEach(qf -> {
+                String sheetName = qf.getSheetName();
+                QueryView qv = qf.getQueryView();
+                // use the given sheet name if provided, otherwise try the query definition name
+                String name = StringUtils.isNotBlank(sheetName) ? sheetName : qv.getQueryDef().getName();
+                // if there is no sheet name or queryDefinition name, use a data region name if provided. Otherwise, use "Data"
+                name = StringUtils.isNotBlank(name) ? name : StringUtils.isNotBlank(qv.getDataRegionName()) ? qv.getDataRegionName() : "Data";
+                // clean it to remove undesirable characters and make it of an acceptable length
+                name = ExcelWriter.cleanSheetName(name);
+                nameFormMap.computeIfAbsent(name, k -> new ArrayList<>()).add(qf);
+            });
+            // Issue 53722: Need to assure unique names for the sheets in the presence of really long names
+            for (Map.Entry<String, List<QueryForm>> entry : nameFormMap.entrySet()) {
+                String name = entry.getKey();
+                if (entry.getValue().size() > 1)
+                {
+                    List<QueryForm> queryForms = entry.getValue();
+                    int countLength = String.valueOf(queryForms.size()).length() + 2;
+                    if (countLength > name.length())
+                        throw new IllegalArgumentException("Cannot create sheet names from overlapping query names.");
+                    for (int i = 0; i < queryForms.size(); i++)
+                    {
+                        sheetNames.put(entry.getValue().get(i), name.substring(0, name.length() - countLength) + "(" + i + ")");
+                    }
+                }
+                else
+                {
+                    sheetNames.put(entry.getValue().get(0), name);
+                }
+            }
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
                 @Override
                 protected void renderSheets(Workbook workbook)
@@ -2122,11 +2155,8 @@ public class QueryController extends SpringActionController
                         QueryView.ExcelExportConfig config = new QueryView.ExcelExportConfig(response, qf.getHeaderType())
                             .setExcludeColumns(qf.getExcludeColumns())
                             .setRenamedColumns(qf.getRenameColumnMap());
-                        String sheetName = qf.getSheetName();
                         qv.configureExcelWriter(this, config);
-                        String name = StringUtils.isNotBlank(sheetName)? sheetName : qv.getQueryDef().getName();
-                        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(qv.getDataRegionName()) ? qv.getDataRegionName() : "Data";
-                        setSheetName(name);
+                        setSheetName(sheetNames.get(qf));
                         setAutoSize(true);
                         renderNewSheet(workbook);
                         qv.logAuditEvent("Exported to Excel", getDataRowCount());
@@ -4683,6 +4713,7 @@ public class QueryController extends SpringActionController
                 else if (commandType != CommandType.importRows)
                 {
                     response.put("rows", responseRows.stream()
+                        .map(JsonUtil::toMapPreserveNonFinite)
                         .map(JsonUtil::toJsonPreserveNulls)
                         .collect(LabKeyCollectors.toJSONArray()));
                 }
@@ -6480,14 +6511,9 @@ public class QueryController extends SpringActionController
                 DataRegionSelection.clearAll(getViewContext(), form.getKey());
                 return new DataRegionSelection.SelectionResponse(0);
             }
-            else
-            {
-                // Note: DataRegionSelection.setSelectionForAll(form, false) will query for all rows in the region to remove those in context.
-                // Instead, get the selected values in context and then "uncheck" them directly
-                List<String> currentCtxSelection = DataRegionSelection.getSelected(form, false);
-                int count = DataRegionSelection.setSelected(getViewContext(), form.getQuerySettings().getSelectionKey(), currentCtxSelection, false);
-                return new DataRegionSelection.SelectionResponse(count);
-            }
+
+            int count = DataRegionSelection.setSelectedFromForm(form);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
@@ -6557,16 +6583,14 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
             getViewContext().getResponse().setHeader("Content-Type", CONTENT_TYPE_JSON);
+            Set<String> selected;
+
             if (form.getQueryName() == null)
-            {
-                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
-                return new ApiSimpleResponse("selected", selected);
-            }
+                selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
             else
-            {
-                List<String> selected = DataRegionSelection.getSelected(form, form.isClearSelected());
-                return new ApiSimpleResponse("selected", selected);
-            }
+                selected = DataRegionSelection.getSelected(form, form.isClearSelected());
+
+            return new ApiSimpleResponse("selected", selected);
         }
     }
 
@@ -6578,7 +6602,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
-            List<String> selection = new ArrayList<>();
+            Set<String> selection = new LinkedHashSet<>();
             if (ids != null)
             {
                 for (String id : ids)

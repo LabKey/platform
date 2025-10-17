@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.formula.functions.T;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -37,6 +36,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.SimpleTranslator.SpecialColumn;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -102,12 +102,12 @@ public class Table
     // Makes long parameter lists easier to read
     public static final int NO_OFFSET = 0;
 
-    public static final String ENTITY_ID_COLUMN_NAME = "EntityId";
-    public static final String OWNER_COLUMN_NAME = "Owner";
-    public static final String CREATED_BY_COLUMN_NAME = "CreatedBy";
-    public static final String CREATED_COLUMN_NAME = "Created";
-    public static final String MODIFIED_BY_COLUMN_NAME = "ModifiedBy";
-    public static final String MODIFIED_COLUMN_NAME = "Modified";
+    private static final String ENTITY_ID_COLUMN_NAME = SpecialColumn.EntityId.name();
+    private static final String OWNER_COLUMN_NAME = "Owner";
+    private static final String CREATED_BY_COLUMN_NAME = SpecialColumn.CreatedBy.name();
+    private static final String CREATED_COLUMN_NAME = SpecialColumn.Created.name();
+    private static final String MODIFIED_BY_COLUMN_NAME = SpecialColumn.ModifiedBy.name();
+    private static final String MODIFIED_COLUMN_NAME = SpecialColumn.Modified.name();
 
     /** Columns that are magically populated as part of an insert or update operation */
     public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = CaseInsensitiveHashSet.of(
@@ -646,7 +646,6 @@ public class Table
         if (null != conn) scope.releaseConnection(conn);
     }
 
-
     /**
      * return a 'clean' list of fields to update
      */
@@ -660,7 +659,6 @@ public class Table
         fields = f.toMap(from, null);
         return _getTableData(table, fields, insert);
     }
-
 
     protected static Map<String, Object> _getTableData(TableInfo table, Map<String, Object> fields, boolean insert)
     {
@@ -678,7 +676,6 @@ public class Table
         {
             String key = column.getName();
 
-//            if (column.isReadOnly() && !(insert && key.equals("EntityId")))
             if (!insert && column.isReadOnly() || column.isAutoIncrement() || column.isVersionColumn())
                 continue;
 
@@ -702,15 +699,13 @@ public class Table
         return m;
     }
 
-
     static String _trimRight(String s)
     {
         if (null == s) return "";
         return StringUtils.stripEnd(s, "\t\r\n ");
     }
 
-
-    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, NowTimestamp now)
     {
         ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
@@ -723,7 +718,7 @@ public class Table
         {
             Date dateCreated = (Date)fields.get(CREATED_COLUMN_NAME);
             if (null == dateCreated || 0 == dateCreated.getTime())
-                fields.put(CREATED_COLUMN_NAME, date);
+                fields.put(CREATED_COLUMN_NAME, now);
         }
         col = table.getColumn(ENTITY_ID_COLUMN_NAME);
         if (col != null && fields.get(ENTITY_ID_COLUMN_NAME) == null)
@@ -746,7 +741,7 @@ public class Table
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
 
-    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, NowTimestamp now)
     {
         ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
         if (null != colModifiedBy && null != user)
@@ -754,11 +749,11 @@ public class Table
 
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         if (null != colModified)
-            fields.put(colModified.getName(), date);
+            fields.put(colModified.getName(), now);
 
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-            fields.put(colVersion.getName(), date);
+            fields.put(colVersion.getName(), now);
     }
 
     protected static void _copyUpdateSpecialFields(TableInfo table, Object returnObject, Map<String, Object> fields)
@@ -778,9 +773,12 @@ public class Table
             _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
     }
 
-
     static private void _setProperty(Object fields, String propName, Object value)
     {
+        // Replace marker NowTimestamp instances with Timestamp for default serialization
+        if (value instanceof NowTimestamp now)
+            value = new java.sql.Timestamp(now.getTime());
+
         if (fields instanceof Map)
         {
             ((Map<String, Object>) fields).put(propName, value);
@@ -819,24 +817,21 @@ public class Table
      */
     public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
-
-        // _executeTriggers(table, fields);
+        assert assertInDb(table);
 
         SQLFragment insertSQL = new SQLFragment();
         SQLFragment columnSQL = new SQLFragment();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
-        ColumnInfo versionColumn = null;
         String comma = "";
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
                 _getTableData(table, (Map<String, Object>)fieldsIn, true) :
                 _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _insertSpecialFields(user, table, fields, date);
-        _updateSpecialFields(user, table, fields, date);
+        NowTimestamp now = new NowTimestamp();
+        _insertSpecialFields(user, table, fields, now);
+        _updateSpecialFields(user, table, fields, now);
 
         List<ColumnInfo> columns = table.getColumns();
 
@@ -868,6 +863,8 @@ public class Table
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
                 valueSQL.append("NULL");
+            else if (value instanceof NowTimestamp ts)
+                valueSQL.appendValue(ts);
             else
             {
                 // Validate the value
@@ -937,7 +934,7 @@ public class Table
             _copyInsertSpecialFields(returnObject, fields);
             _copyUpdateSpecialFields(table, returnObject, fields);
         }
-        catch(SQLException e)
+        catch (SQLException e)
         {
             logException(insertSQL, conn, e, Level.WARN);
             throw new RuntimeSQLException(e);
@@ -963,10 +960,8 @@ public class Table
     /* NOTE this does not enforce that keyColumn is an appropriately unique column! */
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, @Nullable ColumnInfo keyColumn, Object pkVals, @Nullable Filter filter, Level level)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         assert null != pkVals;
-
-        // _executeTriggers(table, previous, fields);
 
         SQLFragment setSQL = new SQLFragment();
         SQLFragment whereSQL = new SQLFragment();
@@ -1028,8 +1023,7 @@ public class Table
         Map<String, Object> fields = fieldsIn instanceof Map ?
             _getTableData(table, (Map<String,Object>)fieldsIn, true) :
             _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _updateSpecialFields(user, table, fields, date);
+        _updateSpecialFields(user, table, fields, new NowTimestamp());
 
         List<ColumnInfo> columns = table.getColumns();
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
@@ -1069,11 +1063,12 @@ public class Table
             Object value = fields.get(column.getName());
             setSQL.append(comma);
             setSQL.appendIdentifier(column.getSelectIdentifier());
+            setSQL.append("=");
 
             if (null == value || value instanceof String s && s.isEmpty())
-            {
-                setSQL.append("=NULL");
-            }
+                setSQL.append("NULL");
+            else if (value instanceof NowTimestamp ts)
+                setSQL.appendValue(ts);
             else
             {
                 // Validate the value
@@ -1085,7 +1080,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                setSQL.append("=?");
+                setSQL.append("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     setSQL.add(value);
                 else
@@ -1128,6 +1123,71 @@ public class Table
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
     }
 
+    /**
+     * Updates the container of specified rows in the provided database table. Optionally, the modification timestamp
+     * and the user who made the modification can also be updated if specified.
+     *
+     * @param table           The table where the container update should be applied.
+     * @param idField         The name of the identifier field used to locate the rows to update.
+     * @param ids             A collection of identifier values specifying the rows to be updated.
+     * @param targetContainer The target container to set for the specified rows.
+     * @param user            The user performing the update. If null, modified/modifiedBy details are not updated.
+     * @param withModified    If true, updates the modified timestamp and the user who made the modification.
+     * @return The number of rows updated in the table.
+     */
+    public static int updateContainer(TableInfo table, String idField, Collection<?> ids, Container targetContainer, @Nullable User user, boolean withModified)
+    {
+        assert assertInDb(table);
+        ColumnInfo idColumn = table.getColumn(idField);
+        if (idColumn == null)
+            throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + idField + "'.");
+
+        if (ids == null || ids.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(idColumn.getFieldKey(), ids);
+
+        return updateContainer(table, targetContainer, filter, user, withModified);
+    }
+
+    public static int updateContainer(TableInfo table, Container targetContainer, @NotNull SimpleFilter filter, @Nullable User user, boolean withModified)
+    {
+        assert assertInDb(table);
+        ColumnInfo containerColumn = table.getColumn(SpecialColumn.Container.name());
+        if (containerColumn == null)
+            throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + SpecialColumn.Container.name() + "'.");
+
+        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
+                .append(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
+                .append(" = ")
+                .appendValue(targetContainer);
+
+        if (withModified)
+        {
+            assert user != null : "User must be specified when updating modified/modifiedBy details.";
+            ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
+            if (null != colModified)
+            {
+                dataUpdate.append(", ").appendIdentifier(colModified.getSelectIdentifier())
+                        .append(" = ")
+                        .appendValue(new java.sql.Timestamp(System.currentTimeMillis()));
+            }
+
+            ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
+            if (null != colModifiedBy)
+            {
+                dataUpdate.append(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
+                        .append(" = ")
+                        .appendValue(user.getUserId());
+            }
+        }
+
+        SQLFragment whereClause = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
+        dataUpdate.append("\n").append(whereClause);
+
+        return new SqlExecutor(table.getSchema()).execute(dataUpdate);
+    }
 
     public static void delete(TableInfo table, Object rowId)
     {
@@ -1154,17 +1214,16 @@ public class Table
 
     public static int delete(TableInfo table)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
+
         return sqlExecutor.execute("DELETE FROM " + table.getSelectName());
     }
 
     public static int delete(TableInfo table, Filter filter)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
-
+        assert assertInDb(table);
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-
         SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
 
         return new SqlExecutor(table.getSchema()).execute(deleteSQL);
@@ -1172,7 +1231,7 @@ public class Table
 
     public static void truncate(TableInfo table)
     {
-        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert assertInDb(table);
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
         sqlExecutor.execute(table.getSqlDialect().getTruncateSql(table.getSelectName()));
     }
@@ -1569,7 +1628,7 @@ public class Table
      *  Create a map that can be passed into Filter.getSQLFragment() that create a SQL fragment using getMetaDataName() instead of
      * getAlias().
      */
-    static private Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
+    private static Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
     {
         Map<FieldKey, ColumnInfo> ret = new HashMap<>();
         for (var column : table.getColumns())
@@ -1581,7 +1640,6 @@ public class Table
         return ret;
     }
 
-
     public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix)
     {
         return checkAllColumns(table, columns, prefix, false);
@@ -1591,7 +1649,6 @@ public class Table
     {
         int bad = 0;
 
-//        Map<FieldKey, ColumnInfo> mapFK = new HashMap<>(columns.size()*2);
         Map<String, ColumnInfo> mapAlias = new HashMap<>(columns.size()*2);
         ColumnInfo prev;
 
@@ -1599,8 +1656,6 @@ public class Table
         {
             if (!checkColumn(table, column, prefix))
                 bad++;
-//            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
-//                bad++;
             if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
                 _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias().getId() + ") as column " + prev + " from table: " + prev.getParentTable());
@@ -1621,7 +1676,6 @@ public class Table
         return 0 == bad;
     }
 
-
     public static boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
     {
         if (column.getParentTable() != table)
@@ -1635,8 +1689,7 @@ public class Table
         }
     }
 
-
-    public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
+    public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete) throws SQLException
     {
         if (!(tableDelete instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException();
@@ -1732,6 +1785,17 @@ public class Table
         return new ParameterMapStatement(tableDelete.getSchema().getScope(), conn, sqlfDelete, updatable.remapSchemaColumns());
     }
 
+    private static boolean assertInDb(TableInfo table)
+    {
+        if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
+            throw new AssertionError("Table " + fullTableName(table) + " is not in the physical database.");
+        return true;
+    }
+
+    private static String fullTableName(TableInfo table)
+    {
+        return table.getSchema().getName() + "." + table.getName();
+    }
 
     public static class TestDataIterator extends AbstractDataIterator
     {

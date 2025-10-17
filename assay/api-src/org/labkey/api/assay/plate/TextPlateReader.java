@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
@@ -44,13 +44,13 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public double[][] loadFile(Plate template, File dataFile) throws ExperimentException
+    public double[][] loadFile(Plate template, FileLike dataFile) throws ExperimentException
     {
         String fileName = dataFile.getName().toLowerCase();
         if (!fileName.endsWith(".txt"))
             throw new ExperimentException("Unable to load data file: Invalid Format");
 
-        try (LineNumberReader reader = new LineNumberReader(Readers.getReader(dataFile)))
+        try (LineNumberReader reader = new LineNumberReader(Readers.getReader(dataFile.openInputStream())))
         {
             List<String> data = new ArrayList<>();
             String line;

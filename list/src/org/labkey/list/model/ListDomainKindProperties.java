@@ -25,7 +25,6 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
     private boolean allowExport = true;
 
     private String category = null;
-    private int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
 
     //Index Entire List as a Single Document
     private String entireListTitleTemplate = "";
@@ -59,7 +58,6 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
         description = copyFrom.description;
         lastIndexed = copyFrom.lastIndexed;
         category = copyFrom.category;
-        discussionSetting = copyFrom.discussionSetting;
         allowDelete = copyFrom.allowDelete;
         allowUpload = copyFrom.allowUpload;
         allowExport = copyFrom.allowExport;
@@ -195,16 +193,6 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
         this.category = category;
     }
 
-    public int getDiscussionSetting()
-    {
-        return discussionSetting;
-    }
-
-    public void setDiscussionSetting(int discussionSetting)
-    {
-        this.discussionSetting = discussionSetting;
-    }
-
     @Override
     public String getEntireListTitleTemplate()
     {
@@ -326,7 +314,6 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
         map.put("AllowDelete", isAllowDelete());
         map.put("AllowUpload", isAllowUpload());
         map.put("AllowExport", isAllowExport());
-        map.put("DiscussionSetting", getDiscussionSetting());
         if (!StringUtils.isEmpty(getCategory()))
             map.put("Category", getCategory());
         if (!StringUtils.isEmpty(getEntireListTitleTemplate()))

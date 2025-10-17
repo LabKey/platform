@@ -109,6 +109,7 @@ public interface QueryUpdateService extends HasPermission
         SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
         BulkLoad,                // (Bool) skips detailed auditing
         CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
+        ProcessingPartition,                // (Bool) Importing a partitioned file from original file
         SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
         PreferPKOverObjectUriAsKey,    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
         SkipReselectRows, // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
@@ -181,7 +182,7 @@ public interface QueryUpdateService extends HasPermission
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
-    List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
+    @Nullable List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
                                                BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
         throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 

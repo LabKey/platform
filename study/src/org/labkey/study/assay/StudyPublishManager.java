@@ -958,7 +958,7 @@ public class StudyPublishManager implements StudyPublishService
             String extra = id++ == 0 ? "" : String.valueOf(id);
             String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
-            file = dir.resolve(fileName);
+            file = FileUtil.appendName(dir, fileName);
         }
         while (Files.exists(file));
 

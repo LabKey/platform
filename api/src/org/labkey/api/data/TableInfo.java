@@ -138,13 +138,13 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     @NotNull List<ColumnInfo> getPkColumns();
 
-    /** Gets all of the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
+    /** Gets all the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
     @NotNull
-    Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices();
+    List<IndexDefinition> getUniqueIndices();
 
-    /** Gets all of the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
+    /** Gets all the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
-    Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
+    List<IndexDefinition> getAllIndices();
 
     class _DoNothingAuditHandler implements AuditHandler
     {
@@ -200,6 +200,14 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
                 }
             }
             throw new EnumConstantNotPresentException(IndexType.class, xmlIndexType.toString());
+        }
+    }
+
+    record IndexDefinition(String name, IndexType indexType, List<ColumnInfo> columns, @Nullable String filterCondition)
+    {
+        void addColumn(ColumnInfo column)
+        {
+            columns.add(column);
         }
     }
 

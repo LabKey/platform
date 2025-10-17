@@ -23,6 +23,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
@@ -113,7 +116,7 @@ public class SharedStudyTest extends BaseWebDriverTest
                 .setDatasetId(SHARED_DEMOGRAPHICS_ID)
                 .shareDemographics("Share by PandaId")
                 .clickApply();
-        datasetDesignerPage.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
+        datasetDesignerPage.getFieldsPanel().setInferFieldFile(FileUtil.appendPath(STUDY_DIR, Path.parse("study/datasets/dataset5001.tsv")));
         // leave the 'visits' column unmapped, make sure it doesn't have a value/only has a placeholder
         // (this dataset doesn't have a meaningful visit field)
         assertEquals("", datasetDesignerPage.getPreviewMappedColumnValue("Visits"));
@@ -130,8 +133,8 @@ public class SharedStudyTest extends BaseWebDriverTest
         setFormElement(Locator.name("subjectColumnName"), "PandaId");
         clickButton("Create Study");
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
-        _listHelper.importDataFromFile(new File(STUDY_DIR, "study/datasets/extra_demographics.txt"));
-        _studyHelper.importDataset(STUDY2_DATASET, getProjectName() + "/" + STUDY2, STUDY2_DATASET_ID, new File(STUDY_DIR, "study/datasets/extra_dataset.txt"));
+        _listHelper.importDataFromFile(FileUtil.appendPath(STUDY_DIR, Path.parse("study/datasets/extra_demographics.txt")));
+        _studyHelper.importDataset(STUDY2_DATASET, getProjectName() + "/" + STUDY2, STUDY2_DATASET_ID, FileUtil.appendPath(STUDY_DIR, Path.parse("study/datasets/extra_dataset.txt")));
     }
 
     @Before
@@ -480,7 +483,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testSharedDatasetSubfolderSecurity()
     {
-        createUserWithPermissions(user, getProjectName(), "Reader");
+        createUserWithPermissions(user, getProjectName(), READER_ROLE);
 
         impersonate(user);
         {
@@ -503,7 +506,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickFolder(STUDY1);
         _permissionsHelper.enterPermissionsUI();
         _permissionsHelper.uncheckInheritedPermissions();
-        _permissionsHelper.setUserPermissions(user, "Reader");
+        _permissionsHelper.setUserPermissions(user, READER_ROLE);
         _permissionsHelper.saveAndFinish();
         clickFolder(STUDY2);
         _permissionsHelper.enterPermissionsUI();

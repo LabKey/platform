@@ -361,7 +361,7 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Set<Class> getUnitTests()
+    public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
             Aggregate.TestCase.class,
@@ -458,7 +458,7 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Set<Class> getIntegrationTests()
+    public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
             AbstractAuditDomainKind.TestCase.class,
@@ -504,13 +504,11 @@ public class ApiModule extends CodeOnlyModule
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
             PropertyManager.TestCase.class,
-            //RateLimiter.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
-            SQLFragment.IntegrationTestCase.class,
             SecurityManager.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
             SqlSelectorTestCase.class,

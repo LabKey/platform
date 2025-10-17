@@ -32,7 +32,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.companyName;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.customLogin;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.customWelcome;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.dateParsingMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.folderDisplayMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.helpMenuEnabled;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.logoHref;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.reportAProblemPath;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.supportEmail;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemDescription;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemEmailAddress;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemShortName;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.themeName;
 
 // Handles all the properties that can be set at the project or site level
 public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
@@ -134,16 +147,6 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void clearHelpMenuEnabled()
     {
         remove(helpMenuEnabled);
-    }
-
-    public void setDiscussionEnabled(boolean enabled)
-    {
-        storeBooleanValue(discussionEnabled, enabled);
-    }
-
-    public void clearDiscussionEnabled()
-    {
-        remove(discussionEnabled);
     }
 
     public void setLogoHref(String href)

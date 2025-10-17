@@ -148,11 +148,11 @@ public class ROutputView extends HttpView
         out.write(sb.toString());
     }
 
-    protected File moveToTemp(File file, String prefix)
+    protected File moveToTemp(File file)
     {
         File root = ScriptEngineReport.getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
 
-        File newFile = new File(root, FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
+        File newFile = FileUtil.appendName(root, FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
         newFile.delete();
 
         LOG.debug("Moving '" + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");

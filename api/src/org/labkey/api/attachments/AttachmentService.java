@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -32,8 +35,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.validation.BindException;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,7 +91,7 @@ public interface AttachmentService
 
     void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
 
-    void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+    int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 
     @NotNull
     List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
@@ -136,7 +137,7 @@ public interface AttachmentService
 
     HttpView<?> getFindAttachmentParentsView();
 
-    class DuplicateFilenameException extends IOException
+    class DuplicateFilenameException extends IOException implements SkipMothershipLogging
     {
         private final List<String> _errors = new ArrayList<>();
 

@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.FileUtil;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -21,6 +22,8 @@ import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.List;
+
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class, Assays.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 5)
@@ -68,7 +71,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         log("Creating a reader user");
         _userHelper.createUser(READER_USER);
         ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
-        permissionsHelper.addMemberToRole(READER_USER, "Reader", PermissionsHelper.MemberType.user, STUDY1);
+        permissionsHelper.addMemberToRole(READER_USER, READER_ROLE, PermissionsHelper.MemberType.user, STUDY1);
     }
 
     @Override
@@ -98,7 +101,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 .setAutoLinkCategory(categoryName)
                 .clickSave();
 
-        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run1.xls");
+        File runFile = FileUtil.appendName(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run1.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         log("Verifying data is auto imported in study");
@@ -179,7 +182,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         _assayHelper.clickEditAssayDesign().setAutoLinkTarget("").clickSave();
 
         goToProjectHome();
-        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run3.xls");
+        File runFile = FileUtil.appendName(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run3.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         linkToStudy(runName, STUDY1, 1, categoryName); // Category exists in Study 1
@@ -210,7 +213,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 .clickSave();
 
         goToProjectHome();
-        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run4.xls");
+        File runFile = FileUtil.appendName(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run4.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         linkToStudy(runName, STUDY1, 1, categoryName);
@@ -238,7 +241,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 .clickSave();
 
         goToProjectHome();
-        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run4.xls");
+        File runFile = FileUtil.appendName(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run4.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         goToProjectHome(STUDY1);

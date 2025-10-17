@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.Theme" %>
@@ -204,23 +203,6 @@
     <%=inheritCheckbox(inherited, helpMenuEnabled)%>
     <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isHelpMenuEnabled())%><%=disabled(inherited)%>></td>
 </tr>
-<%
-    if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS))
-    {
-%>
-<tr>
-    <%
-        String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
-            "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
-        inherited = isInherited(laf.isDiscussionEnabledStored());
-    %>
-    <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp)%></td>
-    <%=inheritCheckbox(inherited, discussionEnabled)%>
-    <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDiscussionEnabled())%><%=disabled(inherited)%>></td>
-</tr>
-<%
-    }
-%>
 <tr>
     <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>
     <% inherited = isInherited(laf.getUnsubstitutedLogoHrefStored()); %>

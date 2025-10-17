@@ -62,7 +62,7 @@ public abstract class DownloadOutputView extends ROutputView
 
         if (file != null && file.exists() && (file.length() > 0))
         {
-            File newFile = moveToTemp(file, "RReportPdf");
+            File newFile = moveToTemp(file);
             // file hasn't been saved yet
             String key = ImageUtil.setFileInSession(getViewContext().getRequest(), newFile);
             downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).

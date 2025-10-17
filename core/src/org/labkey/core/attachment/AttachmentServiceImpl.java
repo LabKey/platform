@@ -119,6 +119,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -545,14 +546,17 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
+    public int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
+        int totalRowsChanged = 0;
+
         for (AttachmentParent parent : parents)
         {
             checkSecurityPolicy(auditUser, parent);
             int rowsChanged = new SqlExecutor(coreTables().getSchema()).execute(sqlMove(parent, newContainer));
             if (rowsChanged > 0)
             {
+                totalRowsChanged += rowsChanged;
                 List<Attachment> atts = getAttachments(parent);
                 String filename;
                 for (Attachment att : atts)
@@ -575,6 +579,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 AttachmentCache.removeAttachments(parent);
             }
         }
+
+        return totalRowsChanged;
     }
 
     /** may return fewer AttachmentFile than Attachment, if there have been deletions */
@@ -586,9 +592,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         for (Attachment attachment : attachments)
         {
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName());
+                File f = new File((adParent).getFileSystemDirectory(), attachment.getName());
                 files.add(new FileAttachmentFile(f));
             }
             else
@@ -1141,17 +1147,28 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             rs = stmt.executeQuery();
 
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
-                if (!parentDir.exists())
+                java.nio.file.Path parentDir = adParent.getFileSystemDirectoryPath();
+                if (!Files.exists(parentDir))
                     throw new FileNotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
-                File file = new File(parentDir, name);
+                java.nio.file.Path file = FileUtil.appendName(parentDir, name);
                 stmt.close();
                 stmt = null;
                 rs.close();
                 rs = null;
-                return new FileInputStream(file);
+                try
+                {
+                    return Files.newInputStream(file);
+                }
+                catch (FileNotFoundException e)
+                {
+                    throw e;
+                }
+                catch (IOException e)
+                {
+                    throw new FileNotFoundException(e.getMessage());
+                }
             }
             else
             {
@@ -1783,9 +1800,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             svc.renameAttachment(attachParent, newName, oldName, user);
 
 
-            assertTrue(new File(attachDir, UPLOAD_LOG).exists());
+            assertTrue(FileUtil.appendName(attachDir, UPLOAD_LOG).exists());
 
-            File otherDir = new File(attachDir, "subdir");
+            File otherDir = FileUtil.appendName(attachDir, "subdir");
             otherDir.mkdir();
             AttachmentDirectory namedParent = fileService.registerDirectory(folder, "test", otherDir.getCanonicalPath(), false);
 
@@ -1797,14 +1814,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             att = svc.getAttachments(namedParent);
             assertEquals(1, att.size());
             assertTrue(att.get(0).getFile().exists());
-            assertSameFile(new File(otherDir, "file.txt"), att.get(0).getFile());
-            assertTrue(new File(otherDir, UPLOAD_LOG).exists());
+            assertSameFile(FileUtil.appendName(otherDir, "file.txt"), att.get(0).getFile());
+            assertTrue(FileUtil.appendName(otherDir, UPLOAD_LOG).exists());
 
             fileService.unregisterDirectory(folder, "test");
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
 
-            File relativeDir = new File(attachDir, "subdir2");
+            File relativeDir = FileUtil.appendName(attachDir, "subdir2");
             relativeDir.mkdirs();
             AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", FileUtil.getAbsoluteCaseSensitiveFile(relativeDir).getAbsolutePath(), false);
             
@@ -1817,10 +1834,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             assertEquals(1, att.size());
 
             File expectedFile1 = att.get(0).getFile();
-            File expectedFile2 = new File(relativeDir, UPLOAD_LOG);
+            File expectedFile2 = FileUtil.appendName(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());
-            assertEquals(new File(relativeDir, "file.txt"), expectedFile1);
+            assertEquals(FileUtil.appendName(relativeDir, "file.txt"), expectedFile1);
             assertTrue(expectedFile2.exists());
 
 

@@ -38,6 +38,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.test.util.PermissionsHelper.FOLDER_ADMIN_ROLE;
+
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudySecurityTest extends BaseWebDriverTest
@@ -145,7 +147,7 @@ public class StudySecurityTest extends BaseWebDriverTest
         goToStudyFolder();
 
         // Test dataset security operations as a folder admin to avoid regressions, Issue #50103
-        impersonateRole("Folder Administrator");
+        impersonateRole(FOLDER_ADMIN_ROLE);
 
         StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 

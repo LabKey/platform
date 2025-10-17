@@ -56,7 +56,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/query/reports/view/dataViews.jsp", webPart);
         view.setTitle("Data Views");
@@ -99,7 +99,6 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             for (ReportService.DesignerInfo info : chartDesigners)
                 menu.addChild(getItem(info, "Add "));
         }
-
 
         // We display the edit button for everyone with insert (Author, Editor, Admin). Other components are admin-only.
         if (portalCtx.hasPermission(InsertPermission.class))

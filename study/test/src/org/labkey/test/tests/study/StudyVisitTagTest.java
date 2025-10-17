@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.FileUtil;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -98,26 +99,26 @@ public class StudyVisitTagTest extends StudyBaseTest
     {
         File visitTagsPath = TestFileUtils.getSampleData("VisitTags");
         goToProjectHome();
-        startImportStudyFromZip(new File(visitTagsPath, PARENT_FOLDER_STUDY + ".folder.zip"), false, false);
+        startImportStudyFromZip(FileUtil.appendName(visitTagsPath, PARENT_FOLDER_STUDY + ".folder.zip"), false, false);
 
         for (String study : DATE_BASED_STUDIES)
         {
             clickFolder(study);
-            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
+            startImportStudyFromZip(FileUtil.appendName(visitTagsPath, study + ".folder.zip"), false, false);
             waitForPipelineJobsToComplete(1, "Study import", false);
         }
 
         for (String study : VISIT_BASED_STUDIES)
         {
             clickFolder(study);
-            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
+            startImportStudyFromZip(FileUtil.appendName(visitTagsPath, study + ".folder.zip"), false, false);
             waitForPipelineJobsToComplete(1, "Study import", false);
         }
 
         for (String study : SINGLE_USE_TAG_ERRORS)
         {
             clickFolder(study);
-            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
+            startImportStudyFromZip(FileUtil.appendName(visitTagsPath, study + ".folder.zip"), false, false);
             waitForPipelineJobsToComplete(1, "Study import", true /* expect error */);
             checkExpectedErrors(1);
         }

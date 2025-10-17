@@ -18,10 +18,10 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
@@ -85,10 +85,10 @@ public class TableChange
             boolean success = false;
             try
             {
-                for (String sql : scope.getSqlDialect().getChangeStatements(this))
+                for (SQLFragment sql : scope.getSqlDialect().getChangeStatements(this))
                 {
-                    LOG.debug("Will issue: " + sql);
-                    executor.execute(SQLFragment.unsafe(sql));
+                    LOG.debug("Will issue: " + sql.getSQL());
+                    executor.execute(sql);
                 }
                 success = true;
             }
@@ -146,14 +146,14 @@ public class TableChange
             TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
             if (storageTableInfo != null)
             {
-                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : storageTableInfo.getAllIndices().values())
+                for (IndexDefinition index : storageTableInfo.getAllIndices())
                 {
-                    List<String> columnNames = index.getValue().stream().map(ColumnInfo::getName).collect(Collectors.toList());
+                    List<String> columnNames = index.columns().stream().map(ColumnInfo::getName).collect(Collectors.toList());
 
                     // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
                     // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
                     // The uniqueness is enforced by a database trigger.
-                    boolean unique = index.first == TableInfo.IndexType.Unique ||
+                    boolean unique = index.indexType() == TableInfo.IndexType.Unique ||
                             (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
 
                     // remove the _hashed_ column prefix for SQLServer

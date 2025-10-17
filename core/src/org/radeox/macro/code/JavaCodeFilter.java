@@ -33,6 +33,8 @@ package org.radeox.macro.code;
  * @version $Id: JavaCodeFilter.java,v 1.5 2003/08/29 12:32:12 stephan Exp $
  */
 
+import org.radeox.filter.regex.RegexFilter;
+
 public class JavaCodeFilter extends DefaultRegexCodeFormatter implements SourceCodeFormatter {
 
   private static final String KEYWORDS =
@@ -51,12 +53,8 @@ public class JavaCodeFilter extends DefaultRegexCodeFormatter implements SourceC
       "Runnable|Runtime|SecurityManager|Short|String|StringBuffer|" +
       "System|Thread|ThreadGroup|Void|boolean|char|byte|short|int|long|float|double)\\b";
 
-  private static final String QUOTES =
-      "\"(([^\"\\\\]|\\.)*)\"";
-
-
   public JavaCodeFilter() {
-    super(QUOTES, "<span class=\"java-quote\">\"$1\"</span>");
+    super(RegexFilter.QUOTE_REGEX, "<span class=\"java-quote\">\"$1\"</span>");
     addRegex(KEYWORDS, "<span class=\"java-keyword\">$1</span>");
     addRegex(OBJECTS, "<span class=\"java-object\">$1</span>");
   }

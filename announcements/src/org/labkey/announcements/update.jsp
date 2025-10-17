@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView.UpdateBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.announcements.model.Settings" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -40,7 +40,7 @@
     UpdateBean bean = me.getModelBean();
 
     AnnouncementModel ann = bean.annModel;
-    DiscussionService.Settings settings = bean.settings;
+    Settings settings = bean.settings;
     ActionURL baseUrl = getViewContext().cloneActionURL().deleteParameters();
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 %>

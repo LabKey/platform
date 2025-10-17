@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -51,8 +52,6 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 /**
  * Holds both the SQL text and JDBC parameter values to use during invocation.
- * User: Matthew
- * Date: Apr 19, 2006
  */
 public class SQLFragment implements Appendable, CharSequence
 {
@@ -207,11 +206,11 @@ public class SQLFragment implements Appendable, CharSequence
             CTE cte = pair.second;
             for (String token : cte.tokens)
             {
-                select = StringUtils.replace(select, token, alias);
+                select = Strings.CS.replace(select, token, alias);
             }
         }
         if (null != self)
-            select = StringUtils.replace(select, "$SELF$", self);
+            select = Strings.CS.replace(select, "$SELF$", self);
         return select;
     }
 
@@ -409,11 +408,6 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    @Deprecated
-    public SQLFragment append(DatabaseIdentifier id)
-    {
-        return append(id.getSql());
-    }
     public SQLFragment appendIdentifier(DatabaseIdentifier id)
     {
         return append(id.getSql());
@@ -599,18 +593,32 @@ public class SQLFragment implements Appendable, CharSequence
 
         if (N instanceof BigDecimal || N instanceof BigInteger || N instanceof Long)
         {
-            getStringBuilder().append(String.valueOf(N));
+            getStringBuilder().append(N);
         }
         else if (Double.isFinite(N.doubleValue()))
         {
-            // Do we know that default java toString() for all numbers creates a valid SQL literal?
-            getStringBuilder().append(String.valueOf(N));
+            getStringBuilder().append(N);
         }
         else
         {
             getStringBuilder().append(" ? ");
             add(N);
         }
+        return this;
+    }
+
+    public final SQLFragment appendNowTimestamp()
+    {
+        return appendValue(new NowTimestamp());
+    }
+
+    // Issue 27534: Stop using {fn now()} in function declarations
+    // Issue 48864: Query Table's use of web server time can cause discrepancies in created/modified timestamps
+    public final SQLFragment appendValue(NowTimestamp now)
+    {
+        if (null == now)
+            return appendNull();
+        getStringBuilder().append("CURRENT_TIMESTAMP");
         return this;
     }
 
@@ -715,18 +723,17 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-
-    /** Append a full statement (using the correct dialect syntax) and its parameters to this SQLFragment */
-    public SQLFragment appendStatement(@Nullable SQLFragment statement, SqlDialect dialect)
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull String separator)
     {
-        if (null == statement || statement.isEmpty())
-            return this;
-        // getSQL() flattens out common table expressions
-        dialect.appendStatement(this, statement.getSQL());
-        addAll(statement.getParams());
+        String s = "";
+        for (SQLFragment fragment : fragments)
+        {
+            append(s);
+            s = separator;
+            append(fragment);
+        }
         return this;
     }
-
 
     // return boolean so this can be used in an assert.  passing in a dialect is not ideal, but parsing comments out
     // before submitting the fragment is not reliable and holding statements & comments separately (to eliminate the
@@ -1299,17 +1306,6 @@ public class SQLFragment implements Appendable, CharSequence
         }
     }
 
-
-    public static class IntegrationTestCase extends Assert
-    {
-        @Test
-        public void test()
-        {
-            // try some Dialect stuff and CTE executed against core schema
-        }
-    }
-
-
     @Override
     public boolean equals(Object obj)
     {
@@ -1346,13 +1342,4 @@ public class SQLFragment implements Appendable, CharSequence
 
         return new SQLFragment(sql, params);
     }
-
-
-
-    /* REMOVE THIS - These methods are going away, but this allows us to merge w/o doing 100 modules at the same time */
-//    @Deprecated public SQLFragment append(@NotNull Container c) {return appendValue(c);}
-    @Deprecated public SQLFragment append(Integer i) {return appendValue(i);}
-//    @Deprecated public SQLFragment append(java.util.Date date) {return appendValue(date);}
-    @Deprecated public SQLFragment appendStringLiteral(CharSequence s) {return appendValue(s);}
-    /* END OF REMOVE THIS */
 }

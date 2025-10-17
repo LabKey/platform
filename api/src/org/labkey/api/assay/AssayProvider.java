@@ -59,10 +59,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,17 +114,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunCreator getRunCreator();
 
     /** @return all the legal data collectors that the user can choose from for the current import attempt */
-    // TODO File->FileLike
-    List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
-
-    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context)
-    {
-        Map<String,File> map = new HashMap<>();
-        if (uploadedFileObjects != null)
-            for (var entry : uploadedFileObjects.entrySet())
-                map.put(entry.getKey(), entry.getValue().toNioPathForRead().toFile());
-        return getDataCollectors(map, context);
-    }
+    List<AssayDataCollector> getDataCollectors(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context);
 
     /**
      * @return the name of the assay provider.

@@ -18,8 +18,8 @@ package org.labkey.api.assay.plate;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -51,7 +51,7 @@ public abstract class AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
+    public List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, FileLike dataFile) throws ExperimentException
     {
         throw new UnsupportedOperationException("loading multiple grids for this reader implementation is not supported");
     }

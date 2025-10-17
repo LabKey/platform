@@ -40,7 +40,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -83,10 +82,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
     public IssuesListDefTable(IssuesQuerySchema schema, ContainerFilter cf)
     {
         super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema, cf);
-
-        ActionURL url = new ActionURL(InsertIssueDefAction.class, getContainer()).
-                addParameter(QueryParam.schemaName, IssuesSchema.getInstance().getSchemaName()).
-                addParameter(QueryParam.queryName, IssuesQuerySchema.TableType.IssueListDef.name());
+        ActionURL url = new ActionURL(InsertIssueDefAction.class, getContainer());
         setInsertURL(new DetailsURL(url));
         addAllColumns();
     }

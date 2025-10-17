@@ -3,6 +3,7 @@ package org.labkey.core.vcs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 
@@ -50,9 +51,9 @@ public class VcsServiceImpl implements VcsService
         {
             while (null != dir)
             {
-                if (new File(dir, ".git").exists())
+                if (FileUtil.appendName(dir, ".git").exists())
                     return git;
-                if (new File(dir, ".svn").exists())
+                if (FileUtil.appendName(dir, ".svn").exists())
                     return svn;
                 dir = dir.getParentFile();
             }

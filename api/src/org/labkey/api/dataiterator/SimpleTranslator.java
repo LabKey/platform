@@ -48,16 +48,17 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.NowTimestamp;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -70,7 +71,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JunitUtil;
@@ -120,7 +120,6 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
-    public static final String DEPRECATED_NULL_MISSING_VALUE_RESOLUTION = "deprecatedNullMissingValueResolution";
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     /**
@@ -243,15 +242,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // - Has a single primary key
                 // - Has a unique index over a single column that isn't the primary key
                 // - The column in the unique index must be a string type
-                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getUniqueIndices().values())
+                for (IndexDefinition def : _targetTable.getUniqueIndices())
                 {
-                    if (index.getKey() != TableInfo.IndexType.Unique)
+                    if (def.indexType() != TableInfo.IndexType.Unique)
                         continue;
 
-                    if (index.getValue().size() != 1)
+                    if (def.columns().size() != 1)
                         continue;
 
-                    ColumnInfo col = index.getValue().get(0);
+                    ColumnInfo col = def.columns().get(0);
                     if (!seen.add(col))
                         continue;
 
@@ -1056,7 +1055,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public Object get()
         {
             if (null == _ts)
-                _ts =  new NowTimestamp(System.currentTimeMillis());
+                _ts =  new NowTimestamp();
             return _ts;
         }
     }
@@ -1085,8 +1084,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             // shared tables should be Integer->Integer
             Integer valueAsInt = null;
-            if (value instanceof String)
-                valueAsInt = Integer.parseInt((String)value);
+            if (value instanceof String stringValue)
+                valueAsInt = Integer.parseInt(stringValue);
             if (_dataspaceTableIdMap.containsKey(valueAsInt))
             {
                 value = _dataspaceTableIdMap.get(valueAsInt);
@@ -1353,17 +1352,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-            {
-                if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_NULL_MISSING_VALUE_RESOLUTION))
-                {
-                    // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
-                    boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
-
-                    missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-                }
-                else
-                    missing = RemapMissingBehavior.Error;
-            }
+                missing = RemapMissingBehavior.Error;
             c = new RemappingConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
@@ -1989,12 +1978,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         Supplier c = _outputColumns.get(i).getValue();
         if (c instanceof ConstantColumn)
             return true;
-        if (c instanceof PassthroughColumn)
-            return _data.isConstant(((PassthroughColumn)c).index);
-        if (c instanceof AliasColumn)
-            return isConstant(((AliasColumn)c).index);
-        if (c instanceof SimpleConvertColumn)
-            return _data.isConstant(((SimpleConvertColumn)c).index);
+        if (c instanceof PassthroughColumn pc)
+            return _data.isConstant(pc.index);
+        if (c instanceof AliasColumn ac)
+            return isConstant(ac.index);
+        if (c instanceof SimpleConvertColumn scc)
+            return _data.isConstant(scc.index);
         if (c instanceof TimestampColumn)
             return true;
         return false;
@@ -2005,18 +1994,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public Object getConstantValue(int i)
     {
         Supplier c = _outputColumns.get(i).getValue();
-        if (c instanceof ConstantColumn)
-            return ((ConstantColumn)c).k;
-        if (c instanceof PassthroughColumn)
-            return _data.getConstantValue(((PassthroughColumn)c).index);
-        if (c instanceof AliasColumn)
-            return getConstantValue(((AliasColumn)c).index);
+        if (c instanceof ConstantColumn cc)
+            return cc.k;
+        if (c instanceof PassthroughColumn pc)
+            return _data.getConstantValue(pc.index);
+        if (c instanceof AliasColumn ac)
+            return getConstantValue(ac.index);
         if (c instanceof SimpleConvertColumn scc)
-        {
             return scc.convert(_data.getConstantValue(scc.index));
-        }
         if (c instanceof TimestampColumn)
-            return new NowTimestamp(System.currentTimeMillis());
+            return new NowTimestamp();
         throw new IllegalStateException("shouldn't call this method unless isConstant()==true");
     }
 
@@ -2026,17 +2013,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         _data.close();
     }
-
-
-    // this is a marker interface to hint that this value may be replaced by {ts now()}
-    public static class NowTimestamp extends java.sql.Timestamp
-    {
-        public NowTimestamp(long ms)
-        {
-            super(ms);
-        }
-    }
-
 
     @Override
     public void debugLogInfo(StringBuilder sb)
