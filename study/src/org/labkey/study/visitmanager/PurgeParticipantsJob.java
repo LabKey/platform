@@ -13,7 +13,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +29,7 @@ public class PurgeParticipantsJob extends PipelineJob
     PurgeParticipantsJob(ViewBackgroundInfo info, PipeRoot pipeRoot)
     {
         super("StudyParticipantPurge", info, pipeRoot);
-        setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("purge_participants", "log")).toPath());
+        setLogFile(pipeRoot.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp("purge_participants", "log")).toNioPathForWrite());
     }
 
     @Override

@@ -26,8 +26,8 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellData;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +42,7 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
     private final Long _runRowId;
     private final int[] _cutoffs;
     private Map<Integer, String> _cutoffFormats;
-    private File _dataFile;
+    private FileLike _dataFile;
     protected StatsService.CurveFitType _renderedCurveFitType;
     private boolean _lockAxes;
 
@@ -191,12 +191,12 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         _cutoffFormats = cutoffFormats;
     }
 
-    public File getDataFile()
+    public FileLike getDataFile()
     {
         return _dataFile;
     }
 
-    public void setDataFile(File dataFile)
+    public void setDataFile(FileLike dataFile)
     {
         _dataFile = dataFile;
     }

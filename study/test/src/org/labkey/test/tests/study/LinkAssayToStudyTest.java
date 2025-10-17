@@ -19,6 +19,7 @@ package org.labkey.test.tests.study;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.FileUtil;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -75,7 +76,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         {
             SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
                     StudyHelper.SPECIMEN_ARCHIVE_A,
-                    new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+                    FileUtil.appendName(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
             importer.importAndWaitForComplete();
         }
         defineAssay();

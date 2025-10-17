@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -23,8 +24,9 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -65,18 +67,18 @@ public abstract class URLRewriter
         return _includeXarXml;
     }
 
-    protected static class FileInfo
+    public static class FileInfo
     {
-        private final Path _path;
+        private final FileLike _path;
         private final String _name;
         private final ExperimentDataHandler _handler;
         private final ExpData _data;
         private final User _user;
         private final String _fileRootPath;
 
-        public FileInfo(ExpData data, Path path, String name, ExperimentDataHandler handler, User user, String fileRootPath)
+        protected FileInfo(ExpData data, Path path, String name, ExperimentDataHandler handler, User user, String fileRootPath)
         {
-            _path = path;
+            _path = FileSystemLike.wrapFile(path);
             _name = name;
             _handler = handler;
             _data = data;
@@ -93,7 +95,7 @@ public abstract class URLRewriter
         {
             if (_handler != null)
             {
-                _handler.exportFile(_data, _path, _fileRootPath, _user, new OutputStream()
+                _handler.exportFile(_data, _path, _user, new OutputStream()
                 {
                     private boolean _closed = false;
 
@@ -106,14 +108,14 @@ public abstract class URLRewriter
                     }
                     
                     @Override
-                    public void write(byte b[]) throws IOException
+                    public void write(byte @NotNull [] b) throws IOException
                     {
                         checkClosed();
                         out.write(b);
                     }
 
                     @Override
-                    public void write(byte b[], int off, int len) throws IOException
+                    public void write(byte @NotNull [] b, int off, int len) throws IOException
                     {
                         checkClosed();
                         out.write(b, off, len);
@@ -135,7 +137,7 @@ public abstract class URLRewriter
             }
             else
             {
-                Files.copy(_path, out);
+                Files.copy(_path.toNioPathForRead(), out);
             }
         }
 
@@ -149,10 +151,10 @@ public abstract class URLRewriter
             {
                 if (!FileUtil.hasCloudScheme(_path))
                 {
-                    File file = _path.toFile();
-                    return NetworkDrive.exists(file) && file.isFile();
+                    return NetworkDrive.exists(_path) && _path.isFile();
                 }
-                return Files.exists(_path) && !Files.isDirectory(_path);
+                Path path = _path.toNioPathForRead();
+                return Files.exists(path) && !Files.isDirectory(path);
             }
         }
     }

@@ -94,7 +94,7 @@ public class DataTransformService
                 continue;
 
             // read the contents of the script file
-            File scriptFile = analysisScript.getScript().toNioPathForRead().toFile();
+            FileLike scriptFile = analysisScript.getScript();
             if (scriptFile.exists())
             {
                 if (operation == TransformOperation.UPDATE)
@@ -104,7 +104,7 @@ public class DataTransformService
 
                 // TODO: don't bother slurping the contents of binary scripts
                 StringBuilder sb = new StringBuilder();
-                try (BufferedReader br = Readers.getReader(scriptFile))
+                try (BufferedReader br = Readers.getReader(scriptFile.openInputStream()))
                 {
                     String l;
                     while ((l = br.readLine()) != null)
@@ -115,7 +115,7 @@ public class DataTransformService
                     throw new ValidationException(e.getMessage());
                 }
                 ScriptEngine engine = null;
-                String ext = FileUtil.getExtension(scriptFile);
+                String ext = FileUtil.getExtension(scriptFile.getName());
                 if (ext != null)
                 {
                     engine = LabKeyScriptEngineManager.get()
@@ -143,7 +143,7 @@ public class DataTransformService
                         FileLike runInfo = files.getKey();
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
-                        bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
+                        bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().getAbsolutePath());
 
                         Map<String, String> paramMap = new HashMap<>();
 
@@ -168,7 +168,7 @@ public class DataTransformService
                         }
                         else
                         {
-                            rewrittenScriptFile = FileSystemLike.wrapFile(scriptFile);
+                            rewrittenScriptFile = scriptFile;
                         }
 
                         // process any output from the transformation script
@@ -228,20 +228,20 @@ public class DataTransformService
             }
             else
             {
-                throw new ValidationException("The transform script, " + scriptFile.getAbsolutePath() + ", configured for this assay does not exist. Please check " +
+                throw new ValidationException("The transform script, " + scriptFile + ", configured for this assay does not exist. Please check " +
                         "the configuration for this assay design.");
             }
         }
         return result;
     }
 
-    public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable File scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)
+    public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable FileLike scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)
     {
         if (scriptFile != null)
         {
-            File srcDir = scriptFile.getParentFile();
+            FileLike srcDir = scriptFile.getParent();
             if (srcDir != null && srcDir.exists())
-                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
         }
         paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
         paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
@@ -263,15 +263,14 @@ public class DataTransformService
         return SecurityManager.TRANSFORM_SESSION_ID;
     }
 
-    private FileLike getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault) throws IOException
+    private FileLike getScriptDir(ExpProtocol protocol, FileLike scriptFile, boolean isDefault) throws IOException
     {
         FileLike tempDir = FileUtil.getTempDirectoryFileLike();
         FileLike tempRoot = tempDir.resolveChild(ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
 
         if (isDefault && scriptFile.exists())
         {
-            // TODO getScriptDir(FileLike scriptFile);
-            tempDir = new FileSystemLike.Builder(scriptFile.getParentFile()).readwrite().root();
+            tempDir = scriptFile.getParent();
             tempRoot = tempDir.resolveChild("TransformAndValidationFiles");
         }
 

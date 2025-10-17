@@ -25,14 +25,12 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -56,36 +54,13 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
-    // TODO File->FileLike
-    void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
-    default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
-    {
-        importFile(data, dataFile, info, log, context);
-    }
-
-    // TODO File->FileLike
-    default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
-    {
-        importFile(data, dataFile, info, log, context);
-    }
-
-    // TODO File->FileLike
-    default void importFile(@NotNull ExpData data, Path dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
-    {
-        if (FileUtil.hasCloudScheme(dataFile))
-            throw new ExperimentException(this.getClass().getName() + " does not support importFile on a cloud path");
-        importFile(data, dataFile.toFile(), info, log, context);
-    }
+    void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
 
     /**
      * Stream the content of this data object. Typically, this just streams the bytes of the file from disk, but could
      * create something based exclusively on what's in the database.
      */
-    // TODO File->FileLike
-    void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException;
-    default void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
-    {
-    }
+    void exportFile(ExpData data, @Nullable FileLike dataFile, User user, OutputStream out) throws ExperimentException;
 
     /** @return URL to the imported version of the data, like a grid view over a database table or a custom details page */
     @Nullable
@@ -106,11 +81,10 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      */
     void deleteData(ExpData data, Container container, User user);
 
-    // TODO File->FileLike
-    boolean hasContentToExport(ExpData data, File file);
-    default boolean hasContentToExport(ExpData data, Path file)
+    // Preferred: use FileLike
+    default boolean hasContentToExport(ExpData data, @Nullable FileLike file)
     {
-        return false;
+        return file != null && file.exists() && file.isFile();
     }
 
     default void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, long oldDataRowID) throws ExperimentException

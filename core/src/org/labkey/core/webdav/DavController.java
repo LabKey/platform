@@ -3779,7 +3779,7 @@ public class DavController extends SpringActionController
                     if (destFile.exists())
                     {
                         WebdavResource parent = (WebdavResource)dest.parent();
-                        tmp = new File(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
+                        tmp = FileUtil.appendName(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                         markTempFile(tmp);
                         if (!destFile.renameTo(tmp))
                             throw new ConfigurationException("Could not remove destination: " + dest.getPath());

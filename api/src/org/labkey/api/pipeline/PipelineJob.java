@@ -476,7 +476,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         String validBaseName = FileUtil.makeLegalName(baseName);
         // need to look in current and archived dirs for any unused log file names (issue 20987)
         File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName);
-        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
+        File archivedDir = FileUtil.appendName(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
         File fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName);
 
         int index = 1;

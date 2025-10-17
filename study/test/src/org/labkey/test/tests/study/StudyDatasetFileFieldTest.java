@@ -146,12 +146,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
                 .selectDatasetByName(datasetName)
                 .clickViewData();
 
-        String expectedText;
-
-        if (SystemUtils.IS_OS_WINDOWS)
-            expectedText = "datasetdata\\sample.txt";
-        else
-            expectedText = "datasetdata/sample.txt";
+        String expectedText = "sample.txt";
 
         assertElementPresent("Did not find the expected sample.txt from the imported dataset.", Locator.tagContainingText("a", expectedText), 1);
         downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));

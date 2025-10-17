@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
@@ -30,7 +31,6 @@ import org.labkey.api.view.HttpView;
 
 import jakarta.servlet.http.HttpSession;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,8 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * Data collector that supplies files the user previously selected through the pipeline/file browser.
@@ -55,25 +53,25 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     {
     }
 
-    private File _originalFileLocation = null;
+    private FileLike _originalFileLocation = null;
 
     @Override
-    public HttpView getView(ContextType context) throws ExperimentException
+    public HttpView<?> getView(ContextType context) throws ExperimentException
     {
         return new HtmlView(getHTML(context));
     }
 
     public HtmlString getHTML(ContextType context)
     {
-        Map<String, File> files = getCurrentFilesForDisplay(context);
+        Map<String, FileLike> files = getCurrentFilesForDisplay(context);
         if (files.isEmpty())
         {
-            return unsafe("<div class=\"labkey-error\">No files have been selected.</div>");
+            return DOM.createHtml(DOM.DIV(DOM.at(DOM.cl("labkey-error")), "No files have been selected."));
         }
 
         HtmlStringBuilder html = HtmlStringBuilder.of();
         html.startTag("ul");
-        for (File file : files.values())
+        for (FileLike file : files.values())
         {
             html.startTag("li");
             html.append(file.getName());
@@ -102,9 +100,9 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     }
 
     /** @return the files to be processed for the current upload attempt */
-    protected Map<String, File> getCurrentFilesForDisplay(ContextType context)
+    protected Map<String, FileLike> getCurrentFilesForDisplay(ContextType context)
     {
-        List<Map<String, File>> files = getFileQueue(context);
+        List<Map<String, FileLike>> files = getFileQueue(context);
         if (files.isEmpty())
         {
             return Collections.emptyMap();
@@ -121,33 +119,32 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     @Override
     public String getDescription(ContextType context)
     {
-        List<Map<String, File>> allFiles = getFileQueue(context);
+        List<Map<String, FileLike>> allFiles = getFileQueue(context);
         if (allFiles.isEmpty())
         {
             return "";
         }
-        Map<String, File> files = allFiles.get(0);
+        Map<String, FileLike> files = allFiles.get(0);
         return (files.size() > 1 ? files.size() + " files" : "One file ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
     }
 
-    public static synchronized void setFileCollection(HttpSession session, Container c, ExpProtocol protocol, List<Map<String, File>> files)
+    public static synchronized void setFileCollection(HttpSession session, Container c, ExpProtocol protocol, List<Map<String, FileLike>> files)
     {
-        List<Map<String, File>> existingFiles = getFileQueue(session, c, protocol);
+        List<Map<String, FileLike>> existingFiles = getFileQueue(session, c, protocol);
         existingFiles.clear();
         existingFiles.addAll(files);
     }
 
-    /* TODO File->FileLike convert FileQueue */
-    public static List<Map<String, File>> getFileQueue(AssayRunUploadContext<?> context)
+    public static List<Map<String, FileLike>> getFileQueue(AssayRunUploadContext<?> context)
     {
         return getFileQueue(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
     }
 
-    private static List<Map<String, File>> getFileQueue(HttpSession session, Container c, ExpProtocol protocol)
+    private static List<Map<String, FileLike>> getFileQueue(HttpSession session, Container c, ExpProtocol protocol)
     {
         // Use the protocol's RowId instead the ExpProtocol itself because it will be serialized as part of the session
         // state when Tomcat is shut down cleanly
-        Map<Pair<Container, Long>, List<Map<String, File>>> collections = (Map<Pair<Container, Long>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        Map<Pair<Container, Long>, List<Map<String, FileLike>>> collections = (Map<Pair<Container, Long>, List<Map<String, FileLike>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
         {
             collections = new HashMap<>();
@@ -171,31 +168,25 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     @NotNull
     public Map<String, FileLike> createData(ContextType context) throws IOException, ExperimentException
     {
-        List<Map<String, File>> files = getFileQueue(context);
+        List<Map<String, FileLike>> files = getFileQueue(context);
         if (files.isEmpty())
         {
             throw new FileNotFoundException("No files from the pipeline directory have been selected");
         }
 
-        Map<String, File> currentFiles = files.get(0);
+        Map<String, FileLike> currentFiles = files.get(0);
         if (!currentFiles.isEmpty())
         {
-            _originalFileLocation = currentFiles.values().iterator().next().getParentFile();
+            _originalFileLocation = currentFiles.values().iterator().next().getParent();
         }
         return savePipelineFiles(context, currentFiles);
     }
 
     @Nullable
     @Override
-    public File getOriginalFileLocation()
+    public FileLike getOriginalFileLocation()
     {
         return _originalFileLocation;
-    }
-
-    @Override
-    public boolean isVisible()
-    {
-        return true;
     }
 
     // When importing via pipeline, the file is already on the server so return the path of that file
@@ -203,11 +194,11 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     @Override
     protected FileLike getFilePath(ContextType context, @Nullable ExpRun run, FileLike tempDirFile)
     {
-        Map<String, File> files = getFileQueue(context).get(0);
-        for (File file : files.values())
+        Map<String, FileLike> files = getFileQueue(context).get(0);
+        for (FileLike file : files.values())
         {
             if (file.getName().equals(tempDirFile.getName()))
-                return FileSystemLike.wrapFile(file);
+                return file;
         }
 
         return null;
@@ -225,7 +216,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     public Map<String, FileLike> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<String, FileLike> result = super.uploadComplete(context, run);
-        List<Map<String, File>> files = getFileQueue(context);
+        List<Map<String, FileLike>> files = getFileQueue(context);
         if (!files.isEmpty())
         {
             files.remove(0);

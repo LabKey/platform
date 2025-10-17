@@ -49,7 +49,7 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
                 fileName = getName().concat(extension);
 
             if (directory != null)
-                file = new File(directory, fileName);
+                file = FileUtil.appendName(directory, fileName);
         }
         if (file != null)
             addFile(file);

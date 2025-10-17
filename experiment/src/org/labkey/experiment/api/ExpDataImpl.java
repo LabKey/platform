@@ -79,6 +79,7 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
@@ -476,7 +477,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         ExperimentDataHandler handler = findDataHandler();
         try
         {
-            handler.importFile(this, path, job.getInfo(), job.getLogger(), xarSource.getXarContext());
+            handler.importFile(this, FileSystemLike.wrapFile(path), job.getInfo(), job.getLogger(), xarSource.getXarContext());
         }
         catch (ExperimentException e)
         {

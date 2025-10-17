@@ -81,7 +81,7 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public PrintWriter getPrintWriter(String filename) throws IOException
     {
-        File file = new File(_root.toFile(), makeLegalName(filename));
+        File file = FileUtil.appendName(_root.toFile(), makeLegalName(filename));
 
         return PrintWriters.getPrintWriter(file);
     }
