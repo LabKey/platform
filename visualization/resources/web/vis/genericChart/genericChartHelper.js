@@ -1071,15 +1071,15 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.y = {};
             }
 
-            if (!scales.y.domain) {
-                var values = $.map(data, d => d.value + (d.error ?? 0)),
-                    min = Math.min(0, Math.min.apply(Math, values)),
-                    max = Math.max(0, Math.max.apply(Math, values));
+            var values = $.map(data, d => d.value + (d.error ?? 0));
+            var min = Math.min(0, Math.min.apply(Math, values));
+            var max = Math.max(0, Math.max.apply(Math, values));
 
+            if (!scales.y.domain) {
                 scales.y.domain = [min, max];
-            } else if (!scales.y.domain[0]) {
+            } else if (scales.y.domain[0] === null) {
                 // if user has set a max but not a min, default to 0 for bar chart
-                scales.y.domain[0] = 0;
+                scales.y.domain[0] = min;
             }
         }
         else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
