@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.RequiresPermission;
@@ -28,10 +30,12 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -47,6 +51,15 @@ import java.util.Map;
 public class InsertIssueDefAction extends UserSchemaAction
 {
     private List<Map<String, Object>> _results;
+
+    @Override
+    protected QueryForm createQueryForm(ViewContext context)
+    {
+        QueryForm form = new QueryForm(IssuesSchema.getInstance().getSchemaName(), IssuesQuerySchema.TableType.IssueListDef.name());
+        form.setViewContext(getViewContext());
+        form.bindParameters(getViewContext().getBindPropertyValues());
+        return form;
+    }
 
     @Override
     public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)

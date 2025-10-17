@@ -36,7 +36,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DOM;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -48,6 +47,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.assay.AssayModule;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -84,7 +85,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         // Can't trust the form's getPath() because it translates the empty string into null, and we
         // need to know if the parameter was present
         String path = getViewContext().getRequest().getParameter("path");
-        List<File> files = new ArrayList<>();
+        List<FileLike> files = new ArrayList<>();
         if (path != null)
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(container);
@@ -92,7 +93,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             {
                 throw new NotFoundException("No pipeline root is available");
             }
-            File f = root.resolvePath(path);
+            FileLike f = root.resolvePathToFileLike(path);
             if (!NetworkDrive.exists(f))
             {
                 throw new NotFoundException("Unable to find file: " + path);
@@ -104,7 +105,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
                 {
                     throw new NotFoundException(fileName);
                 }
-                File file = FileUtil.appendName(f, fileName);
+                FileLike file = f.resolveChild(fileName);
                 if (!NetworkDrive.exists(file))
                 {
                     throw new NotFoundException(fileName);
@@ -125,7 +126,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
                 File f = data.getFile();
                 if (f != null && f.isFile())
                 {
-                    files.add(f);
+                    files.add(FileSystemLike.wrapFile(f));
                 }
             }
         }
@@ -170,8 +171,8 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         }
 
         Collections.sort(files);
-        List<Map<String, File>> maps = new ArrayList<>();
-        for (File file : files)
+        List<Map<String, FileLike>> maps = new ArrayList<>();
+        for (FileLike file : files)
         {
             maps.add(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, file));
         }
@@ -203,7 +204,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         }
     }
 
-    private ModelAndView getConfirmView(List<File> remaining, Map<ExpData, ExpRun> filesWithRun)
+    private ModelAndView getConfirmView(List<FileLike> remaining, Map<ExpData, ExpRun> filesWithRun)
     {
         List<DOM.Renderable> nodes = new ArrayList<>();
 
@@ -229,11 +230,11 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
     }
 
     // split the files into those that have been created by an run and the rest.
-    protected Pair<List<File>, Map<ExpData, ExpRun>> filesWithExistingRuns(List<File> files)
+    protected Pair<List<FileLike>, Map<ExpData, ExpRun>> filesWithExistingRuns(List<FileLike> files)
     {
-        var unimported = new ArrayList<File>();
+        var unimported = new ArrayList<FileLike>();
         var existing = new LinkedHashMap<ExpData, ExpRun>();
-        for (File file : files)
+        for (FileLike file : files)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null)

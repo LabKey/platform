@@ -32,12 +32,12 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -80,8 +80,6 @@ public class DataLoaderServiceImpl implements DataLoaderService
     public void registerFactory(@NotNull DataLoaderFactory factory)
     {
         FileType fileType = factory.getFileType();
-        if (fileType == null)
-            throw new IllegalArgumentException("FileType must not be null");
 
         for (String s : fileType.getSuffixes())
         {
@@ -92,32 +90,21 @@ public class DataLoaderServiceImpl implements DataLoaderService
         _factories.add(factory);
     }
 
-    private static byte[] getHeader(File f, InputStream in)
+    private static byte[] getHeader(@NotNull InputStream in)
     {
         // Can't read header if underlying stream can't be buffered
-        if (in != null && !in.markSupported())
+        if (!in.markSupported())
             return null;
-
-        InputStream is = in;
 
         try
         {
-            if (null == is)
-                is = new BufferedInputStream(new FileInputStream(f));
-
-            is.skip(Long.MIN_VALUE);
-            return FileUtil.readHeader(is, 8*1024);
+            return FileUtil.readHeader(in, 8*1024);
         }
         catch (IOException e)
         {
             throw new RuntimeException("Failed to read file header");
         }
-        finally
-        {
-            // Don't close original InputStream
-            if (is != in)
-                IOUtils.closeQuietly(is);
-        }
+        // Don't close original InputStream
     }
 
     private Collection<DataLoaderFactory> matches(String filename, String contentType, byte[] header, Collection<DataLoaderFactory> factories)
@@ -133,21 +120,21 @@ public class DataLoaderServiceImpl implements DataLoaderService
     }
 
     @Override
-    public DataLoaderFactory findFactory(File file, FileType guessFormat)
+    public DataLoaderFactory findFactory(FileLike file, FileType guessFormat)
     {
         return findFactory(file, null, guessFormat);
     }
 
     @Override
-    public DataLoaderFactory findFactory(File file, String contentType, FileType guessFormat)
+    public DataLoaderFactory findFactory(FileLike file, String contentType, FileType guessFormat)
     {
         InputStream is = null;
         try
         {
-            is = new BufferedInputStream(new FileInputStream(file));
+            is = new BufferedInputStream(file.openInputStream());
             return findFactory(file.getName(), contentType, is, guessFormat);
         }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -170,7 +157,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
             assert factory != null : "No DataLoaderFactory registered for FileType: " + guessFormat;
             if (factory != null)
             {
-                header = getHeader(null, is);
+                header = getHeader(is);
                 if (guessFormat.isType(filename, contentType, header))
                     return factory;
             }
@@ -193,7 +180,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
                 else
                 {
                     if (header == null)
-                        header = getHeader(null, is);
+                        header = getHeader(is);
                     matches.addAll(matches(filename, contentType, header, factories));
                 }
             }
@@ -212,7 +199,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
         // No file extension or all FileType for that extension didn't match.
         // Fallback to checking all factories for a match based on the file header.
         if (header == null)
-            header = getHeader(null, is);
+            header = getHeader(is);
 
         matches.addAll(matches(null, contentType, header, _factories));
 
@@ -278,15 +265,10 @@ public class DataLoaderServiceImpl implements DataLoaderService
         return createLoader(filename, null, r.getInputStream(), hasColumnHeaders, mvIndicatorContainer, guessFormat);
     }
 
-    public DataLoader createLoader(File file, boolean hasColumnHeaders) throws IOException
-    {
-        return createLoader(file, null, hasColumnHeaders, null, null);
-    }
-
     @Override
     public DataLoader createLoader(File file, @Nullable String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
-        DataLoaderFactory factory = findFactory(file, contentType, guessFormat);
+        DataLoaderFactory factory = findFactory(FileSystemLike.wrapFile(file), contentType, guessFormat);
 
         // If no factory matched, attempt to use the guessFormat as the default
         if (factory == null && guessFormat != null)

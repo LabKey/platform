@@ -9,6 +9,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;
 
@@ -118,6 +119,20 @@ public class AncestorLookupDisplayColumn extends DataColumn
             return _dc.renderURL(ctx);
 
         return super.renderURL(ctx);
+    }
+
+    @Override
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        Integer lookupKey = getLookupId(ctx);
+
+        if (_dc != null && lookupKey != null && lookupKey > 0)
+        {
+            _dc.renderGridCellContents(ctx, out);
+            return;
+        }
+
+        super.renderGridCellContents(ctx, out);
     }
 
     @Override

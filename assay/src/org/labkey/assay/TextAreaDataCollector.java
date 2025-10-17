@@ -27,7 +27,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.vfs.FileLike;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
     private static final String FORM_ELEMENT_NAME = "TextAreaDataCollector.textArea";
 
     @Override
-    public HttpView getView(ContextType context)
+    public HtmlView getView(ContextType context)
     {
         return HtmlView.unsafe("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce()+ "\">\n" +
@@ -87,17 +86,5 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
 
         writeFile(bIn, file.toNioPathForRead().toFile());
         return Collections.singletonMap(PRIMARY_FILE, file);
-    }
-
-    @Override
-    protected String getPreferredAssayId(File primaryFile)
-    {
-        // Strip off the .tmp extension if present
-        String result = primaryFile.getName();
-        if (result.toLowerCase().endsWith(".tmp"))
-        {
-            result = result.substring(0, result.length() - ".tmp".length());
-        }
-        return result;
     }
 }

@@ -128,7 +128,7 @@ public class ImageOutput extends AbstractParamReplacement
                 if (!_deleteFile)
                     imgFile = file;
                 else
-                    imgFile = moveToTemp(file, "RReportImg");
+                    imgFile = moveToTemp(file);
 
                 if (imgFile != null)
                 {

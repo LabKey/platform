@@ -435,7 +435,7 @@ public class WorkbookContainerType implements ContainerType
             File parentRoot = FileContentService.get().getFileRoot(parent);
             File origSubRoot = FileContentService.get().getFileRoot(sub);
             File origWbRoot = FileContentService.get().getFileRoot(wbOverride);
-            File wbOverrideRoot = new File(FileContentService.get().getSiteDefaultRoot(), "_foo");
+            File wbOverrideRoot = FileUtil.appendName(FileContentService.get().getSiteDefaultRoot(), "_foo");
 
             FileContentService.get().setFileRoot(wbOverride, wbOverrideRoot);
 
@@ -448,9 +448,9 @@ public class WorkbookContainerType implements ContainerType
             Assert.assertEquals("Incorrect file root", wbOverrideRoot, FileContentService.get().getFileRoot(wbOverride));
             Assert.assertEquals("Should not have changed", origWbRoot, FileContentService.get().getDefaultRoot(wbOverride, false));
 
-            Assert.assertEquals("Incorrect file root", new File(parentRoot, wbDefaultRoot.getName()), FileContentService.get().getFileRoot(wbDefaultRoot));
+            Assert.assertEquals("Incorrect file root", FileUtil.appendName(parentRoot, wbDefaultRoot.getName()), FileContentService.get().getFileRoot(wbDefaultRoot));
 
-            File test = new File(FileContentService.get().getFileRoot(wbOverride), "/@files/test.txt");
+            File test = FileUtil.appendPath(FileContentService.get().getFileRoot(wbOverride), Path.parse("/@files/test.txt"));
             if (!test.getParentFile().exists())
             {
                 FileUtil.mkdirs(test.getParentFile());

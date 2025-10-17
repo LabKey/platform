@@ -96,6 +96,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
@@ -756,7 +757,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
             {
                 Plate p = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
-                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile.toNioPathForRead().toFile()))
+                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile))
                 {
                     PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet, measureAliases);
                     plateTypeGrids.put(plate.getPlateType(), plateInfo);
@@ -1515,6 +1516,41 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     public @NotNull UserSchema getPlateSchema(QuerySchema querySchema, Set<Role> contextualRoles)
     {
         return new PlateSchema(querySchema, contextualRoles);
+    }
+
+    record WellSampleData(Long sampleId, Integer row, Integer col) {}
+
+    @Override
+    public Map<String, Long> getWellLocationToSampleIdMap(Long plateId)
+    {
+        // Note: this method intentionally does not use PlateManager.get().getWellData, by selecting only the columns
+        // we need there is a small but measurable performance boost when importing plate assay data
+        SimpleFilter filter = new SimpleFilter(WellTable.Column.PlateId.fieldKey(), plateId);
+        Set<String> columns = Set.of(WellTable.Column.SampleID.name(), WellTable.Column.Row.name(), WellTable.Column.Col.name());
+        List<WellSampleData> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), columns, filter, null).getArrayList(WellSampleData.class);
+        Map<String, Long> wellLocationToSampleIdMap = new HashMap<>();
+
+        for (WellSampleData well : wells)
+        {
+            PositionImpl pos = new PositionImpl(null, well.row, well.col);
+            wellLocationToSampleIdMap.put(pos.getDescription(), well.sampleId);
+        }
+
+        return wellLocationToSampleIdMap;
+    }
+
+    @Override
+    public boolean isWellLookup(ColumnInfo col)
+    {
+        if (col == null) return false;
+
+        if (!col.isLookup()) return false;
+
+        var wellTable = AssayDbSchema.getInstance().getTableInfoWell();
+        var lookupTable = col.getFkTableInfo();
+
+        return lookupTable.getSchema().getName().equalsIgnoreCase(wellTable.getSchema().getName())
+                && lookupTable.getName().equalsIgnoreCase(wellTable.getName());
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

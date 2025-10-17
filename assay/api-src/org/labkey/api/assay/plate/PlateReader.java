@@ -18,8 +18,8 @@ package org.labkey.api.assay.plate;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -41,14 +41,14 @@ public interface PlateReader
     /**
      * Parse the specified datafile and populate an array of well values
      */
-    double[][] loadFile(Plate template, File dataFile) throws ExperimentException;
+    double[][] loadFile(Plate template, FileLike dataFile) throws ExperimentException;
 
     /**
      * Parse the specified datafile and populate a map of array of well values. This is designed to process files
      * that have multiple grids of data embedded and the caller is interested in all of the data. The parser will
      * attempt to annotate the grids with metadata that it may discover during parsing.
      */
-    List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException;
+    List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, FileLike dataFile) throws ExperimentException;
 
     /**
      * Determines whether the specified well value should be used in any analytical calculations

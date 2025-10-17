@@ -162,6 +162,7 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
+import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
@@ -2591,6 +2592,7 @@ public class ExpDataIterators
                 {
                     _context.setCrossTypeImport(false);
                     _context.setCrossFolderImport(false);
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, true);
 
                     boolean hasCrossFolderImport = false;
 
@@ -2610,6 +2612,7 @@ public class ExpDataIterators
                     if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
                         SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
 
+                    _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, false);
                     _context.setCrossTypeImport(_isCrossType);
                     _context.setCrossFolderImport(_isCrossFolder);
                 }
@@ -2861,6 +2864,7 @@ public class ExpDataIterators
             Map<String, String> aliasMap = sampleType.getImportAliases();
             validFields.addAll(aliasMap.keySet());
             validFields.add(ALIQUOTED_FROM_INPUT);
+            validFields.add(ALIQUOTED_FROM_INPUT_LABEL);
             validFields.add("StorageUnit");
             validFields.add("Storage Unit");
             validFields.add("StorageUnitLabel");

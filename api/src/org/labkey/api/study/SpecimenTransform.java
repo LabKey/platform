@@ -53,19 +53,7 @@ public interface SpecimenTransform
      */
     FileType getFileType();
 
-    /**
-     * Transform the input file into a specimen archive that a basic specimen import can
-     * process.
-     */
-    @Deprecated
-    void transform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException;
-
-    default void transform(@Nullable PipelineJob job, Path input, Path outputArchive) throws PipelineJobException
-    {
-        //TODO this should be implemented in the inheriting classes
-        //  defaulting for now to prevent build issues
-        transform(job, input.toFile(), outputArchive.toFile());
-    }
+    void transform(@Nullable PipelineJob job, Path input, Path outputArchive) throws PipelineJobException;
 
     /**
      * An optional post transform step.

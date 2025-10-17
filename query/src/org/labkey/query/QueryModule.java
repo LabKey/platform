@@ -25,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
@@ -416,6 +417,7 @@ public class QueryModule extends DefaultModule
         json.put(QueryService.PRODUCT_FOLDERS_EXIST, isProductFoldersEnabled && container.hasProductFolders());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductFoldersAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductFoldersDataListingScopedToProject());
+        json.put(QueryService.MAX_QUERY_SELECTION, DataRegionSelection.MAX_QUERY_SELECTION_SIZE);
         return json;
     }
 }

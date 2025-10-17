@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
@@ -266,7 +267,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     private File startBatchFile(File outputDir, String baseName, String extension, int batchSize, int totalBatches) throws IOException
     {
         String batchId = batchSize == 0 ? "" : "-" + totalBatches;
-        File file = new File(outputDir, baseName + batchId + extension);
+        File file = FileUtil.appendName(outputDir, baseName + batchId + extension);
         prepare(file);
         writeFileHeader();
         if (isHeaderRowVisible())

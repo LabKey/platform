@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.File;
 import java.util.Collection;
 
 /**
@@ -43,7 +42,7 @@ class MaintenancePipelineJob extends PipelineJob
     MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
     {
         super("SystemMaintenance", info, pipeRoot);
-        setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")).toPath());
+        setLogFile(pipeRoot.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")).toNioPathForWrite());
         _tasks = tasks;
     }
 

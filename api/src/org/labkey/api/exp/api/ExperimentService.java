@@ -84,6 +84,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -506,6 +507,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
     }
 
+    static boolean isAliquotedFromColumn(String columnName)
+    {
+        return ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(columnName) ||
+               ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL.equalsIgnoreCase(columnName);
+    }
+
     // convert MaterialInputs/Blood/Type to MaterialInputs/Blood$SType
     static @Nullable String getEncodedLineageKey(String inputColumn /*not encoded*/)
     {
@@ -708,6 +715,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @see #getAllExpDataByURL(Path, Container)
      */
     ExpData getExpDataByURL(File f, @Nullable Container c);
+
+    /**
+     * Get the <b>most recently</b> created ExpData for the file, if it exists.
+     * @see #getAllExpDataByURL(Path, Container)
+     */
+    ExpData getExpDataByURL(FileLike f, @Nullable Container c);
 
     /**
      * Get the <b>most recently</b> created ExpData for the path, if it exists.
@@ -984,8 +997,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
 
     List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException;
-
-    File exportXarForRuns(User user, Set<Long> runIds, Long expRowId, XarExportOptions options) throws NotFoundException, IOException, ExperimentException;
 
     /**
      * Create an experiment run to represent the work that the task's job has done so far.

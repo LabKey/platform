@@ -1560,6 +1560,12 @@ quickScan:
      * canonical path.
      */
     @NotNull
+    public static FileLike getAbsoluteCaseSensitiveFile(@NotNull FileLike file)
+    {
+        return FileSystemLike.wrapFile(getAbsoluteCaseSensitiveFile(file.toNioPathForRead().toFile()));
+    }
+
+    @NotNull
     public static File getAbsoluteCaseSensitiveFile(@NotNull File file)
     {
         file = resolveFile(file.getAbsoluteFile());

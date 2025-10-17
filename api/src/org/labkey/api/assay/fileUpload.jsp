@@ -26,6 +26,7 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.vfs.FileLike" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -99,7 +100,7 @@
         // Add an entry for all file groups that can be reused from a previous upload
         <%
         PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
-        for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
+        for (Map.Entry<String, FileLike> entry : bean.getReusableFiles().entrySet()) { %>
             addFileUploadInputRow(null, <%= q(entry.getValue().getName())%>, <%= q(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>
 
