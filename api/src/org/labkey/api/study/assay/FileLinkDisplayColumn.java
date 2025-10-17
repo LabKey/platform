@@ -458,6 +458,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
+    public Object getExportCompatibleValue(RenderContext ctx)
+    {
+        return getJsonValue(ctx);
+    }
+
+    @Override
     public boolean isFilterable()
     {
         return false;
