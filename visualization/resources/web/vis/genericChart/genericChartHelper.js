@@ -1098,12 +1098,15 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
-                        const aVal = _getRowValue(a, xName);
-                        const bVal = _getRowValue(b, xName);
+                        // Issue 54125: use row value instead of formatted value for sorting
+                        const aVal = _getRowValue(a, xName, 'value');
+                        const bVal = _getRowValue(b, xName, 'value');
 
-                        // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
-                        // not currently included in this plot.
-                        if (isDate){
+                        if (aVal === null) {
+                            return 1;
+                        } else if (bVal === null) {
+                            return -1;
+                        } else if (isDate){
                             return new Date(aVal) - new Date(bVal);
                         }
                         return aVal - bVal;
