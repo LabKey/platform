@@ -89,6 +89,7 @@ import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
 import org.labkey.pipeline.status.PipelineQueryView;
 import org.labkey.pipeline.trigger.PipelineTriggerManager;
+import org.labkey.vfs.FileLike;
 import org.mule.MuleManager;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
@@ -848,10 +849,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (pr == null || !pr.isValid())
             throw new NotFoundException();
 
-        Path dirData = null;
+        FileLike dirData = null;
         if (path != null)
         {
-            dirData = pr.resolveToNioPath(path);
+            dirData = pr.resolvePathToFileLike(path);
             if (!NetworkDrive.exists(dirData))
                 throw new NotFoundException("Could not resolve path: " + path);
         }
@@ -887,7 +888,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         TaskPipeline<?> taskPipeline = PipelineJobService.get().getTaskPipeline(form.getTaskId());
         PathAnalysisProperties props = getFileAnalysisProperties(context.getContainer(), form.getTaskId(), form.getPath());
         PipeRoot root = props.getPipeRoot();
-        Path dirData = props.getDirData();
+        FileLike dirData = props.getDirData();
         AbstractFileAnalysisProtocolFactory<?> factory = props.getFactory();
 
         if (dirData == null)
@@ -897,10 +898,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
-            dirData = FileUtil.appendName(dirData, form.getProtocolName() + "_" + FileUtil.getTimestamp());
-            if (!Files.exists(FileUtil.createDirectories(dirData)))
+            dirData = dirData.resolveChild(form.getProtocolName() + "_" + FileUtil.getTimestamp());
+            if (!FileUtil.createDirectory(dirData).exists())
             {
-                throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
+                throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData));
             }
         }
         AbstractFileAnalysisProtocol<?> protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
@@ -964,16 +965,16 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
         protocol.getFactory().ensureDefaultParameters(root);
 
-        Path fileParameters = protocol.getParametersFile(dirData, root);
+        FileLike fileParameters = protocol.getParametersFile(dirData, root);
         // Make sure configure.xml file exists for the job when it runs.
-        if (fileParameters != null && !Files.exists(fileParameters))
+        if (fileParameters != null && !fileParameters.exists())
         {
             protocol.setEmail(context.getUser().getEmail());
             protocol.saveInstance(fileParameters, context.getContainer());
         }
 
         boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
-        List<Path> filesInputList = form.getValidatedPaths(context.getContainer(), allowNonExistentFiles);
+        List<FileLike> filesInputList = form.getValidatedFiles(context.getContainer(), allowNonExistentFiles);
 
         if (form.isActiveJobs())
         {
@@ -982,17 +983,17 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
-            for (Path inputFile : filesInputList)
+            for (FileLike inputFile : filesInputList)
             {
                 try
                 {
-                    Files.move(inputFile, FileUtil.appendName(dirData, inputFile.getFileName().toString()));
+                    Files.move(inputFile.toNioPathForWrite(), dirData.resolveChild(inputFile.getName()).toNioPathForWrite());
                 }
                 catch (IOException e)
                 {
                     if (!allowNonExistentFiles)
                     {
-                        throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitivePath(context.getContainer(), inputFile).toAbsolutePath());
+                        throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitiveFile(inputFile));
                     }
                 }
             }

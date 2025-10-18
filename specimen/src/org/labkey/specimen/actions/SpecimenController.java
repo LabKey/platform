@@ -186,6 +186,7 @@ import org.labkey.specimen.view.NotificationBean;
 import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
 import org.labkey.specimen.view.SpecimenWebPart;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -919,7 +920,7 @@ public class SpecimenController extends SpringActionController
         }
     }
 
-    public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException
+    public static void submitSpecimenBatch(Container c, User user, ActionURL url, FileLike f, PipeRoot root, boolean merge) throws IOException
     {
         if (null == f || !f.exists() || !f.isFile())
             throw new NotFoundException();
@@ -942,7 +943,7 @@ public class SpecimenController extends SpringActionController
             Container c = getContainer();
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
             boolean first = true;
-            for (File f : form.getValidatedFiles(c))
+            for (FileLike f : form.getValidatedFiles(c))
             {
                 // Only possibly overwrite when the first archive is loaded:
                 boolean merge = !first || form.isMerge();
@@ -977,13 +978,13 @@ public class SpecimenController extends SpringActionController
         {
             Container c = getContainer();
             String path = form.getPath();
-            File f = null;
+            FileLike f = null;
 
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
             if (path != null)
             {
                 if (root != null)
-                    f = root.resolvePath(path);
+                    f = root.resolvePathToFileLike(path);
             }
 
             submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, form.isMerge());
@@ -1083,18 +1084,18 @@ public class SpecimenController extends SpringActionController
         @Override
         public ModelAndView getView(PipelineForm form, BindException bindErrors)
         {
-            List<File> dataFiles = form.getValidatedFiles(getContainer());
+            List<FileLike> dataFiles = form.getValidatedFiles(getContainer());
             List<SpecimenArchive> archives = new ArrayList<>();
             List<String> errors = new ArrayList<>();
             _filePaths = form.getFile();
-            for (File dataFile : dataFiles)
+            for (FileLike dataFile : dataFiles)
             {
                 if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
                 {
                     throw new NotFoundException();
                 }
 
-                if (!dataFile.canRead())
+                if (!dataFile.toNioPathForRead().toFile().canRead())
                     errors.add("Can't read data file: " + dataFile);
 
                 SpecimenArchive archive = new SpecimenArchive(dataFile);

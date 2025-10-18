@@ -69,6 +69,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -77,7 +78,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -201,7 +201,7 @@ public class AnalysisController extends SpringActionController
             PipelineService.PathAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
             AbstractFileAnalysisProtocol<?> protocol = props.getFactory().getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false);
             //NOTE: if protocol if null, initFileStatus() will return a result of UNKNOWN
-            Path dirAnalysis = props.getFactory().getAnalysisDir(props.getDirData(), form.getProtocolName(), props.getPipeRoot());
+            FileLike dirAnalysis = props.getFactory().getAnalysisDir(props.getDirData(), form.getProtocolName(), props.getPipeRoot());
             form.initStatus(protocol, props.getDirData(), dirAnalysis);
 
             boolean isRetry = false;
@@ -251,17 +251,17 @@ public class AnalysisController extends SpringActionController
                         if (wbRoot == null || !wbRoot.isValid())
                             continue;
 
-                        File wbDirData = null;
+                        FileLike wbDirData = null;
                         if (form.getPath() != null)
                         {
-                            wbDirData = wbRoot.resolvePath(form.getPath());
+                            wbDirData = wbRoot.resolvePathToFileLike(form.getPath());
                             if (!NetworkDrive.exists(wbDirData))
                                 continue;
                         }
 
-                        for (String protocolName : props.getFactory().getProtocolNames(wbRoot, wbDirData.toPath(), false))
+                        for (String protocolName : props.getFactory().getProtocolNames(wbRoot, wbDirData, false))
                         {
-                            protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData.toPath(), props.getFactory()));
+                            protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData, props.getFactory()));
                         }
                     }
                 }
@@ -273,7 +273,7 @@ public class AnalysisController extends SpringActionController
             return new ApiSimpleResponse(result);
         }
 
-        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, @Nullable Path dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, @Nullable FileLike dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
         {
             JSONObject protocol = new JSONObject();
             AbstractFileAnalysisProtocol<?> pipelineProtocol = factory.getProtocol(root, dirData, protocolName, false);

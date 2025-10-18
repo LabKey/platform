@@ -31,10 +31,9 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.BatchUpdateException;
 import java.util.List;
 
@@ -48,14 +47,14 @@ public class ExperimentPipelineJob extends PipelineJob
 
     private static final Object _experimentLock = new Object();
 
-    private final Path _xarFile;
+    private final FileLike _xarFile;
     private final String _description;
     private final boolean _deleteExistingRuns;
 
     private transient XarSource _xarSource;
 
     @JsonCreator
-    protected ExperimentPipelineJob(@JsonProperty("_xarFile") Path xarFile,
+    protected ExperimentPipelineJob(@JsonProperty("_xarFile") FileLike xarFile,
                                     @JsonProperty("_description") String description,
                                     @JsonProperty("_deleteExistingRuns") boolean deleteExistingRuns)
     {
@@ -65,26 +64,20 @@ public class ExperimentPipelineJob extends PipelineJob
         _deleteExistingRuns = deleteExistingRuns;
     }
 
-    @Deprecated //Prefer the Path version
-    public ExperimentPipelineJob(ViewBackgroundInfo info, File file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
-    {
-        this(info, file.toPath(), description, deleteExistingRuns, root);
-    }
-
-    public ExperimentPipelineJob(ViewBackgroundInfo info, Path file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
+    public ExperimentPipelineJob(ViewBackgroundInfo info, FileLike file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
     {
         super(ExperimentPipelineProvider.NAME, info, root);
         _xarFile = file;
-        _description = description + " - " + file.getFileName().toString();
+        _description = description + " - " + file.getName();
         _deleteExistingRuns = deleteExistingRuns;
 
         XarSource xarSource = getXarSource();
         header("XAR Import from " + xarSource.toString());
     }
 
-    protected XarSource createXarSource(Path file)
+    protected XarSource createXarSource(FileLike file)
     {
-        String name = file.getFileName().toString().toLowerCase();
+        String name = file.getName().toLowerCase();
         if (name.endsWith(".xar") || name.endsWith(".zip"))
         {
             return new CompressedXarSource(file, this);

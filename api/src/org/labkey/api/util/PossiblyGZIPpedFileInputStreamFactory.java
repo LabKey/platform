@@ -15,9 +15,9 @@
  */
 package org.labkey.api.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import org.labkey.vfs.FileLike;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
@@ -36,9 +36,9 @@ abstract public class PossiblyGZIPpedFileInputStreamFactory
 {
     private static final int STREAM_BUFFER_SIZE = 128 * 1024;
 
-    static public InputStream getStream(File f) throws FileNotFoundException
+    static public InputStream getStream(FileLike f) throws IOException
     {
-        FileInputStream fis = new FileInputStream(f);
+        InputStream fis = f.openInputStream();
         try
         {
             return new GZIPInputStream(fis, STREAM_BUFFER_SIZE);
@@ -54,7 +54,7 @@ abstract public class PossiblyGZIPpedFileInputStreamFactory
             {
                 // seems unlikely at this point               
             }
-            return new FileInputStream(f);
+            return f.openInputStream();
         }
     }
 }

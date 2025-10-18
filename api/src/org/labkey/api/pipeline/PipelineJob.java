@@ -62,6 +62,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.remoteapi.query.Filter;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.quartz.CronExpression;
 
 import java.io.BufferedReader;
@@ -133,6 +135,11 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     public void clearActionSet(ExpRun run)
     {
         _actionSet = new RecordedActionSet();
+    }
+
+    public FileLike getLogFileLike()
+    {
+        return FileSystemLike.wrapFile(getLogFilePath());
     }
 
     public enum TaskStatus
@@ -430,12 +437,18 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         return _pipeRoot;
     }
 
-    @Deprecated //Please switch to the Path version
+    @Deprecated //Please switch to the FileLike version
     public void setLogFile(File logFile)
     {
         setLogFile(logFile.toPath());
     }
 
+    public void setLogFile(FileLike logFile)
+    {
+        setLogFile(logFile.toNioPathForWrite());
+    }
+
+    @Deprecated //Please switch to the FileLike version
     public void setLogFile(Path logFile)
     {
         // Set Log file path and clear/reset logger

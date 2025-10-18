@@ -24,6 +24,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,9 +39,9 @@ import java.util.stream.Collectors;
  */
 public class CompressedXarSource extends AbstractFileXarSource
 {
-    private final Path _xarFile;
+    private final FileLike _xarFile;
 
-    public CompressedXarSource(Path xarFile, PipelineJob job)
+    public CompressedXarSource(FileLike xarFile, PipelineJob job)
     {
         super(job);
         _xarFile = xarFile;
@@ -53,13 +54,13 @@ public class CompressedXarSource extends AbstractFileXarSource
      *                           This may not be the same as the the Container returned by job.getContainer().
      * @param substitutions Additional context substitutions
      */
-    public CompressedXarSource(Path xarFile, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
+    public CompressedXarSource(FileLike xarFile, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
     {
         super(job.getDescription(), targetContainer, job.getUser(), job, substitutions);
         _xarFile = xarFile;
     }
 
-    public CompressedXarSource(Path xarFile, PipelineJob job, Container targetContainer)
+    public CompressedXarSource(FileLike xarFile, PipelineJob job, Container targetContainer)
     {
         this(xarFile, job, targetContainer, null);
     }
@@ -67,19 +68,19 @@ public class CompressedXarSource extends AbstractFileXarSource
     @Override
     public void init() throws ExperimentException, IOException
     {
-        Path outputDir = _xarFile.resolve(_xarFile + ".exploded");
+        FileLike outputDir = _xarFile.resolveChild(_xarFile + ".exploded");
         FileUtil.deleteDir(outputDir);
-        if (Files.exists(outputDir))
+        if (outputDir.exists())
         {
             throw new ExperimentException("Failed to clean up old directory " + outputDir);
         }
         FileUtil.createDirectories(outputDir);
-        if (!Files.isDirectory(outputDir))
+        if (!outputDir.isDirectory())
         {
             throw new ExperimentException("Failed to create directory " + outputDir);
         }
 
-        List<Path> xarContents;
+        List<FileLike> xarContents;
         try
         {
             xarContents = ZipUtil.unzipToDirectory(_xarFile, outputDir);
@@ -89,7 +90,7 @@ public class CompressedXarSource extends AbstractFileXarSource
             throw new ExperimentException("Failed to extract XAR file: " + _xarFile, e);
         }
 
-        List<Path> xarFiles = xarContents.stream().filter(f -> f.getFileName().toString().toLowerCase().endsWith(".xar.xml")).collect(Collectors.toList());
+        List<FileLike> xarFiles = xarContents.stream().filter(f -> f.getName().toLowerCase().endsWith(".xar.xml")).toList();
 
         if (xarFiles.isEmpty())
         {
@@ -106,7 +107,7 @@ public class CompressedXarSource extends AbstractFileXarSource
     }
 
     @Override
-    public Path getLogFilePath()
+    public FileLike getLogFilePath()
     {
         try
         {

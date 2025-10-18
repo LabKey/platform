@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -122,7 +123,7 @@ public abstract class XarSource implements Serializable
 
     protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
 
-    public abstract Path getLogFilePath() throws IOException;
+    public abstract FileLike getLogFilePath() throws IOException;
 
     /**
      * Called before trying to import this XAR to let the source set up any resources that are required 

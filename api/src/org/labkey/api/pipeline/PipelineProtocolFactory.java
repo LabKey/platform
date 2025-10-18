@@ -21,14 +21,15 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,10 +45,10 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     private static final Logger LOG = LogManager.getLogger(PipelineProtocolFactory.class);
 
-    public static Path getProtocolRootDir(PipeRoot root)
+    public static FileLike getProtocolRootDir(PipeRoot root)
     {
-        Path systemDir = root.ensureSystemDirectoryPath();
-        return systemDir.resolve(_pipelineProtocolDir);
+        FileLike systemDir = root.ensureSystemFileLike();
+        return systemDir.resolveChild(_pipelineProtocolDir);
     }
 
     public static File locateProtocolRootDir(File rootDir, File systemDir)
@@ -63,7 +64,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
-        Path file = getProtocolFile(root, name, archived);
+        FileLike file = getProtocolFile(root, name, archived);
         try
         {
             Map<String, String> mapNS = new HashMap<>();
@@ -71,7 +72,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
             XmlOptions opts = new XmlOptions().setLoadSubstituteNamespaces(mapNS);
 
             PipelineProtocolPropsDocument doc =
-                    PipelineProtocolPropsDocument.Factory.parse(Files.newInputStream(file), opts);
+                    PipelineProtocolPropsDocument.Factory.parse(file.openInputStream(), opts);
             PipelineProtocolPropsDocument.PipelineProtocolProps ppp =
                     doc.getPipelineProtocolProps();
             String type = ppp.getType();
@@ -104,7 +105,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         }
         catch (Exception e)
         {
-            throw new IOException("Failed to load protocol document " + file.toAbsolutePath() + ".", e);
+            throw new IOException("Failed to load protocol document " + file + ".", e);
         }
     }
 
@@ -115,48 +116,42 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public boolean exists(PipeRoot root, String name, boolean archived)
     {
-        return Files.exists(getProtocolFile(root, name, archived));
+        return getProtocolFile(root, name, archived).exists();
     }
 
-    public Path getProtocolDir(PipeRoot root, boolean archived)
+    public FileLike getProtocolDir(PipeRoot root, boolean archived)
     {
-        Path protocolDir = getProtocolRootDir(root).resolve(getName());
+        FileLike protocolDir = getProtocolRootDir(root).resolveChild(getName());
         if (archived)
-            protocolDir = protocolDir.resolve(_archivedProtocolDir);
+            protocolDir = protocolDir.resolveChild(_archivedProtocolDir);
         return protocolDir;
     }
 
-    public Path getProtocolFile(PipeRoot root, String name, boolean archived)
+    public FileLike getProtocolFile(PipeRoot root, String name, boolean archived)
     {
-        return FileUtil.appendName(getProtocolDir(root, archived), name + ".xml");
+        return getProtocolDir(root, archived).resolveChild(name + ".xml");
     }
 
     /** @return sorted list of protocol names */
-    public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
+    public String[] getProtocolNames(PipeRoot root, FileLike dirData, boolean archived)
     {
         HashSet<String> setNames = new HashSet<>();
 
         // Add <protocol-name>.xml files
-        File[] files = getProtocolDir(root, archived).toFile().listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
-        if (files != null)
+        List<FileLike> files = getProtocolDir(root, archived).getChildren(f -> f.getName().endsWith(".xml") && !f.isDirectory());
+        for (FileLike file : files)
         {
-            for (File file : files)
-            {
-                final String name = file.getName();
-                setNames.add(name.substring(0, name.lastIndexOf('.')));
-            }
+            final String name = file.getName();
+            setNames.add(name.substring(0, name.lastIndexOf('.')));
         }
 
         // Add all directories that already exist in the analysis root.
         if (dirData != null && !archived)
         {
-            files = dirData.resolve(getName()).toFile().listFiles(File::isDirectory);
+            files = dirData.resolveChild(getName()).getChildren(FileLike::isDirectory);
 
-            if (files != null)
-            {
-                for (File file : files)
-                    setNames.add(file.getName());
-            }
+            for (FileLike file : files)
+                setNames.add(file.getName());
         }
 
         String[] vals = setNames.toArray(new String[0]);
@@ -179,22 +174,22 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         {
             if (moveToArchive)
             {
-               Path archiveDir = getProtocolDir(root, true);
-               if (!Files.exists(archiveDir))
+               FileLike archiveDir = getProtocolDir(root, true);
+               if (!archiveDir.exists())
                {
                    FileUtil.createDirectories(archiveDir);
                }
-               else if (Files.isRegularFile(archiveDir))
+               else if (archiveDir.isFile())
                {
                    LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: "
-                           + getProtocolDir(root, false).toAbsolutePath());
+                           + getProtocolDir(root, false));
                    return false;
                }
             }
 
             try
             {
-                Files.move(getProtocolFile(root, name, !moveToArchive), getProtocolFile(root, name, moveToArchive));
+                Files.move(getProtocolFile(root, name, !moveToArchive).toNioPathForWrite(), getProtocolFile(root, name, moveToArchive).toNioPathForWrite());
             }
             catch (IOException e)
             {
@@ -215,25 +210,25 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
      */
     public boolean deleteProtocolFile(PipeRoot root, String name)
     {
-        Path protocolFile = getProtocolFile(root, name, false);
+        FileLike protocolFile = getProtocolFile(root, name, false);
 
         //If it doesn't exist, check archive
-        if (!Files.exists(protocolFile))
+        if (!protocolFile.exists())
             protocolFile = getProtocolFile(root, name, true);
 
         //If it still doesn't exist, move on
-        if (!Files.exists(protocolFile))
+        if (!protocolFile.exists())
         {
             return true; // We don't care if the file doesn't exist
         }
 
         try
         {
-            return Files.deleteIfExists(protocolFile);
+            return protocolFile.delete();
         }
         catch (IOException e)
         {
-            LogManager.getLogger(PipelineProtocolFactory.class).debug("Error attempting to delete protocol file " + protocolFile, e);
+            LOG.debug("Error attempting to delete protocol file " + protocolFile, e);
             return false;
         }
     }

@@ -16,6 +16,7 @@
 package org.labkey.specimen.pipeline;
 
 import org.labkey.api.study.SpecimenTransform;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 
@@ -24,7 +25,7 @@ import java.io.File;
  */
 public interface SpecimenReloadJobSupport extends SpecimenJobSupport
 {
-    void setSpecimenArchive(File archiveFile);
+    void setSpecimenArchive(FileLike archiveFile);
 
     String getSpecimenTransform();
 

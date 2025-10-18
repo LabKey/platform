@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -31,6 +32,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * <code>FileAnalysisTaskPipeline</code>
@@ -38,13 +40,19 @@ import java.util.Map;
  */
 public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskPipelineSettings>
 {
-    interface FilePathFilter extends FileFilter, DirectoryStream.Filter<Path>
+    interface FilePathFilter extends FileFilter, DirectoryStream.Filter<Path>, Predicate<FileLike>
     {
         @Override
         boolean accept(File file);
 
         @Override
         boolean accept(Path path);
+
+        @Override
+        default boolean test(FileLike fileLike)
+        {
+            return accept(fileLike.toNioPathForRead());
+        }
     }
 
 

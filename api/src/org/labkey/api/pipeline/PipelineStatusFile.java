@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +38,10 @@ public interface PipelineStatusFile
         @Deprecated
         PipelineStatusFile getStatusFile(File logFile);
         PipelineStatusFile getStatusFile(Container container, Path logFile);
+        default PipelineStatusFile getStatusFile(Container container, FileLike logFile)
+        {
+            return getStatusFile(container, logFile.toNioPathForRead());
+        }
 
         PipelineStatusFile getStatusFile(long rowId);
 

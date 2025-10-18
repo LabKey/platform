@@ -212,6 +212,10 @@ public class FileUtil
         return deleteDir(dir, null);
     }
 
+    public static boolean deleteDir(FileLike dir)
+    {
+        return deleteDir(dir.toNioPathForWrite(), null);
+    }
 
     @Deprecated
     public static boolean deleteDir(@NotNull File dir, Logger log)
@@ -450,6 +454,12 @@ public class FileUtil
     }
 
 
+    public static FileLike createDirectory(FileLike path) throws IOException
+    {
+        createDirectory(path.toNioPathForWrite(), AppProps.getInstance().isInvalidFilenameBlocked());
+        return path;
+    }
+
     public static Path createDirectory(Path path) throws IOException
     {
         return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
@@ -606,6 +616,11 @@ public class FileUtil
         return getBaseName(file.getName(), dots);
     }
 
+    public static String getBaseName(FileLike file, int dots)
+    {
+        return getBaseName(file.toNioPathForRead().toFile(), dots);
+    }
+
 
     /**
      * Remove text right of and including the last period in a file's name.
@@ -613,6 +628,11 @@ public class FileUtil
      * @return base name
      */
     public static String getBaseName(File file)
+    {
+        return getBaseName(file, 1);
+    }
+
+    public static String getBaseName(FileLike file)
     {
         return getBaseName(file, 1);
     }
@@ -1084,6 +1104,16 @@ public class FileUtil
 
         return path.toString();
     }
+
+    public static void copyFile(FileLike src, FileLike dst) throws IOException
+    {
+        try (InputStream in = src.openInputStream();
+            OutputStream out = dst.openOutputStream())
+        {
+            copyData(in, out);
+        }
+    }
+
 
     public static void copyFile(File src, File dst) throws IOException
     {

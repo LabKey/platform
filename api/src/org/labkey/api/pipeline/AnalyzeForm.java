@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
 
 import java.nio.file.Path;
 
@@ -64,7 +65,7 @@ public class AnalyzeForm extends PipelinePathForm
         setProtocolName(protocolName);
     }
 
-    public void initStatus(AbstractFileAnalysisProtocol protocol, Path dirData, Path dirAnalysis)
+    public void initStatus(AbstractFileAnalysisProtocol protocol, FileLike dirData, FileLike dirAnalysis)
     {
         if (fileInputStatus != null)
             return;
@@ -80,7 +81,7 @@ public class AnalyzeForm extends PipelinePathForm
         fileInputStatus[len] = initStatusFile(protocol, dirData, dirAnalysis, null, false);
     }
 
-    private String initStatusFile(AbstractFileAnalysisProtocol protocol, Path dirData, Path dirAnalysis,
+    private String initStatusFile(AbstractFileAnalysisProtocol protocol, FileLike dirData, FileLike dirAnalysis,
                                   String fileInputName, boolean statusSingle)
     {
         if (protocol == null)
@@ -88,7 +89,7 @@ public class AnalyzeForm extends PipelinePathForm
             return UNKNOWN_STATUS;
         }
 
-        Path fileStatus = null;
+        FileLike fileStatus = null;
 
         if (!statusSingle)
         {
@@ -97,7 +98,7 @@ public class AnalyzeForm extends PipelinePathForm
         }
         else if (fileInputName != null)
         {
-            Path fileInput = FileUtil.appendName(dirData, fileInputName);
+            FileLike fileInput = dirData.resolveChild(fileInputName);
             FileType ft = protocol.findInputType(fileInput);
             if (ft != null)
                 fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis, ft.getBaseName(fileInput));

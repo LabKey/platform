@@ -32,8 +32,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-
-import java.nio.file.Path;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 /**
  * User: vsharma
@@ -100,7 +100,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 throw e;
             }
 
-            Path xarFile = xarSourceWrapper.getXarFile();
+            FileLike xarFile = xarSourceWrapper.getXarFile();
             if (xarFile == null)
             {
                 ctx.getLogger().error("Could not find a xar file in the xar directory.");
@@ -120,7 +120,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 job = new ExperimentPipelineJob(bgInfo, xarFile, "Xar import", false, pipeRoot)
                 {
                     @Override
-                    protected XarSource createXarSource(Path file)
+                    protected XarSource createXarSource(FileLike file)
                     {
                         // Assume this is a .xar or a .zip file
                         return xarSourceWrapper.getXarSource(this);
@@ -165,7 +165,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         private final VirtualFile _xarDir;
         private final FolderImportContext _importContext;
 
-        private Path _xarFile;
+        private FileLike _xarFile;
         private XarSource _xarSource;
 
         public FolderExportXarSourceWrapper(VirtualFile xarDir, FolderImportContext ctx)
@@ -185,13 +185,13 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             {
                 if (file.toLowerCase().endsWith(".xar") || file.toLowerCase().endsWith(".xar.xml"))
                 {
-                    _xarFile = FileUtil.getPath(_importContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file);
+                    _xarFile = FileSystemLike.wrapFile(FileUtil.getPath(_importContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file));
                     break;
                 }
             }
         }
 
-        public Path getXarFile()
+        public FileLike getXarFile()
         {
             return _xarFile;
         }
@@ -200,7 +200,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         {
             if (_xarSource == null)
             {
-                if (getXarFile().getFileName().toString().toLowerCase().endsWith(".xar.xml"))
+                if (getXarFile().getName().toLowerCase().endsWith(".xar.xml"))
                 {
                     _xarSource = new FileXarSource(
                             getXarFile(),

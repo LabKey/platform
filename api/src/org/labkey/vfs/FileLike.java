@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.function.Predicate;
 
 @JsonSerialize(using = FileLike.FileLikeSerializer.class)
 @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
@@ -86,6 +87,12 @@ public interface FileLike extends Comparable<FileLike>
 
     @NotNull
     List<FileLike> getChildren();
+
+    @NotNull
+    default List<FileLike> getChildren(Predicate<FileLike> filter)
+    {
+        return getChildren().stream().filter(filter).toList();
+    }
 
     /**
      * Does not create parent directories

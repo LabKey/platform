@@ -25,6 +25,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -91,16 +92,16 @@ public class PipelinePathForm extends ViewForm
      * For ExpData IDs provided, ensures the files exists and the user has read permission on the associated container.  The files do not need to be located in the same directory.
      * Throws NotFoundException if no files are specified, invalid files are specified, there's no pipeline root, etc.
      */
-    public List<File> getValidatedFiles(Container c)
+    public List<FileLike> getValidatedFiles(Container c)
     {
         return getValidatedFiles(c, false);
     }
 
-    public List<File> getValidatedFiles(Container c, boolean allowNonExistentFiles)
+    public List<FileLike> getValidatedFiles(Container c, boolean allowNonExistentFiles)
     {
         PipeRoot pr = getPipeRoot(c);
 
-        File dir = pr.resolvePath(getPath());
+        FileLike dir = pr.resolvePathToFileLike(getPath());
         if (dir == null || !dir.exists())
             throw new NotFoundException("Could not find path " + getPath());
 
@@ -109,10 +110,10 @@ public class PipelinePathForm extends ViewForm
             throw new NotFoundException("No files specified");
         }
 
-        List<File> result = new ArrayList<>();
+        List<FileLike> result = new ArrayList<>();
         for (String fileName : _file)
         {
-            File f = pr.resolvePath(getPath() + "/" + fileName);
+            FileLike f = pr.resolvePathToFileLike(getPath() + "/" + fileName);
             if (!allowNonExistentFiles && !NetworkDrive.exists(f))
             {
                 throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
@@ -136,7 +137,7 @@ public class PipelinePathForm extends ViewForm
                     throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
                 }
 
-                File file = data.getFile();
+                FileLike file = data.getFileLike();
                 if (!allowNonExistentFiles && !NetworkDrive.exists(file))
                 {
                     throw new NotFoundException("Could not find file '" + file + "'");
@@ -150,55 +151,12 @@ public class PipelinePathForm extends ViewForm
 
     public List<Path> getValidatedPaths(Container c, boolean allowNonExistentFiles)
     {
-        PipeRoot pr = getPipeRoot(c);
-
-        Path dir = pr.resolveToNioPath(getPath());
-        if (dir == null || !Files.exists(dir))
-            throw new NotFoundException("Could not find path " + getPath());
-
-        if ((getFile() == null || getFile().length == 0) && (getFileIds() == null || getFileIds().length == 0))
-        {
-            throw new NotFoundException("No files specified");
-        }
-
+        List<FileLike> files = getValidatedFiles(c, allowNonExistentFiles);
         List<Path> result = new ArrayList<>();
-        for (String fileName : _file)
+        for (FileLike file : files)
         {
-            Path path = pr.resolveToNioPath(getPath() + "/" + fileName);
-            if (!allowNonExistentFiles && (null == path || !Files.exists(path)))
-            {
-                throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
-            }
-            if (null != path)
-                result.add(path);
+            result.add(file.toNioPathForRead());
         }
-
-        ExperimentService es = ExperimentService.get();
-        if (_fileIds != null)
-        {
-            for (int fileId : _fileIds)
-            {
-                ExpData data = es.getExpData(fileId);
-                if(data == null)
-                {
-                    throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
-                }
-
-                if (!data.getContainer().hasPermission(getUser(), ReadPermission.class))
-                {
-                    throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
-                }
-
-                Path path = pr.resolveToNioPath(data.getDataFileURI().getPath());
-                if (!allowNonExistentFiles && (null == path || !Files.exists(path)))
-                {
-                    throw new NotFoundException("Could not find file '" + FileUtil.getFileName(path) + "'");
-                }
-                if (null != path)
-                    result.add(path);
-            }
-        }
-
         return result;
     }
 
@@ -211,13 +169,18 @@ public class PipelinePathForm extends ViewForm
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
-    @Deprecated //prefer the nio.Path version: getValidatedSinglePath
-    public File getValidatedSingleFile(Container c)
+    public FileLike getValidatedSingleFile(Container c)
     {
-        return getValidatedSinglePath(c).toFile();
+        List<FileLike> files = getValidatedFiles(c);
+        if (files.size() != 1)
+        {
+            throw new IllegalArgumentException("Expected a single file but got " + files.size());
+        }
+        return files.get(0);
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
+    @Deprecated // use the FileLike version
     public Path getValidatedSinglePath(Container c)
     {
         List<Path> files = getValidatedPaths(c, false);

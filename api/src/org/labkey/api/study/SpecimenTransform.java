@@ -23,6 +23,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -75,7 +76,7 @@ public interface SpecimenTransform
      * @param importConfig configuration object
      * @param inputArchive the file to write the externally sourced data into
      */
-    void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException;
+    void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, FileLike inputArchive) throws PipelineJobException;
 
     interface ExternalImportConfig
     {

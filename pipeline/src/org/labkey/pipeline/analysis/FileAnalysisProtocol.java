@@ -23,9 +23,9 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -60,16 +60,15 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     @Override
-    public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<Path> filesInput,
-                                                     Path fileParameters, @Nullable Map<String, String> variableMap
+    public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<FileLike> filesInput,
+                                                     FileLike fileParameters, @Nullable Map<String, String> variableMap
     ) throws IOException
     {
         TaskId id = _factory.getPipeline().getId();
 
         boolean splittable = _factory.getPipeline().isSplittable();
-        boolean writeJobInfoFile = _factory.getPipeline().isWriteJobInfoFile();
 
         return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info, root,
-                id, getName(), fileParameters, filesInput, variableMap, splittable, writeJobInfoFile);
+                id, getName(), fileParameters, filesInput, variableMap, splittable);
     }
 }

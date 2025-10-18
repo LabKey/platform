@@ -21,6 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -91,6 +92,11 @@ public class RecordedAction
     public void addInput(File input, String role)
     {
         addInput(input.toURI(), role);
+    }
+
+    public void addInput(FileLike input, String role)
+    {
+        addInput(input.toNioPathForRead().toFile(), role);
     }
 
     private boolean uriExists(URI toTest, Set<DataFile> set)

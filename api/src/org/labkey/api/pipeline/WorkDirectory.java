@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.util.FileType;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,6 +66,12 @@ public interface WorkDirectory
      * @return the full path to the file where it is available for use
      */
     File inputFile(File fileInput, boolean forceCopy) throws IOException;
+
+    default File inputFile(FileLike fileInput, boolean forceCopy) throws IOException
+    {
+        return inputFile(fileInput.toNioPathForRead().toFile(), forceCopy);
+    }
+
 
     /**
      * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless

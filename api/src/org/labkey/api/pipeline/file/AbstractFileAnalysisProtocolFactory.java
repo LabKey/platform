@@ -28,24 +28,24 @@ import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 /**
@@ -96,13 +96,13 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @param root pipeline root under which the files are stored
      * @return analysis directory
      */
-    public Path getAnalysisDir(Path dirData, String protocolName, PipeRoot root)
+    public FileLike getAnalysisDir(FileLike dirData, String protocolName, PipeRoot root)
     {
-        Path defaultFile = dirData.resolve(getName()).resolve(protocolName);
+        FileLike defaultFile = dirData.resolveChild(getName()).resolveChild(protocolName);
         // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
         // pipeline location
         String relativePath = root.relativePath(defaultFile);
-        return root.resolveToNioPath(relativePath);
+        return root.resolvePathToFileLike(relativePath);
     }
 
     /**
@@ -113,12 +113,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return NetworkDrive.exists(new File(file.getParent(), getParametersFileName()));
     }
 
-    @Deprecated
-    public File getParametersFile(@Nullable File dirData, String protocolName, PipeRoot root)
-    {
-        Path result = getParametersFile(dirData == null? null : dirData.toPath(), protocolName, root);
-        return result != null ? result.toFile() : null;
-    }
     /**
      * Get the parameters file location, given a directory containing the mass spec data.
      *
@@ -128,17 +122,17 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @return parameters file
      */
     @Nullable
-    public Path getParametersFile(@Nullable Path dirData, String protocolName, PipeRoot root)
+    public FileLike getParametersFile(@Nullable FileLike dirData, String protocolName, PipeRoot root)
     {
         if (dirData == null)
         {
             return null;
         }
-        Path defaultFile = getAnalysisDir(dirData, protocolName, root).resolve(getParametersFileName());
+        FileLike defaultFile = getAnalysisDir(dirData, protocolName, root).resolveChild(getParametersFileName());
         // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
         // pipeline location
         String relativePath = root.relativePath(defaultFile);
-        return root.resolveToNioPath(relativePath);
+        return root.resolvePathToFileLike(relativePath);
     }
 
     /**
@@ -147,9 +141,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @param root pipeline root directory
      * @return default parameters file
      */
-    public Path getDefaultParametersFile(PipeRoot root)
+    public FileLike getDefaultParametersFile(PipeRoot root)
     {
-        return getProtocolDir(root, false).resolve(getDefaultParametersFileName());
+        return getProtocolDir(root, false).resolveChild(getDefaultParametersFileName());
     }
 
     /**
@@ -164,7 +158,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Override
-    public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
+    public String[] getProtocolNames(PipeRoot root, FileLike dirData, boolean archived)
     {
         String[] protocolNames = super.getProtocolNames(root, dirData, archived);
 
@@ -224,10 +218,10 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return instance;
     }
 
-    public T loadInstance(Path file, Container container) throws IOException
+    public T loadInstance(FileLike file, Container container) throws IOException
     {
         ParamParser parser = createParamParser();
-        try (InputStream is = Files.newInputStream(file))
+        try (InputStream is = file.openInputStream())
         {
             parser.parse(is);
             if (parser.getErrors() != null)
@@ -251,8 +245,8 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     public String getDefaultParametersXML(PipeRoot root) throws IOException
     {
-        Path fileDefault = getDefaultParametersFile(root);
-        if (!Files.exists(fileDefault))
+        FileLike fileDefault = getDefaultParametersFile(root);
+        if (!fileDefault.exists())
             return null;
 
         return new FileDefaultsReader(fileDefault).readXML();
@@ -260,9 +254,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     protected static class FileDefaultsReader extends DefaultsReader
     {
-        private final Path _fileDefaults;
+        private final FileLike _fileDefaults;
 
-        public FileDefaultsReader(Path fileDefaults)
+        public FileDefaultsReader(FileLike fileDefaults)
         {
             _fileDefaults = fileDefaults;
         }
@@ -270,7 +264,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         @Override
         public Reader createReader() throws IOException
         {
-            return Files.newBufferedReader(_fileDefaults, Charset.defaultCharset());
+            return Readers.getReader(_fileDefaults.openInputStream());
         }
     }
     
@@ -313,10 +307,10 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
                 throw new IllegalArgumentException("Line " + err.getLine() + ": " + err.getMessage());
         }
 
-        Path fileDefault = getDefaultParametersFile(root);
+        FileLike fileDefault = getDefaultParametersFile(root);
         FileUtil.createDirectories(fileDefault.getParent());
 
-        try (BufferedWriter writer = Files.newBufferedWriter(fileDefault, Charset.defaultCharset(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
+        try (PrintWriter writer = PrintWriters.getPrintWriter(fileDefault.openOutputStream()))
         {
             writer.write(xml, 0, xml.length());
         }
@@ -347,11 +341,11 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Nullable
-    public AbstractFileAnalysisProtocol<?> getProtocol(PipeRoot root, Path dirData, String protocolName, boolean archived)
+    public AbstractFileAnalysisProtocol<?> getProtocol(PipeRoot root, FileLike dirData, String protocolName, boolean archived)
     {
         try
         {
-            Path protocolFile = getParametersFile(dirData, protocolName, root);
+            FileLike protocolFile = getParametersFile(dirData, protocolName, root);
             AbstractFileAnalysisProtocol<?> result;
             if (NetworkDrive.exists(protocolFile))
             {
@@ -363,7 +357,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             else
             {
                 protocolFile = getProtocolFile(root, protocolName, archived);
-                if (protocolFile == null || !Files.exists(protocolFile))
+                if (protocolFile == null || !protocolFile.exists())
                     return null;
 
                 result = load(root, protocolName, archived);

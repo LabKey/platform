@@ -18,7 +18,6 @@ package org.labkey.api.pipeline.file;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,10 +35,10 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,11 +60,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private String _protocolName;
     private String _joinedBaseName;
     private String _baseName;
-    private Path _dirData;
-    private Path _dirAnalysis;
-    private Path _fileParameters;
-    private Path _fileJobInfo;
-    private List<Path> _filesInput;
+    private FileLike _dirData;
+    private FileLike _dirAnalysis;
+    private FileLike _fileParameters;
+    private List<FileLike> _filesInput;
     private List<FileType> _inputTypes;
     private boolean _splittable = true;
 
@@ -77,39 +75,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     // For serialization
     protected AbstractFileAnalysisJob() {}
 
-    @Deprecated //Prefer the Path version, retained for backwards compatbility
-    public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
+    public AbstractFileAnalysisJob(@NotNull AbstractFileAnalysisProtocol<?> protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,
                                    PipeRoot root,
                                    String protocolName,
-                                   File fileParameters,
-                                   List<File> filesInput,
-                                   boolean splittable,
-                                   boolean writeJobInfoFile) throws IOException
-    {
-        this(
-                protocol,
-                providerName,
-                info,
-                root,
-                protocolName,
-                fileParameters.toPath(),
-                filesInput.stream().map(File::toPath).collect(Collectors.toList()),
-                splittable,
-                writeJobInfoFile
-        );
-    }
-
-    public AbstractFileAnalysisJob(@NotNull AbstractFileAnalysisProtocol protocol,
-                                   String providerName,
-                                   ViewBackgroundInfo info,
-                                   PipeRoot root,
-                                   String protocolName,
-                                   Path fileParameters,
-                                   List<Path> filesInput,
-                                   boolean splittable,
-                                   boolean writeJobInfoFile) throws IOException
+                                   FileLike fileParameters,
+                                   List<FileLike> filesInput,
+                                   boolean splittable) throws IOException
     {
         super(providerName, info, root);
 
@@ -127,13 +100,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         // Check for explicitly set default parameters.  Otherwise use the default.
         String paramDefaults = _parametersOverrides.get("list path, default parameters");
-        Path fileDefaults;
+        FileLike fileDefaults;
         if (paramDefaults != null)
-            fileDefaults = getPipeRoot().resolveToNioPath(paramDefaults);
+            fileDefaults = getPipeRoot().resolvePathToFileLike(paramDefaults);
         else
             fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
-        _parametersDefaults = fileDefaults != null && Files.exists(fileDefaults) ?
+        _parametersDefaults = fileDefaults != null && fileDefaults.exists() ?
                 getInputParameters(fileDefaults).getInputParameters() :
                 Collections.emptyMap();
 
@@ -164,15 +137,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     protected Path getWorkingDirectoryString()
     {
-        return _dirAnalysis.toAbsolutePath();
+        return _dirAnalysis.toNioPathForWrite().toAbsolutePath();
     }
 
-    public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
+    public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, FileLike fileInput)
     {
         this(job, Collections.singletonList(fileInput));
     }
 
-    public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, List<File> filesInput)
+    public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, List<FileLike> filesInput)
     {
         super(job);
 
@@ -188,7 +161,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _joinedBaseName = job._joinedBaseName;
 
         // Change parameters which are specific to the fraction job.
-        _filesInput = filesInput.stream().map(File::toPath).collect(Collectors.toList());
+        _filesInput = new ArrayList<>(filesInput);
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
 
@@ -222,7 +195,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             return super.createSplitJobs();
 
         ArrayList<PipelineJob> jobs = new ArrayList<>();
-        for (File file : getInputFiles())
+        for (FileLike file : _filesInput)
             jobs.add(createSingleFileJob(file));
         return Collections.unmodifiableList(jobs);
     }
@@ -235,7 +208,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     abstract public TaskId getTaskPipelineId();
 
-    abstract public AbstractFileAnalysisJob createSingleFileJob(File file);
+    abstract public AbstractFileAnalysisJob createSingleFileJob(FileLike file);
 
     @Override
     public String getProtocolName()
@@ -259,7 +232,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public List<String> getSplitBaseNames()
     {
         ArrayList<String> baseNames = new ArrayList<>();
-        for (Path fileInput : _filesInput)
+        for (FileLike fileInput : _filesInput)
         {
             for (FileType ft : _inputTypes)
             {
@@ -278,7 +251,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         if (fileType != null)
         {
-            for (Path fileInput : _filesInput)
+            for (FileLike fileInput : _filesInput)
             {
                 if (fileType.isType(fileInput))
                     return fileType.getBaseName(fileInput);
@@ -291,25 +264,25 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public File getDataDirectory()
     {
-        return _dirData.toFile();
+        return _dirData.toNioPathForRead().toFile();
     }
 
     @Override
     public Path getDataDirectoryPath()
     {
-        return _dirData;
+        return _dirData.toNioPathForRead();
     }
 
     @Override
     public File getAnalysisDirectory()
     {
-        return _dirAnalysis.toFile();
+        return _dirAnalysis.toNioPathForWrite().toFile();
     }
 
     @Override
     public Path getAnalysisDirectoryPath()
     {
-        return _dirAnalysis;
+        return _dirAnalysis.toNioPathForWrite();
     }
 
     @Override
@@ -357,28 +330,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public List<Path> getInputFilePaths()
     {
-        return _filesInput;
-    }
-
-    @Override
-    @Nullable
-    public File getJobInfoFile()
-    {
-        return _fileJobInfo.toFile();
-    }
-
-
-    @Override
-    @Nullable
-    public Path getJobInfoFilePath()
-    {
-        return _fileJobInfo;
+        return _filesInput.stream().map(FileLike::toNioPathForRead).toList();
     }
 
     @Override
     public File getParametersFile()
     {
-        return _fileParameters.toFile();
+        return _fileParameters.toNioPathForRead().toFile();
     }
 
     @Override
@@ -407,10 +365,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return getInputParameters(_fileParameters);
     }
 
-    public ParamParser getInputParameters(Path parametersFile) throws IOException
+    public ParamParser getInputParameters(FileLike parametersFile) throws IOException
     {
         ParamParser parser = createParamParser();
-        parser.parse(Files.newInputStream(parametersFile));
+        parser.parse(parametersFile.openInputStream());
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
@@ -428,7 +386,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return parser;
     }
 
-    private void logParameters(String description, Path file, Map<String, String> parameters)
+    private void logParameters(String description, FileLike file, Map<String, String> parameters)
     {
         _log.debug(description + " " + parameters.size() + " parameters (" + file + "):");
         for (Map.Entry<String, String> entry : new TreeMap<>(parameters).entrySet())

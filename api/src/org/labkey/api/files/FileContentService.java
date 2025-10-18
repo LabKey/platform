@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
@@ -339,6 +340,9 @@ public interface FileContentService
 
     @Nullable
     URI getWebDavUrl(@NotNull Path path, @NotNull Container container, @NotNull PathType type);
+
+    @Nullable
+    URI getWebDavUrl(@NotNull FileLike path, @NotNull Container container, @NotNull PathType type);
 
     /**
      * Ensure an entry in the exp.data table exists for all files in the container's file root.
