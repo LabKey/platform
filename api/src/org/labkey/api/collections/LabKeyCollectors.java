@@ -10,6 +10,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -193,6 +194,14 @@ public class LabKeyCollectors
     public static Collector<String, ?, Set<String>> toCaseInsensitiveHashSet()
     {
         return Collectors.toCollection(CaseInsensitiveHashSet::new);
+    }
+
+    /**
+     * Returns a {@link Collector} that builds a case-insensitive linked hash set from a {@link Stream} of {@link String}s
+     */
+    public static Collector<String, ?, Set<String>> toCaseInsensitiveLinkedHashSet()
+    {
+        return Collectors.toCollection(() -> Collections.newSetFromMap(new CaseInsensitiveLinkedHashMap<>()));
     }
 
     /**

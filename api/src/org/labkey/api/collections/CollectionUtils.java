@@ -30,6 +30,7 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -138,6 +139,11 @@ public class CollectionUtils
         Collections.singleton(null).getClass()
     );
 
+    private static final Set<Class<?>> STABLE_ORDERED_MAP_CLASSES = Set.of(
+        CaseInsensitiveLinkedHashMap.class,
+        LinkedHashMap.class
+    );
+
     /**
      * Attempts to determine if the provided Set implementation is stable-ordered, i.e., its iteration order matches its
      * insertion order. Currently, LinkedHashSet, Collections.singleton(), and Collections.emptySet() are considered
@@ -151,7 +157,26 @@ public class CollectionUtils
         if (set instanceof LinkedHashSet<?>)
             return true;
 
-        return (STABLE_ORDERED_SET_CLASSES.contains(set.getClass()));
+        Class<?> clazz = set.getClass();
+
+        if (clazz.getName().equals("java.util.Collections$SetFromMap"))
+        {
+            try
+            {
+                // Inspect the wrapped Map to determine whether it's stable-ordered
+                Field m = clazz.getDeclaredField("m");
+                m.setAccessible(true);
+                Map<?, ?> map = (Map<?, ?>)m.get(set);
+
+                return STABLE_ORDERED_MAP_CLASSES.contains(map.getClass());
+            }
+            catch (NoSuchFieldException | IllegalAccessException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return STABLE_ORDERED_SET_CLASSES.contains(clazz);
     }
 
     /**
@@ -272,12 +297,17 @@ public class CollectionUtils
             assertTrue(isStableOrderedSet(new LinkedHashSet<>()));
             assertTrue(isStableOrderedSet(PageFlowUtil.set("this", "that")));
             assertTrue(isStableOrderedSet(new CsvSet("this,that")));
+            assertTrue(isStableOrderedSet(Set.of("this", "that").stream().collect(LabKeyCollectors.toCaseInsensitiveLinkedHashSet())));
+            assertTrue(isStableOrderedSet(Collections.newSetFromMap(new CaseInsensitiveLinkedHashMap<>())));
+            assertTrue(isStableOrderedSet(Collections.newSetFromMap(new LinkedHashMap<>())));
 
             assertFalse(isStableOrderedSet(Set.of()));
             assertFalse(isStableOrderedSet(Set.of("this")));
             assertFalse(isStableOrderedSet(Set.of("this", "that")));
             assertFalse(isStableOrderedSet(new HashSet<>()));
             assertFalse(isStableOrderedSet(new TreeSet<>()));
+            assertFalse(isStableOrderedSet(Set.of("this", "that").stream().collect(LabKeyCollectors.toCaseInsensitiveHashSet())));
+            assertFalse(isStableOrderedSet(Collections.newSetFromMap(new CaseInsensitiveHashMap<>())));
         }
     }
 }
