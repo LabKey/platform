@@ -5,8 +5,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
+import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 public interface DatabaseMigrationService
 {
     Logger LOG = LogHelper.getLogger(DatabaseMigrationService.class, "Information about database migration");
+
+    record DomainFilter(String column, FilterClause condition) {}
 
     static @NotNull DatabaseMigrationService get()
     {
@@ -80,6 +84,8 @@ public interface DatabaseMigrationService
         FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers);
 
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
+
+        void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames);
 
         void afterSchema();
     }
@@ -175,6 +181,47 @@ public interface DatabaseMigrationService
             }
 
             return null;
+        }
+
+        @Override
+        public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        {
+            addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+        }
+
+        private void addDomainDataStandardFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        {
+            if (selectColumnNames.contains(filter.column()))
+            {
+                // Select all rows in this domain-filtered container that meet its criteria
+                orClause.addClause(
+                    new AndClause(
+                        getContainerClause(sourceTable, fKey, Set.of(guid)),
+                        filter.condition()
+                    )
+                );
+            }
+        }
+
+        // Special domain data filter method for provisioned tables that have a built-in Flag field
+        protected void addDomainDataFlagFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        {
+            if (filter.column().equalsIgnoreCase("Flag"))
+            {
+                SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object WHERE ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = (SELECT PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI = 'urn:exp.labkey.org/#Comment')))", filter.condition().getParamVals());
+
+                // Select all rows where the built-in flag column equals the filter value
+                orClause.addClause(
+                    new AndClause(
+                        getContainerClause(sourceTable, fKey, Set.of(guid)),
+                        new SimpleFilter.SQLClause(flagWhere)
+                    )
+                );
+            }
+            else
+            {
+                addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+            }
         }
 
         @Override
