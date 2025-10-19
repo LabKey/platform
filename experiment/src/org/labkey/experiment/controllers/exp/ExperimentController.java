@@ -6809,7 +6809,7 @@ public class ExperimentController extends SpringActionController
                     if (form.getModule() != null)
                     {
                         FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                        job.setLogFile(logFile.toNioPathForWrite());
+                        job.setLogFile(logFile);
                     }
 
                     PipelineService.get().queueJob(job);
@@ -6849,7 +6849,7 @@ public class ExperimentController extends SpringActionController
                 if (form.getModule() != null)
                 {
                     FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                    job.setLogFile(logFile.toNioPathForWrite());
+                    job.setLogFile(logFile);
                 }
 
                 PipelineService.get().queueJob(job);

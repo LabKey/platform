@@ -314,7 +314,7 @@ public class PublishController extends SpringActionController
             _runIds = form.getRunId();
             _autoLinkCategory = form.getAutoLinkCategory();
 
-            setLogFile(FileUtil.appendName(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")).toPath());
+            setLogFile(pipeRoot.resolvePathToFileLike(FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")));
         }
 
         @Override

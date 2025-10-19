@@ -248,6 +248,6 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     private FileLike getLoadingXarFile()
     {
         FileLike xarPath = _factory.getXarFile(getJob());
-        return xarPath.resolveChild(xarPath + ".loading");
+        return xarPath.getParent().resolveChild(xarPath.getName() + ".loading");
     }
 }
