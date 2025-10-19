@@ -197,7 +197,9 @@ public class LabKeyCollectors
     }
 
     /**
-     * Returns a {@link Collector} that builds a case-insensitive linked hash set from a {@link Stream} of {@link String}s
+     * Returns a {@link Collector} that builds a case-insensitive linked hash set from a {@link Stream} of {@link String}s.
+     * The resulting sets are appropriate for TableSelectors that need stable-ordered column sets since
+     * CollectionUtils.isStableOrderedSet() knows they are stable-ordered.
      */
     public static Collector<String, ?, Set<String>> toCaseInsensitiveLinkedHashSet()
     {

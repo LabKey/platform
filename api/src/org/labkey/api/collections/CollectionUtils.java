@@ -146,11 +146,12 @@ public class CollectionUtils
 
     /**
      * Attempts to determine if the provided Set implementation is stable-ordered, i.e., its iteration order matches its
-     * insertion order. Currently, LinkedHashSet, Collections.singleton(), and Collections.emptySet() are considered
-     * stable-ordered; HashSet, TreeSet, and sets returned from Set.of() are not. We used to special case unstable sets
-     * with size 1, allowing them since they obviously iterate in a predicable manner. However, we then encountered code
-     * paths that usually pass a one-element set, but in some circumstances pass a larger set. We now flag all unstable
-     * sets regardless of size. If you want to pass a single value then use Collections.singleton().
+     * insertion order. Currently, LinkedHashSet, Collections.singleton(), Collections.emptySet(), and
+     * Collections.newSetFromMap() of stable-ordered maps are considered stable-ordered; HashSet, TreeSet, and sets
+     * returned from Set.of() are not. We used to special case unstable sets with size 1, allowing them since they
+     * obviously iterate in a predicable manner. However, we then encountered code paths that usually pass a one-element
+     * set, but in some circumstances pass a larger set. We now flag all unstable sets regardless of size. If you want
+     * to pass a single value then use Collections.singleton().
      */
     public static boolean isStableOrderedSet(@NotNull Set<?> set)
     {
@@ -183,15 +184,16 @@ public class CollectionUtils
      * The compiler does not 100% guarantee that classes are consistent, due to casts or type erasure.
      * This wrapper allows for a runtime check.
      */
-    public static <V> Map<String,V> enforceValueClass(Map<String,V> map, final Class<V> valueClass)
+    public static <V> Map<String, V> enforceValueClass(Map<String, V> map, final Class<V> valueClass)
     {
         checkValueClass(map, valueClass);
-        Map<String,V> ret = map;
+        Map<String, V> ret = map;
         //noinspection ConstantValue,AssertWithSideEffects
-        assert null != (ret = Collections.checkedMap(map,String.class,valueClass));
+        assert null != (ret = Collections.checkedMap(map,String.class, valueClass));
         return ret;
     }
-    public static <V> Map<String,V> checkValueClass(Map<String,V> map, final Class<V> valueClass)
+
+    public static <V> Map<String, V> checkValueClass(Map<String, V> map, final Class<V> valueClass)
     {
         assert null==map || map.values().stream().allMatch(v -> null==v || valueClass.isInstance(v));
         return map;
