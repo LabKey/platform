@@ -54,7 +54,7 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
         if (xarDir != null)
         {
             // #44384 Generate a relative Path object for the folder's VirtualFile
-            FileLike xarDirPath = FileSystemLike.wrapFile(Path.of(xarDir.getLocation()));
+            FileLike xarDirPath = FileSystemLike.wrapFile(Path.of(xarDir.getLocation()).toAbsolutePath());
             FileLike typesXarFile = null;
             Map<String, String> sampleStatusDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();

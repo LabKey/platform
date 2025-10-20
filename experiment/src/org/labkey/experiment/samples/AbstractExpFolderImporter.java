@@ -91,7 +91,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
         if (xarDir != null)
         {
             // #44384 Generate a relative Path object for the folder's VirtualFile
-            FileLike xarDirPath = FileSystemLike.wrapFile(Path.of(xarDir.getLocation()));
+            FileLike xarDirPath = FileSystemLike.wrapFile(Path.of(xarDir.getLocation()).toAbsolutePath());
             FileLike typesXarFile = null;
             FileLike runsXarFile = null;
             Logger log = ctx.getLogger();

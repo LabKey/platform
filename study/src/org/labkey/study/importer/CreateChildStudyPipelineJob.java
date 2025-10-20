@@ -327,7 +327,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
         finally
         {
-            if (!success && _destFolderCreated)
+            if (!success && _destFolderCreated && getDstContainer() != null)
                 ContainerManager.delete(getDstContainer(), getUser());
         }
 
