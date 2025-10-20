@@ -384,6 +384,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getPropertyURI());
                 continue;
             }
+
+            if (CoreSchema.getInstance().getSqlDialect().isReserved(prop.getName()))
+                log.warn("Property name '" + prop.getName() + "' is a reserved word in the current SQL dialect.");
+
             PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
             if (null != spec)
             {
