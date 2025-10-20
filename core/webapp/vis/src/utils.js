@@ -225,7 +225,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
 LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
 {
     var results = [], subgroupAccessor,
-        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
+        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName], 'value');},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
         hasMeasure = measureName != undefined && measureName != null,
         measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName], 'value'); } : null;
@@ -234,7 +234,7 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         if (typeof subDimensionName === 'function') {
             subgroupAccessor = subDimensionName;
         } else {
-            subgroupAccessor = function (row) { return LABKEY.vis.getValue(row[subDimensionName]); }
+            subgroupAccessor = function (row) { return LABKEY.vis.getValue(row[subDimensionName], 'value'); }
         }
     }
 
@@ -407,3 +407,60 @@ LABKEY.vis.getValue = function(obj, preferredProp) {
 
     return obj;
 };
+
+LABKEY.vis.formatDate = function(date, format) {
+    const isValidDate = date instanceof Date && !isNaN(date);
+    if (!isValidDate) return date;
+
+    // Helper function to pad numbers with a leading zero
+    const pad = (num) => num.toString().padStart(2, '0');
+
+    // Month name arrays
+    const monthAbbrs = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const monthFullNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    // Get date and time components
+    const day = date.getDate();
+    const monthIndex = date.getMonth(); // 0-11
+    const year = date.getFullYear();
+    const hours = date.getHours(); // 0-23
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const milliseconds = date.getMilliseconds();
+
+    // --- 12-hour clock and AM/PM ---
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    // 0 (midnight) or 12 (noon) should be 12
+    const hours12 = hours % 12 || 12;
+
+    // --- Token Replacement ---
+    let formatted = format;
+
+    // Year
+    formatted = formatted.replace(/yyyy/g, year.toString());
+    formatted = formatted.replace(/yy/g, year.toString().slice(-2));
+
+    // Month
+    formatted = formatted.replace(/MMMM/g, monthFullNames[monthIndex]);
+    formatted = formatted.replace(/MMM/g, monthAbbrs[monthIndex]);
+    formatted = formatted.replace(/MM/g, pad(monthIndex + 1)); // 1-12
+
+    // Day
+    formatted = formatted.replace(/dd/g, pad(day));
+
+    // Time
+    formatted = formatted.replace(/HH/g, pad(hours)); // 24-hour
+    formatted = formatted.replace(/hh/g, pad(hours12)); // 12-hour
+    formatted = formatted.replace(/mm/g, pad(minutes));
+    formatted = formatted.replace(/ss/g, pad(seconds));
+    formatted = formatted.replace(/SSS/g, milliseconds.toString().padStart(3, '0'));
+    formatted = formatted.replace(/ a/g, ' ' + ampm);
+
+    return formatted;
+}

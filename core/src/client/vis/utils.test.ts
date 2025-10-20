@@ -164,3 +164,99 @@ describe('LABKEY.vis.getAggregateData', () => {
         expect(LABKEY.vis.getAggregateData(dataWithNulls, 'main', 'sub', 'value', 'MEDIAN')).toStrictEqual([{ aggType: 'MEDIAN', label: 'A', subLabel: 'a', value: null }]);
     });
 });
+
+describe('LABKEY.vis.formatDate', () => {
+    // see supported date and time formats https://www.labkey.org/Documentation/wiki-page.view?name=dateformats#date
+    const dateFormats = ["yyyy-MM-dd", "yyyy-MMM-dd", "yyyy-MM", "dd-MM-yyyy", "dd-MMM-yyyy", "dd-MMM-yy", "ddMMMyyyy", "ddMMMyy", "MM/dd/yyyy", "MM-dd-yyyy", "MMMM dd yyyy"];
+    const timeFormats = ["", "HH:mm:ss", "HH:mm", "HH:mm:ss.SSS", "hh:mm a"];
+
+    test('dateFormat only', () => {
+        const testDate = new Date(Date.UTC(2024, 0, 15, 13, 45, 30, 123)); // Jan 15, 2024
+        const expectedResults = [
+            "2024-01-15",
+            "2024-Jan-15",
+            "2024-01",
+            "15-01-2024",
+            "15-Jan-2024",
+            "15-Jan-24",
+            "15Jan2024",
+            "15Jan24",
+            "01/15/2024",
+            "01-15-2024",
+            "January 15 2024"
+        ];
+
+        dateFormats.forEach((format, index) => {
+            const formattedDate = LABKEY.vis.formatDate(testDate, format);
+            expect(formattedDate).toBe(expectedResults[index]);
+        });
+    });
+
+    test('dateFormat and timeFormat', () => {
+        const testDate = new Date("2024-01-15 13:45:30.123");
+        const expectedResults = [
+            "2024-01-15",
+            "2024-01-15 13:45:30",
+            "2024-01-15 13:45",
+            "2024-01-15 13:45:30.123",
+            "2024-01-15 01:45 PM",
+            "2024-Jan-15",
+            "2024-Jan-15 13:45:30",
+            "2024-Jan-15 13:45",
+            "2024-Jan-15 13:45:30.123",
+            "2024-Jan-15 01:45 PM",
+            "2024-01",
+            "2024-01 13:45:30",
+            "2024-01 13:45",
+            "2024-01 13:45:30.123",
+            "2024-01 01:45 PM",
+            "15-01-2024",
+            "15-01-2024 13:45:30",
+            "15-01-2024 13:45",
+            "15-01-2024 13:45:30.123",
+            "15-01-2024 01:45 PM",
+            "15-Jan-2024",
+            "15-Jan-2024 13:45:30",
+            "15-Jan-2024 13:45",
+            "15-Jan-2024 13:45:30.123",
+            "15-Jan-2024 01:45 PM",
+            "15-Jan-24",
+            "15-Jan-24 13:45:30",
+            "15-Jan-24 13:45",
+            "15-Jan-24 13:45:30.123",
+            "15-Jan-24 01:45 PM",
+            "15Jan2024",
+            "15Jan2024 13:45:30",
+            "15Jan2024 13:45",
+            "15Jan2024 13:45:30.123",
+            "15Jan2024 01:45 PM",
+            "15Jan24",
+            "15Jan24 13:45:30",
+            "15Jan24 13:45",
+            "15Jan24 13:45:30.123",
+            "15Jan24 01:45 PM",
+            "01/15/2024",
+            "01/15/2024 13:45:30",
+            "01/15/2024 13:45",
+            "01/15/2024 13:45:30.123",
+            "01/15/2024 01:45 PM",
+            "01-15-2024",
+            "01-15-2024 13:45:30",
+            "01-15-2024 13:45",
+            "01-15-2024 13:45:30.123",
+            "01-15-2024 01:45 PM",
+            "January 15 2024",
+            "January 15 2024 13:45:30",
+            "January 15 2024 13:45",
+            "January 15 2024 13:45:30.123",
+            "January 15 2024 01:45 PM"
+        ];
+
+        dateFormats.forEach((dateFormat, di) => {
+            timeFormats.forEach((timeFormat, ti) => {
+                const formattedDate = LABKEY.vis.formatDate(testDate, dateFormat + (timeFormat !== '' ? ' ' + timeFormat : ''));
+                expect(formattedDate).toBe(expectedResults[di * timeFormats.length + ti]);
+            });
+        });
+    });
+});

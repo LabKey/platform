@@ -488,6 +488,17 @@ LABKEY.vis.GenericChartHelper = new function(){
             else if (isMeasureXMatch && isNumericType(type)) {
                 scales.x.tickFormat = _getNumberFormatFn(fields[i], defaultFormatFn);
             }
+            else if (isMeasureXMatch && isDateType(type)) {
+                // Issue 47898 and 54125: use the date format defined by the field for tick labels
+                if (fields[i].format) {
+                    const dateFormat = fields[i].format;
+                    scales.x.tickFormat = function(v){
+                        const d = new Date(v);
+                        const isValidDate = d instanceof Date && !isNaN(d);
+                        return isValidDate ? LABKEY.vis.formatDate(new Date(v), dateFormat) : v;
+                    };
+                }
+            }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
             $.each(yMeasures, function(idx, yMeasure) {
@@ -575,7 +586,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         var aes = {}, xMeasureType = getMeasureType(measures.x);
         var xMeasureName = !measures.x ? undefined : (measures.x.converted ? measures.x.convertedName : measures.x.name);
 
-        if (chartType === "box_plot") {
+        if (isDateType(xMeasureType)) {
+            // Issue 54125: use continuous instead of discrete accessor for date x-axis
+            aes.x = generateContinuousAcc(xMeasureName);
+        } else if (chartType === "box_plot") {
             if (!measures.x) {
                 aes.x = generateMeasurelessAcc(queryName);
             } else {
