@@ -668,25 +668,6 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    // Useful for IN clauses of string values. See also ContainerManager.getIdsAsCsvList()
-    public SQLFragment appendCsvList(Set<String> values, SqlDialect dialect)
-    {
-        if (values.isEmpty())
-            append("(NULL)");    // WHERE x IN (NULL) should match no rows
-
-        append("(");
-        String comma = "";
-        for (String id : values)
-        {
-            append(comma);
-            comma = ",";
-            appendValue(id, dialect);
-        }
-        append(")");
-
-        return this;
-    }
-
     public SQLFragment append(FieldKey fk)
     {
         if (null == fk)

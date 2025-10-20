@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -24,6 +25,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -98,10 +100,12 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -185,12 +189,13 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
-    public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
-    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
-    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
+    private static final Logger LOG = LogHelper.getLogger(ExperimentModule.class, "Database migration status");
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
+    public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
+    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
+    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
     @Override
@@ -925,15 +930,15 @@ public class ExperimentModule extends SpringModule
                         new InClause(FieldKey.fromParts("ToObjectId", "Container"), containers)
                     );
                     case "Alias" -> new SQLClause(
-                        new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container IN ")
-                            .appendCsvList(containers, sourceTable.getSqlDialect())
-                            .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container IN ")
-                            .appendCsvList(containers, sourceTable.getSqlDialect())
+                        new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container ")
+                            .appendInClause(containers, sourceTable.getSqlDialect())
+                            .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container ")
+                            .appendInClause(containers, sourceTable.getSqlDialect())
                             .append(")")
                     );
                     case "ObjectLegacyNames" -> new SQLClause(
-                        new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container IN ")
-                            .appendCsvList(containers, sourceTable.getSqlDialect())
+                        new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ")
+                            .appendInClause(containers, sourceTable.getSqlDialect())
                             .append(")")
                     );
                     default -> super.getContainerClause(sourceTable, containerFieldKey, containers);
@@ -961,8 +966,8 @@ public class ExperimentModule extends SpringModule
             public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
             {
                 return new SQLClause(
-                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container IN ")
-                        .appendCsvList(containers, sourceTable.getSqlDialect())
+                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container ")
+                        .appendInClause(containers, sourceTable.getSqlDialect())
                         .append(")")
                 );
             }
@@ -972,6 +977,14 @@ public class ExperimentModule extends SpringModule
             {
                 addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
             }
+
+            @Override
+            public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
+            {
+                Collection<String> notCopiedLsids = new TableSelector(sourceTable, new CsvSet("LSID, RowId"), notCopiedFilter, null).getCollection(String.class);
+                if (!notCopiedLsids.isEmpty())
+                    LOG.info("   {} rows not copied: {}", Formats.commaf0.format(notCopiedLsids.size()), notCopiedLsids);
+            }
         });
 
         // Data classes have a built-in Flag field
@@ -980,6 +993,14 @@ public class ExperimentModule extends SpringModule
             public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
             {
                 addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+            }
+
+            @Override
+            public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
+            {
+                Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
+                if (!notCopiedLsids.isEmpty())
+                    LOG.info("   {} rows not copied: {}", Formats.commaf0.format(notCopiedLsids.size()), notCopiedLsids);
             }
         });
     }

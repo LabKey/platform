@@ -17,6 +17,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -86,6 +87,11 @@ public interface DatabaseMigrationService
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
         void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames);
+
+        // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
+        // source table that were NOT copied to the target table. (For example, they were filtered out due to container
+        // and/or domain data filtering.)
+        void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter);
 
         void afterSchema();
     }
@@ -208,7 +214,7 @@ public interface DatabaseMigrationService
         {
             if (filter.column().equalsIgnoreCase("Flag"))
             {
-                SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object WHERE ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = (SELECT PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI = 'urn:exp.labkey.org/#Comment')))", filter.condition().getParamVals());
+                SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object WHERE ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))", filter.condition().getParamVals()[0], getCommentPropertyId(sourceTable));
 
                 // Select all rows where the built-in flag column equals the filter value
                 orClause.addClause(
@@ -222,6 +228,30 @@ public interface DatabaseMigrationService
             {
                 addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
             }
+        }
+
+        private Integer _commentPropertyId = null;
+
+        private synchronized int getCommentPropertyId(TableInfo sourceTable)
+        {
+            if (_commentPropertyId == null)
+            {
+                // Get the exp.PropertyDescriptor table from the source scope
+                TableInfo propertyDescriptor = sourceTable.getSchema().getScope().getSchema("exp", DbSchemaType.Migration).getTable("PropertyDescriptor");
+                // Select the PropertyId associated with built-in Flag fields ("urn:exp.labkey.org/#Comment")
+                Integer propertyId = new TableSelector(propertyDescriptor, Collections.singleton("PropertyId"), new SimpleFilter(FieldKey.fromParts("PropertyURI"), "urn:exp.labkey.org/#Comment"), null).getObject(Integer.class);
+                if (propertyId == null)
+                    throw new RuntimeException("PropertyDescriptor for built-in Flag field not found");
+                else
+                    _commentPropertyId = propertyId;
+            }
+
+            return _commentPropertyId;
+        }
+
+        @Override
+        public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
+        {
         }
 
         @Override
