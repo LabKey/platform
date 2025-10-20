@@ -101,6 +101,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -913,7 +914,7 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
-            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
             {
                 return switch (sourceTable.getName())
                 {
@@ -963,7 +964,7 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
-            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
             {
                 return new SQLClause(
                     new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container ")
@@ -973,7 +974,7 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
             {
                 addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
             }
@@ -990,7 +991,7 @@ public class ExperimentModule extends SpringModule
         // Data classes have a built-in Flag field
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DataClassDomainKind.getSchema()) {
             @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
             {
                 addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
             }

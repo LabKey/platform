@@ -13,6 +13,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
@@ -82,11 +83,11 @@ public interface DatabaseMigrationService
 
         List<TableInfo> getTablesToCopy();
 
-        FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers);
+        FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
 
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
-        void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames);
+        void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames);
 
         // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
         // source table that were NOT copied to the target table. (For example, they were filtered out due to container
@@ -143,7 +144,7 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+        public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
         {
             return new InClause(containerFieldKey, containers);
         }
@@ -190,12 +191,12 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
         {
             addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
         }
 
-        private void addDomainDataStandardFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        private void addDomainDataStandardFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
         {
             if (selectColumnNames.contains(filter.column()))
             {
@@ -210,7 +211,7 @@ public interface DatabaseMigrationService
         }
 
         // Special domain data filter method for provisioned tables that have a built-in Flag field
-        protected void addDomainDataFlagFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, String guid, Set<String> selectColumnNames)
+        protected void addDomainDataFlagFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
         {
             if (filter.column().equalsIgnoreCase("Flag"))
             {
@@ -269,7 +270,7 @@ public interface DatabaseMigrationService
     interface MigrationTableHandler
     {
         TableInfo getTableInfo();
-        FilterClause getAdditionalFilterClause(Set<String> containers);
+        FilterClause getAdditionalFilterClause(Set<GUID> containers);
     }
 
     abstract class DefaultMigrationTableHandler implements MigrationTableHandler
@@ -296,6 +297,6 @@ public interface DatabaseMigrationService
     interface MigrationFilter
     {
         String getName();
-        void saveFilter(String guid, String value);
+        void saveFilter(GUID guid, String value);
     }
 }

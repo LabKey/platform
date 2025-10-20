@@ -1326,7 +1326,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
 
             @Override
-            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
             {
                 FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
 
