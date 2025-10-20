@@ -233,22 +233,26 @@ public class JunitUtil
                     }
 
                     sampleDataDir = _sampleDataDirectories.get(name);
-
-                    if (sampleDataDir == null)
-                    {
-                        Assert.fail("Sample data directory not found for module: " + name + ". Known directories: " + _sampleDataDirectories);
-                    }
                 }
             }
         }
 
-        File file = FileUtil.appendPath(sampleDataDir, Path.parse(relativePath));
-        if (file.exists())
-            return file;
+        String message;
 
-        String message = "No sample data found at [" + file.getAbsolutePath() + "].";
+        if (sampleDataDir != null)
+        {
+            File file = FileUtil.appendPath(sampleDataDir, Path.parse(relativePath));
+            if (file.exists())
+                return file;
 
-        if (null != module)
+            message = "No sample data found at [" + file.getAbsolutePath() + "].";
+        }
+        else
+        {
+            message = "No sample data found at [" + relativePath + "].";
+        }
+
+        if (module != null)
         {
             if (sampleDataDir == null || !sampleDataDir.exists())
             {
