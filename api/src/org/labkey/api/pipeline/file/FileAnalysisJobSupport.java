@@ -65,14 +65,13 @@ public interface FileAnalysisJobSupport
     /**
      * @return the directory in which the original input file resides.
      */
-    @Deprecated //Prefer the getDataDirectoryPath version as File return type doesn't support full URIs very well
-    File getDataDirectory();
-    default Path getDataDirectoryPath()
+    @Deprecated //Prefer the getDataDirectoryFileLike version as File return type doesn't support full URIs very well
+    default File getDataDirectory()
     {
-        // TODO This needs implementation in derived classes...
-        // This is typically safe but may cause an error if FileSystem provider isn't configured
-        return getDataDirectory().toPath();
+        return getDataDirectoryFileLike().toNioPathForWrite().toFile();
     }
+
+    FileLike getDataDirectoryFileLike();
 
     /**
      * @return the directory where the input files reside, and where the

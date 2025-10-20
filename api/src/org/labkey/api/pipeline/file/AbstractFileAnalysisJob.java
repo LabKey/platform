@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import io.micrometer.common.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -262,15 +263,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     }
 
     @Override
-    public File getDataDirectory()
+    public FileLike getDataDirectoryFileLike()
     {
-        return _dirData.toNioPathForRead().toFile();
-    }
-
-    @Override
-    public Path getDataDirectoryPath()
-    {
-        return _dirData.toNioPathForRead();
+        return _dirData;
     }
 
     @Override
@@ -403,7 +398,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName(), getInputFilePaths());
+        return getDataDescription(getDataDirectoryFileLike(), getBaseName(), getJoinedBaseName(), getProtocolName(), _filesInput);
     }
 
     @Override
@@ -418,25 +413,19 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return null;
     }
 
-    @Deprecated //prefer Path version
-    public static String getDataDescription(File dirData, String baseName, String joinedBaseName, String protocolName)
-    {
-        return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName, Collections.emptyList());
-    }
-
-    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName, List<Path> inputFiles)
+    public static String getDataDescription(FileLike dirData, String baseName, String joinedBaseName, String protocolName, List<FileLike> inputFiles)
     {
         String dataName = "";
         if (dirData != null)
         {
-            dataName = dirData.getFileName().toString();
+            dataName = dirData.getName();
             // Can't remember why we would ever need the "xml" check. We may get an extra "." in the path,
             // so check for that and remove it.
             if (".".equals(dataName) || "xml".equals(dataName))
             {
                 dirData = dirData.getParent();
                 if (dirData != null)
-                    dataName = dirData.getFileName().toString();
+                    dataName = dirData.getName();
             }
         }
 
@@ -448,14 +437,17 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                 description.append("/");
             description.append(baseName);
         }
-        description.append(" (").append(protocolName).append(")");
+        if (!StringUtils.isEmpty(protocolName))
+        {
+            description.append(" (").append(protocolName).append(")");
+        }
 
         // input files
         if (!inputFiles.isEmpty())
         {
             description.append(" (");
             //p.getFileName returns the full S3 path -- S3fs bug?
-            description.append(inputFiles.stream().map(FileUtil::getFileName).collect(Collectors.joining(",")));
+            description.append(inputFiles.stream().map(FileLike::getName).collect(Collectors.joining(",")));
             description.append(")");
         }
         return description.toString();

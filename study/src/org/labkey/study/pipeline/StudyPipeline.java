@@ -28,7 +28,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
-import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.ArrayList;

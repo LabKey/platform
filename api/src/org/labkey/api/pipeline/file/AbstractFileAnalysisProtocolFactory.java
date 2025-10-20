@@ -356,9 +356,16 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             }
             else
             {
-                protocolFile = getProtocolFile(root, protocolName, archived);
-                if (protocolFile == null || !protocolFile.exists())
+                try
+                {
+                    protocolFile = getProtocolFile(root, protocolName, archived);
+                    if (protocolFile == null || !protocolFile.exists())
+                        return null;
+                }
+                catch (InvalidPathException e)
+                {
                     return null;
+                }
 
                 result = load(root, protocolName, archived);
             }

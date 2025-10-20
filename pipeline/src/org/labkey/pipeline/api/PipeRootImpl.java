@@ -384,6 +384,17 @@ public class PipeRootImpl implements PipeRoot
     {
         var parsedPath = org.labkey.api.util.Path.parse(relativePath);
 
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            // Return the path to the default location
+            var combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
+                    org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(parsedPath) :
+                    parsedPath;
+            return CloudStoreService.get().getFileLike(getContainer(), _cloudStoreName, combinedPath);
+            // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+        }
+
+
         var pair = _resolveRoot(parsedPath);
         if (null == pair)
             return null;
