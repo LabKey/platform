@@ -1584,19 +1584,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (className == null)
         {
             // For backwards compatibility with <13.2, check the text contents.
-            XmlCursor cur = xmlCustomizer.newCursor();
-            try
+            try (XmlCursor cur = xmlCustomizer.newCursor())
             {
                 XmlCursor.TokenType tok = cur.toFirstContentToken();
                 if (tok == XmlCursor.TokenType.TEXT)
                 {
                     className = cur.getTextValue();
-                    LOG.warn("Query XML for " + getPublicSchemaName() + "." + getPublicName() + " uses deprecated <javaCustomizer>className</javaCustomizer> format.  Please convert this to <javaCustomizer class=\"className\"/>.");
+                    LOG.warn("Query XML for {}.{} uses deprecated <javaCustomizer>className</javaCustomizer> format.  Please convert this to <javaCustomizer class=\"className\"/>.", getPublicSchemaName(), getPublicName());
                 }
-            }
-            finally
-            {
-                if (cur != null) cur.dispose();
             }
         }
 
@@ -1808,7 +1803,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Nullable
     @Override
-    public DomainKind getDomainKind()
+    public DomainKind<?> getDomainKind()
     {
         Domain domain = getDomain();
         if (domain != null)

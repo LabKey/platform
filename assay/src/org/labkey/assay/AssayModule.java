@@ -40,7 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
@@ -289,12 +289,22 @@ public class AssayModule extends SpringModule
             svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
         }
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(AssayDbSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(AssayDbSchema.getInstance().getSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
                 return PlateTypeTable.NAME.equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
+            }
+        });
+
+        // Tables in the "assaywell" provisioned schema are all single-container, so no filtering is needed
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PlateMetadataDomainKind.getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return SITE_WIDE_TABLE;
             }
         });
     }

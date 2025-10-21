@@ -60,7 +60,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -1279,7 +1279,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(CoreSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
             public void beforeVerification()
@@ -1319,13 +1319,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId", "EntityId");
                     case "Containers" -> FieldKey.fromParts("EntityId");
                     case "Report" -> FieldKey.fromParts("ContainerId");
-                    case "APIKeys", "AuthenticationConfigurations", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
+                    // Note: DataStates is not really site-wide, but there seem to be exp.Materials referencing DataStates with conflicting containers
+                    case "APIKeys", "AuthenticationConfigurations", "DataStates", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
                     default -> super.getContainerFieldKey(sourceTable);
                 };
             }
 
             @Override
-            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
             {
                 FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
 
@@ -1349,7 +1350,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(PropertySchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
@@ -1357,7 +1358,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(TestSchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
             @Override
             public List<TableInfo> getTablesToCopy()
             {
@@ -1368,7 +1369,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
-            DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
             {
                 @Override
                 public List<TableInfo> getTablesToCopy()
