@@ -220,12 +220,13 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {Boolean} includeTotal Whether or not to include the cumulative totals. Defaults to false.
  * @param {String} errorBarType SD/STDERR. Defaults to null/undefined.
  * @param {Boolean} keepNames True to use the dimension names in the results data. Defaults to false.
+ * @param {String} rowPropName (Optional) The property name to use when accessing the dimension value from the row object.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false, rowPropName)
 {
     var results = [], subgroupAccessor,
-        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
+        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName], rowPropName);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
         hasMeasure = measureName != undefined && measureName != null,
         measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName], 'value'); } : null;

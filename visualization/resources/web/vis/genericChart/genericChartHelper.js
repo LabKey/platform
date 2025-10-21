@@ -1902,10 +1902,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if (aggType) {
-            // for date measures, we need to use the 'value' of the row object for aggregation
-            const dimFn = function(row){ return LABKEY.vis.getValue(row[dimName], dimIsDate ? 'value' : undefined);}
-
-            data = LABKEY.vis.getAggregateData(data, dimFn, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot');
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot', dimIsDate ? 'value' : undefined);
             if (aggErrorType) {
                 geom.errorAes = { getValue: d => d.error };
             }
