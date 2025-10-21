@@ -961,12 +961,7 @@ public class FileUtil
             }
             else
             {
-                Path result = new File(uri).toPath();
-                if (PipelineService.get().findPipelineRoot(container).isUnderRoot(result))
-                {
-                    return result;
-                }
-                throw new NotFoundException("Path is not under pipeline root: " + result);
+                return new File(uri).toPath();
             }
         }
         else
