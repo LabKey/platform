@@ -275,12 +275,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     }
 
     @Override
-    public Path getAnalysisDirectoryPath()
-    {
-        return _dirAnalysis.toNioPathForWrite();
-    }
-
-    @Override
     public File findOutputFile(@NotNull String outputDir, @NotNull String fileName)
     {
         return getOutputFile(outputDir, fileName, getPipeRoot(), getLogger(), getAnalysisDirectory());
