@@ -26,7 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.CodeOnlyModule;
@@ -120,7 +120,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(CommSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
         {
             @Override
             public void beforeSchema()

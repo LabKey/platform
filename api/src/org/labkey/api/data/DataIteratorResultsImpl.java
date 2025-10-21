@@ -152,7 +152,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     }
 
     @Override
-    public Iterator<Map<String, Object>> iterator()
+    public @NotNull Iterator<Map<String, Object>> iterator()
     {
         // TODO
         return null;

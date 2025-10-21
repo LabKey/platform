@@ -129,6 +129,11 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         this(column, null, null);
     }
 
+    public @Nullable Filter getFilter()
+    {
+        return _filter;
+    }
+
     private static Collection<ColumnInfo> columnInfosList(@NotNull TableInfo table, Collection<String> select)
     {
         Collection<ColumnInfo> selectColumns;
