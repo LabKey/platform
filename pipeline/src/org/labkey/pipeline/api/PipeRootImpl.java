@@ -55,6 +55,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class PipeRootImpl implements PipeRoot
 {
@@ -148,35 +149,32 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public FileLike ensureSystemDirectory()
     {
-        Path root = getRootNioPath();
-        Path systemDir = root.resolve(SYSTEM_DIRECTORY_NAME);
-        if (!Files.exists(systemDir))
+        FileLike root = getRootFileLike();
+        FileLike systemDir = root.resolveChild(SYSTEM_DIRECTORY_NAME);
+        if (systemDir.exists())
         {
             try
             {
                 FileUtil.createDirectories(systemDir);
-
-                Path systemDirLegacy = root.resolve(SYSTEM_DIRECTORY_LEGACY);
-                if (Files.exists(systemDirLegacy))
+                FileLike systemDirLegacy = root.resolveChild(SYSTEM_DIRECTORY_LEGACY);
+                if (systemDirLegacy.exists() && !isCloudRoot())
                 {
                     // Legacy means it must be on file system
-                    File legacyDir = systemDirLegacy.toFile();
-                    for (File f : legacyDir.listFiles())
-                        f.renameTo(systemDir.toFile());
+                    File sysDir = systemDirLegacy.toNioPathForRead().toFile();
+                    File legacyDir = systemDirLegacy.toNioPathForWrite().toFile();
+                    for (File f : Objects.requireNonNullElse(legacyDir.listFiles(),new File[0]))
+                        f.renameTo(sysDir);
                 }
 
                 for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
-                    provider.initSystemDirectory(root, systemDir);
+                    provider.initSystemDirectory(root.toNioPathForWrite(), systemDir.toNioPathForWrite());
             }
             catch (IOException e)
             {
                 throw new RuntimeException(e);
             }
         }
-
-        if (FileUtil.hasCloudScheme(systemDir))
-            throw new RuntimeException("System Dir is not on file system.");
-        return new FileSystemLike.Builder(systemDir).readwrite().root();
+        return systemDir;
     }
 
     @Override
