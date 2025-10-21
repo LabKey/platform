@@ -33,9 +33,11 @@ import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
@@ -951,7 +953,22 @@ public class FileUtil
     public static Path stringToPath(Container container, String str, boolean isEncoded)
     {
         if (!FileUtil.hasCloudScheme(str))
-            return new File(createUri(str, isEncoded)).toPath();
+        {
+            URI uri = createUri(str, isEncoded);
+            if (!uri.isAbsolute())
+            {
+                return PipelineService.get().findPipelineRoot(container).resolveToNioPath(str);
+            }
+            else
+            {
+                Path result = new File(uri).toPath();
+                if (PipelineService.get().findPipelineRoot(container).isUnderRoot(result))
+                {
+                    return result;
+                }
+                throw new NotFoundException("Path is not under pipeline root: " + result);
+            }
+        }
         else
             return Objects.requireNonNull(CloudStoreService.get()).getPathFromUrl(container, PageFlowUtil.decode(str)/*decode everything not just the space*/);
     }
