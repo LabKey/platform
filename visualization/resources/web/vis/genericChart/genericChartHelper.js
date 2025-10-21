@@ -1869,6 +1869,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var generateDataForChartType = function(chartConfig, chartType, geom, data) {
         let dimName = null;
+        let dimIsDate = false;
         let subDimName = null;
         let measureName = null;
         let aggType = chartType === 'bar_chart' || chartType === 'pie_chart' ? 'COUNT' : null;
@@ -1876,6 +1877,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (chartConfig.measures.x) {
             dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+            dimIsDate = isDateType(getMeasureType(chartConfig.measures.x));
         }
         if (chartConfig.measures.xSub) {
             subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
@@ -1900,7 +1902,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if (aggType) {
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot');
+            // for date measures, we need to use the 'value' of the row object for aggregation
+            const dimFn = function(row){ return LABKEY.vis.getValue(row[dimName], dimIsDate ? 'value' : undefined);}
+
+            data = LABKEY.vis.getAggregateData(data, dimFn, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot');
             if (aggErrorType) {
                 geom.errorAes = { getValue: d => d.error };
             }

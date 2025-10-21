@@ -225,7 +225,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
 LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false)
 {
     var results = [], subgroupAccessor,
-        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName], 'value');},
+        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
         hasMeasure = measureName != undefined && measureName != null,
         measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName], 'value'); } : null;
@@ -234,7 +234,7 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         if (typeof subDimensionName === 'function') {
             subgroupAccessor = subDimensionName;
         } else {
-            subgroupAccessor = function (row) { return LABKEY.vis.getValue(row[subDimensionName], 'value'); }
+            subgroupAccessor = function (row) { return LABKEY.vis.getValue(row[subDimensionName]); }
         }
     }
 
