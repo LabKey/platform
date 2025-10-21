@@ -5489,7 +5489,11 @@ public class AdminController extends SpringActionController
                     PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
             FolderWriterImpl writer = new FolderWriterImpl();
             String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
-            try (OutputStream out = pipelineUnzipDir.openOutputStream();
+            FileLike implicitZipFile = pipelineUnzipDir.resolveChild(zipFileName);
+            if (!pipelineUnzipDir.isDirectory())
+                pipelineUnzipDir.mkdirs();
+            implicitZipFile.createFile();
+            try (OutputStream out = implicitZipFile.openOutputStream();
                     ZipFile zip = new ZipFile(out, false))
             {
                 writer.write(sourceContainer, ctx, zip);
@@ -5498,7 +5502,6 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            FileLike implicitZipFile = pipelineUnzipDir.resolveChild(zipFileName);
 
             // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
             ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
