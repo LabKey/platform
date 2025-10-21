@@ -47,7 +47,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public static FileLike getProtocolRootDir(PipeRoot root)
     {
-        FileLike systemDir = root.ensureSystemFileLike();
+        FileLike systemDir = root.ensureSystemDirectory();
         return systemDir.resolveChild(_pipelineProtocolDir);
     }
 

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Activity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.vfs.FileLike;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -42,7 +43,7 @@ public class ImportOptions
     private final Collection<String> _messages = new LinkedList<>();
     private Set<String> _dataTypes;
     private Activity _activity;
-    private Path _analysisDir;
+    private FileLike _analysisDir;
     private String _folderArchiveSourceName = null;
 
     private boolean _isNewFolderImport; // if we know the target folder is empty, can skip certain merge logic
@@ -153,12 +154,12 @@ public class ImportOptions
         _activity = activity;
     }
 
-    public Path getAnalysisDir()
+    public FileLike getAnalysisDir()
     {
         return _analysisDir;
     }
 
-    public void setAnalysisDir(Path analysisDir)
+    public void setAnalysisDir(FileLike analysisDir)
     {
         _analysisDir = analysisDir;
     }

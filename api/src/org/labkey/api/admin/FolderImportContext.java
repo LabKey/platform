@@ -29,11 +29,10 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,7 +46,7 @@ import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
  */
 public class FolderImportContext extends AbstractFolderContext
 {
-    private Path _folderXml;
+    private FileLike _folderXml;
 
     private String _xarJobId;
 
@@ -66,7 +65,7 @@ public class FolderImportContext extends AbstractFolderContext
         super(null, null, null, null, null, null);
     }
 
-    public FolderImportContext(User user, Container c, Path folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
+    public FolderImportContext(User user, Container c, FileLike folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, null, dataTypes, logger, root);
         _folderXml = folderXml;
@@ -112,17 +111,17 @@ public class FolderImportContext extends AbstractFolderContext
         return folderDoc;
     }
 
-    private FolderDocument readFolderDocument(Path folderXml) throws ImportException, IOException
+    private FolderDocument readFolderDocument(FileLike folderXml) throws ImportException, IOException
     {
-        if (!Files.exists(folderXml))
-            throw new ImportException(folderXml.getFileName() + " file does not exist.");
+        if (!folderXml.exists())
+            throw new ImportException(folderXml.getName() + " file does not exist.");
 
         FolderDocument folderDoc;
 
-        try (InputStream inputStream = Files.newInputStream(folderXml))
+        try (InputStream inputStream = folderXml.openInputStream())
         {
             folderDoc = FolderDocument.Factory.parse(inputStream, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getFileName().toString());
+            XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getName());
         }
         catch (XmlException | XmlValidationException e)
         {

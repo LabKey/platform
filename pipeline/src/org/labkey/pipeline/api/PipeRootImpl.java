@@ -146,17 +146,7 @@ public class PipeRootImpl implements PipeRoot
 
     @Override
     @NotNull
-    public File ensureSystemDirectory()
-    {
-        Path path = ensureSystemDirectoryPath();
-        if (FileUtil.hasCloudScheme(path))
-            throw new RuntimeException("System Dir is not on file system.");
-        return path.toFile();
-    }
-
-    @Override
-    @NotNull
-    public Path ensureSystemDirectoryPath()
+    public FileLike ensureSystemDirectory()
     {
         Path root = getRootNioPath();
         Path systemDir = root.resolve(SYSTEM_DIRECTORY_NAME);
@@ -184,7 +174,9 @@ public class PipeRootImpl implements PipeRoot
             }
         }
 
-        return systemDir;
+        if (FileUtil.hasCloudScheme(systemDir))
+            throw new RuntimeException("System Dir is not on file system.");
+        return new FileSystemLike.Builder(systemDir).readwrite().root();
     }
 
     @Override
@@ -490,28 +482,22 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
-    /**
-     * Get a local directory that can be used for importing (Read/Write)
-     *
-     * Cloud: Uses temp directory
-     * Default: Uses file root
-     */
     @Override
     @NotNull
-    public File getImportDirectory()
+    public FileLike getImportDirectory()
     {
         // If pipeline root is in File system, return that; otherwise return temp directory
-        File root = isCloudRoot() ?
-            FileUtil.getTempDirectory() :
-            getRootPath();
-        return FileUtil.appendName(root, PipelineService.UNZIP_DIR);
+        FileLike root = isCloudRoot() ?
+            FileUtil.getTempDirectoryFileLike() :
+            getRootFileLike();
+        return root.resolveChild(PipelineService.UNZIP_DIR);
     }
 
     @Override
-    public Path deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
+    public FileLike deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
-        Path importDir = getImportDirectory().toPath();
-        if (Files.exists(importDir) && !FileUtil.deleteDir(importDir, logger))
+        FileLike importDir = getImportDirectory();
+        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }

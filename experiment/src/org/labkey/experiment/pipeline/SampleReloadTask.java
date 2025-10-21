@@ -65,7 +65,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
     {
         PipelineJob job = getJob();
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
-        job.setLogFile(FileUtil.appendName(support.getDataDirectory(), FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
+        job.setLogFile(support.getDataDirectoryFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
         Map<String, String> params = support.getParameters();
 
         job.setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());

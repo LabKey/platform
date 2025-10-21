@@ -6744,7 +6744,7 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            FileLike systemDir = pipeRoot.ensureSystemFileLike();
+            FileLike systemDir = pipeRoot.ensureSystemDirectory();
             FileLike uploadDir = systemDir.resolveChild("UploadedXARs");
             FileUtil.createDirectories(uploadDir);
             if (!uploadDir.isDirectory())

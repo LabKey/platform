@@ -115,6 +115,7 @@ import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1172,10 +1173,10 @@ public class PipelineController extends SpringActionController
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
-            java.nio.file.Path folderPath = form.getValidatedSinglePath(c);
+            FileLike folderPath = form.getValidatedSingleFile(c);
 
             ActionURL url = new ActionURL(StartFolderImportAction.class, getContainer());
-            url.addParameter("filePath", folderPath.toAbsolutePath().toString());
+            url.addParameter("filePath", form.getPipeRoot(c).relativePath(folderPath));
             url.addParameter("validateQueries", true);
             url.addParameter("createSharedDatasets", true);
             return url;
@@ -1205,7 +1206,7 @@ public class PipelineController extends SpringActionController
         private final List<Container> _importContainers = new ArrayList<>();
 
         private String _navTrail = "Import Folder";
-        private java.nio.file.Path _archiveFile;
+        private FileLike _archiveFile;
 
         @Override
         public void validateCommand(StartFolderImportForm form, Errors errors)
@@ -1221,7 +1222,8 @@ public class PipelineController extends SpringActionController
             }
             else
             {
-                _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
+                // We no longer support absolute paths - should be relative to the pipeline root
+                _archiveFile = currentPipelineRoot.resolvePathToFileLike(form.getFilePath());
 
                 if (OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG))
                 {
@@ -1298,14 +1300,14 @@ public class PipelineController extends SpringActionController
         {
             User user = getUser();
             boolean success = true;
-            Map<Container, java.nio.file.Path> containerArchiveXmlMap = new HashMap<>();
+            Map<Container, FileLike> containerArchiveXmlMap = new HashMap<>();
 
-            if (Files.exists(_archiveFile))
+            if (_archiveFile.exists())
             {
                 // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
                 for (Container container : _importContainers)
                 {
-                    java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
+                    FileLike archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
                     if (errors.hasErrors())
                         return false;
 
@@ -1342,12 +1344,12 @@ public class PipelineController extends SpringActionController
             return success;
         }
 
-        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, java.nio.file.Path archiveXml)
+        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, FileLike archiveXml)
         {
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
             ActionURL url = getViewContext().getActionURL();
 
-            return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), pipelineRoot, options);
+            return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getName(), pipelineRoot, options);
         }
 
         @Override
@@ -1721,11 +1723,11 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlStartFolderImport(Container container, @NotNull java.nio.file.Path archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
+        public ActionURL urlStartFolderImport(Container container, @NotNull FileLike archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
 
-            return addStartImportParameters(url, archiveFile, options, fromTemplateSourceFolder);
+            return addStartImportParameters(container, url, archiveFile, options, fromTemplateSourceFolder);
         }
 
         @Override
@@ -1742,9 +1744,10 @@ public class PipelineController extends SpringActionController
             return url;
         }
 
-        private ActionURL addStartImportParameters(ActionURL url, @NotNull java.nio.file.Path file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
+        private ActionURL addStartImportParameters(Container container, ActionURL url, @NotNull FileLike file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
-            url.addParameter("filePath", file.toAbsolutePath().toString());
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+            url.addParameter("filePath", pipelineRoot.relativePath(file));
             url.addParameter("validateQueries", options == null || !options.isSkipQueryValidation());
             url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());
             if (options != null)

@@ -39,6 +39,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 
 import java.nio.file.Path;
 
@@ -69,10 +70,10 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
         _ctx.setLoggerGetter(new PipelineJobLoggerGetter(this));
     }
 
-    public FolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
+    public FolderImportJob(Container c, User user, ActionURL url, FileLike folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
     {
         super("FolderImport", new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = new FileSystemFile(folderXml.getParent());
+        _root = new FileSystemFile(folderXml.getParent().toNioPathForRead());
         _originalFilename = originalFilename;
         _folderArchiveSourceName = options.getFolderArchiveSourceName(); // Optional FolderArchiveSource name. If non-null, will be invoked to generate the archive before import.
         setupLocalDirectoryAndJobLog(pipeRoot, "FolderImport", FolderImportProvider.generateLogFilename("folder_load"));
@@ -112,7 +113,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     }
 
     @Override
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(FolderImportJob.class));
     }

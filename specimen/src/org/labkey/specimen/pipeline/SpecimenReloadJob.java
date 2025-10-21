@@ -42,7 +42,7 @@ public class SpecimenReloadJob extends SpecimenBatch implements Serializable, Sp
     {
         super(info, null, root, false);
 
-        File logFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("specimen_reload", "log"));
+        FileLike logFile = root.resolvePathToFileLike(FileUtil.makeFileNameWithTimestamp("specimen_reload", "log"));
         setLogFile(logFile);
         _transformName = transformName;
     }

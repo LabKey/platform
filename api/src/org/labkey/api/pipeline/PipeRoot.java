@@ -25,7 +25,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
@@ -89,21 +88,16 @@ public interface PipeRoot extends SecurableResource
     @Nullable
     FileLike resolvePathToFileLike(String relativePath);
 
-    /**
-     * Get a local directory that can be used for importing (Read/Write)
-     *
-     * Cloud: Uses a temp directory
-     * Default: Uses folder within the file root
-     */
     @NotNull
-    File getImportDirectory();
+    FileLike getImportDirectory();
 
     /**
      * Delete the import directory and its contents
+     *
      * @return File object for import directory
      * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
      */
-    Path deleteImportDirectory(@Nullable Logger log) throws DirectoryNotDeletedException;
+    FileLike deleteImportDirectory(@Nullable Logger log) throws DirectoryNotDeletedException;
 
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);
@@ -125,18 +119,8 @@ public interface PipeRoot extends SecurableResource
 
     /** Creates a .labkey directory if it's not present and returns it. Used for things like protocol definition files,
      * log files for some upgrade tasks, etc. Its contents are generally not exposed directly to the user */
-    @Deprecated // prefer ensureSystemFileLike()
     @NotNull
-    File ensureSystemDirectory();
-
-    @Deprecated // prefer ensureSystemFileLike()
-    @NotNull
-    Path ensureSystemDirectoryPath();
-
-    default FileLike ensureSystemFileLike()
-    {
-        return new FileSystemLike.Builder(ensureSystemDirectory()).readwrite().root();
-    }
+    FileLike ensureSystemDirectory();
 
     /** @return the entityId for this pipeline root, used to store permissions */
     String getEntityId();

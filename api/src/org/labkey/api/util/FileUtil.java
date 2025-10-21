@@ -212,19 +212,24 @@ public class FileUtil
         return deleteDir(dir, null);
     }
 
-    public static boolean deleteDir(FileLike dir)
+    public static boolean deleteDir(@NotNull FileLike dir)
     {
         return deleteDir(dir.toNioPathForWrite(), null);
     }
 
+    public static boolean deleteDir(@NotNull FileLike dir, @Nullable Logger log)
+    {
+        return deleteDir(dir.toNioPathForWrite(), log);
+    }
+
     @Deprecated
-    public static boolean deleteDir(@NotNull File dir, Logger log)
+    public static boolean deleteDir(@NotNull File dir, @Nullable Logger log)
     {
         return deleteDir(dir.toPath(), log);
     }
 
 
-    public static boolean deleteDir(Path dir, Logger log)
+    public static boolean deleteDir(@NotNull Path dir, @Nullable Logger log)
     {
         //TODO seems like this could be reworked to use Files.walkFileTree
         log = log == null ? LOG : log;

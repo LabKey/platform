@@ -196,7 +196,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container, @Nullable ContainerFilter cf);
 
-    boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
+    boolean runFolderImportJob(Container c, User user, ActionURL url, FileLike folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
 
     /**
      * Register a folder archive source implementation. A FolderArchiveSource creates folder artifacts that can be

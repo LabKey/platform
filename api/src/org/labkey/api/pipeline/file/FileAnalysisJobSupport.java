@@ -19,10 +19,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -77,14 +79,8 @@ public interface FileAnalysisJobSupport
      * @return the directory where the input files reside, and where the
      *      final analysis should end up.
      */
-    @Deprecated // Please use getAnalysisDirectoryPath instead, as File objects may have issues with full URIs
+    @Deprecated // Please use getAnalysisDirectoryFileLike
     File getAnalysisDirectory();
-    default Path getAnalysisDirectoryPath()
-    {
-        // TODO This needs implementation in derived classes...
-        // This is typically safe but may cause an error if FileSystem provider isn't configured
-        return getAnalysisDirectory().toPath();
-    }
 
     default FileLike getAnalysisDirectoryFileLike()
     {
@@ -98,13 +94,30 @@ public interface FileAnalysisJobSupport
      * This allows the task definitions to name files they require as input,
      * and the pipeline definition to specify where those files should come from.
      */
-    @Deprecated // Please use findInputPath instead, as File objects may have issues with full URIs
+    @Deprecated // Please use findInputFileLike instead, as File objects may have issues with full URIs
     File findInputFile(String name);
+    @Deprecated // Please use findInputFileLike instead, as File objects may have issues with full URIs
     default Path findInputPath(String filepath)
     {
         // TODO This needs implementation in derived classes...
         // This is typically safe but may cause an error if FileSystem provider isn't configured
         return findInputFile(filepath).toPath();
+    }
+    default FileLike findInputFileLike(String filepath)
+    {
+        File file = findInputFile(filepath);
+        if (file != null)
+        {
+            try
+            {
+                return FileSystemLike.wrapFile(getDataDirectory(), file);
+            }
+            catch (IOException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+        return null;
     }
 
     /**

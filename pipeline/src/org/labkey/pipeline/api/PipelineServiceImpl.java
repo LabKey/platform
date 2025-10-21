@@ -321,10 +321,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public Map<Container, PipeRoot> getAllPipelineRoots()
     {
-        PipelineRoot[] pipelines = PipelineManager.getPipelineRoots(PRIMARY_ROOT);
-
         Map<Container, PipeRoot> result = new HashMap<>();
-        for (PipelineRoot pipeline : pipelines)
+        for (PipelineRoot pipeline : PipelineManager.getPipelineRoots(PRIMARY_ROOT))
         {
             PipeRoot p = new PipeRootImpl(pipeline);
             if (p.getContainer() != null)
@@ -457,7 +455,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-        File labkeyBootstrap = new File(new File(System.getProperty("catalina.home")), "labkeyBootstrap.jar");
+        File labkeyBootstrap = FileUtil.appendName(new File(System.getProperty("catalina.home")), "labkeyBootstrap.jar");
 
         if (!labkeyBootstrap.exists())
         {
@@ -755,7 +753,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options)
+    public boolean runFolderImportJob(Container c, User user, ActionURL url, FileLike folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options)
     {
         try
         {
@@ -815,7 +813,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options)
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
-        Path folderXml = new File(pipelineRoot.getRootPath(), "folder.xml").toPath();
+        FileLike folderXml = pipelineRoot.resolvePathToFileLike("folder.xml");
 
         return runFolderImportJob(c, user, null, folderXml, "folder.xml", pipelineRoot, options);
     }
