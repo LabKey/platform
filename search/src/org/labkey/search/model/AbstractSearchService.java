@@ -733,7 +733,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private void logQueueStatus(String message)
     {
-        _log.debug("{}; _runQueue.size() = {}, _itemQueue.size() = {}", message, _runQueue.size(), _itemQueue.size());
+        _log.trace("{}; _runQueue.size() = {}, _itemQueue.size() = {}", message, _runQueue.size(), _itemQueue.size());
     }
 
     @Override
