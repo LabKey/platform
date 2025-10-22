@@ -14,6 +14,7 @@ if(!LABKEY.vis) {
 LABKEY.vis.GenericChartHelper = new function(){
 
     var DEFAULT_TICK_LABEL_MAX = 25;
+    var NULL_VALUE_LABEL ='[Blank]';
     var $ = jQuery;
 
     var getRenderTypes = function() {
@@ -589,7 +590,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         const rowPropName = isDateType(xMeasureType) ? 'value' : undefined; // Issue 54125
 
         // Issue 50074: box plots with numeric x-axis to support null values
-        var nullValueLabel = isNumericType(xMeasureType) || isDateType(xMeasureType) ? "[Blank]" : undefined;
+        var nullValueLabel = isNumericType(xMeasureType) || isDateType(xMeasureType) ? NULL_VALUE_LABEL : undefined;
 
         if (isBox) {
             if (!measures.x) {
@@ -1117,9 +1118,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                         const aVal = _getRowValue(a, xName, 'value');
                         const bVal = _getRowValue(b, xName, 'value');
 
-                        if (aVal === null) {
+                        if (aVal === null || aVal === NULL_VALUE_LABEL) {
                             return 1;
-                        } else if (bVal === null) {
+                        } else if (bVal === null || bVal === NULL_VALUE_LABEL) {
                             return -1;
                         } else if (isDate){
                             const aDate = new Date(aVal);
@@ -1907,7 +1908,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if (aggType) {
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false, aggErrorType, chartType === 'line_plot', dimIsDate ? 'value' : undefined);
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, NULL_VALUE_LABEL, false, aggErrorType, chartType === 'line_plot', dimIsDate ? 'value' : undefined);
             if (aggErrorType) {
                 geom.errorAes = { getValue: d => d.error };
             }
