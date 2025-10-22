@@ -409,9 +409,12 @@ LABKEY.vis.getValue = function(obj, preferredProp) {
     return obj;
 };
 
+LABKEY.vis.isValidDate = function(date) {
+    return date instanceof Date && !isNaN(date);
+}
+
 LABKEY.vis.formatDate = function(date, format) {
-    const isValidDate = date instanceof Date && !isNaN(date);
-    if (!isValidDate) return date;
+    if (!LABKEY.vis.isValidDate(date)) return date;
 
     // Helper function to pad numbers with a leading zero
     const pad = (num) => num.toString().padStart(2, '0');

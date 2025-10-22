@@ -260,3 +260,20 @@ describe('LABKEY.vis.formatDate', () => {
         });
     });
 });
+
+describe('LABKEY.vis.isValidDate', () => {
+    test('valid dates', () => {
+        expect(LABKEY.vis.isValidDate(new Date())).toBe(true);
+        expect(LABKEY.vis.isValidDate(new Date('2024-01-15'))).toBe(true);
+        expect(LABKEY.vis.isValidDate(new Date('January 15, 2024'))).toBe(true);
+        expect(LABKEY.vis.isValidDate(new Date('2024-01-15T13:45:30Z'))).toBe(true);
+    });
+
+    test('invalid dates', () => {
+        expect(LABKEY.vis.isValidDate(new Date('invalid date string'))).toBe(false);
+        expect(LABKEY.vis.isValidDate(NaN)).toBe(false);
+        expect(LABKEY.vis.isValidDate(undefined)).toBe(false);
+        expect(LABKEY.vis.isValidDate(null)).toBe(false);
+        expect(LABKEY.vis.isValidDate('2024-01-15')).toBe(false); // string,
+    });
+});

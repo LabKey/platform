@@ -494,8 +494,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     const dateFormat = fields[i].format;
                     scales.x.tickFormat = function(v){
                         const d = new Date(v);
-                        const isValidDate = d instanceof Date && !isNaN(d);
-                        return isValidDate ? LABKEY.vis.formatDate(new Date(v), dateFormat) : v;
+                        return LABKEY.vis.isValidDate(d) ? LABKEY.vis.formatDate(d, dateFormat) : v;
                     };
                 }
             }
@@ -585,22 +584,23 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {}, xMeasureType = getMeasureType(measures.x);
         var xMeasureName = !measures.x ? undefined : (measures.x.converted ? measures.x.convertedName : measures.x.name);
+        const isBox = chartType === "box_plot";
+        const isScatter = chartType === "scatter_plot";
+        const rowPropName = isDateType(xMeasureType) ? 'value' : undefined; // Issue 54125
 
-        if (isDateType(xMeasureType)) {
-            // Issue 54125: use continuous instead of discrete accessor for date x-axis
-            aes.x = generateContinuousAcc(xMeasureName);
-        } else if (chartType === "box_plot") {
+        // Issue 50074: box plots with numeric x-axis to support null values
+        var nullValueLabel = isNumericType(xMeasureType) || isDateType(xMeasureType) ? "[Blank]" : undefined;
+
+        if (isBox) {
             if (!measures.x) {
                 aes.x = generateMeasurelessAcc(queryName);
             } else {
-                // Issue 50074: box plots with numeric x-axis to support null values
-                var nullValueLabel = isNumericType(xMeasureType) ? "[Blank]" : undefined;
-                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel);
+                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel, rowPropName);
             }
-        } else if (isNumericType(xMeasureType) || (chartType === 'scatter_plot' && measures.x.measure)) {
+        } else if (isNumericType(xMeasureType) || (isScatter && measures.x.measure)) {
             aes.x = generateContinuousAcc(xMeasureName);
         } else {
-            aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
+            aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel, rowPropName);
         }
 
         // charts that have multiple y-measures selected will need to put the aes.y function on their specific layer
@@ -753,13 +753,14 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The name of the measure.
      * @param {String} measureLabel The label of the measure.
      * @param {String} nullValueLabel The label value to use for null values
+     * @param {String} propName (Optional) The property name to get from the row, defaults to undefined.
      * @returns {Function}
      */
-    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel)
+    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel, propName)
     {
         return function(row)
         {
-            var value = _getRowValue(row, measureName);
+            var value = _getRowValue(row, measureName, propName);
             if (value === null)
                 value = nullValueLabel !== undefined ? nullValueLabel : "Not in " + measureLabel;
 
@@ -1121,7 +1122,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                         } else if (bVal === null) {
                             return -1;
                         } else if (isDate){
-                            return new Date(aVal) - new Date(bVal);
+                            const aDate = new Date(aVal);
+                            const bDate = new Date(bVal);
+                            if (!LABKEY.vis.isValidDate(aDate)) return 1;
+                            else if (!LABKEY.vis.isValidDate(bDate)) return -1;
+                            return aDate - bDate;
                         }
                         return aVal - bVal;
                     },
