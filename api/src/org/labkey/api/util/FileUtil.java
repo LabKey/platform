@@ -494,8 +494,7 @@ public class FileUtil
     {
         if (!file.getFileSystem().canWriteFiles())
             throw new UnauthorizedException();
-        File target = toFileForWrite(file);
-        createDirectories(target.toPath(), AppProps.getInstance().isInvalidFilenameBlocked());
+        createDirectories(file.toNioPathForWrite(), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
 
