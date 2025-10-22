@@ -413,30 +413,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private CoreWarningProvider _warningProvider;
     private ServletRegistration.Dynamic _webdavServletDynamic;
 
-    private SQLFragment _groupFilterCondition = null;
-
-    public CoreModule()
-    {
-        // Must be registered very early
-        DatabaseMigrationService.get().registerMigrationFilter(new MigrationFilter()
-        {
-            @Override
-            public String getName()
-            {
-                return "GroupFilter";
-            }
-
-            @Override
-            public void saveFilter(@Nullable GUID guid, String groupFilter)
-            {
-                if (guid != null)
-                    throw new ConfigurationException("GUID should not be provided to GroupFilter");
-
-                _groupFilterCondition = new SQLFragment(groupFilter);
-            }
-        });
-    }
-
     @Override
     public boolean hasScripts()
     {
@@ -1307,7 +1283,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerSchemaHandler(new CoreMigrationSchemaHandler());
+        CoreMigrationSchemaHandler schemaHandler = new CoreMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(schemaHandler);
+        DatabaseMigrationService.get().registerMigrationFilter(schemaHandler);
 
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
@@ -1341,7 +1319,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Encryption.checkMigration();
     }
 
-    private class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler
+    private static class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements MigrationFilter
     {
         public CoreMigrationSchemaHandler()
         {
@@ -1444,6 +1422,25 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
             new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+        }
+
+        // MigrationFilter implementation below
+
+        private SQLFragment _groupFilterCondition = null;
+
+        @Override
+        public String getName()
+        {
+            return "GroupFilter";
+        }
+
+        @Override
+        public void saveFilter(@Nullable GUID guid, String groupFilter)
+        {
+            if (guid != null)
+                throw new ConfigurationException("GUID should not be provided to GroupFilter");
+
+            _groupFilterCondition = new SQLFragment(groupFilter);
         }
     }
 
