@@ -21,12 +21,15 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -267,6 +270,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             result.put("jmsType", PipelineService.get().getJmsType().toString());
 
             result.put("pipelineRootCount", PipelineService.get().getAllPipelineRoots().size());
+            result.put("supplementalDirectories", new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount());
 
             return result;
         });
