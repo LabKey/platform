@@ -4507,13 +4507,6 @@ public class ExperimentController extends SpringActionController
             return json;
         }
 
-        @Override
-        protected void configureLoader(DataLoader loader) throws IOException
-        {
-            if (getOptionParamValue(Params.crossTypeImport))
-                loader.setInferTypes(false);
-            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
-        }
     }
 
     public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -4669,12 +4662,6 @@ public class ExperimentController extends SpringActionController
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
-        }
-
-        @Override
-        protected void configureLoader(DataLoader loader) throws IOException
-        {
-            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
         }
 
     }
