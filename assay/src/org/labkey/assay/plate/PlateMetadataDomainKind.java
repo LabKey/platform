@@ -175,7 +175,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
         return PROVISIONED_SCHEMA_NAME;
     }
 
-    public DbSchema getSchema()
+    public static DbSchema getSchema()
     {
         return DbSchema.get(PROVISIONED_SCHEMA_NAME, DbSchemaType.Provisioned);
     }

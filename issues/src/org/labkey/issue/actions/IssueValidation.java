@@ -235,13 +235,18 @@ public class IssueValidation
                 }
             }
 
-            // Issue 40178: Related Issues need to be in synch when related issues are deleted
+            // Issue 40178: Related Issues need to be in sync when related issues are deleted
             for (Integer originalRelatedId : originalRelatedIssues)
             {
                 if (!newRelatedIssues.contains(originalRelatedId))
                 {
                     IssueObject related = IssueManager.getIssue(null, user, originalRelatedId);
-                    if (null != related)
+                    if (related == null || !related.lookupContainer().hasPermission(user, ReadPermission.class))
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + originalRelatedId + "'");
+                        return;
+                    }
+                    else
                     {
                       related = ChangeSummary.relatedIssueCommentHandler(originalIssue.getIssueId(), related.getIssueId(), user, true );
                       IssueManager.saveIssue(user, related.lookupContainer(), related);

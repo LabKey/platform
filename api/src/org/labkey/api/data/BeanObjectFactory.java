@@ -256,6 +256,14 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             String prop = propMap.get(label); //Map to correct casing...
             if (null != prop)
                 properties[i] = prop;
+            else if (label.endsWith("_"))
+            {
+                // Try stripping trailing underscore (added by some databases for reserved words)
+                // For example "File" is a reserved word in SQL Server, but it's used by FileSystemAuditDomainKind/FileSystemAuditEvent
+                prop = propMap.get(label.substring(0, label.length() - 1));
+                if (null != prop)
+                    properties[i] = prop;
+            }
         }
 
         ArrayList<K> list = new ArrayList<>();
