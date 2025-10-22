@@ -217,7 +217,11 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public @NotNull FileLike getRootFileLike()
     {
-        return new FileSystemLike.Builder(getRootPath()).readwrite().root();
+        var ret = resolvePathToFileLike("");
+        // this should not return null unless there a configuration problem.
+        if (null == ret)
+            throw new IllegalStateException("Could not resolve pipeline path.");
+        return ret;
     }
 
     @Override
@@ -381,9 +385,7 @@ public class PipeRootImpl implements PipeRoot
                     org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(parsedPath) :
                     parsedPath;
             return CloudStoreService.get().getFileLike(getContainer(), _cloudStoreName, combinedPath);
-            // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
         }
-
 
         var pair = _resolveRoot(parsedPath);
         if (null == pair)
