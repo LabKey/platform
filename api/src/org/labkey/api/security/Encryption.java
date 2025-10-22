@@ -544,7 +544,7 @@ public class Encryption
         String oldPassPhrase = getOldEncryptionPassPhrase();
         AESConfig oldConfig = AESConfig.current;
 
-        if (isEncryptionPassPhraseSpecified())
+        if (isEncryptionPassPhraseSpecified() && ModuleLoader.getInstance().shouldInsertData())
         {
             boolean migrationNeeded = false;
             String keySource = null;

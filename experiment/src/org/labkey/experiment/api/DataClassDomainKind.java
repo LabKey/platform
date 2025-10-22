@@ -259,7 +259,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return PROVISIONED_SCHEMA_NAME;
     }
 
-    public DbSchema getSchema()
+    public static DbSchema getSchema()
     {
         return DbSchema.get(PROVISIONED_SCHEMA_NAME, DbSchemaType.Provisioned);
     }

@@ -24,7 +24,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -188,7 +188,7 @@ public class SearchModule extends DefaultModule
             return Collections.singletonMap("fullTextSearches", count);
         });
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(SearchSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
         {
             @Override
             public List<TableInfo> getTablesToCopy()
