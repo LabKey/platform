@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 public interface DatabaseMigrationConfiguration
 {
     boolean shouldInsertData();
+    default void beforeMigration(){};
     DbScope getSourceScope();
     DbScope getTargetScope();
     @NotNull Set<String> getSkipSchemas();

@@ -18,8 +18,9 @@ public class PhiFieldsTable extends BaseFieldsTable
         setDescription("Shows one row for each PHI-annotated field in the selected folder(s). Rows are shown in " +
             "a folder or project only if the user has administrator permissions in that folder.");
 
-        MutableColumnInfo phi = addColumn("PHI", JdbcType.VARCHAR);
+        MutableColumnInfo phi = getMutableColumnOrThrow("PHI");
         phi.setDescription("PHI Annotation");
+        phi.setHidden(false);
 
         addCondition(new SimpleFilter(phi.getFieldKey(), "NotPHI", CompareType.NEQ));
     }

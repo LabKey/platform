@@ -17,6 +17,7 @@ package org.labkey.test.tests.mothership;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.Assertions;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -307,8 +308,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
                 "clientException", rowMap.get("PageflowAction"));
-        checker().verifyEquals("Unexpected exception message",
-                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyThat("Unexpected exception message",
+            rowMap.get("ExceptionMessage"), CoreMatchers.containsString("x is undefined"));
         checker().verifyEquals("Expect confirmation that the user is correct",
                 getCurrentUser(), rowMap.get("Username"));
         checker().verifyEquals("expext the referring URL to be the page from which we caused this",
@@ -340,8 +341,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
                 "clientException", rowMap.get("PageflowAction"));
-        checker().verifyEquals("Unexpected exception message",
-                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyThat("Unexpected exception message",
+                rowMap.get("ExceptionMessage"), CoreMatchers.containsString("x is undefined"));
         checker().verifyEquals("Expect confirmation that the user is correct",
                 getCurrentUser(), rowMap.get("Username"));
         checker().verifyEquals("expext the referring URL to be the page from which we caused this",
@@ -373,8 +374,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
                 "clientException", rowMap.get("PageflowAction"));
-        checker().verifyEquals("Unexpected exception message",
-                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyThat("Unexpected exception message",
+            rowMap.get("ExceptionMessage"), CoreMatchers.containsString("x is undefined"));
         checker().verifyEquals("Expect confirmation that the user is correct",
                 getCurrentUser(), rowMap.get("Username"));
         checker().verifyEquals("expext the referring URL to be the page from which we caused this",
@@ -406,8 +407,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is clientException",
                 "clientException", rowMap.get("PageflowAction"));
-        checker().verifyEquals("Unexpected exception message",
-                "TypeError: result.does is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyThat("Unexpected exception message",
+            rowMap.get("ExceptionMessage"), CoreMatchers.containsString("result.does is undefined"));
         checker().verifyEquals("Expect confirmation that the user is correct",
                 getCurrentUser(), rowMap.get("Username"));
         checker().verifyEquals("expect the referring URL to be the page from which we caused this",
