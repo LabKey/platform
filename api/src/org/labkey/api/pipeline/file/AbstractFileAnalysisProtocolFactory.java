@@ -25,9 +25,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
-import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -45,8 +42,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.util.List;
 
 /**
  * Base class for protocol factories that are primarily focused on analyzing data files (as opposed to other types of resources)
@@ -319,25 +314,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             _log.error("Error writing default parameters file.", eio);
             throw eio;
         }
-    }
-
-    public static <T extends AbstractFileAnalysisProvider<F, TaskPipeline<?>>, F extends AbstractFileAnalysisProtocolFactory<?>>
-            F fromFile(Class<T> clazz, File file)
-    {
-        List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
-        for (PipelineProvider provider : providers)
-        {
-            if (!(clazz.isInstance(provider)))
-                continue;
-
-            T mprovider = (T) provider;
-            F factory = mprovider.getProtocolFactory(file);
-            if (factory != null)
-                return factory;
-        }
-
-        // TODO: Return some default?
-        return null;
     }
 
     @Nullable
