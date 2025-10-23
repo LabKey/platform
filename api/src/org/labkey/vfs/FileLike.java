@@ -24,7 +24,8 @@ import java.nio.file.InvalidPathException;
 import java.util.List;
 import java.util.function.Predicate;
 
-
+@JsonSerialize(using = FileLike.FileLikeSerializer.class)
+@JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
 public interface FileLike extends Comparable<FileLike>
 {
     FileSystemLike getFileSystem();
