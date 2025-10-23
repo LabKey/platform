@@ -59,15 +59,20 @@ class ExperimentMigrationSchemaHandler extends DatabaseMigrationService.DefaultM
                 new InClause(FieldKey.fromParts("DataId", "Container"), containers),
                 new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
             );
-            case "MaterialInput" -> new AndClause(
-                new InClause(FieldKey.fromParts("MaterialId", "Container"), containers),
-                new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
-            );
             case "Material" -> new AndClause(
                 new InClause(FieldKey.fromParts("Container"), containers),
                 new OrClause(
                     new CompareClause(FieldKey.fromParts("RunId"), CompareType.ISBLANK, null),
                     new InClause(FieldKey.fromParts("RunId", "Container"), containers)
+                )
+            );
+            case "MaterialInput" -> new AndClause(
+                new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers),
+                // The below effectively matches the "Material" conditions above, since MaterialInput has an FK to Material
+                new InClause(FieldKey.fromParts("MaterialId", "Container"), containers),
+                new OrClause(
+                    new CompareClause(FieldKey.fromParts("MaterialId", "RunId"), CompareType.ISBLANK, null),
+                    new InClause(FieldKey.fromParts("MaterialId", "RunId", "Container"), containers)
                 )
             );
             case "Edge" -> new AndClause(
