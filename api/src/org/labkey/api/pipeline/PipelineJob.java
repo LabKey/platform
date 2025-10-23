@@ -2024,7 +2024,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      */
     protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
     {
-        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getWorkingDirectoryString());
+        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, baseLogFileName, getWorkingDirectoryString());
         setLocalDirectory(localDirectory);
         setLogFile(localDirectory.determineLogFile());
     }
