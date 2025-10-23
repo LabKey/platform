@@ -168,7 +168,7 @@
  * @param {Integer} [config.tickLength] (Optional) The length, in pixels for the x and y axis tick marks. Defaults to 8.
  * @param {Integer} [config.tickWidth] (Optional) The x and y axis tick line width. Defaults to 1.
  * @param {Integer} [config.tickOverlapRotation] (Optional) The degree of rotation for overlapping x axis tick labels.
- *      Defaults to 15 degrees.
+ *      Defaults to 35 degrees.
  * @param {Integer} [config.gridLineWidth] (Optional) The line width for the grid lines of the plot. Defaults to 1.
  * @param {Integer} [config.borderWidth] (Optional) The border line width with the x and y axis. Defaults to 1.
  *
