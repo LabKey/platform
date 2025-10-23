@@ -22,6 +22,7 @@ import org.labkey.api.assay.AssayFilePropertyWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
@@ -156,7 +157,11 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             }
 
             // Do all the real work of the import
-            ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps);
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, _primaryFile.getName());
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.APIAction, "AssayUploadPipelineJob");
+            ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps, transactionDetails/*TODO*/);
             setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");
 

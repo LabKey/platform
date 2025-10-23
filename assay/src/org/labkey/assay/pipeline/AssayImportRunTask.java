@@ -24,6 +24,7 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -837,7 +838,11 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Long batchId = null;
 
             // Import the assay run
-            Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, uploadedData.getName());
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.APIAction, "AssayImportRunTask");
+            Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, false, transactionDetails);
             ExpRun run = pair.second;
 
             if (getJob() instanceof FileAnalysisJobSupport)

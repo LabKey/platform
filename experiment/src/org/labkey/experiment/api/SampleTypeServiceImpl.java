@@ -1975,7 +1975,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        moveFile(renameData, sourceContainer, user, transaction.getAuditId());
+                        moveFile(renameData, sourceContainer, user, transaction.getAuditEvent());
                 }
             }, POSTCOMMIT);
 
@@ -2165,7 +2165,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleFileRenames;
     }
 
-    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user, Long txAuditId)
+    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user, TransactionAuditProvider.TransactionAuditEvent txAuditEvent)
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
@@ -2190,7 +2190,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         String changeDetail = String.format("sample type '%s' sample '%s'", renameData.sampleType.getName(), renameData.sampleName);
-        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail, txAuditId, renameData.fieldName);
+        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail, txAuditEvent, renameData.fieldName);
     }
 
     @Override

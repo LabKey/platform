@@ -126,13 +126,12 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         public SampleTypeAuditEvent()
         {
             super();
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public SampleTypeAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
         }
 
         public String getSourceLsid()

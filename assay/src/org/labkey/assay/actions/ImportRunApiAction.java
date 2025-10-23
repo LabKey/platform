@@ -319,15 +319,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
-            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, getTransactionAuditDetails());
             AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
-            Long auditTransactionId = transaction.getAuditId();
+            var auditTransactionEvent = transaction.getAuditEvent();
+            Long auditTransactionId = auditTransactionEvent == null ? null : auditTransactionEvent.getRowId();
 
             // Bind file property values and persist files to the file system.
             {
                 Map<String, MultipartFile> fileMap = getFileMap();
-                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay batch property file uploaded.");
-                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, auditTransactionId, "Assay run property file uploaded.");
+                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, auditTransactionEvent, "Assay batch property file uploaded.");
+                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, auditTransactionEvent, "Assay run property file uploaded.");
             }
 
             AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.setOutputDatas(outputData)
@@ -337,7 +338,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     .setUploadedFiles(filePropertyWriter.getUploadedFiles())
                     .create();
 
-            Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync);
+            Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync, getTransactionAuditDetails());
             ExpRun run = result.second;
 
             transaction.commit();
@@ -377,7 +378,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         CaseInsensitiveHashMap<Object> properties,
         Map<String, MultipartFile> fileMap,
         AssayFilePropertyWriter<? extends AssayProvider> fileWriter,
-        Long auditTransactionId,
+        TransactionAuditProvider.TransactionAuditEvent auditTransactionEvent,
         String auditComment
     ) throws ExperimentException, ValidationException
     {
@@ -388,7 +389,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (filePropertyMap.isEmpty())
             return;
 
-        var fileProperties = fileWriter.savePostedFiles(getContainer(), getUser(), filePropertyMap, auditTransactionId, auditComment);
+        var fileProperties = fileWriter.savePostedFiles(getContainer(), getUser(), filePropertyMap, auditTransactionEvent, auditComment);
         for (var entry : fileProperties.entrySet())
             properties.put(entry.getKey(), entry.getValue().toNioPathForRead().toString());
     }

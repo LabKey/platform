@@ -1,5 +1,6 @@
 package org.labkey.api.audit;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
@@ -7,6 +8,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.JsonPrettyPrintDisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
@@ -16,12 +18,17 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +39,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static final String COLUMN_NAME_START_TIME = "StartTime";
     public static final String COLUMN_NAME_TRANSACTION_TYPE = "TransactionType";
+    public static final String COLUMN_NAME_TRANSACTION_DETAILS = "TransactionDetails";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -81,6 +89,11 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                     col.setLabel("Start Time");
                 else if (COLUMN_NAME_TRANSACTION_TYPE.equalsIgnoreCase(col.getName()))
                     col.setLabel("Transaction Type");
+                else if (COLUMN_NAME_TRANSACTION_DETAILS.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Transaction Details");
+                    col.setDisplayColumnFactory(new JsonPrettyPrintDisplayColumnFactory());
+                }
             }
         };
     }
@@ -104,6 +117,64 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         return DbScope.getLabKeyScope().getCurrentTransaction().getAuditId();
     }
 
+    public static TransactionAuditEvent getCurrentTransactionAuditEvent()
+    {
+        if (null == DbScope.getLabKeyScope().getCurrentTransaction())
+            return null;
+        return DbScope.getLabKeyScope().getCurrentTransaction().getAuditEvent();
+    }
+
+    public enum TransactionDetail
+    {
+        Operation(false),
+        AuditEvents(true),
+        ImportFileName(true),
+        //BackgroundImport(false),
+        ClientLibrary(false),
+        Product(false),
+        // CrossFolderImport(false),
+        // CrossTypeImport(false),
+        // AllowCreateStorage(false),
+        // UseTransactionAuditCache(false),
+        APIVersion(false),
+        APIAction(false),
+        QueryCommand(true),
+        BatchAction(false),
+        ImportOptions(true)
+        ;
+
+        private final boolean multiValue;
+        TransactionDetail(boolean multiValue)
+        {
+            this.multiValue = multiValue;
+        }
+
+        public void add(Map<TransactionDetail, Object> detailMap, Object value)
+        {
+            if (value == null)
+                return;
+
+            if (!this.multiValue)
+            {
+                detailMap.put(this, value);
+                return;
+            }
+            Object existing = detailMap.get(this);;
+            Set<String> values;
+            if (existing == null)
+                values = new HashSet<>();
+            else if (existing instanceof Set)
+                values = (Set<String>) existing;
+            else
+                values = new HashSet<>(List.of(existing.toString()));
+            if (value instanceof String)
+                values.add((String) value);
+            else if (value instanceof Collections)
+                values.addAll((Set<String>) value);
+            detailMap.put(this, values);
+        }
+    }
+
     public static class TransactionAuditEvent extends AuditTypeEvent
     {
         private Date _startTime;
@@ -111,6 +182,8 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         private String _transactionType;
 
         private int _commentCount = 0; // the audit event comment might have been updated/appended multiple times, for example, the original insert triggers additional insert/update via trigger scripts
+
+        private final Map<TransactionDetail, Object> _detailMap = new HashMap<>();
 
         public TransactionAuditEvent()
         {
@@ -144,6 +217,28 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         public void setTransactionType(String transactionType)
         {
             _transactionType = transactionType;
+        }
+
+        public String getTransactionDetails()
+        {
+            try
+            {
+                return JsonUtil.DEFAULT_MAPPER.writeValueAsString(_detailMap);
+            }
+            catch (JsonProcessingException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+
+        public void addDetail(TransactionDetail key, Object value)
+        {
+            key.add(_detailMap, value);
+        }
+
+        public void addDetails(Map<TransactionDetail, Object> details)
+        {
+            _detailMap.putAll(details);
         }
 
         @Override
@@ -197,6 +292,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_START_TIME, PropertyType.DATE_TIME));
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_TYPE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_DETAILS, PropertyType.STRING, -1));
             _fields = Collections.unmodifiableSet(fields);
 
             // We override the base fields so we can use a DbSequence as the RowId and make it available

@@ -4691,19 +4691,27 @@ public class QueryController extends SpringActionController
                         auditTransaction = NO_OP_TRANSACTION;
 
                     if (auditTransaction.getAuditEvent() != null)
+                    {
                         auditEvent = auditTransaction.getAuditEvent();
+                        // detect trigger event?
+                    }
                     else
                     {
-                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), getTransactionAuditDetails());
                         AbstractQueryUpdateService.addTransactionAuditEvent(auditTransaction,  getUser(), auditEvent);
                     }
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.QueryCommand, commandType.name());
                 }
 
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
+                {
                     auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
+                    if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.BatchAction)))
+                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.BatchAction, true);
+                }
 
                 if (commandType == CommandType.moveRows)
                 {

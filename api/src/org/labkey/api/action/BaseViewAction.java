@@ -28,13 +28,16 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.AbstractPropertyAccessor;
@@ -71,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -535,6 +539,23 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return getCommandClass().isAssignableFrom(clazz);
     }
 
+    public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails()
+    {
+        return getTransactionAuditDetails(getViewContext());
+    }
+
+    public static Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails(ViewContext viewContext)
+    {
+        Map<TransactionAuditProvider.TransactionDetail, Object> map = new HashMap<>();
+        map.put(TransactionAuditProvider.TransactionDetail.APIAction, viewContext.getActionURL().getController() + "-" + viewContext.getActionURL().getAction());
+        String productName = HttpUtil.getProductName(viewContext.getRequest());
+        if (null != productName)
+            map.put(TransactionAuditProvider.TransactionDetail.Product, productName);
+        String clientLibrary = HttpUtil.getClientLibrary(viewContext.getRequest());
+        if (null != clientLibrary)
+            map.put(TransactionAuditProvider.TransactionDetail.ClientLibrary, clientLibrary);
+        return map;
+    }
 
     /* for TableViewForm, uses BeanUtils to work with DynaBeans */
     static public class BeanUtilsPropertyBindingResult extends BeanPropertyBindingResult

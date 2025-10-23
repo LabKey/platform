@@ -119,13 +119,12 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         {
             super();
             setEventType(EVENT_TYPE);
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public FileSystemAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
         }
 
         public String getDirectory()

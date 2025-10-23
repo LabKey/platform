@@ -174,6 +174,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
+        if (configParameters != null)
+            configParameters.put(TransactionAuditProvider.TransactionDetail.BatchAction, true);
         List<Map<String, Object>> result = this._insertRowsUsingDIB(getListUser(user, container), container, rows, context, extraScriptContext);
 
         if (null != result)
@@ -277,6 +279,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to update data in this table.");
 
+        if (configParameters != null)
+            configParameters.put(TransactionAuditProvider.TransactionDetail.BatchAction, true);
         return _importRowsUsingDIB(getListUser(user, container), container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
@@ -288,6 +292,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        if (configParameters != null)
+            configParameters.put(TransactionAuditProvider.TransactionDetail.BatchAction, true);
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = _importRowsUsingDIB(getListUser(user, container), container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())

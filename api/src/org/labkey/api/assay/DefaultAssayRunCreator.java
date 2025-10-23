@@ -123,13 +123,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         return DataTransformService.get().transformAndValidate(context, run, DataTransformService.TransformOperation.INSERT);
     }
-
-    @Override
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId) throws ExperimentException, ValidationException
-    {
-        return saveExperimentRun(context, batchId, false);
-    }
-
     /**
      * Create and save an experiment run synchronously or asynchronously in a background job depending upon the assay design.
      *
@@ -141,7 +134,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public Pair<ExpExperiment, ExpRun> saveExperimentRun(
             AssayRunUploadContext<ProviderType> context,
             @Nullable Long batchId,
-            boolean forceAsync
+            boolean forceAsync,
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails
     ) throws ExperimentException, ValidationException
     {
         ExpExperiment exp = null;
@@ -158,7 +152,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             if (transaction.getAuditId() == null)
             {
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
             context.init();
@@ -176,7 +170,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 run.setComments(context.getComments());
                 run.setWorkflowTaskId(context.getWorkflowTask());
 
-                exp = saveExperimentRun(context, exp, run, false);
+                exp = saveExperimentRun(context, exp, run, false, transactionDetails);
 
                 // re-fetch the run after it has been fully constructed
                 run = ExperimentService.get().getExpRun(run.getRowId());
@@ -267,7 +261,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         final AssayRunUploadContext<ProviderType> context,
         @Nullable ExpExperiment batch,
         @NotNull ExpRun run,
-        boolean forceSaveBatchProps
+        boolean forceSaveBatchProps,
+        @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails
     ) throws ExperimentException, ValidationException
     {
         context.setAutoFillDefaultResultColumns(run.getRowId() > 0); // need to setAutoFillDefaultResultColumns before run is saved
@@ -327,7 +322,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
                 else
                 {
-                    var auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction);
+                    var auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, auditAction, transactionDetails);
                     AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
                 }
             }

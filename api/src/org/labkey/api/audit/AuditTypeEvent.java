@@ -191,6 +191,15 @@ public class AuditTypeEvent
         _transactionId = transactionId;
     }
 
+    public void setTransactionEvent(@Nullable TransactionAuditProvider.TransactionAuditEvent transactionEvent, String auditEventType)
+    {
+        if (transactionEvent == null)
+            return;
+
+        _transactionId = transactionEvent.getRowId();
+        transactionEvent.addDetail(TransactionAuditProvider.TransactionDetail.AuditEvents, auditEventType);
+    }
+
     protected String getContainerMessageElement(@NotNull Container container)
     {
         String value = " (" + container.getId() + ")";
