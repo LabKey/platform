@@ -30,7 +30,7 @@ public interface DatabaseMigrationService
 {
     Logger LOG = LogHelper.getLogger(DatabaseMigrationService.class, "Information about database migration");
 
-    record DomainFilter(String column, FilterClause condition) {}
+    record DomainFilter(Set<GUID> containers, String column, FilterClause condition) {}
 
     static @NotNull DatabaseMigrationService get()
     {
@@ -87,7 +87,7 @@ public interface DatabaseMigrationService
 
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
-        void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames);
+        void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames);
 
         // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
         // source table that were NOT copied to the target table. (For example, they were filtered out due to container
@@ -191,19 +191,19 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
+        public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
-            addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+            addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
         }
 
-        private void addDomainDataStandardFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
+        protected void addDomainDataStandardFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
             if (selectColumnNames.contains(filter.column()))
             {
                 // Select all rows in this domain-filtered container that meet its criteria
                 orClause.addClause(
                     new AndClause(
-                        getContainerClause(sourceTable, fKey, Set.of(guid)),
+                        getContainerClause(sourceTable, fKey, filter.containers()),
                         filter.condition()
                     )
                 );
@@ -211,7 +211,7 @@ public interface DatabaseMigrationService
         }
 
         // Special domain data filter method for provisioned tables that have a built-in Flag field
-        protected void addDomainDataFlagFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
+        protected void addDomainDataFlagFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
             if (filter.column().equalsIgnoreCase("Flag"))
             {
@@ -220,20 +220,20 @@ public interface DatabaseMigrationService
                 // Select all rows where the built-in flag column equals the filter value
                 orClause.addClause(
                     new AndClause(
-                        getContainerClause(sourceTable, fKey, Set.of(guid)),
+                        getContainerClause(sourceTable, fKey, filter.containers()),
                         new SimpleFilter.SQLClause(flagWhere)
                     )
                 );
             }
             else
             {
-                addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+                addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
             }
         }
 
         private Integer _commentPropertyId = null;
 
-        private synchronized int getCommentPropertyId(TableInfo sourceTable)
+        protected synchronized int getCommentPropertyId(TableInfo sourceTable)
         {
             if (_commentPropertyId == null)
             {
@@ -297,6 +297,7 @@ public interface DatabaseMigrationService
     interface MigrationFilter
     {
         String getName();
-        void saveFilter(GUID guid, String value);
+        // Implementations should validate guid nullity
+        void saveFilter(@Nullable GUID guid, String value);
     }
 }
