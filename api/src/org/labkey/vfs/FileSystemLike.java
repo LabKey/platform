@@ -1,7 +1,9 @@
 package org.labkey.vfs;
 
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
@@ -116,6 +118,8 @@ public interface FileSystemLike
         boolean canDeleteRoot = false;
         boolean memCheck = true;
         boolean caching = false;
+        String containerId = null;
+        String configName = null;
 
         public Builder(URI uri)
         {
@@ -170,14 +174,42 @@ public interface FileSystemLike
             return this;
         }
 
+        public Builder container(String containerId)
+        {
+            this.containerId = containerId;
+            return this;
+        }
+
+        public Builder config(String configName)
+        {
+            this.configName = configName;
+            return this;
+        }
+
+
+        public final String S3_SCHEME = "s3"; //  S3FileSystemProvider.getScheme();
+
         public FileSystemLike build()
         {
             var scheme = defaultIfBlank(uri.getScheme(), FILE_SCHEME);
+
             FileSystemLike ret;
-            if (defaultVfs || !FILE_SCHEME.equals(scheme))
+            if (S3_SCHEME.equals(scheme))
+            {
+                Container c = ContainerManager.getForId(containerId);
+                if (null == c)
+                    throw new RuntimeException("Container not found: " + containerId);
+                ret = CloudStoreService.get().getFileSystemLike(c, configName);
+            }
+            else if (defaultVfs && !FILE_SCHEME.equals(scheme))
+            {
                 ret = new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+            }
             else
+            {
                 ret = new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+            }
+
             if (caching)
                 ret = ret.getCachingFileSystem();
             if (!memCheck)
