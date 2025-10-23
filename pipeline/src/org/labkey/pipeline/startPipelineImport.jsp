@@ -59,7 +59,6 @@
 
     Study study = studyService != null ? studyService.getStudy(getContainer()) : null;
     TimepointType timepointType = study != null ? study.getTimepointType() : null;
-    boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG);
 %>
 
 <labkey:errors/>
@@ -92,7 +91,6 @@ Ext4.onReady(function()
                 canCreateSharedDatasets: <%=canCreateSharedDatasets%>,
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,
-                showAdvancedImportOptions: <%=isAdvancedImportOptionEnabled%>,
                 isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
                 isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
                 isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>,

@@ -218,15 +218,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
-        OptionalFeatureService.get().addFeatureFlag(
-            new OptionalFeatureFlag(
-                ADVANCED_IMPORT_FLAG,
-                "Restore 'Advanced Import Options' during Folder import",
-                "This option will be removed in LabKey Server v25.11.",
-                false, false, OptionalFeatureService.FeatureType.Deprecated
-            )
-        );
-
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();
             SqlDialect dialect = PipelineSchema.getInstance().getSchema().getSqlDialect();
