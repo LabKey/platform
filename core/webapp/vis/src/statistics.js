@@ -199,20 +199,48 @@ LABKEY.vis.Stat.MEAN = LABKEY.vis.Stat.getMean;
 /**
  * Returns the standard deviation.
  * @param values An array of numbers.
+ * @param sample If true, use (n-1) for the denominator of the final step. Defaults to false.
  * @returns {Number}
  */
-LABKEY.vis.Stat.getStdDev = function(values)
+LABKEY.vis.Stat.getStdDev = function(values, sample = false)
 {
     if (values == null)
         throw "invalid input";
+    if (values.length === 0)
+        return undefined;
+    if (sample && values.length === 1)
+        return undefined;
+
     var mean = LABKEY.vis.Stat.getMean(values);
     var squareDiffs =  values.map(function(value){
         var diff = value - mean;
         return diff * diff;
     });
-    var avgSquareDiff = LABKEY.vis.Stat.getMean(squareDiffs);
-    return Math.sqrt(avgSquareDiff);
+    if (sample) {
+        var sumSquareDiffs = squareDiffs.reduce(function(a,b){return a + b});
+        return Math.sqrt(sumSquareDiffs / (squareDiffs.length - 1));
+    }
+    return Math.sqrt(LABKEY.vis.Stat.getMean(squareDiffs));
 };
+LABKEY.vis.Stat.SD = LABKEY.vis.Stat.getStdDev;
+
+/**
+ * Returns the SEM (standard error of the mean).
+ * @param values An array of numbers.
+ * @param sample If true, use (n-1) for the denominator of the final step. Defaults to false.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.getStdErr = function(values, sample = false) {
+    if (values == null)
+        throw "invalid input";
+    if (values.length === 0)
+        return undefined;
+    if (sample && values.length === 1)
+        return undefined;
+
+    return LABKEY.vis.Stat.getStdDev(values, sample) / Math.sqrt(values.length);
+}
+LABKEY.vis.Stat.SEM = LABKEY.vis.Stat.getStdErr;
 
 // CUSUM_WEIGHT_FACTOR of 0.5 and CUSUM_CONTROL_LIMIT of 5 to achieve a 3*stdDev boundary
 LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR = 0.5;

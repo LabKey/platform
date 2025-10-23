@@ -1046,6 +1046,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 config.scales[axisName].min = options[axisName].scaleRange.min;
                 config.scales[axisName].max = options[axisName].scaleRange.max;
             }
+
+            if (config.measures[axisName]) {
+                // LKS y-axis supports multiple measures, so account for that when applying options
+                // note that we only apply to the first measure in the array
+                var measure = LABKEY.Utils.isArray(config.measures[axisName]) ? config.measures[axisName][0] : config.measures[axisName];
+
+                if (options[axisName].aggregate !== undefined) {
+                    measure.aggregate = options[axisName].aggregate;
+                    measure.errorBars = undefined; // reset error bars if aggregate changes
+                }
+                if (options[axisName].errorBars !== undefined) {
+                    measure.errorBars = options[axisName].errorBars;
+                }
+            }
         }
     },
 
@@ -1324,6 +1338,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (chartConfig.scales && chartConfig.scales[axisName]) {
             Ext4.apply(this.options[axisName], chartConfig.scales[axisName]);
         }
+        if (chartConfig.measures && chartConfig.measures[axisName]) {
+            // LKS y-axis supports multiple measures, so account for that when applying options
+            // note that we only apply to the first measure in the array
+            var measure = LABKEY.Utils.isArray(chartConfig.measures[axisName]) ? chartConfig.measures[axisName][0] : chartConfig.measures[axisName];
+
+            if (measure.aggregate)
+                this.options[axisName].aggregate = measure.aggregate.value ?? measure.aggregate;
+            if (measure.errorBars)
+                this.options[axisName].errorBars = measure.errorBars;
+        }
     },
 
     loadInitialSelection : function()
@@ -1596,29 +1620,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
 
-        if (chartType === 'bar_chart' || chartType === 'pie_chart') {
-            var dimName = null, measureName = null, subDimName = null,
-                aggType = 'COUNT';
-
-            if (chartConfig.measures.x) {
-                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
-            }
-            if (chartConfig.measures.xSub) {
-                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
-            }
-            if (chartConfig.measures.y) {
-                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
-
-                if (Ext4.isDefined(chartConfig.measures.y.aggregate)) {
-                    aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
-                }
-                // backwards compatibility for bar charts saved prior to aggregate method selection UI
-                else if (measureName != null) {
-                    aggType = 'SUM';
-                }
-            }
-
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+        if (chartType === 'bar_chart' || chartType === 'pie_chart' || chartType === 'line_plot') {
+            data = LABKEY.vis.GenericChartHelper.generateDataForChartType(chartConfig, chartType, geom, data);
 
             // convert any undefined values to zero for display purposes in Bar and Pie chart case
             Ext4.each(data, function(d) {

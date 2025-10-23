@@ -931,14 +931,14 @@ public class ExperimentModule extends SpringModule
                         new InClause(FieldKey.fromParts("ToObjectId", "Container"), containers)
                     );
                     case "Alias" -> new SQLClause(
-                        new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container ")
+                        new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container")
                             .appendInClause(containers, sourceTable.getSqlDialect())
-                            .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container ")
+                            .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container")
                             .appendInClause(containers, sourceTable.getSqlDialect())
                             .append(")")
                     );
                     case "ObjectLegacyNames" -> new SQLClause(
-                        new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ")
+                        new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container")
                             .appendInClause(containers, sourceTable.getSqlDialect())
                             .append(")")
                     );
@@ -967,16 +967,33 @@ public class ExperimentModule extends SpringModule
             public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
             {
                 return new SQLClause(
-                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container ")
+                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container")
                         .appendInClause(containers, sourceTable.getSqlDialect())
                         .append(")")
                 );
             }
 
             @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
+            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
             {
-                addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+                // Sample-type-specific optimization
+                if (filter.column().equalsIgnoreCase("Flag"))
+                {
+                    // Select all rows where the built-in flag column equals the filter value
+                    orClause.addClause(
+                        new SQLClause(new SQLFragment(
+                            "RowId IN (SELECT RowId FROM exp.Material WHERE Container")
+                            .appendInClause(filter.containers(), sourceTable.getSqlDialect())
+                            .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
+                            .add(filter.condition().getParamVals()[0])
+                            .add(getCommentPropertyId(sourceTable))
+                        )
+                    );
+                }
+                else
+                {
+                    addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
+                }
             }
 
             @Override
@@ -984,16 +1001,16 @@ public class ExperimentModule extends SpringModule
             {
                 Collection<String> notCopiedLsids = new TableSelector(sourceTable, new CsvSet("LSID, RowId"), notCopiedFilter, null).getCollection(String.class);
                 if (!notCopiedLsids.isEmpty())
-                    LOG.info("   {} rows not copied: {}", Formats.commaf0.format(notCopiedLsids.size()), notCopiedLsids);
+                    LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
             }
         });
 
         // Data classes have a built-in Flag field
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DataClassDomainKind.getSchema()) {
             @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, GUID guid, Set<String> selectColumnNames)
+            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
             {
-                addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, guid, selectColumnNames);
+                addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
             }
 
             @Override
@@ -1001,7 +1018,7 @@ public class ExperimentModule extends SpringModule
             {
                 Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
                 if (!notCopiedLsids.isEmpty())
-                    LOG.info("   {} rows not copied: {}", Formats.commaf0.format(notCopiedLsids.size()), notCopiedLsids);
+                    LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
             }
         });
     }
