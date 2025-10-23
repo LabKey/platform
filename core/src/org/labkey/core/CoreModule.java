@@ -48,8 +48,6 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -61,7 +59,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.MigrationFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -72,10 +69,6 @@ import org.labkey.api.data.OutOfRangeDisplayColumn;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
-import org.labkey.api.data.SimpleFilter.AndClause;
-import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.data.SimpleFilter.OrClause;
-import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
@@ -178,7 +171,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -412,30 +404,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private CoreWarningProvider _warningProvider;
     private ServletRegistration.Dynamic _webdavServletDynamic;
-
-    private SQLFragment _groupFilterCondition = null;
-
-    public CoreModule()
-    {
-        // Must be registered very early
-        DatabaseMigrationService.get().registerMigrationFilter(new MigrationFilter()
-        {
-            @Override
-            public String getName()
-            {
-                return "GroupFilter";
-            }
-
-            @Override
-            public void saveFilter(@Nullable GUID guid, String groupFilter)
-            {
-                if (guid != null)
-                    throw new ConfigurationException("GUID should not be provided to GroupFilter");
-
-                _groupFilterCondition = new SQLFragment(groupFilter);
-            }
-        });
-    }
 
     @Override
     public boolean hasScripts()
@@ -1307,144 +1275,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        DatabaseMigrationService.get().registerSchemaHandler(new CoreMigrationSchemaHandler());
-
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
-            @Override
-            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
-            {
-                return sourceTable.getName().equals("PropertySets") ? FieldKey.fromParts("ObjectId") : super.getContainerFieldKey(sourceTable);
-            }
-        });
-
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
-            @Override
-            public List<TableInfo> getTablesToCopy()
-            {
-                return List.of(); // Skip all test tables
-            }
-        });
-
-        // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
-        if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
-        {
-            DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
-            {
-                @Override
-                public List<TableInfo> getTablesToCopy()
-                {
-                    return List.of(); // Skip all vehicle tables
-                }
-            });
-        }
-
+        CoreMigrationSchemaHandler.register();
         Encryption.checkMigration();
-    }
-
-    private class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler
-    {
-        public CoreMigrationSchemaHandler()
-        {
-            super(CoreSchema.getInstance().getSchema());
-        }
-
-        @Override
-        public void beforeVerification()
-        {
-            super.beforeVerification();
-
-            // Delete root and shared containers that were needed for bootstrapping
-            TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            Table.delete(containers);
-            DbScope targetScope = DbScope.getLabKeyScope();
-            new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
-        }
-
-        @Override
-        public void beforeSchema()
-        {
-            new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
-            new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
-        }
-
-        @Override
-        public List<TableInfo> getTablesToCopy()
-        {
-            List<TableInfo> tablesToCopy = super.getTablesToCopy();
-            tablesToCopy.remove(CoreSchema.getInstance().getTableInfoModules());
-            tablesToCopy.remove(CoreSchema.getInstance().getTableInfoSqlScripts());
-            tablesToCopy.remove(CoreSchema.getInstance().getTableInfoUpgradeSteps());
-
-            return tablesToCopy;
-        }
-
-        @Override
-        public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
-        {
-            return switch (sourceTable.getName())
-            {
-                case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId", "EntityId");
-                case "Containers" -> FieldKey.fromParts("EntityId");
-                case "Report" -> FieldKey.fromParts("ContainerId");
-                // Note: DataStates is not really site-wide, but there seem to be exp.Materials referencing DataStates with conflicting containers
-                case "APIKeys", "AuthenticationConfigurations", "DataStates", "EmailOptions", "Logins", "ReportEngines", "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
-                default -> super.getContainerFieldKey(sourceTable);
-            };
-        }
-
-        @Override
-        public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
-        {
-            FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
-            String tableName = sourceTable.getName();
-
-            // Users and root groups have container == null, so add that as an OR clause
-            if ("Principals".equals(tableName) || "Members".equals(tableName))
-            {
-                OrClause orClause = new OrClause();
-                orClause.addClause(containerClause);
-                orClause.addClause(new CompareClause(containerFieldKey, CompareType.ISBLANK, null));
-                containerClause = orClause;
-
-                if (_groupFilterCondition != null)
-                {
-                    SQLFragment groupFilterFragment = new SQLFragment();
-
-                    if ("Principals".equals(tableName))
-                    {
-                        groupFilterFragment
-                            .append("Type <> 'g' OR (type = 'g' AND UserId ")
-                            .append(_groupFilterCondition)
-                            .append(")");
-                    }
-                    else
-                    {
-                        groupFilterFragment
-                            .append("GroupId ")
-                            .append(_groupFilterCondition);
-                    }
-
-                    containerClause = new AndClause(containerClause, new SQLClause(groupFilterFragment));
-                }
-            }
-
-            if ("RoleAssignments".equals(tableName) && _groupFilterCondition != null)
-            {
-                SQLFragment groupFilterFragment = new SQLFragment("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
-                    .append(_groupFilterCondition)
-                    .append("))");
-                containerClause = new AndClause(containerClause, new SQLClause(groupFilterFragment));
-            }
-
-            return containerClause;
-        }
-
-        @Override
-        public void afterSchema()
-        {
-            new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
-            new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
-        }
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate
