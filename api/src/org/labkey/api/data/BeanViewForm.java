@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class BeanViewForm<K> extends TableViewForm implements DynaBean
+public class BeanViewForm<K> extends TableViewForm
 {
     private final Class<K> _wrappedClass;
 
@@ -83,11 +83,11 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
     }
 
     @Override
-    public Map<String, String> getStrings()
+    public Map<String, Object> getStrings()
     {
         //If we don't have strings and do have typed values then
         //make the strings match the typed values
-        Map<String, String> strings = super.getStrings();
+        Map<String, Object> strings = super.getStrings();
         if (null == strings || strings.isEmpty() && (null != _values && !_values.isEmpty()))
         {
             strings = new HashMap<>();
@@ -95,7 +95,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
             {
                 strings.put(entry.getKey(), ConvertUtils.convert(entry.getValue()));
             }
-            _stringValues = strings;
+            setStrings(strings);
         }
 
         return strings;

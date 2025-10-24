@@ -63,7 +63,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PHI;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -748,7 +747,7 @@ public class IssuesController extends SpringActionController
                         IssuesForm form = new IssuesForm();
                         form.setUser(getViewContext().getUser());
                         form.setContainer(getViewContext().getContainer());
-                        Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
+                        Map<String, Object> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {
                             Object value = rec.get(prop);
@@ -784,7 +783,7 @@ public class IssuesController extends SpringActionController
         Issue.action getAction(IssuesForm form)
         {
             if (form.getStrings().containsKey("action"))
-                return Issue.action.valueOf(form.getStrings().get("action"));
+                return Issue.action.valueOf(form.getAsString("action"));
             return null;
         }
     }
@@ -816,7 +815,7 @@ public class IssuesController extends SpringActionController
                     IssueObject prevIssue = action != Issue.action.insert ? IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId()) : null;
                     Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();
 
-                    Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
+                    Map<String, Object> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
                     for (DomainProperty prop : issueListDef.getDomain(getUser()).getProperties())
                     {
                         if (!IssueDefDomainKind.RESOLUTION_LOOKUP.equalsIgnoreCase(prop.getName()))
@@ -864,7 +863,7 @@ public class IssuesController extends SpringActionController
                     setTypedProperties(issue, issuesForm, issueListDef.getName());
 
                     // handle attachments, the attachment value is a | delimited array of file names
-                    String attachments = issuesForm.get("attachment");
+                    String attachments = issuesForm.getAsString("attachment");
                     List<AttachmentFile> attachmentFiles = new ArrayList<>();
                     if (!StringUtils.isBlank(attachments))
                     {
@@ -1370,9 +1369,9 @@ public class IssuesController extends SpringActionController
 
             if (_issue.getResolution() == null || _issue.getResolution().isEmpty())
             {
-                if (form.get("resolution") != null)
+                if (form.getAsString("resolution") != null)
                 {
-                    _issue.setResolution(form.get("resolution"));
+                    _issue.setResolution(form.getAsString("resolution"));
                 }
             }
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -2229,45 +2228,45 @@ public class IssuesController extends SpringActionController
         public Issue.action getAction()
         {
             if (getStrings().containsKey("action"))
-                return Issue.action.valueOf(getStrings().get("action"));
+                return Issue.action.valueOf(getAsString("action"));
 
             throw new NotFoundException("No action specified");
         }
 
         public String getComment()
         {
-            return _stringValues.get("comment");
+            return getAsString("comment");
         }
 
         public String getNotifyList()
         {
-            return _stringValues.get("notifyList");
+            return getAsString("notifyList");
         }
 
         // XXX: change return value to typed ReturnURLString
         public String getCallbackURL()
         {
-            return _stringValues.get("callbackURL");
+            return getAsString("callbackURL");
         }
 
         public String getBody()
         {
-            return _stringValues.get("body");
+            return getAsString("body");
         }
 
         public String getPriority()
         {
-            return _stringValues.get("priority");
+            return getAsString("priority");
         }
 
         private String getIssueDefName()
         {
-            return _stringValues.get(IssuesListView.ISSUE_LIST_DEF_NAME);
+            return getAsString(IssuesListView.ISSUE_LIST_DEF_NAME);
         }
 
         private String getIssueDefId()
         {
-            return _stringValues.get(IssuesListView.ISSUE_LIST_DEF_ID);
+            return getAsString(IssuesListView.ISSUE_LIST_DEF_ID);
         }
 
         // Make this method public
@@ -2284,7 +2283,7 @@ public class IssuesController extends SpringActionController
          */
         public boolean getSkipPost()
         {
-            return BooleanUtils.toBoolean(_stringValues.get("skipPost"));
+            return BooleanUtils.toBoolean(getAsString("skipPost"));
         }
 
         public ActionURL getForwardURL()
@@ -2304,12 +2303,12 @@ public class IssuesController extends SpringActionController
 
         public int getIssueId()
         {
-            return NumberUtils.toInt(_stringValues.get("issueId"));
+            return NumberUtils.toInt(getAsString("issueId"));
         }
 
         public boolean isDirty()
         {
-            return BooleanUtils.toBoolean(_stringValues.get("dirty"));
+            return BooleanUtils.toBoolean(getAsString("dirty"));
         }
     }
 

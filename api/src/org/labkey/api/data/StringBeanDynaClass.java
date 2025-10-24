@@ -90,18 +90,6 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
 
     public static StringBeanDynaClass createDynaClass(Class beanClass, Map<String, Class> extraProps)
     {
-
-        /*
-
-                WrapStringDynaClass dynaClass =
-                        (WrapStringDynaClass) _dynaClasses.get(beanClass);
-                if (dynaClass == null)
-                {
-                    dynaClass = new WrapStringDynaClass(beanClass);
-                    _dynaClasses.put(beanClass, dynaClass);
-                }
-                return (dynaClass);
-        */
         return new StringBeanDynaClass(beanClass, extraProps);
     }
 
@@ -117,6 +105,6 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
     @Override
     public DynaBean newInstance()
     {
-        return new BeanViewForm(_beanClass);
+        throw new UnsupportedOperationException("StringBeanDynaClass does not support newInstance()");
     }
 } 

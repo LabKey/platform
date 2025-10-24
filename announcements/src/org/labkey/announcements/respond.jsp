@@ -75,11 +75,11 @@ if (!mr.isApproved(c, user, false /* Not a new thread */))
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class="labkey-form-label">Title * <%=helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type="text" size="60" maxLength="255" name="title" value='<%=form.get("title")%>' onChange="LABKEY.setDirty(true);"/></td></tr><%
+    %><tr><td class="labkey-form-label">Title * <%=helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type="text" size="60" maxLength="255" name="title" value='<%=form.getAsString("title")%>' onChange="LABKEY.setDirty(true);"/></td></tr><%
 }
 else
 {
-    %><tr><td colspan="2"><labkey:input type="hidden" name="title" value='<%=form.get("title")%>'/></td></tr><%
+    %><tr><td colspan="2"><labkey:input type="hidden" name="title" value='<%=form.getAsString("title")%>'/></td></tr><%
 }
 
 if (settings.hasStatus())
@@ -111,7 +111,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input type="text" size="23" name="expires" value='<%=form.get("expires")%>' onChange="LABKEY.setDirty(true);"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input type="text" size="23" name="expires" value='<%=form.getAsString("expires")%>' onChange="LABKEY.setDirty(true);"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
@@ -129,7 +129,7 @@ if (settings.hasExpires())
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
                     <% addHandler("body", "change", "LABKEY.setDirty(true);"); %>
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.getAsString("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>

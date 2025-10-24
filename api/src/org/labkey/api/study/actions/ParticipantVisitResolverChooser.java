@@ -202,7 +202,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         TableViewForm viewForm = ctx.getForm();
         // check to see if our insert view has explicit initial values:
         if (null != viewForm && viewForm.getStrings().containsKey(_typeInputName))
-            return viewForm.get(_typeInputName);
+            return viewForm.getAsString(_typeInputName);
         return ctx.get(_typeInputName);
     }
 }

@@ -445,9 +445,8 @@ public class DataColumn extends DisplayColumn
         {
             // See if the value is itself a URL
             Object value = getDisplayValue(ctx);
-            if (value != null)
+            if (value instanceof String toString)
             {
-                String toString = value.toString();
                 if (StringUtilsLabKey.startsWithURL(toString) &&
                         !toString.contains(" ") &&
                         !toString.contains("\n") &&
@@ -798,7 +797,7 @@ public class DataColumn extends DisplayColumn
             if (viewForm != null && viewForm.contains(this, ctx))
             {
                 // On error reshow, use the user supplied form value
-                displayValue = viewForm.get(formFieldName);
+                displayValue = viewForm.getAsString(formFieldName);
             }
             if (displayValue == null)
                 displayValue = getDisplayValue(ctx);

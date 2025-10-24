@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.IteratorUtils;
@@ -34,11 +33,11 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -55,6 +54,8 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import java.beans.Introspector;
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -67,11 +68,13 @@ import java.util.Set;
  * Supports insert, update, delete functionality with a minimum of fuss
  * <p/>
  */
-public class TableViewForm extends ViewForm implements DynaBean, HasBindParameters
+public class TableViewForm extends ViewForm implements HasBindParameters
 {
     private static final Logger _log = LogHelper.getLogger(TableViewForm.class, "Table operation warnings");
 
-    protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<>();
+    // This is called "stringValues" as this is expected to come from a form POST,
+    // However, it can also be String[], other types must be converted
+    protected Map<String, Object> _stringValues = new CaseInsensitiveHashMap<>();
     protected Map<String, Object> _values = null;
     protected StringWrapperDynaClass _dynaClass;
     protected Object _oldValues;
@@ -160,7 +163,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             throw new UnauthorizedException();
         }
         if (null != _tinfo.getColumn("container"))
-            set("container", _c.getId());
+            setStringToBind("container", _c.getId());
 
         Map<String, Object> newMap = Table.insert(_user, _tinfo, getTypedValues());
         setTypedValues(newMap, false);
@@ -184,7 +187,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         }
 
         if (null != _tinfo.getColumn("container"))
-            set("container", _c.getId());
+            setStringToBind("container", _c.getId());
 
         Object[] pkVal = getPkVals();
         Map<String, Object> newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
@@ -296,14 +299,12 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setPkVal(String str)
     {
         assertSinglePK();
-
-        set(getPkName(), str);
+        setStringToBind(getPkName(), str);
     }
 
     public void setPkVal(Object o)
     {
         assertSinglePK();
-
         setTypedValue(getPkName(), o);
     }
 
@@ -318,16 +319,22 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     {
         //Issue 42042: Lists with text primary key don't handle commas in key value when viewing row details
         if (getPkNamesList().size() == 1)
-            set(getPkNamesList().get(0), s);
+        {
+            setStringToBind(getPkNamesList().get(0), s);
+        }
         else
+        {
+            // TODO replace with new splitStringToValues
+            // setPkVals(PageFlowUtil.splitStringToValuesForImport(s));
             setPkVals(s.split(","));
+        }
     }
 
     public void setPkVals(String[] s)
     {
         List<String> pkNames = getPkNamesList();
         for (int i = 0; i < pkNames.size() && i < s.length; i++)
-            set(pkNames.get(i), s[i]);
+            setStringToBind(pkNames.get(i), s[i]);
     }
 
     /**
@@ -359,13 +366,17 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 Object oldValues = getOldValues();
                 if (oldValues instanceof Map m)
+                {
                     pkVal = m.get(pkName);
+                }
                 else
+                {
                     try
                     {
                         pkVal = PropertyUtils.getProperty(oldValues, pkName);
                     }
                     catch (Exception ignored) {}
+                }
             }
             pkVals[i] = pkVal;
         }
@@ -392,6 +403,30 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _validateRequired = validateRequired;
     }
 
+
+    private Object getStringValuesToBind(String propName)
+    {
+        Object value =  _stringValues.get(propName);
+        if (null == value)
+        {
+            return null;
+        }
+        else if (value instanceof String str)
+        {
+           return StringUtils.isEmpty(str) ? null : str;
+        }
+        else if (value instanceof String[])
+        {
+            return value;
+        }
+        else
+        {
+            // TODO MultiChoice use a custom checked Map
+            throw new ConversionException("Unexpected value of type: " + value.getClass());
+        }
+    }
+
+
     protected void _populateValues(BindException errors)
     {
         // Don't do anything special if dynaclass is null
@@ -409,31 +444,29 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         for (String propName : keys)
         {
+            // NOTE later code relies on false==contains(propName) when there is a conversion error
+            Object bindValue = getStringValuesToBind(propName);
+
             ColumnInfo col = getColumnByFormFieldName(propName);
-            String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
             Class<?> propType = null;
 
-            if (StringUtils.isEmpty(str))
-                str = null;
-
             try
             {
-
-                if (null != str)
+                if (null != bindValue)
                 {
                     Object val;
-                    if (null != col && null != col.getKindOfQuantity())
+                    if (null != col)
                     {
-                        val = Quantity.convert(str, col.getDisplayUnit());
+                        val = col.getConvertFn().apply(bindValue);
                     }
                     else
                     {
                         propType = _dynaClass.getTruePropType(propName);
                         if (propType != null)
-                            val = ConvertUtils.convert(str, propType);
+                            val = ConvertUtils.convert(bindValue, propType);
                         else
-                            val = str;
+                            val = bindValue;
                     }
                     values.put(propName, val);
                 }
@@ -455,7 +488,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                             if (mvCol != null)
                             {
                                 String ff_mvName = getFormFieldName(mvCol);
-                                isError = StringUtils.trimToNull(_stringValues.get(ff_mvName)) == null;
+                                isError = null == getStringValuesToBind(ff_mvName);
                             }
                         }
                         if (isError)
@@ -463,7 +496,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                         else
                             values.put(propName, null);
                     }
-
                 }
                 else
                 {
@@ -482,6 +514,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
                     try
                     {
+                        String str = null==bindValue ? null : bindValue instanceof String[] ? ((String[])bindValue)[0] : (String)bindValue;
                         Object remappedValue = cache.remap(fk.getLookupSchemaKey(), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
                         if (remappedValue != null)
                         {
@@ -500,6 +533,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     String error = SpringActionController.ERROR_CONVERSION;
                     if (null != propType)
                         error += "." + propType.getSimpleName();
+                    String str = bindValue instanceof String[] strs ? PageFlowUtil.joinValuesToString(Arrays.asList(strs),',') : String.valueOf(bindValue);
                     errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, Objects.toString(defaultMessage, "Could not convert value: " + str)));
                 }
             }
@@ -537,7 +571,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setTypedValue(String propName, Object val)
     {
         getTypedValues().put(propName, val);
-        _stringValues.put(propName, ConvertUtils.convert(val));
+        setStringToBind(propName, val);
     }
 
     /**
@@ -572,9 +606,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         for (ColumnInfo column : getTable().getColumns())
         {
             if (hasTypedValue(column))
+            {
                 values.put(column.getName(), getTypedValue(column));
-            else if (includeUntyped && contains(column))
-                values.put(column.getName(), get(column));
+            }
+            else if (includeUntyped && _stringValues.containsKey(getFormFieldName(column)))
+            {
+                values.put(column.getName(), _stringValues.get(getFormFieldName(column)));
+            }
             else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
                 String fieldName = getMultiPartFormFieldName(column);
@@ -603,8 +641,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 {
                     if (hasTypedValue(mvColumn))
                         values.put(mvColumn.getName(), getTypedValue(mvColumn));
-                    else if (includeUntyped && contains(mvColumn))
-                        values.put(mvColumn.getName(), get(mvColumn));
+                    else if (includeUntyped && _stringValues.containsKey(getFormFieldName(mvColumn)))
+                        values.put(mvColumn.getName(), _stringValues.get(getFormFieldName(mvColumn)));
                 }
             }
         }
@@ -642,107 +680,101 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String propName = e.getKey();
             if (Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
-            _values.put(propName, e.getValue());
-            _stringValues.put(propName, ConvertUtils.convert(e.getValue()));
+            setTypedValue(propName, e.getValue());
         }
     }
 
-    public void setStrings(Map<String, String> strings)
+    public void setStrings(Map<String, Object> strings)
     {
         assert null != _dynaClass;
 
-        _stringValues = strings;
+        _stringValues.clear();
+        _stringValues.putAll(strings);
         _values = null;
     }
 
-    public Map<String, String> getStrings()
+    public Map<String, Object> getStrings()
     {
         return _stringValues;
     }
 
-    public boolean contains(ColumnInfo col)
-    {
-        return _stringValues.containsKey(getFormFieldName(col));
-    }
+//    public boolean contains(ColumnInfo col)
+//    {
+//        return _stringValues.containsKey(getFormFieldName(col));
+//    }
 
     public boolean contains(DisplayColumn col, RenderContext ctx)
     {
         return _stringValues.containsKey(col.getFormFieldName(ctx));
     }
 
-    @Override
-    public String get(String arg0)
+    public String getAsString(String propName)
     {
-        return _stringValues.get(arg0);
+        Object value = _stringValues.get(propName);
+        if (value == null || value instanceof String)
+            return (String)value;
+        String[] arr = (String[])value;
+        if (arr.length == 0)
+            return null;
+        return arr.length > 0 ? arr[0] : null;
     }
 
-    public String get(ColumnInfo col)
+    public String getAsString(ColumnInfo col)
     {
-        return _stringValues.get(getFormFieldName(col));
+        return getAsString(getFormFieldName(col));
     }
 
-    @Override
-    public void set(String arg0, Object arg1)
+    public void setStringToBind(String propName, Object value)
     {
-        String v;
-        if (arg1 == null)
-            v = null;
-        else if (arg1 instanceof Object[])
-        {
-            // HACK: This is annoying, but TableViewForm insists on converting values to Strings before letting populateValues() bind.
-            // Doubly annoying is we need to work around StringArrayConverter's poor parsing of single string values as seen in Issue 5340.
-            // Convert into stringified array that org.apache.commons.beanutils.converters.StringArrayConverter can parse.
-            v = "{" + StringUtils.join((Object[])arg1, ",") + "}";
-        }
+        if (null == value || value instanceof String || value instanceof String[])
+            _stringValues.put(propName, value);
+        else if (value instanceof Collection<?> col && col.stream().allMatch(e -> null==e || e instanceof String))
+            _stringValues.put(propName, col.toArray(new String[0]));
         else
-        {
-            // Trim to prevent users from inadvertently letting in leading/trailing spaces, which cause confusion on filtering, sorting, joins, and many other places
-            v = arg1.toString().trim();
-        }
-        _stringValues.put(arg0, v);
+            _stringValues.put(propName, ConvertUtils.convert(value));
         _values = null;
     }
 
-    @Override
+    // TODO TableViewForm
     public boolean contains(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public Object get(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public Object get(String arg0, int arg1)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public DynaClass getDynaClass()
     {
-        return _dynaClass;
+        throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public void remove(String arg0, String arg1)
     {
-        throw new UnsupportedOperationException("No indexed properties in a table");
+        throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public void set(String arg0, String arg1, Object arg2)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
-    @Override
+    // TODO TableViewForm
     public void set(String arg0, int arg1, Object arg2)
     {
-        throw new UnsupportedOperationException("No indexed properties in a table");
+        throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
     public void validateBind(BindException errors)
@@ -843,10 +875,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         // handle Spring style markers
         IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
             if (name.startsWith(SpringActionController.FIELD_MARKER))
-                set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
+                setStringToBind(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
         });
-
-        BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
 
         // handle binding of base class ReturnURLForm
         PropertyValue pvReturn = params.getPropertyValue(ActionURL.Param.returnUrl.toString());
@@ -863,9 +893,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             Object value = pv.getValue();
             if (value instanceof String || value instanceof String[])
-                set(pv.getName(), value);
+                _stringValues.put(pv.getName(), value);
         }
 
+        BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
         validateBind(errors);
         return errors;
     }

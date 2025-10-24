@@ -69,6 +69,6 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
     @Override
     public DynaBean newInstance()
     {
-        return new TableViewForm(_tinfo);
+        throw new UnsupportedOperationException("TableWrapperDynaClass does not support newInstance()");
     }
 } 

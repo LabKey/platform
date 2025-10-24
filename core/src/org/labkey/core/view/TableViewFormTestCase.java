@@ -45,19 +45,19 @@ public class TableViewFormTestCase extends Assert
         Assert.assertEquals(ctx.getRequest().getUserPrincipal(), tf.getUser());
 
         //Test date handling
-        tf.set("datetimeNotNull", "2004-06-20");
+        tf.setStringToBind("datetimeNotNull", "2004-06-20");
         Date dt = (Date) tf.getTypedValue("datetimeNotNull");
         Assert.assertTrue("Date get", dt.equals(new Timestamp(DateUtil.parseISODateTime("2004-06-20"))));
 
         //Should turn empty strings into nulls
-        tf.set("text", "");
+        tf.setStringToBind("text", "");
         Assert.assertNull("Turn string to null", tf.getTypedValue("text"));
 
-        tf.set("bitNull", "1");
+        tf.setStringToBind("bitNull", "1");
         Assert.assertTrue((Boolean) tf.getTypedValue("bitNull"));
 
         tf.setPkVal(20);
-        Assert.assertEquals("20", tf.get("rowId"));
+        Assert.assertEquals("20", tf.getAsString("rowId"));
         Assert.assertEquals(20, tf.getTypedValue("rowId"));
     }
 
@@ -76,10 +76,10 @@ public class TableViewFormTestCase extends Assert
         //Assert.assertEquals("3 Non-null fields", errors.size(), 3);
         //Non-nullable fields are named NotNull
 
-        tf.set("datetimeNotNull", "2004-06-20");
-        tf.set("bitNotNull", "1");
-        tf.set("intNotNull", "20");
-        tf.set("datetimeNull", "garbage");
+        tf.setStringToBind("datetimeNotNull", "2004-06-20");
+        tf.setStringToBind("bitNotNull", "1");
+        tf.setStringToBind("intNotNull", "20");
+        tf.setStringToBind("datetimeNull", "garbage");
 
         BindException errors = new NullSafeBindException(tf, "form");
         tf.validateBind(errors);
@@ -103,11 +103,11 @@ public class TableViewFormTestCase extends Assert
         TestForm tf = new TestForm();
         tf.setViewContext(ctx);
 
-        tf.set("datetimeNotNull", "2004-06-20");
-        tf.set("bitNotNull", "1");
-        tf.set("intNotNull", "20");
-        tf.set("datetimeNull", "2004-06-20");
-        tf.set("text", "First test record");
+        tf.setStringToBind("datetimeNotNull", "2004-06-20");
+        tf.setStringToBind("bitNotNull", "1");
+        tf.setStringToBind("intNotNull", "20");
+        tf.setStringToBind("datetimeNull", "2004-06-20");
+        tf.setStringToBind("text", "First test record");
         tf.doInsert();
 
         Assert.assertNotNull(tf.getPkVal());
@@ -116,8 +116,8 @@ public class TableViewFormTestCase extends Assert
         Date createdDate = (Date) tf.getTypedValue("created");
 
         //Make sure date->string->date comes out right...
-        tf.set("datetimeNotNull", tf.get("created"));
-        tf.set("text", "Second test record");
+        tf.setStringToBind("datetimeNotNull", tf.getAsString("created"));
+        tf.setStringToBind("text", "Second test record");
         tf.getStrings().remove("rowId");
         tf.doInsert();
         Assert.assertEquals("Date time roundtrip: ", createdDate.getTime(), ((Date) tf.getTypedValue("datetimeNotNull")).getTime());

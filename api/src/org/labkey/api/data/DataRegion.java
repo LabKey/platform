@@ -2309,7 +2309,7 @@ public class DataRegion extends DisplayElement
                                         //UNDONE: Should we require a viewForm whenever someone
                                         //posts? I tend to think so.
                                         if (null != viewForm)
-                                            pkVal = viewForm.get(pkColName);
+                                            pkVal = viewForm.getAsString(pkColName);
 
                                         if (pkVal == null)
                                             pkVal = valueMap.get(pkColName);
