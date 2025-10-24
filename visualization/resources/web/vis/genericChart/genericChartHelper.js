@@ -14,6 +14,7 @@ if(!LABKEY.vis) {
 LABKEY.vis.GenericChartHelper = new function(){
 
     var DEFAULT_TICK_LABEL_MAX = 25;
+    var NULL_VALUE_LABEL ='[Blank]';
     var $ = jQuery;
 
     var getRenderTypes = function() {
@@ -130,7 +131,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                     ? properties[0].aggregate : properties.aggregate;
 
             if (LABKEY.Utils.isDefined(aggregateProps)) {
-                var aggLabel = LABKEY.Utils.isObject(aggregateProps) ? aggregateProps.name : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
+                var aggLabel = LABKEY.Utils.isObject(aggregateProps)
+                        ? (aggregateProps.name ?? aggregateProps.label)
+                        : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
             else {
@@ -288,21 +291,26 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getChartTypeBasedWidth = function(chartType, measures, measureStore, defaultWidth) {
         var width = defaultWidth;
 
-        if (chartType == 'bar_chart' && LABKEY.Utils.isObject(measures.x)) {
-            // 15px per bar + 15px between bars + 300 for default margins
-            var xBarCount = measureStore.members(measures.x.name).length;
-            width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
+        try {
+            if (chartType == 'bar_chart' && LABKEY.Utils.isObject(measures.x)) {
+                // 15px per bar + 15px between bars + 300 for default margins
+                var xBarCount = measureStore.members(measures.x.name).length;
+                width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
 
-            if (LABKEY.Utils.isObject(measures.xSub)) {
-                // 15px per bar per group + 200px between groups + 300 for default margins
-                var xSubCount = measureStore.members(measures.xSub.name).length;
-                width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
+                if (LABKEY.Utils.isObject(measures.xSub)) {
+                    // 15px per bar per group + 200px between groups + 300 for default margins
+                    var xSubCount = measureStore.members(measures.xSub.name).length;
+                    width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
+                }
             }
-        }
-        else if (chartType == 'box_plot' && LABKEY.Utils.isObject(measures.x)) {
-            // 20px per box + 20px between boxes + 300 for default margins
-            var xBoxCount = measureStore.members(measures.x.name).length;
-            width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
+            else if (chartType == 'box_plot' && LABKEY.Utils.isObject(measures.x)) {
+                // 20px per box + 20px between boxes + 300 for default margins
+                var xBoxCount = measureStore.members(measures.x.name).length;
+                width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
+            }
+        } catch (e) {
+            // measureStore.members can throw if the measure name is not found
+            // we don't care about this here when trying to figure out the width, just use the defaultWidth
         }
 
         return width;
@@ -481,6 +489,16 @@ LABKEY.vis.GenericChartHelper = new function(){
             else if (isMeasureXMatch && isNumericType(type)) {
                 scales.x.tickFormat = _getNumberFormatFn(fields[i], defaultFormatFn);
             }
+            else if (isMeasureXMatch && isDateType(type)) {
+                // Issue 47898 and 54125: use the date format defined by the field for tick labels
+                if (fields[i].format) {
+                    const dateFormat = fields[i].format;
+                    scales.x.tickFormat = function(v){
+                        const d = new Date(v);
+                        return LABKEY.vis.isValidDate(d) ? LABKEY.vis.formatDate(d, dateFormat) : v;
+                    };
+                }
+            }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
             $.each(yMeasures, function(idx, yMeasure) {
@@ -567,19 +585,23 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {}, xMeasureType = getMeasureType(measures.x);
         var xMeasureName = !measures.x ? undefined : (measures.x.converted ? measures.x.convertedName : measures.x.name);
+        const isBox = chartType === "box_plot";
+        const isScatter = chartType === "scatter_plot";
+        const rowPropName = isDateType(xMeasureType) ? 'value' : undefined; // Issue 54125
 
-        if (chartType === "box_plot") {
+        // Issue 50074: box plots with numeric x-axis to support null values
+        var nullValueLabel = isNumericType(xMeasureType) || isDateType(xMeasureType) ? NULL_VALUE_LABEL : undefined;
+
+        if (isBox) {
             if (!measures.x) {
                 aes.x = generateMeasurelessAcc(queryName);
             } else {
-                // Issue 50074: box plots with numeric x-axis to support null values
-                var nullValueLabel = isNumericType(xMeasureType) ? "[Blank]" : undefined;
-                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel);
+                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel, rowPropName);
             }
-        } else if (isNumericType(xMeasureType) || (chartType === 'scatter_plot' && measures.x.measure)) {
+        } else if (isNumericType(xMeasureType) || (isScatter && measures.x.measure)) {
             aes.x = generateContinuousAcc(xMeasureName);
         } else {
-            aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
+            aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel, rowPropName);
         }
 
         // charts that have multiple y-measures selected will need to put the aes.y function on their specific layer
@@ -670,6 +692,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
                         sep = ', \n';
 
+                        // include the std dev / SEM value in the hover display for a value if available
+                        if (row[measure.name] && row[measure.name].error !== undefined && row[measure.name].errorType !== undefined) {
+                            hover += sep + row[measure.name].errorType + ': ' + row[measure.name].error;
+                        }
+
                         distinctNames.push(measure.name);
                     }
                 }, this);
@@ -727,13 +754,14 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The name of the measure.
      * @param {String} measureLabel The label of the measure.
      * @param {String} nullValueLabel The label value to use for null values
+     * @param {String} propName (Optional) The property name to get from the row, defaults to undefined.
      * @returns {Function}
      */
-    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel)
+    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel, propName)
     {
         return function(row)
         {
-            var value = _getRowValue(row, measureName);
+            var value = _getRowValue(row, measureName, propName);
             if (value === null)
                 value = nullValueLabel !== undefined ? nullValueLabel : "Not in " + measureLabel;
 
@@ -1059,12 +1087,15 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.y = {};
             }
 
-            if (!scales.y.domain) {
-                var values = $.map(data, function(d) {return d.value;}),
-                    min = Math.min(0, Math.min.apply(Math, values)),
-                    max = Math.max(0, Math.max.apply(Math, values));
+            var values = $.map(data, d => d.value + (d.error ?? 0));
+            var min = Math.min(0, Math.min.apply(Math, values));
+            var max = Math.max(0, Math.max.apply(Math, values));
 
+            if (!scales.y.domain) {
                 scales.y.domain = [min, max];
+            } else if (scales.y.domain[0] === null) {
+                // if user has set a max but not a min, default to 0 for bar chart
+                scales.y.domain[0] = min;
             }
         }
         else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
@@ -1083,13 +1114,20 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
-                        const aVal = _getRowValue(a, xName);
-                        const bVal = _getRowValue(b, xName);
+                        // Issue 54125: use row value instead of formatted value for sorting
+                        const aVal = _getRowValue(a, xName, 'value');
+                        const bVal = _getRowValue(b, xName, 'value');
 
-                        // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
-                        // not currently included in this plot.
-                        if (isDate){
-                            return new Date(aVal) - new Date(bVal);
+                        if (aVal === null || aVal === NULL_VALUE_LABEL) {
+                            return 1;
+                        } else if (bVal === null || bVal === NULL_VALUE_LABEL) {
+                            return -1;
+                        } else if (isDate){
+                            const aDate = new Date(aVal);
+                            const bDate = new Date(bVal);
+                            if (!LABKEY.vis.isValidDate(aDate)) return 1;
+                            else if (!LABKEY.vis.isValidDate(bDate)) return -1;
+                            return aDate - bDate;
                         }
                         return aVal - bVal;
                     },
@@ -1180,6 +1218,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
                 if (!aes.shape && yMeasures.length > 1) {
                     layerAes.shape = emptyTextFn;
+                }
+
+                // allow for bar chart and line chart to provide an errorAes for showing error bars
+                if (geom && geom.errorAes) {
+                    layerAes.error = geom.errorAes.getValue;
                 }
 
                 layers.push(
@@ -1342,13 +1385,16 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
     };
 
-    var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
+    var _wrapXAxisTickTextLines = function(scales, plotConfig, maxTickLength, data) {
         if (scales.x && scales.x.scaleType === 'discrete') {
             var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
-            return (tickCount * maxTickLength * 4) > (plotConfig.width - 150);
+            // after 10 tick labels, we switch to rotating the label, so use that as the max here
+            tickCount = Math.min(tickCount, 10);
+            var approxTickLabelWidth = plotConfig.width / tickCount;
+            return Math.max(1, Math.floor((maxTickLength * 8) / approxTickLabelWidth));
         }
 
-        return false;
+        return 1;
     };
 
     var _getPlotMargins = function(renderType, scales, aes, data, plotConfig, chartConfig) {
@@ -1367,10 +1413,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             });
 
-            if (_willRotateXAxisTickText(scales, plotConfig, maxLen, data)) {
-                // min bottom margin: 50, max bottom margin: 150
-                margins.bottom = Math.min(Math.max(50, maxLen*5), 175);
-            }
+            var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
+            // min bottom margin: 50, max bottom margin: 150
+            margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog
@@ -1828,6 +1873,50 @@ LABKEY.vis.GenericChartHelper = new function(){
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
+    var generateDataForChartType = function(chartConfig, chartType, geom, data) {
+        let dimName = null;
+        let dimIsDate = false;
+        let subDimName = null;
+        let measureName = null;
+        let aggType = chartType === 'bar_chart' || chartType === 'pie_chart' ? 'COUNT' : null;
+        let aggErrorType = null;
+
+        if (chartConfig.measures.x) {
+            dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+            dimIsDate = isDateType(getMeasureType(chartConfig.measures.x));
+        }
+        if (chartConfig.measures.xSub) {
+            subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
+        } else if (chartConfig.measures.series) {
+            subDimName = chartConfig.measures.series.name;
+        }
+
+        // LKS y-axis supports multiple measures, but for aggregation we only support one
+        if (chartConfig.measures.y && (!LABKEY.Utils.isArray(chartConfig.measures.y) || chartConfig.measures.y.length === 1)) {
+            const yMeasure = LABKEY.Utils.isArray(chartConfig.measures.y) ? chartConfig.measures.y[0] : chartConfig.measures.y;
+            measureName = yMeasure.converted ? yMeasure.convertedName : yMeasure.name;
+
+            if (LABKEY.Utils.isDefined(yMeasure.aggregate)) {
+                aggType = yMeasure.aggregate.value || yMeasure.aggregate;
+                aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
+                aggErrorType = aggType === 'MEAN' ? yMeasure.errorBars : null;
+            }
+            else if (measureName != null && (chartType === 'bar_chart' || chartType === 'pie_chart')) {
+                // default to SUM for bar and pie charts
+                aggType = 'SUM';
+            }
+        }
+
+        if (aggType) {
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, NULL_VALUE_LABEL, false, aggErrorType, chartType === 'line_plot', dimIsDate ? 'value' : undefined);
+            if (aggErrorType) {
+                geom.errorAes = { getValue: d => d.error };
+            }
+        }
+
+        return data;
+    }
+
     var generateChartSVG = function(renderTo, chartConfig, measureStore, trendlineData) {
         var responseMetaData = measureStore.getResponseMetadata();
 
@@ -1850,28 +1939,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         var geom = generateGeom(chartType, chartConfig.geomOptions);
         var labels = generateLabels(chartConfig.labels);
 
-        if (chartType === 'bar_chart' || chartType === 'pie_chart') {
-            var dimName = null, subDimName = null; measureName = null, aggType = 'COUNT';
-
-            if (chartConfig.measures.x) {
-                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
-            }
-            if (chartConfig.measures.xSub) {
-                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
-            }
-            if (chartConfig.measures.y) {
-                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
-
-                if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
-                    aggType = chartConfig.measures.y.aggregate;
-                    aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
-                }
-                else if (measureName != null) {
-                    aggType = 'SUM';
-                }
-            }
-
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+        if (chartType === 'bar_chart' || chartType === 'pie_chart' || chartType === 'line_plot') {
+            data = generateDataForChartType(chartConfig, chartType, geom, data);
         }
 
         var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
@@ -1965,6 +2034,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateAggregateData: generateAggregateData,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
+        generateDataForChartType: generateDataForChartType,
         generateDiscreteAcc: generateDiscreteAcc,
         generateContinuousAcc: generateContinuousAcc,
         generateGroupingAcc: generateGroupingAcc,

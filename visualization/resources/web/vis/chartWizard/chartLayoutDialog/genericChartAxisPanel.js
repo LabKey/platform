@@ -137,6 +137,61 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             }
         });
 
+        this.aggregateMethodCombobox = Ext4.create('Ext.form.field.ComboBox', {
+            fieldLabel: 'Aggregate Method',
+            name: 'aggregate',
+            getInputValue: this.getAggregateMethod,
+            triggerAction: 'all',
+            mode: 'local',
+            width: 300,
+            store: Ext4.create('Ext.data.ArrayStore', {
+                fields: ['value', 'display'],
+                data: [
+                    ['', 'None'],
+                    ['SUM', 'Sum'],
+                    ['MIN', 'Min'],
+                    ['MAX', 'Max'],
+                    ['MEAN', 'Mean'],
+                    ['MEDIAN', 'Median']
+                ]
+            }),
+            forceSelection: 'true',
+            editable: false,
+            valueField: 'value',
+            displayField: 'display',
+            value: '',
+            listeners: {
+                scope: this,
+                change: function(rg, newValue) {
+                    this.onAggregateMethodChange(newValue);
+                }
+            }
+        });
+
+        this.errorBarsRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            fieldLabel: 'Error Bars',
+            columns: 1,
+            vertical: true,
+            items: [
+                Ext4.create('Ext.form.field.Radio', {
+                    boxLabel: 'None',
+                    inputValue: '',
+                    name: 'errorBars',
+                    checked: 'true'
+                }),
+                Ext4.create('Ext.form.field.Radio', {
+                    boxLabel: 'Standard Deviation',
+                    inputValue: 'SD',
+                    name: 'errorBars'
+                }),
+                Ext4.create('Ext.form.field.Radio', {
+                    boxLabel: 'Standard Error of the Mean',
+                    inputValue: 'SEM',
+                    name: 'errorBars'
+                })
+            ]
+        });
+
         this.items = this.getInputFields();
         
         this.callParent();
@@ -147,18 +202,27 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         return [
             this.axisLabelFieldContainer,
             this.scaleTypeRadioGroup,
-            this.scaleRangeRadioGroup
+            this.scaleRangeRadioGroup,
+            this.aggregateMethodCombobox,
+            this.errorBarsRadioGroup
         ];
     },
 
     getPanelOptionValues: function()
     {
-        return {
+        var values = {
             label: this.getAxisLabel(),
             scaleTrans: this.getScaleType(),
             scaleRangeType: this.getScaleRangeType(),
             scaleRange: this.getScaleRange()
         };
+
+        if (!this.aggregateMethodCombobox.hideForDatatype)
+            values.aggregate = this.getAggregateMethod();
+        if (!this.errorBarsRadioGroup.hideForDatatype)
+            values.errorBars = this.getErrorBarsType();
+
+        return values;
     },
 
     setPanelOptionValues: function(config)
@@ -181,6 +245,11 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         this.setScaleRange(config);
 
         this.adjustScaleAndRangeOptions();
+
+        if (config.aggregate)
+            this.setAggregateMethod(config.aggregate);
+        if (config.errorBars)
+            this.setErrorBars(config.errorBars);
     },
 
     getAxisLabel: function(){
@@ -210,6 +279,14 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     getDefaultAxisLabel : function()
     {
         return Ext4.isString(this.defaultAxisLabel) ? this.defaultAxisLabel : null;
+    },
+
+    getAggregateMethod : function(){
+        return this.aggregateMethodCombobox.getValue();
+    },
+
+    getErrorBarsType: function(){
+        return this.errorBarsRadioGroup.getValue().errorBars;
     },
 
     getScaleType: function(){
@@ -269,6 +346,24 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
+    onAggregateMethodChange: function(value) {
+        // reset error bars to None on aggregate change
+        this.setErrorBars('');
+    },
+
+    setAggregateMethod: function(value){
+        this.aggregateMethodCombobox.setValue(value);
+        this.onAggregateMethodChange(value);
+    },
+
+    setErrorBars: function(value){
+        this.errorBarsRadioGroup.setValue(value);
+        const selector = value === '' ? 'radio': 'radio[inputValue="' + value + '"]';
+        var radioComp = this.errorBarsRadioGroup.down(selector);
+        if (radioComp)
+            radioComp.setValue(true);
+    },
+
     validateManualScaleRange: function() {
         var range = this.getScaleRange();
 
@@ -292,13 +387,26 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (Ext4.isBoolean(isNumeric)) {
             this.setRangeOptionVisible(isNumeric);
             this.setScaleTypeOptionVisible(isNumeric);
+            this.setAggregateOptionVisible(isNumeric);
+            this.setErrorBarsOptionVisible(isNumeric);
         }
 
         //some render type axis options should always be hidden
-        var fixXChartTypes = this.renderType === 'bar_chart' || this.renderType === 'box_plot';
+        var isBar = this.renderType === 'bar_chart';
+        var isBox = this.renderType === 'box_plot';
+        var isLine = this.renderType === 'line_plot';
+        var fixXChartTypes = isBar || isBox;
         if ((this.axisName === 'x' && fixXChartTypes) || overrideAsHidden) {
             this.setRangeOptionVisible(false);
             this.setScaleTypeOptionVisible(false);
+        }
+
+        // only show aggregate method for line chart and error bars option for both bar and line
+        if (!(this.axisName === 'y' && isLine)) {
+            this.setAggregateOptionVisible(false);
+        }
+        if (!(this.axisName === 'y' && (isBar || isLine))) {
+            this.setErrorBarsOptionVisible(false);
         }
     },
 
@@ -310,6 +418,16 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     setScaleTypeOptionVisible : function(visible)
     {
         this.scaleTypeRadioGroup.hideForDatatype = !visible;
+    },
+
+    setAggregateOptionVisible : function(visible)
+    {
+        this.aggregateMethodCombobox.hideForDatatype = !visible;
+    },
+
+    setErrorBarsOptionVisible : function(visible)
+    {
+        this.errorBarsRadioGroup.hideForDatatype = !visible;
     },
 
     validateChanges : function ()

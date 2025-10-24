@@ -345,6 +345,13 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     {
                         var includeLayoutField = inputField.hideForDatatype ? false : this.hasMatchingLayoutOption(chartTypeLayoutOptions, inputField.layoutOptions);
                         inputField.setVisible(includeLayoutField);
+
+                        // hide aggregate method options and error bars options if there are multiple y-axis measures or sides in use
+                        if (inputField.isVisible() && (inputField.fieldLabel === 'Aggregate Method' || inputField.fieldLabel === 'Error Bars')) {
+                            const sides = LABKEY.vis.GenericChartHelper.getDistinctYAxisSides(measures);
+                            const yMeasureCount = LABKEY.Utils.isArray(measures.y) ? measures.y.length : (measures.y ? 1 : 0);
+                            inputField.setVisible(yMeasureCount < 2 && sides.length < 2);
+                        }
                     }, this);
                 }
             }, this);
