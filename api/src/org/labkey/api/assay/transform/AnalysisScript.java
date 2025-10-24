@@ -40,14 +40,7 @@ public class AnalysisScript
 
     private AnalysisScript(File script)
     {
-        try
-        {
-            _script = FileSystemLike.wrapFile(script.getParentFile(), script);
-        }
-        catch (IOException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        _script = new FileSystemLike.Builder(script).build().getRoot();
     }
 
     public FileLike getScript()

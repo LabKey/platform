@@ -22,7 +22,6 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunCreator;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.PlateUploadForm;
@@ -121,9 +120,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public AssayRunCreator<?> getRunCreator()
+    public PlateBasedRunCreator<?> getRunCreator()
     {
-        return new PlateBasedRunCreator(this);
+        return new PlateBasedRunCreator<>(this);
     }
 
     @Override
@@ -385,7 +384,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         }
     }
 
-    public static class CurveFitTableInfo extends EnumTableInfo
+    public static class CurveFitTableInfo extends EnumTableInfo<StatsService.CurveFitType>
     {
         PlateBasedAssayProvider _provider;
 

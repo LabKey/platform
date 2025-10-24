@@ -297,7 +297,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     DataExchangeHandler createDataExchangeHandler();
     /** Make a context that knows how to update a run that's already been stored in the database */
-    AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
+    AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
     /**
      * Make a context that knows how to do the import in the background, on a separate thread
      * (and therefore detached from the HTTP request that might have spawned it)
@@ -321,11 +321,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     @Nullable
     Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid);
-
-    /**
-     * Get the URL for an assay result row's LSID.
-     */
-    @Nullable ActionURL getResultRowURL(Container container, Lsid lsid);
 
     /**
      * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.

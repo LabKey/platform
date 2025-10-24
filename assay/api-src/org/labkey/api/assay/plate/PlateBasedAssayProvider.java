@@ -27,7 +27,6 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Collection;
 
 /**
