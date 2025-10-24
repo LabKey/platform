@@ -841,7 +841,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, uploadedData.getName());
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
-            transactionDetails.put(TransactionAuditProvider.TransactionDetail.APIAction, "AssayImportRunTask");
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayImportRunTask");
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, false, transactionDetails);
             ExpRun run = pair.second;
 

@@ -301,7 +301,7 @@ public class HttpUtil
         return request.getRemoteAddr();
     }
 
-    public static @Nullable String getProductName(HttpServletRequest request)
+    public static @Nullable String getProductNameFromReferer(HttpServletRequest request)
     {
         if (!isBrowser(request))
             return null;
@@ -315,6 +315,28 @@ public class HttpUtil
                 String actionName = url.getAction();
                 if ("app".equalsIgnoreCase(actionName) || "appdev".equalsIgnoreCase(actionName))
                     return url.getController();
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    public static @Nullable String getRefererRelativeURL(HttpServletRequest request)
+    {
+        if (!isBrowser(request))
+            return null;
+
+        String referer = request.getHeader("Referer");
+        if (referer != null)
+        {
+            try
+            {
+                ActionURL url = new ActionURL(referer);
+                return url.toContainerRelativeURL();
             }
             catch (Exception e)
             {

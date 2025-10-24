@@ -160,7 +160,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, _primaryFile.getName());
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
-            transactionDetails.put(TransactionAuditProvider.TransactionDetail.APIAction, "AssayUploadPipelineJob");
+            transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayUploadPipelineJob");
             ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps, transactionDetails/*TODO*/);
             setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");

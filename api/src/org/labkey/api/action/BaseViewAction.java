@@ -547,13 +547,21 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     public static Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails(ViewContext viewContext)
     {
         Map<TransactionAuditProvider.TransactionDetail, Object> map = new HashMap<>();
-        map.put(TransactionAuditProvider.TransactionDetail.APIAction, viewContext.getActionURL().getController() + "-" + viewContext.getActionURL().getAction());
-        String productName = HttpUtil.getProductName(viewContext.getRequest());
-        if (null != productName)
-            map.put(TransactionAuditProvider.TransactionDetail.Product, productName);
+        map.put(TransactionAuditProvider.TransactionDetail.Action, viewContext.getActionURL().getController() + "-" + viewContext.getActionURL().getAction());
         String clientLibrary = HttpUtil.getClientLibrary(viewContext.getRequest());
         if (null != clientLibrary)
             map.put(TransactionAuditProvider.TransactionDetail.ClientLibrary, clientLibrary);
+        else
+        {
+            String productName = HttpUtil.getProductNameFromReferer(viewContext.getRequest()); // app
+            if (null != productName)
+                map.put(TransactionAuditProvider.TransactionDetail.Product, productName);
+            else // LKS
+            {
+                String refererRelativeURL = HttpUtil.getRefererRelativeURL(viewContext.getRequest());
+                map.put(TransactionAuditProvider.TransactionDetail.Product, refererRelativeURL);
+            }
+        }
         return map;
     }
 

@@ -1,6 +1,7 @@
 package org.labkey.api.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
@@ -126,27 +127,44 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
 
     public enum TransactionDetail
     {
-        Operation(false),
-        AuditEvents(true),
-        ImportFileName(true),
-        //BackgroundImport(false),
-        ClientLibrary(false),
-        Product(false),
-        // CrossFolderImport(false),
-        // CrossTypeImport(false),
-        // AllowCreateStorage(false),
-        // UseTransactionAuditCache(false),
-        APIVersion(false),
-        APIAction(false),
-        QueryCommand(true),
-        BatchAction(false),
-        ImportOptions(true)
-        ;
+        AuditEvents(true, "The types of audit events generated during the transaction"),
+        ImportFileName(true, "The input filenames used for the import action"),
+        ClientLibrary(false, "The client library (R, Python, etc) used to perform the action"),
+        Product(false, "The product (Sample Manager, etc) this action originated from"),
+        Action(false, "The controller-action for this request"),
+        QueryCommand(true, "The query commands (insert.update) executed during the transaction"),
+        BatchAction(false, "If data iterator was used for insert/update"),
+        ImportOptions(true, "Various import parameters (CrossType, CrossFolder, etc) used during the import action"),
+        EditMethod(false, "The method used to insert/update data from the app (e.g., 'DetailEdit', 'GridEdit', etc)"),
+        RequestSource(false, "The URL where the request originated from");
 
         private final boolean multiValue;
-        TransactionDetail(boolean multiValue)
+        TransactionDetail(boolean multiValue, String description)
         {
             this.multiValue = multiValue;
+        }
+
+        public static TransactionDetail fromString(String key)
+        {
+            for (TransactionDetail detail : values())
+            {
+                if (detail.name().equalsIgnoreCase(key))
+                    return detail;
+            }
+            return null;
+        }
+
+        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails,  @NotNull Map<String, Object> auditDetails)
+        {
+            if (!auditDetails.isEmpty())
+            {
+                for (Map.Entry<String, Object> entry : auditDetails.entrySet())
+                {
+                    TransactionAuditProvider.TransactionDetail detail = TransactionAuditProvider.TransactionDetail.fromString(entry.getKey());
+                    if (detail != null)
+                        detail.add(transactionDetails, entry.getValue());
+                }
+            }
         }
 
         public void add(Map<TransactionDetail, Object> detailMap, Object value)

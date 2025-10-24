@@ -4645,6 +4645,8 @@ public class QueryController extends SpringActionController
 
             Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
 
+            Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
+
             Map<Enum, Object> configParameters = new HashMap<>();
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
@@ -4697,7 +4699,9 @@ public class QueryController extends SpringActionController
                     }
                     else
                     {
-                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), getTransactionAuditDetails());
+                        Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+                        TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetails);
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), transactionDetails);
                         AbstractQueryUpdateService.addTransactionAuditEvent(auditTransaction,  getUser(), auditEvent);
                     }
                     auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.QueryCommand, commandType.name());
