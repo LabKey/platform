@@ -151,7 +151,7 @@ public class PipeRootImpl implements PipeRoot
     {
         FileLike root = getRootFileLike();
         FileLike systemDir = root.resolveChild(SYSTEM_DIRECTORY_NAME);
-        if (systemDir.exists())
+        if (!systemDir.exists())
         {
             try
             {
