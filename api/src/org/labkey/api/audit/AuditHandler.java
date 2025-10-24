@@ -87,7 +87,7 @@ public interface AuditHandler
             String key = entry.getKey();
             // getDatasetRows() (at least) should return key==column.getName(), expect getColumn(name) to work
             ColumnInfo col = null==table ? null : table.getColumn(key);
-            if (col != null && col.getFk() instanceof MultiValuedForeignKey)
+            if (col != null && (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
                 isMultiValued = true;
 
             String nameFromAlias = key;
@@ -99,7 +99,7 @@ public interface AuditHandler
 
                 if (aliasColumn != null)
                 {
-                    if (aliasColumn.getFk() != null && aliasColumn.getFk() instanceof MultiValuedForeignKey)
+                    if (aliasColumn.getFk() != null && (aliasColumn.isMultiValued() || aliasColumn.getFk() instanceof MultiValuedForeignKey))
                         isMultiValued = true;
                     nameFromAlias = aliasColumn.getName();
                 }

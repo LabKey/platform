@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterMapStatement;
@@ -90,6 +91,13 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         MutableColumnInfo aliasCol = new AliasedColumn(this, alias, lsidCol)
         {
             @Override
+            public ForeignKey getFk()
+            {
+                // Do not traverse lookup
+                return null;
+            }
+
+            @Override
             public SQLFragment getValueSql(String tableAlias)
             {
                 return new SQLFragment("(SELECT ")
@@ -99,6 +107,12 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
                     .append(" ON AA.rowId = MM.alias")
                     .append(" WHERE MM.lsid = ").append(lsidCol.getValueSql(tableAlias))
                     .append(")");
+            }
+
+            @Override
+            public boolean isMultiValued()
+            {
+                return true;
             }
         };
 

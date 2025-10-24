@@ -290,6 +290,8 @@ public interface ColumnInfo extends ColumnRenderProperties
      */
     boolean isKeyField();
 
+    boolean isMultiValued();
+
     @Override
     boolean isMvEnabled();
 

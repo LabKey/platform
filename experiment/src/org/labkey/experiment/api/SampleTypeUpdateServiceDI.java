@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,10 +41,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConversionExceptionWithMessage;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -118,7 +115,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -1944,7 +1940,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         else
                             addColumn(to, i);
                     }
-                    else if (to.getFk() instanceof MultiValuedForeignKey)
+                    else if (to.isMultiValued() || to.getFk() instanceof MultiValuedForeignKey)
                     {
                         // pass-through multi-value columns -- converting will stringify a collection
                         if (isScopedField)

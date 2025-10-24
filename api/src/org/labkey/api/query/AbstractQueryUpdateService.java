@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -723,9 +722,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             !col.getJavaObjectClass().isInstance(value) &&
             !(value instanceof AttachmentFile) &&
             !(value instanceof MultipartFile) &&
-            !(value instanceof JSONArray) &&
             !(value instanceof String[]) &&
-            !(col.getFk() instanceof MultiValuedForeignKey))
+            !(col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
         {
             try
             {
