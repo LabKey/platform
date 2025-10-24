@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.json.JSONObject;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 
 import java.util.Date;
 
@@ -42,9 +43,20 @@ public abstract class CreatedModified
         return _createdBy.getUserProps();
     }
 
+    @JsonIgnore
+    public User getCreatedByUser()
+    {
+        return _createdBy;
+    }
+
     public void setCreatedBy(User createdBy)
     {
         _createdBy = createdBy;
+    }
+
+    public void setCreatedBy(int createdById)
+    {
+        _createdBy = UserManager.getUser(createdById);
     }
 
     @JsonProperty("modified")
@@ -73,8 +85,19 @@ public abstract class CreatedModified
         return _modifiedBy.getUserProps();
     }
 
+    @JsonIgnore
+    public User getModifiedByUser()
+    {
+        return _modifiedBy;
+    }
+
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public void setModifiedBy(int modifiedById)
+    {
+        _modifiedBy = UserManager.getUser(modifiedById);
     }
 }
