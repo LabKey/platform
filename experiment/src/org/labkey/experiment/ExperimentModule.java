@@ -25,24 +25,16 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongHashMap;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.DomainFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.data.SimpleFilter.OrClause;
-import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -89,7 +81,6 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -99,8 +90,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.Formats;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -886,103 +875,8 @@ public class ExperimentModule extends SpringModule
         }
 
         DatabaseMigrationService.get().registerSchemaHandler(new ExperimentMigrationSchemaHandler());
-
-        // Sample set materialized tables join on RowId to exp.Material. They also have a built-in Flag field.
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SampleTypeDomainKind.getSchema()) {
-            @Override
-            public @Nullable FieldKey getContainerFieldKey(TableInfo table)
-            {
-                return FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
-            }
-
-            @Override
-            public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
-            {
-                return new SQLClause(
-                    new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container")
-                        .appendInClause(containers, sourceTable.getSqlDialect())
-                        .append(")")
-                );
-            }
-
-            @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
-            {
-                // Sample-type-specific optimization
-                if (filter.column().equalsIgnoreCase("Flag"))
-                {
-                    // Select all rows where the built-in flag column equals the filter value
-                    orClause.addClause(
-                        new SQLClause(new SQLFragment(
-                            "RowId IN (SELECT RowId FROM exp.Material WHERE Container")
-                            .appendInClause(filter.containers(), sourceTable.getSqlDialect())
-                            .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
-                            .add(filter.condition().getParamVals()[0])
-                            .add(getCommentPropertyId(sourceTable))
-                        )
-                    );
-                }
-                else
-                {
-                    addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
-                }
-            }
-
-            @Override
-            public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
-            {
-                Collection<String> notCopiedLsids = new TableSelector(sourceTable, new CsvSet("LSID, RowId"), notCopiedFilter, null).getCollection(String.class);
-                if (!notCopiedLsids.isEmpty())
-                    LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
-            }
-        });
-
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DataClassDomainKind.getSchema()) {
-            @Override
-            public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
-            {
-                // Data classes have a built-in Flag field
-                addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
-            }
-
-            private static final Set<String> SEQUENCE_TABLES = Sets.newCaseInsensitiveHashSet("protsequence", "nucsequence", "molecule");
-            private static final Set<Long> SEQUENCE_IDS = new HashSet<>();
-
-            @Override
-            public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
-            {
-                Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
-                if (!notCopiedLsids.isEmpty())
-                    LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
-
-                String name = sourceTable.getName();
-                int idx = name.indexOf('_');
-                name = name.substring(idx + 1);
-
-                if (SEQUENCE_TABLES.contains(name))
-                {
-                    new TableSelector(targetTable, Collections.singleton("Ident")).stream(String.class)
-                        .map(ident -> {
-                            int i = ident.indexOf(':');
-                            try
-                            {
-                                return Long.parseLong(ident.substring(i + 1));
-                            }
-                            catch (Exception e)
-                            {
-                                throw new RuntimeException("Exception trying to split ident on ':' (" + ident + ")", e);
-                            }
-                        })
-                        .forEach(SEQUENCE_IDS::add);
-                }
-            }
-
-            @Override
-            public void afterSchema()
-            {
-                LOG.info("This is where we'll copy {} sequences into biologics.SequenceIdentity", SEQUENCE_IDS.size());
-            }
-        });
+        DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
+        DatabaseMigrationService.get().registerSchemaHandler(new DataClassMigrationSchemaHandler());
     }
 
     @Override

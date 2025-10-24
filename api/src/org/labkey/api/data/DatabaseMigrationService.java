@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
+import org.labkey.api.data.DatabaseMigrationService.MigrationSchemaHandler.Sequence;
 import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -62,8 +64,12 @@ public interface DatabaseMigrationService
         return null;
     }
 
+    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, Map<String, Sequence> schemaSequenceMap, MigrationSchemaHandler schemaHandler) {};
+
     interface MigrationSchemaHandler
     {
+        record Sequence(String schemaName, String tableName, String columnName, long lastValue) {}
+
         // Marker for tables to declare themselves as site-wide (no container filtering)
         FieldKey SITE_WIDE_TABLE = FieldKey.fromParts("site-wide");
 
@@ -86,7 +92,7 @@ public interface DatabaseMigrationService
         // and/or domain data filtering.)
         void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter);
 
-        void afterSchema();
+        void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap);
     }
 
     class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
@@ -248,7 +254,7 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void afterSchema()
+        public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
         {
         }
     }
