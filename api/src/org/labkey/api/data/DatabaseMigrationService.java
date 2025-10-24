@@ -3,7 +3,6 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 

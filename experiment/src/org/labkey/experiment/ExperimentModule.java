@@ -27,6 +27,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -936,13 +937,16 @@ public class ExperimentModule extends SpringModule
             }
         });
 
-        // Data classes have a built-in Flag field
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DataClassDomainKind.getSchema()) {
             @Override
             public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
             {
+                // Data classes have a built-in Flag field
                 addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
             }
+
+            private static final Set<String> SEQUENCE_TABLES = Sets.newCaseInsensitiveHashSet("protsequence", "nucsequence", "molecule");
+            private static final Set<Long> SEQUENCE_IDS = new HashSet<>();
 
             @Override
             public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
@@ -950,6 +954,33 @@ public class ExperimentModule extends SpringModule
                 Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
                 if (!notCopiedLsids.isEmpty())
                     LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
+
+                String name = sourceTable.getName();
+                int idx = name.indexOf('_');
+                name = name.substring(idx + 1);
+
+                if (SEQUENCE_TABLES.contains(name))
+                {
+                    new TableSelector(targetTable, Collections.singleton("Ident")).stream(String.class)
+                        .map(ident -> {
+                            int i = ident.indexOf(':');
+                            try
+                            {
+                                return Long.parseLong(ident.substring(i + 1));
+                            }
+                            catch (Exception e)
+                            {
+                                throw new RuntimeException("Exception trying to split ident on ':' (" + ident + ")", e);
+                            }
+                        })
+                        .forEach(SEQUENCE_IDS::add);
+                }
+            }
+
+            @Override
+            public void afterSchema()
+            {
+                LOG.info("This is where we'll copy {} sequences into biologics.SequenceIdentity", SEQUENCE_IDS.size());
             }
         });
     }
