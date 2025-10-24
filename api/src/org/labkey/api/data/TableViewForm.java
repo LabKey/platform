@@ -33,6 +33,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -455,14 +456,15 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             {
                 if (null != bindValue)
                 {
+                    propType = _dynaClass.getTruePropType(propName);
                     Object val;
-                    if (null != col)
+                    if (null != col && null != col.getKindOfQuantity())
                     {
-                        val = col.getConvertFn().apply(bindValue);
+                        // TODO MultiChoice switch to col.getConvertFn().apply(bindValue)
+                        val = Quantity.convert(bindValue, col.getDisplayUnit());
                     }
                     else
                     {
-                        propType = _dynaClass.getTruePropType(propName);
                         if (propType != null)
                             val = ConvertUtils.convert(bindValue, propType);
                         else
