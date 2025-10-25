@@ -272,21 +272,34 @@ public class ListImporter
                                 String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
                                 if (null != src)
                                 {
-                                    String sequence = "";
+                                    SQLFragment keyupdate;
 
-                                    int start = src.indexOf('\'');
-                                    int end = src.lastIndexOf('\'');
-
-                                    if (end > start)
+                                    // To best support crazy column names, reuse the regclass in the nextval() call when present
+                                    if (src.startsWith("nextval(") && src.endsWith("::regclass)"))
                                     {
-                                        sequence = src.substring(start + 1, end);
+                                        String setVal = src.replace("nextval(", "setval(");
+                                        setVal = setVal.replace("::regclass)", "::regclass, ");
+                                        keyupdate = new SQLFragment("SELECT ").append(SQLFragment.unsafe(setVal));
+                                    }
+                                    else
+                                    {
+                                        // In case there are sequences in the wild with different syntax, fall back on
+                                        // our previous strategy
+                                        String sequence = "";
+
+                                        int start = src.indexOf('\'');
+                                        int end = src.lastIndexOf('\'');
+
+                                        if (end > start)
+
+                                            sequence = src.substring(start + 1, end);
                                         if (!sequence.toLowerCase().startsWith("list."))
                                             sequence = "list." + sequence;
+                                        keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
                                     }
 
                                     String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
-                                    SQLFragment keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
-                                    keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
+                                    keyupdate.append(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
                                     keyupdate.append("), 1), false)");
                                     new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                 }
