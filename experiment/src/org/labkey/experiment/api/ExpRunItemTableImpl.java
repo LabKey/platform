@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterMapStatement;
@@ -116,6 +117,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             }
         };
 
+        aliasCol.setSqlTypeName(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR));
         aliasCol.setDescription("Contains the list of aliases for this data object");
         aliasCol.setCalculated(false);
         aliasCol.setNullable(true);
