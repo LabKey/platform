@@ -73,6 +73,9 @@ public interface DatabaseMigrationService
         // Marker for tables to declare themselves as site-wide (no container filtering)
         FieldKey SITE_WIDE_TABLE = FieldKey.fromParts("site-wide");
 
+        // Dummy value returned from getContainerFieldKey() to ensure that custom getContainerClause() method is called
+        FieldKey DUMMY_FIELD_KEY = FieldKey.fromParts("DUMMY");
+
         DbSchema getSchema();
 
         void beforeVerification();

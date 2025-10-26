@@ -3,7 +3,8 @@ package org.labkey.experiment;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DatabaseMigrationService.DomainFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -20,7 +21,7 @@ import org.labkey.api.util.logging.LogHelper;
 import java.util.Collection;
 import java.util.Set;
 
-class SampleTypeMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler
+class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
     private static final Logger LOG = LogHelper.getLogger(SampleTypeMigrationSchemaHandler.class, "Sample type migration status");
 
@@ -32,29 +33,39 @@ class SampleTypeMigrationSchemaHandler extends DatabaseMigrationService.DefaultM
     @Override
     public @Nullable FieldKey getContainerFieldKey(TableInfo table)
     {
-        return FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
+        return DUMMY_FIELD_KEY; // Unused dummy value -- see override below
     }
 
     @Override
     public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
     {
-        return new SQLClause(
-            new SQLFragment("RowId IN (SELECT RowId FROM exp.Material WHERE Container")
-                .appendInClause(containers, sourceTable.getSqlDialect())
-                .append(")")
+        String joinColumnName = getJoinColumnName(sourceTable);
+
+        return new SQLClause(new SQLFragment()
+            .appendIdentifier(joinColumnName)
+            .append(" IN (SELECT ")
+            .appendIdentifier(joinColumnName)
+            .append(" FROM exp.Material WHERE Container")
+            .appendInClause(containers, sourceTable.getSqlDialect())
+            .append(")")
         );
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DatabaseMigrationService.DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
     {
-        // Sample-type-specific optimization
+        // Sample-type-specific optimization - joining to exp.Material instead of exp.Object is much faster
         if (filter.column().equalsIgnoreCase("Flag"))
         {
+            String joinColumnName = getJoinColumnName(sourceTable);
+
             // Select all rows where the built-in flag column equals the filter value
             orClause.addClause(
-                new SQLClause(new SQLFragment(
-                    "RowId IN (SELECT RowId FROM exp.Material WHERE Container")
+                new SQLClause(new SQLFragment()
+                    .appendIdentifier(joinColumnName)
+                    .append(" IN (SELECT ")
+                    .appendIdentifier(joinColumnName)
+                    .append(" FROM exp.Material WHERE Container")
                     .appendInClause(filter.containers(), sourceTable.getSqlDialect())
                     .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
                     .add(filter.condition().getParamVals()[0])
@@ -68,9 +79,16 @@ class SampleTypeMigrationSchemaHandler extends DatabaseMigrationService.DefaultM
         }
     }
 
+    private String getJoinColumnName(TableInfo sourceTable)
+    {
+        // Provisioned sample type tables occasionally have no RowId column; hopefully they have an LSID column.
+        return sourceTable.getColumn("RowId") != null ? "RowId" : "LSID";
+    }
+
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
+        // TODO: delete orphaned rows in exp.Material and exp.Object. Be sure to handle no RowId case.
         Collection<String> notCopiedLsids = new TableSelector(sourceTable, new CsvSet("LSID, RowId"), notCopiedFilter, null).getCollection(String.class);
         if (!notCopiedLsids.isEmpty())
             LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));

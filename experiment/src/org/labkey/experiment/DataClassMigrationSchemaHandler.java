@@ -1,16 +1,21 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DatabaseMigrationService.DomainFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
@@ -25,7 +30,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class DataClassMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler
+class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
     private static final Logger LOG = LogHelper.getLogger(DataClassMigrationSchemaHandler.class, "Data class migration status");
 
@@ -35,7 +40,37 @@ class DataClassMigrationSchemaHandler extends DatabaseMigrationService.DefaultMi
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DatabaseMigrationService.DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public @Nullable FieldKey getContainerFieldKey(TableInfo table)
+    {
+        FieldKey fieldKey = super.getContainerFieldKey(table);
+        return fieldKey != null ? fieldKey : DUMMY_FIELD_KEY; // "DUMMY" case is a data class that lacks an FK
+    }
+
+    @Override
+    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    {
+        final FilterClause clause;
+
+        if (containerFieldKey != DUMMY_FIELD_KEY)
+        {
+            clause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        }
+        else
+        {
+            // There are a couple bad data class provisioned tables that lack an FK to exp.Data. In that case, craft the
+            // FilterClause explicitly.
+            clause = new SQLClause(
+                new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
+                .appendInClause(containers, sourceTable.getSqlDialect())
+                .append(")")
+            );
+        }
+
+        return clause;
+    }
+
+    @Override
+    public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
     {
         // Data classes have a built-in Flag field
         addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
@@ -47,6 +82,7 @@ class DataClassMigrationSchemaHandler extends DatabaseMigrationService.DefaultMi
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
+        // TODO: delete orphaned rows in exp.Data and exp.Object
         Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
         if (!notCopiedLsids.isEmpty())
             LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
@@ -90,7 +126,7 @@ class DataClassMigrationSchemaHandler extends DatabaseMigrationService.DefaultMi
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, sequenceMap.get("biologics"), new DatabaseMigrationService.DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, sequenceMap.get("biologics"), new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
                 public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)

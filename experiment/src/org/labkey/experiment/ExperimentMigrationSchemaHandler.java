@@ -47,7 +47,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         return switch (table.getName())
         {
-            case "Alias", "ObjectLegacyNames" -> FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
+            case "Alias", "ObjectLegacyNames" -> DUMMY_FIELD_KEY; // Unused dummy value -- see override below
             case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
             case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
             case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
