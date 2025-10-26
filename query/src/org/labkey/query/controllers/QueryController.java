@@ -4713,8 +4713,8 @@ public class QueryController extends SpringActionController
                 if (auditEvent != null)
                 {
                     auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
-                    if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.BatchAction)))
-                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.BatchAction, true);
+                    if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.DataIteratorUsed)))
+                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
                 }
 
                 if (commandType == CommandType.moveRows)
@@ -5140,6 +5140,7 @@ public class QueryController extends SpringActionController
 
             JSONArray resultArray = new JSONArray();
             JSONObject extraContext = json.optJSONObject("extraContext");
+            JSONObject auditDetails = json.optJSONObject("auditDetails");
 
             int startingErrorIndex = 0;
             int errorCount = 0;
@@ -5167,6 +5168,14 @@ public class QueryController extends SpringActionController
                         commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
                     }
                     commandObject.put("extraContext", commandExtraContext);
+                    Map<String, Object> commandAuditDetails = new HashMap<>();
+                    if (auditDetails != null)
+                        commandAuditDetails.putAll(auditDetails.toMap());
+                    if (commandObject.has("auditDetails"))
+                    {
+                        commandAuditDetails.putAll(commandObject.getJSONObject("auditDetails").toMap());
+                    }
+                    commandObject.put("auditDetails", commandAuditDetails);
 
                     JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted, i);
                     // Bail out immediately if we're going to return a failure-type response message

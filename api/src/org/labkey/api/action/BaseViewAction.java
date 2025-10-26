@@ -559,7 +559,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             else // LKS
             {
                 String refererRelativeURL = HttpUtil.getRefererRelativeURL(viewContext.getRequest());
-                map.put(TransactionAuditProvider.TransactionDetail.Product, refererRelativeURL);
+                map.put(TransactionAuditProvider.TransactionDetail.RequestSource, refererRelativeURL);
             }
         }
         return map;

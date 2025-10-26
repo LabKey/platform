@@ -133,10 +133,12 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         Product(false, "The product (Sample Manager, etc) this action originated from"),
         Action(false, "The controller-action for this request"),
         QueryCommand(true, "The query commands (insert.update) executed during the transaction"),
-        BatchAction(false, "If data iterator was used for insert/update"),
+        DataIteratorUsed(false, "If data iterator was used for insert/update"),
         ImportOptions(true, "Various import parameters (CrossType, CrossFolder, etc) used during the import action"),
         EditMethod(false, "The method used to insert/update data from the app (e.g., 'DetailEdit', 'GridEdit', etc)"),
-        RequestSource(false, "The URL where the request originated from");
+        RequestSource(false, "The URL where the request originated from"),
+        ETL(true, "The ETL process name involved in the transaction"),
+        FileWatcher(true, "File watcher source(s) involved in the transaction");
 
         private final boolean multiValue;
         TransactionDetail(boolean multiValue, String description)

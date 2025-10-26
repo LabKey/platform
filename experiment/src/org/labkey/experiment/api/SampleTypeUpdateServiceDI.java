@@ -562,7 +562,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
             if (configParameters != null)
-                configParameters.put(TransactionAuditProvider.TransactionDetail.BatchAction, true);
+                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
 
             try
             {

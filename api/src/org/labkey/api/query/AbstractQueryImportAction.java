@@ -885,7 +885,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     return 0;
                 if (auditEvent != null)
                 {
-                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.BatchAction, true /* qus.loadRows always use DIB*/);
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true /* qus.loadRows always use DIB*/);
                     auditEvent.addComment(auditAction, count);
                 }
 

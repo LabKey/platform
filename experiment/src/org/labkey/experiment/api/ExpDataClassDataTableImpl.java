@@ -1509,7 +1509,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
                 if (configParameters != null)
-                    configParameters.put(TransactionAuditProvider.TransactionDetail.BatchAction, true);
+                    configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
 
                 results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
             }
