@@ -640,6 +640,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             String propName = e.getKey();
             if (Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
+            setTypedValue(propName, e.getValue());
             // TODO MultiChoice To convert or not to convert???
             _stringValues.put(propName, e.getValue());
         }
@@ -672,10 +673,13 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         Object value = _stringValues.get(propName);
         if (value == null || value instanceof String)
             return (String)value;
-        String[] arr = (String[])value;
-        if (arr.length == 0)
-            return null;
-        return arr.length > 0 ? arr[0] : null;
+        if (value instanceof String[])
+        {
+            String[] arr = (String[]) value;
+            if (arr.length == 0)
+                return null;
+        }
+        return ConvertUtils.convert(value);
     }
 
     public String getAsString(ColumnInfo col)
