@@ -1222,39 +1222,7 @@ public class PipelineController extends SpringActionController
             else
             {
                 _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
-
-                if (OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG))
-                {
-                    // Be sure that the set of folder to apply the import to match the setting to enable/disable them
-                    if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().isEmpty()))
-                    {
-                        errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
-                    }
-                    else if (!form.isApplyToMultipleFolders() && form.getFolderRowIds() != null)
-                    {
-                        errors.reject(ERROR_MSG, "Folder RowIds provided when 'apply to multiple folders' not enabled.");
-                    }
-                }
-
-                // Be sure that the user has admin permissions to all selected folders and that all selected folders exist
-                if (form.getFolderRowIds() != null)
-                {
-                    for (Integer rowId : form.getFolderRowIds())
-                    {
-                        Container selectedContainer = ContainerManager.getForRowId(rowId);
-                        if (selectedContainer == null)
-                            errors.reject(ERROR_MSG, "Folder does not exist for selected RowId: " + rowId + ".");
-                        else if (!selectedContainer.hasPermission(getUser(), AdminPermission.class))
-                            errors.reject(ERROR_MSG, "You do not have the required permissions for the selected folder: " + selectedContainer.getTitle() + ".");
-                        else
-                            _importContainers.add(selectedContainer);
-                    }
-                }
-                else
-                {
-                    // default to importing the archive to the current container
-                    _importContainers.add(getContainer());
-                }
+                _importContainers.add(getContainer());
 
                 // Be sure that each import container has a valid pipeline root
                 for (Container container : _importContainers)
@@ -1263,19 +1231,6 @@ public class PipelineController extends SpringActionController
                     if (!PipelineService.get().hasValidPipelineRoot(container) || null == pipelineRoot)
                     {
                         errors.reject(ERROR_MSG, "Pipeline root not found for selected container: " + container.getTitle() + ".");
-                    }
-                }
-
-                if (OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG))
-                {
-                    // Be sure that the provided data types to import match the setting to enable/disable them
-                    if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().isEmpty()))
-                    {
-                        errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
-                    }
-                    else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
-                    {
-                        errors.reject(ERROR_MSG, "Folder data types provided when 'select specific objects to import' not enabled.");
                     }
                 }
             }
@@ -1302,7 +1257,7 @@ public class PipelineController extends SpringActionController
 
             if (Files.exists(_archiveFile))
             {
-                // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
+                // should be just the current container in the default case, and unzip the archive if necessary
                 for (Container container : _importContainers)
                 {
                     java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
@@ -1312,22 +1267,17 @@ public class PipelineController extends SpringActionController
                     containerArchiveXmlMap.put(container, archiveXml);
                 }
 
-                // create a new pipeline import job for applying the imported archive to each selected container
-                for (Container container : _importContainers)
-                {
-                    ImportOptions options = new ImportOptions(container.getId(), getUser().getUserId());
-                    options.setSkipQueryValidation(!form.isValidateQueries());
-                    options.setCreateSharedDatasets(form.isCreateSharedDatasets());
-                    options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
-                    options.setDataTypes(form.getDataTypes());
-                    options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
+                ImportOptions options = new ImportOptions(getContainer().getId(), getUser().getUserId());
+                options.setSkipQueryValidation(!form.isValidateQueries());
+                options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+                options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
+                options.setDataTypes(form.getDataTypes());
+                options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
-                    ComplianceService complianceService = ComplianceService.get();
-                    if (null != complianceService)
-                        options.setActivity(complianceService.getCurrentActivity(getViewContext()));
+                ComplianceService complianceService = ComplianceService.get();
+                options.setActivity(complianceService.getCurrentActivity(getViewContext()));
 
-                    success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container));
-                }
+                success = createImportPipelineJob(getContainer(), user, options, containerArchiveXmlMap.get(getContainer()));
             }
 
             // the original archive file would have been placed in the current container unzip dir, clean that up
