@@ -40,7 +40,14 @@ public class AnalysisScript
 
     private AnalysisScript(File script)
     {
-        _script = new FileSystemLike.Builder(script).build().getRoot();
+        if (!script.exists())
+        {
+            _script = new FileSystemLike.Builder(script).build().getRoot();
+        }
+        else
+        {
+            _script = FileSystemLike.wrapFile(script);
+        }
     }
 
     public FileLike getScript()
