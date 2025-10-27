@@ -16,8 +16,11 @@ import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
@@ -82,10 +85,49 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
-        // TODO: delete orphaned rows in exp.Data and exp.Object
         Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
         if (!notCopiedLsids.isEmpty())
-            LOG.info("   {} rows not copied", Formats.commaf0.format(notCopiedLsids.size()));
+        {
+            LOG.info("   {} rows not copied -- deleting associated rows from exp.Data, exp.Object, etc.", Formats.commaf0.format(notCopiedLsids.size()));
+            SqlDialect dialect = sourceTable.getSqlDialect();
+            SqlExecutor executor = new SqlExecutor(OntologyManager.getExpSchema());
+
+            // Delete from exp.Data (and associated tables)
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE LSID")
+                    .appendInClause(notCopiedLsids, dialect)
+                    .append(")")
+            );
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID")
+                    .appendInClause(notCopiedLsids, dialect)
+            );
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.Data WHERE LSID")
+                    .appendInClause(notCopiedLsids, dialect)
+            );
+
+            // Delete from exp.Object (and associated tables)
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
+                    .appendInClause(notCopiedLsids, dialect)
+                    .append(")")
+            );
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
+                    .appendInClause(notCopiedLsids, dialect)
+                    .append(")")
+            );
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
+                    .appendInClause(notCopiedLsids, dialect)
+                    .append(")")
+            );
+            executor.execute(
+                new SQLFragment("DELETE FROM exp.Object WHERE ObjectURI")
+                    .appendInClause(notCopiedLsids, dialect)
+            );
+        }
 
         String name = sourceTable.getName();
         int idx = name.indexOf('_');
