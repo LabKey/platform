@@ -116,7 +116,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -433,10 +432,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
         private void populateMenu()
         {
-            NavTree menu = getNavTree();
-            String label = getCaption();
-            menu.setId(getDataRegionName() + ".Menu." + label);
-
             if (getQueryDef() != null)
             {
                 NavTree editQueryItem;
@@ -444,13 +439,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
                 else
                     editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
-                editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
                 addMenuItem(editQueryItem);
 
                 if (getQueryDef().isMetadataEditable() && getQueryDef().canEditMetadata(getUser()))
                 {
                     NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
-                    editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
                     addMenuItem(editMetadataItem);
                 }
             }
@@ -466,7 +459,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 {
                     String name = query.getName();
                     NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name));
-                    item.setId(getDataRegionName() + ":" + label + ":" + name);
                     // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
                     // which can be expensive for some schemas
                     if (name.equals(current))
@@ -1123,7 +1115,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             if (urlInsert != null)
             {
                 NavTree insertNew = new NavTree(getInsertButtonText(getInsertButtonText(INSERT_ROW_TEXT)), urlInsert);
-                insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
                 button.addMenuItem(insertNew);
                 hasInsertNewOption = true;
             }
@@ -1135,7 +1126,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
             {
                 NavTree importData = new NavTree(getInsertButtonText(IMPORT_BULK_DATA_TEXT), urlImport);
-                importData.setId(getBaseMenuId() + ":Insert:Import");
                 button.addMenuItem(importData);
                 hasImportDataOption = true;
             }
@@ -1491,7 +1481,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         button.setTooltip("Grid views");
         button.setIconCls("table");
         NavTree menu = button.getNavTree();
-        menu.setId(getBaseMenuId() + ".Menu.GridViews");
 
         if (getSettings().isAllowCustomizeView())
             addCustomizeViewItems(button);
@@ -1514,7 +1503,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     {
         MenuButton button = new MenuButton("Reports");
         NavTree menu = button.getNavTree();
-        menu.setId(getBaseMenuId() + ".Menu.Reports");
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
@@ -1539,7 +1527,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
                     NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
-                    item.setId(getBaseMenuId() + ":Reports:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
                     item.setImageCls(designer.getIconCls());
 
@@ -1581,7 +1568,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
                 NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
-                item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
                 item.setImageSrc(designer.getIconURL());
                 item.setImageCls(designer.getIconCls());
                 button.addMenuItem(item);
@@ -1719,19 +1705,17 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 item.setSelected(true);
             }
             item.setScript(DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});");
-            item.setId(getBaseMenuId() + ":GridViews:" + label);
             button.addMenuItem(item);
         }
 
         TableInfo t = getTable();
-        if (t instanceof UnionTable)
+        if (t instanceof UnionTable ut)
         {
-            t = ((UnionTable) t).getComponentTable();   // check against a component table
+            t = ut.getComponentTable();   // check against a component table
         }
         if (null != t && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
-            containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
             ContainerFilter selectedFilter = getContainerFilter();
@@ -1744,8 +1728,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 String propName = getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME;
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
-
-                filterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter:" + filterType);
 
                 if (selectedFilterType == filterType)
                 {
@@ -1815,7 +1797,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
                 item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(""));
-                item.setId(getBaseMenuId() + ":GridViews:default");
                 if ("".equals(currentView))
                     item.setStrong(true);
             }
@@ -1825,7 +1806,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
                 item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(name));
-                item.setId(getBaseMenuId() + ":GridViews:grid-" + PageFlowUtil.filter(name));
                 if (name.equals(currentView))
                     item.setStrong(true);
             }
@@ -1929,7 +1909,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 String reportId = report.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), (ActionURL) null);
-                item.setId(getBaseMenuId() + ":Reports:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
                 item.setImageSrc(ReportUtil.getIconUrl(getContainer(), report));
@@ -2012,7 +1991,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
 
             NavTree customizeView = new NavTree("Customize Grid");
-            customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
             customizeView.setScript(DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".toggleShowCustomizeView();");
             customizeView.setImageCls("fa fa-pencil");
             button.addMenuItem(customizeView);
@@ -2024,7 +2002,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             if (provider != null)
             {
                 NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
-                item.setId(getBaseMenuId() + ":GridViews:Edit Snapshot");
             }
         }
     }
@@ -2036,7 +2013,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             url.addParameter(entry.getKey(), entry.getValue());
 
         NavTree item = button.addMenuItem("Manage Views", url);
-        item.setId(getBaseMenuId() + ":GridViews:Manage Views");
         item.setImageCls("fa fa-cog");
     }
 

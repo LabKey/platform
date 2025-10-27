@@ -214,7 +214,7 @@ public class StatementDataIterator extends AbstractDataIterator
         _currentBinding = _bindings[0];
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex)
-            _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
+            _batchSize = Math.max(10, 10000/Math.max(2, _currentBinding.length));
 
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
