@@ -1018,12 +1018,6 @@ public class DomainUtil
                 return prefix + invalidPattenError;
         }
 
-        // Issue 53831: add a specific check for assay name length since we append onto the name when creating the assay domains (ex. "<assay nam> Batch Fields")
-        // which makes that actual max less than the DB size of 200
-        int assayNameLengthMax = 150;
-        if ("Assay Design".equalsIgnoreCase(kindName) && domainName.length() > assayNameLengthMax)
-            return "Value is too long for assay design name, a maximum length of " + assayNameLengthMax + " is allowed. The supplied value, '" + StringUtils.abbreviateMiddle(domainName, "...", 50) + "', was " + domainName.length() + " characters long.";
-
         return null;
     }
 
