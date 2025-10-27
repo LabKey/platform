@@ -909,7 +909,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         protected Object getInputValue(RenderContext ctx)
         {
             TableViewForm viewForm = ctx.getForm();
-            return viewForm.getStrings().get(_inputName);
+            return viewForm.getValuesToBind().get(_inputName);
         }
     }
 

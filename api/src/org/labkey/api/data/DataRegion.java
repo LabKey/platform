@@ -2058,7 +2058,7 @@ public class DataRegion extends DisplayElement
         {
             TableViewForm form = ctx.getForm();
             if (null != form)
-                ctx.setRow((Map) form.getStrings());
+                ctx.setRow(form.getValuesToBind());
         }
         renderForm(ctx, out);
     }

@@ -1084,7 +1084,7 @@ public class AnnouncementsController extends SpringActionController
                 cal.add(Calendar.MONTH, 1);
 
                 String expires = DateUtil.formatDate(c, cal.getTime());
-                form.setStringToBind("expires", expires);
+                form.setValueToBind("expires", expires);
                 currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 assignedTo = settings.getDefaultAssignedTo();
             }
@@ -1094,8 +1094,8 @@ public class AnnouncementsController extends SpringActionController
                 assert null == form.getAsString("title");
                 assert null == form.getAsString("expires");
 
-                form.setStringToBind("title", latestPost.getTitle());
-                form.setStringToBind("status", "Active");  // By default, every new response resets status to active, #35047
+                form.setValueToBind("title", latestPost.getTitle());
+                form.setValueToBind("status", "Active");  // By default, every new response resets status to active, #35047
                 form.setTypedValue("expires", DateUtil.formatDate(c, latestPost.getExpires()));
 
                 assignedTo = latestPost.getAssignedTo();

@@ -164,7 +164,7 @@ public class MVDisplayColumn extends DataColumn
         if (col != null)
         {
             String formFieldName = ctx.getForm().getFormFieldName(col);
-            if (null != viewForm && viewForm.getStrings().containsKey(formFieldName))
+            if (null != viewForm && viewForm.getValuesToBind().containsKey(formFieldName))
                 val = viewForm.getAsString(formFieldName);
             else if (ctx.getRow() != null)
             {

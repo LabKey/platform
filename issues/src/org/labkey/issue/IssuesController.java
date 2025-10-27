@@ -753,7 +753,7 @@ public class IssuesController extends SpringActionController
                             Object value = rec.get(prop);
                             stringMap.put(prop, JSONObject.NULL.equals(value) ? null : value.toString());
                         }
-                        form.setStrings(stringMap);
+                        form.setValuesToBind(stringMap);
                         _issueForms.add(form);
                     }
                 }
@@ -782,7 +782,7 @@ public class IssuesController extends SpringActionController
         @Override
         Issue.action getAction(IssuesForm form)
         {
-            if (form.getStrings().containsKey("action"))
+            if (form.getValuesToBind().containsKey("action"))
                 return Issue.action.valueOf(form.getAsString("action"));
             return null;
         }
@@ -815,15 +815,15 @@ public class IssuesController extends SpringActionController
                     IssueObject prevIssue = action != Issue.action.insert ? IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId()) : null;
                     Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();
 
-                    Map<String, Object> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
+                    Map<String, Object> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getValuesToBind());
                     for (DomainProperty prop : issueListDef.getDomain(getUser()).getProperties())
                     {
                         if (!IssueDefDomainKind.RESOLUTION_LOOKUP.equalsIgnoreCase(prop.getName()))
                             stringMap.computeIfAbsent(prop.getName(), (propName) -> Objects.toString(prevIssueProps.get(propName), null));
                     }
                     // Be sure that the posted values take precedence, even if they're null
-                    stringMap.putAll(issuesForm.getStrings());
-                    issuesForm.setStrings(stringMap);
+                    stringMap.putAll(issuesForm.getValuesToBind());
+                    issuesForm.setValuesToBind(stringMap);
                 }
                 IssueObject issue = issuesForm.getBean();
 
@@ -2217,9 +2217,9 @@ public class IssuesController extends SpringActionController
             setValidateRequired(false);
         }
 
-        private static Map<String, Class> extraProps()
+        private static Map<String, Class<?>> extraProps()
         {
-            Map<String, Class> map = new LinkedHashMap<>();
+            Map<String, Class<?>> map = new LinkedHashMap<>();
             map.put("action", String.class);
             map.put("callbackURL", String.class);
             return map;
@@ -2227,7 +2227,7 @@ public class IssuesController extends SpringActionController
 
         public Issue.action getAction()
         {
-            if (getStrings().containsKey("action"))
+            if (getValuesToBind().containsKey("action"))
                 return Issue.action.valueOf(getAsString("action"));
 
             throw new NotFoundException("No action specified");
