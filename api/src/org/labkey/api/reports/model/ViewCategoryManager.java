@@ -42,12 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: klum
- * Date: Oct 12, 2011
- * Time: 7:13:20 PM
- */
-public class ViewCategoryManager extends ContainerManager.AbstractContainerListener
+public class ViewCategoryManager implements ContainerManager.ContainerListener
 {
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
