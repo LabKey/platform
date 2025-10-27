@@ -51,7 +51,9 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -799,13 +801,24 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             if (matchedFile == null)
                 throw new PipelineJobException("No output files matched assay file type: " + assayFileType);
 
+            User user = getJob().getUser();
+            Container container = getJob().getContainer();
+
+            String fileWatcherDescription = getJob().getDescription();
+            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent = tx.getAuditEvent();
+            if (transactionAuditEvent != null)
+                transactionAuditEvent.addDetail(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription);
+            else
+            {
+                transactionAuditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, QueryService.AuditAction.RELOAD, Map.of(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription));
+                AbstractQueryUpdateService.addTransactionAuditEvent(tx, user, transactionAuditEvent);
+            }
+
             // Issue 22587: Create ExpData for the output file from the RecordedActions if necessary so that we
             // ensure the generated bit is set on the ExpData.  Otherwise, the DefaultAssayRunCreator will create
             // the ExpData but without the generated bit.
             createData(matchedFile, assayDataType);
 
-            User user = getJob().getUser();
-            Container container = getJob().getContainer();
 
             AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
                     = provider.createRunUploadFactory(protocol, user, container);
