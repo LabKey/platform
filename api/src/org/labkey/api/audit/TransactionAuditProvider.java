@@ -127,18 +127,18 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
 
     public enum TransactionDetail
     {
-        AuditEvents(true, "The types of audit events generated during the transaction"),
-        ImportFileName(true, "The input filenames used for the import action"),
-        ClientLibrary(false, "The client library (R, Python, etc) used to perform the action"),
-        Product(false, "The product (Sample Manager, etc) this action originated from"),
         Action(false, "The controller-action for this request"),
-        QueryCommand(true, "The query commands (insert.update) executed during the transaction"),
+        AuditEvents(true, "The types of audit events generated during the transaction"),
+        ClientLibrary(false, "The client library (R, Python, etc) used to perform the action"),
         DataIteratorUsed(false, "If data iterator was used for insert/update"),
-        ImportOptions(true, "Various import parameters (CrossType, CrossFolder, etc) used during the import action"),
         EditMethod(false, "The method used to insert/update data from the app (e.g., 'DetailEdit', 'GridEdit', etc)"),
-        RequestSource(false, "The URL where the request originated from"),
         ETL(true, "The ETL process name involved in the transaction"),
-        FileWatcher(true, "File watcher source(s) involved in the transaction");
+        FileWatcher(true, "File watcher source(s) involved in the transaction"),
+        ImportFileName(true, "The input filenames used for the import action"),
+        ImportOptions(true, "Various import parameters (CrossType, CrossFolder, etc) used during the import action"),
+        Product(false, "The product (Sample Manager, etc) this action originated from"),
+        QueryCommand(true, "The query commands (insert.update) executed during the transaction"),
+        RequestSource(false, "The URL where the request originated from");
 
         private final boolean multiValue;
         TransactionDetail(boolean multiValue, String description)
