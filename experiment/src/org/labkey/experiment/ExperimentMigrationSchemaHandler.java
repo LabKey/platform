@@ -3,7 +3,9 @@ package org.labkey.experiment;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
-import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationConfiguration;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -15,10 +17,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-class ExperimentMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler
+class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
     public ExperimentMigrationSchemaHandler()
     {
@@ -42,12 +47,21 @@ class ExperimentMigrationSchemaHandler extends DatabaseMigrationService.DefaultM
     {
         return switch (table.getName())
         {
-            case "Alias", "ObjectLegacyNames" -> FieldKey.fromParts("DUMMY"); // Unused dummy value -- see override below
+            case "Alias", "ObjectLegacyNames" -> DUMMY_FIELD_KEY; // Unused dummy value -- see override below
             case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
             case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
             case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
             default -> super.getContainerFieldKey(table);
         };
+    }
+
+    @Override
+    public List<TableInfo> getTablesToCopy()
+    {
+        // No need to populate the MaterialIndexed table -- new server should be completely re-indexed after migration
+        List<TableInfo> tables = super.getTablesToCopy();
+        tables.remove(ExperimentServiceImpl.get().getTinfoMaterialIndexed());
+        return tables;
     }
 
     @Override
@@ -104,7 +118,7 @@ class ExperimentMigrationSchemaHandler extends DatabaseMigrationService.DefaultM
     }
 
     @Override
-    public void afterSchema()
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
