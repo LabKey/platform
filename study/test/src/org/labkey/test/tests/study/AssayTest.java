@@ -68,6 +68,7 @@ public class AssayTest extends AbstractAssayTest
     private static final String ISSUE_53625_PROJECT = "Issue53625Project";
     private static final String ISSUE_53616_ASSAY = "Issue53616Assay";
     private static final String ISSUE_53616_PROJECT = "Issue53616Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
+    private static final String ISSUE_53831_PROJECT = "Issue53831Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
     private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
 
@@ -88,8 +89,24 @@ public class AssayTest extends AbstractAssayTest
         _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, false);
         _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53625_PROJECT, false);
+        _containerHelper.deleteProject(ISSUE_53831_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
+    }
+
+    // Issue 53831: Assay name max length check
+    @Test
+    public void testAssayNameMaxLength() throws Exception
+    {
+        _containerHelper.createProject(ISSUE_53831_PROJECT, "Assay");
+        goToProjectHome(ISSUE_53831_PROJECT);
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", "a" + "0123456789".repeat(15));
+        List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
+        checker().verifyEquals("Wrong number of errors", 1, errors.size());
+        checker().verifyEquals("Wrong error message: " + errors.get(0),
+                "Value is too long for assay design name, a maximum length of 150 is allowed. The supplied value, 'a01234567890123456789012...78901234567890123456789', was 151 characters long.",
+                errors.get(0));
+        assayDesignerPage.clickCancel();
     }
 
     // Issue 53616: Assay creation attempt after an error results in "Assay protocol already exists for this name."
