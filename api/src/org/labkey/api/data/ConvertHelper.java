@@ -862,7 +862,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value instanceof String s)
             {
                 // If the value is wrapped with { and }, let the beanutils converter tokenize the values.
-                // This let's us handle Issue 5340 while allowing multi-value strings to be parsed.
+                // This lets us handle Issue 5340 while allowing multi-value strings to be parsed.
                 if (s.startsWith("{") && s.endsWith("}"))
                     return _nested.convert(type, value);
             }
