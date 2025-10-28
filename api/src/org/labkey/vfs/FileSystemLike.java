@@ -1,5 +1,6 @@
 package org.labkey.vfs;
 
+import com.fasterxml.jackson.databind.DeserializationContext;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -188,6 +189,26 @@ public interface FileSystemLike
 
 
         public final String S3_SCHEME = "s3"; //  S3FileSystemProvider.getScheme();
+
+        public FileSystemLike build(DeserializationContext ctx)
+        {
+            if (null != ctx && S3_SCHEME.equals(uri.getScheme()))
+            {
+                Map<Path, FileSystemLike> map;
+                if (null == (map = (Map<Path, FileSystemLike>) ctx.getAttribute(FileSystemLike.Builder.class.getName())))
+                    ctx.setAttribute(FileSystemLike.Builder.class.getName(), (map = new HashMap<>()));
+                Path fsKey = new Path(containerId, configName);
+                FileSystemLike cloud = map.get(fsKey);
+                if (null == cloud)
+                {
+                    // cloud is always caching we don't care if caching values match
+                    cloud = build();
+                    map.put(fsKey, cloud);
+                }
+                return cloud;
+            }
+            return build();
+        }
 
         public FileSystemLike build()
         {

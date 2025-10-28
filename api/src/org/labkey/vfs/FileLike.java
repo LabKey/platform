@@ -191,7 +191,7 @@ public interface FileLike extends Comparable<FileLike>
                 b.container(node.get("containerId").asText());
             if (node.has("configName"))
                 b.config(node.get("configName").asText());
-            return b.build().resolveFile(Path.parse(path));
+            return b.build(ctx).resolveFile(Path.parse(path));
         }
     }
 }
