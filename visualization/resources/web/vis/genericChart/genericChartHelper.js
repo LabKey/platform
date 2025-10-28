@@ -1949,14 +1949,19 @@ LABKEY.vis.GenericChartHelper = new function(){
             return;
 
         var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData);
+        let plots = [];
         $.each(plotConfigArr, function(idx, plotConfig) {
             if (chartType === 'pie_chart') {
-                new LABKEY.vis.PieChart(plotConfig);
+                plots.push(new LABKEY.vis.PieChart(plotConfig));
             }
             else {
-                new LABKEY.vis.Plot(plotConfig).render();
+                const plot = new LABKEY.vis.Plot(plotConfig);
+                plot.render();
+                plots.push(plot);
             }
         }, this);
+
+        return plots;
     }
 
     var _renderMessages = function(divId, messages) {
