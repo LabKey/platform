@@ -45,9 +45,14 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private final String _counterSeqPrefix;
     private boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
     private final List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
-    private Map<String, String> _importAliases;
+    private final Map<String, String> _importAliases;
 
     public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, @Nullable Map<String, String> importAliases)
+    {
+        this(di, context, parentTable, container, getNonConflictCountFn, counterSeqPrefix, importAliases, "name", "nameExpression");
+    }
+
+    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, @Nullable Map<String, String> importAliases, String nameColName, String expressionColName)
     {
         super(DataIteratorUtil.wrapMap(di, false));
         _context = context;
@@ -55,8 +60,8 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         _importAliases = importAliases;
 
         Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-        _nameCol = map.get("name");
-        _expressionCol = map.get("nameExpression");
+        _nameCol = map.get(nameColName);
+        _expressionCol = map.get(expressionColName);
         assert _nameCol != null;
         assert _expressionCol != null;
 

@@ -21,17 +21,29 @@ public class NameExpressionDataIteratorBuilder implements DataIteratorBuilder
 {
     final DataIteratorBuilder _pre;
     private final TableInfo _parentTable;
+    private final String _nameColumnName;
+    private final String _nameExpressionColumnName;
 
     public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, TableInfo parentTable)
     {
         _pre = pre;
         _parentTable = parentTable;
+        _nameColumnName = "name";
+        _nameExpressionColumnName = "nameExpression";
+    }
+
+    public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, TableInfo parentTable, String nameColumn, String nameExpressionColumn)
+    {
+        _pre = pre;
+        _parentTable = parentTable;
+        _nameColumnName = nameColumn;
+        _nameExpressionColumnName = nameExpressionColumn;
     }
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         DataIterator pre = _pre.getDataIterator(context);
-        return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _parentTable, null, null, null, null));
+        return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _parentTable, null, null, null, null, _nameColumnName, _nameExpressionColumnName));
     }
 }
