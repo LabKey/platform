@@ -129,7 +129,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         }
 
         String logFile = protocol.timestampLog() ? FileUtil.makeFileNameWithTimestamp(_baseName) : _baseName;
-        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", logFile);
+        setupLocalDirectoryAndJobLog(getPipeRoot(), logFile);
     }
 
     /**
@@ -166,7 +166,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
 
-        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
+        setupLocalDirectoryAndJobLog(getPipeRoot(), _baseName);
     }
 
     @Override

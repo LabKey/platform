@@ -25,6 +25,7 @@ import datadog.trace.api.CorrelationIdentifier;
 import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1872,7 +1873,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     public static String getClassNameFromJson(String serialized)
     {
         // Expect [ "org.labkey....", {....
-        if (StringUtils.startsWith(serialized, "["))
+        if (Strings.CS.startsWith(serialized, "["))
         {
             return StringUtils.substringBetween(serialized, "\"");
         }
@@ -2019,10 +2020,9 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * Note: Override getDefaultLocalDirectoryString if piperoot isn't the desired local directory
      *
      * @param pipeRoot Pipeline's root directory
-     * @param moduleName supplying the pipeline
      * @param baseLogFileName base name of the log file
      */
-    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
+    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String baseLogFileName)
     {
         LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, baseLogFileName, getWorkingDirectoryString());
         setLocalDirectory(localDirectory);
