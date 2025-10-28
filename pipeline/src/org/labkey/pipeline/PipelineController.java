@@ -1272,7 +1272,6 @@ public class PipelineController extends SpringActionController
                 options.setCreateSharedDatasets(form.isCreateSharedDatasets());
                 options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
                 options.setDataTypes(form.getDataTypes());
-                options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
                 ComplianceService complianceService = ComplianceService.get();
                 options.setActivity(complianceService.getCurrentActivity(getViewContext()));
@@ -1367,26 +1366,6 @@ public class PipelineController extends SpringActionController
         public void setCreateSharedDatasets(boolean createSharedDatasets)
         {
             _createSharedDatasets = createSharedDatasets;
-        }
-
-        public boolean isSpecificImportOptions()
-        {
-            return _specificImportOptions;
-        }
-
-        public void setSpecificImportOptions(boolean specificImportOptions)
-        {
-            _specificImportOptions = specificImportOptions;
-        }
-
-        public boolean isApplyToMultipleFolders()
-        {
-            return _applyToMultipleFolders;
-        }
-
-        public void setApplyToMultipleFolders(boolean applyToMultipleFolders)
-        {
-            _applyToMultipleFolders = applyToMultipleFolders;
         }
 
         public boolean isFailForUndefinedVisits()
