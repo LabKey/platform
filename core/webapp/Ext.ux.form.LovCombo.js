@@ -292,12 +292,10 @@ Ext.ux.form.LovCombo = Ext.extend(Ext.form.ComboBox, {
 			if(this.valueField && this.store.getCount()) {
                 this.store.suspendEvents(true);
 				this.store.clearFilter();
-				this.store.each(function(r) {
+				this.store.each(function (r) {
 					var checked = !(!v.match(
-						 '(^|' + this.separator + ')' + RegExp.escape(r.get(this.valueField))
-						+'(' + this.separator + '|$)'))
-					;
-
+							'(^|' + this.separator + ')' + RegExp.escape(JSON.stringify(r.get(this.valueField)))
+							+ '(' + this.separator + '|$)'));
 					r.set(this.checkField, checked);
 				}, this);
                 this.store.resumeEvents();

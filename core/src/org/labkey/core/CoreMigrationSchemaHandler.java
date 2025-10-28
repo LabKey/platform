@@ -1,0 +1,187 @@
+package org.labkey.core;
+
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseMigrationConfiguration;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TestSchema;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.GUID;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler implements DatabaseMigrationService.MigrationFilter
+{
+    static void register()
+    {
+        CoreMigrationSchemaHandler schemaHandler = new CoreMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(schemaHandler);
+        DatabaseMigrationService.get().registerMigrationFilter(schemaHandler);
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return sourceTable.getName().equals("PropertySets") ? FieldKey.fromParts("ObjectId") : super.getContainerFieldKey(sourceTable);
+            }
+        });
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
+            @Override
+            public List<TableInfo> getTablesToCopy()
+            {
+                return List.of(); // Skip all test tables
+            }
+        });
+
+        // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
+        if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
+        {
+            DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            {
+                @Override
+                public List<TableInfo> getTablesToCopy()
+                {
+                    return List.of(); // Skip all vehicle tables
+                }
+            });
+        }
+    }
+
+    private CoreMigrationSchemaHandler()
+    {
+        super(CoreSchema.getInstance().getSchema());
+    }
+
+    @Override
+    public void beforeVerification()
+    {
+        super.beforeVerification();
+
+        // Delete root and shared containers that were needed for bootstrapping
+        TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+        Table.delete(containers);
+        DbScope targetScope = DbScope.getLabKeyScope();
+        new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
+    }
+
+    @Override
+    public void beforeSchema()
+    {
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
+    }
+
+    @Override
+    public List<TableInfo> getTablesToCopy()
+    {
+        List<TableInfo> tablesToCopy = super.getTablesToCopy();
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoModules());
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoSqlScripts());
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoUpgradeSteps());
+
+        return tablesToCopy;
+    }
+
+    @Override
+    public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+    {
+        return switch (sourceTable.getName())
+        {
+            case "ContainerAliases" -> FieldKey.fromParts("ContainerRowId", "EntityId");
+            case "Containers" -> FieldKey.fromParts("EntityId");
+            case "Report" -> FieldKey.fromParts("ContainerId");
+            // Note: DataStates is not really site-wide, but there seem to be exp.Materials referencing DataStates with conflicting containers
+            case "APIKeys", "AuthenticationConfigurations", "DataStates", "EmailOptions", "Logins", "ReportEngines",
+                 "ShortURL", "UsersData" -> SITE_WIDE_TABLE;
+            default -> super.getContainerFieldKey(sourceTable);
+        };
+    }
+
+    @Override
+    public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    {
+        SimpleFilter.FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        String tableName = sourceTable.getName();
+
+        // Users and root groups have container == null, so add that as an OR clause
+        if ("Principals".equals(tableName) || "Members".equals(tableName))
+        {
+            SimpleFilter.OrClause orClause = new SimpleFilter.OrClause();
+            orClause.addClause(containerClause);
+            orClause.addClause(new CompareType.CompareClause(containerFieldKey, CompareType.ISBLANK, null));
+            containerClause = orClause;
+
+            if (_groupFilterCondition != null)
+            {
+                SQLFragment groupFilterFragment = new SQLFragment();
+
+                if ("Principals".equals(tableName))
+                {
+                    groupFilterFragment
+                        .append("Type <> 'g' OR (type = 'g' AND UserId ")
+                        .append(_groupFilterCondition)
+                        .append(")");
+                }
+                else
+                {
+                    groupFilterFragment
+                        .append("GroupId ")
+                        .append(_groupFilterCondition);
+                }
+
+                containerClause = new SimpleFilter.AndClause(containerClause, new SimpleFilter.SQLClause(groupFilterFragment));
+            }
+        }
+
+        if ("RoleAssignments".equals(tableName) && _groupFilterCondition != null)
+        {
+            SQLFragment groupFilterFragment = new SQLFragment("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
+                .append(_groupFilterCondition)
+                .append("))");
+            containerClause = new SimpleFilter.AndClause(containerClause, new SimpleFilter.SQLClause(groupFilterFragment));
+        }
+
+        return containerClause;
+    }
+
+    @Override
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+    {
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+    }
+
+    // MigrationFilter implementation below
+
+    private SQLFragment _groupFilterCondition = null;
+
+    @Override
+    public String getName()
+    {
+        return "GroupFilter";
+    }
+
+    @Override
+    public void saveFilter(@Nullable GUID guid, String groupFilter)
+    {
+        if (guid != null)
+            throw new ConfigurationException("GUID should not be provided to GroupFilter");
+
+        _groupFilterCondition = new SQLFragment(groupFilter);
+    }
+}

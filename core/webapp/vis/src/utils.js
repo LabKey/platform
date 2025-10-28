@@ -6,10 +6,6 @@
 
 // Contains helpers that aren't specific to plot, layer, geom, etc. and are used throughout the API.
 
-if(!LABKEY){
-	var LABKEY = {};
-}
-
 if(!LABKEY.vis){
     /**
      * @namespace The namespace for the internal LabKey visualization library. Contains classes within
@@ -185,7 +181,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
                     if (groupedData[groupName].hasOwnProperty(subgroupName))
                     {
                         var row = {rawData: groupedData[groupName][subgroupName]},
-                            count = row['rawData'].length;
+                            count = row.rawData.length;
                         total += count;
 
                         row[nameProp] = groupName;
@@ -199,7 +195,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
             else
             {
                 var row = {rawData: groupedData[groupName]},
-                    count = row['rawData'].length;
+                    count = row.rawData.length;
                 total += count;
 
                 row[nameProp] = groupName;
@@ -222,15 +218,18 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
  * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
  * @param {Boolean} includeTotal Whether or not to include the cumulative totals. Defaults to false.
+ * @param {String} errorBarType SD/STDERR. Defaults to null/undefined.
+ * @param {Boolean} keepNames True to use the dimension names in the results data. Defaults to false.
+ * @param {String} rowPropName (Optional) The property name to use when accessing the dimension value from the row object.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal, errorBarType, keepNames = false, rowPropName)
 {
     var results = [], subgroupAccessor,
-        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
+        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName], rowPropName);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
         hasMeasure = measureName != undefined && measureName != null,
-        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName]); } : null;
+        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName], 'value'); } : null;
 
     if (hasSubgroup) {
         if (typeof subDimensionName === 'function') {
@@ -244,39 +243,67 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
 
     for (var i = 0; i < groupData.length; i++)
     {
-        var row = {label: groupData[i]['name']};
-        if (row['label'] == null || row['label'] == 'null')
-            row['label'] = nullDisplayValue || 'null';
+        var row = {label: groupData[i].name};
+        if (row.label == null || row.label == 'null')
+            row.label = nullDisplayValue || 'null';
 
         if (hasSubgroup)
         {
-            row['subLabel'] = groupData[i]['subname'];
-            if (row['subLabel'] == null || row['subLabel'] == 'null')
-                row['subLabel'] = nullDisplayValue || 'null';
+            row.subLabel = groupData[i].subname;
+            if (row.subLabel == null || row.subLabel == 'null')
+                row.subLabel = nullDisplayValue || 'null';
         }
         if (includeTotal) {
-            row['total'] = groupData[i]['total'];
+            row.total = groupData[i].total;
         }
 
-        var values = measureAccessor != undefined && measureAccessor != null
+        var values = measureAccessor !== undefined && measureAccessor !== null
                 ? LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor)
                 : null;
 
-        if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+        if (aggregate === undefined || aggregate === null || aggregate === 'COUNT')
         {
-            row['value'] = values != null ? values.length : groupData[i]['count'];
+            row.value = values != null ? values.length : groupData[i].count;
         }
         else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
         {
             try {
-                row.value = LABKEY.vis.Stat[aggregate](values);
+                if (values?.length > 0) {
+                    row.value = LABKEY.vis.Stat[aggregate](values);
+                } else {
+                    row.value = null;
+                }
+                row.aggType = aggregate;
             } catch (e) {
                 row.value = null;
+            }
+
+            if (errorBarType === 'SD' || errorBarType === 'SEM') {
+                row.error = LABKEY.vis.Stat[errorBarType](values, true);
+                row.errorType = errorBarType;
             }
         }
         else
         {
             throw 'Aggregate ' + aggregate + ' is not yet supported.';
+        }
+
+        if (keepNames) {
+            // if the value was/is a number, convert it back so that the axis domain min/max calculate correctly
+            var dimValue = row.label;
+            row[dimensionName] = { value: !isNaN(Number(dimValue)) ? Number(dimValue) : dimValue };
+            row[measureName] = { value: row.value };
+            row[measureName].aggType = aggregate;
+
+            if (row.hasOwnProperty('subLabel')) {
+                row[subDimensionName] = { value: row.subLabel };
+            }
+            if (row.hasOwnProperty('error')) {
+                row[measureName].error = row.error;
+            }
+            if (row.hasOwnProperty('errorType')) {
+                row[measureName].errorType = row.errorType;
+            }
         }
 
         results.push(row);
@@ -367,9 +394,11 @@ LABKEY.vis.naturalSortFn = function(aso, bso) {
     return b[i] ? -1 : 0;
 };
 
-LABKEY.vis.getValue = function(obj) {
+LABKEY.vis.getValue = function(obj, preferredProp) {
     if (obj && typeof obj == 'object') {
-        if (obj.hasOwnProperty('formattedValue')) {
+        if (preferredProp && obj.hasOwnProperty(preferredProp)) {
+            return obj[preferredProp];
+        } else if (obj.hasOwnProperty('formattedValue')) {
             return obj.formattedValue;
         } else if (obj.hasOwnProperty('displayValue')) {
             return obj.displayValue;
@@ -379,3 +408,63 @@ LABKEY.vis.getValue = function(obj) {
 
     return obj;
 };
+
+LABKEY.vis.isValidDate = function(date) {
+    return date instanceof Date && !isNaN(date);
+}
+
+LABKEY.vis.formatDate = function(date, format) {
+    if (!LABKEY.vis.isValidDate(date)) return date;
+
+    // Helper function to pad numbers with a leading zero
+    const pad = (num) => num.toString().padStart(2, '0');
+
+    // Month name arrays
+    const monthAbbrs = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const monthFullNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    // Get date and time components
+    const day = date.getDate();
+    const monthIndex = date.getMonth(); // 0-11
+    const year = date.getFullYear();
+    const hours = date.getHours(); // 0-23
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const milliseconds = date.getMilliseconds();
+
+    // --- 12-hour clock and AM/PM ---
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    // 0 (midnight) or 12 (noon) should be 12
+    const hours12 = hours % 12 || 12;
+
+    // --- Token Replacement ---
+    let formatted = format;
+
+    // Year
+    formatted = formatted.replace(/yyyy/g, year.toString());
+    formatted = formatted.replace(/yy/g, year.toString().slice(-2));
+
+    // Month
+    formatted = formatted.replace(/MMMM/g, monthFullNames[monthIndex]);
+    formatted = formatted.replace(/MMM/g, monthAbbrs[monthIndex]);
+    formatted = formatted.replace(/MM/g, pad(monthIndex + 1)); // 1-12
+
+    // Day
+    formatted = formatted.replace(/dd/g, pad(day));
+
+    // Time
+    formatted = formatted.replace(/HH/g, pad(hours)); // 24-hour
+    formatted = formatted.replace(/hh/g, pad(hours12)); // 12-hour
+    formatted = formatted.replace(/mm/g, pad(minutes));
+    formatted = formatted.replace(/ss/g, pad(seconds));
+    formatted = formatted.replace(/SSS/g, milliseconds.toString().padStart(3, '0'));
+    formatted = formatted.replace(/ a/g, ' ' + ampm);
+
+    return formatted;
+}
