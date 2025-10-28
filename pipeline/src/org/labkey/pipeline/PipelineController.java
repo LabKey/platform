@@ -1202,8 +1202,6 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
     {
-        private final List<Container> _importContainers = new ArrayList<>();
-
         private String _navTrail = "Import Folder";
         private java.nio.file.Path _archiveFile;
 
@@ -1222,16 +1220,12 @@ public class PipelineController extends SpringActionController
             else
             {
                 _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
-                _importContainers.add(getContainer());
 
-                // Be sure that each import container has a valid pipeline root
-                for (Container container : _importContainers)
+                // Be sure that import container has a valid pipeline root
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+                if (!PipelineService.get().hasValidPipelineRoot(getContainer()) || null == pipelineRoot)
                 {
-                    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
-                    if (!PipelineService.get().hasValidPipelineRoot(container) || null == pipelineRoot)
-                    {
-                        errors.reject(ERROR_MSG, "Pipeline root not found for selected container: " + container.getTitle() + ".");
-                    }
+                    errors.reject(ERROR_MSG, "Pipeline root not found for selected container: " + getContainer().getTitle() + ".");
                 }
             }
         }
@@ -1257,15 +1251,12 @@ public class PipelineController extends SpringActionController
 
             if (Files.exists(_archiveFile))
             {
-                // should be just the current container in the default case, and unzip the archive if necessary
-                for (Container container : _importContainers)
-                {
-                    java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
-                    if (errors.hasErrors())
-                        return false;
 
-                    containerArchiveXmlMap.put(container, archiveXml);
-                }
+                java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(getContainer(), _archiveFile, "folder.xml", errors);
+                if (errors.hasErrors())
+                    return false;
+
+                containerArchiveXmlMap.put(getContainer(), archiveXml);
 
                 ImportOptions options = new ImportOptions(getContainer().getId(), getUser().getUserId());
                 options.setSkipQueryValidation(!form.isValidateQueries());
@@ -1302,19 +1293,8 @@ public class PipelineController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(StartFolderImportForm form)
         {
-            // default case, go to the pipeline jobs page for the current container
-            // otherwise go to the pipeline jobs page for the project and show all subfolders
-            Container c = getContainer();
-            if (_importContainers.size() == 1 && _importContainers.get(0).equals(c))
-            {
-                return urlProvider(PipelineStatusUrls.class).urlBegin(c);
-            }
-            else
-            {
-                ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
-                url.addParameter("StatusFiles.containerFilterName", ContainerFilter.Type.CurrentAndSubfolders.name());
-                return url;
-            }
+            // go to the pipeline jobs page for the current container
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
 
         @Override
@@ -1331,8 +1311,6 @@ public class PipelineController extends SpringActionController
         private String _filePath;
         private boolean _validateQueries;
         private boolean _createSharedDatasets;
-        private boolean _specificImportOptions;
-        private boolean _applyToMultipleFolders;
         private boolean _isCloudRoot; // Remove as part of Issue #43835
         private boolean _failForUndefinedVisits;
         private Set<String> _dataTypes;
