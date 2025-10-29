@@ -161,7 +161,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, _primaryFile.getName());
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayUploadPipelineJob");
-            ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps, transactionDetails/*TODO*/);
+            ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps, transactionDetails);
             setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");
 

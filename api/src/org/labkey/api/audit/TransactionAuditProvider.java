@@ -179,7 +179,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                 detailMap.put(this, value);
                 return;
             }
-            Object existing = detailMap.get(this);;
+            Object existing = detailMap.get(this);
             Set<String> values;
             if (existing == null)
                 values = new HashSet<>();
@@ -189,8 +189,9 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                 values = new HashSet<>(List.of(existing.toString()));
             if (value instanceof String)
                 values.add((String) value);
-            else if (value instanceof Collections)
-                values.addAll((Set<String>) value);
+            else if (value instanceof Collection)
+                for (Object v : (Collection<?>) value)
+                    values.add(v.toString());
             detailMap.put(this, values);
         }
     }

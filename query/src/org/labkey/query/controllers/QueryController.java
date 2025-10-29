@@ -4695,7 +4695,6 @@ public class QueryController extends SpringActionController
                     if (auditTransaction.getAuditEvent() != null)
                     {
                         auditEvent = auditTransaction.getAuditEvent();
-                        // detect trigger event?
                     }
                     else
                     {
