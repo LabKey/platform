@@ -126,7 +126,7 @@ public class ServerManager
 
     static
     {
-        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             @Override
             public void containerDeleted(Container c, User user)
