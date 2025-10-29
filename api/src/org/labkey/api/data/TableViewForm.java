@@ -388,7 +388,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         if (null == value)
             return null;
         if (value instanceof String str)
-           return StringUtils.isEmpty(str) ? null : str;
+           return StringUtils.trimToNull(str);
         return value;
     }
 
