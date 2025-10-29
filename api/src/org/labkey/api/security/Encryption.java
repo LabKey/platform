@@ -572,6 +572,10 @@ public class Encryption
 
             if (migrationNeeded)
             {
+                // Reset to zero to ignore problems that might have been encountered early in startup, prior to
+                // starting the migration process
+                DECRYPTION_EXCEPTIONS.set(0);
+
                 final AESConfig migrationConfig = oldConfig;
                 final String message = keySource;
                 final String passPhrase = oldPassPhrase != null ? oldPassPhrase : getEncryptionPassPhrase();
