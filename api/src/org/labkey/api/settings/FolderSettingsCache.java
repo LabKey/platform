@@ -15,17 +15,12 @@
  */
 package org.labkey.api.settings;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-
-import java.beans.PropertyChangeEvent;
-import java.util.Collection;
-import java.util.Collections;
 
 // Folder settings inherit all the way up the folder tree. All the property sets involved should be cached, but the walk
 // up the tree is a potentially expensive operation just to format a date or number. So, we cache the set of resolved
@@ -116,13 +111,6 @@ public class FolderSettingsCache
     public static class FolderSettingsCacheListener implements ContainerManager.ContainerListener
     {
         @Override
-        public void containerCreated(Container c, User user)
-        {
-            // Don't care... nothing should be cached for a brand new container, and it must be a leaf node (doesn't
-            // affect other folders' settings.
-        }
-
-        @Override
         public void containerDeleted(Container c, User user)
         {
             // Should be sufficient to remove settings for this container only; in a recursive delete, this method
@@ -135,19 +123,6 @@ public class FolderSettingsCache
         {
             // When moving a tree, this is called only for the top node, so we need to clear the entire cache.
             clear();
-        }
-
-        @NotNull
-        @Override
-        public Collection<String> canMove(Container c, Container newParent, User user)
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-            // Don't care
         }
     }
 }
