@@ -24,7 +24,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.beans.PropertyChangeEvent;
 
-public class StudyContainerListener extends ContainerManager.AbstractContainerListener
+public class StudyContainerListener implements ContainerManager.ContainerListener
 {
     @Override
     public void containerDeleted(Container c, User user)

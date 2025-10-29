@@ -32,7 +32,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
@@ -67,11 +66,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: cnathe
- * Date: 9/14/2015
- */
-public class NotificationServiceImpl extends AbstractContainerListener implements NotificationService
+public class NotificationServiceImpl implements ContainerManager.ContainerListener, NotificationService
 {
     private final static NotificationServiceImpl INSTANCE = new NotificationServiceImpl();
     private final Map<String, String> _typeLabelMap = new ConcurrentHashMap<>();
@@ -397,7 +392,6 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     {
         return _typeIconMap.getOrDefault(type, "fa-bell");
     }
-
 
     @Override
     public void sendServerEvent(int userId, Class<?> clazz)
