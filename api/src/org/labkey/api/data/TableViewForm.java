@@ -533,7 +533,9 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public void setTypedValue(String propName, Object val)
     {
-        getTypedValues().put(propName, val);
+        // call _populate() if necessary
+        getTypedValues();
+        _values.put(propName, val);
         // We don't use setValueToBind() here because we want to avoid its side effect of clearing _values
         // To convert or not to convert???
         _stringValues.put(propName, val);
@@ -552,7 +554,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         if (null == _values)
             populateValues(null);
 
-        return _values;
+        return Collections.unmodifiableMap(_values);
     }
 
     /**
@@ -656,7 +658,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public Map<String, Object> getValuesToBind()
     {
-        return _stringValues;
+        return Collections.unmodifiableMap(_stringValues);
     }
 
     public boolean contains(DisplayColumn col, RenderContext ctx)
