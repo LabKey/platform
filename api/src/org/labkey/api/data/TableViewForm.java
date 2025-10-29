@@ -73,8 +73,8 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 {
     private static final Logger _log = LogHelper.getLogger(TableViewForm.class, "Table operation warnings");
 
-    // This is called "stringValues" as this is expected to come from a form POST (but it was never just string valure)
-    // However, it can also be String[] abd other types
+    // This is called "stringValues" as this is expected to come from a form POST (but it was never just a string value)
+    // However, it can also be String[] and other types
     protected Map<String, Object> _stringValues = new CaseInsensitiveHashMap<>();
     protected Map<String, Object> _values = null;
     protected Object _oldValues;
@@ -301,8 +301,8 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         }
         else
         {
-            // TODO replace with new splitStringToValues
-            // setPkVals(PageFlowUtil.splitStringToValuesForImport(s));
+            // CONSIDER We should support PK column names with commas.  We should replace with better parser.
+            // something like: setPkVals(PageFlowUtil.splitStringToValuesForImport(s));
             setPkVals(s.split(","));
         }
     }
@@ -534,7 +534,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     public void setTypedValue(String propName, Object val)
     {
         getTypedValues().put(propName, val);
-        // setValueToBind() but w/o invalidate.
+        // We don't use setValueToBind() here because we want to avoid its side effect of clearing _values
         // To convert or not to convert???
         _stringValues.put(propName, val);
     }
@@ -649,8 +649,9 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     public void setValuesToBind(Map<String, Object> strings)
     {
         _stringValues.clear();
-        _stringValues.putAll(strings);
         _values = null;
+        for (Map.Entry<String, Object> e : strings.entrySet())
+            setValueToBind(e.getKey(), e.getValue());
     }
 
     public Map<String, Object> getValuesToBind()
@@ -658,24 +659,18 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         return _stringValues;
     }
 
-//    public boolean contains(ColumnInfo col)
-//    {
-//        return _stringValues.containsKey(getFormFieldName(col));
-//    }
-
     public boolean contains(DisplayColumn col, RenderContext ctx)
     {
         return _stringValues.containsKey(col.getFormFieldName(ctx));
     }
 
-    public String getAsString(String propName)
+    public @Nullable String getAsString(@NotNull String propName)
     {
         Object value = _stringValues.get(propName);
         if (value == null || value instanceof String)
             return (String)value;
-        if (value instanceof String[])
+        if (value instanceof String[] arr)
         {
-            String[] arr = (String[]) value;
             if (arr.length == 0)
                 return null;
         }
@@ -839,7 +834,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
         for (PropertyValue pv : params.getPropertyValues())
         {
-            _stringValues.put(pv.getName(), pv.getValue());
+            setValueToBind(pv.getName(), pv.getValue());
         }
 
         BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
