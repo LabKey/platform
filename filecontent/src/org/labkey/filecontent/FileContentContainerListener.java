@@ -19,12 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
-/**
- * User: adam
- * Date: 2/25/12
- * Time: 8:44 PM
- */
-public class FileContentContainerListener extends ContainerManager.AbstractContainerListener
+public class FileContentContainerListener implements ContainerManager.ContainerListener
 {
     @Override
     public void containerDeleted(Container c, User user)
