@@ -30,7 +30,6 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
 {
     // Helpful constants for convenience (and efficiency)
     public static final HtmlString EMPTY_STRING = HtmlString.of("");
-    public static final HtmlString SP = HtmlString.of(" ");
     public static final HtmlString NBSP = HtmlString.unsafe("&nbsp;");
     public static final HtmlString NDASH = HtmlString.unsafe("&ndash;");
     public static final HtmlString BR = HtmlString.unsafe("<br/>");
