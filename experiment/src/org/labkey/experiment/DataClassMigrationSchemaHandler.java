@@ -98,47 +98,28 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             LOG.info("   {} rows not copied -- deleting associated rows from exp.Data, exp.Object, etc.", Formats.commaf0.format(notCopiedObjectIds.size()));
             SqlExecutor executor = new SqlExecutor(ExperimentService.get().getSchema());
             SqlDialect dialect = ExperimentService.get().getSchema().getSqlDialect();
+            SQLFragment objectIdClause = new SQLFragment()
+                .appendInClause(notCopiedObjectIds, dialect);
 
             // Delete from exp.Data (and associated tables)
             LOG.info("   exp.DataInput");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
+                    .append(objectIdClause)
                     .append(")")
             );
             LOG.info("   exp.DataAliasMap");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId") // TODO: Use notCopiedLsids instead?
-                    .appendInClause(notCopiedObjectIds, dialect)
-                    .append(")")
+                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID")
+                    .appendInClause(notCopiedLsids, dialect)
             );
             LOG.info("   exp.Data");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Data WHERE ObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
+                    .append(objectIdClause)
             );
 
-            // Delete from exp.Object (and associated tables)
-            LOG.info("   exp.Edge (FromObjectId)");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
-            );
-            LOG.info("   exp.Edge (ToObjectId)");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
-            );
-            LOG.info("   exp.ObjectProperty");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
-            );
-            LOG.info("   exp.Object");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
-                    .appendInClause(notCopiedObjectIds, dialect)
-            );
+            ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
         }
 
         String name = sourceTable.getName();

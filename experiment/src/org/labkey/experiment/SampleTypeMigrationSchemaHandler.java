@@ -136,27 +136,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     .append(objectIdClause)
             );
 
-            // Delete from exp.Object (and associated tables)
-            LOG.info("   exp.Edge (FromObjectId)");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
-                    .append(objectIdClause)
-            );
-            LOG.info("   exp.Edge (ToObjectId)");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
-                    .append(objectIdClause)
-            );
-            LOG.info("   exp.ObjectProperty");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
-                    .append(objectIdClause)
-            );
-            LOG.info("   exp.Object");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
-                    .append(objectIdClause)
-            );
+            ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
         }
     }
 }

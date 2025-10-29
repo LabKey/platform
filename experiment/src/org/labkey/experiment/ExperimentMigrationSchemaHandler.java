@@ -1,5 +1,6 @@
 package org.labkey.experiment;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
@@ -17,6 +18,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
@@ -25,6 +27,8 @@ import java.util.Set;
 
 class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
+    private static final Logger LOG = LogHelper.getLogger(ExperimentMigrationSchemaHandler.class, "Progress of exp deletes during database migration");
+
     public ExperimentMigrationSchemaHandler()
     {
         super(OntologyManager.getExpSchema());
@@ -124,5 +128,32 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId) REFERENCES exp.ExperimentRun (RowId)");
+    }
+
+    // Delete from exp.Object and associated tables
+    public static void deleteObjectIds(SQLFragment objectIdClause)
+    {
+        SqlExecutor executor = new SqlExecutor(OntologyManager.getExpSchema());
+
+        LOG.info("   exp.Edge (FromObjectId)");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
+                .append(objectIdClause)
+        );
+        LOG.info("   exp.Edge (ToObjectId)");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
+                .append(objectIdClause)
+        );
+        LOG.info("   exp.ObjectProperty");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
+                .append(objectIdClause)
+        );
+        LOG.info("   exp.Object");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
+                .append(objectIdClause)
+        );
     }
 }

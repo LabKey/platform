@@ -47,7 +47,7 @@ public class FolderManagement
         FolderManagement
         {
             @Override
-            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction<?> action, NavTree root, Container c, User user)
             {
                 // In the root, view is rendered as a standalone page (no tab strip). Create an appropriate nav trail.
                 if (c.isRoot())
@@ -76,7 +76,7 @@ public class FolderManagement
         ProjectSettings // Used for project settings
         {
             @Override
-            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction<?> action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic("customizeLook");
                 root.addChild("Project Settings");
@@ -91,7 +91,7 @@ public class FolderManagement
         LookAndFeelSettings // Used for the admin console actions -- allows for troubleshooter permissions
         {
             @Override
-            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction<?> action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic("customizeLook");
                 PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Look and Feel Settings", action.getClass(), c);
@@ -104,7 +104,7 @@ public class FolderManagement
             }
         };
 
-        abstract void addNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+        abstract void addNavTrail(BaseViewAction<?> action, NavTree root, Container c, User user);
 
         abstract boolean shouldRenderTabStrip(Container container);
     }
@@ -170,14 +170,14 @@ public class FolderManagement
         protected abstract List<TabProvider> getTabProviders();
 
         @Override
-        public abstract HttpView getTabView(String tabId) throws Exception;
+        public abstract HttpView<?> getTabView(String tabId) throws Exception;
     }
 
 
     /**
      * Marker interface for actions that register themselves with a management page
      */
-    interface ManagementAction extends Controller
+    public interface ManagementAction extends Controller
     {
     }
 
@@ -208,7 +208,7 @@ public class FolderManagement
         }
 
         protected abstract TYPE getType();
-        protected abstract HttpView getTabView() throws Exception;
+        protected abstract HttpView<?> getTabView() throws Exception;
 
         @Override
         public void addNavTrail(NavTree root)
@@ -244,7 +244,7 @@ public class FolderManagement
 
         protected abstract TYPE getType();
 
-        protected abstract HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception;
+        protected abstract HttpView<?> getTabView(FORM form, boolean reshow, BindException errors) throws Exception;
 
         @Override
         public void addNavTrail(NavTree root)
@@ -255,7 +255,7 @@ public class FolderManagement
 
 
     /** Wrap the provided view in a tab strip, if that's what the type desires **/
-    private static HttpView wrapViewInTabStrip(BaseViewAction action, TYPE type, HttpView view, BindException errors)
+    private static HttpView<?> wrapViewInTabStrip(BaseViewAction<?> action, TYPE type, HttpView<?> view, BindException errors)
     {
         ViewContext ctx = action.getViewContext();
         Container c = ctx.getContainer();
@@ -268,7 +268,7 @@ public class FolderManagement
             return new ManagementTabStrip(c, tabId, errors)
             {
                 @Override
-                public HttpView getTabView(String tabId)
+                public HttpView<?> getTabView(String tabId)
                 {
                     return view;
                 }
