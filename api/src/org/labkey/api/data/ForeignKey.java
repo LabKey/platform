@@ -37,7 +37,7 @@ import java.util.Set;
 public interface ForeignKey
 {
     /**
-     * Return a new lookup column with the specified displayField.  If displayField is null, then this method
+     * Return a new lookup column with the specified displayField. If displayField is null, then this method
      * should return the title column (default display field) of the foreign table.
      * It should return null if there is no default display field.
      * The ColumnInfo parent is a column which has the value of the foreign key.
@@ -47,8 +47,8 @@ public interface ForeignKey
     ColumnInfo createLookupColumn(ColumnInfo parent, String displayField);
 
     /**
-     * Return the TableInfo for the foreign table.  This TableInfo can be used to discover the names of available
-     * columns in a UI.  The returned TableInfo will not necessarily be one that can be used for querying (e.g. passing
+     * Return the TableInfo for the foreign table. This TableInfo can be used to discover the names of available
+     * columns in a UI. The returned TableInfo will not necessarily be one that can be used for querying (e.g. passing
      * to Table.select...
      */
     @Nullable
@@ -61,7 +61,7 @@ public interface ForeignKey
     }
 
     /**
-     * Return an URL expression for what the hyperlink for this column should be.  The hyperlink must be able to be
+     * Return a URL expression for what the hyperlink for this column should be. The hyperlink must be able to be
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.
      */
     @Nullable StringExpression getURL(ColumnInfo parent);
@@ -72,7 +72,7 @@ public interface ForeignKey
     @NotNull NamedObjectList getSelectList(RenderContext ctx);
 
     /**
-     * @return The container id of the foreign user schema table.  Null means current container.
+     * @return The container id of the foreign user schema table. Null means current container.
      */
     Container getLookupContainer();
 
@@ -111,7 +111,7 @@ public interface ForeignKey
 
     /**
      * Fixup any references fo FieldKeys that may have been reparented or renamed by Query and
-     * generate a new ForeignKey.  If fixup is not needed, return null.
+     * generate a new ForeignKey. If fixup is not needed, return null.
      *
      * @param parent A new parent FieldKey to inject, e.g. "title" becomes "parent/title".
      * @param mapping Rename FieldKeys, e.g. "foo" becomes "bar".
