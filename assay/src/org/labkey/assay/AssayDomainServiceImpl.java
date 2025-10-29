@@ -430,6 +430,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (nameError != null)
                     throw new ValidationException(nameError);
 
+                // Issue 53831: add a specific check for assay name length since we append onto the name when creating the assay domains (ex. "<assay name> Batch Fields")
+                // which makes that actual max less than the DB size of 200
+                int assayNameLengthMax = 150;
+                if (assay.getName().length() > assayNameLengthMax)
+                    throw new ValidationException("Value is too long for assay design name, a maximum length of " + assayNameLengthMax + " is allowed. The supplied value, '" + StringUtils.abbreviateMiddle(assay.getName(), "...", 50) + "', was " + assay.getName().length() + " characters long.");
+
                 if (isNew)
                 {
                     // check for existing assay protocol with the given name before creating
