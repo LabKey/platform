@@ -21,12 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.issue.model.IssueListDefCache;
 import org.labkey.issue.model.IssueManager;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 3:30:34 PM
- */
-public class IssueContainerListener extends ContainerManager.AbstractContainerListener
+public class IssueContainerListener implements ContainerManager.ContainerListener
 {
     @Override
     public void containerDeleted(Container c, User user)

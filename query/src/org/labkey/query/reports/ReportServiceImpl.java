@@ -34,7 +34,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -117,7 +116,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
-public class ReportServiceImpl extends AbstractContainerListener implements ReportService
+public class ReportServiceImpl implements ContainerManager.ContainerListener, ReportService
 {
     private static final Logger _log = LogHelper.getLogger(ReportService.class, "Errors and warnings with reports");
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();

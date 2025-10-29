@@ -102,6 +102,17 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return this;
     }
 
+    public String getStatusCakeApiKey()
+    {
+        return elementCache().statusCakeApiKeyInput.get();
+    }
+
+    public EditUpgradeMessagePage setStatusCakeApiKey(String apiKey)
+    {
+        elementCache().statusCakeApiKeyInput.set(apiKey);
+        return this;
+    }
+
     public ShowExceptionsPage save()
     {
         sleep(1000);    // give time for set or clear actions to process
@@ -115,13 +126,14 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return new ElementCache();
     }
 
-    protected class ElementCache extends BaseMothershipPage.ElementCache
+    protected class ElementCache extends BaseMothershipPage<?>.ElementCache
     {
         Input currentBuildDateInput = new Input(Locator.name("currentBuildDate").findWhenNeeded(this), getDriver());
         Input messageTextArea = new Input(Locator.name("message").findWhenNeeded(this), getDriver());
         Input createIssueURLInput = new Input(Locator.name("createIssueURL").findWhenNeeded(this), getDriver());
         Input issuesContainerInput = new Input(Locator.name("issuesContainer").findWhenNeeded(this), getDriver());
         Input marketingMessageTextArea = new Input(Locator.name("marketingMessage").findWhenNeeded(this), getDriver());
-        WebElement saveButton = Locator.lkButton("Save").findWhenNeeded( this);
+        Input statusCakeApiKeyInput = new Input(Locator.name("statusCakeApiKey").findWhenNeeded(this), getDriver());
+        WebElement saveButton = Locator.lkButton("Save").findWhenNeeded(this);
     }
 }
