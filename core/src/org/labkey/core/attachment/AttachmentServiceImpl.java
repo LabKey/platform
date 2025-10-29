@@ -110,7 +110,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -1000,36 +999,12 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-
-    @Override
-    public void propertyChange(PropertyChangeEvent propertyChangeEvent)
-    {
-    }
-
     @Override
     public void containerDeleted(Container c, User user)
     {
         // TODO: do we need to get each document and remove its security policy?
         ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
         AttachmentCache.removeAttachments(c);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
     }
 
     private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException

@@ -380,7 +380,7 @@ public class ContainerManager
                     SecurityManager.setInheritPermissions(c);
             }
 
-            // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
+            // NOTE parent caches some info about children (e.g., hasWorkbookChildren)
             // since mutating cached objects is frowned upon, just uncache parent
             // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
             _removeFromCache(parent, true);
@@ -1165,7 +1165,6 @@ public class ContainerManager
         return map.get(name);
     }
 
-
     public static Container getForURL(@NotNull ActionURL url)
     {
         Container ret = getForPath(url.getExtraPath());
@@ -1173,7 +1172,6 @@ public class ContainerManager
             ret = getForId(StringUtils.strip(url.getExtraPath(), "/"));
         return ret;
     }
-
 
     public static Container getForPath(@NotNull String path)
     {
@@ -1448,7 +1446,7 @@ public class ContainerManager
 
                 NavTree t = new NavTree(name);
 
-                // 34137: Support folder path expansion for containers where label != name
+                // Issue 34137: Support folder path expansion for containers where label != name
                 t.setId(f.getId());
                 if (hasPolicyRead)
                 {
@@ -1464,7 +1462,7 @@ public class ContainerManager
                 }
                 else
                 {
-                    // 32718: If navigation access is not open then hide projects that aren't directly
+                    // Issue 32718: If navigation access is not open then hide projects that aren't directly
                     // accessible in site folder navigation.
 
                     if (f.equals(c) || f.isRoot() || (hasPolicyRead && f.isProject()))
@@ -1689,7 +1687,7 @@ public class ContainerManager
 
             boolean changedProjects = !oldProject.getId().equals(newProject.getId());
 
-            // Synchronize the transaction, but not the listeners -- see #9901
+            // Issue 9901: Synchronize the transaction, but not the listeners
             try (DbScope.Transaction t = ensureTransaction())
             {
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
@@ -1752,7 +1750,7 @@ public class ContainerManager
             // Rename
             if (isRenaming)
             {
-                // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
+                // Issue 16221: Don't allow renaming of system reserved folders (e.g., /Shared, home, root, etc).
                 if (!isRenameable(c))
                     throw new ApiUsageException("This folder may not be renamed as it is reserved by the system.");
 
@@ -1949,8 +1947,7 @@ public class ContainerManager
             if (experimentService != null)
                 experimentService.removeContainerDataTypeExclusions(c.getId());
 
-            // After we've committed the transaction, be sure that we remove this container from the cache
-            // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
+            // Issue 17015: After we've committed the transaction, be sure that we remove this container from the cache
             tx.addCommitTask(() ->
             {
                 // Be sure that we've waited until any threads that might be populating the cache have finished
@@ -2141,7 +2138,6 @@ public class ContainerManager
         }
     }
 
-
     /** Recursive, including root node */
     public static Set<Container> getAllChildren(Container root)
     {
@@ -2191,7 +2187,6 @@ public class ContainerManager
                 "WHERE ps.category = '" + AUDIT_SETTINGS_PROPERTY_SET_NAME + "' AND p.name='"+ REQUIRE_USER_COMMENTS_PROPERTY_NAME + "' and p.value='true'");
         return new SqlSelector(CORE.getSchema(), sql).getObject(Long.class);
     }
-
 
     /** Retrieve entire container hierarchy */
     public static MultiValuedMap<Container, Container> getContainerTree()
@@ -2264,7 +2259,6 @@ public class ContainerManager
             .collect(Collectors.toSet());
     }
 
-
     public static SQLFragment getIdsAsCsvList(Set<Container> containers, SqlDialect d)
     {
         if (containers.isEmpty())
@@ -2283,7 +2277,6 @@ public class ContainerManager
         return csvList;
     }
 
-
     public static List<String> getIds(User user, Class<? extends Permission> perm)
     {
         Set<Container> containers = getContainerSet(getContainerTree(), user, perm);
@@ -2296,66 +2289,37 @@ public class ContainerManager
         return ids;
     }
 
-
-    //
-    // ContainerListener
-    //
-
     public interface ContainerListener extends PropertyChangeListener
     {
         enum Order {First, Last}
 
         /** Called after a new container has been created */
-        void containerCreated(Container c, User user);
+        default void containerCreated(Container c, User user) { }
 
         default void containerCreated(Container c, User user, @Nullable String auditMsg)
         {
             containerCreated(c, user);
         }
 
-        /** Called immediately prior to deleting the row from core.containers */
-        void containerDeleted(Container c, User user);
+        /** Called immediately before deleting the row from core.containers */
+        default void containerDeleted(Container c, User user) { }
 
-        /** Called after the container has been moved to its new parent */
-        void containerMoved(Container c, Container oldParent, User user);
+        /** Called after the container has been moved to its new parent (post-commit) */
+        default void containerMoved(Container c, Container oldParent, User user) { }
 
         /**
-         * Called prior to moving a container, to find out if there are any issues that would prevent a successful move
+         * Called before moving a container, to find out if there are any issues that would prevent a successful move
          * @return a list of errors that should prevent the move from happening, if any
          */
         @NotNull
-        Collection<String> canMove(Container c, Container newParent, User user);
-
-        @Override
-        void propertyChange(PropertyChangeEvent evt);
-    }
-
-    public static abstract class AbstractContainerListener implements ContainerListener
-    {
-        @Override
-        public void containerCreated(Container c, User user)
-        {}
-
-        @Override
-        public void containerDeleted(Container c, User user)
-        {}
-
-        @Override
-        public void containerMoved(Container c, Container oldParent, User user)
-        {}
-
-        @NotNull
-        @Override
-        public Collection<String> canMove(Container c, Container newParent, User user)
+        default Collection<String> canMove(Container c, Container newParent, User user)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt)
-        {}
+        default void propertyChange(PropertyChangeEvent evt) { }
     }
-
 
     public static class ContainerPropertyChangeEvent extends PropertyChangeEvent implements PropertyChange<Property, Object>
     {
@@ -2383,7 +2347,6 @@ public class ContainerManager
         }
     }
 
-
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<>();
     private static final List<ContainerListener> _laterListeners = new CopyOnWriteArrayList<>();
@@ -2394,7 +2357,6 @@ public class ContainerManager
         addContainerListener(listener, ContainerListener.Order.First);
     }
 
-
     // Explicitly request "Last" ordering via this method.  "Last" listeners execute after all "First" listeners.
     public static void addContainerListener(ContainerListener listener, ContainerListener.Order order)
     {
@@ -2404,13 +2366,11 @@ public class ContainerManager
             _laterListeners.add(listener);
     }
 
-
     public static void removeContainerListener(ContainerListener listener)
     {
         _listeners.remove(listener);
         _laterListeners.remove(listener);
     }
-
 
     private static List<ContainerListener> getListeners()
     {
@@ -2421,7 +2381,6 @@ public class ContainerManager
         return combined;
     }
 
-
     private static List<ContainerListener> getListenersReversed()
     {
         List<ContainerListener> combined = new LinkedList<>();
@@ -2431,7 +2390,7 @@ public class ContainerManager
         ListIterator<ContainerListener> iter = copy.listIterator(copy.size());
 
         // Iterate in reverse
-        while(iter.hasPrevious())
+        while (iter.hasPrevious())
             combined.add(iter.previous());
 
         // Copy to guarantee consistency between .listIterator() and .size()
@@ -2440,12 +2399,11 @@ public class ContainerManager
         ListIterator<ContainerListener> laterIter = laterCopy.listIterator(laterCopy.size());
 
         // Iterate in reverse
-        while(laterIter.hasPrevious())
+        while (laterIter.hasPrevious())
             combined.add(laterIter.previous());
 
         return combined;
     }
-
 
     protected static void fireCreateContainer(Container c, User user, @Nullable String auditMsg)
     {
@@ -2464,7 +2422,6 @@ public class ContainerManager
         }
     }
 
-
     protected static void fireDeleteContainer(Container c, User user)
     {
         List<ContainerListener> list = getListenersReversed();
@@ -2480,21 +2437,19 @@ public class ContainerManager
             {
                 LOG.error("fireDeleteContainer for " + l.getClass().getName(), e);
 
-                // Fail fast (first Throwable aborts iteration), #17560
+                // Issue 17560: Fail fast (first Throwable aborts iteration)
                 throw e;
             }
         }
     }
 
-
-    protected static void fireRenameContainer(Container c, User user, String oldValue)
+    private static void fireRenameContainer(Container c, User user, String oldValue)
     {
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, user, Property.Name, oldValue, c.getName());
         firePropertyChangeEvent(evt);
     }
 
-
-    protected static void fireMoveContainer(Container c, Container oldParent, User user)
+    private static void fireMoveContainer(Container c, Container oldParent, User user)
     {
         List<ContainerListener> list = getListeners();
 
@@ -2511,7 +2466,6 @@ public class ContainerManager
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, user, Property.Parent, oldParent, c.getParent());
         firePropertyChangeEvent(evt);
     }
-
 
     public static void firePropertyChangeEvent(ContainerPropertyChangeEvent evt)
     {
@@ -2986,12 +2940,6 @@ public class ContainerManager
             }
         }
 
-        // ContainerListener
-        @Override
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-        }
-
         @Override
         public void containerCreated(Container c, User user)
         {
@@ -3000,23 +2948,10 @@ public class ContainerManager
             _containers.put(c.getParsedPath(), c);
         }
 
-
         @Override
         public void containerDeleted(Container c, User user)
         {
             _containers.remove(c.getParsedPath());
-        }
-
-        @Override
-        public void containerMoved(Container c, Container oldParent, User user)
-        {
-        }
-
-        @NotNull
-        @Override
-        public Collection<String> canMove(Container c, Container newParent, User user)
-        {
-            return Collections.emptyList();
         }
     }
 
