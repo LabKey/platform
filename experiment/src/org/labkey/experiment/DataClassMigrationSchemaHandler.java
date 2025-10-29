@@ -20,7 +20,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
@@ -85,47 +85,59 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
+        // exp.Data has an index on ObjectId, so use ObjectIds to delete from exp.Data tables as well as exp.Object.
+        // Our notCopiedFilter works on the data class provisioned table, so we need to select LSIDs from that table
+        // and then select from exp.Data to map those LSIDs to ObjectIds.
         Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
+
         if (!notCopiedLsids.isEmpty())
         {
-            LOG.info("   {} rows not copied -- deleting associated rows from exp.Data, exp.Object, etc.", Formats.commaf0.format(notCopiedLsids.size()));
-            SqlDialect dialect = sourceTable.getSqlDialect();
-            SqlExecutor executor = new SqlExecutor(OntologyManager.getExpSchema());
+            SimpleFilter dataFilter = new SimpleFilter(new InClause(FieldKey.fromParts("LSID"), notCopiedLsids));
+            Collection<Integer> notCopiedObjectIds = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("ObjectId"), dataFilter, null).getCollection(Integer.class);
+
+            LOG.info("   {} rows not copied -- deleting associated rows from exp.Data, exp.Object, etc.", Formats.commaf0.format(notCopiedObjectIds.size()));
+            SqlExecutor executor = new SqlExecutor(ExperimentService.get().getSchema());
+            SqlDialect dialect = ExperimentService.get().getSchema().getSqlDialect();
 
             // Delete from exp.Data (and associated tables)
+            LOG.info("   exp.DataInput");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE LSID")
-                    .appendInClause(notCopiedLsids, dialect)
+                new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
                     .append(")")
             );
+            LOG.info("   exp.DataAliasMap");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID")
-                    .appendInClause(notCopiedLsids, dialect)
+                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId") // TODO: Use notCopiedLsids instead?
+                    .appendInClause(notCopiedObjectIds, dialect)
+                    .append(")")
             );
+            LOG.info("   exp.Data");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.Data WHERE LSID")
-                    .appendInClause(notCopiedLsids, dialect)
+                new SQLFragment("DELETE FROM exp.Data WHERE ObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
             );
 
             // Delete from exp.Object (and associated tables)
+            LOG.info("   exp.Edge (FromObjectId)");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
-                    .appendInClause(notCopiedLsids, dialect)
-                    .append(")")
+                new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
             );
+            LOG.info("   exp.Edge (ToObjectId)");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
-                    .appendInClause(notCopiedLsids, dialect)
-                    .append(")")
+                new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
             );
+            LOG.info("   exp.ObjectProperty");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI")
-                    .appendInClause(notCopiedLsids, dialect)
-                    .append(")")
+                new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
             );
+            LOG.info("   exp.Object");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.Object WHERE ObjectURI")
-                    .appendInClause(notCopiedLsids, dialect)
+                new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
+                    .appendInClause(notCopiedObjectIds, dialect)
             );
         }
 

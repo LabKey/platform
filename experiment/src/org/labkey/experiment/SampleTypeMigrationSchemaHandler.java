@@ -98,13 +98,8 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         if (getJoinColumnName(sourceTable).equals("LSID"))
         {
-            // SELECT RowId FROM exp.Material m WHERE lsid IN (SELECT lsid FROM expsampleset.c3258d9570_dinosaurs WHERE ...)
-            selector = new SqlSelector(getSchema(), new SQLFragment("SELECT RowId FROM exp.Material m WHERE lsid IN (SELECT lsid FROM ")
-                .appendIdentifier(sourceTable.getSelectName())
-                .append(" WHERE ")
-                .append(notCopiedFilter.getSQLFragment(dialect))
-                .append(")")
-            );
+            Collection<String> lsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
+            selector = new SqlSelector(getSchema(), new SQLFragment("SELECT RowId FROM exp.Material m WHERE lsid").appendInClause(lsids, dialect));
         }
         else
         {
@@ -124,33 +119,40 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 .appendInClause(notCopiedRows, dialect);
 
             // Delete from exp.Material (and associated tables)
+            LOG.info("   exp.MaterialInput");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId")
                     .append(objectIdClause)
             );
+            LOG.info("   exp.MaterialAliasMap");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
                     .append(objectIdClause)
                     .append(")")
             );
+            LOG.info("   exp.Material");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Material WHERE RowId")
                     .append(objectIdClause)
             );
 
             // Delete from exp.Object (and associated tables)
+            LOG.info("   exp.Edge (FromObjectId)");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
                     .append(objectIdClause)
             );
+            LOG.info("   exp.Edge (ToObjectId)");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
                     .append(objectIdClause)
             );
+            LOG.info("   exp.ObjectProperty");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
                     .append(objectIdClause)
             );
+            LOG.info("   exp.Object");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
                     .append(objectIdClause)

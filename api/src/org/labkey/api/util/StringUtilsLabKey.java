@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.view.ViewServlet;
 
 import java.nio.charset.Charset;

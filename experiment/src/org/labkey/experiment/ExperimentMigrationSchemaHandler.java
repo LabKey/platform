@@ -58,9 +58,10 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public List<TableInfo> getTablesToCopy()
     {
-        // No need to populate the MaterialIndexed table -- new server should be completely re-indexed after migration
+        // No need to populate the MaterialIndexed or DataIndexed tables -- new server should be completely re-indexed after migration
         List<TableInfo> tables = super.getTablesToCopy();
         tables.remove(ExperimentServiceImpl.get().getTinfoMaterialIndexed());
+        tables.remove(ExperimentServiceImpl.get().getTinfoDataIndexed());
         return tables;
     }
 
