@@ -269,6 +269,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
+        if (configParameters != null)
+            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
         return context;
     }
 
