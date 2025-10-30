@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import au.com.bytecode.opencsv.CSVWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +24,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -90,6 +88,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVJSONWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -226,6 +225,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.CsrfInput;
@@ -2841,29 +2841,14 @@ public class ExperimentController extends SpringActionController
                 String filename = filenamePrefix + "." + delimType.extension;
                 String newlineChar = !rootObject.isNull("newlineChar") ? rootObject.getString("newlineChar") : "\n";
 
-                PageFlowUtil.prepareResponseForFile(response, Collections.emptyMap(), filename, true);
-                response.setContentType(delimType.contentType);
+                response.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
-                try (CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar))
+                try(var tsvWriter = new TSVJSONWriter(filenamePrefix, rowsArray))
                 {
-                    for (int i = 0; i < rowsArray.length(); i++)
-                    {
-                        List<Object> objectList = rowsArray.getJSONArray(i).toList();
-                        Iterator<Object> it = objectList.iterator();
-                        List<String> list = new ArrayList<>();
-
-                        while (it.hasNext())
-                        {
-                            Object o = it.next();
-                            if (o != null)
-                                list.add(o.toString());
-                            else
-                                list.add("");
-                        }
-
-                        writer.writeNext(list.toArray(new String[0]));
-                    }
+                    tsvWriter.setRowSeparator(newlineChar);
+                    tsvWriter.setDelimiterCharacter(delimType);
+                    tsvWriter.setQuoteCharacter(quoteType);
+                    tsvWriter.write(response);
                 }
 
                 JSONObject qInfo = rootObject.optJSONObject("queryinfo");
