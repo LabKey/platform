@@ -796,7 +796,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             NamedObjectList objectList = new NamedObjectList();
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
