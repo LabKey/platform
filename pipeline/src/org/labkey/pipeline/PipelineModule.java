@@ -93,10 +93,8 @@ import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 
 import javax.management.StandardMBean;
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -283,11 +281,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    @Override
     public void containerDeleted(Container c, User user)
     {
         try
@@ -301,24 +294,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         PipelineManager.purge(c, user);
     }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
 
     @Override
     public @NotNull Set<Class<?>> getIntegrationTests()

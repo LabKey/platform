@@ -51,11 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: klum
- * Date: Feb 13, 2012
- */
-public class ReportPropsManager extends ContainerManager.AbstractContainerListener
+public class ReportPropsManager implements ContainerManager.ContainerListener
 {
     private static final Logger _log = LogManager.getLogger(ReportPropsManager.class);
     private static final String PROPERTIES_DOMAIN = "Report Properties";

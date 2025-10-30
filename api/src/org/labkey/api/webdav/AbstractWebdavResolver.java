@@ -269,7 +269,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
     }
 
-    public abstract static class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
+    public abstract static class AbstractWebdavListener implements ContainerManager.ContainerListener
     {
         @Override
         public void containerCreated(Container c, User user)

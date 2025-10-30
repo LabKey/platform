@@ -36,12 +36,7 @@ import org.labkey.api.security.User;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: bimber
- * Date: 3/4/13
- * Time: 10:45 AM
- */
-public class SimpleModuleContainerListener extends ContainerManager.AbstractContainerListener
+public class SimpleModuleContainerListener implements ContainerManager.ContainerListener
 {
     private final Module _owner;
 
