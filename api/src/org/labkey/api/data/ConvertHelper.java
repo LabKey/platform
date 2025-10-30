@@ -59,6 +59,7 @@ import org.labkey.api.security.roles.RoleConverter;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SimpleTime;
 import org.labkey.api.util.SkipMothershipLogging;
@@ -71,7 +72,6 @@ import org.labkey.api.view.ShortURLRecordConverter;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 
-import java.awt.*;
 import java.beans.PropertyEditorSupport;
 import java.io.File;
 import java.math.BigDecimal;
@@ -83,7 +83,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -146,7 +148,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new CharacterConverter()), Character.class);
         _register(new CharacterConverter(), Character.TYPE);
         _register(new NullSafeConverter(new ClassConverter()), Class.class);
-        _register(new ColorConverter(), Color.class);
+        _register(new ColorConverter(), java.awt.Color.class);
         _register(new ContainerConverter(), Container.class);
         _register(new GuidConverter(), GUID.class);
         _register(new InfDoubleConverter(), Double.TYPE);
@@ -838,11 +840,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
         public Object convert(Class type, Object value)
         {
             if (value == null)
-                return Color.WHITE;
+                return java.awt.Color.WHITE;
             if (value.getClass() == type)
                 return value;
             String s = value.toString();
-            return Color.decode(s);
+            return java.awt.Color.decode(s);
         }
     }
 
@@ -859,14 +861,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return null;
             if (value instanceof String[])
                 return value;
+            if (value instanceof List l)
+                return l.stream().map(v -> Objects.toString(v, null)).toArray(String[]::new);
             if (value instanceof String s)
-            {
-                // If the value is wrapped with { and }, let the beanutils converter tokenize the values.
-                // This lets us handle Issue 5340 while allowing multi-value strings to be parsed.
-                if (s.startsWith("{") && s.endsWith("}"))
-                    return _nested.convert(type, value);
-            }
-
+                return PageFlowUtil.splitStringToValuesForImport(s).toArray(String[]::new);
             // Otherwise, treat it as a single element string array.
             return new String[] {String.valueOf(value)};
         }

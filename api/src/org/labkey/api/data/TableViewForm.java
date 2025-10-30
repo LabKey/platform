@@ -20,7 +20,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +43,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Basic form for handling posts into views.
@@ -803,25 +804,53 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         }
     }
 
-    @Override
-    public @NotNull BindException bindParameters(PropertyValues params)
+    /** Handle @ prefix and [] suffix
+     * "@field" indicates that if "field" is missing, it should be treated as "field=0"
+     * "@field[] indicates that value should be treated as an array even if only one value is present
+     *  <br>
+     *  client _could_ post both "myfield=" and "myfield[]=", but that's a client bug
+     */
+    PropertyValues preprocessPropertyValues(PropertyValues params)
     {
-        /*
-         * Checkboxes are weird. If set to FALSE they don't post
-         * at all. So impossible to tell difference between values
-         * that weren't on the html form at all and ones that were set to false
-         * by the user.
-         * To fix this each checkbox posts its name in a hidden field
-         * We set them all to false and spring will overwrite with true
-         * if they are set.
-         */
-        HttpServletRequest request = getRequest();
+        // we can usually just return params
+        if (params.stream().noneMatch(e -> e.getName().endsWith("[]") || e.getName().startsWith(SpringActionController.FIELD_MARKER)))
+            return params;
 
-        // handle Spring style markers
-        IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
-            if (name.startsWith(SpringActionController.FIELD_MARKER))
-                setValueToBind(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
-        });
+        Set<String> names = params.stream().map(PropertyValue::getName).collect(Collectors.toSet());
+        var ret = new MutablePropertyValues();
+        for (var orig : params)
+        {
+            var copy = orig;
+            if (orig.getName().startsWith(SpringActionController.FIELD_MARKER))
+            {
+                if (names.contains(orig.getName().substring(1)))
+                    continue;
+                copy = new PropertyValue(orig.getName().substring(1), "0");
+            }
+            else if (orig.getName().endsWith("[]") && orig.getValue()!=null)
+            {
+                var value = orig.getValue();
+                var convertedValue = value;
+                if (List.class.isAssignableFrom(value.getClass()))
+                {
+                    convertedValue = ((List<?>) value).toArray(new Object[0]);
+                }
+                if (!value.getClass().isArray())
+                {
+                    convertedValue = Array.newInstance(value.getClass(), 1);
+                    Array.set(convertedValue, 0, value);
+                }
+                copy = new PropertyValue(orig.getName().substring(0, orig.getName().length() - 2), convertedValue);
+            }
+            ret.addPropertyValue(copy);
+        }
+        return ret;
+    }
+
+    @Override
+    public @NotNull BindException bindParameters(PropertyValues paramsIn)
+    {
+        var params = preprocessPropertyValues(paramsIn);
 
         // handle binding of base class ReturnURLForm
         PropertyValue pvReturn = params.getPropertyValue(ActionURL.Param.returnUrl.toString());
