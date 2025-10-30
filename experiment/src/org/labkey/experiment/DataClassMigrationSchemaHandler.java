@@ -80,7 +80,8 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     private static final Set<String> SEQUENCE_TABLES = Sets.newCaseInsensitiveHashSet("protsequence", "nucsequence", "molecule");
-    private static final Set<Long> SEQUENCE_IDS = new HashSet<>();
+
+    private final Set<Long> SEQUENCE_IDS = new HashSet<>();
 
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
@@ -142,7 +143,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     }
                 })
                 .forEach(SEQUENCE_IDS::add);
-            LOG.info("   {} unique SequenceIds were added to the SequenceIdentity set", SEQUENCE_IDS.size() - startSize);
+            LOG.info("   {} unique SequenceIds were added to the SequenceIdentity set", Formats.commaf0.format(SEQUENCE_IDS.size() - startSize));
         }
     }
 
