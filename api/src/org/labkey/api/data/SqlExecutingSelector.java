@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +24,7 @@ import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -40,19 +40,21 @@ import java.util.Map;
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
 
 /**
- * Selector that is driven by SQL, which subclasses can control how it's interpreted (LabKey SQL, raw DB SQL, etc)
+ * Selector that is driven by SQL, which subclasses can control how it's interpreted (LabKey SQL, raw DB SQL, etc.)
  */
 public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends SqlExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR>
 {
+    private static final Logger LOGGER = LogHelper.getLogger(SqlExecutingSelector.class, "Log warnings about SQL exceptions");
+
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
     @Nullable Map<String, Object> _namedParameters = null;
     private ConnectionFactory _connectionFactory = super::getConnection;
+    private Integer _fetchSize = null; // By default, use the standard fetch size
 
-    private @Nullable AsyncQueryRequest _asyncRequest = null;
+    private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
     private final QueryLogging _queryLogging;
-    private static final Logger LOGGER = LogManager.getLogger(SqlExecutingSelector.class);
 
     // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.
@@ -108,6 +110,16 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
         _connectionFactory = null != factory ? factory : super::getConnection;
 
+        return getThis();
+    }
+
+    /**
+     * Set a ResultSet fetch size that differs from the default value (1,000 rows on PostgreSQL). This is normally a
+     * fine fetch size, but not when dealing with rows containing large TEXT or BYTEA columns.
+     */
+    public SELECTOR setFetchSize(int fetchSize)
+    {
+        _fetchSize = fetchSize;
         return getThis();
     }
 
@@ -282,7 +294,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     }
 
 
-    void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
+    void setAsyncRequest(@Nullable AsyncQueryRequest<?> asyncRequest)
     {
         _asyncRequest = asyncRequest;
 
@@ -291,7 +303,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     }
 
     @Nullable
-    private AsyncQueryRequest getAsyncRequest()
+    private AsyncQueryRequest<?> getAsyncRequest()
     {
         return _asyncRequest;
     }
@@ -466,7 +478,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
         }
 
-        private ResultSet executeQuery(Connection conn, SQLFragment sqlFragment, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
+        private ResultSet executeQuery(Connection conn, SQLFragment sqlFragment, boolean scrollable, @Nullable AsyncQueryRequest<?> asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
         {
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
@@ -475,13 +487,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null == parameters || parameters.isEmpty())
             {
                 Statement stmt = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                initializeStatement(conn, stmt, asyncRequest, statementMaxRows);
+                initializeStatement(stmt, asyncRequest, statementMaxRows);
                 rs = stmt.executeQuery(sql);
             }
             else
             {
                 PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                initializeStatement(conn, stmt, asyncRequest, statementMaxRows);
+                initializeStatement(stmt, asyncRequest, statementMaxRows);
 
                 try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
@@ -499,12 +511,17 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             return rs;
         }
 
-        private void initializeStatement(Connection conn, Statement stmt, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
+        private void initializeStatement(Statement stmt, @Nullable AsyncQueryRequest<?> asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
         {
             // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
             if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows)
             {
                 stmt.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
+            }
+
+            if (null != _fetchSize)
+            {
+                stmt.setFetchSize(_fetchSize);
             }
 
             if (asyncRequest != null)

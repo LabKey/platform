@@ -1810,7 +1810,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private Closer configureToDisableJdbcCaching(ConnectionWrapper connection, DbScope scope) throws SQLException
     {
-        assert connection.getAutoCommit(); // We just got a new connection... it better  be set to auto commit
+        assert connection.getAutoCommit(); // We just got a new connection... it better be set to auto commit
 
         try
         {
