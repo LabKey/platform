@@ -43,7 +43,6 @@ import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -84,7 +83,6 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -1656,7 +1654,6 @@ public class PipelineController extends SpringActionController
             url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());
             if (options != null)
             {
-                url.addParameter("advancedImportOptions", options.isAdvancedImportOptions());
                 url.addParameter("fromZip", true);
                 url.addParameter("fromTemplateSourceFolder", fromTemplateSourceFolder);
             }
