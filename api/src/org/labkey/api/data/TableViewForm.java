@@ -810,7 +810,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
      *  <br>
      *  client _could_ post both "myfield=" and "myfield[]=", but that's a client bug
      */
-    PropertyValues preprocessPropertyValues(PropertyValues params)
+    public static PropertyValues preprocessPropertyValues(PropertyValues params)
     {
         // we can usually just return params
         if (params.stream().noneMatch(e -> e.getName().endsWith("[]") || e.getName().startsWith(SpringActionController.FIELD_MARKER)))
