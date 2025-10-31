@@ -58,6 +58,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -631,7 +632,11 @@ public abstract class DisplayColumn extends RenderColumn
 
     public static String getJsonTypeName(Class<?> valueClass)
     {
-        if (String.class.isAssignableFrom(valueClass))
+        if (Map.class.isAssignableFrom(valueClass))
+            return "object";
+        else if (valueClass.isArray() || Collection.class.isAssignableFrom(valueClass))
+            return "array";
+        else if (String.class.isAssignableFrom(valueClass))
             return "string";
         else if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
             return "boolean";
@@ -1166,7 +1171,7 @@ public abstract class DisplayColumn extends RenderColumn
                     val = viewForm.getAsString(formFieldName);
             }
             else if (ctx.getRow() != null)
-                val = col.getValue(ctx);
+                val = getValue(ctx);
         }
 
         return val;

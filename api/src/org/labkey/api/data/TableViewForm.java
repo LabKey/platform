@@ -65,6 +65,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.action.SpringActionController.FIELD_MARKER;
+import static org.labkey.api.data.MultiChoice.ARRAY_MARKER;
+
 /**
  * Basic form for handling posts into views.
  * Supports insert, update, delete functionality with a minimum of fuss
@@ -644,7 +647,6 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             if (Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
             setTypedValue(propName, e.getValue());
-            // TODO MultiChoice To convert or not to convert???
             _stringValues.put(propName, e.getValue());
         }
     }
@@ -813,7 +815,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     public static PropertyValues preprocessPropertyValues(PropertyValues params)
     {
         // we can usually just return params
-        if (params.stream().noneMatch(e -> e.getName().endsWith("[]") || e.getName().startsWith(SpringActionController.FIELD_MARKER)))
+        if (params.stream().noneMatch(e -> e.getName().endsWith(ARRAY_MARKER) || e.getName().startsWith(FIELD_MARKER)))
             return params;
 
         Set<String> names = params.stream().map(PropertyValue::getName).collect(Collectors.toSet());
@@ -821,13 +823,13 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         for (var orig : params)
         {
             var copy = orig;
-            if (orig.getName().startsWith(SpringActionController.FIELD_MARKER))
+            if (orig.getName().startsWith(FIELD_MARKER))
             {
                 if (names.contains(orig.getName().substring(1)))
                     continue;
                 copy = new PropertyValue(orig.getName().substring(1), "0");
             }
-            else if (orig.getName().endsWith("[]") && orig.getValue()!=null)
+            else if (orig.getName().endsWith(ARRAY_MARKER) && orig.getValue()!=null)
             {
                 var value = orig.getValue();
                 var convertedValue = value;

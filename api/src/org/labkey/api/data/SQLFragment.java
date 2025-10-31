@@ -684,6 +684,11 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    public SQLFragment add(Object p, JdbcType type)
+    {
+        getMutableParams().add(new Parameter.TypedValue(p, type));
+        return this;
+    }
 
     /** Adds the objects as JDBC parameter values */
     public SQLFragment addAll(Collection<?> l)

@@ -35,6 +35,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormatSymbols;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -168,8 +169,9 @@ public interface ColumnRenderProperties extends ImportAliasable
             return "Date";
         else if (Date.class.isAssignableFrom(javaClass))
             return "Date and Time";
-        else
-            return "Other";
+        else if (List.class.isAssignableFrom(javaClass) || javaClass.isArray())
+            return "Array";
+        return "Other";
     }
 
     /** Don't return TYPEs just real java objects */
@@ -381,18 +383,20 @@ public interface ColumnRenderProperties extends ImportAliasable
         final var defaultUnit = col.getDisplayUnit();
         final @NotNull var jdbcType = col.getJdbcType();
 
-        if (null == defaultUnit)
+        if (null != defaultUnit)
+            return defaultUnit::convert;
+
+        if (PropertyType.MULTI_CHOICE == col.getPropertyType())
+            return MultiChoice.Converter.getInstance();
+
+        return (value) ->
         {
-            return (value) ->
-            {
-                // quick check for unnecessary conversion
-                if (value == null || javaClass == value.getClass())
-                    return value;
-                if (value instanceof CharSequence)
-                    ConvertUtils.convert(value.toString(), javaClass);
-                return jdbcType.convert(value);
-            };
-        }
-        return defaultUnit::convert;
+            // quick check for unnecessary conversion
+            if (value == null || javaClass == value.getClass())
+                return value;
+            if (value instanceof CharSequence)
+                ConvertUtils.convert(value.toString(), javaClass);
+            return jdbcType.convert(value);
+        };
     }
 }
