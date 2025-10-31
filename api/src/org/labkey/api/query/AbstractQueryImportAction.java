@@ -310,6 +310,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         crossFolderImport,
         useTransactionAuditCache,
         lookupResolutionType,
+        auditDetails,
     }
 
     @Nullable
@@ -442,6 +443,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         String text = getParam(Params.text);
         String path = getParam(Params.path);
+        String auditDetailsJson = getParam(Params.auditDetails);
 
         String moduleName = getParam(Params.module);
         String moduleResource = getParam(Params.moduleResource);
@@ -458,6 +460,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
         transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, getTransactionImportParams(_insertOption.name(), _useAsync));
+        if (!StringUtils.isEmpty(auditDetailsJson))
+            TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetailsJson);
 
         try
         {

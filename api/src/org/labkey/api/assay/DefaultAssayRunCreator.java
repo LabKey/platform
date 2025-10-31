@@ -150,9 +150,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
-            if (transaction.getAuditId() == null)
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = transaction.getAuditEvent();
+            if (auditEvent == null)
             {
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
+                auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
             context.init();
@@ -166,6 +167,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
                 }
                 FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
                 run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
                 run.setComments(context.getComments());
                 run.setWorkflowTaskId(context.getWorkflowTask());
@@ -181,6 +183,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 context.uploadComplete(null);
                 context.setTransactionAuditId(transaction.getAuditId());
+                FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+                if (primaryFile != null)
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
+                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
                 exp = saveExperimentRunAsync(context, exp);
             }
             transaction.commit();

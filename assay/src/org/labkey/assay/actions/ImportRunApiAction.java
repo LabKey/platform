@@ -130,6 +130,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         boolean allowLookupByAlternateKey;
         String auditUserComment;
         Map<Object, String> outputData = new HashMap<>();
+        String auditDetailsJsonStr;
 
         // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
@@ -173,6 +174,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
             auditUserComment  = json.optString("auditUserComment", null);
+            auditDetailsJsonStr = json.optString("auditUserComment", null);
             JSONArray dataRows = json.optJSONArray(AssayJSONConverter.DATA_ROWS);
             if (dataRows != null)
                 rawData = JsonUtil.toMapList(dataRows);
@@ -204,6 +206,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             allowCrossRunFileInputs = form.isAllowCrossRunFileInputs();
             allowLookupByAlternateKey = form.isAllowLookupByAlternateKey();
             auditUserComment = form.getAuditUserComment();
+            auditDetailsJsonStr = form.getAuditDetails();
         }
 
         if (reImportOption == null)
@@ -319,7 +322,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
-            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, getTransactionAuditDetails());
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+            if (!StringUtils.isEmpty(auditDetailsJsonStr))
+                TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetailsJsonStr);
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
             AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
             var auditTransactionEvent = transaction.getAuditEvent();
             Long auditTransactionId = auditTransactionEvent == null ? null : auditTransactionEvent.getRowId();
@@ -356,7 +362,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             String asyncJobGUID = uploadContext.getPipelineJobGUID();
             if (!StringUtils.isEmpty(asyncJobGUID))
+            {
+                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportOptions, "backgroundImport");
                 resp.put("jobId", PipelineService.get().getJobId(getUser(), getContainer(), asyncJobGUID));
+            }
 
             return resp;
         }
@@ -459,6 +468,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private boolean _allowCrossRunFileInputs;
         private boolean _allowLookupByAlternateKey = true;
         private String _auditUserComment = null;
+        private String _auditDetails = null;
 
         public JSONObject getJson()
         {
@@ -678,6 +688,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setAuditUserComment(String auditUserComment)
         {
             _auditUserComment = auditUserComment;
+        }
+
+        public String getAuditDetails()
+        {
+            return _auditDetails;
+        }
+
+        public void setAuditDetails(String auditDetails)
+        {
+            _auditDetails = auditDetails;
         }
 
         @Override

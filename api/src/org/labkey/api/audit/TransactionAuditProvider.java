@@ -1,8 +1,10 @@
 package org.labkey.api.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.micrometer.common.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -168,6 +170,23 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
                         detail.add(transactionDetails, entry.getValue());
                 }
             }
+        }
+
+        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails,  @NotNull String auditDetailsJson)
+        {
+            if (StringUtils.isEmpty(auditDetailsJson))
+                return;
+
+            Map<String, Object> auditDetails = new HashMap<>();
+            try
+            {
+                auditDetails = new JSONObject(auditDetailsJson).toMap();
+            }
+            catch (Exception ignore)
+            {
+            }
+
+            addAuditDetails(transactionDetails, auditDetails);
         }
 
         public void add(Map<TransactionDetail, Object> detailMap, Object value)
