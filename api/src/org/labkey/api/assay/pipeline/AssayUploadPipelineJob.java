@@ -156,11 +156,12 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
                 _forceSaveBatchProps = true;
             }
 
-            // Do all the real work of the import
             Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, _primaryFile.getName());
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
             transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayUploadPipelineJob");
+
+            // Do all the real work of the import
             ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps, transactionDetails);
             setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");

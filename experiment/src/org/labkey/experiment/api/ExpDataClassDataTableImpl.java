@@ -1508,9 +1508,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
                 finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
-                if (configParameters != null)
-                    configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
-
+                recordDataIteratorUsed(configParameters);
                 results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
             }
             else

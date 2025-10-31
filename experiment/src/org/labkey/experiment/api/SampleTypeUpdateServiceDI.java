@@ -560,9 +560,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
-
-            if (configParameters != null)
-                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+            recordDataIteratorUsed(configParameters);
 
             try
             {

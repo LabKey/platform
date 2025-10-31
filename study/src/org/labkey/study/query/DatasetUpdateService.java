@@ -237,8 +237,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        if (configParameters != null)
-            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        recordDataIteratorUsed(configParameters);
         int count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (count > 0)
         {
@@ -277,8 +276,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        if (configParameters != null)
-            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        recordDataIteratorUsed(configParameters);
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
 
         return loadRows(user, container, rows, context, extraScriptContext);
@@ -293,8 +291,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             aliasColumns(_columnMapping, row);
         }
 
-        if (configParameters != null)
-            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        recordDataIteratorUsed(configParameters);
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
         if (_skipAuditLogging)
