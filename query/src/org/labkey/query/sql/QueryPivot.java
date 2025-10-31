@@ -1181,7 +1181,7 @@ public class QueryPivot extends AbstractQueryRelation
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             return new NamedObjectList();
         }

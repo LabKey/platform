@@ -20,11 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * User: adam
- * Date: 1/22/12
- * Time: 2:33 PM
- */
 public interface SqlFactory
 {
     /** Returns the SQL to execute. If null, execution is skipped and handler is called with null parameters, allowing
