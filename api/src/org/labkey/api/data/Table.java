@@ -1171,7 +1171,7 @@ public class Table
             {
                 dataUpdate.append(", ").appendIdentifier(colModified.getSelectIdentifier())
                         .append(" = ")
-                        .appendValue(new java.sql.Timestamp(System.currentTimeMillis()));
+                        .appendNowTimestamp();
             }
 
             ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
