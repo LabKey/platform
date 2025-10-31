@@ -167,7 +167,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
                 }
                 FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
+                if (primaryFile != null)
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
                 run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
                 run.setComments(context.getComments());
                 run.setWorkflowTaskId(context.getWorkflowTask());
