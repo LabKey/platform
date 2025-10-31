@@ -40,7 +40,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         java.nio.file.Path root = svc.getFileRootPath(c);
         if (root != null)
         {
-            if (!FileUtil.hasCloudScheme(root) && NetworkDrive.exists(root.toFile()))
+            if (!FileUtil.hasCloudScheme(root) && NetworkDrive.exists(root))
             {
                 result.add(FileContentService.SCRIPTS_LINK);
             }

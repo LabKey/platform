@@ -11,8 +11,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
 import org.labkey.assay.AssayDomainServiceImpl;
 import org.labkey.assay.AssayManager;
 
@@ -61,7 +59,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
     private void createStandardAssayDesign(String name) throws ValidationException
     {
         // create assay design
-        AssayDomainService assayDomainService = new AssayDomainServiceImpl(new ViewContext(new ViewBackgroundInfo(getContainer(), getUser(), null)));
+        AssayDomainService assayDomainService = new AssayDomainServiceImpl(getUser(), getContainer());
 
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
         assayTemplate.setName(name);

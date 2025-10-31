@@ -327,11 +327,15 @@ public interface FileSystemLike
     }
 
     /**
+     * Deprecated - stop passing around absolute paths through HTTP form submissions, and refactor to use
+     * pipeline root relative paths.
+     *
      * Verify that the provided path is within the Pipeline for the container and is usable as file
      * @param container scope and context
      * @param filePath to verify
      * @return A FileLike object representation of the provided file path relative to the container's pipeline root
      */
+    @Deprecated
     static FileLike getVerifiedFileLike(Container container, String filePath)
     {
         if (filePath == null)

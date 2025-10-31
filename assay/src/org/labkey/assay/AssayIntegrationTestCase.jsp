@@ -137,7 +137,7 @@
     private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups) throws Exception
     {
         // create assay design
-        AssayDomainService assayDomainService = new AssayDomainServiceImpl(context);
+        AssayDomainService assayDomainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
         assayTemplate.setName(ASSAY_NAME);
         assayTemplate.setEditableRuns(true);
@@ -721,7 +721,7 @@
         var sampleTypeName = "Does Not Exist";
         var lookupName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
         var assayPair = createAssay(context, true, true);
-        var domainService = new AssayDomainServiceImpl(context);
+        var domainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         var gwtProtocol = domainService.getAssayDefinition(assayPair.second.getRowId(), false);
 
         // Update the assay design to refer to a non-existent sample type
