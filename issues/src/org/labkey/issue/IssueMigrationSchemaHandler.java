@@ -56,15 +56,25 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
     {
-        // Delete all issues, comments, and related issues that were NOT copied
-        SimpleFilter deleteFilter = new SimpleFilter(
-            new NotClause(
-                new InClause(FieldKey.fromParts("IssueId"), ISSUE_IDS)
-            )
-        );
         LOG.info("   Deleting related issues, comments, and issues rows associated with {} issues", ISSUE_IDS.size());
-        Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
-        Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
-        Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
+
+        if (!ISSUE_IDS.isEmpty())
+        {
+            // Delete all issues, comments, and related issues that were NOT copied
+            SimpleFilter deleteRelatedFilter = new SimpleFilter(
+                new NotClause(
+                    new InClause(FieldKey.fromParts("RelatedIssueId"), ISSUE_IDS)
+                )
+            );
+            Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
+            SimpleFilter deleteFilter = new SimpleFilter(
+                new NotClause(
+                    new InClause(FieldKey.fromParts("IssueId"), ISSUE_IDS)
+                )
+            );
+            Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
+            Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
+            Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
+        }
     }
 }

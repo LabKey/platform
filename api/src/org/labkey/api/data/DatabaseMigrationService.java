@@ -86,25 +86,25 @@ public interface DatabaseMigrationService
 
         List<TableInfo> getTablesToCopy();
 
-        // Create a filter clause that selects from all specified containers and (optionally) applied table-specific filters
+        // Create a filter clause that selects from all specified containers and (in some overrides) applies table-specific filters
         FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
 
         // Create a filter clause that selects from all specified containers
         FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
 
         // Return the FieldKey that can be used to filter this table by container. Special values SITE_WIDE_TABLE and
-        // DUMMY_FIELD_KEY can be returned for special behaviors. SITE_WIDE_TABLE is used to select all rows.
-        // DUMMY_FIELD_KEY ensures that the handler's custom getContainerClause() will be called.
+        // DUMMY_FIELD_KEY can be returned for special behaviors. DUMMY_FIELD_KEY ensures that the handler's custom
+        // getContainerClause() is always called. SITE_WIDE_TABLE is used to select all rows.
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
-        // Create a filter clause that selects all rows from unfiltered containers and filtered rows from the filtered containers
+        // Create a filter clause that selects all rows from unfiltered containers plus filtered rows from the filtered containers
         FilterClause getDomainDataFilter(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, FieldKey containerFieldKey, Set<String> selectColumnNames);
 
         void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames);
 
         // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
-        // source table that were NOT copied to the target table. (For example, they were filtered out due to container
-        // and/or domain data filtering.)
+        // source table that were NOT copied to the target table. (For example, rows in a global table not copied due to
+        // container filtering or rows in a provisioned table not copied due to domain data filtering.)
         void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter);
 
         void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap);
