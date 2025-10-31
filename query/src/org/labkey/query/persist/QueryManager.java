@@ -611,7 +611,7 @@ public class QueryManager
         return dependents;
     }
 
-    static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.AbstractContainerListener()
+    static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()
     {
         @Override
         public void containerDeleted(Container c, User user)

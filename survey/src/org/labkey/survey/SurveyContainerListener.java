@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
-public class SurveyContainerListener extends ContainerManager.AbstractContainerListener
+public class SurveyContainerListener implements ContainerManager.ContainerListener
 {
     @Override
     public void containerDeleted(Container c, User user)

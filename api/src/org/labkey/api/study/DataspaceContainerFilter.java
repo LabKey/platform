@@ -217,13 +217,6 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
                     studiesCache.remove(oldParent.getProject().getId());
             }
 
-            @NotNull
-            @Override
-            public Collection<String> canMove(Container c, Container newParent, User user)
-            {
-                return Collections.emptyList();
-            }
-
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {

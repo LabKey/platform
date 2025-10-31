@@ -196,7 +196,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.011;
+        return 25.013;
     }
 
     @Nullable
@@ -531,27 +531,26 @@ public class ExperimentModule extends SpringModule
             fileContentService.addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.fileRootPath, "RowId"));
             fileContentService.addFileListener(new FileLinkFileListener());
         }
-        ContainerManager.addContainerListener(
-                new ContainerManager.AbstractContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        {
+            @Override
+            public void containerDeleted(Container c, User user)
+            {
+                try
                 {
-                    @Override
-                    public void containerDeleted(Container c, User user)
-                    {
-                        try
-                        {
-                        ExperimentService.get().deleteAllExpObjInContainer(c, user);
-                        }
-                        catch (ExperimentException ee)
-                        {
-                        throw new RuntimeException(ee);
-                        }
-                    }
-                },
-                // This is in the Last group because when a container is deleted,
-                // the Experiment listener needs to be called after the Study listener,
-                // because Study needs the metadata held by Experiment to delete properly.
-                // but it should be before the CoreContainerListener
-                ContainerManager.ContainerListener.Order.Last);
+                    ExperimentService.get().deleteAllExpObjInContainer(c, user);
+                }
+                catch (ExperimentException ee)
+                {
+                    throw new RuntimeException(ee);
+                }
+            }
+        },
+        // This is in the Last group because when a container is deleted,
+        // the Experiment listener needs to be called after the Study listener,
+        // because Study needs the metadata held by Experiment to delete properly.
+        // but it should be before the CoreContainerListener
+        ContainerManager.ContainerListener.Order.Last);
 
         if (ModuleLoader.getInstance().shouldInsertData())
             SystemProperty.registerProperties();

@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.assay.plate.PlateManager;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,27 +36,12 @@ import java.util.Set;
 public class AssayContainerListener implements ContainerListener
 {
     @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    @Override
     public void containerDeleted(Container c, User user)
     {
         PlateManager.get().deleteAllPlateData(c);
 
         // Changing the container tree can change what assays are in scope
         AssayManager.get().clearProtocolCache();
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
     }
 
     @NotNull

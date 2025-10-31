@@ -25,7 +25,7 @@ import org.labkey.search.model.DavCrawler;
 
 import java.beans.PropertyChangeEvent;
 
-public class SearchContainerListener extends ContainerManager.AbstractContainerListener
+public class SearchContainerListener implements ContainerManager.ContainerListener
 {
     @Override
     public void containerCreated(Container c, User user)
