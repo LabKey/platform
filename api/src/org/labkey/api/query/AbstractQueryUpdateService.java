@@ -270,7 +270,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
         if (configParameters != null)
-            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        {
+            try
+            {
+                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+            } catch (UnsupportedOperationException ignore)
+            {
+                // configParameters is immutable, likely originated from a junit test
+            }
+        }
         return context;
     }
 
