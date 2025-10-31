@@ -10,7 +10,10 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.AndClause;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -113,19 +116,13 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     }
 
     @Override
-    public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
     {
-        SimpleFilter.FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        FilterClause filterClause = getContainerClause(sourceTable, containerFieldKey, containers);
         String tableName = sourceTable.getName();
 
-        // Users and root groups have container == null, so add that as an OR clause
         if ("Principals".equals(tableName) || "Members".equals(tableName))
         {
-            SimpleFilter.OrClause orClause = new SimpleFilter.OrClause();
-            orClause.addClause(containerClause);
-            orClause.addClause(new CompareType.CompareClause(containerFieldKey, CompareType.ISBLANK, null));
-            containerClause = orClause;
-
             if (_groupFilterCondition != null)
             {
                 SQLFragment groupFilterFragment = new SQLFragment();
@@ -144,7 +141,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
                         .append(_groupFilterCondition);
                 }
 
-                containerClause = new SimpleFilter.AndClause(containerClause, new SimpleFilter.SQLClause(groupFilterFragment));
+                filterClause = new AndClause(filterClause, new SQLClause(groupFilterFragment));
             }
         }
 
@@ -153,7 +150,25 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
             SQLFragment groupFilterFragment = new SQLFragment("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
                 .append(_groupFilterCondition)
                 .append("))");
-            containerClause = new SimpleFilter.AndClause(containerClause, new SimpleFilter.SQLClause(groupFilterFragment));
+            filterClause = new AndClause(filterClause, new SQLClause(groupFilterFragment));
+        }
+
+        return filterClause;
+    }
+
+    @Override
+    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    {
+        FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        String tableName = sourceTable.getName();
+
+        if ("Principals".equals(tableName) || "Members".equals(tableName))
+        {
+            // Users and root groups have container == null, so add that as an OR clause
+            OrClause orClause = new OrClause();
+            orClause.addClause(containerClause);
+            orClause.addClause(new CompareType.CompareClause(containerFieldKey, CompareType.ISBLANK, null));
+            containerClause = orClause;
         }
 
         return containerClause;
@@ -180,7 +195,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     public void saveFilter(@Nullable GUID guid, String groupFilter)
     {
         if (guid != null)
-            throw new ConfigurationException("GUID should not be provided to GroupFilter");
+            throw new ConfigurationException("GroupFilter is applied globally; you cannot specify a GUID");
 
         _groupFilterCondition = new SQLFragment(groupFilter);
     }
