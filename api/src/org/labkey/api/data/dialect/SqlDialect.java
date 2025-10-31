@@ -2093,9 +2093,11 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Returns a SQL query that selects the last auto-increment values where they're non-null. Required columns are:
-    // SchemaName, TableName, ColumnName, and LastValue.
-    public String getSelectSequencesSql()
+    public record Sequence(String schemaName, String tableName, String columnName, Long lastValue) {}
+
+    // Returns information about all auto-increment / serial sequences associated with a table. PostgreSQL tables can
+    // have more than one. Sequence value will be null if the sequence hasn't been incremented yet.
+    public @NotNull Collection<Sequence> getAutoIncrementSequences(TableInfo table)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -30,7 +30,6 @@ import org.labkey.experiment.api.DataClassDomainKind;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -148,7 +147,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
         // Experiment shouldn't mess with Biologics tables, but it gets the job done
 
@@ -162,7 +161,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, sequenceMap.get("biologics"), new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
                 public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)

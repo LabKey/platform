@@ -24,7 +24,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler implements DatabaseMigrationService.MigrationFilter
@@ -175,7 +174,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     }
 
     @Override
-    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");

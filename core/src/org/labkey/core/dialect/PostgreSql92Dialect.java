@@ -19,7 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -213,35 +215,41 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
-    public String getSelectSequencesSql()
+    public @NotNull Collection<Sequence> getAutoIncrementSequences(TableInfo table)
     {
-        return """
-            SELECT
-                s.relname AS SequenceName, -- Not used
-                tns.nspname AS SchemaName,
-                t.relname AS TableName,
-                a.attname AS ColumnName,
-                seq.last_value AS LastValue,
-                sns.nspname AS SequenceSchema -- Not used. In theory, sequence could live in a different schema, but not our practice
-            FROM
-                pg_depend d
-            JOIN
-                pg_class s ON d.objid = s.oid -- The sequence
-            JOIN
-                pg_namespace sns ON s.relnamespace = sns.oid
-            JOIN
-                pg_class t ON d.refobjid = t.oid -- The table
-            JOIN
-                pg_namespace tns ON t.relnamespace = tns.oid
-            JOIN
-                pg_attribute a ON d.refobjid = a.attrelid AND d.refobjsubid = a.attnum
-            JOIN
-                pg_sequences seq ON s.relname = seq.SequenceName
-            WHERE
-                s.relkind = 'S' -- Sequence
-                AND t.relkind IN ('r', 'P') -- Table (regular table or partitioned table)
-                AND d.deptype IN ('a', 'i') -- Automatic dependency for DEFAULT or index-related for PK
-                AND seq.last_value IS NOT NULL
-            """;
+        SQLFragment sql = new SQLFragment("""
+            SELECT SchemaName, TableName, ColumnName, LastValue FROM (
+                SELECT
+                    s.relname AS SequenceName, -- Not used
+                    tns.nspname AS SchemaName,
+                    t.relname AS TableName,
+                    a.attname AS ColumnName,
+                    seq.last_value AS LastValue,
+                    sns.nspname AS SequenceSchema -- Not used. In theory, sequence could live in a different schema, but not our practice
+                FROM
+                    pg_depend d
+                JOIN
+                    pg_class s ON d.objid = s.oid -- The sequence
+                JOIN
+                    pg_namespace sns ON s.relnamespace = sns.oid
+                JOIN
+                    pg_class t ON d.refobjid = t.oid -- The table
+                JOIN
+                    pg_namespace tns ON t.relnamespace = tns.oid
+                JOIN
+                    pg_attribute a ON d.refobjid = a.attrelid AND d.refobjsubid = a.attnum
+                JOIN
+                    pg_sequences seq ON s.relname = seq.SequenceName AND tns.nspname = seq.SchemaName -- maybe sns.nspname instead? but that's slower...
+                WHERE
+                    s.relkind = 'S' -- Sequence
+                    AND t.relkind IN ('r', 'P') -- Table (regular table or partitioned table)
+                    AND d.deptype IN ('a', 'i') -- Automatic dependency for DEFAULT or index-related for PK
+            )
+            WHERE SchemaName ILIKE ? AND TableName ILIKE ?
+            """,
+            table.getSchema().getName(),
+            table.getName()
+        );
+        return new SqlSelector(table.getSchema(), sql).getCollection(Sequence.class);
     }
 }

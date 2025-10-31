@@ -20,7 +20,6 @@ import org.labkey.api.util.Formats;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -54,7 +53,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
         LOG.info("   Deleting related issues, comments, and issues rows associated with {} issues", ISSUE_IDS.size());
 

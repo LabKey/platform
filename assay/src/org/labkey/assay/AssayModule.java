@@ -331,8 +331,8 @@ public class AssayModule extends SpringModule
     public Set<String> getProvisionedSchemaNames()
     {
         return Set.of(
-                AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME,
-                PlateMetadataDomainKind.PROVISIONED_SCHEMA_NAME
+            AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME,
+            PlateMetadataDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 
