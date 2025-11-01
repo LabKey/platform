@@ -89,6 +89,11 @@ public class FileSystemLocal extends AbstractFileSystemLike
             return new _FileLike(path, file);
     }
 
+    @Override
+    public String toString()
+    {
+        return "FileSystemLocal " + nioRoot + " caching=" + caching;
+    }
 
     @JsonSerialize(using = FileLike.FileLikeSerializer.class)
     @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)

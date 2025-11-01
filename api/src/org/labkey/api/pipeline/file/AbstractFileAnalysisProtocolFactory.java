@@ -109,9 +109,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     /**
-     * Get the parameters file location, given a directory containing the mass spec data.
+     * Get the parameters file location, given a directory containing the input files to the job.
      *
-     * @param dirData mass spec data directory
+     * @param dirData input data directory
      * @param protocolName name of protocol for analysis
      * @param root pipeline root under which the files are stored
      * @return parameters file

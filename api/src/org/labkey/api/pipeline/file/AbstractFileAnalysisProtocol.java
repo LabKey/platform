@@ -196,7 +196,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             try
             {
-                _log.info("Creating directory " + dir);
+                _log.info("Creating directory " + dir + " for file " + file + " in " + file.getFileSystem());
                 FileUtil.createDirectories(dir);
             }
             catch (IOException e)
