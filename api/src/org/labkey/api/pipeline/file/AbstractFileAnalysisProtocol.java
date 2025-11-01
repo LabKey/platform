@@ -42,13 +42,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,6 +196,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             try
             {
+                _log.info("Creating directory " + dir);
                 FileUtil.createDirectories(dir);
             }
             catch (IOException e)
@@ -229,7 +228,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
         catch (IOException eio)
         {
-            _log.error("Error writing input XML.", eio);
+            _log.error("Error writing input XML. File is dir: " + file.isDirectory(), eio);
             throw eio;
         }
     }
