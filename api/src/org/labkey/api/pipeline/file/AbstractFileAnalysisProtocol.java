@@ -204,6 +204,10 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 throw new IOException("Failed to create directory '" + dir + "'.");
             }
         }
+        else
+        {
+            _log.info(dir + " exists and is a directory: " + dir.isDirectory());
+        }
 
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM, getName());
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_DESCRIPTION_PARAM, getDescription());
