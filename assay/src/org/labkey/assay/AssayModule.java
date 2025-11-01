@@ -307,6 +307,8 @@ public class AssayModule extends SpringModule
                 return SITE_WIDE_TABLE;
             }
         });
+
+        DatabaseMigrationService.get().registerSchemaHandler(new AssayResultMigrationSchemaHandler());
     }
 
     @Override
@@ -319,9 +321,8 @@ public class AssayModule extends SpringModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        HashSet<String> set = new HashSet<>();
+        HashSet<String> set = new HashSet<>(getProvisionedSchemaNames());
         set.add(AssayDbSchema.getInstance().getSchemaName());
-        set.addAll(getProvisionedSchemaNames());
 
         return set;
     }
@@ -358,13 +359,13 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
-            TsvAssayProvider.TestCase.class,
-            AssaySchemaImpl.TestCase.class,
+            AssayPlateMetadataServiceImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PositionImpl.TestCase.class,
+            AssaySchemaImpl.TestCase.class,
             PlateImpl.TestCase.class,
             PlateUtils.TestCase.class,
-            AssayPlateMetadataServiceImpl.TestCase.class
+            PositionImpl.TestCase.class,
+            TsvAssayProvider.TestCase.class
         );
     }
 

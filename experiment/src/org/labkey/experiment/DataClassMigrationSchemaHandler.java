@@ -5,8 +5,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -72,10 +72,17 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
     {
         // Data classes have a built-in Flag field
-        addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
+        if (filter.column().equalsIgnoreCase("Flag"))
+        {
+            addObjectPropertyClause(orClause, filter, sourceTable, fKey, getCommentPropertyId(sourceTable.getSchema().getScope()));
+        }
+        else
+        {
+            addDataFilterClause(orClause, filter, sourceTable, fKey, selectColumnNames);
+        }
     }
 
     private static final Set<String> SEQUENCE_TABLES = Sets.newCaseInsensitiveHashSet("protsequence", "nucsequence", "molecule");
@@ -164,7 +171,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
-                public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+                public FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
                 {
                     // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
                     return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);

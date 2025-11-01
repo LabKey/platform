@@ -83,7 +83,7 @@ public interface DatabaseMigrationService
         List<TableInfo> getTablesToCopy();
 
         // Create a filter clause that selects from all specified containers and (in some overrides) applies table-specific filters
-        FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
+        FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
 
         // Create a filter clause that selects from all specified containers
         FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers);
@@ -94,9 +94,9 @@ public interface DatabaseMigrationService
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
         // Create a filter clause that selects all rows from unfiltered containers plus filtered rows from the filtered containers
-        FilterClause getDomainDataFilter(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, FieldKey containerFieldKey, Set<String> selectColumnNames);
+        FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, FieldKey containerFieldKey, Set<String> selectColumnNames);
 
-        void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames);
+        void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames);
 
         // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
         // source table that were NOT copied to the target table. (For example, rows in a global table not copied due to
@@ -153,7 +153,7 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+        public FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
         {
             return getContainerClause(sourceTable, containerFieldKey, containers);
         }
@@ -209,7 +209,7 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public FilterClause getDomainDataFilter(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+        public final FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
             // Filtered case: remove the filtered containers from the unconditional container set
             Set<GUID> otherContainers = new HashSet<>(copyContainers);
@@ -219,7 +219,7 @@ public interface DatabaseMigrationService
             OrClause orClause = new OrClause();
 
             // Delegate to the MigrationSchemaHandler to add domain-filtered containers back with their special filter applied
-            domainFilters.forEach(filter -> addDomainDataFilter(orClause, filter, sourceTable, fKey, selectColumnNames));
+            domainFilters.forEach(filter -> addDomainDataFilterClause(orClause, filter, sourceTable, fKey, selectColumnNames));
 
             if (!orClause.getClauses().isEmpty())
             {
@@ -231,13 +231,13 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+        public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
-            addDataFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
+            addDataFilterClause(orClause, filter, sourceTable, fKey, selectColumnNames);
         }
 
         // Add a filter and return true if the column exists directly on the table
-        protected boolean addDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+        protected boolean addDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
         {
             boolean columnExists = selectColumnNames.contains(filter.column());
 
@@ -255,30 +255,18 @@ public interface DatabaseMigrationService
             return columnExists;
         }
 
-        // Add a filter to select all rows where the object property with <propertyId> equals the filter value
-        protected void addObjectPropertyFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, int propertyId)
+        // Add a clause that selects all rows where the object property with <propertyId> equals the filter value. This
+        // is only for provisioned tables that lack an ObjectId, MaterialId, or DataId column.
+        protected void addObjectPropertyClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey containerFieldKey, int propertyId)
         {
             SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object WHERE ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))", filter.condition().getParamVals()[0], propertyId);
 
             orClause.addClause(
                 new AndClause(
-                    getContainerClause(sourceTable, fKey, filter.containers()),
+                    getContainerClause(sourceTable, containerFieldKey, filter.containers()),
                     new SQLClause(flagWhere)
                 )
             );
-        }
-
-        // Special domain data filter method for provisioned tables that have a built-in Flag field (currently used by data classes)
-        protected void addDomainDataFlagFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
-        {
-            if (filter.column().equalsIgnoreCase("Flag"))
-            {
-                addObjectPropertyFilter(orClause, filter, sourceTable, fKey, getCommentPropertyId(sourceTable.getSchema().getScope()));
-            }
-            else
-            {
-                addDataFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
-            }
         }
 
         private Integer _commentPropertyId = null;

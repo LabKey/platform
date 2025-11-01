@@ -239,7 +239,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 JOIN
                     pg_attribute a ON d.refobjid = a.attrelid AND d.refobjsubid = a.attnum
                 JOIN
-                    pg_sequences seq ON s.relname = seq.SequenceName AND tns.nspname = seq.SchemaName -- maybe sns.nspname instead? but that's slower...
+                    pg_sequences seq ON s.relname = seq.SequenceName AND tns.nspname = seq.SchemaName -- maybe sns.nspname instead? but that is slower...
                 WHERE
                     s.relkind = 'S' -- Sequence
                     AND t.relkind IN ('r', 'P') -- Table (regular table or partitioned table)

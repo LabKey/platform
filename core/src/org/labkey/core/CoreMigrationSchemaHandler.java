@@ -50,7 +50,6 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
             }
         });
 
-        // TODO: Temporary, until "clone" migration type copies schemas with a registered handler only
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
             DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
@@ -115,7 +114,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     }
 
     @Override
-    public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
     {
         FilterClause filterClause = getContainerClause(sourceTable, containerFieldKey, containers);
         String tableName = sourceTable.getName();
