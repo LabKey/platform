@@ -21,13 +21,12 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     public ExperimentAuditEvent()
     {
         super();
-        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
     }
 
     public ExperimentAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
-        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+        setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
     }
 
     public String getProtocolLsid()

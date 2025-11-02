@@ -16,11 +16,14 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
+
+import java.util.Map;
 
 /**
  * An AssayRunCreator does the actual work of constructing an assay run and saving it to the database. It gets
@@ -40,14 +43,17 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
      * @param batchId if not null, the run group that's already created for this batch. If null, a new one will be created.
      * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
      */
-    Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId)
-            throws ExperimentException, ValidationException;
+    default Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId)
+            throws ExperimentException, ValidationException
+    {
+        return saveExperimentRun(context, batchId, false, null);
+    }
 
-    Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId, boolean forceAsync)
+    Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId, boolean forceAsync, Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
             throws ExperimentException, ValidationException;
     /**
      * @return the batch to which the run has been assigned
      */
-    ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
+    ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
         throws ExperimentException, ValidationException;
 }
