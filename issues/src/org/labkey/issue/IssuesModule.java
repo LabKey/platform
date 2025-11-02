@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
@@ -29,7 +30,6 @@ import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -161,6 +162,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 return metric;
             });
         }
+
+        DatabaseMigrationService.get().registerSchemaHandler(new IssueMigrationSchemaHandler());
     }
 
     @NotNull
@@ -170,14 +173,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         Collection<String> list = new LinkedList<>();
         long count = IssueManager.getIssueCount(c);
         if (count > 0)
-            list.add("" + count + " Issue" + (count > 1 ? "s" : ""));
+            list.add(StringUtilsLabKey.pluralize(count, " Issue"));
         return list;
-    }
-
-    @Override
-    public TabDisplayMode getTabDisplayMode()
-    {
-        return Module.TabDisplayMode.DISPLAY_USER_PREFERENCE;
     }
 
     @Override
