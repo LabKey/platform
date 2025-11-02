@@ -206,7 +206,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
         else
         {
-            _log.info(dir + " exists and is a directory: " + dir.isDirectory());
+            _log.info(dir + " exists and is a directory: " + dir.isDirectory() + " for file " + file + " in " + file.getFileSystem());
         }
 
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM, getName());
