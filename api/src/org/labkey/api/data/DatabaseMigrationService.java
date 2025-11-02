@@ -20,6 +20,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -327,6 +328,27 @@ public interface DatabaseMigrationService
         String getName();
         // Implementations should validate guid nullity
         void saveFilter(@Nullable GUID guid, String value);
+    }
+
+    interface ExperimentDeleteService
+    {
+        static @NotNull ExperimentDeleteService get()
+        {
+            ExperimentDeleteService ret = ServiceRegistry.get().getService(ExperimentDeleteService.class);
+            if (ret == null)
+                throw new IllegalStateException("ExperimentDeleteService not found");
+            return ret;
+        }
+
+        static void setInstance(ExperimentDeleteService impl)
+        {
+            ServiceRegistry.get().registerService(ExperimentDeleteService.class, impl);
+        }
+
+        /**
+         * Deletes all rows from exp.Data, exp.Object, and related tables associated with the provided ObjectIds
+         */
+        void deleteDataRows(Collection<Long> objectIds);
     }
 
     // Helper method that parses a data filter then adds it and its container to the provided collections, coalescing

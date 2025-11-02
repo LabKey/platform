@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DatabaseMigrationService.ExperimentDeleteService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
@@ -70,17 +71,18 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))
             .append(")");
 
-        Collection<Long> notCopiedDataIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
+        Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
-        if (notCopiedDataIds.isEmpty())
+        if (notCopiedObjectIds.isEmpty())
         {
             LOG.info(rowsNotCopied(0));
         }
         else
         {
-            LOG.info("{} -- deleting associated rows from exp.Data, exp.Object, etc.", rowsNotCopied(notCopiedDataIds.size()));
+            LOG.info("{} -- deleting associated rows from exp.Data, exp.Object, etc.", rowsNotCopied(notCopiedObjectIds.size()));
 
-            // TODO: Delete exp.Data, etc. rows associated with the rows that weren't copied
+            // Delete exp.Data, exp.Object, etc. rows associated with the rows that weren't copied
+            ExperimentDeleteService.get().deleteDataRows(notCopiedObjectIds);
         }
     }
 }

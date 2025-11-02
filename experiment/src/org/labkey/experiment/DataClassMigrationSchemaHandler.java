@@ -7,6 +7,7 @@ import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DatabaseMigrationService.ExperimentDeleteService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -33,7 +34,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
+class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements ExperimentDeleteService
 {
     private static final Logger LOG = LogHelper.getLogger(DataClassMigrationSchemaHandler.class, "Data class migration status");
 
@@ -60,8 +61,8 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             // container FilterClause explicitly.
             clause = new SQLClause(
                 new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
-                .appendInClause(containers, sourceTable.getSqlDialect())
-                .append(")")
+                    .appendInClause(containers, sourceTable.getSqlDialect())
+                    .append(")")
             );
         }
         else
@@ -143,7 +144,8 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     // exp.Data has an index on ObjectId plus we need ObjectIds to delete from exp.Object, etc. so pass in ObjectIds here
-    private void deleteDataRows(Collection<Long> objectIds)
+    @Override
+    public void deleteDataRows(Collection<Long> objectIds)
     {
         SqlExecutor executor = new SqlExecutor(ExperimentService.get().getSchema());
         SqlDialect dialect = ExperimentService.get().getSchema().getSqlDialect();
