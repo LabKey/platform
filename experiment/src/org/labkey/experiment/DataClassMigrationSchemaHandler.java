@@ -17,13 +17,14 @@ import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.DataClassDomainKind;
 
@@ -92,41 +93,28 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
-        // exp.Data has an index on ObjectId, so use ObjectIds to delete from exp.Data tables as well as exp.Object.
-        // Our notCopiedFilter works on the data class provisioned table, so we need to select LSIDs from that table
-        // and then select from exp.Data to map those LSIDs to ObjectIds.
-        Collection<String> notCopiedLsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
+        // Select all ObjectIds associated with the not-copied rows from the source database. Our notCopiedFilter
+        // works on the data class provisioned table, so we need to use a sub-select (as opposed to a join) to avoid
+        // ambiguous column references.
+        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data WHERE LSID IN (SELECT LSID FROM ")
+            .appendIdentifier(sourceTable.getSelectName())
+            .append(" ")
+            .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))
+            .append(")");
+        Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
-        if (!notCopiedLsids.isEmpty())
+        // TODO: temp check - delete this
+        Collection<String> lsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
+        assert notCopiedObjectIds.size() == lsids.size();
+
+        if (notCopiedObjectIds.isEmpty())
         {
-            SimpleFilter dataFilter = new SimpleFilter(new InClause(FieldKey.fromParts("LSID"), notCopiedLsids));
-            Collection<Integer> notCopiedObjectIds = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("ObjectId"), dataFilter, null).getCollection(Integer.class);
-
-            LOG.info("   {} rows not copied -- deleting associated rows from exp.Data, exp.Object, etc.", Formats.commaf0.format(notCopiedObjectIds.size()));
-            SqlExecutor executor = new SqlExecutor(ExperimentService.get().getSchema());
-            SqlDialect dialect = ExperimentService.get().getSchema().getSqlDialect();
-            SQLFragment objectIdClause = new SQLFragment()
-                .appendInClause(notCopiedObjectIds, dialect);
-
-            // Delete from exp.Data (and associated tables)
-            LOG.info("   exp.DataInput");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
-                    .append(objectIdClause)
-                    .append(")")
-            );
-            LOG.info("   exp.DataAliasMap");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID")
-                    .appendInClause(notCopiedLsids, dialect)
-            );
-            LOG.info("   exp.Data");
-            executor.execute(
-                new SQLFragment("DELETE FROM exp.Data WHERE ObjectId")
-                    .append(objectIdClause)
-            );
-
-            ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
+            LOG.info(rowsNotCopied(0));
+        }
+        else
+        {
+            LOG.info("{} -- deleting associated rows from exp.Data, exp.Object, etc.", rowsNotCopied(notCopiedObjectIds.size()));
+            deleteDataRows(notCopiedObjectIds);
         }
 
         String name = sourceTable.getName();
@@ -149,8 +137,39 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     }
                 })
                 .forEach(SEQUENCE_IDS::add);
-            LOG.info("   {} unique SequenceIds were added to the SequenceIdentity set", Formats.commaf0.format(SEQUENCE_IDS.size() - startSize));
+            LOG.info("{} added to the SequenceIdentity set",
+                StringUtilsLabKey.pluralize(SEQUENCE_IDS.size() - startSize, "unique SequenceId was", "unique SequenceIds were"));
         }
+    }
+
+    // exp.Data has an index on ObjectId plus we need ObjectIds to delete from exp.Object, etc. so pass in ObjectIds here
+    private void deleteDataRows(Collection<Long> objectIds)
+    {
+        SqlExecutor executor = new SqlExecutor(ExperimentService.get().getSchema());
+        SqlDialect dialect = ExperimentService.get().getSchema().getSqlDialect();
+        SQLFragment objectIdClause = new SQLFragment()
+            .appendInClause(objectIds, dialect);
+
+        // Delete from exp.Data (and associated tables)
+        LOG.info("   exp.DataInput");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
+                .append(objectIdClause)
+                .append(")")
+        );
+        LOG.info("   exp.DataAliasMap");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId")
+                .appendInClause(objectIds, dialect)
+                .append(")")
+        );
+        LOG.info("   exp.Data");
+        executor.execute(
+            new SQLFragment("DELETE FROM exp.Data WHERE ObjectId")
+                .append(objectIdClause)
+        );
+
+        ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
     }
 
     @Override

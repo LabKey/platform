@@ -2,31 +2,29 @@ package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
 class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
@@ -96,42 +94,53 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
         SqlDialect dialect = sourceTable.getSqlDialect();
-        final Selector selector;
 
-        if (getJoinColumnName(sourceTable).equals("RowId"))
+        // Select all MaterialIds and ObjectIds associated with the not-copied rows from the source database. Our
+        // notCopiedFilter works on the sample type provisioned table, so we need to use a sub-select (as opposed
+        // to a join) to avoid ambiguous column references.
+        String joinColumnName = getJoinColumnName(sourceTable);
+
+        SQLFragment rowIdAndObjectIdSql = new SQLFragment("SELECT RowId, ObjectId FROM exp.Material WHERE ")
+            .appendIdentifier(joinColumnName)
+            .append(" IN (SELECT ")
+            .appendIdentifier(joinColumnName)
+            .append(" FROM ")
+            .appendIdentifier(sourceTable.getSelectName())
+            .append(" ")
+            .append(notCopiedFilter.getSQLFragment(dialect))
+            .append(")");
+
+        Collection<Integer> notCopiedMaterialIds = new ArrayList<>();
+        Collection<Long> notCopiedObjectIds = new ArrayList<>();
+
+        try (Stream<ResultSet> stream = new SqlSelector(sourceTable.getSchema(), rowIdAndObjectIdSql).uncachedResultSetStream())
         {
-            selector = new TableSelector(sourceTable, Collections.singleton("RowId"), notCopiedFilter, null);
+            stream.forEach(rs -> {
+                try
+                {
+                    notCopiedMaterialIds.add(rs.getInt(1));
+                    notCopiedObjectIds.add(rs.getLong(2));
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        if (notCopiedMaterialIds.isEmpty())
+        {
+            LOG.info(rowsNotCopied(0));
         }
         else
         {
-            // Forced to use two separate queries here since notCopiedFilter must be applied to sourceTable. Attempting
-            // a combined query that joins to exp.Material results in ambiguous LSID references.
-            Collection<String> lsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
-            SimpleFilter filter = new SimpleFilter(new InClause(FieldKey.fromParts("LSID"), lsids));
-            selector = new TableSelector(ExperimentService.get().getTinfoMaterial(), new CsvSet("RowId, LSID"), filter, null);
-        }
-
-        Collection<Integer> notCopiedMaterialIds = selector.getCollection(Integer.class);
-
-        if (!notCopiedMaterialIds.isEmpty())
-        {
-            LOG.info("   {} rows not copied -- deleting associated rows from exp.Material, exp.Object, etc.", Formats.commaf0.format(notCopiedMaterialIds.size()));
+            LOG.info("{} -- deleting associated rows from exp.Material, exp.Object, etc.", rowsNotCopied(notCopiedMaterialIds.size()));
 
             SqlExecutor executor = new SqlExecutor(OntologyManager.getExpSchema());
 
             // Create an IN clause of exp.Material.RowIds
             SQLFragment materialIdClause = new SQLFragment()
                 .appendInClause(notCopiedMaterialIds, dialect);
-
-            // Create an IN clause of exp.Object.ObjectIds. Need to do this now, before we delete from exp.Materials.
-            SimpleFilter filter = new SimpleFilter(new SQLClause(
-                new SQLFragment("RowId")
-                    .append(materialIdClause)
-            ));
-            Collection<Long> objectIds = new TableSelector(ExperimentService.get().getTinfoMaterial(), new CsvSet("ObjectId, RowId"), filter, null)
-                .getCollection(Long.class);
-            SQLFragment objectIdClause = new SQLFragment()
-                .appendInClause(objectIds, dialect);
 
             // Delete from exp.Material (and associated tables)
             LOG.info("   exp.MaterialInput");
@@ -155,6 +164,9 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 new SQLFragment("DELETE FROM exp.Material WHERE RowId")
                     .append(materialIdClause)
             );
+
+            SQLFragment objectIdClause = new SQLFragment()
+                .appendInClause(notCopiedObjectIds, dialect);
 
             ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
         }

@@ -15,6 +15,7 @@ import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
@@ -286,6 +287,11 @@ public interface DatabaseMigrationService
             }
 
             return _commentPropertyId;
+        }
+
+        protected String rowsNotCopied(int count)
+        {
+            return "   " + StringUtilsLabKey.pluralize(count, "row") + " not copied";
         }
 
         @Override

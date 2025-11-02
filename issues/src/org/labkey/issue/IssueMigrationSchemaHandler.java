@@ -16,7 +16,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Formats;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashSet;
@@ -49,13 +49,13 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), new CsvSet("IssueId, EntityId"), new SimpleFilter(joinOnEntityId), null).stream(Integer.class)
             .forEach(ISSUE_IDS::add);
-        LOG.info("   {} IssueIds were added to the IssueId set", Formats.commaf0.format(ISSUE_IDS.size() - startSize));
+        LOG.info("   {} added to the IssueId set", StringUtilsLabKey.pluralize(ISSUE_IDS.size() - startSize, "IssueId was", "IssueIds were"));
     }
 
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        LOG.info("   Deleting related issues, comments, and issues rows associated with {} issues", ISSUE_IDS.size());
+        LOG.info("   Deleting related issues, comments, and issues rows associated with {}", StringUtilsLabKey.pluralize(ISSUE_IDS.size(), "issue"));
 
         if (!ISSUE_IDS.isEmpty())
         {
