@@ -108,7 +108,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     @Override
     public FileAnalysisTaskPipeline getTaskPipeline()
     {
-        TaskPipeline tp = super.getTaskPipeline();
+        TaskPipeline<?> tp = super.getTaskPipeline();
         if (tp == null)
         {
             LOG.warn("Task pipeline " + _taskPipelineId + " not found.");
