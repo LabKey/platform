@@ -36,6 +36,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
@@ -257,7 +258,7 @@ public class HttpUtil
             SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "clientApiRequests", clientLibrary);
     }
 
-    private static @Nullable String getClientLibrary(HttpServletRequest request)
+    public static @Nullable String getClientLibrary(HttpServletRequest request)
     {
         String userAgent = getUserAgent(request);
         if (null != userAgent)
@@ -298,5 +299,51 @@ public class HttpUtil
             }
         }
         return request.getRemoteAddr();
+    }
+
+    public static @Nullable String getProductNameFromReferer(HttpServletRequest request)
+    {
+        if (!isBrowser(request))
+            return null;
+
+        String referer = request.getHeader("Referer");
+        if (referer != null)
+        {
+            try
+            {
+                ActionURL url = new ActionURL(referer);
+                String actionName = url.getAction();
+                if ("app".equalsIgnoreCase(actionName) || "appdev".equalsIgnoreCase(actionName))
+                    return url.getController();
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    public static @Nullable String getRefererRelativeURL(HttpServletRequest request)
+    {
+        if (!isBrowser(request))
+            return null;
+
+        String referer = request.getHeader("Referer");
+        if (referer != null)
+        {
+            try
+            {
+                ActionURL url = new ActionURL(referer);
+                return url.toContainerRelativeURL();
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

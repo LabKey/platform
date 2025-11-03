@@ -17,14 +17,10 @@
 package org.labkey.api.issues;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 
-/**
- * User: Tamra Myers
- * Date: Sep 29, 2006
- * Time: 12:44:32 PM
- */
 public class IssuesSchema
 {
     private static final IssuesSchema instance = new IssuesSchema();
@@ -48,7 +44,7 @@ public class IssuesSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public SqlDialect getSqlDialect()

@@ -208,13 +208,12 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         public QueryUpdateAuditEvent()
         {
             super();
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public QueryUpdateAuditEvent(Container container, String comment)
         {
             super(QUERY_UPDATE_AUDIT_EVENT, container, comment);
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), QUERY_UPDATE_AUDIT_EVENT);
         }
 
         public String getRowPk()

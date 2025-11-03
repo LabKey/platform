@@ -104,13 +104,12 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public SampleTimelineAuditEvent()
     {
         super();
-        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
     }
 
     public SampleTimelineAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
-        setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+        setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
     }
 
     public String getSampleLsid()

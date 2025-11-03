@@ -408,7 +408,10 @@ public interface QueryService
                 "deleted"),
         MERGE("%s row(s) were inserted or updated.",
                 "%s was inserted or updated.",
-                "inserted or updated");
+                "inserted or updated"),
+        RELOAD("%s row(s) were reloaded.",
+                "%s was reloaded.",
+                "reloaded");
 
         final String _commentDetailed;
         final String _commentDetailedFormat;

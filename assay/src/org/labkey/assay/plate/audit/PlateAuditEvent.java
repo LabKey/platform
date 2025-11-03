@@ -2,6 +2,7 @@ package org.labkey.assay.plate.audit;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -36,7 +37,7 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
         PlateAuditProvider.PlateEventType eventType,
         Container container,
         PlateImpl plate,
-        Long transactionAuditId
+        TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent
     )
     {
         super(EVENT_NAME, container, eventType.getComment(plate.isTemplate()));
@@ -47,7 +48,7 @@ public class PlateAuditEvent extends DetailedAuditTypeEvent
         setPlateTypeRowId(plate.getPlateType().getRowId());
         setSourcePlateRowId(plate.getSourcePlateRowId());
         setTemplate(plate.isTemplate());
-        setTransactionId(transactionAuditId);
+        setTransactionEvent(transactionAuditEvent, EVENT_NAME);
     }
 
     public String getPlateEventType()

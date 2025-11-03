@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -934,4 +935,19 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 context.setCrossFolderImport(false);
         }
     }
+
+    protected void recordDataIteratorUsed(@Nullable Map<Enum, Object> configParameters)
+    {
+        if (configParameters != null)
+        {
+            try
+            {
+                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+            } catch (UnsupportedOperationException ignore)
+            {
+                // configParameters is immutable, likely originated from a junit test
+            }
+        }
+    }
+
 }

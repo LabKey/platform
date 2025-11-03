@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
@@ -219,7 +221,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
                     inputData, outputData, inputMaterial, outputMaterial);
 
-            return saveAssayRun(uploadContext, batch, run);
+            return saveAssayRun(uploadContext, batch, run, BaseViewAction.getTransactionAuditDetails(context));
         }
         return null;
     }
@@ -316,10 +318,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return provider.createRunUploadFactory(protocol, context);
     }
 
-    protected ExpExperiment saveAssayRun(AssayRunUploadContext<?> context, ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
+    protected ExpExperiment saveAssayRun(AssayRunUploadContext<?> context, ExpExperiment batch, ExpRun run, Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetail) throws ExperimentException, ValidationException
     {
         AssayRunCreator runCreator = getProvider().getRunCreator();
-        return runCreator.saveExperimentRun(context, batch, run, false);
+        return runCreator.saveExperimentRun(context, batch, run, false, transactionDetail);
     }
 
     @Override

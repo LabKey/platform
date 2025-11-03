@@ -1027,7 +1027,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         public final ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
         {
-            Pair<ExpExperiment, ExpRun> pair = form.getProvider().getRunCreator().saveExperimentRun(form, form.getBatchId());
+            Pair<ExpExperiment, ExpRun> pair = form.getProvider().getRunCreator().saveExperimentRun(form, form.getBatchId(), false, getTransactionAuditDetails());
             assert pair != null && pair.first != null;
             ExpExperiment exp = pair.first;
             ExpRun run = pair.second;
