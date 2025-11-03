@@ -802,7 +802,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         else
         {
             JdbcType jdbcType = col.getJdbcType();
-            ret =jdbcType.getJavaClass(isNullable);
+            ret = jdbcType.getJavaClass(isNullable);
             isNumeric = jdbcType.isNumeric();
         }
         if (isNumeric)
