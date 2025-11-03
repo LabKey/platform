@@ -268,13 +268,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
         if (o instanceof String s)
         {
-            return null != StringUtils.trimToNull(s);
+            return !StringUtils.isBlank(s);
         }
         if (o instanceof String[] strings)
         {
             for (String s : strings)
             {
-                if (null != StringUtils.trimToNull(s))
+                if (!StringUtils.isBlank(s))
                 {
                     return true;
                 }

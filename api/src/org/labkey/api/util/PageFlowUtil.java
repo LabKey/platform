@@ -24,6 +24,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -123,6 +124,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -146,7 +148,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.data.DataRegion.LAST_FILTER_PARAM;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
@@ -649,7 +650,7 @@ public class PageFlowUtil
         if (StringUtils.isBlank(encoded))
             return null;
 
-        if (StringUtils.startsWith(encoded, WAF_PREFIX))
+        if (Strings.CS.startsWith(encoded, WAF_PREFIX))
         {
             encoded = encoded.substring(WAF_PREFIX.length());
             if (!Pattern.matches("[A-Za-z0-9+/=]*", encoded))
@@ -707,7 +708,7 @@ public class PageFlowUtil
             return "";
 
         String encoded = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
-        encoded = StringUtils.replace(encoded, "+", "%20");
+        encoded = Strings.CS.replace(encoded, "+", "%20");
 
         if (decodeUnreservedMarks)
         {
@@ -715,7 +716,7 @@ public class PageFlowUtil
             // does not. Here we decode these marks so that we match encodeURIComponent() encoding.
             // See https://stackoverflow.com/a/607403
             for (var entry : DECODE_UNRESERVED_MARKS.entrySet())
-                encoded = StringUtils.replace(encoded, entry.getValue(), entry.getKey());
+                encoded = Strings.CS.replace(encoded, entry.getValue(), entry.getKey());
         }
 
         return encoded;
@@ -940,7 +941,7 @@ public class PageFlowUtil
         MediaType mediaType = getMediaTypeFor(file);
         String contentType = getContentTypeFor(fileName);
 
-        if (MediaType.TEXT_PLAIN.equals(mediaType) && startsWith(contentType,"text/"))
+        if (MediaType.TEXT_PLAIN.equals(mediaType) && Strings.CS.startsWith(contentType,"text/"))
         {
             // don't do anything, extension is probably fine
         }
@@ -1107,7 +1108,7 @@ public class PageFlowUtil
             this(s, null, System.currentTimeMillis());
         }
 
-        public Content(String s, @Nullable byte[] e, long m)
+        public Content(String s, byte @Nullable [] e, long m)
         {
             content = s;
             encoded = e;
@@ -1154,7 +1155,7 @@ public class PageFlowUtil
             result = 31 * result + (content != null ? content.hashCode() : 0);
             result = 31 * result + (encoded != null ? Arrays.hashCode(encoded) : 0);
             //result = 31 * result + (compressed != null ? Arrays.hashCode(compressed) : 0);
-            result = 31 * result + (int) (modified ^ (modified >>> 32));
+            result = 31 * result + Long.hashCode(modified);
             return result;
         }
     }
@@ -2053,6 +2054,7 @@ public class PageFlowUtil
     }
 
     /** validate an html fragment */
+    @SuppressWarnings("HttpUrlsUsage")
     public static String validateHtml(String html, Collection<String> errors, Collection<String> scriptWarnings)
     {
         if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
@@ -2587,6 +2589,121 @@ public class PageFlowUtil
             .collect(Collectors.joining(String.valueOf(delimiter)));
     }
 
+
+    private static char peek(ParsePosition p, char[] s)
+    {
+        int i=p.getIndex();
+        return i < s.length-1 ? s[i+1] : '\0';
+    }
+
+    private static char next(ParsePosition p, char[] s)
+    {
+        int i=p.getIndex();
+        if (i >= s.length-1)
+            return '\0';
+        p.setIndex(i+1);
+        return s[i+1];
+    }
+
+    public static List<String> splitStringToValuesForImport(String str)
+    {
+        enum STATE {BEFORETOKEN, INTOKEN, INQUOTEDTOKEN, AFTERTOKEN}
+
+        if (str == null)
+            return null;
+        List<String> result = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        STATE state = STATE.BEFORETOKEN;
+        char[] charArray = str.toCharArray();
+        ParsePosition pos = new ParsePosition(-1);
+
+        char c;
+        do
+        {
+            c = next(pos, charArray);
+            switch (state)
+            {
+                case BEFORETOKEN ->
+                {
+                    assert currentToken.isEmpty();
+                    if (Character.isWhitespace(c))
+                       continue;
+                    if (c == '"')
+                        state = STATE.INQUOTEDTOKEN;
+                    else if (c == ',' || c == '\0')
+                        result.add(currentToken.toString());
+                    else
+                    {
+                        currentToken.append(c);
+                        state = STATE.INTOKEN;
+                    }
+                }
+                case AFTERTOKEN ->
+                {
+                    assert currentToken.length() == 0;
+                    if (Character.isWhitespace(c))
+                        continue;
+                    if (c == ',' || c == '\0')
+                        state = STATE.BEFORETOKEN;
+                    else
+                        throw new ConversionException("Badly formatted list of strings");
+                }
+                case INTOKEN ->
+                {
+                    if (c == ',' || c == '\0')
+                    {
+                        result.add(currentToken.toString().trim());
+                        currentToken.setLength(0);
+                        state = STATE.BEFORETOKEN;
+                    }
+                    else
+                    {
+                        currentToken.append(c);
+                    }
+                }
+                case INQUOTEDTOKEN ->
+                {
+                    if (c == '\0')
+                        throw new ConversionException("Unterminated quoted string");
+                    else if (c != '"')
+                    {
+                        currentToken.append(c);
+                    }
+                    else if (peek(pos, charArray) == '"')
+                    {
+                        next(pos, charArray);
+                        currentToken.append('"');
+                    }
+                    else
+                    {
+                        result.add(currentToken.toString());
+                        currentToken.setLength(0);
+                        state = STATE.AFTERTOKEN;
+                    }
+                }
+            }
+        } while (0 != c);
+        return result;
+    }
+
+    // Google Sheets compatible version of joinValuesToString()
+    public static String joinValuesToStringForExport(@NotNull List<String> values)
+    {
+        return values.stream()
+                .map(value -> null==value ? "" : shouldEscapeForExport(value) ? "\"" + Strings.CS.replace(value,"\"", "\"\"") + "\"": value)
+                .collect(Collectors.joining(", "));
+    }
+
+    private static boolean shouldEscapeForExport(@NotNull String value)
+    {
+        if (value.isEmpty())
+            return true;
+        if (Character.isWhitespace(value.charAt(0)) || Character.isWhitespace(value.charAt(value.length()-1)))
+            return true;
+        return StringUtils.containsAny(value,",\"");
+    }
+
+
     /**
      * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
      * Issue 52119: App issues with assay run properties with special characters
@@ -2759,6 +2876,7 @@ public class PageFlowUtil
         @Test
         public void testRobot()
         {
+            @SuppressWarnings("HttpUrlsUsage")
             List<String> bots = Arrays.asList(
                 "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html",
                 "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
@@ -2912,6 +3030,76 @@ public class PageFlowUtil
         }
 
         @Test
+        public void testGoogleSheetMultiValue()
+        {
+           var googleMultiChoice = """
+                Option 1, Option 2, "A""quote", "B,comma", C\\backslash
+                """.trim();
+           var expectedList = List.of("Option 1", "Option 2", "A\"quote", "B,comma", "C\\backslash");
+           var list = splitStringToValuesForImport(googleMultiChoice);
+           assertEquals(expectedList.size(), list.size());
+           for (int i=0 ; i<expectedList.size() ; i++)
+               assertEquals(expectedList.get(i), list.get(i));
+           var join = joinValuesToStringForExport(list);
+           assertEquals(googleMultiChoice, join);
+
+           // some non-canonical spacing, different quotes, and some empty values
+            var googleMultiChoiceAlt = """
+                Option 1   ,"Option 2"\t,, "A""quote", "B,comma",  , C\\backslash,
+                """.trim();
+            expectedList = List.of("Option 1", "Option 2", "", "A\"quote", "B,comma", "","C\\backslash","");
+            list = splitStringToValuesForImport(googleMultiChoiceAlt);
+            assertEquals(expectedList.size(), list.size());
+            for (int i=0 ; i<expectedList.size() ; i++)
+                assertEquals(expectedList.get(i), list.get(i));
+            assertEquals(expectedList, splitStringToValuesForImport(joinValuesToStringForExport(list)));
+
+            // should null -> null or List.of()
+            assertNull(splitStringToValuesForImport(null));
+            // should "" -> List.of() or List.of("")
+            assertEquals(List.of(""), splitStringToValuesForImport(""));
+            assertEquals(List.of("",""), splitStringToValuesForImport(","));
+            assertEquals(List.of("","",""), splitStringToValuesForImport(",  ,"));
+
+            List<List<String>> quickTests = Arrays.asList(
+                    List.of(""),
+                    List.of("",""),
+                    List.of("","",""),
+                    List.of(" A", "B ", "C D"),
+                    List.of(",A", "B,", "C,D"),
+                    List.of("\tA", "B\t", "C\tD"),
+                    List.of("\"A", "B\"", "C\"D")
+            );
+            for (List<String> test : quickTests)
+                assertEquals(test, splitStringToValuesForImport(joinValuesToStringForExport(test)));
+        }
+
+        @Test
+        public void testGoogleSheetMultiValueBad()
+        {
+            try
+            {
+                splitStringToValuesForImport("\"A\"dreck,B,C"); // unescaped "
+                fail("Expected exception");
+            }
+            catch (ConversionException e)
+            {
+                // expected
+            }
+
+            try
+            {
+                splitStringToValuesForImport("A,\"B,C"); // unterminated "
+                fail("Expected exception");
+            }
+            catch (ConversionException e)
+            {
+                // expected
+            }
+        }
+
+
+            @Test
         public void encodePath()
         {
             assertEquals("a/b/c", PageFlowUtil.encodePath("a/b/c"));

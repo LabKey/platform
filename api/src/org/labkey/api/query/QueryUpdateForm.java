@@ -51,8 +51,7 @@ public class QueryUpdateForm extends TableViewForm
 
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx, @Nullable BindException errors)
     {
-        _tinfo = table;
-        _dynaClass = new QueryWrapperDynaClass(this);
+        super(table);
         setViewContext(ctx);
 
         // TODO: Fix this hack.

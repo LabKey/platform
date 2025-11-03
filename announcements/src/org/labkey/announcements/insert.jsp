@@ -70,7 +70,7 @@
         %><tr><td colspan="3"><span class="labkey-message">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
     }
 %>
-  <tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type='text' size='60' maxLength="255" id="title" name='title' value='<%=form.get("title")%>' onChange="LABKEY.setDirty(true);" /></td></tr>
+  <tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type='text' size='60' maxLength="255" id="title" name='title' value='<%=form.getAsString("title")%>' onChange="LABKEY.setDirty(true);" /></td></tr>
 <%
     if (settings.hasStatus())
     {
@@ -101,7 +101,7 @@
     }
     if (settings.hasExpires())
     {
-        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=form.get("expires")%>' onChange="LABKEY.setDirty(true);" /></td><td><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=form.getAsString("expires")%>' onChange="LABKEY.setDirty(true);" /></td><td><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
 %>
 
@@ -119,7 +119,7 @@
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
                     <% addHandler("body", "change", "LABKEY.setDirty(true);"); %>
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.getAsString("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
@@ -165,7 +165,7 @@ else
     %><%= generateBackButton("Cancel") %><%
 }
 %>
-<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.get("discussionSrcIdentifier")%>'/>
+<labkey:input type="hidden" name="discussionSrcIdentifier" value='<%=form.getAsString("discussionSrcIdentifier")%>'/>
 </labkey:form>
 <p/>
 <%
