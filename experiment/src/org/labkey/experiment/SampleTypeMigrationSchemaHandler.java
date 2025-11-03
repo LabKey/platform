@@ -151,6 +151,11 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 new SQLFragment("UPDATE assay.Well SET SampleId = null WHERE SampleId")
                     .append(materialIdClause)
             );
+            LOG.info("   inventory.Item");
+            executor.execute(
+                new SQLFragment("DELETE FROM inventory.Item WHERE MaterialId")
+                    .append(materialIdClause)
+            );
             LOG.info("   exp.Material");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Material WHERE RowId")
