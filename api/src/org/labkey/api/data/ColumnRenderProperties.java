@@ -395,7 +395,7 @@ public interface ColumnRenderProperties extends ImportAliasable
             if (value == null || javaClass == value.getClass())
                 return value;
             if (value instanceof CharSequence)
-                ConvertUtils.convert(value.toString(), javaClass);
+                return ConvertUtils.convert(value.toString(), javaClass);
             return jdbcType.convert(value);
         };
     }
