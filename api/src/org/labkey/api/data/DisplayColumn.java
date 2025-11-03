@@ -634,7 +634,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (Map.class.isAssignableFrom(valueClass))
             return "object";
-        else if (valueClass.isArray() || Collection.class.isAssignableFrom(valueClass))
+        else if (valueClass.isArray() || List.class.isAssignableFrom(valueClass))
             return "array";
         else if (String.class.isAssignableFrom(valueClass))
             return "string";
