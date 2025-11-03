@@ -5225,7 +5225,6 @@ public class AdminController extends SpringActionController
         private boolean _createSharedDatasets;
         private boolean _validateQueries;
         private boolean _failForUndefinedVisits;
-        private boolean _advancedImportOptions;
         private String _sourceTemplateFolder;
         private String _sourceTemplateFolderId;
         private String _origin;
@@ -5258,16 +5257,6 @@ public class AdminController extends SpringActionController
         public void setValidateQueries(boolean validateQueries)
         {
             _validateQueries = validateQueries;
-        }
-
-        public boolean isAdvancedImportOptions()
-        {
-            return _advancedImportOptions;
-        }
-
-        public void setAdvancedImportOptions(boolean advancedImportOptions)
-        {
-            _advancedImportOptions = advancedImportOptions;
         }
 
         public String getSourceTemplateFolder()
@@ -5407,16 +5396,7 @@ public class AdminController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
-            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
             options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
-
-            // if the option is selected to show the advanced import options, redirect to there
-            if (form.isAdvancedImportOptions())
-            {
-                // archiveFile is the zip of the source template folder located in the current container's unzip dir
-                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), fiConfig.archiveFile, options, fiConfig.fromTemplateSourceFolder);
-                return true;
-            }
 
             // finally, create the study or folder import pipeline job
             _successURL = pipelineUrlProvider.urlBegin(container);

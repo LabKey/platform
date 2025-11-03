@@ -47,7 +47,6 @@
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
     boolean canCreateSharedDatasets = false;
-    boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
     String sharedDatasetsHelpText = "By default, datasets will be created in this container. For Dataspace projects, shared " +
             "datasets are created at the project level so that they can be used by each of the study folders in the project.";
@@ -180,18 +179,6 @@
             </label>
         </td>
     </tr>
-    <%
-        if (isAdvancedImportOptionEnabled)
-        {
-    %>
-        <tr>
-            <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
-                <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
-            </td>
-        </tr>
-    <%
-        }
-    %>
     <tr>
         <td style="padding-top: 5px;">
             <%= button(action + " " + noun).submit(true) %>

@@ -3,6 +3,7 @@ package org.labkey.assay.plate.audit;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -185,12 +186,12 @@ public class PlateSetAuditProvider extends AbstractAuditTypeProvider
     {
         public static PlateSetAuditEvent plateSetCreated(
             Container container,
-            Long transactionAuditId,
+            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent,
             PlateSetImpl plateSet,
             @Nullable String additionalComment
         )
         {
-            var event = new PlateSetAuditEvent(PlateSetEventType.CREATE_PLATE_SET, container, plateSet, transactionAuditId);
+            var event = new PlateSetAuditEvent(PlateSetEventType.CREATE_PLATE_SET, container, plateSet, transactionAuditEvent);
             event.setNewRecordMap(container, plateSet);
 
             if (additionalComment != null)
@@ -201,7 +202,7 @@ public class PlateSetAuditProvider extends AbstractAuditTypeProvider
 
         public static List<PlateSetAuditEvent> plateSetsArchived(
             Container container,
-            Long transactionAuditId,
+            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent,
             List<Long> plateSetIds,
             boolean archive
         ) throws ValidationException
@@ -220,7 +221,7 @@ public class PlateSetAuditProvider extends AbstractAuditTypeProvider
 
                 plateSet.setArchived(archive);
 
-                var event = new PlateSetAuditEvent(eventType, container, plateSet, transactionAuditId);
+                var event = new PlateSetAuditEvent(eventType, container, plateSet, transactionAuditEvent);
                 event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(CaseInsensitiveHashMap.of(PlateTable.Column.Archived.name(), String.valueOf(!archive))));
                 event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(CaseInsensitiveHashMap.of(PlateTable.Column.Archived.name(), String.valueOf(archive))));
                 events.add(event);
