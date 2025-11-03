@@ -1,7 +1,6 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.SQLFragment;
@@ -15,7 +14,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -36,13 +34,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public @Nullable FieldKey getContainerFieldKey(TableInfo table)
-    {
-        return DUMMY_FIELD_KEY; // Unused dummy value -- see override below
-    }
-
-    @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         String joinColumnName = getJoinColumnName(sourceTable);
 
@@ -57,7 +49,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         // Sample-type-specific optimization - joining to exp.Material instead of exp.Object is much faster
         if (filter.column().equalsIgnoreCase("Flag"))
@@ -80,7 +72,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         }
         else
         {
-            addDataFilterClause(orClause, filter, sourceTable, fKey, selectColumnNames);
+            addDataFilterClause(orClause, filter, sourceTable, selectColumnNames);
         }
     }
 

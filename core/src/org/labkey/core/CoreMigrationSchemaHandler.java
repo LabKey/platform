@@ -2,6 +2,7 @@ package org.labkey.core;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
@@ -114,9 +115,9 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     }
 
     @Override
-    public FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
     {
-        FilterClause filterClause = getContainerClause(sourceTable, containerFieldKey, containers);
+        FilterClause filterClause = getContainerClause(sourceTable, containers);
         String tableName = sourceTable.getName();
 
         if ("Principals".equals(tableName) || "Members".equals(tableName))
@@ -155,9 +156,9 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     }
 
     @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
-        FilterClause containerClause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        FilterClause containerClause = super.getContainerClause(sourceTable, containers);
         String tableName = sourceTable.getName();
 
         if ("Principals".equals(tableName) || "Members".equals(tableName))
@@ -165,7 +166,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
             // Users and root groups have container == null, so add that as an OR clause
             OrClause orClause = new OrClause();
             orClause.addClause(containerClause);
-            orClause.addClause(new CompareType.CompareClause(containerFieldKey, CompareType.ISBLANK, null));
+            orClause.addClause(new CompareClause(getContainerFieldKey(sourceTable), CompareType.ISBLANK, null));
             containerClause = orClause;
         }
 

@@ -50,7 +50,6 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         return switch (table.getName())
         {
-            case "Alias", "ObjectLegacyNames" -> DUMMY_FIELD_KEY; // Unused dummy value -- see override below
             case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
             case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
             case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
@@ -69,7 +68,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         return switch (sourceTable.getName())
         {
@@ -117,7 +116,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .append(")")
             );
-            default -> super.getContainerClause(sourceTable, containerFieldKey, containers);
+            default -> super.getContainerClause(sourceTable, containers);
         };
     }
 

@@ -1,7 +1,6 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
@@ -44,18 +43,11 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     }
 
     @Override
-    public @Nullable FieldKey getContainerFieldKey(TableInfo table)
-    {
-        FieldKey fieldKey = super.getContainerFieldKey(table);
-        return fieldKey != null ? fieldKey : DUMMY_FIELD_KEY; // "DUMMY" case is a data class that lacks an FK
-    }
-
-    @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         final FilterClause clause;
 
-        if (containerFieldKey == DUMMY_FIELD_KEY)
+        if (getContainerFieldKey(sourceTable) == null)
         {
             // There are a couple bad data class provisioned tables that lack an FK to exp.Data. In that case, craft the
             // container FilterClause explicitly.
@@ -67,23 +59,23 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         }
         else
         {
-            clause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+            clause = super.getContainerClause(sourceTable, containers);
         }
 
         return clause;
     }
 
     @Override
-    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         // Data classes have a built-in Flag field
         if (filter.column().equalsIgnoreCase("Flag"))
         {
-            addObjectPropertyClause(orClause, filter, sourceTable, fKey, getCommentPropertyId(sourceTable.getSchema().getScope()));
+            addObjectPropertyClause(orClause, filter, sourceTable, getCommentPropertyId(sourceTable.getSchema().getScope()));
         }
         else
         {
-            addDataFilterClause(orClause, filter, sourceTable, fKey, selectColumnNames);
+            addDataFilterClause(orClause, filter, sourceTable, selectColumnNames);
         }
     }
 
@@ -188,7 +180,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
-                public FilterClause getTableFilterClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+                public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
                 {
                     // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
                     return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
