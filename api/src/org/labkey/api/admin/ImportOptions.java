@@ -34,7 +34,6 @@ public class ImportOptions
 {
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
-    private boolean _advancedImportOptions;
     private boolean _failForUndefinedVisits;
     private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
     private String _containerId;
@@ -81,16 +80,6 @@ public class ImportOptions
     public void setCreateSharedDatasets(boolean createSharedDatasets)
     {
         _createSharedDatasets = createSharedDatasets;
-    }
-
-    public boolean isAdvancedImportOptions()
-    {
-        return _advancedImportOptions;
-    }
-
-    public void setAdvancedImportOptions(boolean advancedImportOptions)
-    {
-        _advancedImportOptions = advancedImportOptions;
     }
 
     public boolean isFailForUndefinedVisits()

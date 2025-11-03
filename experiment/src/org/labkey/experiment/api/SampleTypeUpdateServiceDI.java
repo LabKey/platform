@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -559,6 +560,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+            recordDataIteratorUsed(configParameters);
 
             try
             {

@@ -6,7 +6,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.DomainFilter;
+import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -54,33 +54,34 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         final FilterClause clause;
 
-        if (containerFieldKey != DUMMY_FIELD_KEY)
-        {
-            clause = super.getContainerClause(sourceTable, containerFieldKey, containers);
-        }
-        else
+        if (containerFieldKey == DUMMY_FIELD_KEY)
         {
             // There are a couple bad data class provisioned tables that lack an FK to exp.Data. In that case, craft the
-            // FilterClause explicitly.
+            // container FilterClause explicitly.
             clause = new SQLClause(
                 new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
                 .appendInClause(containers, sourceTable.getSqlDialect())
                 .append(")")
             );
         }
+        else
+        {
+            clause = super.getContainerClause(sourceTable, containerFieldKey, containers);
+        }
 
         return clause;
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
     {
         // Data classes have a built-in Flag field
         addDomainDataFlagFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
     }
 
     private static final Set<String> SEQUENCE_TABLES = Sets.newCaseInsensitiveHashSet("protsequence", "nucsequence", "molecule");
-    private static final Set<Long> SEQUENCE_IDS = new HashSet<>();
+
+    private final Set<Long> SEQUENCE_IDS = new HashSet<>();
 
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
@@ -142,7 +143,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     }
                 })
                 .forEach(SEQUENCE_IDS::add);
-            LOG.info("   {} unique SequenceIds were added to the SequenceIdentity set", SEQUENCE_IDS.size() - startSize);
+            LOG.info("   {} unique SequenceIds were added to the SequenceIdentity set", Formats.commaf0.format(SEQUENCE_IDS.size() - startSize));
         }
     }
 
@@ -164,8 +165,9 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, sequenceMap.get("biologics"), new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
-                public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+                public FilterClause getTableFilter(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
                 {
+                    // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
                     return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
                 }
             });

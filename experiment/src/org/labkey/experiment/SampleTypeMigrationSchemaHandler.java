@@ -3,7 +3,7 @@ package org.labkey.experiment;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.DomainFilter;
+import org.labkey.api.data.DatabaseMigrationService.DataFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -57,7 +57,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DomainFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
     {
         // Sample-type-specific optimization - joining to exp.Material instead of exp.Object is much faster
         if (filter.column().equalsIgnoreCase("Flag"))
@@ -74,13 +74,13 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     .appendInClause(filter.containers(), sourceTable.getSqlDialect())
                     .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
                     .add(filter.condition().getParamVals()[0])
-                    .add(getCommentPropertyId(sourceTable))
+                    .add(getCommentPropertyId(sourceTable.getSchema().getScope()))
                 )
             );
         }
         else
         {
-            addDomainDataStandardFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
+            addDataFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
         }
     }
 
