@@ -104,10 +104,6 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             .append(")");
         Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
-        // TODO: temp check - delete this
-        Collection<String> lsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
-        assert notCopiedObjectIds.size() == lsids.size();
-
         if (notCopiedObjectIds.isEmpty())
         {
             LOG.info(rowsNotCopied(0));
