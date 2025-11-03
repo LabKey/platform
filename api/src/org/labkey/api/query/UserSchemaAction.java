@@ -264,7 +264,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                         auditEvent = transaction.getAuditEvent();
                     else
                     {
-                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), auditAction);
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), auditAction, getTransactionAuditDetails());
                         AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
                     }
                 }

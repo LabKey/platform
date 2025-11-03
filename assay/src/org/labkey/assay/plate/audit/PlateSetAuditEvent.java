@@ -2,6 +2,7 @@ package org.labkey.assay.plate.audit;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -33,7 +34,7 @@ public class PlateSetAuditEvent extends DetailedAuditTypeEvent
         PlateSetAuditProvider.PlateSetEventType eventType,
         Container container,
         PlateSetImpl plateSet,
-        Long transactionAuditId
+        TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent
     )
     {
         super(EVENT_NAME, container, eventType.getComment());
@@ -45,7 +46,7 @@ public class PlateSetAuditEvent extends DetailedAuditTypeEvent
         setPrimaryPlateSetRowId(plateSet.getPrimaryPlateSetId());
         setParentPlateSetRowId(plateSet.getParentPlateSetId());
         setRootPlateSetRowId(plateSet.getRootPlateSetId());
-        setTransactionId(transactionAuditId);
+        setTransactionEvent(transactionAuditEvent, EVENT_NAME);
     }
 
     public Boolean getArchived()

@@ -189,6 +189,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 .append(")");
         ExprColumn column = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of data currently stored in this data class");
+        column.setFormat("#,##0");
 
         return column;
     }

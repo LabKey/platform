@@ -250,7 +250,7 @@ public class TableViewFormTestCase extends Assert
 
         //Make sure date->string->date comes out right...
         Map<String,Object> copy = new HashMap<>(tf.getValuesToBind());
-        copy.remove("rowid");
+        copy.remove("rowId");
         copy.put("datetimeNotNull", tf.getAsString("created"));
         copy.put("text", "Second test record");
         tf = new TestForm();
