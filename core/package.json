@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@labkey/components": "6.68.2-fb-package-updates-1025.0",
-    "@labkey/themes": "1.4.2"
+    "@labkey/themes": "1.4.3-fb-package-updates-1025.0"
   },
   "devDependencies": {
     "@labkey/build": "8.6.1-fb-package-updates-1025.1",
