@@ -260,7 +260,7 @@ public interface DatabaseMigrationService
         // is only for provisioned tables that lack an ObjectId, MaterialId, or DataId column.
         protected void addObjectPropertyClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, int propertyId)
         {
-            SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object WHERE ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))", filter.condition().getParamVals()[0], propertyId);
+            SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object o INNER JOIN exp.ObjectProperty op ON o.ObjectId = op.ObjectId WHERE StringValue = ? AND PropertyId = ?)", filter.condition().getParamVals()[0], propertyId);
 
             orClause.addClause(
                 new AndClause(
