@@ -67,6 +67,8 @@ public class QueryImportPipelineJob extends PipelineJob
 
         String _jobNotificationProvider;
 
+        Map<TransactionAuditProvider.TransactionDetail, Object> _transactionDetails;
+
         public QueryImportAsyncContextBuilder()
         {
 
@@ -233,6 +235,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public QueryImportAsyncContextBuilder setTransactionDetails(Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
+        {
+            _transactionDetails = transactionDetails;
+            return this;
+        }
+
+        public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionDetails()
+        {
+            return _transactionDetails;
+        }
+
     }
 
     @Override
@@ -300,7 +313,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
-                auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction);
+                auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());
 
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 

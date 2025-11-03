@@ -3,6 +3,7 @@ package org.labkey.assay.plate.audit;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -185,12 +186,12 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
     {
         public static PlateAuditEvent plateCreated(
             Container container,
-            Long transactionAuditId,
+            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent,
             PlateImpl plate,
             @Nullable String additionalComment
         )
         {
-            var event = new PlateAuditEvent(PlateEventType.CREATE_PLATE, container, plate, transactionAuditId);
+            var event = new PlateAuditEvent(PlateEventType.CREATE_PLATE, container, plate, transactionAuditEvent);
             event.setNewRecordMap(container, plate);
 
             if (additionalComment != null)
@@ -199,17 +200,17 @@ public class PlateAuditProvider extends AbstractAuditTypeProvider
             return event;
         }
 
-        public static PlateAuditEvent plateDeleted(Container container, Long transactionAuditId, PlateImpl plate)
+        public static PlateAuditEvent plateDeleted(Container container, TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent, PlateImpl plate)
         {
-            var event = new PlateAuditEvent(PlateEventType.DELETE_PLATE, container, plate, transactionAuditId);
+            var event = new PlateAuditEvent(PlateEventType.DELETE_PLATE, container, plate, transactionAuditEvent);
             event.setOldRecordMap(container, plate);
 
             return event;
         }
 
-        public static PlateAuditEvent plateImported(Container container, Long transactionAuditId, PlateImpl plate, ExpRun run, boolean isReimport)
+        public static PlateAuditEvent plateImported(Container container, TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent, PlateImpl plate, ExpRun run, boolean isReimport)
         {
-            var event = new PlateAuditEvent(PlateEventType.PLATE_IMPORT, container, plate, transactionAuditId);
+            var event = new PlateAuditEvent(PlateEventType.PLATE_IMPORT, container, plate, transactionAuditEvent);
             event.setImportRunId(run.getRowId());
             event.setReimport(isReimport);
 
