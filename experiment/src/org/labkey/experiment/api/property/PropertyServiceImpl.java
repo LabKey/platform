@@ -323,10 +323,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (_validatorTypes.containsKey(validatorKind.getTypeURI()))
             throw new IllegalArgumentException("Validator type : " + validatorKind.getTypeURI() + " is already registered");
 
-        var uri = validatorKind.getTypeURI();
-        _validatorTypes.put(uri, validatorKind);
-        _validatorTypes.put(uri.substring(uri.lastIndexOf(':')+1), validatorKind);
-        _validatorTypes.put(validatorKind.getName(), validatorKind);
+        _validatorTypes.put(validatorKind.getTypeURI(), validatorKind);
     }
 
     @Override
