@@ -6,6 +6,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ class AliasDisplayColumnFactory implements DisplayColumnFactory
             {
                 Object value = super.getInputValue(ctx);
                 if (value instanceof List)
-                    return String.join(", ", (List) value);
+                    return PageFlowUtil.joinValuesToStringForExport((List<String>) value);
                 return "";
             }
         };
