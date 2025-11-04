@@ -791,19 +791,22 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
 
     public static Class<?> defaultJavaClass(ColumnRenderProperties col, boolean isNullable)
     {
-        Class<?> ret;
-        boolean isNumeric;
         PropertyType pt = col.getPropertyType();
+        JdbcType jdbcType = col.getJdbcType();
+        boolean isNumeric;
+        Class<?> ret;
+
         if (pt != null)
         {
-            ret = pt.getJavaType();
+            if (JdbcType.ARRAY == jdbcType && PropertyType.MULTI_CHOICE == pt)
+                return MultiChoice.Array.class;
             isNumeric = pt.getJdbcType().isNumeric();
+            ret = pt.getJavaType();
         }
         else
         {
-            JdbcType jdbcType = col.getJdbcType();
-            ret = jdbcType.getJavaClass(isNullable);
             isNumeric = jdbcType.isNumeric();
+            ret = jdbcType.getJavaClass(isNullable);
         }
         if (isNumeric)
         {

@@ -60,6 +60,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.OutOfRangeDisplayColumn;
@@ -1454,6 +1455,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,

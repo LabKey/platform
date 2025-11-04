@@ -61,6 +61,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -710,7 +712,7 @@ public class DataColumn extends DisplayColumn
             {
                 IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
-                    renderTextChoiceFormInput(out, formFieldName, value, strVal, disabledInput, textChoiceValidator);
+                    renderTextChoiceFormInput(out, formFieldName, value, List.of(strVal), disabledInput, textChoiceValidator);
                 else
                     renderTextFormInput(out, formFieldName, value, strVal, disabledInput);
             }
@@ -735,7 +737,8 @@ public class DataColumn extends DisplayColumn
         return ctx.getForm() == null || col == null ? HtmlString.EMPTY_STRING : ctx.getErrors(col);
     }
 
-    private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, NamedObjectList entryList)
+
+    private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, NamedObjectList entryList)
     {
         SelectBuilder select = new SelectBuilder()
             .disabled(disabledInput)
@@ -747,12 +750,15 @@ public class DataColumn extends DisplayColumn
         // add empty option
         options.add(new OptionBuilder().build());
 
+        Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
+                strValues.size()==1 ? (null == strValues.get(0) ? Set.of() : Set.of(strValues.get(0))) :
+                new HashSet<>(strValues);
         for (NamedObject entry : entryList)
         {
             String entryName = entry.getName();
             OptionBuilder option = new OptionBuilder()
-                .selected(isSelectInputSelected(entryName, value, strVal))
-                .value(entryName);
+                    .selected(selectedValues.contains(entryName))
+                    .value(entryName);
 
             if (null != entry.getObject())
                 option.label(getSelectInputDisplayValue(entry));
@@ -767,22 +773,18 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(out, formFieldName, value);
     }
 
-    private void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
+    protected void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, IPropertyValidator textChoiceValidator)
     {
-        NamedObjectList options = new NamedObjectList();
-        List<String> choices = PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator);
+        LinkedHashSet<String> choices = new LinkedHashSet<>(PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
 
         // if the already saved strVal is not in the current choice set, add it (as it seems wrong to remove a value that the user hasn't explicitly touched)
-        if (!StringUtils.isEmpty(strVal) && !choices.contains(strVal))
-        {
-            choices = new ArrayList<>(choices);
-            choices.add(strVal);
-        }
+        choices.addAll(strValues);
 
+        NamedObjectList options = new NamedObjectList();
         for (String choice : choices)
             options.put(new SimpleNamedObject(choice, choice));
 
-        renderSelectFormInput(out, formFieldName, value, strVal, disabledInput, options);
+        renderSelectFormInput(out, formFieldName, value, strValues, disabledInput, options);
     }
 
     protected void renderSelectFormInputFromFk(RenderContext ctx, HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
@@ -807,7 +809,7 @@ public class DataColumn extends DisplayColumn
         }
         else
         {
-            renderSelectFormInput(out, formFieldName, value, strVal, disabledInput, entryList);
+            renderSelectFormInput(out, formFieldName, value, List.of(Objects.toString(value)), disabledInput, entryList);
         }
     }
 
