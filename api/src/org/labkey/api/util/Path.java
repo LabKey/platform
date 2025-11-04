@@ -99,7 +99,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         {
             if (s != null && s.contains("\\"))
             {
-                LOG.warn("Path contains backslash: {}", s, new Exception("Path contains backslash"));
+                LOG.debug("Path contains backslash: {}", s, new Exception("Path contains backslash"));
             }
         }
     }

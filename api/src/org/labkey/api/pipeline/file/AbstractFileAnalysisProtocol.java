@@ -196,17 +196,13 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             try
             {
-                _log.info("Creating directory " + dir + " for file " + file + " in " + file.getFileSystem());
+                _log.debug("Creating directory " + dir);
                 FileUtil.createDirectories(dir);
             }
             catch (IOException e)
             {
                 throw new IOException("Failed to create directory '" + dir + "'.");
             }
-        }
-        else
-        {
-            _log.info(dir + " exists and is a directory: " + dir.isDirectory() + " for file " + file + " in " + file.getFileSystem());
         }
 
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM, getName());
@@ -232,7 +228,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
         catch (IOException eio)
         {
-            _log.error("Error writing input XML. File is dir: " + file.isDirectory(), eio);
+            _log.error("Error writing input XML.", eio);
             throw eio;
         }
     }

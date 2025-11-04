@@ -75,7 +75,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
     @Override
     public FileLike resolveFile(Path path)
     {
-        LOG.info("Resolving " + path + " against " + nioRoot);
+        LOG.debug("Resolving {} against {}", path, nioRoot);
         path = path.absolute().normalize();
         if (null == path)
             throw new IllegalArgumentException("Path could not be resolved");
