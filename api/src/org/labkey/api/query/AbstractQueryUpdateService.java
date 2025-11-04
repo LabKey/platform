@@ -359,6 +359,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class);
     }
 
+    protected boolean hasInsertRowsPermission(User user)
+    {
+        return hasPermission(user, InsertPermission.class);
+    }
+
     // override this
     protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
     {
@@ -526,7 +531,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                       DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!hasPermission(user, InsertPermission.class))
+        if (!hasInsertRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
@@ -586,7 +591,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, InsertPermission.class))
+        if (!hasInsertRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
