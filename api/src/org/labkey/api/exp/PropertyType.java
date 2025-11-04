@@ -216,10 +216,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
+            return MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, value);
         }
 
         @Override
@@ -231,25 +228,25 @@ public enum PropertyType
         @Override
         protected void init(PropertyRow row, Object value)
         {
-            row.stringValue = (String)value;
+            throw new UnsupportedOperationException("TODO MultiChoice");
         }
 
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            property.stringValue = value == null ? null : value.toString();
+            throw new UnsupportedOperationException("TODO MultiChoice");
         }
 
         @Override
         protected Object getValue(ObjectProperty property)
         {
-            return property.getStringValue();
+            throw new UnsupportedOperationException("TODO MultiChoice");
         }
 
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            return prefix + "Value";
+            return "Option 1, Option 2";
         }
     },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, CellType.STRING, Identifiable.class)

@@ -39,7 +39,7 @@ import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.at;
 
-public  class MultiChoice
+public class MultiChoice
 {
     public static final String ARRAY_MARKER = "[]";
     public static class DisplayColumn extends DataColumn
