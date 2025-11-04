@@ -531,6 +531,7 @@ public class PipeRootImpl implements PipeRoot
         if (!strPath.toLowerCase().startsWith(strRoot.toLowerCase()))
             return null;
         String ret = strPath.substring(strRoot.length());
+        ret = ret.replace('\\', '/');
         if (ret.startsWith(File.separator) || ret.startsWith("/"))
         {
             return ret.substring(1);
