@@ -21,7 +21,6 @@ public class PostgresTableSizesTable extends AbstractPostgresAdminOnlyTable
         addColumn(new BaseColumnInfo("total_size", this, JdbcType.BIGINT)).setFormat("#,##0");
     }
 
-
     @Override
     public @NotNull SQLFragment getFromSQL()
     {
@@ -33,7 +32,8 @@ public class PostgresTableSizesTable extends AbstractPostgresAdminOnlyTable
                     pg_table_size(quote_ident(table_schema) || '.' || quote_ident(table_name)) AS table_size,
                     pg_indexes_size(quote_ident(table_schema) || '.' || quote_ident(table_name)) AS index_size,
                     pg_total_relation_size(quote_ident(table_schema) || '.' || quote_ident(table_name)) AS total_size
-                FROM information_schema.tables""");
+                FROM information_schema.tables
+                WHERE table_schema NOT IN ('public', 'information_schema') AND table_schema NOT LIKE 'pg_%'""");
         return result;
     }
 }

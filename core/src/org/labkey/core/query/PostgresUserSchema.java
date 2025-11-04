@@ -46,6 +46,9 @@ import java.util.Set;
     @Override
     public Set<String> getTableNames()
     {
-        return Set.of(POSTGRES_STAT_ACTIVITY_TABLE_NAME, POSTGRES_LOCKS_TABLE_NAME);
+        return Set.of(
+                POSTGRES_LOCKS_TABLE_NAME,
+                POSTGRES_STAT_ACTIVITY_TABLE_NAME,
+                POSTGRES_TABLE_SIZES_TABLE_NAME);
     }
 }
