@@ -70,7 +70,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,11 +84,6 @@ import java.util.TreeMap;
 
 import static java.util.Collections.emptyMap;
 
-/**
- * User: brittp
-* Date: Jul 11, 2007
-* Time: 2:52:54 PM
-*/
 public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext<ProviderType>
 {
     protected Map<DomainProperty, String> _uploadSetProperties = null;
@@ -129,8 +123,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (_runProperties == null)
         {
             Domain domain = getProvider().getRunDomain(getProtocol());
-            List<? extends DomainProperty> properties = domain.getProperties();
-            _runProperties = getPropertyMapFromRequest(properties);
+            _runProperties = getPropertyMapFromRequest(domain.getProperties());
         }
         return Collections.unmodifiableMap(_runProperties);
     }
@@ -325,70 +318,67 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public Map<DomainProperty, FileLike> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
     {
-        if (_additionalFiles == null)
+        if (_additionalFiles != null)
+            return _additionalFiles;
+
+        Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        List<String> filePdNames = new ArrayList<>();
+
+        for (DomainProperty pd : pds)
         {
-            Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            List<String> filePdNames = new ArrayList<>();
-
-            for (DomainProperty pd : pds)
+            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
             {
-                if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
-                {
-                    fileParameters.put(UploadWizardAction.getInputName(pd), pd);
-                    filePdNames.add(pd.getName());
-                }
+                fileParameters.put(UploadWizardAction.getInputName(pd), pd);
+                filePdNames.add(pd.getName());
             }
-
-            if (!fileParameters.isEmpty())
-            {
-                AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
-                try
-                {
-                    // Initialize member variable so we know that we've already tried to save the posted files in case of error
-                    _additionalFiles = new HashMap<>();
-                    Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
-                    for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
-                        _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
-
-                    File previousFile;
-                    HttpServletRequest request = getViewContext().getRequest();
-
-                    // Hidden values in form containing previously uploaded files if previous upload resulted in error
-                    for (String fileParam : filePdNames)
-                    {
-                        if (request instanceof MultipartHttpServletRequest mhsr && null != request.getParameter(fileParam))
-                        {
-                            String previousFileName = request.getParameter(fileParam);
-                            if (null != previousFileName)
-                            {
-                                previousFile = FileUtil.appendName(getAssayDirectory(getContainer(), null), previousFileName);
-
-                                MultipartFile multiFile = mhsr.getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
-
-                                // If file is removed from form after error, override hidden file name with empty file
-                                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
-                                    _additionalFiles.put(fileParameters.get(fileParam), BLANK_FILE);
-
-                                // Only add hidden file parameter if it is a valid file in the pipeline root directory and
-                                // a new file hasn't been uploaded for that parameter
-                                if (previousFile.isFile()
-                                        && FileUtils.directoryContains(getAssayDirectory(getContainer(), null), previousFile)
-                                        && !_additionalFiles.containsKey(fileParameters.get(fileParam)))
-                                {
-                                    _additionalFiles.put(fileParameters.get(fileParam), FileSystemLike.wrapFile(previousFile));
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-            else
-                _additionalFiles = emptyMap();
         }
+
+        if (fileParameters.isEmpty())
+            return _additionalFiles = emptyMap();
+
+        AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
+        try
+        {
+            // Initialize member variable so we know that we've already tried to save the posted files in case of error
+            _additionalFiles = new HashMap<>();
+            Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
+            for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
+                _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
+
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest request))
+                return _additionalFiles;
+
+            File assayDirectory = getAssayDirectory(getContainer(), null);
+
+            // Hidden values in form containing previously uploaded files if the previous upload resulted in error
+            for (String fileParam : filePdNames)
+            {
+                String previousFileName = request.getParameter(fileParam);
+                if (previousFileName == null)
+                    continue;
+
+                DomainProperty domainProperty = fileParameters.get(fileParam);
+                MultipartFile multiFile = request.getFileMap().get(fileParam);
+
+                // If the file is removed from form after error, override hidden file name with an empty file
+                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
+                {
+                    _additionalFiles.put(domainProperty, BLANK_FILE);
+                    continue;
+                }
+
+                // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
+                // a new file hasn't been uploaded for that parameter
+                File previousFile = FileUtil.appendName(assayDirectory, previousFileName);
+                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile) && !_additionalFiles.containsKey(domainProperty))
+                    _additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         return _additionalFiles;
     }
 
