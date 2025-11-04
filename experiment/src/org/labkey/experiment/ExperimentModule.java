@@ -875,7 +875,9 @@ public class ExperimentModule extends SpringModule
 
         DatabaseMigrationService.get().registerSchemaHandler(new ExperimentMigrationSchemaHandler());
         DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
-        DatabaseMigrationService.get().registerSchemaHandler(new DataClassMigrationSchemaHandler());
+        DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(dcHandler);
+        DatabaseMigrationService.ExperimentDeleteService.setInstance(dcHandler);
     }
 
     @Override
