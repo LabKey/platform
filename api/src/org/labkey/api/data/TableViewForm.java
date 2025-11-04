@@ -560,6 +560,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         if (null == _values)
         {
             // TODO we don't usually enter this code path, but we should still throw if there is a conversion error
+            // or maybe enforce that populateValues() has been called and throw IllegalStateException here?
             populateValues(null);
         }
         return _values;
