@@ -3,16 +3,21 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.ontology.Unit;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
+import java.io.StringBufferInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -186,6 +191,7 @@ public class MultiChoice
             array = str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
+                    .filter(set::add)
                     .toArray(String[]::new);
         }
 
@@ -204,6 +210,20 @@ public class MultiChoice
             if (null == list)
                 list = Collections.unmodifiableList(Arrays.asList(array));
             return list;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (!(obj instanceof Array arr))
+                return false;
+            return Arrays.equals(array, arr.array);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Arrays.hashCode(array);
         }
 
         @Override
@@ -491,13 +511,17 @@ public class MultiChoice
         public <T> T convert(Class<T> aClass, Object o)
         {
             if (null == o)
-                return (T) List.of();
+                return (T) Array.from(new String[]{});
+            if (o instanceof MultiChoice.Array arr)
+                return (T)arr;
             if (o instanceof String s)
                 return (T) Array.from(s);
-            if (o instanceof org.json.JSONArray json)
-                return (T) Array.from(json);
             if (o.getClass().isArray())
                 return (T) Array.from((Object[]) o);
+            if (o instanceof org.json.JSONArray json)
+                return (T) Array.from(json);
+            if (o instanceof List list)
+                return (T) new Array(list.stream());
             return (T) Array.from(o.toString());
         }
 
@@ -505,6 +529,58 @@ public class MultiChoice
         final public Object apply(Object o)
         {
             return convert(MultiChoice.Array.class, o);
+        }
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testConvert() throws Exception
+        {
+            Array expected = Array.from(new String[]{"a,","b\"","c "});
+
+            assertEquals(expected, _converter.convert(Array.class, expected));
+            assertEquals(expected, _converter.convert(Array.class, "\"a,\",\"b\"\"\",\"c \""));
+            assertEquals(expected, _converter.convert(Array.class, new String[]{"a,","b\"","c "}));
+            assertEquals(expected, _converter.convert(Array.class, List.of("a,","b\"","c ")));
+            assertEquals(expected, _converter.convert(Array.class, new JSONArray(List.of("a,","b\"","c "))));
+        }
+
+        @Test
+        public void testCSV() throws Exception
+        {
+            Array expected = Array.from(new String[]{"a,", "b\\", "c,d", "e\"f"});
+            // toString() == "a,", b\, "c,d", "e""f"
+            assertEquals("\"a,\", b\\, \"c,d\", \"e\"\"f\"", expected.toString());
+
+            // csv/tsv with double double-quote escaping
+            // add " around entire value, and double the "
+            // (need to use some \" to avoid ending the """ """ block)
+            String oneMultiValueColumn = """
+                column
+                ""\"a,"", b\\, ""c,d"", ""e""\""f""\"
+                """;
+
+            try (var csvLoader = new TabLoader.CsvFactory().createLoader(new StringBufferInputStream(oneMultiValueColumn), true))
+            {
+                var maps = csvLoader.load();
+                assertEquals(1, maps.size());
+                Map<String,Object> map = maps.get(0);
+                assertTrue(map.get("column") instanceof String);
+                String value = (String) map.get("column");
+                assertEquals(expected, Array.from(value));
+            }
+            try (var tsvLoader = new TabLoader.TsvFactory().createLoader(new StringBufferInputStream(oneMultiValueColumn), true))
+            {
+                var maps = tsvLoader.load();
+                assertEquals(1, maps.size());
+                Map<String,Object> map = maps.get(0);
+                assertTrue(map.get("column") instanceof String);
+                String value = (String) map.get("column");
+                assertEquals(expected, Array.from(value));
+            }
         }
     }
 }
