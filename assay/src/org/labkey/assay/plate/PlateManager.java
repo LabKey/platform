@@ -2918,7 +2918,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 // Example comment: "Plate set was created. Created via reformat. Initially contains 5 plates."
                 int plateCount = plates == null ? 0 : plates.size();
                 String comment = StringUtilsLabKey.joinNonBlank(" ", StringUtils.trimToEmpty(additionalAuditComment), String.format("Initially contains %s.", StringUtilsLabKey.pluralize(plateCount, "plate")));
-                PlateSetAuditEvent auditEvent = PlateSetAuditProvider.EventFactory.plateSetCreated(container, tx.getAuditId(), newPlateSet, comment);
+                PlateSetAuditEvent auditEvent = PlateSetAuditProvider.EventFactory.plateSetCreated(container, tx.getAuditEvent(), newPlateSet, comment);
                 AuditLogService.get().addEvent(user, auditEvent);
             }
 
@@ -3060,7 +3060,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
                 tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
-                List<PlateSetAuditEvent> auditEvents = PlateSetAuditProvider.EventFactory.plateSetsArchived(container, tx.getAuditId(), plateSetIds, archive);
+                List<PlateSetAuditEvent> auditEvents = PlateSetAuditProvider.EventFactory.plateSetsArchived(container, tx.getAuditEvent(), plateSetIds, archive);
                 AuditLogService.get().addEvents(user, auditEvents, true);
             }
 
@@ -5162,17 +5162,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void addPlateCreatedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, @Nullable String additionalComment)
     {
-        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateCreated(container, tx.getAuditId(), plate, additionalComment));
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateCreated(container, tx.getAuditEvent(), plate, additionalComment));
     }
 
     public void addPlateDeletedAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates)
     {
-        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateDeleted(container, tx.getAuditId(), plate));
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateDeleted(container, tx.getAuditEvent(), plate));
     }
 
     public void addPlateImportAuditEvents(Container container, User user, DbScope.Transaction tx, Collection<Plate> plates, ExpRun run, boolean isReimport)
     {
-        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateImported(container, tx.getAuditId(), plate, run, isReimport));
+        addPlateAuditEvents(user, plates, plate -> PlateAuditProvider.EventFactory.plateImported(container, tx.getAuditEvent(), plate, run, isReimport));
     }
 
     public void ensureTransactionAuditId(DbScope.Transaction tx, Container container, User user, QueryService.AuditAction auditAction)

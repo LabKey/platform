@@ -38,10 +38,10 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
         this(beanClass, null);
     }
 
-    protected StringBeanDynaClass(Class beanClass, Map<String, Class> extras)
+    protected StringBeanDynaClass(Class<?> beanClass, Map<String, Class<?>> extras)
     {
         _beanClass = beanClass;
-        PropertyDescriptor propDescriptors[] = PropertyUtils.getPropertyDescriptors(beanClass);
+        PropertyDescriptor[] propDescriptors = PropertyUtils.getPropertyDescriptors(beanClass);
         if (propDescriptors == null)
             propDescriptors = new PropertyDescriptor[0];
         Map<String, Class<?>> propTypes = new CaseInsensitiveHashMap<>();
@@ -49,7 +49,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
             propTypes.put(propDescriptor.getName(), propDescriptor.getPropertyType());
         if (null != extras)
         {
-            for (Map.Entry<String, Class> entry : extras.entrySet())
+            for (Map.Entry<String, Class<?>> entry : extras.entrySet())
             {
                 String prop = entry.getKey();
                 if (propTypes.containsKey(prop))
@@ -70,38 +70,14 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
      *
      * @param beanClass Bean class for which a WrapDynaClass is requested
      */
-    public static StringBeanDynaClass createDynaClass(Class beanClass)
+    public static StringBeanDynaClass createDynaClass(Class<?> beanClass)
     {
-
-        /*
-
-                WrapStringDynaClass dynaClass =
-                        (WrapStringDynaClass) _dynaClasses.get(beanClass);
-                if (dynaClass == null)
-                {
-                    dynaClass = new WrapStringDynaClass(beanClass);
-                    _dynaClasses.put(beanClass, dynaClass);
-                }
-                return (dynaClass);
-        */
         return new StringBeanDynaClass(beanClass);
     }
 
 
-    public static StringBeanDynaClass createDynaClass(Class beanClass, Map<String, Class> extraProps)
+    public static StringBeanDynaClass createDynaClass(Class<?> beanClass, Map<String, Class<?>> extraProps)
     {
-
-        /*
-
-                WrapStringDynaClass dynaClass =
-                        (WrapStringDynaClass) _dynaClasses.get(beanClass);
-                if (dynaClass == null)
-                {
-                    dynaClass = new WrapStringDynaClass(beanClass);
-                    _dynaClasses.put(beanClass, dynaClass);
-                }
-                return (dynaClass);
-        */
         return new StringBeanDynaClass(beanClass, extraProps);
     }
 
@@ -117,6 +93,6 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
     @Override
     public DynaBean newInstance()
     {
-        return new BeanViewForm(_beanClass);
+        throw new UnsupportedOperationException("StringBeanDynaClass does not support newInstance()");
     }
 } 

@@ -1717,7 +1717,7 @@ public class StudyController extends BaseStudyController
             {
                 // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
                 // study table or dataset
-                String subjectNounSingular = form.get("SubjectNounSingular");
+                String subjectNounSingular = form.getAsString("SubjectNounSingular");
                 if (null != subjectNounSingular)
                 {
                     String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
@@ -1729,7 +1729,7 @@ public class StudyController extends BaseStudyController
             // Skip validation if Spring binding already has an error for subject noun plural
             if (errors.getFieldError("SubjectNounPlural") == null)
             {
-                String subjectNounPlural = form.get("SubjectNounPlural");
+                String subjectNounPlural = form.getAsString("SubjectNounPlural");
                 if (null != subjectNounPlural)
                 {
                     String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
@@ -1742,7 +1742,7 @@ public class StudyController extends BaseStudyController
             if (errors.getFieldError("SubjectColumnName") == null)
             {
                 // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
-                String subjectColName = form.get("SubjectColumnName");
+                String subjectColName = form.getAsString("SubjectColumnName");
                 if (null != subjectColName)
                 {
                     String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);

@@ -2,6 +2,7 @@ package org.labkey.api.assay;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -59,7 +60,7 @@ public class AssayFilePropertyWriter<ContextType extends AssayRunUploadContext<?
         }
     }
 
-    public CaseInsensitiveHashMap<FileLike> savePostedFiles(Container container, User user, Map<String, MultipartFile> filePropertyMap, Long auditTransactionId, String auditComment) throws ExperimentException
+    public CaseInsensitiveHashMap<FileLike> savePostedFiles(Container container, User user, Map<String, MultipartFile> filePropertyMap, TransactionAuditProvider.TransactionAuditEvent auditTransactionEvent, String auditComment) throws ExperimentException
     {
         FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(container);
         CaseInsensitiveHashMap<FileLike> properties = new CaseInsensitiveHashMap<>();
@@ -87,7 +88,7 @@ public class AssayFilePropertyWriter<ContextType extends AssayRunUploadContext<?
                 event.setProvidedFileName(originalName);
                 event.setFile(file.getName());
                 event.setDirectory(file.getParent());
-                event.setTransactionId(auditTransactionId);
+                event.setTransactionEvent(auditTransactionEvent, FileSystemAuditProvider.EVENT_TYPE);
                 event.setFieldName(entry.getKey());
                 AuditLogService.get().addEvent(user, event);
 
