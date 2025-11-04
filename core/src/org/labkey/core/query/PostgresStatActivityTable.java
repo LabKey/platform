@@ -4,6 +4,7 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -51,37 +52,37 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
         setDescription("Shows info about the active Postgres connections and their activity");
 
         // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
-        addColumn(new ExprColumn(this, "datid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".datid"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "datname", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".datname"), JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("datid", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("datname", this, JdbcType.VARCHAR));
 
-        ExprColumn pidColumn = new ExprColumn(this, "pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER);
+        BaseColumnInfo pidColumn = new BaseColumnInfo("pid", this, JdbcType.INTEGER);
         pidColumn.setKeyField(true);
         addColumn(pidColumn);
 
-        addColumn(new ExprColumn(this, "leader_pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".leader_pid"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "usesysid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".usesysid"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "usename", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".usename"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "application_name", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".application_name"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "client_addr", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_addr"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "client_hostname", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_hostname"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "client_port", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_port"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "backend_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_start"), JdbcType.TIMESTAMP));
-        addColumn(new ExprColumn(this, "xact_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".xact_start"), JdbcType.TIMESTAMP));
-        addColumn(new ExprColumn(this, "query_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".query_start"), JdbcType.TIMESTAMP));
-        addColumn(new ExprColumn(this, "state_change", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".state_change"), JdbcType.TIMESTAMP));
-        addColumn(new ExprColumn(this, "wait_event_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".wait_event_type"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "wait_event", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".wait_event"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "state", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".state"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "backend_xid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_xid"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "backend_xmin", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_xmin"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "query", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".query"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "backend_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_type"), JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("leader_pid", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("usesysid", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("usename", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("application_name", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("client_addr", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("client_hostname", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("client_port", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("backend_start", this, JdbcType.TIMESTAMP));
+        addColumn(new BaseColumnInfo("xact_start", this, JdbcType.TIMESTAMP));
+        addColumn(new BaseColumnInfo("query_start", this, JdbcType.TIMESTAMP));
+        addColumn(new BaseColumnInfo("state_change", this, JdbcType.TIMESTAMP));
+        addColumn(new BaseColumnInfo("wait_event_type", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("wait_event", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("state", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("backend_xid", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("backend_xmin", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("query", this, JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("backend_type", this,  JdbcType.VARCHAR));
 
         // Our calculated values
         var threadCol = addColumn(new ExprColumn(this, "threadsAndRequests", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER));
         threadCol.setDisplayColumnFactory(ThreadDisplayColumn::new);
-        addColumn(new ExprColumn(this, "running_time_ms", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".running_time_ms"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "blocked_by", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".blocked_by"), JdbcType.VARCHAR));
+        addColumn(new BaseColumnInfo("running_time_ms", this, JdbcType.INTEGER));
+        addColumn(new BaseColumnInfo("blocked_by", this, JdbcType.VARCHAR));
 
         setDefaultVisibleColumns(Arrays.asList(
                 pidColumn.getFieldKey(),
