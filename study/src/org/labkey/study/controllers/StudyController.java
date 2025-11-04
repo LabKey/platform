@@ -1757,8 +1757,8 @@ public class StudyController extends BaseStudyController
             if (!getContainer().hasPermission(getUser(),AdminPermission.class))
                 throw new UnauthorizedException();
 
+            form.setTypedValue("container", getContainer().getId());
             Map<String,Object> values = form.getTypedValues();
-            values.put("container", getContainer().getId());
 
             TableInfo studyProperties = form.getTable();
             QueryUpdateService qus = studyProperties.getUpdateService();
