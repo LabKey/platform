@@ -1251,7 +1251,7 @@ public class PipelineController extends SpringActionController
 
             if (_archiveFile.exists())
             {
-                FileLike archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
+                FileLike archiveXml = PipelineManager.getArchiveXmlFile(getContainer(), _archiveFile, "folder.xml", errors);
                 if (errors.hasErrors())
                     return false;
 
