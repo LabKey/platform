@@ -364,6 +364,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return hasPermission(user, InsertPermission.class);
     }
 
+    protected boolean hasDeleteRowsPermission(User user)
+    {
+        return hasPermission(user, DeletePermission.class);
+    }
+
     // override this
     protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
     {
@@ -950,7 +955,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, DeletePermission.class))
+        if (!hasDeleteRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
         BatchValidationException errors = new BatchValidationException();
@@ -1017,7 +1022,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!container.hasPermission(user, AdminPermission.class) && !hasPermission(user, DeletePermission.class))
+        if (!container.hasPermission(user, AdminPermission.class) && !hasDeleteRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to truncate this table.");
 
         BatchValidationException errors = new BatchValidationException();
