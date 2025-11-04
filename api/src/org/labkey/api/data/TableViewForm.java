@@ -146,7 +146,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         if (null != _tinfo.getColumn("container"))
             setValueToBind("container", _c.getId());
 
-        Map<String, Object> newMap = Table.insert(_user, _tinfo, getTypedValues());
+        Map<String, Object> newMap = Table.insert(_user, _tinfo, _getTypedValues());
         setTypedValues(newMap, false);
     }
 
@@ -171,7 +171,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             setValueToBind("container", _c.getId());
 
         Object[] pkVal = getPkVals();
-        Map<String, Object> newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
+        Map<String, Object> newMap = Table.update(_user, _tinfo, _getTypedValues(), pkVal);
         setTypedValues(newMap, true);
     }
 
@@ -233,7 +233,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         if (maps.length > 0)
         {
             setTypedValues(maps[0], false);
-            setOldValues(new CaseInsensitiveHashMap<>(getTypedValues()));
+            setOldValues(new CaseInsensitiveHashMap<>(_getTypedValues()));
         }
     }
 
@@ -342,7 +342,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         {
             String pkName = pkNames.get(i);
             Object pkVal;
-            pkVal = getTypedValues().get(pkName);
+            pkVal = _getTypedValues().get(pkName);
             if (null == pkVal)
             {
                 Object oldValues = getOldValues();
@@ -517,28 +517,28 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public Object getTypedValue(String propName)
     {
-        return getTypedValues().get(propName);
+        return _getTypedValues().get(propName);
     }
 
     public Object getTypedValue(ColumnInfo column)
     {
-        return getTypedValues().get(getFormFieldName(column));
+        return _getTypedValues().get(getFormFieldName(column));
     }
 
     public boolean hasTypedValue(String propName)
     {
-        return getTypedValues().containsKey(propName);
+        return _getTypedValues().containsKey(propName);
     }
 
     public boolean hasTypedValue(ColumnInfo column)
     {
-        return getTypedValues().containsKey(getFormFieldName(column));
+        return _getTypedValues().containsKey(getFormFieldName(column));
     }
 
     public void setTypedValue(String propName, Object val)
     {
         // call _populate() if necessary
-        getTypedValues();
+        _getTypedValues();
         _values.put(propName, val);
         // We don't use setValueToBind() here because we want to avoid its side effect of clearing _values
         // To convert or not to convert???
@@ -555,10 +555,18 @@ public class TableViewForm extends ViewForm implements HasBindParameters
      */
     public Map<String, Object> getTypedValues()
     {
-        if (null == _values)
-            populateValues(null);
+        return Collections.unmodifiableMap(_getTypedValues());
+    }
 
-        return Collections.unmodifiableMap(_values);
+    private Map<String, Object> _getTypedValues()
+    {
+        if (null == _values)
+        {
+            // TODO we don't usually enter this code path, but we should still throw if there is a conversion error
+            // or maybe enforce that populateValues() has been called and throw IllegalStateException here?
+            populateValues(null);
+        }
+        return _values;
     }
 
     /**
@@ -583,7 +591,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
                 String fieldName = getMultiPartFormFieldName(column);
-                Object typedValue = getTypedValues().get(fieldName);
+                Object typedValue = _getTypedValues().get(fieldName);
 
                 if (typedValue != null)
                     values.put(column.getName(), typedValue);
