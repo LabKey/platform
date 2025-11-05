@@ -20,16 +20,13 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 
 import java.beans.PropertyDescriptor;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,10 +43,6 @@ public abstract class PipelineProtocol
     private String name;
     private String template;
 
-    public PipelineProtocol()
-    {
-    }
-
     public PipelineProtocol(String name)
     {
         this.name = name;
@@ -65,7 +58,7 @@ public abstract class PipelineProtocol
         this.name = name;
     }
 
-    public abstract PipelineProtocolFactory getFactory();
+    public abstract PipelineProtocolFactory<?> getFactory();
 
     public void validateToSave(PipeRoot root, boolean validateName, boolean abortOnExists) throws PipelineValidationException
     {
@@ -100,7 +93,7 @@ public abstract class PipelineProtocol
             throw new PipelineValidationException("The name '" + name + "' is not a valid protocol name.");
     }
 
-    public Path getDefinitionFile(PipeRoot root)
+    public FileLike getDefinitionFile(PipeRoot root)
     {
         return getFactory().getProtocolFile(root, name, false);
     }
@@ -152,17 +145,11 @@ public abstract class PipelineProtocol
         return propMap;
     }
 
-    @Deprecated
-    public void save(File file) throws IOException
-    {
-        save(file.toPath());
-    }
-
-    private void ensureDir(Path dir) throws IOException
+    private void ensureDir(FileLike dir) throws IOException
     {
         try
         {
-            if (!Files.exists(dir))
+            if (!dir.exists())
             {
                 FileUtil.createDirectories(dir);
             }
@@ -173,9 +160,9 @@ public abstract class PipelineProtocol
         }
     }
 
-    public void save(Path file) throws IOException
+    public void save(FileLike file) throws IOException
     {
-        Path dir = file.getParent();
+        FileLike dir = file.getParent();
         try
         {
             ensureDir(dir);
@@ -210,9 +197,9 @@ public abstract class PipelineProtocol
         XmlOptions opts = new XmlOptions()
                 .setSavePrettyPrint()
                 .setSaveImplicitNamespaces(mapNS);
-        try (BufferedWriter bfw = Files.newBufferedWriter(file, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
+        try (PrintWriter pw = PrintWriters.getPrintWriter(file.toNioPathForWrite()))
         {
-            doc.save(bfw, opts);
+            doc.save(pw, opts);
         }
     }
 

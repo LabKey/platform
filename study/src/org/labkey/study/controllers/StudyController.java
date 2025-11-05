@@ -287,6 +287,7 @@ import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.labkey.study.xml.DatasetsDocument;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -3953,7 +3954,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(ResetPipelinePathForm form, BindException errors) throws Exception
         {
-            for (File f : form.getValidatedFiles(getContainer()))
+            for (FileLike f : form.getValidatedFiles(getContainer()))
             {
                 if (f.isFile() && f.getName().endsWith(".lock"))
                 {
@@ -4120,7 +4121,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
 
-            File definitionFile = form.getValidatedSingleFile(c);
+            File definitionFile = form.getValidatedSingleFile(c).toNioPathForRead().toFile();
             path = form.getPath();
             if (!path.endsWith("/"))
             {

@@ -23,9 +23,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -4969,7 +4969,7 @@ public class ExperimentController extends SpringActionController
 
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
-        if (StringUtils.endsWithIgnoreCase(fileName, ".xar"))
+        if (Strings.CI.endsWith(fileName, ".xar"))
             xarXmlFileName = fileName + ".xml";
 
         switch (exportType)
@@ -6731,10 +6731,10 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            Path systemDir = pipeRoot.ensureSystemDirectoryPath();
-            Path uploadDir = systemDir.resolve("UploadedXARs");
+            FileLike systemDir = pipeRoot.ensureSystemDirectory();
+            FileLike uploadDir = systemDir.resolveChild("UploadedXARs");
             FileUtil.createDirectories(uploadDir);
-            if (!Files.isDirectory(uploadDir))
+            if (!uploadDir.isDirectory())
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
                 return false;
@@ -6744,18 +6744,18 @@ public class ExperimentController extends SpringActionController
             {
                 userDirName = GUEST_DIRECTORY_NAME;
             }
-            Path userDir = FileUtil.appendName(uploadDir, userDirName);
+            FileLike userDir = uploadDir.resolveChild(userDirName);
             FileUtil.createDirectories(userDir);
-            if (!Files.isDirectory(userDir))
+            if (!userDir.isDirectory())
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
                 return false;
             }
 
-            Path xarFile = FileUtil.appendName(userDir, formFile.getOriginalFilename());
+            FileLike xarFile = userDir.resolveChild(formFile.getOriginalFilename());
 
             // As this is multi-part will need to use finally to close, to prevent a stream closure exception
-            try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(xarFile)))
+            try (OutputStream out = new BufferedOutputStream(xarFile.openOutputStream()))
             {
                 out.write(bytes);
             }
@@ -6786,17 +6786,17 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ImportXarForm form, BindException errors) throws Exception
         {
-            for (File f : form.getValidatedFiles(getContainer()))
+            for (FileLike f : form.getValidatedFiles(getContainer()))
             {
                 if (f.isFile())
                 {
-                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
+                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                     // TODO: Configure module resources with the appropriate log location per container
                     if (form.getModule() != null)
                     {
                         FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                        job.setLogFile(logFile.toNioPathForWrite());
+                        job.setLogFile(logFile);
                     }
 
                     PipelineService.get().queueJob(job);
@@ -6827,16 +6827,16 @@ public class ExperimentController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             List<Map<String, String>> archives = new ArrayList<>();
-            for (File f : form.getValidatedFiles(getContainer()))
+            for (FileLike f : form.getValidatedFiles(getContainer()))
             {
                 Map<String, String> archive = new HashMap<>();
-                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
+                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
                 {
                     FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                    job.setLogFile(logFile.toNioPathForWrite());
+                    job.setLogFile(logFile);
                 }
 
                 PipelineService.get().queueJob(job);

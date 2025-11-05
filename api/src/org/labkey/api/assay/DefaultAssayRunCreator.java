@@ -221,9 +221,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 // Choose another file as the primary
                 primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
             }
-            primaryFile = Objects.requireNonNull(primaryFile);
+            Objects.requireNonNull(primaryFile);
             AssayRunAsyncContext asyncContext = context.getProvider().createRunAsyncContext(context);
-            final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
+            final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<>(
                 asyncContext,
                 info,
                 batch,

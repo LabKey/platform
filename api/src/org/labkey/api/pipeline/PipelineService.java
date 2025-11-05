@@ -33,6 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -195,7 +196,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container, @Nullable ContainerFilter cf);
 
-    boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
+    boolean runFolderImportJob(Container c, User user, ActionURL url, FileLike folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
 
     /**
      * Register a folder archive source implementation. A FolderArchiveSource creates folder artifacts that can be
@@ -224,10 +225,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     class PathAnalysisProperties
     {
         private final PipeRoot _pipeRoot;
-        private final Path _dirData;
+        private final FileLike _dirData;
         private final AbstractFileAnalysisProtocolFactory<?> _factory;
 
-        public PathAnalysisProperties(PipeRoot pipeRoot, Path dirData, AbstractFileAnalysisProtocolFactory<?> factory)
+        public PathAnalysisProperties(PipeRoot pipeRoot, FileLike dirData, AbstractFileAnalysisProtocolFactory<?> factory)
         {
             _pipeRoot = pipeRoot;
             _dirData = dirData;
@@ -240,7 +241,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
         }
 
         @Nullable
-        public Path getDirData()
+        public FileLike getDirData()
         {
             return _dirData;
         }

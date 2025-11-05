@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.labkey.vfs.FileLike;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -84,9 +84,9 @@ public class RecordedActionSet
         return _otherInputs;
     }
 
-    public void add(Path inputFile, String inputRole)
+    public void add(FileLike inputFile, String inputRole)
     {
-        _otherInputs.put(inputFile.toUri(), inputRole);
+        _otherInputs.put(inputFile.toNioPathForRead().toUri(), inputRole);
     }
 
     public void add(RecordedActionSet set)

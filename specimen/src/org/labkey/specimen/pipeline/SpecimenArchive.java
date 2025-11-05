@@ -19,8 +19,8 @@ package org.labkey.specimen.pipeline;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,14 +36,14 @@ import java.util.zip.ZipFile;
 */
 public class SpecimenArchive
 {
-    private final File _definitionFile;
+    private final FileLike _definitionFile;
 
-    public SpecimenArchive(File definitionFile)
+    public SpecimenArchive(FileLike definitionFile)
     {
         _definitionFile = definitionFile;
     }
 
-    public File getDefinitionFile()
+    public FileLike getDefinitionFile()
     {
         return _definitionFile;
     }
@@ -56,13 +56,13 @@ public class SpecimenArchive
         {
             if (transform.getFileType().isType(_definitionFile))
             {
-                entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.length(), new Date(_definitionFile.lastModified())));
+                entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.getSize(), new Date(_definitionFile.getLastModified())));
                 return entryList;
             }
         }
 
         // standard non-transformed specimen archive
-        try (ZipFile zip = new ZipFile(_definitionFile))
+        try (ZipFile zip = new ZipFile(_definitionFile.toNioPathForRead().toFile()))
         {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements())

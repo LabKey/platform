@@ -59,7 +59,7 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
         if (protocol.getName() != null)
             protocol.setName(protocol.getName().trim());
 
-        AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
+        AssayDomainService svc = new AssayDomainServiceImpl(getViewContext().getUser(), getViewContext().getContainer());
         GWTProtocol updated = svc.saveChanges(protocol, true);
         return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'", updated);
     }

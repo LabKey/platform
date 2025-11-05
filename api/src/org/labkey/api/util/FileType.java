@@ -334,6 +334,11 @@ public class FileType implements Serializable
         return getName(parentDir.toPath(), basename);
     }
 
+    public String getName(FileLike parentDir, String basename)
+    {
+        return getName(parentDir.toNioPathForRead(), basename);
+    }
+
     public String getName(Path parentDir, String basename)
     {
         if (_suffixes.size() > 1)
@@ -430,6 +435,11 @@ public class FileType implements Serializable
         return getBaseName(file.toPath());
     }
 
+    public String getBaseName(FileLike file)
+    {
+        return getBaseName(file.toNioPathForRead());
+    }
+
     public String getBaseName(@NotNull java.nio.file.Path file)
     {
         String fileName = file.getFileName().toString();
@@ -467,6 +477,11 @@ public class FileType implements Serializable
     public File newFile(File parent, String basename)
     {
         return FileUtil.appendName(parent, getName(parent, basename));
+    }
+
+    public FileLike newFile(FileLike parent, String basename)
+    {
+        return parent.resolveChild(getName(parent, basename));
     }
 
     public Path newFile(Path parent, String basename)
@@ -657,15 +672,15 @@ public class FileType implements Serializable
     }
 
     @NotNull
-    public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<Path> files)
+    public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<FileLike> files)
     {
         ArrayList<FileType> foundTypes = new ArrayList<>();
         // This O(n*m), but these are usually very short lists.
         for (FileType type : types)
         {
-            for (Path file : files)
+            for (FileLike file : files)
             {
-                if (type.isType(file.getFileName().toString()))
+                if (type.isType(file.getName()))
                 {
                     foundTypes.add(type);
                     break;

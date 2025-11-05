@@ -23,6 +23,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResponseHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -46,16 +49,21 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZipUtil
 {
-    // Unzip a zipped file archive to the specified directory
-    @Deprecated
-    public static List<File> unzipToDirectory(File zipFile, File unzipDir) throws IOException
-    {
-        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath()).stream().map(Path::toFile).collect(Collectors.toList());
-    }
-
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir) throws IOException
     {
         return unzipToDirectory(zipFile, unzipDir, null);
+    }
+
+    public static List<FileLike> unzipToDirectory(FileLike zipFile, FileLike unzipDir) throws IOException
+    {
+        List<Path> paths = unzipToDirectory(zipFile.toNioPathForRead(), unzipDir.toNioPathForWrite(), null);
+        File rootFile = unzipDir.toNioPathForRead().toFile();
+        List<FileLike> result = new ArrayList<>();
+        for (Path path : paths)
+        {
+            result.add(FileSystemLike.wrapFile(rootFile, path.toFile()));
+        }
+        return result;
     }
 
     @Deprecated
@@ -67,12 +75,6 @@ public class ZipUtil
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log) throws IOException
     {
         return unzipToDirectory(zipFile, unzipDir, log, false);
-    }
-
-    @Deprecated
-    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
-    {
-        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath(), log, includeFolder).stream().map(Path::toFile).collect(Collectors.toList());
     }
 
     // Unzip an archive to the specified directory; log each file if Logger is non-null

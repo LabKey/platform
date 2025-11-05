@@ -23,6 +23,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -57,6 +58,11 @@ public class FileSystemFile extends AbstractVirtualFile
     public FileSystemFile(File root)
     {
         this(root.toPath());
+    }
+
+    public FileSystemFile(FileLike root)
+    {
+        this(root.toNioPathForWrite());
     }
 
     public FileSystemFile(Path root)

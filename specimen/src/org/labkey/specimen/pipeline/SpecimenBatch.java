@@ -29,6 +29,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -48,7 +49,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     // For serialization
     protected SpecimenBatch() {}
 
-    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge)
+    public SpecimenBatch(ViewBackgroundInfo info, FileLike definitionFile, PipeRoot root, boolean merge)
     {
         super(info, definitionFile, root);
         _isMerge = merge;
@@ -78,7 +79,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     @Override
     public Path getSpecimenArchivePath()
     {
-        return _definitionFile.toPath();
+        return _definitionFile.toNioPathForRead();
     }
 
     @Override

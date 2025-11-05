@@ -155,7 +155,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     if (useLocalImportDir)
                     {   //TODO this should be done from the import context getSpecimenArchive
                         specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
-                        specimenFile = job.getPipeRoot().getImportDirectory().toPath().resolve(specimenFile);
+                        specimenFile = job.getPipeRoot().getImportDirectory().toNioPathForRead().resolve(specimenFile);
                     }
 
                     SpecimenMigrationService.get().importSpecimenArchive(specimenFile, job, studyImportContext, false, false);

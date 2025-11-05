@@ -10,6 +10,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -19,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -32,10 +32,10 @@ import java.util.zip.ZipInputStream;
 public class CompressedInputStreamXarSource extends AbstractFileXarSource
 {
     private final InputStream _xarInputStream;
-    private final Path _logFile;
+    private final FileLike _logFile;
     private String _xml;
 
-    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, @Nullable PipelineJob job, User user, Container container, @Nullable Map<String, String> substitutions)
+    public CompressedInputStreamXarSource(InputStream xarInputStream, FileLike xarFile, FileLike logFile, @Nullable PipelineJob job, User user, Container container, @Nullable Map<String, String> substitutions)
     {
         super(job == null ? null : job.getDescription(), container, user, job, substitutions);
         _xarInputStream = xarInputStream;
@@ -86,7 +86,7 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
     }
 
     @Override
-    public Path getLogFilePath()
+    public FileLike getLogFilePath()
     {
         return _logFile;
     }
