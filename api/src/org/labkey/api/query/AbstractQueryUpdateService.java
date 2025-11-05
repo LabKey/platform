@@ -369,6 +369,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return hasPermission(user, DeletePermission.class);
     }
 
+    protected boolean hasUpdateRowsPermission(User user)
+    {
+        return hasPermission(user, UpdatePermission.class);
+    }
+
     // override this
     protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
     {
@@ -560,7 +565,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                                       DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!hasPermission(user, UpdatePermission.class))
+        if (!hasUpdateRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to update data in this table.");
 
         return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
@@ -827,7 +832,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                                                 BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, UpdatePermission.class))
+        if (!hasUpdateRowsPermission(user))
             throw new UnauthorizedException("You do not have permission to update data in this table.");
 
         if (oldKeys != null && rows.size() != oldKeys.size())
