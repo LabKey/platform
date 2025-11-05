@@ -487,6 +487,7 @@ public class AdminController extends SpringActionController
         {
             AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+            AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
         }
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
@@ -2664,6 +2665,15 @@ public class AdminController extends SpringActionController
         public PostgresLocksAction()
         {
             super(PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME);
+        }
+    }
+
+    @AdminConsoleAction
+    public class PostgresTableSizesAction extends AbstractPostgresAction
+    {
+        public PostgresTableSizesAction()
+        {
+            super(PostgresUserSchema.POSTGRES_TABLE_SIZES_TABLE_NAME);
         }
     }
 
