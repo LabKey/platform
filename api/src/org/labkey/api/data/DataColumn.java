@@ -712,7 +712,10 @@ public class DataColumn extends DisplayColumn
             {
                 IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
-                    renderTextChoiceFormInput(out, formFieldName, value, List.of(strVal), disabledInput, textChoiceValidator);
+                {
+                    List<String> strVals = StringUtils.isEmpty(strVal) ? List.of() : List.of(strVal);
+                    renderTextChoiceFormInput(out, formFieldName, value, strVals, disabledInput, textChoiceValidator);
+                }
                 else
                     renderTextFormInput(out, formFieldName, value, strVal, disabledInput);
             }
