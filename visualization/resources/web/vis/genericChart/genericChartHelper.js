@@ -1340,8 +1340,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 // we need at least 2 data points for curve fitting
                 if (series.rawData.length > 1) {
                     series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                } else {
+                    series.error = 'Series ' + series.name + ': Not enough data points for trendline calculation.';
                 }
             } catch (e) {
+                series.error = e;
                 console.error(e);
             }
         }
@@ -1406,7 +1409,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     resolve(response);
                 }),
                 failure : LABKEY.Utils.getCallbackWrapper(function(reason) {
-                    reject(reason);
+                    reject('Series "' + seriesData.name + '" - ' + reason.exception);
                 }, this, true),
             });
         });
@@ -1973,7 +1976,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             data = generateDataForChartType(chartConfig, chartType, geom, data);
         }
 
-        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
+        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore, trendlineData);
         _renderMessages(renderTo, validation.messages);
         if (!validation.success)
             return;
@@ -1997,12 +2000,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.innerHTML = '<h3 style="color:red;">Error rendering chart:</h3><div>' + messages.join('<br/>') + '</div>';
+            errorDiv.innerHTML = '<div style="color:red; padding: 5px 0;">Error rendering chart: ' + messages.join(' ') + '</div>';
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
 
-    var _validateChartConfig = function(chartConfig, aes, scales, measureStore) {
+    var _validateChartConfig = function(chartConfig, aes, scales, measureStore, trendlineData) {
         var hasNoDataMsg = validateResponseHasData(measureStore, false);
         if (hasNoDataMsg != null)
             return {success: false, messages: [hasNoDataMsg]};
@@ -2032,6 +2035,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                         if (!validation.success)
                             return {success: false, messages: messages};
                     }
+                }
+            }
+        }
+
+        if (trendlineData) {
+            for (var i = 0; i < trendlineData.length; i++) {
+                if (trendlineData[i].error) {
+                    messages.push(trendlineData[i].error);
                 }
             }
         }
