@@ -103,7 +103,7 @@ public class MultiChoice
             if (textChoiceValidator != null)
             {
                 setInputType("select.multiple");
-                renderTextChoiceFormInput(out, formFieldName+ARRAY_MARKER, array, array, disabledInput, textChoiceValidator);
+                renderTextChoiceFormInput(out, ARRAY_MARKER+formFieldName, array, array, disabledInput, textChoiceValidator);
             }
             else
             {
