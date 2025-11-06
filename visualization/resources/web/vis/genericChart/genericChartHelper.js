@@ -1320,6 +1320,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
             asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
             asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+            parameters: chartConfig.geomOptions.trendlineParameters,
             data: chartConfig.measures.series
                     ? LABKEY.vis.groupCountData(data, generateGroupingAcc(chartConfig.measures.series.name))
                     : [{name: 'All', rawData: data}],
@@ -1363,12 +1364,37 @@ LABKEY.vis.GenericChartHelper = new function(){
             const xMin = d3.min(points, xAcc);
             const xMax = d3.max(points, xAcc);
 
+            // Get the first non-null value for curveFitName in the seriesData.rawData.
+            // Also make sure that if we have > 1 non-null value, they are all the same.
+            const curveFitName = trendlineConfig.parameters;
+            let providedParams;
+            if (curveFitName) {
+                for (let i = 0; i < seriesData.rawData.length; i++) {
+                    const row = seriesData.rawData[i];
+                    const curveFitValue = _getRowValue(row, curveFitName, 'value');
+                    if (curveFitValue !== null && curveFitValue !== undefined) {
+                        if (providedParams === undefined) {
+                            providedParams = curveFitValue;
+                        } else if (providedParams !== curveFitValue) {
+                            reject('Series "' + seriesData.name + '" - Inconsistent curve fit parameters in "' + curveFitName + '" variable.');
+                            return;
+                        }
+                    }
+                }
+
+                if (!providedParams) {
+                    reject('Series "' + seriesData.name + '" - No curve fit parameters found in "' + curveFitName + '" variable.');
+                    return;
+                }
+            }
+
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
                 method: 'POST',
                 jsonData: {
                     curveFitType: trendlineConfig.type,
                     points: points,
+                    parametersStr: providedParams,
                     logXScale: trendlineConfig.logXScale,
                     asymptoteMin: trendlineConfig.asymptoteMin,
                     asymptoteMax: trendlineConfig.asymptoteMax,
@@ -1614,7 +1640,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getAllowableTypes = function(field) {
         var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
                 nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
-                numericAndDateTypes = numericTypes.concat(['date','DATE']);
+                numericAndDateTypes = numericTypes.concat(['date','DATE']),
+                textTypes = ['string', 'STRING', 'TEXT'];
 
         if (field.altSelectionOnly)
             return [];
@@ -1624,6 +1651,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             return nonNumericTypes;
         else if (field.numericOrDateOnly)
             return numericAndDateTypes;
+        else if (field.textOnly)
+            return textTypes;
         else
             return numericTypes.concat(nonNumericTypes);
     }
