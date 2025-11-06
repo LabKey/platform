@@ -502,6 +502,8 @@ async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainTy
         }
     }, {...folderOptions, ...userOptions}).expect((result) => {
         const domain = JSON.parse(result.text);
+        expect(domain).toHaveProperty('domainId');
+        expect(domain).toHaveProperty('domainURI');
         domainId = domain.domainId;
         domainURI = domain.domainURI;
         return true;
@@ -626,6 +628,8 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
         }
     }, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
         const domain = JSON.parse(result.text);
+        expect(domain).toHaveProperty('domainId');
+        expect(domain).toHaveProperty('domainURI');
         childDomainId = domain.domainId;
         childDomainURI = domain.domainURI;
         return true;
