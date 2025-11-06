@@ -3,7 +3,9 @@ package org.labkey.experiment.pipeline;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
@@ -19,6 +21,7 @@ import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -65,7 +68,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
     {
         PipelineJob job = getJob();
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
-        job.setLogFile(FileUtil.appendName(support.getDataDirectory(), FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
+        job.setLogFile(support.getDataDirectoryFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
         Map<String, String> params = support.getParameters();
 
         job.setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());
@@ -198,29 +201,44 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                     QueryUpdateService qus = tinfo.getUpdateService();
                     if (qus != null)
                     {
-                        try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, c, null))
+                        try (DbScope.Transaction transaction = tinfo.getSchema().getScope().ensureTransaction())
                         {
-                            BatchValidationException errors = new BatchValidationException();
-                            DataIteratorContext context = new DataIteratorContext(errors);
-
-                            if (_insertOption != null)
-                                context.setInsertOption(_insertOption);
-
-                            if (_auditBehavior != null)
-                                context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
-                            context.setAllowImportLookupByAlternateKey(_alternateKeyLookup);
-
-                            int count = qus.loadRows(user, c, loader, context, null);
-                            log.info("Imported a total of " + count + " rows into : " + sampleType.getName());
-                            if (context.getErrors().hasErrors())
+                            String fileWatcherDescription = getJob().getDescription();
+                            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent = transaction.getAuditEvent();
+                            if (transactionAuditEvent != null)
+                                transactionAuditEvent.addDetail(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription);
+                            else
                             {
-                                for (ValidationException error : context.getErrors().getRowErrors())
-                                    log.error(error.getMessage());
+                                transactionAuditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(c, QueryService.AuditAction.RELOAD, Map.of(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription));
+                                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, transactionAuditEvent);
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            log.error("import failed", e);
+
+                            try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, c, null))
+                            {
+                                BatchValidationException errors = new BatchValidationException();
+                                DataIteratorContext context = new DataIteratorContext(errors);
+
+                                if (_insertOption != null)
+                                    context.setInsertOption(_insertOption);
+
+                                if (_auditBehavior != null)
+                                    context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+                                context.setAllowImportLookupByAlternateKey(_alternateKeyLookup);
+
+                                int count = qus.loadRows(user, c, loader, context, null);
+                                log.info("Imported a total of " + count + " rows into : " + sampleType.getName());
+                                if (context.getErrors().hasErrors())
+                                {
+                                    for (ValidationException error : context.getErrors().getRowErrors())
+                                        log.error(error.getMessage());
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                log.error("import failed", e);
+                            }
+
+                            transaction.commit();
                         }
                     }
                     else

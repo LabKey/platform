@@ -20,18 +20,19 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.nio.file.Path;
 
 public class InvalidFileException extends ImportException
 {
-    @Deprecated // prefer the Path version
-    public InvalidFileException(File root, File file, Throwable t)
+    public InvalidFileException(FileLike root, FileLike file, Throwable t)
     {
-        this(root.toPath(), file.toPath(), t);
+        this(root.toNioPathForRead(), file.toNioPathForRead(), t);
     }
 
+    @Deprecated // prefer the FileLike version
     public InvalidFileException(Path root, Path file, Throwable t)
     {
         super(getErrorString(root, file, t.getMessage()));
@@ -42,19 +43,9 @@ public class InvalidFileException extends ImportException
         super(getErrorString(root.getRelativePath(file.getName()), t.getMessage()));
     }    
 
-    public InvalidFileException(File root, File file, XmlException e)
-    {
-        super(getErrorString(root, file, e));
-    }
-
     public InvalidFileException(VirtualFile root, File file, XmlException e)
     {
         super(getErrorString(root, file, e));
-    }
-
-    public InvalidFileException(File root, File file, XmlValidationException e)
-    {
-        super(getErrorString(root, file, (String)null), e);
     }
 
     public InvalidFileException(VirtualFile root, File file, XmlValidationException e)

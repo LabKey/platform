@@ -333,6 +333,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
+import org.labkey.vfs.FileLike;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -486,6 +487,7 @@ public class AdminController extends SpringActionController
         {
             AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+            AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
         }
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
@@ -2663,6 +2665,15 @@ public class AdminController extends SpringActionController
         public PostgresLocksAction()
         {
             super(PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME);
+        }
+    }
+
+    @AdminConsoleAction
+    public class PostgresTableSizesAction extends AbstractPostgresAction
+    {
+        public PostgresTableSizesAction()
+        {
+            super(PostgresUserSchema.POSTGRES_TABLE_SIZES_TABLE_NAME);
         }
     }
 
@@ -5215,7 +5226,6 @@ public class AdminController extends SpringActionController
         private boolean _createSharedDatasets;
         private boolean _validateQueries;
         private boolean _failForUndefinedVisits;
-        private boolean _advancedImportOptions;
         private String _sourceTemplateFolder;
         private String _sourceTemplateFolderId;
         private String _origin;
@@ -5248,16 +5258,6 @@ public class AdminController extends SpringActionController
         public void setValidateQueries(boolean validateQueries)
         {
             _validateQueries = validateQueries;
-        }
-
-        public boolean isAdvancedImportOptions()
-        {
-            return _advancedImportOptions;
-        }
-
-        public void setAdvancedImportOptions(boolean advancedImportOptions)
-        {
-            _advancedImportOptions = advancedImportOptions;
         }
 
         public String getSourceTemplateFolder()
@@ -5336,7 +5336,7 @@ public class AdminController extends SpringActionController
             User user = getUser();
             Container container = getContainer();
             PipeRoot pipelineRoot;
-            Path pipelineUnzipDir;  // Should be local & writable
+            FileLike pipelineUnzipDir;  // Should be local & writable
             PipelineUrls pipelineUrlProvider;
 
             if (form.getOrigin() == null)
@@ -5386,8 +5386,8 @@ public class AdminController extends SpringActionController
             }
 
             // get the folder.xml file from the unzipped import archive
-            Path archiveXml = pipelineUnzipDir.resolve("folder.xml");
-            if (!Files.exists(archiveXml))
+            FileLike archiveXml = pipelineUnzipDir.resolveChild("folder.xml");
+            if (!archiveXml.exists())
             {
                 errors.reject("folderImport", "This archive doesn't contain a folder.xml file.");
                 return false;
@@ -5397,16 +5397,7 @@ public class AdminController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
-            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
             options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
-
-            // if the option is selected to show the advanced import options, redirect to there
-            if (form.isAdvancedImportOptions())
-            {
-                // archiveFile is the zip of the source template folder located in the current container's unzip dir
-                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), fiConfig.archiveFile, options, fiConfig.fromTemplateSourceFolder);
-                return true;
-            }
 
             // finally, create the study or folder import pipeline job
             _successURL = pipelineUrlProvider.urlBegin(container);
@@ -5415,7 +5406,7 @@ public class AdminController extends SpringActionController
             return !errors.hasErrors();
         }
 
-        private @Nullable FolderImportConfig getFolderFromZipArchive(Path pipelineUnzipDir, BindException errors)
+        private @Nullable FolderImportConfig getFolderFromZipArchive(FileLike pipelineUnzipDir, BindException errors)
         {
             // user chose to import from a zip file
             Map<String, MultipartFile> map = getFileMap();
@@ -5439,17 +5430,17 @@ public class AdminController extends SpringActionController
             // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
             try
             {
-                Path pipelineUnzipFile = pipelineUnzipDir.resolve(originalFilename);
+                FileLike pipelineUnzipFile = pipelineUnzipDir.resolveFile(org.labkey.api.util.Path.parse(originalFilename));
                 // Check that the resolved file is under the pipelineUnzipDir
-                if (!pipelineUnzipFile.normalize().startsWith(pipelineUnzipDir.normalize()))
+                if (!pipelineUnzipFile.toNioPathForRead().normalize().startsWith(pipelineUnzipDir.toNioPathForRead().normalize()))
                 {
                     errors.reject("folderImport", "Invalid file path - must be within the unzip directory");
                     return null;
                 }
 
                 FileUtil.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
-                FileUtil.createFile(pipelineUnzipFile);
-                try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
+                FileUtil.createNewFile(pipelineUnzipFile, true);
+                try (OutputStream os = pipelineUnzipFile.openOutputStream())
                 {
                     FileUtil.copyData(zipFile.getInputStream(), os);
                 }
@@ -5476,7 +5467,7 @@ public class AdminController extends SpringActionController
             }
         }
 
-        private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final Path pipelineUnzipDir, final BindException errors) throws Exception
+        private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final FileLike pipelineUnzipDir, final BindException errors) throws Exception
         {
             // user choose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
@@ -5488,7 +5479,12 @@ public class AdminController extends SpringActionController
                     PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
             FolderWriterImpl writer = new FolderWriterImpl();
             String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
-            try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
+            FileLike implicitZipFile = pipelineUnzipDir.resolveChild(zipFileName);
+            if (!pipelineUnzipDir.isDirectory())
+                pipelineUnzipDir.mkdirs();
+            implicitZipFile.createFile();
+            try (OutputStream out = implicitZipFile.openOutputStream();
+                    ZipFile zip = new ZipFile(out, false))
             {
                 writer.write(sourceContainer, ctx, zip);
             }
@@ -5496,26 +5492,25 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            Path implicitZipFile = pipelineUnzipDir.resolve(zipFileName);
 
             // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
             ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
 
             return new FolderImportConfig(
                 StringUtils.isNotEmpty(form.getSourceTemplateFolderId()),
-                implicitZipFile.getFileName().toString(),
+                implicitZipFile.getName(),
                 implicitZipFile,
                 null
             );
         }
 
         private static class FolderImportConfig {
-            Path pipelineUnzipFile;
+            FileLike pipelineUnzipFile;
             String originalFileName;
-            Path archiveFile;
+            FileLike archiveFile;
             boolean fromTemplateSourceFolder;
 
-            public FolderImportConfig(boolean fromTemplateSourceFolder, String originalFileName, Path archiveFile, @Nullable Path pipelineUnzipFile)
+            public FolderImportConfig(boolean fromTemplateSourceFolder, String originalFileName, FileLike archiveFile, @Nullable FileLike pipelineUnzipFile)
             {
                 this.originalFileName = originalFileName;
                 this.archiveFile = archiveFile;

@@ -20,7 +20,6 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirFactory;
@@ -268,28 +267,15 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
         for (File fileWork : filesWork)
         {
-            File fileOutput;
+            File fileOutput = switch (tp.getOutputLocation())
+            {
+                case ANALYSIS_DIR -> new File(_support.getAnalysisDirectory(), fileWork.getName());
+                case DATA_DIR -> new File(_support.getDataDirectory(), fileWork.getName());
+                case PATH -> _support.findOutputFile(tp.getOutputDir(), fileWork.getName());
+                default -> _support.findOutputFile(fileWork.getName());
+            };
 
             // Check if the output is specifically flagged to go into a special location
-            switch (tp.getOutputLocation())
-            {
-                case ANALYSIS_DIR:
-                    fileOutput = new File(_support.getAnalysisDirectory(), fileWork.getName());
-                    break;
-
-                case DATA_DIR:
-                    fileOutput = new File(_support.getDataDirectory(), fileWork.getName());
-                    break;
-
-                case PATH:
-                    fileOutput = _support.findOutputFile(tp.getOutputDir(), fileWork.getName());
-                    break;
-
-                case DEFAULT:
-                default:
-                    fileOutput = _support.findOutputFile(fileWork.getName());
-                    break;
-            }
 
             if (fileOutput != null)
             {
@@ -383,23 +369,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     @Override
     public File newFile(FileType type)
     {
-        return newFile(Function.output, type);
-    }
-
-    @Override
-    public File newFile(Function f, FileType type)
-    {
-        if (f == Function.input)
-        {
-            // that null arg to type.getName causes it to try all known filename extensions instead of just default
-            return newFile(f, type.getName((File)null, _support.getBaseName()));
-        }
-        else if (f == Function.output)
-        {
-            // TODO: Issue 20143: pipeline: Custom output directory for task outputs
-            return newFile(f, type.getName(_dir, _support.getBaseName()));
-        }
-        throw new IllegalArgumentException("input or output expected");
+        // TODO: Issue 20143: pipeline: Custom output directory for task outputs
+        return newFile(Function.output, type.getName(_dir, _support.getBaseName()));
     }
 
     @Override

@@ -34,7 +34,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -117,7 +116,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
-public class ReportServiceImpl extends AbstractContainerListener implements ReportService
+public class ReportServiceImpl implements ContainerManager.ContainerListener, ReportService
 {
     private static final Logger _log = LogHelper.getLogger(ReportService.class, "Errors and warnings with reports");
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
@@ -1071,6 +1070,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
                 MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
                 AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
+                AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
                 Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
                     .flatMap(c -> ReportService.get().getReports(null, c).stream())
                     .peek(report -> {
@@ -1082,6 +1082,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                                 String configJson = descriptor.getJSON();
                                 if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
                                     genericChartWithTrendlineTypeCount.getAndIncrement();
+                                if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
+                                    genericChartWithErrorBarsCount.getAndIncrement();
                             }
                         }
                     })
@@ -1090,7 +1092,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 return Map.of(
                     "reportCountsByType", countsByType,
                     "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType),
-                    "genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount
+                    "genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount,
+                    "genericChartWithErrorBarsCount", genericChartWithErrorBarsCount
                 );
             });
         }

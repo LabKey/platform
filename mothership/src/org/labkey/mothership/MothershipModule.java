@@ -121,7 +121,7 @@ public class MothershipModule extends DefaultModule
     {
         MothershipReport.setShowSelfReportExceptions(true);
 
-        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             @Override
             public void containerDeleted(Container c, User user)

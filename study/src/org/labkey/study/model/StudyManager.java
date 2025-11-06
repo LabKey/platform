@@ -2795,9 +2795,9 @@ public class StudyManager
     {
         for (TableInfo tinfo : studyDesignTables)
         {
-            if (tinfo instanceof FilteredTable)
+            if (tinfo instanceof FilteredTable<?> ft)
             {
-                Table.delete(((FilteredTable)tinfo).getRealTable(), new SimpleFilter(FieldKey.fromParts("Container"), c));
+                Table.delete(ft.getRealTable(), new SimpleFilter(FieldKey.fromParts("Container"), c));
             }
         }
     }

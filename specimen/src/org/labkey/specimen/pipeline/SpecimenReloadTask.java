@@ -58,8 +58,7 @@ public class SpecimenReloadTask extends PipelineJob.Task<SpecimenReloadTask.Fact
             PipeRoot root = PipelineService.get().findPipelineRoot(job.getContainer());
             if (root != null)
             {
-                FileLike archiveFileLike = root.getRootFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("specimen_reload", transform.getFileType().getDefaultSuffix()));
-                File archive = FileSystemLike.toFile(archiveFileLike);
+                FileLike archive = root.getRootFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("specimen_reload", transform.getFileType().getDefaultSuffix()));
                 transform.importFromExternalSource(job, support.getExternalImportConfig(), archive);
 
                 support.setSpecimenArchive(archive);

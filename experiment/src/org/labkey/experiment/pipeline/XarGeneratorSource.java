@@ -18,6 +18,7 @@ package org.labkey.experiment.pipeline;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.vfs.FileLike;
 
 import java.nio.file.Path;
 
@@ -27,14 +28,14 @@ import java.nio.file.Path;
 */
 public class XarGeneratorSource extends AbstractFileXarSource
 {
-    public XarGeneratorSource(PipelineJob job, Path xarFile)
+    public XarGeneratorSource(PipelineJob job, FileLike xarFile)
     {
         super(job);
         _xmlFile = xarFile;
     }
 
     @Override
-    public Path getLogFilePath()
+    public FileLike getLogFilePath()
     {
         throw new UnsupportedOperationException();
     }

@@ -186,12 +186,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
 
             @Override
-            public @NotNull Collection<String> canMove(Container c, Container newParent, User user)
-            {
-                return Collections.emptyList();
-            }
-
-            @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
                 REQUIRED_MODULES_CACHE.clear();

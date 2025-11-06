@@ -42,7 +42,7 @@ class MaintenancePipelineJob extends PipelineJob
     MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
     {
         super("SystemMaintenance", info, pipeRoot);
-        setLogFile(pipeRoot.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")).toNioPathForWrite());
+        setLogFile(pipeRoot.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
         _tasks = tasks;
     }
 

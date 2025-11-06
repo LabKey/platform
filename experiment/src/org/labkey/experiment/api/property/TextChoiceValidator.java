@@ -17,6 +17,7 @@ package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -24,7 +25,11 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class TextChoiceValidator extends RegExValidator implements ValidatorKind
 {
@@ -52,18 +57,39 @@ public class TextChoiceValidator extends RegExValidator implements ValidatorKind
     {
         assert value != null : "Shouldn't be validating a null value";
 
-        List<String> validValues = (List<String>)validatorCache.get(TextChoiceValidator.class, validator.getExpressionValue());
+        Set<String> validValues = (Set<String>)validatorCache.get(TextChoiceValidator.class, validator.getExpressionValue());
         if (validValues == null)
         {
-            validValues = PropertyService.get().getTextChoiceValidatorOptions(validator);
+            validValues = new LinkedHashSet<>(PropertyService.get().getTextChoiceValidatorOptions(validator));
             // Cache the validValues so that it can be reused
             validatorCache.put(TextChoiceValidator.class, validator.getExpressionValue(), validValues);
         }
 
-        if (validValues.contains(value))
-            return true;
+        Object errorValue = null;
 
-        createErrorMessage(validator, field, value, errors);
-        return false;
+        if (value instanceof String)
+        {
+            if (!validValues.contains(value))
+                errorValue = value;
+        }
+        else if (value instanceof Collection col)
+        {
+            for (Object item : col)
+            {
+                if (null == item || !validValues.contains(Objects.toString(item)))
+                {
+                    errorValue = item;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            errorValue = value;
+        }
+
+        if (null != errorValue)
+            createErrorMessage(validator, field, value, errors);
+        return null == errorValue;
     }
 }

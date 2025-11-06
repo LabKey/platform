@@ -49,7 +49,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
 
     private static Path getExperimentDirectory(PipeRoot pr, String name)
     {
-        Path systemDir = pr.ensureSystemDirectoryPath();
+        Path systemDir = pr.ensureSystemDirectory().toNioPathForRead();
         return systemDir.resolve(DIR_NAME_EXPERIMENT).resolve(name);
     }
 

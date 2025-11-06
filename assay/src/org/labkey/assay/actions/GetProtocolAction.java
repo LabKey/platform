@@ -83,7 +83,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
-                AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
+                AssayDomainService svc = new AssayDomainServiceImpl(getViewContext().getUser(), getViewContext().getContainer());
                 GWTProtocol ret = svc.getAssayDefinition(form.getProtocolId(), form.isCopy());
                 if (ret == null)
                 {
@@ -99,7 +99,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
         else if (form.getProviderName() != null)
         {
             // get the assay template
-            AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
+            AssayDomainService svc = new AssayDomainServiceImpl(getViewContext().getUser(), getViewContext().getContainer());
             GWTProtocol ret = svc.getAssayTemplate(form.getProviderName());
             return success("Generated assay template for provider '" + form.getProviderName() + "'", ret);
         }

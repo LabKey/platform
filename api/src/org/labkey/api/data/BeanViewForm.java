@@ -19,13 +19,16 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaClass;
+import org.labkey.api.action.HasBindParameters;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class BeanViewForm<K> extends TableViewForm implements DynaBean
+public class BeanViewForm<K> extends TableViewForm implements DynaBean, HasBindParameters
 {
+    private final StringBeanDynaClass _dynaClass;
     private final Class<K> _wrappedClass;
 
     protected BeanViewForm(Class<K> clss)
@@ -39,9 +42,10 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
     }
 
 
-    public BeanViewForm(Class<K> clss, TableInfo tinfo, Map<String, Class> extraProps)
+    public BeanViewForm(Class<K> clss, TableInfo tinfo, Map<String, Class<?>> extraProps)
     {
-        super(StringBeanDynaClass.createDynaClass(clss, extraProps), tinfo);
+        super(tinfo);
+        _dynaClass = StringBeanDynaClass.createDynaClass(clss, extraProps);
         _wrappedClass = clss;
     }
 
@@ -60,7 +64,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
                 else
                     bean = (K) BeanUtils.cloneBean(_oldValues);
 
-                factory.fromMap(bean, getStrings());
+                factory.fromMap(bean, getValuesToBind());
                 return bean;
             }
             catch (ReflectiveOperationException x)
@@ -71,7 +75,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         else
         {
             ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
-            return factory.fromMap(getStrings());
+            return factory.fromMap(getValuesToBind());
         }
     }
 
@@ -83,11 +87,11 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
     }
 
     @Override
-    public Map<String, String> getStrings()
+    public Map<String, Object> getValuesToBind()
     {
         //If we don't have strings and do have typed values then
         //make the strings match the typed values
-        Map<String, String> strings = super.getStrings();
+        Map<String, Object> strings = super.getValuesToBind();
         if (null == strings || strings.isEmpty() && (null != _values && !_values.isEmpty()))
         {
             strings = new HashMap<>();
@@ -95,7 +99,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
             {
                 strings.put(entry.getKey(), ConvertUtils.convert(entry.getValue()));
             }
-            _stringValues = strings;
+            setValuesToBind(strings);
         }
 
         return strings;
@@ -117,5 +121,69 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         {
             throw new IllegalArgumentException("Type of old values is incompatible with wrapped class");
         }
+    }
+
+    @Override
+    protected Class<?> getTruePropType(String propName)
+    {
+        var ret = _dynaClass.getTruePropType(propName);
+        if (null == ret)
+            ret = super.getTruePropType(propName);
+        return ret;
+    }
+
+    // DynaBean
+    @Override
+    public DynaClass getDynaClass()
+    {
+        return _dynaClass;
+    }
+
+    @Override
+    public Object get(String name)
+    {
+        return super.getValueToBind(name);
+    }
+
+    @Override
+    public void set(String name, Object value)
+    {
+        super.setValueToBind(name,value);
+    }
+
+    @Override
+    public boolean contains(String arg0, String arg1)
+    {
+        throw new UnsupportedOperationException("No mapped properties in a table");
+    }
+
+    @Override
+    public Object get(String arg0, String arg1)
+    {
+        throw new UnsupportedOperationException("No mapped properties in a table");
+    }
+
+    @Override
+    public Object get(String arg0, int arg1)
+    {
+        throw new UnsupportedOperationException("No indexed properties in a table");
+    }
+
+    @Override
+    public void remove(String arg0, String arg1)
+    {
+        throw new UnsupportedOperationException("No indexed properties in a table");
+    }
+
+    @Override
+    public void set(String arg0, String arg1, Object arg2)
+    {
+        throw new UnsupportedOperationException("No mapped properties in a table");
+    }
+
+    @Override
+    public void set(String arg0, int arg1, Object arg2)
+    {
+        throw new UnsupportedOperationException("No indexed properties in a table");
     }
 }

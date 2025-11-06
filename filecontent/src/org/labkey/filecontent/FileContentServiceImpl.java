@@ -93,6 +93,7 @@ import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.vfs.FileLike;
 
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedWriter;
@@ -904,13 +905,6 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             }
         }
 
-        @NotNull
-        @Override
-        public Collection<String> canMove(Container c, Container newParent, User user)
-        {
-            return Collections.emptyList();
-        }
-
         @Override
         public void propertyChange(PropertyChangeEvent propertyChangeEvent)
         {
@@ -1372,6 +1366,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public String getAbsolutePathFromDataFileUrl(String dataFileUrl, Container container)
     {
         return FileUtil.getAbsolutePath(container, FileUtil.createUri(dataFileUrl));
+    }
+
+    @Nullable
+    @Override
+    public URI getWebDavUrl(@NotNull FileLike path, @NotNull Container container, @NotNull PathType type)
+    {
+        return getWebDavUrl(path.toNioPathForRead(), container, type);
     }
 
     @Nullable

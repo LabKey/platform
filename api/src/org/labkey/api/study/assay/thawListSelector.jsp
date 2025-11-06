@@ -39,10 +39,10 @@
     JspView<RenderContext> thisView = HttpView.currentView();
     RenderContext ctx = thisView.getModelBean();
     boolean renderAll = ctx.get(RenderSubSelectors.class.getSimpleName()) == null ? true : ctx.get(RenderSubSelectors.class.getSimpleName()).equals(RenderSubSelectors.ALL);
-    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
+    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
     boolean textType = !listType;
 
-    String containerPath = ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+    String containerPath = ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
     Container container = containerPath == null ? null : ContainerManager.getForPath(containerPath);
 
     String textTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.TEXT_NAMESPACE_SUFFIX;
@@ -96,7 +96,7 @@
             typeAhead : true,
             typeAheadDelay : 250,
             forceSelection : true,
-            initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
+            initialValue : <%=q(ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
             fieldLabel : 'Schema',
             name: <%= q(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME) %>,
             validateOnBlur: false,
@@ -104,14 +104,14 @@
         }));
 
         var queryCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
-            defaultSchema : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
+            defaultSchema : <%=q(ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
             id : 'thawListQueryName',
             includeUserQueries: true,
             typeAhead : true,
             typeAheadDelay : 250,
             fieldLabel : 'Query',
             name: <%= q(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME) %>,
-            initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
+            initialValue : <%=q(ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
             width: 500
         }));
 

@@ -168,7 +168,7 @@
  * @param {Integer} [config.tickLength] (Optional) The length, in pixels for the x and y axis tick marks. Defaults to 8.
  * @param {Integer} [config.tickWidth] (Optional) The x and y axis tick line width. Defaults to 1.
  * @param {Integer} [config.tickOverlapRotation] (Optional) The degree of rotation for overlapping x axis tick labels.
- *      Defaults to 15 degrees.
+ *      Defaults to 35 degrees.
  * @param {Integer} [config.gridLineWidth] (Optional) The line width for the grid lines of the plot. Defaults to 1.
  * @param {Integer} [config.borderWidth] (Optional) The border line width with the x and y axis. Defaults to 1.
  *
@@ -1754,6 +1754,7 @@ boxPlot.render();
         }
         // default to true
         config.properties.showBoundLines = config.properties.showBoundLines ?? true;
+        config.properties.groupMatchingXTick = config.properties.groupMatchingXTick ?? true;
 
         // get a sorted array of the unique x-axis labels
         var uniqueXAxisKeys = {}, uniqueXAxisLabels = [];
@@ -2129,7 +2130,11 @@ boxPlot.render();
                     }
                 };
 
-                index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
+                if (config.properties.groupMatchingXTick) {
+                    index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
+                } else {
+                    index++; // Issue 54018
+                }
 
                 // calculate average values for the trend line data (used when grouping x by unique value)
                 addAllValuesToTrendLineData(groupedTrendlineData, index, index, row, hasYRightMetric);
@@ -2181,8 +2186,6 @@ boxPlot.render();
         if (distinctColorValues.length < 2 && config.properties.groupBy === undefined) {
             config.properties.color = undefined;
         }
-
-        config.tickOverlapRotation = 35;
 
         // CUSUM plots can only be linear scale
         var yAxisScaleOverride;

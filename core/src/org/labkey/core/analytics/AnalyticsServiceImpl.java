@@ -288,5 +288,6 @@ public class AnalyticsServiceImpl implements AnalyticsService
             }
         });
         properties.save();
+        get().resetCSP();
     }
 }

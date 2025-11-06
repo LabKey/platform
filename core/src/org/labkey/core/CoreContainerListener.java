@@ -15,9 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -36,14 +33,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.Portal;
 
 import java.beans.PropertyChangeEvent;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Objects;
 
 public class CoreContainerListener implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = LogManager.getLogger(CoreContainerListener.class);
-
     @Override
     public void containerCreated(Container c, User user)
     {
@@ -84,13 +77,6 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         String message = c.getName() + " was moved from " + oldParent.getPath() + " to " + c.getParent().getPath();
         addAuditEvent(user, c, message);
         // re-index is handled when the propertyChange() event fires
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
     }
 
     private void addAuditEvent(User user, Container c, String comment)

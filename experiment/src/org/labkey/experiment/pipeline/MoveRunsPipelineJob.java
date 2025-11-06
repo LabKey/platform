@@ -57,7 +57,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         _sourceContainer = sourceContainer;
 
         String baseLogFileName = FileUtil.makeFileNameWithTimestamp("moveRun", ".log");
-        setupLocalDirectoryAndJobLog(getPipeRoot(), ExperimentService.MODULE_NAME, baseLogFileName);
+        setupLocalDirectoryAndJobLog(getPipeRoot(), baseLogFileName);
 
         getLogger().info(getDescription());
         for (var runId : _runIds)

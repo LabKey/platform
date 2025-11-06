@@ -127,6 +127,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 .append(")");
         ExprColumn column = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of samples currently stored in this sample type");
+        column.setFormat("#,##0");
 
         return column;
     }

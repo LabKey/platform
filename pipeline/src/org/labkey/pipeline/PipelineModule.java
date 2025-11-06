@@ -21,12 +21,15 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -47,8 +50,6 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.OptionalFeatureFlag;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -95,10 +96,8 @@ import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 
 import javax.management.StandardMBean;
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +106,6 @@ import java.util.Set;
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
     private static final Logger _log = LogHelper.getLogger(PipelineModule.class, "Module responsible for managing pipeline jobs and logs");
-    public static final String ADVANCED_IMPORT_FLAG = "advancedImportFlag";
 
     @Override
     public String getName()
@@ -218,15 +216,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
-        OptionalFeatureService.get().addFeatureFlag(
-            new OptionalFeatureFlag(
-                ADVANCED_IMPORT_FLAG,
-                "Restore 'Advanced Import Options' during Folder import",
-                "This option will be removed in LabKey Server v25.11.",
-                false, false, OptionalFeatureService.FeatureType.Deprecated
-            )
-        );
-
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();
             SqlDialect dialect = PipelineSchema.getInstance().getSchema().getSqlDialect();
@@ -267,6 +256,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             result.put("jmsType", PipelineService.get().getJmsType().toString());
 
             result.put("pipelineRootCount", PipelineService.get().getAllPipelineRoots().size());
+            result.put("supplementalDirectories", new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount());
 
             return result;
         });
@@ -295,11 +285,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    @Override
     public void containerDeleted(Container c, User user)
     {
         try
@@ -313,24 +298,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         PipelineManager.purge(c, user);
     }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
 
     @Override
     public @NotNull Set<Class<?>> getIntegrationTests()

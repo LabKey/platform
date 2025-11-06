@@ -15,7 +15,7 @@ LABKEY.vis.internal.Axis = function() {
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
-        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 25, gridLineWidth = 1, borderWidth = 1,
+        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
         yGutterXOffset = 0, xGutterYOffset = 0, addLogGutterLabel = false, xGridExtension = 0, yGridExtension = 0, logGutterSel;
 
@@ -453,37 +453,73 @@ LABKEY.vis.internal.Axis = function() {
                 }
             }
         }
-        if (tickHover || tickClick || tickMouseOver || tickMouseOut) {
+
+        const hasTickAction = tickHover || tickClick || tickMouseOver || tickMouseOut;
+        if (hasTickAction) {
             addTickAreaRects(textAnchors, !hasOverlap);
             addHighlightRects(textAnchors);
         }
 
-        if (orientation == 'bottom') {
-            if (hasOverlap) {
-                textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
-                        .attr('text-anchor', 'start');
+        if (orientation === 'bottom' && hasOverlap) {
+            // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
+            if (hasTickAction || tickOverlapRotation !== undefined || textEls[0].length > 10) {
+                if (!tickOverlapRotation) tickOverlapRotation = 35;
+                const rotate = (v) => `rotate(${tickOverlapRotation}, ${textXFn(v)}, ${textYFn(v)})`;
 
-                if (tickHover || tickClick || tickMouseOver || tickMouseOut)
-                {
+                textEls.attr('transform', rotate).attr('text-anchor', 'start');
+
+                if (hasTickAction) {
                     addTickAreaRects(textAnchors);
                     textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
-                            .attr('transform', function (v)
-                            {
-                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                            });
+                            .attr('transform', rotate);
 
                     addHighlightRects(textAnchors);
-                    textAnchors.selectAll('rect.highlight')
-                            .attr('transform', function (v)
-                            {
-                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
-                            });
+                    textAnchors.selectAll('rect.highlight').attr('transform', rotate);
+                }
+            } else {
+                // wrap text to multiple lines if we have overlapping tick labels and are not rotating
+                function wrapAxisTickLabel(text) {
+                    let width;
+                    text.each(function(v) {
+                        if (!width) width = scale(v) - grid.leftEdge;
+
+                        const textEl = d3.select(this);
+                        const words = textEl.text().split(/[\s]+/).reverse();
+                        const lineHeight = 1.1; // ems
+                        const x = this.getAttribute("x");
+                        const y = this.getAttribute("y");
+                        let word;
+                        let line = [];
+                        let lineNumber = 0;
+                        let tspan = textEl.text(null)
+                                .append("tspan")
+                                .attr("x", x)
+                                .attr("y", y)
+                                .attr("dy", "0em");
+
+                        while (word = words.pop()) {
+                            line.push(word);
+                            tspan.text(line.join(" "));
+                            if (tspan.node().getComputedTextLength() > width) {
+                                line.pop();
+                                tspan.text(line.join(" "));
+                                line = [word];
+                                tspan = textEl.append("tspan")
+                                        .attr("x", x)
+                                        .attr("y", y)
+                                        .attr("dy", ++lineNumber * lineHeight + "em")
+                                        .text(word);
+                            }
+                        }
+                    });
                 }
 
-            } else {
-                textEls.attr('transform', '');
+                textEls.attr('transform', '').call(wrapAxisTickLabel);
                 textAnchors.selectAll('rect.highlight').attr('transform', '');
             }
+        } else if (orientation === 'bottom') {
+            textEls.attr('transform', '');
+            textAnchors.selectAll('rect.highlight').attr('transform', '');
         }
 
         if (!borderSel) {
@@ -2080,6 +2116,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'point').append('path');
 
+        if (geom.errorAes !== undefined) {
+            geom.errorShowVertical = true;
+            geom.errorWidth = Math.max(2, Math.min(10, geom.size)); // match size of points, if provided, default to 2 with max of 10
+            renderErrorBar(layer, plot, geom, data);
+        }
+
         // two different ways to add the hover title (so that it works in IE as well)
         anchorSel.attr('xlink:title', hoverTextAcc);
         anchorSel.append('title').text(hoverTextAcc);
@@ -2165,22 +2207,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderErrorBar = function(layer, plot, geom, data) {
-        var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
+    var renderErrorBar = function(layer, plot, geom, data, xAcc) {
+        const errorLineWidth = geom.errorWidth != null ? geom.errorWidth : geom.width;
+        const xAcc_ = xAcc || function(row) {return geom.getX(row);};
 
-        colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
-        sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
-        topFn = function(d) {
+        const colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
+        const topFn = function(d) {
             var x, y, value, error;
-            x = geom.getX(d);
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value + error);
-            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
-        bottomFn = function(d) {
+        const bottomFn = function(d) {
             var x, y, value, error;
-            x = geom.getX(d);
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value - error);
@@ -2188,15 +2230,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (y == null && geom.yScale.trans == "log") {
                 return null;
             }
-            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - errorLineWidth, y, x + errorLineWidth, y);
         };
-        verticalFn = function(d) {
-            var x, y1, y2, value, error;
-            x = geom.getX(d);
+        const verticalFn = function(d) {
+            var x, y, y1, y2, value, error;
+            x = xAcc_(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
+            y = geom.yScale.scale(value);
             y1 = geom.yScale.scale(value + error);
-            y2 = geom.yScale.scale(value - error);
+            y2 =  geom.topOnly ? y : geom.yScale.scale(value - error);
             // if we have a log scale, y2 will be null for negative values so set to scale min
             if (y2 == null && geom.yScale.trans == "log") {
                 y2 = geom.yScale.range[0];
@@ -2207,29 +2250,38 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         data.filter(function(d) {
             // Note: while we don't actually use the color here, we need to calculate it so they show up in the legend,
             // even if the points are null.
-            var x = geom.getX(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d);
+            var x = xAcc_(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d);
             if (typeof colorAcc == 'function') { colorAcc(d); }
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
 
-        selection = layer.selectAll('.error-bar').data(data);
+        const selection = layer.selectAll('.error-bar').data(data);
         selection.exit().remove();
 
-        newBars = selection.enter().append('g').attr('class', 'error-bar');
+        const newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
         if (!geom.topOnly) {
             newBars.append('path').attr('class', 'error-bar-bottom');
         }
+        if (geom.errorShowVertical) {
+            newBars.append('path').attr('class','error-bar-vert');
+        }
 
-        selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', 1);
         if (!geom.topOnly) {
-            selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+            selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', 1);
+        }
+        if (geom.errorShowVertical) {
+            selection.selectAll('.error-bar-vert').attr('d', verticalFn).attr('stroke', colorAcc).attr('stroke-width', 1);
         }
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));
             if (!geom.topOnly) {
                 selection.selectAll('.error-bar-bottom').style("stroke-dasharray", ("2, 1"));
+            }
+            if (geom.errorShowVertical) {
+                selection.selectAll('.error-bar-vert').style("stroke-dasharray", ("2, 1"));
             }
         }
     };
@@ -3137,6 +3189,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
             return (d.label !== undefined ? d.label + '\n' : '')
                 + (d.subLabel !== undefined ? 'Subcategory: ' + d.subLabel + '\n' : '')
+                + (d.errorType !== undefined && d.error !== undefined ? d.errorType + ': ' + d.error + '\n' : '')
                 + 'Value: ' + geom.yAes.getValue(d);
         };
 
@@ -3168,6 +3221,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         yZero = {};
         yZero[geom.yAes.value] = 0;
+
+        if (geom.errorAes !== undefined) {
+            geom.topOnly = true;
+            geom.errorShowVertical = true;
+            geom.errorWidth = Math.max(2, Math.min(25, barWidth / 8)); // min 2 and max of 25 but default to 1/8 of bar width
+            renderErrorBar(layer, plot, geom, data, function(d) {
+                return xAcc(d) + (barWidth / 2);
+            });
+        }
 
         // group each bar with an a tag for hover
         barWrappers = layer.selectAll('a.bar-individual').data(data);

@@ -72,7 +72,7 @@ public class StudyPropertiesController extends BaseStudyController
 
             // In order to pull the data out for an edit, we need to explicitly add the container id to the parameters
             // that the query update form will use
-            updateForm.set("container", getContainer().getId());
+            updateForm.setValueToBind("container", getContainer().getId());
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();

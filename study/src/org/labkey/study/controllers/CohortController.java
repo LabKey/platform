@@ -341,7 +341,7 @@ public class CohortController extends BaseStudyController
             {
                 view = new InsertView(updateForm, errors);
                 // by default, cohorts are enrolled
-                updateForm.set("enrolled", true);
+                updateForm.setValueToBind("enrolled", true);
             }
             else
             {

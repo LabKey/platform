@@ -3,6 +3,7 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
@@ -13,6 +14,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 
 public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
 {
@@ -32,6 +34,18 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
         addWrapColumn(_rootTable.getColumn("Description"));
         addWrapColumn(_rootTable.getColumn("RangeURI"));
         addWrapColumn(_rootTable.getColumn("StorageColumnName"));
+        addWrapColumn(_rootTable.getColumn("ConceptURI"));
+
+        // Add the other columns in case they're useful for future troubleshooting, but keep them out
+        // of the way by default
+        for (ColumnInfo column : _rootTable.getColumns())
+        {
+            if (getColumn(column.getName()) == null)
+            {
+                addWrapColumn(column).setHidden(true);
+            }
+        }
+
     }
 
     protected MutableColumnInfo addColumn(String name, JdbcType type)

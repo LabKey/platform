@@ -108,7 +108,7 @@ public class AggregateColumnInfo extends BaseColumnInfo
                 }
 
                 @Override
-                public NamedObjectList getSelectList(RenderContext ctx)
+                public @NotNull NamedObjectList getSelectList(RenderContext ctx)
                 {
                     return fk.getSelectList(ctx);
                 }

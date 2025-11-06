@@ -231,8 +231,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
+        return createTransactionAuditEvent(container, auditAction, null);
+    }
+
+    public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> details)
+    {
         long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();
-        return new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, auditId);
+        TransactionAuditProvider.TransactionAuditEvent event = new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, auditId);
+        if (details != null)
+            event.addDetails(details);
+        return event;
     }
 
     public static void addTransactionAuditEvent(DbScope.Transaction transaction, User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
@@ -261,6 +269,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
+        if (configParameters != null)
+        {
+            try
+            {
+                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+            } catch (UnsupportedOperationException ignore)
+            {
+                // configParameters is immutable, likely originated from a junit test
+            }
+        }
         return context;
     }
 

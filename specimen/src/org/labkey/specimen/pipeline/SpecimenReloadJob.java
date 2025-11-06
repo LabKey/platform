@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -41,13 +42,13 @@ public class SpecimenReloadJob extends SpecimenBatch implements Serializable, Sp
     {
         super(info, null, root, false);
 
-        File logFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("specimen_reload", "log"));
+        FileLike logFile = root.resolvePathToFileLike(FileUtil.makeFileNameWithTimestamp("specimen_reload", "log"));
         setLogFile(logFile);
         _transformName = transformName;
     }
 
     @Override
-    public void setSpecimenArchive(File archiveFile)
+    public void setSpecimenArchive(FileLike archiveFile)
     {
         _definitionFile = archiveFile;
     }

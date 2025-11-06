@@ -211,10 +211,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 _form.logSelections(getLogger());
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
-                if(_form.getFolderProps() != null)
-                    _form.setFolderProps(_form.getFolderProps()[0].split(","));
-                if(_form.getStudyProps() != null)
-                    _form.setStudyProps(_form.getStudyProps()[0].split(","));
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
                 FolderExportContext folderExportContext = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false, _form.getExportPhiLevel(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(),
@@ -327,7 +323,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
         finally
         {
-            if (!success && _destFolderCreated)
+            if (!success && _destFolderCreated && getDstContainer() != null)
                 ContainerManager.delete(getDstContainer(), getUser());
         }
 

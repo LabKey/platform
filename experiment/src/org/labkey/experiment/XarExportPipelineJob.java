@@ -73,7 +73,7 @@ public class XarExportPipelineJob extends PipelineJob
 
         _exportFile = exportedXarsDir.resolveChild(_fileName).toNioPathForWrite().toFile();
 
-        setLogFile(exportedXarsDir.resolveChild(fileName + ".log").toNioPathForWrite());
+        setLogFile(exportedXarsDir.resolveChild(fileName + ".log"));
 
         header("Experiment export to " + _exportFile.getName());
     }

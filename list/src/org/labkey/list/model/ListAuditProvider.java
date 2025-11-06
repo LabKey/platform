@@ -156,7 +156,6 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         public ListAuditEvent()
         {
             super();
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
         }
 
         public ListAuditEvent(Container container, String comment, ListDefinitionImpl list)
@@ -165,7 +164,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             setListDomainUri(list.getDomain().getTypeURI());
             setListId(list.getListId());
             setListName(list.getName());
-            setTransactionId(TransactionAuditProvider.getCurrentTransactionAuditId());
+            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), ListManager.LIST_AUDIT_EVENT);
         }
 
         public int getListId()

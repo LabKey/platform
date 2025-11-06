@@ -391,7 +391,7 @@ public class SecurityManager
     }
 
     /** Move is handled by direct call from ContainerManager into SecurityManager */
-    private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
+    private static class SecurityContainerListener implements ContainerManager.ContainerListener
     {
         @Override
         public void containerDeleted(Container c, User user)

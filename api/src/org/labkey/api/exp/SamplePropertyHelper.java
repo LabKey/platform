@@ -246,7 +246,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         protected Object getInputValue(RenderContext ctx)
         {
             TableViewForm viewForm = ctx.getForm();
-            return viewForm.getStrings().get(getName());
+            return viewForm.getValuesToBind().get(getName());
         }
 
         @Override
