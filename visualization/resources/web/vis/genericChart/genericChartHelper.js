@@ -1602,9 +1602,14 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
             else if (hasZeroes)
             {
-                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1.";
+                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis zero values as Number.EPSILON.";
                 var accFn = aes[measureName];
-                aes[measureName] = function(row){return accFn(row) + 1};
+                aes[measureName] = function(row){
+                    if (accFn(row) === 0) {
+                        return Number.EPSILON;
+                    }
+                    return accFn(row);
+                };
             }
         }
 
@@ -2000,7 +2005,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.innerHTML = '<div style="color:red; padding: 5px 0;">Error rendering chart: ' + messages.join(' ') + '</div>';
+            errorDiv.innerHTML = '<div style="color:red; padding: 5px 0;">Error: ' + messages.join(' ') + '</div>';
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
