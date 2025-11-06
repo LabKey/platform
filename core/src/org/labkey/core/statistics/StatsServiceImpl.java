@@ -71,6 +71,8 @@ public class StatsServiceImpl implements StatsService
                 return new ThreeParameterCurveFit(data, asymptoteMax);
             case FOUR_PARAMETER_SIMPLEX:
                 return new FourParameterSimplex(data);
+            case FIVE_PARAMETER_ALT:
+                return new FiveParameterCurveFit(data, asymptoteMin, asymptoteMax);
             case THREE_PARAMETER:
                 return new ParameterCurveFit(data, type, 0.0, asymptoteMax);
             case FOUR_PARAMETER:
